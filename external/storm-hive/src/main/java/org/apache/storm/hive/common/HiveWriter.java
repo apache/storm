@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.hcatalog.streaming.*;
@@ -259,7 +260,8 @@ public class HiveWriter {
         }
     }
 
-    private StreamingConnection newConnection(final UserGroupInformation ugi, final boolean tokenAuthEnabled)
+    @VisibleForTesting
+    StreamingConnection newConnection(final UserGroupInformation ugi, final boolean tokenAuthEnabled)
         throws InterruptedException, ConnectFailure {
         try {
             return  callWithTimeout(new CallRunner<StreamingConnection>() {

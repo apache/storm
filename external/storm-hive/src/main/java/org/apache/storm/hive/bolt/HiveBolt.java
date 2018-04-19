@@ -18,6 +18,7 @@
 
 package org.apache.storm.hive.bolt;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.apache.hive.hcatalog.streaming.SerializationError;
 import org.apache.hive.hcatalog.streaming.StreamingException;
@@ -59,9 +60,11 @@ public class HiveBolt extends BaseRichBolt {
     private transient Timer heartBeatTimer;
     private AtomicBoolean sendHeartBeat = new AtomicBoolean(false);
     private UserGroupInformation ugi = null;
-    private Map<HiveEndPoint, HiveWriter> allWriters;
     private BatchHelper batchHelper;
     private boolean tokenAuthEnabled;
+
+    @VisibleForTesting
+    Map<HiveEndPoint, HiveWriter> allWriters;
 
     public HiveBolt(HiveOptions options) {
         this.options = options;
@@ -244,7 +247,8 @@ public class HiveBolt extends BaseRichBolt {
         allWriters.clear();
     }
 
-    private HiveWriter getOrCreateWriter(HiveEndPoint endPoint)
+    @VisibleForTesting
+    HiveWriter getOrCreateWriter(HiveEndPoint endPoint)
         throws HiveWriter.ConnectFailure, InterruptedException {
         try {
             HiveWriter writer = allWriters.get( endPoint );
