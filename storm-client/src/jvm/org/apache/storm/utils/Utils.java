@@ -109,7 +109,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import javax.security.auth.Subject;
 
-import static org.apache.commons.lang.exception.ExceptionUtils.*;
+import static org.apache.commons.lang.exception.ExceptionUtils.getStackTrace;
 
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
