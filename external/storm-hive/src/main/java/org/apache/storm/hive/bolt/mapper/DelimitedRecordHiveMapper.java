@@ -18,6 +18,7 @@
 package org.apache.storm.hive.bolt.mapper;
 
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.trident.tuple.TridentTuple;
@@ -139,5 +140,10 @@ public class DelimitedRecordHiveMapper implements HiveMapper {
     private String getPartitionsByTimeFormat() {
         Date d = new Date();
         return parseDate.format(d.getTime());
+    }
+
+    @VisibleForTesting
+    public String getFieldDelimiter() {
+        return fieldDelimiter;
     }
 }
