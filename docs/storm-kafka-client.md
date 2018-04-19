@@ -359,3 +359,37 @@ KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
 ```
 
 Note: This setting has no effect with AT_LEAST_ONCE processing guarantee, where tuple tracking is required and therefore always enabled.
+
+# Mapping from `storm-kafka` to `storm-kafka-client` spout properties
+
+This may not be an exhaustive list because the `storm-kafka` configs were taken from Storm 0.9.6
+[SpoutConfig](https://svn.apache.org/repos/asf/storm/site/releases/0.9.6/javadocs/storm/kafka/SpoutConfig.html) and
+[KafkaConfig](https://svn.apache.org/repos/asf/storm/site/releases/0.9.6/javadocs/storm/kafka/KafkaConfig.html).
+`storm-kafka-client` spout configurations were taken from Storm 1.0.6
+[KafkaSpoutConfig](https://storm.apache.org/releases/1.0.6/javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.html) 
+and Kafka 0.10.1.0 [ConsumerConfig](https://kafka.apache.org/0101/javadoc/index.html?org/apache/kafka/clients/consumer/ConsumerConfig.html).
+
+| SpoutConfig   | KafkaSpoutConfig/ConsumerConfig | KafkaSpoutConfig Usage |
+| ------------- | ------------------------------- | ---------------------- |
+| **Setting:** `startOffsetTime`<br><br> **Default:** `EarliestTime`<br>________________________________________________ <br> **Setting:** `forceFromStart` <br><br> **Default:** `false` <br><br> `startOffsetTime` & `forceFromStart` together determine the starting offset. `forceFromStart` determines whether the Zookeeper offset is ignored. `startOffsetTime` sets the timestamp that determines the beginning offset, in case there is no offset in Zookeeper, or the Zookeeper offset is ignored | **Setting:** [`FirstPollOffsetStrategy`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.FirstPollOffsetStrategy.html)<br><br> **Default:** `UNCOMMITTED_EARLIEST` <br><br> [Refer to the helper table](#helper-table-for-setting-firstpolloffsetstrategy) for picking `FirstPollOffsetStrategy` based on your `startOffsetTime` & `forceFromStart` settings | [`<KafkaSpoutConfig-Builder>.setFirstPollOffsetStrategy(<strategy-name>)`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.Builder.html#setFirstPollOffsetStrategy-org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy-)|
+| **Setting:** `scheme`<br><br> The interface that specifies how a `ByteBuffer` from a Kafka topic is transformed into Storm tuple <br>**Default:** `RawMultiScheme` | **Setting:** [`Deserializers`](https://kafka.apache.org/11/javadoc/org/apache/kafka/common/serialization/Deserializer.html)| [`<KafkaSpoutConfig-Builder>.setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, <deserializer-class>)`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.Builder.html#setProp-java.lang.String-java.lang.Object-)<br><br> [`<KafkaSpoutConfig-Builder>.setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, <deserializer-class>)`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.Builder.html#setProp-java.lang.String-java.lang.Object-)|
+| **Setting:** `fetchSizeBytes`<br><br> Message fetch size -- the number of bytes to attempt to fetch in one request to a Kafka server <br> **Default:** `1MB` | **Setting:** [`max.partition.fetch.bytes`](http://kafka.apache.org/10/documentation.html#newconsumerconfigs) | [`<KafkaSpoutConfig-Builder>.setProp(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, <int-value>)`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.Builder.html#setProp-java.lang.String-java.lang.Object-)|
+| **Setting:** `bufferSizeBytes`<br><br> Buffer size (in bytes) for network requests. The buffer size which consumer has for pulling data from producer <br> **Default:** `1MB`| **Setting:** [`receive.buffer.bytes`](http://kafka.apache.org/10/documentation.html#newconsumerconfigs) | [`<KafkaSpoutConfig-Builder>.setProp(ConsumerConfig.RECEIVE_BUFFER_CONFIG, <int-value>)`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.Builder.html#setProp-java.lang.String-java.lang.Object-)|
+| **Setting:** `socketTimeoutMs`<br><br> **Default:** `10000` | **N/A** ||
+| **Setting:** `useStartOffsetTimeIfOffsetOutOfRange`<br><br> **Default:** `true` | **Setting:** [`auto.offset.reset`](http://kafka.apache.org/10/documentation.html#newconsumerconfigs) <br><br> **Default:** Note that the default value for `auto.offset.reset` is `earliest` if you have [`ProcessingGuarantee`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.ProcessingGuarantee.html) set to `AT_LEAST_ONCE`, but the default value is `latest` otherwise.| [`<KafkaSpoutConfig-Builder>.setProp(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, <String>)`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.Builder.html#setProp-java.lang.String-java.lang.Object-)|
+| **Setting:** `fetchMaxWait`<br><br> Maximum time in ms to wait for the response <br> **Default:** `10000` | **Setting:** [`fetch.max.wait.ms`](http://kafka.apache.org/10/documentation.html#newconsumerconfigs) | [`<KafkaSpoutConfig-Builder>.setProp(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, <value>)`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.Builder.html#setProp-java.lang.String-java.lang.Object-)|
+| **Setting:** `maxOffsetBehind`<br><br> Specifies how long a spout attempts to retry the processing of a failed tuple. One of the scenarios is when a failing tuple's offset is more than `maxOffsetBehind` behind the acked offset, the spout stops retrying the tuple.<br>**Default:** `LONG.MAX_VALUE`| **N/A** ||
+| **Setting:** `clientId`| **Setting:** [`client.id`](http://kafka.apache.org/10/documentation.html#newconsumerconfigs)| [`<KafkaSpoutConfig-Builder>.setProp(ConsumerConfig.CLIENT_ID_CONFIG, <String>)`](javadocs/org/apache/storm/kafka/spout/KafkaSpoutConfig.Builder.html#setProp-java.lang.String-java.lang.Object-)|
+
+If you are using this table to upgrade your topology to use `storm-kafka-client` instead of `storm-kafka`, then you will also need to migrate the consumer offsets from ZooKeeper to Kafka broker. Use [`storm-kafka-migration`](https://github.com/apache/storm/tree/master/external/storm-kafka-migration) tool to migrate the Kafka consumer offsets.
+
+#### Helper table for setting `FirstPollOffsetStrategy`
+
+Pick and set `FirstPollOffsetStrategy` based on `startOffsetTime` & `forceFromStart` settings:
+
+| `startOffsetTime`    | `forceFromStart` | `FirstPollOffsetStrategy` |
+| -------------------- | ---------------- | ------------------------- |
+| `EarliestTime` | `true` | `EARLIEST` |
+| `EarliestTime` | `false` | `UNCOMMITTED_EARLIEST` |
+| `LatestTime` | `true` | `LATEST` |
+| `LatestTime` | `false` | `UNCOMMITTED_LATEST` |
