@@ -63,6 +63,9 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         List<String> unFavoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES);
 
         for (ExecutorDetails exec : orderedExecutors) {
+            if (!running) {
+                return null;
+            }
             LOG.debug(
                     "Attempting to schedule: {} of component {}[ REQ {} ]",
                     exec,
@@ -77,6 +80,9 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         LOG.error("/* Scheduling left over task (most likely sys tasks) */");
         // schedule left over system tasks
         for (ExecutorDetails exec : executorsNotScheduled) {
+            if (!running) {
+                return null;
+            }
             final List<ObjectResources> sortedNodes = this.sortAllNodes(td, exec, favoredNodes, unFavoredNodes);
             scheduleExecutor(exec, td, scheduledTasks, sortedNodes);
         }

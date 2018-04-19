@@ -286,6 +286,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             return new SolverResult(state, false);
         }
 
+        if (!running) {
+            return new SolverResult(state, false);
+        }
+
         ExecutorDetails exec = state.currentExec();
         List<ObjectResources> sortedNodes = sortAllNodes(state.td, exec, favoredNodes, unFavoredNodes);
 

@@ -97,6 +97,20 @@ public class DaemonConfig implements Validated {
     public static final String STORM_SCHEDULER = "storm.scheduler";
 
     /**
+     * Max time to attempt to schedule one topology. The default is 600 seconds
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY = "scheduling.timeout.seconds.per.topology";
+
+    /**
+     * Max time to attempt to schedule one topology in the foreground before leaving it for the background. The default is 10 seconds
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String SCHEDULING_FOREGROUND_TIMEOUT_SECONDS_PER_TOPOLOGY = "scheduling.foreground.timeout.seconds.per.topology";
+
+    /**
      * The number of seconds that the blacklist scheduler will concern of bad slots or supervisors.
      */
     @isPositiveNumber

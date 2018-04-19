@@ -18,6 +18,8 @@
 
 package org.apache.storm.scheduler.resource;
 
+import java.util.TreeSet;
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResources;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +44,7 @@ import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.resource.strategies.scheduling.BaseResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
 import org.apache.storm.testing.TestWordCounter;
@@ -50,6 +53,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.DisallowedStrategyException;
 import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.junit.BeforeClass;
@@ -946,6 +950,103 @@ public class TestResourceAwareScheduler {
 
         assertTrue("Topo scheduled?", cluster.getAssignmentById(topo.getId()) != null);
         assertEquals("Topo all executors scheduled?", 25, cluster.getAssignmentById(topo.getId()).getExecutorToSlot().size());
+    }
+
+    public static class NeverEndingSchedulingStrategy extends BaseResourceAwareStrategy {
+
+        @Override
+        public void prepare(Map<String, Object> config) {
+            this.running = true;
+        }
+
+        @Override
+        protected TreeSet<ObjectResources> sortObjectResources(
+            AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails, ExistingScheduleFunc existingScheduleFunc) {
+            // NO-OP
+            return null;
+        }
+
+        @Override
+        public SchedulingResult schedule(Cluster schedulingState, TopologyDetails td) {
+            while (this.running) {
+                try {
+                    Time.sleep(5);
+                } catch (InterruptedException e) {
+                    //Ignored
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Test multiple spouts and cyclic topologies
+     */
+    @Test
+    public void testStrategyTakingTooLong() {
+        try (Time.SimulatedTime st = new Time.SimulatedTime(0)) {
+            INimbus iNimbus = new INimbusTest();
+            Map<String, SupervisorDetails> supMap = genSupervisors(8, 4, 100, 1000);
+            Config config = createClusterConfig(100, 500, 500, null);
+            List<String> allowedSchedulerStrategies = new ArrayList<>();
+            allowedSchedulerStrategies.add(DefaultResourceAwareStrategy.class.getName());
+            allowedSchedulerStrategies.add(NeverEndingSchedulingStrategy.class.getName());
+            config.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, allowedSchedulerStrategies);
+            config.put(DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY, 30);
+            config.put(DaemonConfig.SCHEDULING_FOREGROUND_TIMEOUT_SECONDS_PER_TOPOLOGY, 1);
+            //Set the foreground timeout to 1 but we will use simulated time for timing out the topology (I don't want to wait 30 seconds
+            // for a test)
+
+            TopologyDetails topo1 = genTopology("topo-1", config, 1, 0, 2, 0, currentTime - 2, 10, "jerry");
+            TopologyDetails topo3 = genTopology("topo-3", config, 1, 2, 1, 1, currentTime - 2, 20, "jerry");
+            config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, NeverEndingSchedulingStrategy.class.getName());
+
+            TopologyDetails topo2 = genTopology("topo-2", config, 2, 0, 2, 0, currentTime - 2, 20, "jerry");
+
+            Topologies topologies = new Topologies(topo1, topo2, topo3);
+            Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
+            ResourceAwareScheduler rs = new ResourceAwareScheduler();
+
+            rs.prepare(config);
+
+            //Because scheduling is happening in the background we want to keep scheduling until we get topo-1 and topo-3 scheduled.
+            rs.schedule(topologies, cluster);
+
+            assertNotNull("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()));
+            assertEquals("Topo-1 all executors scheduled?", 2, cluster.getAssignmentById(topo1.getId()).getExecutorToSlot().size());
+            assertNull("Topo-2 not scheduled", cluster.getAssignmentById(topo2.getId()));
+            assertEquals("Scheduling in background 0 of 30 seconds used.", cluster.getStatusMap().get(topo2.getId()));
+            assertNotNull("Topo-3 scheduled?", cluster.getAssignmentById(topo3.getId()));
+            assertEquals("Topo-3 all executors scheduled?", 3, cluster.getAssignmentById(topo3.getId()).getExecutorToSlot().size());
+
+            //Go 30 fake seconds in the future and schedule again.
+            Time.advanceTime(30_000);
+            rs.schedule(topologies, cluster);
+
+            //Because topo-3 was successfully scheduled after topo-2 the first time around topo-2 was canceled
+            //This time is was restarted
+
+            assertNotNull("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()));
+            assertEquals("Topo-1 all executors scheduled?", 2, cluster.getAssignmentById(topo1.getId()).getExecutorToSlot().size());
+            assertNull("Topo-2 not scheduled", cluster.getAssignmentById(topo2.getId()));
+            assertEquals("Scheduling in background 0 of 30 seconds used.", cluster.getStatusMap().get(topo2.getId()));
+            assertNotNull("Topo-3 scheduled?", cluster.getAssignmentById(topo3.getId()));
+            assertEquals("Topo-3 all executors scheduled?", 3, cluster.getAssignmentById(topo3.getId()).getExecutorToSlot().size());
+
+            //Go 30 fake seconds in the future and schedule again.
+            Time.advanceTime(30_000);
+            rs.schedule(topologies, cluster);
+
+            //Now nothing was scheduled the second time schedule was called topo-2 is now timed out.
+
+            assertNotNull("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()));
+            assertEquals("Topo-1 all executors scheduled?", 2, cluster.getAssignmentById(topo1.getId()).getExecutorToSlot().size());
+            assertNull("Topo-2 not scheduled", cluster.getAssignmentById(topo2.getId()));
+            assertEquals("Scheduling took too long for " + topo2.getId() + " using strategy " +
+                NeverEndingSchedulingStrategy.class.getName() + " timeout after 30 seconds.", cluster.getStatusMap().get(topo2.getId()));
+            assertNotNull("Topo-3 scheduled?", cluster.getAssignmentById(topo3.getId()));
+            assertEquals("Topo-3 all executors scheduled?", 3, cluster.getAssignmentById(topo3.getId()).getExecutorToSlot().size());
+        }
     }
 
     @Rule
