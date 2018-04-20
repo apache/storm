@@ -41,7 +41,7 @@ public class WordCountTopology {
     private static final String INSERT_BOLT = "INSERT_BOLT";
 
     private static final String CONSUMER_GROUP = "wordcount";
-    private static final String CONSUMER_TOPIC = "wordcountsource";
+    private static final String CONSUMER_TOPIC = "source";
 
     public static StormTopology buildTopology(String nameserverAddr, String topic){
         Properties properties = new Properties();
@@ -68,8 +68,8 @@ public class WordCountTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         builder.setSpout(WORD_SPOUT, spout, 1);
-        builder.setBolt(COUNT_BOLT, bolt, 1).shuffleGrouping(WORD_SPOUT);
-        builder.setBolt(INSERT_BOLT, insertBolt, 1).fieldsGrouping(COUNT_BOLT, new Fields("word"));
+        builder.setBolt(COUNT_BOLT, bolt, 1).fieldsGrouping(WORD_SPOUT, new Fields("str"));
+        builder.setBolt(INSERT_BOLT, insertBolt, 1).shuffleGrouping(COUNT_BOLT);
 
         return builder.createTopology();
     }
