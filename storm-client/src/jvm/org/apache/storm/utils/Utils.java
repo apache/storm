@@ -18,6 +18,11 @@
 
 package org.apache.storm.utils;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.MapDifference.ValueDifference;
+import com.google.common.collect.Maps;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,7 +62,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,12 +69,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.MapDifference.ValueDifference;
-import com.google.common.collect.Maps;
-
+import javax.security.auth.Subject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.Config;
@@ -104,10 +103,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import javax.security.auth.Subject;
 
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
@@ -361,12 +356,12 @@ public class Utils {
                             Time.sleep(s);
                     }
                 } catch (Throwable t) {
-                    LOG.error("Async loop died!", t);
                     if (Utils.exceptionCauseIsInstanceOf(
                             InterruptedException.class, t)) {
-                        LOG.info("Async loop interrupted!");
+                        LOG.error("Async loop interrupted!", t);
                         return;
                     }
+                    LOG.error("Async loop died!", t);
                     throw new RuntimeException(t);
                 }
             }
