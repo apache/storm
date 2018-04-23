@@ -15,43 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.hdfs.trident.rotation;
 
-import org.apache.storm.trident.tuple.TridentTuple;
+package org.apache.storm.hdfs.trident.rotation;
 
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.storm.trident.tuple.TridentTuple;
 
 
 public class TimedRotationPolicy implements FileRotationPolicy {
 
-    public static enum TimeUnit {
-
-        SECONDS((long)1000),
-        MINUTES((long)1000*60),
-        HOURS((long)1000*60*60),
-        DAYS((long)1000*60*60*24);
-
-        private long milliSeconds;
-
-        private TimeUnit(long milliSeconds){
-            this.milliSeconds = milliSeconds;
-        }
-
-        public long getMilliSeconds(){
-            return milliSeconds;
-        }
-    }
-
     private long interval;
     private Timer rotationTimer;
     private AtomicBoolean rotationTimerTriggered = new AtomicBoolean();
-
-
-    public TimedRotationPolicy(float count, TimeUnit units){
-        this.interval = (long)(count * units.getMilliSeconds());
+    public TimedRotationPolicy(float count, TimeUnit units) {
+        this.interval = (long) (count * units.getMilliSeconds());
     }
+
     /**
      * Called for every tuple the HdfsBolt executes.
      *
@@ -77,7 +58,7 @@ public class TimedRotationPolicy implements FileRotationPolicy {
         rotationTimerTriggered.set(false);
     }
 
-    public long getInterval(){
+    public long getInterval() {
         return this.interval;
     }
 
@@ -94,5 +75,23 @@ public class TimedRotationPolicy implements FileRotationPolicy {
             }
         };
         rotationTimer.scheduleAtFixedRate(task, interval, interval);
+    }
+
+    public static enum TimeUnit {
+
+        SECONDS((long) 1000),
+        MINUTES((long) 1000 * 60),
+        HOURS((long) 1000 * 60 * 60),
+        DAYS((long) 1000 * 60 * 60 * 24);
+
+        private long milliSeconds;
+
+        private TimeUnit(long milliSeconds) {
+            this.milliSeconds = milliSeconds;
+        }
+
+        public long getMilliSeconds() {
+            return milliSeconds;
+        }
     }
 }

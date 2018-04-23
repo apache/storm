@@ -15,21 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.common.rotation;
 
+import java.io.IOException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class MoveFileAction implements RotationAction {
     private static final Logger LOG = LoggerFactory.getLogger(MoveFileAction.class);
 
     private String destination;
 
-    public MoveFileAction toDestination(String destDir){
+    public MoveFileAction toDestination(String destDir) {
         destination = destDir;
         return this;
     }

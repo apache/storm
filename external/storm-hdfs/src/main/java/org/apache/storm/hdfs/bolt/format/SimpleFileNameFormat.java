@@ -1,27 +1,21 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt.format;
 
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
-
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Utils;
 
@@ -41,11 +35,11 @@ public class SimpleFileNameFormat implements FileNameFormat {
         // compile parameters
         SimpleDateFormat dateFormat = new SimpleDateFormat(timeFormat);
         String ret = name
-                .replace("$TIME", dateFormat.format(new Date(timeStamp)))
-                .replace("$NUM", String.valueOf(rotation))
-                .replace("$HOST", host)
-                .replace("$COMPONENT", componentId)
-                .replace("$TASK", String.valueOf(taskId));
+            .replace("$TIME", dateFormat.format(new Date(timeStamp)))
+            .replace("$NUM", String.valueOf(rotation))
+            .replace("$HOST", host)
+            .replace("$COMPONENT", componentId)
+            .replace("$TASK", String.valueOf(taskId));
         return ret;
     }
 
@@ -78,7 +72,7 @@ public class SimpleFileNameFormat implements FileNameFormat {
      * $HOST - local host name<br/>
      * $COMPONENT - component id<br/>
      * $TASK - task id<br/>
-     * 
+     *
      * @param name
      *            file name
      * @return
@@ -90,10 +84,10 @@ public class SimpleFileNameFormat implements FileNameFormat {
 
     public SimpleFileNameFormat withTimeFormat(String timeFormat) {
         //check format
-        try{
+        try {
             new SimpleDateFormat(timeFormat);
-        }catch (Exception e) {
-            throw new IllegalArgumentException("invalid timeFormat: "+e.getMessage());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("invalid timeFormat: " + e.getMessage());
         }
         this.timeFormat = timeFormat;
         return this;
