@@ -17,17 +17,23 @@
  *  * limitations under the License.
  *
  */
+
 package org.apache.storm.sql.compiler.backends.trident;
 
 import com.google.common.collect.ImmutableMap;
+import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.avatica.util.DateTimeUtils;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.sql.AbstractTridentProcessor;
 import org.apache.storm.sql.SqlTestUtil;
 import org.apache.storm.sql.TestUtils;
 import org.apache.storm.sql.planner.trident.QueryPlanner;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.sql.AbstractTridentProcessor;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
@@ -37,193 +43,189 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
 import static org.junit.Assert.assertEquals;
 
 public class TestPlanCompiler {
-  private static LocalCluster cluster;
+    private static LocalCluster cluster;
 
-  @BeforeClass
-  public static void staticSetup() throws Exception {
-    cluster = new LocalCluster();
-  }
-
-  @AfterClass
-  public static void staticCleanup() {
-    if (cluster!= null) {
-      cluster.shutdown();
-      cluster = null;
+    @BeforeClass
+    public static void staticSetup() throws Exception {
+        cluster = new LocalCluster();
     }
-  }
 
-  @Before
-  public void setUp() {
-    getCollectedValues().clear();
-  }
+    @AfterClass
+    public static void staticCleanup() {
+        if (cluster != null) {
+            cluster.shutdown();
+            cluster = null;
+        }
+    }
 
-  @Test
-  public void testCompile() throws Exception {
-    final int EXPECTED_VALUE_SIZE = 2;
-    String sql = "SELECT ID FROM FOO WHERE ID > 2";
-    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
-    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
-    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
-    QueryPlanner planner = new QueryPlanner(state.schema());
-    AbstractTridentProcessor proc = planner.compile(data, sql);
-    final TridentTopology topo = proc.build();
-    Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
-            f, new TestUtils.MockStateUpdater(), new Fields());
-    SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
-    Assert.assertArrayEquals(new Values[] { new Values(3), new Values(4)}, getCollectedValues().toArray());
-  }
+    @Before
+    public void setUp() {
+        getCollectedValues().clear();
+    }
 
-  @Test
-  public void testInsert() throws Exception {
-    final int EXPECTED_VALUE_SIZE = 1;
-    String sql = "INSERT INTO BAR SELECT ID, NAME, ADDR FROM FOO WHERE ID > 3";
-    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
-    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
-    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
-    data.put("BAR", new TestUtils.MockSqlTridentDataSource());
+    @Test
+    public void testCompile() throws Exception {
+        final int EXPECTED_VALUE_SIZE = 2;
+        String sql = "SELECT ID FROM FOO WHERE ID > 2";
+        TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+        final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+        data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+        QueryPlanner planner = new QueryPlanner(state.schema());
+        AbstractTridentProcessor proc = planner.compile(data, sql);
+        final TridentTopology topo = proc.build();
+        Fields f = proc.outputStream().getOutputFields();
+        proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+                                             f, new TestUtils.MockStateUpdater(), new Fields());
+        SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
+        Assert.assertArrayEquals(new Values[]{ new Values(3), new Values(4) }, getCollectedValues().toArray());
+    }
 
-    QueryPlanner planner = new QueryPlanner(state.schema());
-    AbstractTridentProcessor proc = planner.compile(data, sql);
-    final TridentTopology topo = proc.build();
-    SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
-    Assert.assertArrayEquals(new Values[] { new Values(4, "abcde", "y")}, getCollectedValues().toArray());
-  }
+    @Test
+    public void testInsert() throws Exception {
+        final int EXPECTED_VALUE_SIZE = 1;
+        String sql = "INSERT INTO BAR SELECT ID, NAME, ADDR FROM FOO WHERE ID > 3";
+        TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+        final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+        data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+        data.put("BAR", new TestUtils.MockSqlTridentDataSource());
 
-  @Test
-  public void testUdf() throws Exception {
-    int EXPECTED_VALUE_SIZE = 1;
-    String sql = "SELECT MYPLUS(ID, 3)" +
-            "FROM FOO " +
-            "WHERE ID = 2";
-    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
-    Map<String, ISqlTridentDataSource> data = new HashMap<>();
-    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+        QueryPlanner planner = new QueryPlanner(state.schema());
+        AbstractTridentProcessor proc = planner.compile(data, sql);
+        final TridentTopology topo = proc.build();
+        SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
+        Assert.assertArrayEquals(new Values[]{ new Values(4, "abcde", "y") }, getCollectedValues().toArray());
+    }
 
-    QueryPlanner planner = new QueryPlanner(state.schema());
-    AbstractTridentProcessor proc = planner.compile(data, sql);
-    final TridentTopology topo = proc.build();
-    Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
-            f, new TestUtils.MockStateUpdater(), new Fields());
-    SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
-    Assert.assertArrayEquals(new Values[] { new Values(5) }, getCollectedValues().toArray());
-  }
+    @Test
+    public void testUdf() throws Exception {
+        int EXPECTED_VALUE_SIZE = 1;
+        String sql = "SELECT MYPLUS(ID, 3)" +
+                     "FROM FOO " +
+                     "WHERE ID = 2";
+        TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+        Map<String, ISqlTridentDataSource> data = new HashMap<>();
+        data.put("FOO", new TestUtils.MockSqlTridentDataSource());
 
-  @Test
-  public void testNested() throws Exception {
-    int EXPECTED_VALUE_SIZE = 1;
-    String sql = "SELECT ID, MAPFIELD['c'], NESTEDMAPFIELD, ARRAYFIELD " +
-            "FROM FOO " +
-            "WHERE NESTEDMAPFIELD['a']['b'] = 2 AND ARRAYFIELD[2] = 200";
-    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverNestedTable(sql);
+        QueryPlanner planner = new QueryPlanner(state.schema());
+        AbstractTridentProcessor proc = planner.compile(data, sql);
+        final TridentTopology topo = proc.build();
+        Fields f = proc.outputStream().getOutputFields();
+        proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+                                             f, new TestUtils.MockStateUpdater(), new Fields());
+        SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
+        Assert.assertArrayEquals(new Values[]{ new Values(5) }, getCollectedValues().toArray());
+    }
 
-    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
-    data.put("FOO", new TestUtils.MockSqlTridentNestedDataSource());
+    @Test
+    public void testNested() throws Exception {
+        int EXPECTED_VALUE_SIZE = 1;
+        String sql = "SELECT ID, MAPFIELD['c'], NESTEDMAPFIELD, ARRAYFIELD " +
+                     "FROM FOO " +
+                     "WHERE NESTEDMAPFIELD['a']['b'] = 2 AND ARRAYFIELD[2] = 200";
+        TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverNestedTable(sql);
 
-    QueryPlanner planner = new QueryPlanner(state.schema());
-    AbstractTridentProcessor proc = planner.compile(data, sql);
-    final TridentTopology topo = proc.build();
-    Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
-    SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
+        final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+        data.put("FOO", new TestUtils.MockSqlTridentNestedDataSource());
 
-    Map<String, Integer> map = ImmutableMap.of("b", 2, "c", 4);
-    Map<String, Map<String, Integer>> nestedMap = ImmutableMap.of("a", map);
-    Assert.assertArrayEquals(new Values[]{new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300))}, getCollectedValues().toArray());
-  }
+        QueryPlanner planner = new QueryPlanner(state.schema());
+        AbstractTridentProcessor proc = planner.compile(data, sql);
+        final TridentTopology topo = proc.build();
+        Fields f = proc.outputStream().getOutputFields();
+        proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
+        SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
 
-  /**
-   * All the binary literal tests are done here, because Avatica converts the result to byte[]
-   * whereas Trident provides the result to ByteString which makes different semantic from Trident implementation.
-   */
-  @Test
-  public void testBinaryStringFunctions() throws Exception {
-    int EXPECTED_VALUE_SIZE = 1;
-    String sql = "SELECT x'45F0AB' || x'45F0AB', " +
-            "POSITION(x'F0' IN x'453423F0ABBC'), " +
-            "OVERLAY(x'453423F0ABBC45' PLACING x'4534' FROM 3), " +
-            "SUBSTRING(x'453423F0ABBC' FROM 3), " +
-            "SUBSTRING(x'453423F0ABBC453423F0ABBC' FROM 3 FOR 4) " +
-            "FROM FOO " +
-            "WHERE ID > 0 AND ID < 2";
+        Map<String, Integer> map = ImmutableMap.of("b", 2, "c", 4);
+        Map<String, Map<String, Integer>> nestedMap = ImmutableMap.of("a", map);
+        Assert.assertArrayEquals(new Values[]{ new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300)) }, getCollectedValues().toArray());
+    }
 
-    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+    /**
+     * All the binary literal tests are done here, because Avatica converts the result to byte[] whereas Trident provides the result to
+     * ByteString which makes different semantic from Trident implementation.
+     */
+    @Test
+    public void testBinaryStringFunctions() throws Exception {
+        int EXPECTED_VALUE_SIZE = 1;
+        String sql = "SELECT x'45F0AB' || x'45F0AB', " +
+                     "POSITION(x'F0' IN x'453423F0ABBC'), " +
+                     "OVERLAY(x'453423F0ABBC45' PLACING x'4534' FROM 3), " +
+                     "SUBSTRING(x'453423F0ABBC' FROM 3), " +
+                     "SUBSTRING(x'453423F0ABBC453423F0ABBC' FROM 3 FOR 4) " +
+                     "FROM FOO " +
+                     "WHERE ID > 0 AND ID < 2";
 
-    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
-    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
-    QueryPlanner planner = new QueryPlanner(state.schema());
-    AbstractTridentProcessor proc = planner.compile(data, sql);
-    final TridentTopology topo = proc.build();
-    Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
-    SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
+        TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
 
-    List<Object> v = getCollectedValues().get(0);
+        final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+        data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+        QueryPlanner planner = new QueryPlanner(state.schema());
+        AbstractTridentProcessor proc = planner.compile(data, sql);
+        final TridentTopology topo = proc.build();
+        Fields f = proc.outputStream().getOutputFields();
+        proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
+        SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
 
-    assertEquals("45f0ab45f0ab", v.get(0).toString());
-    assertEquals(4, v.get(1));
-    assertEquals("45344534abbc45", v.get(2).toString());
-    assertEquals("23f0abbc", v.get(3).toString());
-    assertEquals("23f0abbc", v.get(4).toString());
-  }
+        List<Object> v = getCollectedValues().get(0);
 
-  /**
-   * All the date/time/timestamp related tests are done here, because Avatica converts the result of date functions to java.sql classes
-   * whereas Trident provides long type which makes different semantic from Trident implementation.
-   */
-  @Test
-  public void testDateKeywordsAndFunctions() throws Exception {
-    int EXPECTED_VALUE_SIZE = 1;
-    String sql = "SELECT " +
-            "LOCALTIME, CURRENT_TIME, LOCALTIMESTAMP, CURRENT_TIMESTAMP, CURRENT_DATE, " +
-            "DATE '1970-05-15' AS datefield, TIME '00:00:00' AS timefield, TIMESTAMP '2016-01-01 00:00:00' as timestampfield, " +
-            "EXTRACT(MONTH FROM TIMESTAMP '2010-01-23 12:34:56')," +
-            "FLOOR(DATE '2016-01-23' TO MONTH)," +
-            "CEIL(TIME '12:34:56' TO MINUTE)," +
-            "{fn CURDATE()} = CURRENT_DATE, {fn CURTIME()} = LOCALTIME, {fn NOW()} = LOCALTIMESTAMP," +
-            "{fn QUARTER(DATE '2016-10-07')}, {fn TIMESTAMPADD(MINUTE, 15, TIMESTAMP '2016-10-07 00:00:00')}," +
-            "{fn TIMESTAMPDIFF(SECOND, TIMESTAMP '2016-10-06 00:00:00', TIMESTAMP '2016-10-07 00:00:00')}," +
-            "INTERVAL '1-5' YEAR TO MONTH AS intervalfield, " +
-            "(DATE '1970-01-01', DATE '1970-01-15') AS anchoredinterval_field "   +
-            "FROM FOO " +
-            "WHERE ID > 0 AND ID < 2";
-    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+        assertEquals("45f0ab45f0ab", v.get(0).toString());
+        assertEquals(4, v.get(1));
+        assertEquals("45344534abbc45", v.get(2).toString());
+        assertEquals("23f0abbc", v.get(3).toString());
+        assertEquals("23f0abbc", v.get(4).toString());
+    }
 
-    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
-    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
-    QueryPlanner planner = new QueryPlanner(state.schema());
-    AbstractTridentProcessor proc = planner.compile(data, sql);
-    final DataContext dataContext = proc.getDataContext();
-    final TridentTopology topo = proc.build();
-    Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
-    SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
+    /**
+     * All the date/time/timestamp related tests are done here, because Avatica converts the result of date functions to java.sql classes
+     * whereas Trident provides long type which makes different semantic from Trident implementation.
+     */
+    @Test
+    public void testDateKeywordsAndFunctions() throws Exception {
+        int EXPECTED_VALUE_SIZE = 1;
+        String sql = "SELECT " +
+                     "LOCALTIME, CURRENT_TIME, LOCALTIMESTAMP, CURRENT_TIMESTAMP, CURRENT_DATE, " +
+                     "DATE '1970-05-15' AS datefield, TIME '00:00:00' AS timefield, TIMESTAMP '2016-01-01 00:00:00' as timestampfield, " +
+                     "EXTRACT(MONTH FROM TIMESTAMP '2010-01-23 12:34:56')," +
+                     "FLOOR(DATE '2016-01-23' TO MONTH)," +
+                     "CEIL(TIME '12:34:56' TO MINUTE)," +
+                     "{fn CURDATE()} = CURRENT_DATE, {fn CURTIME()} = LOCALTIME, {fn NOW()} = LOCALTIMESTAMP," +
+                     "{fn QUARTER(DATE '2016-10-07')}, {fn TIMESTAMPADD(MINUTE, 15, TIMESTAMP '2016-10-07 00:00:00')}," +
+                     "{fn TIMESTAMPDIFF(SECOND, TIMESTAMP '2016-10-06 00:00:00', TIMESTAMP '2016-10-07 00:00:00')}," +
+                     "INTERVAL '1-5' YEAR TO MONTH AS intervalfield, " +
+                     "(DATE '1970-01-01', DATE '1970-01-15') AS anchoredinterval_field " +
+                     "FROM FOO " +
+                     "WHERE ID > 0 AND ID < 2";
+        TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
 
-    long utcTimestamp = (long) dataContext.get(DataContext.Variable.UTC_TIMESTAMP.camelName);
-    long currentTimestamp = (long) dataContext.get(DataContext.Variable.CURRENT_TIMESTAMP.camelName);
-    long localTimestamp = (long) dataContext.get(DataContext.Variable.LOCAL_TIMESTAMP.camelName);
+        final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+        data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+        QueryPlanner planner = new QueryPlanner(state.schema());
+        AbstractTridentProcessor proc = planner.compile(data, sql);
+        final DataContext dataContext = proc.getDataContext();
+        final TridentTopology topo = proc.build();
+        Fields f = proc.outputStream().getOutputFields();
+        proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
+        SqlTestUtil.runTridentTopology(cluster, EXPECTED_VALUE_SIZE, proc, topo);
 
-    System.out.println(getCollectedValues());
+        long utcTimestamp = (long) dataContext.get(DataContext.Variable.UTC_TIMESTAMP.camelName);
+        long currentTimestamp = (long) dataContext.get(DataContext.Variable.CURRENT_TIMESTAMP.camelName);
+        long localTimestamp = (long) dataContext.get(DataContext.Variable.LOCAL_TIMESTAMP.camelName);
 
-    java.sql.Timestamp timestamp = new java.sql.Timestamp(utcTimestamp);
-    int dateInt = (int) timestamp.toLocalDateTime().atOffset(ZoneOffset.UTC).toLocalDate().toEpochDay();
-    int localTimeInt = (int) (localTimestamp % DateTimeUtils.MILLIS_PER_DAY);
-    int currentTimeInt = (int) (currentTimestamp % DateTimeUtils.MILLIS_PER_DAY);
+        System.out.println(getCollectedValues());
 
-    Assert.assertArrayEquals(new Values[]{new Values(localTimeInt, currentTimeInt, localTimestamp, currentTimestamp, dateInt,
-                    134, 0, 1451606400000L, 1L, 0L, 45300000, true, true, true, 4L, 1475799300000L, 86400, 17, 0, 14)},
-            getCollectedValues().toArray());
-  }
+        java.sql.Timestamp timestamp = new java.sql.Timestamp(utcTimestamp);
+        int dateInt = (int) timestamp.toLocalDateTime().atOffset(ZoneOffset.UTC).toLocalDate().toEpochDay();
+        int localTimeInt = (int) (localTimestamp % DateTimeUtils.MILLIS_PER_DAY);
+        int currentTimeInt = (int) (currentTimestamp % DateTimeUtils.MILLIS_PER_DAY);
+
+        Assert.assertArrayEquals(new Values[]{
+                                     new Values(localTimeInt, currentTimeInt, localTimestamp, currentTimestamp, dateInt,
+                                                134, 0, 1451606400000L, 1L, 0L, 45300000, true, true, true, 4L, 1475799300000L, 86400, 17, 0, 14)
+                                 },
+                                 getCollectedValues().toArray());
+    }
 
 }
