@@ -1,50 +1,33 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
-package org.apache.storm.kafka;
 
-import kafka.javaapi.consumer.SimpleConsumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.storm.kafka.trident.IBrokerReader;
+package org.apache.storm.kafka;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import kafka.javaapi.consumer.SimpleConsumer;
+import org.apache.storm.kafka.trident.IBrokerReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class DynamicPartitionConnections {
 
     private static final Logger LOG = LoggerFactory.getLogger(DynamicPartitionConnections.class);
-
-    static class ConnectionInfo {
-        SimpleConsumer consumer;
-        Set<String> partitions = new HashSet<String>();
-
-        public ConnectionInfo(SimpleConsumer consumer) {
-            this.consumer = consumer;
-        }
-    }
-
     Map<Broker, ConnectionInfo> _connections = new HashMap<>();
     KafkaConfig _config;
     IBrokerReader _reader;
-
     public DynamicPartitionConnections(KafkaConfig config, IBrokerReader brokerReader) {
         _config = config;
         _reader = brokerReader;
@@ -57,10 +40,11 @@ public class DynamicPartitionConnections {
 
     public SimpleConsumer register(Broker host, String topic, int partition) {
         if (!_connections.containsKey(host)) {
-            _connections.put(host, new ConnectionInfo(new SimpleConsumer(host.host, host.port, _config.socketTimeoutMs, _config.bufferSizeBytes, _config.clientId)));
+            _connections.put(host, new ConnectionInfo(
+                new SimpleConsumer(host.host, host.port, _config.socketTimeoutMs, _config.bufferSizeBytes, _config.clientId)));
         }
         ConnectionInfo info = _connections.get(host);
-        info.partitions.add(getHashKey(topic,partition));
+        info.partitions.add(getHashKey(topic, partition));
         return info.consumer;
     }
 
@@ -74,7 +58,7 @@ public class DynamicPartitionConnections {
 
     public void unregister(Broker port, String topic, int partition) {
         ConnectionInfo info = _connections.get(port);
-        info.partitions.remove(getHashKey(topic,partition));
+        info.partitions.remove(getHashKey(topic, partition));
         if (info.partitions.isEmpty()) {
             info.consumer.close();
             _connections.remove(port);
@@ -94,5 +78,14 @@ public class DynamicPartitionConnections {
 
     private String getHashKey(String topic, int partition) {
         return topic + "_" + partition;
+    }
+
+    static class ConnectionInfo {
+        SimpleConsumer consumer;
+        Set<String> partitions = new HashSet<String>();
+
+        public ConnectionInfo(SimpleConsumer consumer) {
+            this.consumer = consumer;
+        }
     }
 }

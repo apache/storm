@@ -1,34 +1,38 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
-import org.apache.storm.Config;
-import org.apache.curator.test.TestingServer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import kafka.javaapi.consumer.SimpleConsumer;
+import org.apache.curator.test.TestingServer;
+import org.apache.storm.Config;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.*;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.when;
@@ -60,7 +64,7 @@ public class ZkCoordinatorTest {
         Map<String, Object> conf = buildZookeeperConfig(server);
         state = new ZkState(conf);
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
-        when(dynamicPartitionConnections.register(any(Broker.class), any(String.class) ,anyInt())).thenReturn(simpleConsumer);
+        when(dynamicPartitionConnections.register(any(Broker.class), any(String.class), anyInt())).thenReturn(simpleConsumer);
     }
 
     private Map<String, Object> buildZookeeperConfig(TestingServer server) {
@@ -128,7 +132,8 @@ public class ZkCoordinatorTest {
         HashMap<Integer, PartitionManager> managersAfterRefresh = new HashMap<Integer, PartitionManager>();
         for (List<PartitionManager> partitionManagersAfter : partitionManagersAfterRefresh) {
             for (PartitionManager manager : partitionManagersAfter) {
-                assertFalse("Multiple PartitionManagers for same partition", managersAfterRefresh.containsKey(manager.getPartition().partition));
+                assertFalse("Multiple PartitionManagers for same partition",
+                            managersAfterRefresh.containsKey(manager.getPartition().partition));
                 managersAfterRefresh.put(manager.getPartition().partition, manager);
             }
         }
@@ -150,7 +155,8 @@ public class ZkCoordinatorTest {
         assertSame(managerBefore._committedTo, managerAfter._committedTo);
     }
 
-    private void assertPartitionsAreDifferent(List<PartitionManager> partitionManagersBefore, List<PartitionManager> partitionManagersAfter, int partitionsPerTask) {
+    private void assertPartitionsAreDifferent(List<PartitionManager> partitionManagersBefore, List<PartitionManager> partitionManagersAfter,
+                                              int partitionsPerTask) {
         assertEquals(partitionsPerTask, partitionManagersBefore.size());
         assertEquals(partitionManagersBefore.size(), partitionManagersAfter.size());
         for (int i = 0; i < partitionsPerTask; i++) {
@@ -174,7 +180,8 @@ public class ZkCoordinatorTest {
     private List<ZkCoordinator> buildCoordinators(int totalTasks) {
         List<ZkCoordinator> coordinatorList = new ArrayList<ZkCoordinator>();
         for (int i = 0; i < totalTasks; i++) {
-            ZkCoordinator coordinator = new ZkCoordinator(dynamicPartitionConnections, topoConf, spoutConfig, state, i, totalTasks, i, "test-id", reader);
+            ZkCoordinator coordinator =
+                new ZkCoordinator(dynamicPartitionConnections, topoConf, spoutConfig, state, i, totalTasks, i, "test-id", reader);
             coordinatorList.add(coordinator);
         }
         return coordinatorList;

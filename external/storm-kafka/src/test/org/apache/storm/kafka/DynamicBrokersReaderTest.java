@@ -1,40 +1,33 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
-import org.apache.storm.Config;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
 import org.apache.curator.utils.ZKPaths;
+import org.apache.storm.Config;
+import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.apache.storm.kafka.trident.GlobalPartitionInformation;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Date: 16/05/2013
@@ -66,7 +59,7 @@ public class DynamicBrokersReaderTest {
 
         Map<String, Object> conf2 = new HashMap<>();
         conf2.putAll(conf);
-        conf2.put("kafka.topic.wildcard.match",true);
+        conf2.put("kafka.topic.wildcard.match", true);
 
         wildCardBrokerReader = new DynamicBrokersReader(conf2, connectionString, masterPath, "^test.*$");
         zookeeper.start();
@@ -114,8 +107,8 @@ public class DynamicBrokersReaderTest {
     }
 
 
-    private GlobalPartitionInformation getByTopic(List<GlobalPartitionInformation> partitions, String topic){
-        for(GlobalPartitionInformation partitionInformation : partitions) {
+    private GlobalPartitionInformation getByTopic(List<GlobalPartitionInformation> partitions, String topic) {
+        for (GlobalPartitionInformation partitionInformation : partitions) {
             if (partitionInformation.topic.equals(topic)) return partitionInformation;
         }
         return null;
@@ -242,7 +235,7 @@ public class DynamicBrokersReaderTest {
         String connectionString = server.getConnectString();
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 1000);
-//        conf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 1000);
+        //        conf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 1000);
         conf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 4);
         conf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 5);
 

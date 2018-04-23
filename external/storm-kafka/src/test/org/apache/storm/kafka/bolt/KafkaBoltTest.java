@@ -1,37 +1,26 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka.bolt;
 
-import org.apache.storm.Config;
-import org.apache.storm.Constants;
-import org.apache.storm.task.GeneralTopologyContext;
-import org.apache.storm.task.IOutputCollector;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.TupleImpl;
-import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.TupleUtils;
 import com.google.common.collect.ImmutableList;
-import kafka.api.OffsetRequest;
+import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.Future;
 import kafka.api.FetchRequest;
+import kafka.api.OffsetRequest;
 import kafka.javaapi.FetchResponse;
 import kafka.javaapi.OffsetResponse;
 import kafka.javaapi.consumer.SimpleConsumer;
@@ -41,25 +30,44 @@ import kafka.message.MessageAndOffset;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.junit.*;
+import org.apache.storm.Config;
+import org.apache.storm.Constants;
+import org.apache.storm.kafka.Broker;
+import org.apache.storm.kafka.BrokerHosts;
+import org.apache.storm.kafka.KafkaConfig;
+import org.apache.storm.kafka.KafkaTestBroker;
+import org.apache.storm.kafka.KafkaUtils;
+import org.apache.storm.kafka.Partition;
+import org.apache.storm.kafka.StaticHosts;
+import org.apache.storm.kafka.trident.GlobalPartitionInformation;
+import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.task.IOutputCollector;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.TupleImpl;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.TupleUtils;
+import org.apache.storm.utils.Utils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.apache.storm.kafka.*;
-import org.apache.storm.kafka.trident.GlobalPartitionInformation;
-
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Properties;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
-
-import java.lang.reflect.Field;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class KafkaBoltTest {
 
@@ -72,6 +80,29 @@ public class KafkaBoltTest {
 
     @Mock
     private IOutputCollector collector;
+
+    private static ByteBufferMessageSet mockSingleMessage(byte[] key, byte[] message) {
+        ByteBufferMessageSet sets = mock(ByteBufferMessageSet.class);
+        MessageAndOffset msg = mock(MessageAndOffset.class);
+        final List<MessageAndOffset> msgs = ImmutableList.of(msg);
+        doReturn(msgs.iterator()).when(sets).iterator();
+        Message kafkaMessage = mock(Message.class);
+        doReturn(ByteBuffer.wrap(key)).when(kafkaMessage).key();
+        doReturn(ByteBuffer.wrap(message)).when(kafkaMessage).payload();
+        doReturn(kafkaMessage).when(msg).message();
+        return sets;
+    }
+
+    private static SimpleConsumer mockSimpleConsumer(ByteBufferMessageSet mockMsg) {
+        SimpleConsumer simpleConsumer = mock(SimpleConsumer.class);
+        FetchResponse resp = mock(FetchResponse.class);
+        doReturn(resp).when(simpleConsumer).fetch(any(FetchRequest.class));
+        OffsetResponse mockOffsetResponse = mock(OffsetResponse.class);
+        doReturn(new long[]{}).when(mockOffsetResponse).offsets(anyString(), anyInt());
+        doReturn(mockOffsetResponse).when(simpleConsumer).getOffsetsBefore(any(kafka.javaapi.OffsetRequest.class));
+        doReturn(mockMsg).when(resp).messageSet(anyString(), anyInt());
+        return simpleConsumer;
+    }
 
     @Before
     public void initMocks() {
@@ -261,7 +292,6 @@ public class KafkaBoltTest {
         verifyMessage(null, message);
     }
 
-
     @Test
     public void executeWithBrokerDown() throws Exception {
         broker.shutdown();
@@ -274,7 +304,9 @@ public class KafkaBoltTest {
     private boolean verifyMessage(String key, String message) {
         long lastMessageOffset = KafkaUtils.getOffset(simpleConsumer, kafkaConfig.topic, 0, OffsetRequest.LatestTime()) - 1;
         ByteBufferMessageSet messageAndOffsets = KafkaUtils.fetchMessages(kafkaConfig, simpleConsumer,
-                new Partition(Broker.fromString(broker.getBrokerConnectionString()),kafkaConfig.topic, 0), lastMessageOffset);
+                                                                          new Partition(
+                                                                              Broker.fromString(broker.getBrokerConnectionString()),
+                                                                              kafkaConfig.topic, 0), lastMessageOffset);
         MessageAndOffset messageAndOffset = messageAndOffsets.iterator().next();
         Message kafkaMessage = messageAndOffset.message();
         ByteBuffer messageKeyBuffer = kafkaMessage.key();
@@ -290,23 +322,25 @@ public class KafkaBoltTest {
 
     private Tuple generateTestTuple(Object key, Object message) {
         TopologyBuilder builder = new TopologyBuilder();
-        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
-            @Override
-            public Fields getComponentOutputFields(String componentId, String streamId) {
-                return new Fields("key", "message");
-            }
-        };
+        GeneralTopologyContext topologyContext =
+            new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
+                @Override
+                public Fields getComponentOutputFields(String componentId, String streamId) {
+                    return new Fields("key", "message");
+                }
+            };
         return new TupleImpl(topologyContext, new Values(key, message), topologyContext.getComponentId(1), 1, "");
     }
 
     private Tuple generateTestTuple(Object message) {
         TopologyBuilder builder = new TopologyBuilder();
-        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
-            @Override
-            public Fields getComponentOutputFields(String componentId, String streamId) {
-                return new Fields("message");
-            }
-        };
+        GeneralTopologyContext topologyContext =
+            new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
+                @Override
+                public Fields getComponentOutputFields(String componentId, String streamId) {
+                    return new Fields("message");
+                }
+            };
         return new TupleImpl(topologyContext, new Values(message), topologyContext.getComponentId(1), 1, "");
     }
 
@@ -317,28 +351,5 @@ public class KafkaBoltTest {
         // Sanity check
         assertTrue(TupleUtils.isTick(tuple));
         return tuple;
-    }
-
-    private static ByteBufferMessageSet mockSingleMessage(byte[] key, byte[] message) {
-        ByteBufferMessageSet sets = mock(ByteBufferMessageSet.class);
-        MessageAndOffset msg = mock(MessageAndOffset.class);
-        final List<MessageAndOffset> msgs = ImmutableList.of(msg);
-        doReturn(msgs.iterator()).when(sets).iterator();
-        Message kafkaMessage = mock(Message.class);
-        doReturn(ByteBuffer.wrap(key)).when(kafkaMessage).key();
-        doReturn(ByteBuffer.wrap(message)).when(kafkaMessage).payload();
-        doReturn(kafkaMessage).when(msg).message();
-        return sets;
-    }
-
-    private static SimpleConsumer mockSimpleConsumer(ByteBufferMessageSet mockMsg) {
-        SimpleConsumer simpleConsumer = mock(SimpleConsumer.class);
-        FetchResponse resp = mock(FetchResponse.class);
-        doReturn(resp).when(simpleConsumer).fetch(any(FetchRequest.class));
-        OffsetResponse mockOffsetResponse = mock(OffsetResponse.class);
-        doReturn(new long[] {}).when(mockOffsetResponse).offsets(anyString(), anyInt());
-        doReturn(mockOffsetResponse).when(simpleConsumer).getOffsetsBefore(any(kafka.javaapi.OffsetRequest.class));
-        doReturn(mockMsg).when(resp).messageSet(anyString(), anyInt());
-        return simpleConsumer;
     }
 }

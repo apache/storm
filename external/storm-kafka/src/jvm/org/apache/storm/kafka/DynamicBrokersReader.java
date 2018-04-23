@@ -1,37 +1,31 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
-import org.apache.storm.Config;
-import org.apache.storm.utils.ObjectReader;
 import com.google.common.base.Preconditions;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.RetryNTimes;
-import org.json.simple.JSONValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.storm.kafka.trident.GlobalPartitionInformation;
-
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.RetryNTimes;
+import org.apache.storm.Config;
+import org.apache.storm.kafka.trident.GlobalPartitionInformation;
+import org.apache.storm.utils.ObjectReader;
+import org.json.simple.JSONValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class DynamicBrokersReader {
@@ -49,7 +43,7 @@ public class DynamicBrokersReader {
 
         validateConfig(conf);
 
-        Preconditions.checkNotNull(zkStr,"zkString cannot be null");
+        Preconditions.checkNotNull(zkStr, "zkString cannot be null");
         Preconditions.checkNotNull(zkPath, "zkPath cannot be null");
         Preconditions.checkNotNull(topic, "topic cannot be null");
 
@@ -58,11 +52,11 @@ public class DynamicBrokersReader {
         _isWildcardTopic = ObjectReader.getBoolean(conf.get("kafka.topic.wildcard.match"), false);
         try {
             _curator = CuratorFrameworkFactory.newClient(
-                    zkStr,
-                    ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
-                    ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
-                    new RetryNTimes(ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
-                            ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
+                zkStr,
+                ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
+                ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
+                new RetryNTimes(ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
+                                ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
             _curator.start();
         } catch (Exception ex) {
             LOG.error("Couldn't connect to zookeeper", ex);
@@ -74,33 +68,33 @@ public class DynamicBrokersReader {
      * Get all partitions with their current leaders
      */
     public List<GlobalPartitionInformation> getBrokerInfo() throws SocketTimeoutException {
-      List<String> topics =  getTopics();
-      List<GlobalPartitionInformation> partitions =  new ArrayList<GlobalPartitionInformation>();
+        List<String> topics = getTopics();
+        List<GlobalPartitionInformation> partitions = new ArrayList<GlobalPartitionInformation>();
 
-      for (String topic : topics) {
-          GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(topic, this._isWildcardTopic);
-          try {
-              int numPartitionsForTopic = getNumPartitions(topic);
-              String brokerInfoPath = brokerPath();
-              for (int partition = 0; partition < numPartitionsForTopic; partition++) {
-                  int leader = getLeaderFor(topic,partition);
-                  String path = brokerInfoPath + "/" + leader;
-                  try {
-                      byte[] brokerData = _curator.getData().forPath(path);
-                      Broker hp = getBrokerHost(brokerData);
-                      globalPartitionInformation.addPartition(partition, hp);
-                  } catch (org.apache.zookeeper.KeeperException.NoNodeException e) {
-                      LOG.error("Node {} does not exist ", path);
-                  }
-              }
-          } catch (SocketTimeoutException e) {
-              throw e;
-          } catch (Exception e) {
-              throw new RuntimeException(e);
-          }
-          LOG.info("Read partition info from zookeeper: " + globalPartitionInformation);
-          partitions.add(globalPartitionInformation);
-      }
+        for (String topic : topics) {
+            GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(topic, this._isWildcardTopic);
+            try {
+                int numPartitionsForTopic = getNumPartitions(topic);
+                String brokerInfoPath = brokerPath();
+                for (int partition = 0; partition < numPartitionsForTopic; partition++) {
+                    int leader = getLeaderFor(topic, partition);
+                    String path = brokerInfoPath + "/" + leader;
+                    try {
+                        byte[] brokerData = _curator.getData().forPath(path);
+                        Broker hp = getBrokerHost(brokerData);
+                        globalPartitionInformation.addPartition(partition, hp);
+                    } catch (org.apache.zookeeper.KeeperException.NoNodeException e) {
+                        LOG.error("Node {} does not exist ", path);
+                    }
+                }
+            } catch (SocketTimeoutException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            LOG.info("Read partition info from zookeeper: " + globalPartitionInformation);
+            partitions.add(globalPartitionInformation);
+        }
         return partitions;
     }
 
@@ -135,9 +129,10 @@ public class DynamicBrokersReader {
         }
     }
 
-    public String topicsPath () {
+    public String topicsPath() {
         return _zkPath + "/topics";
     }
+
     public String partitionPath(String topic) {
         return topicsPath() + "/" + topic + "/partitions";
     }
@@ -145,7 +140,6 @@ public class DynamicBrokersReader {
     public String brokerPath() {
         return _zkPath + "/ids";
     }
-
 
 
     /**
@@ -202,13 +196,13 @@ public class DynamicBrokersReader {
      */
     private void validateConfig(final Map<String, Object> conf) {
         Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT),
-                "%s cannot be null", Config.STORM_ZOOKEEPER_SESSION_TIMEOUT);
+                                   "%s cannot be null", Config.STORM_ZOOKEEPER_SESSION_TIMEOUT);
         Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT),
-                "%s cannot be null", Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT);
+                                   "%s cannot be null", Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT);
         Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES),
-                "%s cannot be null", Config.STORM_ZOOKEEPER_RETRY_TIMES);
+                                   "%s cannot be null", Config.STORM_ZOOKEEPER_RETRY_TIMES);
         Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL),
-                "%s cannot be null", Config.STORM_ZOOKEEPER_RETRY_INTERVAL);
+                                   "%s cannot be null", Config.STORM_ZOOKEEPER_RETRY_INTERVAL);
     }
 
 }
