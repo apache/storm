@@ -1,39 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.localizer;
-
-import static org.apache.storm.blobstore.BlobStoreAclHandler.WORLD_EVERYTHING;
-import static org.apache.storm.localizer.LocalizedResource.USERCACHE;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.endsWith;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.startsWith;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.common.base.Joiner;
 import java.io.File;
@@ -55,41 +32,61 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
+import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.AccessControl;
 import org.apache.storm.generated.AccessControlType;
 import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.security.auth.DefaultPrincipalToLocal;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.apache.storm.Config;
-import org.apache.storm.blobstore.ClientBlobStore;
-import org.apache.storm.generated.ExecutorInfo;
-import org.apache.storm.generated.LocalAssignment;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.security.auth.DefaultPrincipalToLocal;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.storm.blobstore.BlobStoreAclHandler.WORLD_EVERYTHING;
+import static org.apache.storm.localizer.LocalizedResource.USERCACHE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 public class AsyncLocalizerTest {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncLocalizerTest.class);
+    private final String user1 = "user1";
+    private final String user2 = "user2";
+    private final String user3 = "user3";
+    //From LocalizerTest
+    private File baseDir;
+    private ClientBlobStore mockblobstore = mock(ClientBlobStore.class);
 
     private static String getTestLocalizerRoot() {
         File f = new File("./target/" + Thread.currentThread().getStackTrace()[2].getMethodName() + "/localizer/");
@@ -187,25 +184,25 @@ public class AsyncLocalizerTest {
         final int port = 8080;
         final String simpleLocalName = "simple.txt";
         final String simpleKey = "simple";
-        
+
         final String stormLocal = "/tmp/storm-local/";
         final File userDir = new File(stormLocal, user);
-        final String stormRoot = stormLocal+topoId+"/";
-        
+        final String stormRoot = stormLocal + topoId + "/";
+
         final String localizerRoot = getTestLocalizerRoot();
         final String simpleCurrentLocalFile = localizerRoot + "/usercache/" + user + "/filecache/files/simple.current";
-       
+
         final StormTopology st = new StormTopology();
         st.set_spouts(new HashMap<>());
         st.set_bolts(new HashMap<>());
         st.set_state_spouts(new HashMap<>());
- 
+
         Map<String, Map<String, Object>> topoBlobMap = new HashMap<>();
         Map<String, Object> simple = new HashMap<>();
         simple.put("localname", simpleLocalName);
         simple.put("uncompress", false);
         topoBlobMap.put(simpleKey, simple);
-        
+
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_LOCAL_DIR, stormLocal);
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
@@ -214,7 +211,7 @@ public class AsyncLocalizerTest {
         Map<String, Object> topoConf = new HashMap<>(conf);
         topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topoBlobMap);
         topoConf.put(Config.TOPOLOGY_NAME, topoName);
-        
+
         List<LocalizedResource> localizedList = new ArrayList<>();
         LocalizedResource simpleLocal = new LocalizedResource(simpleKey, Paths.get(localizerRoot), false, ops, conf, user);
         localizedList.add(simpleLocal);
@@ -228,7 +225,7 @@ public class AsyncLocalizerTest {
 
             //Write the mocking backwards so the actual method is not called on the spy object
             doReturn(CompletableFuture.supplyAsync(() -> null)).when(bl)
-                .requestDownloadBaseTopologyBlobs(any(), eq(null));
+                                                               .requestDownloadBaseTopologyBlobs(any(), eq(null));
             doReturn(userDir).when(bl).getLocalUserFileCacheDir(user);
             doReturn(localizedList).when(bl).getBlobs(any(List.class), any(), any());
 
@@ -254,119 +251,9 @@ public class AsyncLocalizerTest {
         }
     }
 
-
-    //From LocalizerTest
-    private File baseDir;
-
-    private final String user1 = "user1";
-    private final String user2 = "user2";
-    private final String user3 = "user3";
-
-    private ClientBlobStore mockblobstore = mock(ClientBlobStore.class);
-
-
-    class TestLocalizer extends AsyncLocalizer {
-
-        TestLocalizer(Map<String, Object> conf, String baseDir) throws IOException {
-            super(conf, AdvancedFSOps.make(conf), baseDir);
-        }
-
-        @Override
-        protected ClientBlobStore getClientBlobStore() {
-            return mockblobstore;
-        }
-
-        synchronized void addReferences(List<LocalResource> localresource, PortAndAssignment pna, BlobChangingCallback cb) {
-            String user = pna.getOwner();
-            for (LocalResource blob : localresource) {
-                ConcurrentMap<String, LocalizedResource> lrsrcSet = blob.shouldUncompress() ? userArchives.get(user) : userFiles.get(user);
-                if (lrsrcSet != null) {
-                    LocalizedResource lrsrc = lrsrcSet.get(blob.getBlobName());
-                    if (lrsrc != null) {
-                        lrsrc.addReference(pna, blob.needsCallback() ? cb : null);
-                        LOG.debug("added reference for topo: {} key: {}", pna, blob);
-                    } else {
-                        LOG.warn("trying to add reference to non-existent blob, key: {} topo: {}", blob, pna);
-                    }
-                } else {
-                    LOG.warn("trying to add reference to non-existent local resource set, user: {} topo: {}", user, pna);
-                }
-            }
-        }
-
-        void setTargetCacheSize(long size) {
-            cacheTargetSize = size;
-        }
-
-        // For testing, be careful as it doesn't clone
-        ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> getUserFiles() {
-            return userFiles;
-        }
-
-        ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> getUserArchives() {
-            return userArchives;
-        }
-
-        /**
-         * This function either returns the blob in the existing cache or if it doesn't exist in the
-         * cache, it will download the blob and will block until the download is complete.
-         */
-        LocalizedResource getBlob(LocalResource localResource, PortAndAssignment pna, BlobChangingCallback cb)
-            throws AuthorizationException, KeyNotFoundException, IOException {
-            ArrayList<LocalResource> arr = new ArrayList<>();
-            arr.add(localResource);
-            List<LocalizedResource> results = getBlobs(arr, pna, cb);
-            if (results.isEmpty() || results.size() != 1) {
-                throw new IOException("Unknown error getting blob: " + localResource + ", for user: " + pna.getOwner() +
-                    ", topo: " + pna);
-            }
-            return results.get(0);
-        }
-    }
-
-    class TestInputStreamWithMeta extends InputStreamWithMeta {
-        private final long version;
-        private InputStream iostream;
-
-        public TestInputStreamWithMeta(long version) {
-            iostream = IOUtils.toInputStream("some test data for my input stream");
-            this.version = version;
-        }
-
-        public TestInputStreamWithMeta(InputStream istream, long version) {
-            iostream = istream;
-            this.version = version;
-        }
-
-        @Override
-        public long getVersion() throws IOException {
-            return version;
-        }
-
-        @Override
-        public synchronized int read() {
-            return 0;
-        }
-
-        @Override
-        public synchronized int read(byte[] b)
-            throws IOException {
-            int length = iostream.read(b);
-            if (length == 0) {
-                return -1;
-            }
-            return length;
-        }
-
-        @Override
-        public long getFileLength() {
-            return 0;
-        }
-    };
-
     @Before
     public void setUp() throws Exception {
-        baseDir = new File(System.getProperty("java.io.tmpdir") + "/blob-store-localizer-test-"+ UUID.randomUUID());
+        baseDir = new File(System.getProperty("java.io.tmpdir") + "/blob-store-localizer-test-" + UUID.randomUUID());
         if (!baseDir.mkdir()) {
             throw new IOException("failed to create base directory");
         }
@@ -376,8 +263,11 @@ public class AsyncLocalizerTest {
     public void tearDown() throws Exception {
         try {
             FileUtils.deleteDirectory(baseDir);
-        } catch (IOException ignore) {}
+        } catch (IOException ignore) {
+        }
     }
+
+    ;
 
     protected String joinPath(String... pathList) {
         return Joiner.on(File.separator).join(pathList);
@@ -402,11 +292,11 @@ public class AsyncLocalizerTest {
 
         String expectedDir = constructUserCacheDir(baseDir.toString(), user1);
         assertEquals("get local user dir doesn't return right value",
-            expectedDir, localizer.getLocalUserDir(user1).toString());
+                     expectedDir, localizer.getLocalUserDir(user1).toString());
 
         String expectedFileDir = joinPath(expectedDir, LocalizedResource.FILECACHE);
         assertEquals("get local user file dir doesn't return right value",
-            expectedFileDir, localizer.getLocalUserFileCacheDir(user1).toString());
+                     expectedFileDir, localizer.getLocalUserFileCacheDir(user1).toString());
     }
 
     @Test
@@ -545,7 +435,8 @@ public class AsyncLocalizerTest {
             when(mockblobstore.getBlobMeta(key1)).thenReturn(rbm);
 
             when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(new
-                FileInputStream(archiveFile.getAbsolutePath()), 0));
+                                                                                         FileInputStream(archiveFile.getAbsolutePath()),
+                                                                                     0));
 
             long timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
@@ -583,7 +474,7 @@ public class AsyncLocalizerTest {
             assertEquals("file path doesn't match", keyFile.toPath(), key1rsrc.getFilePathWithVersion());
             assertEquals("size doesn't match", size, key1rsrc.getSizeOnDisk());
             assertTrue("timestamp not within range", (key1rsrc.getLastUsed() >= timeBefore && key1rsrc
-                .getLastUsed() <= timeAfter));
+                                                                                                  .getLastUsed() <= timeAfter));
 
             timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
@@ -598,7 +489,7 @@ public class AsyncLocalizerTest {
             assertNotNull("Local resource doesn't exist but should", key1rsrc);
             assertEquals("refcount doesn't match " + key1rsrc.getDependencies(), false, key1rsrc.isUsed());
             assertTrue("timestamp not within range", (key1rsrc.getLastUsed() >= timeBefore && key1rsrc
-                .getLastUsed() <= timeAfter));
+                                                                                                  .getLastUsed() <= timeAfter));
 
             // should remove the blob since cache size set really small
             localizer.cleanup();
@@ -660,7 +551,7 @@ public class AsyncLocalizerTest {
             assertEquals("file path doesn't match", keyFile.toPath(), key1rsrc.getCurrentSymlinkPath());
             assertEquals("size doesn't match", 34, key1rsrc.getSizeOnDisk());
             assertTrue("timestamp not within range", (key1rsrc.getLastUsed() >= timeBefore && key1rsrc
-                .getLastUsed() <= timeAfter));
+                                                                                                  .getLastUsed() <= timeAfter));
 
             timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
@@ -675,7 +566,7 @@ public class AsyncLocalizerTest {
             assertNotNull("Local resource doesn't exist but should", key1rsrc);
             assertEquals("refcount doesn't match " + key1rsrc.getDependencies(), false, key1rsrc.isUsed());
             assertTrue("timestamp not within range " + timeBefore + " " + key1rsrc.getLastUsed() + " " + timeAfter,
-                (key1rsrc.getLastUsed() >= timeBefore && key1rsrc.getLastUsed() <= timeAfter));
+                       (key1rsrc.getLastUsed() >= timeBefore && key1rsrc.getLastUsed() <= timeAfter));
 
             // should remove the blob since cache size set really small
             localizer.cleanup();
@@ -710,8 +601,10 @@ public class AsyncLocalizerTest {
             when(mockblobstore.getBlob(key2)).thenReturn(new TestInputStreamWithMeta(0));
             when(mockblobstore.getBlob(key3)).thenReturn(new TestInputStreamWithMeta(0));
 
-            List<LocalResource> keys = Arrays.asList(new LocalResource[]{new LocalResource(key1, false, false),
-                new LocalResource(key2, false, false), new LocalResource(key3, false, false)});
+            List<LocalResource> keys = Arrays.asList(new LocalResource[]{
+                new LocalResource(key1, false, false),
+                new LocalResource(key2, false, false), new LocalResource(key3, false, false)
+            });
             File user1Dir = localizer.getLocalUserFileCacheDir(user1);
             assertTrue("failed to create user dir", user1Dir.mkdirs());
 
@@ -724,7 +617,7 @@ public class AsyncLocalizerTest {
             LocalizedResource lrsrc3 = lrsrcs.get(2);
 
             String expectedFileDir = joinPath(baseDir.toString(), USERCACHE, user1,
-                LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
+                                              LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
             assertTrue("user filecache dir not created", new File(expectedFileDir).exists());
             File keyFile = new File(expectedFileDir, key1 + LocalizedResource.CURRENT_BLOB_SUFFIX);
             File keyFile2 = new File(expectedFileDir, key2 + LocalizedResource.CURRENT_BLOB_SUFFIX);
@@ -760,7 +653,7 @@ public class AsyncLocalizerTest {
             lrsrc = localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
             LOG.info("Got Blob...");
             assertTrue("timestamp not within range " + timeBefore + " <= " + lrsrc.getLastUsed() + " <= " + timeAfter,
-                (lrsrc.getLastUsed() >= timeBefore && lrsrc.getLastUsed() <= timeAfter));
+                       (lrsrc.getLastUsed() >= timeBefore && lrsrc.getLastUsed() <= timeAfter));
             //Resets the last access time for key1
             localizer.removeBlobReference(lrsrc.getKey(), topo1Pna, false);
 
@@ -829,7 +722,7 @@ public class AsyncLocalizerTest {
         LocalFsBlobStore spy = spy(bs);
         Mockito.doReturn(true).when(spy).checkForBlobOrDownload(key1);
         Mockito.doNothing().when(spy).checkForBlobUpdate(key1);
-        spy.prepare(conf,null,null);
+        spy.prepare(conf, null, null);
         spy.getBlob(key1, null);
     }
 
@@ -837,7 +730,7 @@ public class AsyncLocalizerTest {
     public void testMultipleUsers() throws Exception {
         Map<String, Object> conf = new HashMap<>();
         // set clean time really high so doesn't kick in
-        conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60*60*1000);
+        conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
 
         String topo1 = "topo1";
         String topo2 = "topo2";
@@ -884,9 +777,9 @@ public class AsyncLocalizerTest {
         String expectedUserDir1 = joinPath(baseDir.toString(), USERCACHE, user1);
         String expectedFileDirUser1 = joinPath(expectedUserDir1, LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
         String expectedFileDirUser2 = joinPath(baseDir.toString(), USERCACHE, user2,
-            LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
+                                               LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
         String expectedFileDirUser3 = joinPath(baseDir.toString(), USERCACHE, user3,
-            LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
+                                               LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
         assertTrue("user filecache dir user1 not created", new File(expectedFileDirUser1).exists());
         assertTrue("user filecache dir user2 not created", new File(expectedFileDirUser2).exists());
         assertTrue("user filecache dir user3 not created", new File(expectedFileDirUser3).exists());
@@ -929,7 +822,7 @@ public class AsyncLocalizerTest {
     public void testUpdate() throws Exception {
         Map<String, Object> conf = new HashMap<>();
         // set clean time really high so doesn't kick in
-        conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60*60*1000);
+        conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
 
         String key1 = "key1";
         String topo1 = "topo1";
@@ -983,6 +876,105 @@ public class AsyncLocalizerTest {
         localizer.updateBlobs();
         assertTrue("blob version file not created", versionFile.exists());
         assertEquals("blob version not correct", 3, LocalizedResource.localVersionOfBlob(keyVersionFile));
-        assertTrue("blob file with version 3 not created",  new File(expectedFileDir, key1 + ".3").exists());
+        assertTrue("blob file with version 3 not created", new File(expectedFileDir, key1 + ".3").exists());
+    }
+
+    class TestLocalizer extends AsyncLocalizer {
+
+        TestLocalizer(Map<String, Object> conf, String baseDir) throws IOException {
+            super(conf, AdvancedFSOps.make(conf), baseDir);
+        }
+
+        @Override
+        protected ClientBlobStore getClientBlobStore() {
+            return mockblobstore;
+        }
+
+        synchronized void addReferences(List<LocalResource> localresource, PortAndAssignment pna, BlobChangingCallback cb) {
+            String user = pna.getOwner();
+            for (LocalResource blob : localresource) {
+                ConcurrentMap<String, LocalizedResource> lrsrcSet = blob.shouldUncompress() ? userArchives.get(user) : userFiles.get(user);
+                if (lrsrcSet != null) {
+                    LocalizedResource lrsrc = lrsrcSet.get(blob.getBlobName());
+                    if (lrsrc != null) {
+                        lrsrc.addReference(pna, blob.needsCallback() ? cb : null);
+                        LOG.debug("added reference for topo: {} key: {}", pna, blob);
+                    } else {
+                        LOG.warn("trying to add reference to non-existent blob, key: {} topo: {}", blob, pna);
+                    }
+                } else {
+                    LOG.warn("trying to add reference to non-existent local resource set, user: {} topo: {}", user, pna);
+                }
+            }
+        }
+
+        void setTargetCacheSize(long size) {
+            cacheTargetSize = size;
+        }
+
+        // For testing, be careful as it doesn't clone
+        ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> getUserFiles() {
+            return userFiles;
+        }
+
+        ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> getUserArchives() {
+            return userArchives;
+        }
+
+        /**
+         * This function either returns the blob in the existing cache or if it doesn't exist in the
+         * cache, it will download the blob and will block until the download is complete.
+         */
+        LocalizedResource getBlob(LocalResource localResource, PortAndAssignment pna, BlobChangingCallback cb)
+            throws AuthorizationException, KeyNotFoundException, IOException {
+            ArrayList<LocalResource> arr = new ArrayList<>();
+            arr.add(localResource);
+            List<LocalizedResource> results = getBlobs(arr, pna, cb);
+            if (results.isEmpty() || results.size() != 1) {
+                throw new IOException("Unknown error getting blob: " + localResource + ", for user: " + pna.getOwner() +
+                                      ", topo: " + pna);
+            }
+            return results.get(0);
+        }
+    }
+
+    class TestInputStreamWithMeta extends InputStreamWithMeta {
+        private final long version;
+        private InputStream iostream;
+
+        public TestInputStreamWithMeta(long version) {
+            iostream = IOUtils.toInputStream("some test data for my input stream");
+            this.version = version;
+        }
+
+        public TestInputStreamWithMeta(InputStream istream, long version) {
+            iostream = istream;
+            this.version = version;
+        }
+
+        @Override
+        public long getVersion() throws IOException {
+            return version;
+        }
+
+        @Override
+        public synchronized int read() {
+            return 0;
+        }
+
+        @Override
+        public synchronized int read(byte[] b)
+            throws IOException {
+            int length = iostream.read(b);
+            if (length == 0) {
+                return -1;
+            }
+            return length;
+        }
+
+        @Override
+        public long getFileLength() {
+            return 0;
+        }
     }
 }

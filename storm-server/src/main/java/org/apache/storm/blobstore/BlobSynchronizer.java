@@ -1,30 +1,24 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.blobstore;
 
 import java.nio.channels.ClosedByInterruptException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,14 +44,6 @@ public class BlobSynchronizer {
         this.nimbusInfo = nimbusInfo;
     }
 
-    public void setZookeeperKeySet(Set<String> zookeeperKeySet) {
-        this.zookeeperKeySet = zookeeperKeySet;
-    }
-
-    public void setBlobStoreKeySet(Set<String> blobStoreKeySet) {
-        this.blobStoreKeySet = blobStoreKeySet;
-    }
-
     public void setZkClient(CuratorFramework zkClient) {
         this.zkClient = zkClient;
     }
@@ -68,19 +54,28 @@ public class BlobSynchronizer {
         return keySet;
     }
 
+    public void setBlobStoreKeySet(Set<String> blobStoreKeySet) {
+        this.blobStoreKeySet = blobStoreKeySet;
+    }
+
     public Set<String> getZookeeperKeySet() {
         Set<String> keySet = new HashSet<String>();
         keySet.addAll(zookeeperKeySet);
         return keySet;
     }
 
+    public void setZookeeperKeySet(Set<String> zookeeperKeySet) {
+        this.zookeeperKeySet = zookeeperKeySet;
+    }
+
     public synchronized void syncBlobs() {
         try {
-            LOG.debug("Sync blobs - blobstore keys {}, zookeeper keys {}",getBlobStoreKeySet(), getZookeeperKeySet());
+            LOG.debug("Sync blobs - blobstore keys {}, zookeeper keys {}", getBlobStoreKeySet(), getZookeeperKeySet());
             deleteKeySetFromBlobStoreNotOnZookeeper(getBlobStoreKeySet(), getZookeeperKeySet());
             updateKeySetForBlobStore(getBlobStoreKeySet());
             Set<String> keySetToDownload = getKeySetToDownload(getBlobStoreKeySet(), getZookeeperKeySet());
-            LOG.debug("Key set Blobstore-> Zookeeper-> DownloadSet {}-> {}-> {}", getBlobStoreKeySet(), getZookeeperKeySet(), keySetToDownload);
+            LOG.debug("Key set Blobstore-> Zookeeper-> DownloadSet {}-> {}-> {}", getBlobStoreKeySet(), getZookeeperKeySet(),
+                      keySetToDownload);
 
             for (String key : keySetToDownload) {
                 try {
@@ -93,16 +88,16 @@ public class BlobSynchronizer {
                     LOG.debug("Detected deletion for the key {} while downloading - skipping download", key);
                 }
             }
-        } catch(InterruptedException | ClosedByInterruptException exp) {
+        } catch (InterruptedException | ClosedByInterruptException exp) {
             LOG.error("Interrupt Exception {}", exp);
-        } catch(Exception exp) {
+        } catch (Exception exp) {
             throw new RuntimeException(exp);
         }
     }
 
     public void deleteKeySetFromBlobStoreNotOnZookeeper(Set<String> keySetBlobStore, Set<String> keySetZookeeper) throws Exception {
         if (keySetBlobStore.removeAll(keySetZookeeper)
-                || (keySetZookeeper.isEmpty() && !keySetBlobStore.isEmpty())) {
+            || (keySetZookeeper.isEmpty() && !keySetBlobStore.isEmpty())) {
             LOG.debug("Key set to delete in blobstore {}", keySetBlobStore);
             for (String key : keySetBlobStore) {
                 blobStore.deleteBlob(key, BlobStoreUtils.getNimbusSubject());

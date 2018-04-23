@@ -1,23 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
@@ -37,9 +33,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -48,6 +41,15 @@ public class TestRebalance {
     static final int SLEEP_TIME_BETWEEN_RETRY = 1000;
 
     private static final Logger LOG = LoggerFactory.getLogger(TestRebalance.class);
+
+    public static String topoNameToId(String topoName, ILocalCluster cluster) throws TException {
+        for (TopologySummary topoSum : cluster.getClusterInfo().get_topologies()) {
+            if (topoSum.get_name().equals(topoName)) {
+                return topoSum.get_id();
+            }
+        }
+        return null;
+    }
 
     @Test
     public void testRebalanceTopologyResourcesAndConfigs()
@@ -71,11 +73,11 @@ public class TestRebalance {
 
             TopologyBuilder builder = new TopologyBuilder();
             SpoutDeclarer s1 = builder.setSpout("spout-1", new TestUtilsForResourceAwareScheduler.TestSpout(),
-                2);
+                                                2);
             BoltDeclarer b1 = builder.setBolt("bolt-1", new TestUtilsForResourceAwareScheduler.TestBolt(),
-                2).shuffleGrouping("spout-1");
+                                              2).shuffleGrouping("spout-1");
             BoltDeclarer b2 = builder.setBolt("bolt-2", new TestUtilsForResourceAwareScheduler.TestBolt(),
-                2).shuffleGrouping("bolt-1");
+                                              2).shuffleGrouping("bolt-1");
 
             StormTopology stormTopology = builder.createTopology();
 
@@ -172,14 +174,5 @@ public class TestRebalance {
             }
         }
         return false;
-    }
-
-    public static String topoNameToId(String topoName, ILocalCluster cluster) throws TException {
-        for (TopologySummary topoSum : cluster.getClusterInfo().get_topologies()) {
-            if (topoSum.get_name().equals(topoName)) {
-                return topoSum.get_id();
-            }
-        }
-        return null;
     }
 }

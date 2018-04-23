@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.drpc;
 
 import org.apache.storm.generated.DRPCExecutionException;
@@ -42,7 +43,7 @@ public abstract class OutstandingRequest {
     }
 
     public boolean wasFetched() {
-        return _fetched; 
+        return _fetched;
     }
 
     public String getFunction() {
@@ -54,5 +55,6 @@ public abstract class OutstandingRequest {
     }
 
     public abstract void returnResult(String result);
+
     public abstract void fail(DRPCExecutionException e);
 }

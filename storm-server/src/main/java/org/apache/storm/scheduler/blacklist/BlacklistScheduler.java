@@ -1,33 +1,25 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.scheduler.blacklist;
 
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
@@ -46,29 +38,23 @@ import org.slf4j.LoggerFactory;
 
 
 public class BlacklistScheduler implements IScheduler {
-    private static final Logger LOG = LoggerFactory.getLogger(BlacklistScheduler.class);
-
     public static final int DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME = 1800;
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT = 3;
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME = 300;
-
+    private static final Logger LOG = LoggerFactory.getLogger(BlacklistScheduler.class);
     private final IScheduler underlyingScheduler;
-    private Map<String, Object> conf;
-
     protected int toleranceTime;
     protected int toleranceCount;
     protected int resumeTime;
     protected IReporter reporter;
     protected IBlacklistStrategy blacklistStrategy;
-
     protected int nimbusMonitorFreqSecs;
-
     protected Map<String, Set<Integer>> cachedSupervisors;
-
     //key is supervisor key ,value is supervisor ports
     protected EvictingQueue<HashMap<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow;
     protected int windowSize;
     protected Set<String> blacklistHost;
+    private Map<String, Object> conf;
 
     public BlacklistScheduler(IScheduler underlyingScheduler) {
         this.underlyingScheduler = underlyingScheduler;
@@ -81,18 +67,18 @@ public class BlacklistScheduler implements IScheduler {
         this.conf = conf;
 
         toleranceTime = ObjectReader.getInt(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_TIME),
-                DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME);
+                                            DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME);
         toleranceCount = ObjectReader.getInt(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT),
-                DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
+                                             DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
         resumeTime = ObjectReader.getInt(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME),
-                DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
+                                         DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
 
         String reporterClassName = ObjectReader.getString(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_REPORTER),
-                LogReporter.class.getName());
+                                                          LogReporter.class.getName());
         reporter = (IReporter) initializeInstance(reporterClassName, "blacklist reporter");
 
         String strategyClassName = ObjectReader.getString(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_STRATEGY),
-                DefaultBlacklistStrategy.class.getName());
+                                                          DefaultBlacklistStrategy.class.getName());
         blacklistStrategy = (IBlacklistStrategy) initializeInstance(strategyClassName, "blacklist strategy");
 
         nimbusMonitorFreqSecs = ObjectReader.getInt(this.conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS));
@@ -177,7 +163,7 @@ public class BlacklistScheduler implements IScheduler {
 
     private Set<String> getBlacklistHosts(Cluster cluster, Topologies topologies) {
         Set<String> blacklistSet = blacklistStrategy.getBlacklist(new ArrayList<>(badSupervisorsToleranceSlidingWindow),
-                cluster, topologies);
+                                                                  cluster, topologies);
         Set<String> blacklistHostSet = new HashSet<>();
         for (String supervisor : blacklistSet) {
             String host = cluster.getHost(supervisor);
@@ -235,7 +221,7 @@ public class BlacklistScheduler implements IScheduler {
                     cachedSupervisors.put(supervisorKey, slots);
                 }
                 LOG.info("Worker slot {} was never back to normal during tolerance period, probably dead. Will be removed from cache.",
-                        workerSlot);
+                         workerSlot);
             }
         }
     }

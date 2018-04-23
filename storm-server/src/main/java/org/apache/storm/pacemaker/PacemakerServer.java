@@ -1,36 +1,30 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.pacemaker;
 
-import org.apache.storm.Config;
-import org.apache.storm.DaemonConfig;
-import org.apache.storm.generated.HBMessage;
-import org.apache.storm.messaging.netty.ISaslServer;
-import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
-import org.apache.storm.security.auth.AuthUtils;
-import java.lang.InterruptedException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import javax.security.auth.login.Configuration;
+import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.generated.HBMessage;
+import org.apache.storm.messaging.netty.ISaslServer;
+import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
 import org.apache.storm.pacemaker.codec.ThriftNettyServerCodec;
+import org.apache.storm.security.auth.AuthUtils;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -55,48 +49,47 @@ class PacemakerServer implements ISaslServer {
     private ConcurrentSkipListSet<Channel> authenticated_channels = new ConcurrentSkipListSet<Channel>();
     private ThriftNettyServerCodec.AuthMethod authMethod;
 
-    public PacemakerServer(IServerMessageHandler handler, Map<String, Object> config){
-        int maxWorkers = (int)config.get(DaemonConfig.PACEMAKER_MAX_THREADS);
-        this.port = (int)config.get(Config.PACEMAKER_PORT);
+    public PacemakerServer(IServerMessageHandler handler, Map<String, Object> config) {
+        int maxWorkers = (int) config.get(DaemonConfig.PACEMAKER_MAX_THREADS);
+        this.port = (int) config.get(Config.PACEMAKER_PORT);
         this.handler = handler;
         this.topo_name = "pacemaker_server";
 
-        String auth = (String)config.get(Config.PACEMAKER_AUTH_METHOD);
-        switch(auth) {
+        String auth = (String) config.get(Config.PACEMAKER_AUTH_METHOD);
+        switch (auth) {
 
-        case "DIGEST":
-            Configuration login_conf = AuthUtils.GetConfiguration(config);
-            authMethod = ThriftNettyServerCodec.AuthMethod.DIGEST;
-            this.secret = AuthUtils.makeDigestPayload(login_conf, AuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
-            if(this.secret == null) {
-                LOG.error("Can't start pacemaker server without digest secret.");
-                throw new RuntimeException("Can't start pacemaker server without digest secret.");
-            }
-            break;
+            case "DIGEST":
+                Configuration login_conf = AuthUtils.GetConfiguration(config);
+                authMethod = ThriftNettyServerCodec.AuthMethod.DIGEST;
+                this.secret = AuthUtils.makeDigestPayload(login_conf, AuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
+                if (this.secret == null) {
+                    LOG.error("Can't start pacemaker server without digest secret.");
+                    throw new RuntimeException("Can't start pacemaker server without digest secret.");
+                }
+                break;
 
-        case "KERBEROS":
-            authMethod = ThriftNettyServerCodec.AuthMethod.KERBEROS;
-            break;
+            case "KERBEROS":
+                authMethod = ThriftNettyServerCodec.AuthMethod.KERBEROS;
+                break;
 
-        case "NONE":
-            authMethod = ThriftNettyServerCodec.AuthMethod.NONE;
-            break;
+            case "NONE":
+                authMethod = ThriftNettyServerCodec.AuthMethod.NONE;
+                break;
 
-        default:
-            LOG.error("Can't start pacemaker server without proper PACEMAKER_AUTH_METHOD.");
-            throw new RuntimeException("Can't start pacemaker server without proper PACEMAKER_AUTH_METHOD.");
+            default:
+                LOG.error("Can't start pacemaker server without proper PACEMAKER_AUTH_METHOD.");
+                throw new RuntimeException("Can't start pacemaker server without proper PACEMAKER_AUTH_METHOD.");
         }
 
         ThreadFactory bossFactory = new NettyRenameThreadFactory("server-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("server-worker");
         NioServerSocketChannelFactory factory;
-        if(maxWorkers > 0) {
+        if (maxWorkers > 0) {
             factory =
                 new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
                                                   Executors.newCachedThreadPool(workerFactory),
                                                   maxWorkers);
-        }
-        else {
+        } else {
             factory =
                 new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
                                                   Executors.newCachedThreadPool(workerFactory));
@@ -106,10 +99,10 @@ class PacemakerServer implements ISaslServer {
         bootstrap.setOption("tcpNoDelay", true);
         bootstrap.setOption("sendBufferSize", FIVE_MB_IN_BYTES);
         bootstrap.setOption("keepAlive", true);
-        int thriftMessageMaxSize = (Integer)config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
+        int thriftMessageMaxSize = (Integer) config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
         ChannelPipelineFactory pipelineFactory =
             new ThriftNettyServerCodec(this, config, authMethod, thriftMessageMaxSize)
-            .pipelineFactory();
+                .pipelineFactory();
         bootstrap.setPipelineFactory(pipelineFactory);
         Channel channel = bootstrap.bind(new InetSocketAddress(port));
         allChannels.add(channel);
@@ -123,11 +116,10 @@ class PacemakerServer implements ISaslServer {
 
     public void cleanPipeline(Channel channel) {
         boolean authenticated = authenticated_channels.contains(channel);
-        if(!authenticated) {
-            if(channel.getPipeline().get(ThriftNettyServerCodec.SASL_HANDLER) != null) {
+        if (!authenticated) {
+            if (channel.getPipeline().get(ThriftNettyServerCodec.SASL_HANDLER) != null) {
                 channel.getPipeline().remove(ThriftNettyServerCodec.SASL_HANDLER);
-            }
-            else if(channel.getPipeline().get(ThriftNettyServerCodec.KERBEROS_HANDLER) != null) {
+            } else if (channel.getPipeline().get(ThriftNettyServerCodec.KERBEROS_HANDLER) != null) {
                 channel.getPipeline().remove(ThriftNettyServerCodec.KERBEROS_HANDLER);
             }
         }
@@ -137,15 +129,14 @@ class PacemakerServer implements ISaslServer {
         cleanPipeline(channel);
 
         boolean authenticated = (authMethod == ThriftNettyServerCodec.AuthMethod.NONE) || authenticated_channels.contains(channel);
-        HBMessage m = (HBMessage)mesg;
+        HBMessage m = (HBMessage) mesg;
         LOG.debug("received message. Passing to handler. {} : {} : {}",
                   handler.toString(), m.toString(), channel.toString());
         HBMessage response = handler.handleMessage(m, authenticated);
-        if(response != null) {
+        if (response != null) {
             LOG.debug("Got Response from handler: {}", response);
             channel.write(response);
-        }
-        else {
+        } else {
             LOG.info("Got null response from handler handling message: {}", m);
         }
     }

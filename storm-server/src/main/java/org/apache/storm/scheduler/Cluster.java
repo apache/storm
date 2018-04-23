@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.daemon.nimbus.TopologyResources;
@@ -49,40 +48,33 @@ import org.slf4j.LoggerFactory;
 
 public class Cluster implements ISchedulingState {
     private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
-    private SchedulerAssignmentImpl assignment;
-
     /**
      * key: supervisor id, value: supervisor details.
      */
     private final Map<String, SupervisorDetails> supervisors = new HashMap<>();
-
     /**
      * key: rack, value: nodes in that rack.
      */
     private final Map<String, List<String>> networkTopography = new HashMap<>();
-
     /**
      * key: topologyId, value: topology's current assignments.
      */
     private final Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
-
     /**
      * key topologyId, Value: scheduler's status.
      */
     private final Map<String, String> status = new HashMap<>();
-
     /**
      * A map from hostname to supervisor ids.
      */
     private final Map<String, List<String>> hostToId = new HashMap<>();
-
     private final Map<String, Object> conf;
-
-    private Set<String> blackListedHosts = new HashSet<>();
-    private INimbus inimbus;
     private final Topologies topologies;
     private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache;
     private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache;
+    private SchedulerAssignmentImpl assignment;
+    private Set<String> blackListedHosts = new HashSet<>();
+    private INimbus inimbus;
 
     public Cluster(
         INimbus nimbus,
@@ -111,7 +103,7 @@ public class Cluster implements ISchedulingState {
     /**
      * Testing Constructor that takes an existing cluster and replaces the topologies in it.
      *
-     * @param src the original cluster
+     * @param src        the original cluster
      * @param topologies the new topolgoies to use
      */
     @VisibleForTesting
@@ -195,13 +187,76 @@ public class Cluster implements ISchedulingState {
     }
 
     /**
-     * Check if the given topology is allowed for modification right now. If not throw an
-     * IllegalArgumentException else go on.
+     * Get heap memory usage for a worker's main process and logwriter process.
+     *
+     * @param topConf - the topology config
+     * @return the assigned memory (in MB)
+     */
+    public static double getAssignedMemoryForSlot(final Map<String, Object> topConf) {
+        double totalWorkerMemory = 0.0;
+        final Integer topologyWorkerDefaultMemoryAllocation = 768;
+
+        List<String> topologyWorkerGcChildopts = ConfigUtils.getValueAsList(
+            Config.TOPOLOGY_WORKER_GC_CHILDOPTS, topConf);
+        List<String> workerGcChildopts = ConfigUtils.getValueAsList(
+            Config.WORKER_GC_CHILDOPTS, topConf);
+        Double memGcChildopts = null;
+        memGcChildopts = Utils.parseJvmHeapMemByChildOpts(
+            topologyWorkerGcChildopts, null);
+        if (memGcChildopts == null) {
+            memGcChildopts = Utils.parseJvmHeapMemByChildOpts(
+                workerGcChildopts, null);
+        }
+
+        List<String> topologyWorkerChildopts = ConfigUtils.getValueAsList(
+            Config.TOPOLOGY_WORKER_CHILDOPTS, topConf);
+        Double memTopologyWorkerChildopts = Utils.parseJvmHeapMemByChildOpts(
+            topologyWorkerChildopts, null);
+
+        List<String> workerChildopts = ConfigUtils.getValueAsList(
+            Config.WORKER_CHILDOPTS, topConf);
+        Double memWorkerChildopts = Utils.parseJvmHeapMemByChildOpts(
+            workerChildopts, null);
+
+        if (memGcChildopts != null) {
+            totalWorkerMemory += memGcChildopts;
+        } else if (memTopologyWorkerChildopts != null) {
+            totalWorkerMemory += memTopologyWorkerChildopts;
+        } else if (memWorkerChildopts != null) {
+            totalWorkerMemory += memWorkerChildopts;
+        } else {
+            Object workerHeapMemoryMb = topConf.get(
+                Config.WORKER_HEAP_MEMORY_MB);
+            totalWorkerMemory += ObjectReader.getInt(
+                workerHeapMemoryMb, topologyWorkerDefaultMemoryAllocation);
+        }
+
+        List<String> topoWorkerLwChildopts = ConfigUtils.getValueAsList(
+            Config.TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS, topConf);
+        if (topoWorkerLwChildopts != null) {
+            totalWorkerMemory += Utils.parseJvmHeapMemByChildOpts(
+                topoWorkerLwChildopts, 0.0);
+        }
+        return totalWorkerMemory;
+    }
+
+    /**
+     * Check if the given topology is allowed for modification right now. If not throw an IllegalArgumentException else go on.
      *
      * @param topologyId the id of the topology to check
      */
     protected void assertValidTopologyForModification(String topologyId) {
         //NOOP
+    }
+
+    @Override
+    public Topologies getTopologies() {
+        return topologies;
+    }
+
+    @Override
+    public Set<String> getBlacklistedHosts() {
+        return blackListedHosts;
     }
 
     /**
@@ -216,16 +271,6 @@ public class Cluster implements ISchedulingState {
         }
         blackListedHosts.clear();
         blackListedHosts.addAll(hosts);
-    }
-
-    @Override
-    public Topologies getTopologies() {
-        return topologies;
-    }
-
-    @Override
-    public Set<String> getBlacklistedHosts() {
-        return blackListedHosts;
     }
 
     public void blacklistHost(String host) {
@@ -304,7 +349,8 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Set<Integer> getUsedPorts(SupervisorDetails supervisor) {
-        return nodeToUsedSlotsCache.computeIfAbsent(supervisor.getId(), (x) -> new HashSet<>()).stream().map(WorkerSlot::getPort).collect(Collectors.toSet());
+        return nodeToUsedSlotsCache.computeIfAbsent(supervisor.getId(), (x) -> new HashSet<>()).stream().map(WorkerSlot::getPort)
+                                   .collect(Collectors.toSet());
     }
 
     @Override
@@ -424,12 +470,12 @@ public class Cluster implements ISchedulingState {
             totalResources.addOnHeap(shared.get_off_heap_worker());
 
             addResource(
-                    sharedTotalResources,
-                    Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, shared.get_off_heap_worker()
+                sharedTotalResources,
+                Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, shared.get_off_heap_worker()
             );
             addResource(
-                    sharedTotalResources,
-                    Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, shared.get_on_heap()
+                sharedTotalResources,
+                Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, shared.get_on_heap()
             );
         }
         sharedTotalResources = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(sharedTotalResources);
@@ -441,12 +487,12 @@ public class Cluster implements ISchedulingState {
         ret.set_mem_off_heap(totalResources.getOffHeapMemoryMb());
         ret.set_mem_on_heap(totalResources.getOnHeapMemoryMb());
         ret.set_shared_mem_off_heap(
-                sharedTotalResources.getOrDefault(
-                        Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0)
+            sharedTotalResources.getOrDefault(
+                Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0)
         );
         ret.set_shared_mem_on_heap(
-                sharedTotalResources.getOrDefault(
-                        Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0)
+            sharedTotalResources.getOrDefault(
+                Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0)
         );
         return ret;
     }
@@ -493,22 +539,22 @@ public class Cluster implements ISchedulingState {
         if (memoryAdded > memoryAvailable) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Could not schedule {}:{} on {} not enough Mem {} > {}",
-                    td.getName(),
-                    exec,
-                    ws,
-                    memoryAdded,
-                    memoryAvailable);
+                          td.getName(),
+                          exec,
+                          ws,
+                          memoryAdded,
+                          memoryAvailable);
             }
             return false;
         }
         if (afterOnHeap > maxHeap) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Could not schedule {}:{} on {} HEAP would be too large {} > {}",
-                    td.getName(),
-                    exec,
-                    ws,
-                    afterOnHeap,
-                    maxHeap);
+                          td.getName(),
+                          exec,
+                          ws,
+                          afterOnHeap,
+                          maxHeap);
             }
             return false;
         }
@@ -531,9 +577,9 @@ public class Cluster implements ISchedulingState {
         if (td == null) {
             throw new IllegalArgumentException(
                 "Trying to schedule for topo "
-                    + topologyId
-                    + " but that is not a known topology "
-                    + topologies.getAllIds());
+                + topologyId
+                + " but that is not a known topology "
+                + topologies.getAllIds());
         }
         WorkerResources resources = calculateWorkerResources(td, executors);
         SchedulerAssignmentImpl assignment = assignments.get(topologyId);
@@ -545,14 +591,14 @@ public class Cluster implements ISchedulingState {
                 if (assignment.isExecutorAssigned(executor)) {
                     throw new RuntimeException(
                         "Attempting to assign executor: "
-                            + executor
-                            + " of topology: "
-                            + topologyId
-                            + " to workerslot: "
-                            + slot
-                            + ". The executor is already assigned to workerslot: "
-                            + assignment.getExecutorToSlot().get(executor)
-                            + ". The executor must unassigned before it can be assigned to another slot!");
+                        + executor
+                        + " of topology: "
+                        + topologyId
+                        + " to workerslot: "
+                        + slot
+                        + ". The executor is already assigned to workerslot: "
+                        + assignment.getExecutorToSlot().get(executor)
+                        + ". The executor must unassigned before it can be assigned to another slot!");
                 }
             }
         }
@@ -587,7 +633,7 @@ public class Cluster implements ISchedulingState {
     /**
      * Calculate the amount of shared off heap memory on a given nodes with the given assignment.
      *
-     * @param nodeId the id of the node
+     * @param nodeId     the id of the node
      * @param assignment the current assignment
      * @return the amount of shared off heap memory for that node in MB
      */
@@ -759,59 +805,6 @@ public class Cluster implements ISchedulingState {
     }
 
     /**
-     * Get heap memory usage for a worker's main process and logwriter process.
-     * @param topConf - the topology config
-     * @return the assigned memory (in MB)
-     */
-    public static double getAssignedMemoryForSlot(final Map<String, Object> topConf) {
-        double totalWorkerMemory = 0.0;
-        final Integer topologyWorkerDefaultMemoryAllocation = 768;
-
-        List<String> topologyWorkerGcChildopts = ConfigUtils.getValueAsList(
-            Config.TOPOLOGY_WORKER_GC_CHILDOPTS, topConf);
-        List<String> workerGcChildopts = ConfigUtils.getValueAsList(
-            Config.WORKER_GC_CHILDOPTS, topConf);
-        Double memGcChildopts = null;
-        memGcChildopts = Utils.parseJvmHeapMemByChildOpts(
-            topologyWorkerGcChildopts, null);
-        if (memGcChildopts == null) {
-            memGcChildopts = Utils.parseJvmHeapMemByChildOpts(
-                workerGcChildopts, null);
-        }
-
-        List<String> topologyWorkerChildopts = ConfigUtils.getValueAsList(
-            Config.TOPOLOGY_WORKER_CHILDOPTS, topConf);
-        Double memTopologyWorkerChildopts = Utils.parseJvmHeapMemByChildOpts(
-            topologyWorkerChildopts, null);
-
-        List<String> workerChildopts = ConfigUtils.getValueAsList(
-            Config.WORKER_CHILDOPTS, topConf);
-        Double memWorkerChildopts = Utils.parseJvmHeapMemByChildOpts(
-            workerChildopts, null);
-
-        if (memGcChildopts != null) {
-            totalWorkerMemory += memGcChildopts;
-        } else if (memTopologyWorkerChildopts != null) {
-            totalWorkerMemory += memTopologyWorkerChildopts;
-        } else if (memWorkerChildopts != null) {
-            totalWorkerMemory += memWorkerChildopts;
-        } else {
-            Object workerHeapMemoryMb = topConf.get(
-                Config.WORKER_HEAP_MEMORY_MB);
-            totalWorkerMemory += ObjectReader.getInt(
-                workerHeapMemoryMb, topologyWorkerDefaultMemoryAllocation);
-        }
-
-        List<String> topoWorkerLwChildopts = ConfigUtils.getValueAsList(
-            Config.TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS, topConf);
-        if (topoWorkerLwChildopts != null) {
-            totalWorkerMemory += Utils.parseJvmHeapMemByChildOpts(
-                topoWorkerLwChildopts, 0.0);
-        }
-        return totalWorkerMemory;
-    }
-
-    /**
      * set scheduler status for a topology.
      */
     public void setStatus(TopologyDetails td, String statusMessage) {
@@ -837,10 +830,6 @@ public class Cluster implements ISchedulingState {
         return status;
     }
 
-    public String getStatus(String topoId) {
-        return status.get(topoId);
-    }
-
     /**
      * set scheduler status map.
      */
@@ -856,6 +845,10 @@ public class Cluster implements ISchedulingState {
         }
         this.status.clear();
         this.status.putAll(statusMap);
+    }
+
+    public String getStatus(String topoId) {
+        return status.get(topoId);
     }
 
     @Override
@@ -925,7 +918,7 @@ public class Cluster implements ISchedulingState {
 
 
     /**
-     *  This medhod updates ScheduledResources and UsedSlots cache for given workerSlot
+     * This medhod updates ScheduledResources and UsedSlots cache for given workerSlot
      *
      * @param workerSlot
      * @param workerResources

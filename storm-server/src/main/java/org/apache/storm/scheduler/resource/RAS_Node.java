@@ -34,24 +34,23 @@ import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Represents a single node in the cluster. */
+/**
+ * Represents a single node in the cluster.
+ */
 public class RAS_Node {
     private static final Logger LOG = LoggerFactory.getLogger(RAS_Node.class);
-
+    private final String nodeId;
+    private final Cluster cluster;
+    private final Set<WorkerSlot> originallyFreeSlots;
     //A map consisting of all workers on the node.
     //The key of the map is the worker id and the value is the corresponding workerslot object
     private Map<String, WorkerSlot> slots = new HashMap<>();
-
     // A map describing which topologies are using which slots on this node.  The format of the map is the following:
     // {TopologyId -> {WorkerId -> {Executors}}}
     private Map<String, Map<String, Collection<ExecutorDetails>>> topIdToUsedSlots = new HashMap<>();
-
-    private final String nodeId;
     private String hostname;
     private boolean isAlive;
     private SupervisorDetails sup;
-    private final Cluster cluster;
-    private final Set<WorkerSlot> originallyFreeSlots;
 
     public RAS_Node(
         String nodeId,
@@ -97,6 +96,26 @@ public class RAS_Node {
                 originallyFreeSlots.add(slot);
             }
         }
+    }
+
+    public static int countFreeSlotsAlive(Collection<RAS_Node> nodes) {
+        int total = 0;
+        for (RAS_Node n : nodes) {
+            if (n.isAlive()) {
+                total += n.totalSlotsFree();
+            }
+        }
+        return total;
+    }
+
+    public static int countTotalSlotsAlive(Collection<RAS_Node> nodes) {
+        int total = 0;
+        for (RAS_Node n : nodes) {
+            if (n.isAlive()) {
+                total += n.totalSlots();
+            }
+        }
+        return total;
     }
 
     public String getId() {
@@ -167,7 +186,9 @@ public class RAS_Node {
         return isAlive;
     }
 
-    /** Get a collection of the topology ids currently running on this node. */
+    /**
+     * Get a collection of the topology ids currently running on this node.
+     */
     public Collection<String> getRunningTopologies() {
         return topIdToUsedSlots.keySet();
     }
@@ -192,7 +213,9 @@ public class RAS_Node {
         return slots.size();
     }
 
-    /** Free all slots on this node. This will update the Cluster too. */
+    /**
+     * Free all slots on this node. This will update the Cluster too.
+     */
     public void freeAllSlots() {
         if (!isAlive) {
             LOG.warn("Freeing all slots on a dead node {} ", nodeId);
@@ -279,8 +302,8 @@ public class RAS_Node {
     /**
      * Assigns a worker to a node.
      *
-     * @param target the worker slot to assign the executors
-     * @param td the topology the executors are from
+     * @param target    the worker slot to assign the executors
+     * @param td        the topology the executors are from
      * @param executors executors to assign to the specified worker slot
      */
     public void assign(WorkerSlot target, TopologyDetails td, Collection<ExecutorDetails> executors) {
@@ -343,9 +366,9 @@ public class RAS_Node {
     /**
      * Would scheduling exec in ws fit with the current resource constraints.
      *
-     * @param ws the slot to possibly put exec in
+     * @param ws   the slot to possibly put exec in
      * @param exec the executor to possibly place in ws
-     * @param td the topology exec is a part of
+     * @param td   the topology exec is a part of
      * @return true if it would fit else false
      */
     public boolean wouldFit(WorkerSlot ws, ExecutorDetails exec, TopologyDetails td) {
@@ -353,13 +376,13 @@ public class RAS_Node {
             throw new IllegalStateException("Slot " + ws + " is not a part of this node " + nodeId);
         }
         return isAlive
-            && cluster.wouldFit(
+               && cluster.wouldFit(
             ws,
             exec,
             td,
             getTotalAvailableResources(),
             td.getTopologyWorkerMaxHeapSize()
-            );
+        );
     }
 
     @Override
@@ -378,40 +401,20 @@ public class RAS_Node {
     @Override
     public String toString() {
         return "{Node: "
-            + ((sup == null) ? "null (possibly down)" : sup.getHost())
-            + ", Avail [ Mem: "
-            + getAvailableMemoryResources()
-            + ", CPU: "
-            + getAvailableCpuResources()
-            + ", Slots: "
-            + this.getFreeSlots()
-            + "] Total [ Mem: "
-            + ((sup == null) ? "N/A" : this.getTotalMemoryResources())
-            + ", CPU: "
-            + ((sup == null) ? "N/A" : this.getTotalCpuResources())
-            + ", Slots: "
-            + this.slots.values()
-            + " ]}";
-    }
-
-    public static int countFreeSlotsAlive(Collection<RAS_Node> nodes) {
-        int total = 0;
-        for (RAS_Node n : nodes) {
-            if (n.isAlive()) {
-                total += n.totalSlotsFree();
-            }
-        }
-        return total;
-    }
-
-    public static int countTotalSlotsAlive(Collection<RAS_Node> nodes) {
-        int total = 0;
-        for (RAS_Node n : nodes) {
-            if (n.isAlive()) {
-                total += n.totalSlots();
-            }
-        }
-        return total;
+               + ((sup == null) ? "null (possibly down)" : sup.getHost())
+               + ", Avail [ Mem: "
+               + getAvailableMemoryResources()
+               + ", CPU: "
+               + getAvailableCpuResources()
+               + ", Slots: "
+               + this.getFreeSlots()
+               + "] Total [ Mem: "
+               + ((sup == null) ? "N/A" : this.getTotalMemoryResources())
+               + ", CPU: "
+               + ((sup == null) ? "N/A" : this.getTotalCpuResources())
+               + ", Slots: "
+               + this.slots.values()
+               + " ]}";
     }
 
     /**

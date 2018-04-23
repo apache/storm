@@ -54,11 +54,11 @@ public class ResourceNameNormalizer {
             return new HashMap<>();
         }
         return new HashMap<>(resourceMap.entrySet().stream()
-            .collect(Collectors.toMap(
-                //Map the key if needed
-                (e) -> resourceNameMapping.getOrDefault(e.getKey(), e.getKey()),
-                //Map the value
-                (e) -> e.getValue().doubleValue())));
+                                        .collect(Collectors.toMap(
+                                            //Map the key if needed
+                                            (e) -> resourceNameMapping.getOrDefault(e.getKey(), e.getKey()),
+                                            //Map the value
+                                            (e) -> e.getValue().doubleValue())));
     }
 
     public Map<String, String> getResourceNameMapping() {

@@ -26,15 +26,15 @@ import org.apache.storm.generated.LocalAssignment;
 public interface BlobChangingCallback {
 
     /**
-     * Informs the listener that a blob has changed and is ready to update and replace a localized blob that has been marked as
-     * tied to the life cycle of the worker process.
+     * Informs the listener that a blob has changed and is ready to update and replace a localized blob that has been marked as tied to the
+     * life cycle of the worker process.
      *
-     * If `go.getLatch()` is never called before the method completes it is assumed that
-     * the listener is good with the blob changing.
+     * If `go.getLatch()` is never called before the method completes it is assumed that the listener is good with the blob changing.
+     *
      * @param assignment the assignment this resource and callback are registered with.
-     * @param port the port that this resource and callback are registered with.
-     * @param blob the blob that is going to change.
-     * @param go a way to indicate if the listener is ready for the resource to change.
+     * @param port       the port that this resource and callback are registered with.
+     * @param blob       the blob that is going to change.
+     * @param go         a way to indicate if the listener is ready for the resource to change.
      */
     void blobChanging(LocalAssignment assignment, int port, LocallyCachedBlob blob, GoodToGo go);
 }

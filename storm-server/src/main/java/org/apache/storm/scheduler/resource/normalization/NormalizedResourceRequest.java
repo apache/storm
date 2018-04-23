@@ -37,6 +37,28 @@ import org.slf4j.LoggerFactory;
 public class NormalizedResourceRequest implements NormalizedResourcesWithMemory {
 
     private static final Logger LOG = LoggerFactory.getLogger(NormalizedResourceRequest.class);
+    private final NormalizedResources normalizedResources;
+    private double onHeap;
+    private double offHeap;
+
+    private NormalizedResourceRequest(Map<String, ? extends Number> resources,
+                                      Map<String, Double> defaultResources) {
+        Map<String, Double> normalizedResourceMap = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(defaultResources);
+        normalizedResourceMap.putAll(NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resources));
+        onHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
+        offHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0);
+        normalizedResources = new NormalizedResources(normalizedResourceMap);
+    }
+    public NormalizedResourceRequest(ComponentCommon component, Map<String, Object> topoConf) {
+        this(parseResources(component.get_json_conf()), getDefaultResources(topoConf));
+    }
+    public NormalizedResourceRequest(Map<String, Object> topoConf) {
+        this((Map<String, ? extends Number>) null, getDefaultResources(topoConf));
+    }
+
+    public NormalizedResourceRequest() {
+        this((Map<String, ? extends Number>) null, null);
+    }
 
     private static void putIfMissing(Map<String, Double> dest, String destKey, Map<String, Object> src, String srcKey) {
         if (!dest.containsKey(destKey)) {
@@ -48,8 +70,9 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
     }
 
     private static Map<String, Double> getDefaultResources(Map<String, Object> topoConf) {
-        Map<String, Double> ret = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap((Map<String, Number>) topoConf.getOrDefault(
-            Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>()));
+        Map<String, Double> ret =
+            NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap((Map<String, Number>) topoConf.getOrDefault(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>()));
         putIfMissing(ret, Constants.COMMON_CPU_RESOURCE_NAME, topoConf, Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
         putIfMissing(ret, Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, topoConf, Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
         putIfMissing(ret, Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, topoConf, Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
@@ -78,7 +101,7 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
                 }
                 if (jsonObject.containsKey(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)) {
                     Double topoCpu = ObjectReader.getDouble(jsonObject.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT),
-                        null);
+                                                            null);
                     topologyResources.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, topoCpu);
                 }
 
@@ -100,31 +123,6 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
             return null;
         }
         return topologyResources;
-    }
-
-    private final NormalizedResources normalizedResources;
-    private double onHeap;
-    private double offHeap;
-
-    private NormalizedResourceRequest(Map<String, ? extends Number> resources,
-        Map<String, Double> defaultResources) {
-        Map<String, Double> normalizedResourceMap = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(defaultResources);
-        normalizedResourceMap.putAll(NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resources));
-        onHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
-        offHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0);
-        normalizedResources = new NormalizedResources(normalizedResourceMap);
-    }
-
-    public NormalizedResourceRequest(ComponentCommon component, Map<String, Object> topoConf) {
-        this(parseResources(component.get_json_conf()), getDefaultResources(topoConf));
-    }
-
-    public NormalizedResourceRequest(Map<String, Object> topoConf) {
-        this((Map<String, ? extends Number>) null, getDefaultResources(topoConf));
-    }
-
-    public NormalizedResourceRequest() {
-        this((Map<String, ? extends Number>) null, null);
     }
 
     public Map<String, Double> toNormalizedMap() {

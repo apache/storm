@@ -1,54 +1,45 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.blobstore;
 
-import org.apache.storm.cluster.DaemonType;
-import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.KeyAlreadyExistsException;
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.generated.ReadableBlobMeta;
-
-import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
-import org.apache.zookeeper.KeeperException.NoNodeException;
-import org.apache.curator.framework.CuratorFramework;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.security.auth.Subject;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.cluster.DaemonType;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.KeyAlreadyExistsException;
+import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.ReadableBlobMeta;
+import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.Utils;
+import org.apache.zookeeper.KeeperException.NoNodeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
-
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Provides a local file system backed blob store implementation for Nimbus.
@@ -72,11 +63,11 @@ public class LocalFsBlobStore extends BlobStore {
     public static final Logger LOG = LoggerFactory.getLogger(LocalFsBlobStore.class);
     private static final String DATA_PREFIX = "data_";
     private static final String META_PREFIX = "meta_";
-    protected BlobStoreAclHandler _aclHandler;
     private final String BLOBSTORE_SUBTREE = "/blobstore/";
+    private final int allPermissions = READ | WRITE | ADMIN;
+    protected BlobStoreAclHandler _aclHandler;
     private NimbusInfo nimbusInfo;
     private FileBlobStoreImpl fbs;
-    private final int allPermissions = READ | WRITE | ADMIN;
     private Map<String, Object> conf;
     private CuratorFramework zkClient;
 
@@ -98,22 +89,23 @@ public class LocalFsBlobStore extends BlobStore {
     }
 
     @Override
-    public AtomicOutputStream createBlob(String key, SettableBlobMeta meta, Subject who) throws AuthorizationException, KeyAlreadyExistsException {
+    public AtomicOutputStream createBlob(String key, SettableBlobMeta meta, Subject who) throws AuthorizationException,
+        KeyAlreadyExistsException {
         LOG.debug("Creating Blob for key {}", key);
         validateKey(key);
         _aclHandler.normalizeSettableBlobMeta(key, meta, who, allPermissions);
         BlobStoreAclHandler.validateSettableACLs(key, meta.get_acl());
         _aclHandler.hasPermissions(meta.get_acl(), allPermissions, who, key);
-        if (fbs.exists(DATA_PREFIX+key)) {
+        if (fbs.exists(DATA_PREFIX + key)) {
             throw new KeyAlreadyExistsException(key);
         }
         BlobStoreFileOutputStream mOut = null;
         try {
-            mOut = new BlobStoreFileOutputStream(fbs.write(META_PREFIX+key, true));
+            mOut = new BlobStoreFileOutputStream(fbs.write(META_PREFIX + key, true));
             mOut.write(Utils.thriftSerialize(meta));
             mOut.close();
             mOut = null;
-            return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX+key, true));
+            return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX + key, true));
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -132,7 +124,7 @@ public class LocalFsBlobStore extends BlobStore {
         validateKey(key);
         checkPermission(key, who, WRITE);
         try {
-            return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX+key, false));
+            return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX + key, false));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -141,14 +133,14 @@ public class LocalFsBlobStore extends BlobStore {
     private SettableBlobMeta getStoredBlobMeta(String key) throws KeyNotFoundException {
         InputStream in = null;
         try {
-            LocalFsBlobStoreFile pf = fbs.read(META_PREFIX+key);
+            LocalFsBlobStoreFile pf = fbs.read(META_PREFIX + key);
             try {
                 in = pf.getInputStream();
             } catch (FileNotFoundException fnf) {
                 throw new KeyNotFoundException(key);
             }
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte [] buffer = new byte[2048];
+            byte[] buffer = new byte[2048];
             int len;
             while ((len = in.read(buffer)) > 0) {
                 out.write(buffer, 0, len);
@@ -172,7 +164,7 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public ReadableBlobMeta getBlobMeta(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
-        if(!checkForBlobOrDownload(key)) {
+        if (!checkForBlobOrDownload(key)) {
             checkForBlobUpdate(key);
         }
         SettableBlobMeta meta = getStoredBlobMeta(key);
@@ -180,7 +172,7 @@ public class LocalFsBlobStore extends BlobStore {
         ReadableBlobMeta rbm = new ReadableBlobMeta();
         rbm.set_settable(meta);
         try {
-            LocalFsBlobStoreFile pf = fbs.read(DATA_PREFIX+key);
+            LocalFsBlobStoreFile pf = fbs.read(DATA_PREFIX + key);
             rbm.set_version(pf.getModTime());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -198,7 +190,7 @@ public class LocalFsBlobStore extends BlobStore {
         _aclHandler.hasPermissions(orig.get_acl(), ADMIN, who, key);
         BlobStoreFileOutputStream mOut = null;
         try {
-            mOut = new BlobStoreFileOutputStream(fbs.write(META_PREFIX+key, false));
+            mOut = new BlobStoreFileOutputStream(fbs.write(META_PREFIX + key, false));
             mOut.write(Utils.thriftSerialize(meta));
             mOut.close();
             mOut = null;
@@ -233,7 +225,7 @@ public class LocalFsBlobStore extends BlobStore {
             // able to delete the blob without checking meta's ACL
             // skip checking everything and continue deleting local files
             LOG.debug("Given subject is eligible to delete key without checking ACL, skipping... key: {} subject: {}",
-                    key, who);
+                      key, who);
         }
 
         try {
@@ -265,13 +257,13 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public InputStreamWithMeta getBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
-        if(!checkForBlobOrDownload(key)) {
+        if (!checkForBlobOrDownload(key)) {
             checkForBlobUpdate(key);
         }
         SettableBlobMeta meta = getStoredBlobMeta(key);
         _aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
         try {
-            return new BlobStoreFileInputStream(fbs.read(DATA_PREFIX+key));
+            return new BlobStoreFileInputStream(fbs.read(DATA_PREFIX + key));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -314,7 +306,7 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public int updateBlobReplication(String key, int replication, Subject who) throws AuthorizationException, KeyNotFoundException {
         throw new UnsupportedOperationException("For local file system blob store the update blobs function does not work. " +
-                "Please use HDFS blob store to make this feature available.");
+                                                "Please use HDFS blob store to make this feature available.");
     }
 
     //This additional check and download is for nimbus high availability in case you have more than one nimbus
@@ -347,7 +339,7 @@ public class LocalFsBlobStore extends BlobStore {
     public void fullCleanup(long age) throws IOException {
         fbs.fullCleanup(age);
     }
-    
+
     @VisibleForTesting
     File getKeyDataDir(String key) {
         return fbs.getKeyDir(DATA_PREFIX + key);

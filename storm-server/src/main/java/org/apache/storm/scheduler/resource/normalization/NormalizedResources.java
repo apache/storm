@@ -45,16 +45,6 @@ public class NormalizedResources {
     private double[] otherResources;
 
     /**
-     * This is for testing only. It allows a test to reset the static state relating to resource names. We reset the mapping because some
-     * algorithms sadly have different behavior if a resource exists or not.
-     */
-    @VisibleForTesting
-    public static void resetResourceNames() {
-        RESOURCE_NAME_NORMALIZER = new ResourceNameNormalizer();
-        RESOURCE_MAP_ARRAY_BRIDGE = new ResourceMapArrayBridge();
-    }
-
-    /**
      * Copy constructor.
      */
     public NormalizedResources(NormalizedResources other) {
@@ -74,6 +64,16 @@ public class NormalizedResources {
     }
 
     /**
+     * This is for testing only. It allows a test to reset the static state relating to resource names. We reset the mapping because some
+     * algorithms sadly have different behavior if a resource exists or not.
+     */
+    @VisibleForTesting
+    public static void resetResourceNames() {
+        RESOURCE_NAME_NORMALIZER = new ResourceNameNormalizer();
+        RESOURCE_MAP_ARRAY_BRIDGE = new ResourceMapArrayBridge();
+    }
+
+    /**
      * Get the total amount of cpu.
      *
      * @return the amount of cpu.
@@ -81,7 +81,7 @@ public class NormalizedResources {
     public double getTotalCpu() {
         return cpu;
     }
-    
+
     private void zeroPadOtherResourcesIfNecessary(int requiredLength) {
         if (requiredLength > otherResources.length) {
             double[] newResources = new double[requiredLength];
@@ -116,16 +116,18 @@ public class NormalizedResources {
 
     /**
      * Throw an IllegalArgumentException because a resource became negative during remove.
-     * @param resourceName The name of the resource that became negative
-     * @param currentValue The current value of the resource
+     *
+     * @param resourceName    The name of the resource that became negative
+     * @param currentValue    The current value of the resource
      * @param subtractedValue The value that was subtracted to make the resource negative
      */
     public void throwBecauseResourceBecameNegative(String resourceName, double currentValue, double subtractedValue) {
         throw new IllegalArgumentException(String.format("Resource amounts should never be negative."
-            + " Resource '%s' with current value '%f' became negative because '%f' was removed.",
-            resourceName, currentValue, subtractedValue));
+                                                         +
+                                                         " Resource '%s' with current value '%f' became negative because '%f' was removed.",
+                                                         resourceName, currentValue, subtractedValue));
     }
-    
+
     /**
      * Remove the other resources from this. This is the same as subtracting the resources in other from this.
      *
@@ -173,8 +175,8 @@ public class NormalizedResources {
      * A simple sanity check to see if all of the resources in this would be large enough to hold the resources in other ignoring memory. It
      * does not check memory because with shared memory it is beyond the scope of this.
      *
-     * @param other the resources that we want to check if they would fit in this.
-     * @param thisTotalMemoryMb The total memory in MB of this
+     * @param other              the resources that we want to check if they would fit in this.
+     * @param thisTotalMemoryMb  The total memory in MB of this
      * @param otherTotalMemoryMb The total memory in MB of other
      * @return true if it might fit, else false if it could not possibly fit.
      */
@@ -204,8 +206,8 @@ public class NormalizedResources {
 
     private void throwBecauseUsedIsNotSubsetOfTotal(NormalizedResources used, double totalMemoryMb, double usedMemoryMb) {
         throw new IllegalArgumentException(String.format("The used resources must be a subset of the total resources."
-            + " Used: '%s', Total: '%s', Used Mem: '%f', Total Mem: '%f'",
-            used.toNormalizedMap(), this.toNormalizedMap(), usedMemoryMb, totalMemoryMb));
+                                                         + " Used: '%s', Total: '%s', Used Mem: '%f', Total Mem: '%f'",
+                                                         used.toNormalizedMap(), this.toNormalizedMap(), usedMemoryMb, totalMemoryMb));
     }
 
     /**
@@ -213,18 +215,19 @@ public class NormalizedResources {
      * subset of the total resources. If a resource in the total has a value of zero, it will be skipped in the calculation to avoid
      * division by 0. If all resources are skipped the result is defined to be 100.0.
      *
-     * @param used the amount of resources used.
+     * @param used          the amount of resources used.
      * @param totalMemoryMb The total memory in MB
-     * @param usedMemoryMb The used memory in MB
+     * @param usedMemoryMb  The used memory in MB
      * @return the average percentage used 0.0 to 100.0.
+     *
      * @throws IllegalArgumentException if any resource in used has a greater value than the same resource in the total, or used has generic
-     *     resources that are not present in the total.
+     *                                  resources that are not present in the total.
      */
     public double calculateAveragePercentageUsedBy(NormalizedResources used, double totalMemoryMb, double usedMemoryMb) {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Calculating avg percentage used by. Used Mem: {} Total Mem: {}"
-                + " Used Normalized Resources: {} Total Normalized Resources: {}", totalMemoryMb, usedMemoryMb,
-                toNormalizedMap(), used.toNormalizedMap());
+                      + " Used Normalized Resources: {} Total Normalized Resources: {}", totalMemoryMb, usedMemoryMb,
+                      toNormalizedMap(), used.toNormalizedMap());
         }
 
         int skippedResourceTypes = 0;
@@ -290,18 +293,19 @@ public class NormalizedResources {
      * subset of the total resources. If a resource in the total has a value of zero, it will be skipped in the calculation to avoid
      * division by 0. If all resources are skipped the result is defined to be 100.0.
      *
-     * @param used the amount of resources used.
+     * @param used          the amount of resources used.
      * @param totalMemoryMb The total memory in MB
-     * @param usedMemoryMb The used memory in MB
+     * @param usedMemoryMb  The used memory in MB
      * @return the minimum percentage used 0.0 to 100.0.
+     *
      * @throws IllegalArgumentException if any resource in used has a greater value than the same resource in the total, or used has generic
-     *     resources that are not present in the total.
+     *                                  resources that are not present in the total.
      */
     public double calculateMinPercentageUsedBy(NormalizedResources used, double totalMemoryMb, double usedMemoryMb) {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Calculating min percentage used by. Used Mem: {} Total Mem: {}"
-                + " Used Normalized Resources: {} Total Normalized Resources: {}", totalMemoryMb, usedMemoryMb,
-                toNormalizedMap(), used.toNormalizedMap());
+                      + " Used Normalized Resources: {} Total Normalized Resources: {}", totalMemoryMb, usedMemoryMb,
+                      toNormalizedMap(), used.toNormalizedMap());
         }
 
         double min = 1.0;
@@ -322,7 +326,7 @@ public class NormalizedResources {
         if (used.otherResources.length > otherResources.length) {
             throwBecauseUsedIsNotSubsetOfTotal(used, totalMemoryMb, usedMemoryMb);
         }
-        
+
         for (int i = 0; i < otherResources.length; i++) {
             if (otherResources[i] == 0.0) {
                 //Skip any resources where the total is 0, the percent used for this resource isn't meaningful.

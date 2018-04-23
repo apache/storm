@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.scheduler.resource;
@@ -52,11 +46,35 @@ public class ResourceAwareScheduler implements IScheduler {
     private IConfigLoader configLoader;
     private int maxSchedulingAttempts;
 
+    private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
+        markFailedTopology(u, c, td, message, null);
+    }
+
+    private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message, Throwable t) {
+        c.setStatus(td, message);
+        String realMessage = td.getId() + " " + message;
+        if (t != null) {
+            LOG.error(realMessage, t);
+        } else {
+            LOG.error(realMessage);
+        }
+        u.markTopoUnsuccess(td);
+    }
+
+    private static double getCpuUsed(SchedulerAssignment assignment) {
+        return assignment.getScheduledResources().values().stream().mapToDouble((wr) -> wr.get_cpu()).sum();
+    }
+
+    private static double getMemoryUsed(SchedulerAssignment assignment) {
+        return assignment.getScheduledResources().values().stream()
+                         .mapToDouble((wr) -> wr.get_mem_on_heap() + wr.get_mem_off_heap()).sum();
+    }
+
     @Override
     public void prepare(Map<String, Object> conf) {
         this.conf = conf;
         schedulingPriorityStrategy = ReflectionUtils.newInstance(
-                (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY));
+            (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY));
         configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
         maxSchedulingAttempts = ObjectReader.getInt(
             conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_TOPOLOGY_SCHEDULING_ATTEMPTS), 5);
@@ -85,21 +103,6 @@ public class ResourceAwareScheduler implements IScheduler {
         }
     }
 
-    private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
-        markFailedTopology(u, c, td, message, null);
-    }
-
-    private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message, Throwable t) {
-        c.setStatus(td, message);
-        String realMessage = td.getId() + " " + message;
-        if (t != null) {
-            LOG.error(realMessage, t);
-        } else {
-            LOG.error(realMessage);
-        }
-        u.markTopoUnsuccess(td);
-    }
-
     private void scheduleTopology(TopologyDetails td, Cluster cluster, final User topologySubmitter,
                                   List<TopologyDetails> orderedTopologies) {
         //A copy of cluster that we can modify, but does not get committed back to cluster unless scheduling succeeds
@@ -119,17 +122,17 @@ public class ResourceAwareScheduler implements IScheduler {
             rasStrategy.prepare(conf);
         } catch (DisallowedStrategyException e) {
             markFailedTopology(topologySubmitter, cluster, td,
-                "Unsuccessful in scheduling - " + e.getAttemptedClass()
-                    + " is not an allowed strategy. Please make sure your "
-                    + Config.TOPOLOGY_SCHEDULER_STRATEGY
-                    + " config is one of the allowed strategies: "
-                    + e.getAllowedStrategies(), e);
+                               "Unsuccessful in scheduling - " + e.getAttemptedClass()
+                               + " is not an allowed strategy. Please make sure your "
+                               + Config.TOPOLOGY_SCHEDULER_STRATEGY
+                               + " config is one of the allowed strategies: "
+                               + e.getAllowedStrategies(), e);
             return;
         } catch (RuntimeException e) {
             markFailedTopology(topologySubmitter, cluster, td,
-                "Unsuccessful in scheduling - failed to create instance of topology strategy "
-                    + strategyConf
-                    + ". Please check logs for details", e);
+                               "Unsuccessful in scheduling - failed to create instance of topology strategy "
+                               + strategyConf
+                               + ". Please check logs for details", e);
             return;
         }
 
@@ -167,7 +170,7 @@ public class ResourceAwareScheduler implements IScheduler {
                                 Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
 
                                 LOG.debug("Evicting Topology {} with workers: {} from user {}", topologyEvict.getName(), workersToEvict,
-                                    topologyEvict.getTopologySubmitter());
+                                          topologyEvict.getTopologySubmitter());
                                 cpuNeeded -= getCpuUsed(evictAssignemnt);
                                 memoryNeeded -= getMemoryUsed(evictAssignemnt);
                                 evictedSomething = true;
@@ -205,20 +208,11 @@ public class ResourceAwareScheduler implements IScheduler {
                 }
             } catch (Exception ex) {
                 markFailedTopology(topologySubmitter, cluster, td,
-                    "Internal Error - Exception thrown when scheduling. Please check logs for details", ex);
+                                   "Internal Error - Exception thrown when scheduling. Please check logs for details", ex);
                 return;
             }
         }
         markFailedTopology(topologySubmitter, cluster, td, "Failed to schedule within " + maxSchedulingAttempts + " attempts");
-    }
-
-    private static double getCpuUsed(SchedulerAssignment assignment) {
-        return assignment.getScheduledResources().values().stream().mapToDouble((wr) -> wr.get_cpu()).sum();
-    }
-
-    private static double getMemoryUsed(SchedulerAssignment assignment) {
-        return assignment.getScheduledResources().values().stream()
-            .mapToDouble((wr) -> wr.get_mem_on_heap() + wr.get_mem_off_heap()).sum();
     }
 
     /**
@@ -288,7 +282,7 @@ public class ResourceAwareScheduler implements IScheduler {
             return convertToDouble(raw);
         } else {
             LOG.warn("Reading from user-resource-pools.yaml returned null. This could because the file is not available. "
-                    + "Will load configs from storm configuration");
+                     + "Will load configs from storm configuration");
         }
 
         // if no configs from user-resource-pools.yaml, get configs from conf
