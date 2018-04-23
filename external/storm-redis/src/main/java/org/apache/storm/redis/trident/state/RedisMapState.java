@@ -1,29 +1,22 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.redis.trident.state;
 
-import org.apache.storm.task.IMetricsContext;
-import org.apache.storm.tuple.Values;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Pipeline;
+import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.trident.state.OpaqueValue;
 import org.apache.storm.trident.state.Serializer;
 import org.apache.storm.trident.state.State;
@@ -36,9 +29,10 @@ import org.apache.storm.trident.state.map.NonTransactionalMap;
 import org.apache.storm.trident.state.map.OpaqueMap;
 import org.apache.storm.trident.state.map.SnapshottableMap;
 import org.apache.storm.trident.state.map.TransactionalMap;
-
-import java.util.List;
-import java.util.Map;
+import org.apache.storm.tuple.Values;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Pipeline;
 
 /**
  * IBackingMap implementation for single Redis environment.
@@ -47,6 +41,27 @@ import java.util.Map;
  * @see AbstractRedisMapState
  */
 public class RedisMapState<T> extends AbstractRedisMapState<T> {
+    private JedisPool jedisPool;
+    private Options options;
+    private Serializer serializer;
+    private KeyFactory keyFactory;
+
+    /**
+     * Constructor
+     *
+     * @param jedisPool JedisPool
+     * @param options options of State
+     * @param serializer Serializer
+     * @param keyFactory KeyFactory
+     */
+    public RedisMapState(JedisPool jedisPool, Options options,
+                         Serializer<T> serializer, KeyFactory keyFactory) {
+        this.jedisPool = jedisPool;
+        this.options = options;
+        this.serializer = serializer;
+        this.keyFactory = keyFactory;
+    }
+
     /**
      * Provides StateFactory for opaque transactional.
      *
@@ -189,6 +204,106 @@ public class RedisMapState<T> extends AbstractRedisMapState<T> {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Serializer getSerializer() {
+        return serializer;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected KeyFactory getKeyFactory() {
+        return keyFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected List<String> retrieveValuesFromRedis(List<String> keys) {
+        String[] stringKeys = keys.toArray(new String[keys.size()]);
+
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+
+            RedisDataTypeDescription description = this.options.dataTypeDescription;
+            switch (description.getDataType()) {
+                case STRING:
+                    return jedis.mget(stringKeys);
+
+                case HASH:
+                    return jedis.hmget(description.getAdditionalKey(), stringKeys);
+
+                default:
+                    throw new IllegalArgumentException("Cannot process such data type: " + description.getDataType());
+            }
+
+        } finally {
+            if (jedis != null) {
+                jedis.close();
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void updateStatesToRedis(Map<String, String> keyValues) {
+        Jedis jedis = null;
+
+        try {
+            jedis = jedisPool.getResource();
+
+            RedisDataTypeDescription description = this.options.dataTypeDescription;
+            switch (description.getDataType()) {
+                case STRING:
+                    String[] keyValue = buildKeyValuesList(keyValues);
+                    jedis.mset(keyValue);
+                    if (this.options.expireIntervalSec > 0) {
+                        Pipeline pipe = jedis.pipelined();
+                        for (int i = 0; i < keyValue.length; i += 2) {
+                            pipe.expire(keyValue[i], this.options.expireIntervalSec);
+                        }
+                        pipe.sync();
+                    }
+                    break;
+
+                case HASH:
+                    jedis.hmset(description.getAdditionalKey(), keyValues);
+                    if (this.options.expireIntervalSec > 0) {
+                        jedis.expire(description.getAdditionalKey(), this.options.expireIntervalSec);
+                    }
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("Cannot process such data type: " + description.getDataType());
+            }
+
+        } finally {
+            if (jedis != null) {
+                jedis.close();
+            }
+        }
+    }
+
+    private String[] buildKeyValuesList(Map<String, String> keyValues) {
+        String[] keyValueLists = new String[keyValues.size() * 2];
+
+        int idx = 0;
+        for (Map.Entry<String, String> kvEntry : keyValues.entrySet()) {
+            keyValueLists[idx++] = kvEntry.getKey();
+            keyValueLists[idx++] = kvEntry.getValue();
+        }
+
+        return keyValueLists;
+    }
+
+    /**
      * RedisMapState.Factory provides single Redis environment version of StateFactory.
      */
     protected static class Factory implements StateFactory {
@@ -232,11 +347,11 @@ public class RedisMapState<T> extends AbstractRedisMapState<T> {
         @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             JedisPool jedisPool = new JedisPool(DEFAULT_POOL_CONFIG,
-                                                    jedisPoolConfig.getHost(),
-                                                    jedisPoolConfig.getPort(),
-                                                    jedisPoolConfig.getTimeout(),
-                                                    jedisPoolConfig.getPassword(),
-                                                    jedisPoolConfig.getDatabase());
+                                                jedisPoolConfig.getHost(),
+                                                jedisPoolConfig.getPort(),
+                                                jedisPoolConfig.getTimeout(),
+                                                jedisPoolConfig.getPassword(),
+                                                jedisPoolConfig.getDatabase());
             RedisMapState state = new RedisMapState(jedisPool, options, serializer, keyFactory);
             CachedMap c = new CachedMap(state, options.localCacheSize);
 
@@ -256,126 +371,5 @@ public class RedisMapState<T> extends AbstractRedisMapState<T> {
 
             return new SnapshottableMap(ms, new Values(options.globalKey));
         }
-    }
-
-    private JedisPool jedisPool;
-    private Options options;
-    private Serializer serializer;
-    private KeyFactory keyFactory;
-
-    /**
-     * Constructor
-     *
-     * @param jedisPool JedisPool
-     * @param options options of State
-     * @param serializer Serializer
-     * @param keyFactory KeyFactory
-     */
-    public RedisMapState(JedisPool jedisPool, Options options,
-                                            Serializer<T> serializer, KeyFactory keyFactory) {
-        this.jedisPool = jedisPool;
-        this.options = options;
-        this.serializer = serializer;
-        this.keyFactory = keyFactory;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected Serializer getSerializer() {
-        return serializer;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected KeyFactory getKeyFactory() {
-        return keyFactory;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected List<String> retrieveValuesFromRedis(List<String> keys) {
-        String[] stringKeys = keys.toArray(new String[keys.size()]);
-
-        Jedis jedis = null;
-        try {
-            jedis = jedisPool.getResource();
-
-            RedisDataTypeDescription description = this.options.dataTypeDescription;
-            switch (description.getDataType()) {
-            case STRING:
-                return jedis.mget(stringKeys);
-
-            case HASH:
-                return jedis.hmget(description.getAdditionalKey(), stringKeys);
-
-            default:
-                throw new IllegalArgumentException("Cannot process such data type: " + description.getDataType());
-            }
-
-        } finally {
-            if (jedis != null) {
-                jedis.close();
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void updateStatesToRedis(Map<String, String> keyValues) {
-        Jedis jedis = null;
-
-        try {
-            jedis = jedisPool.getResource();
-
-            RedisDataTypeDescription description = this.options.dataTypeDescription;
-            switch (description.getDataType()) {
-            case STRING:
-                String[] keyValue = buildKeyValuesList(keyValues);
-                jedis.mset(keyValue);
-                if(this.options.expireIntervalSec > 0){
-                    Pipeline pipe = jedis.pipelined();
-                    for(int i = 0; i < keyValue.length; i += 2){
-                        pipe.expire(keyValue[i], this.options.expireIntervalSec);
-                    }
-                    pipe.sync();
-                }
-                break;
-
-            case HASH:
-                jedis.hmset(description.getAdditionalKey(), keyValues);
-                if (this.options.expireIntervalSec > 0) {
-                    jedis.expire(description.getAdditionalKey(), this.options.expireIntervalSec);
-                }
-                break;
-
-            default:
-                throw new IllegalArgumentException("Cannot process such data type: " + description.getDataType());
-            }
-
-        } finally {
-            if (jedis != null) {
-                jedis.close();
-            }
-        }
-    }
-
-    private String[] buildKeyValuesList(Map<String, String> keyValues) {
-        String[] keyValueLists = new String[keyValues.size() * 2];
-
-        int idx = 0;
-        for (Map.Entry<String, String> kvEntry : keyValues.entrySet()) {
-            keyValueLists[idx++] = kvEntry.getKey();
-            keyValueLists[idx++] = kvEntry.getValue();
-        }
-
-        return keyValueLists;
     }
 }
