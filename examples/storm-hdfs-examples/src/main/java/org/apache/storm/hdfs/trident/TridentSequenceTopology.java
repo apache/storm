@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.trident;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
@@ -40,10 +40,12 @@ import org.yaml.snakeyaml.Yaml;
 
 public class TridentSequenceTopology {
 
-    public static StormTopology buildTopology(String hdfsUrl){
+    public static StormTopology buildTopology(String hdfsUrl) {
         FixedBatchSpout spout = new FixedBatchSpout(new Fields("sentence", "key"), 1000, new Values("the cow jumped over the moon", 1l),
-                new Values("the man went to the store and bought some candy", 2l), new Values("four score and seven years ago", 3l),
-                new Values("how many apples can you eat", 4l), new Values("to be or not to be the person", 5l));
+                                                    new Values("the man went to the store and bought some candy", 2l),
+                                                    new Values("four score and seven years ago", 3l),
+                                                    new Values("how many apples can you eat", 4l),
+                                                    new Values("to be or not to be the person", 5l));
         spout.setCycle(true);
 
         TridentTopology topology = new TridentTopology();
@@ -52,23 +54,23 @@ public class TridentSequenceTopology {
         Fields hdfsFields = new Fields("sentence", "key");
 
         FileNameFormat fileNameFormat = new DefaultFileNameFormat()
-                .withPath("/tmp/trident")
-                .withPrefix("trident")
-                .withExtension(".seq");
+            .withPath("/tmp/trident")
+            .withPrefix("trident")
+            .withExtension(".seq");
 
         FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(5.0f, FileSizeRotationPolicy.Units.MB);
 
         HdfsState.Options seqOpts = new HdfsState.SequenceFileOptions()
-                .withFileNameFormat(fileNameFormat)
-                .withSequenceFormat(new DefaultSequenceFormat("key", "sentence"))
-                .withRotationPolicy(rotationPolicy)
-                .withFsUrl(hdfsUrl)
-                .withConfigKey("hdfs.config")
-                .addRotationAction(new MoveFileAction().toDestination("/tmp/dest2/"));
+            .withFileNameFormat(fileNameFormat)
+            .withSequenceFormat(new DefaultSequenceFormat("key", "sentence"))
+            .withRotationPolicy(rotationPolicy)
+            .withFsUrl(hdfsUrl)
+            .withConfigKey("hdfs.config")
+            .addRotationAction(new MoveFileAction().toDestination("/tmp/dest2/"));
         StateFactory factory = new HdfsStateFactory().withOptions(seqOpts);
 
         TridentState state = stream
-                .partitionPersist(factory, hdfsFields, new HdfsUpdater(), new Fields());
+            .partitionPersist(factory, hdfsFields, new HdfsUpdater(), new Fields());
 
         return topology.build();
     }
