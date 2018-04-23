@@ -15,19 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.serialization;
 
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.testing.TestSerObject;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 // FIXME: it should be moved to storm-client when serialization-test.clj can be removed
 public class SerializationTest {

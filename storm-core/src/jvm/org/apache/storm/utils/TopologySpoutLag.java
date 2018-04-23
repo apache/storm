@@ -1,23 +1,23 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.utils;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
@@ -28,27 +28,20 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class TopologySpoutLag {
     // FIXME: This class can be moved to webapp once UI porting is done.
 
     private static final String SPOUT_ID = "spoutId";
-    private static final String SPOUT_TYPE= "spoutType";
+    private static final String SPOUT_TYPE = "spoutType";
     private static final String SPOUT_LAG_RESULT = "spoutLagResult";
     private static final String ERROR_INFO = "errorInfo";
     private final static Logger logger = LoggerFactory.getLogger(TopologySpoutLag.class);
 
-    public static Map<String, Map<String, Object>> lag (StormTopology stormTopology, Map<String, Object> topologyConf) {
+    public static Map<String, Map<String, Object>> lag(StormTopology stormTopology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         Map<String, SpoutSpec> spouts = stormTopology.get_spouts();
         String className = null;
-        for (Map.Entry<String, SpoutSpec> spout: spouts.entrySet()) {
+        for (Map.Entry<String, SpoutSpec> spout : spouts.entrySet()) {
             try {
                 SpoutSpec spoutSpec = spout.getValue();
                 ComponentObject componentObject = spoutSpec.get_spout_object();
@@ -82,18 +75,18 @@ public class TopologySpoutLag {
         }
     }
 
-    private static List<String> getCommandLineOptionsForNewKafkaSpout (Map<String, Object> jsonConf) {
+    private static List<String> getCommandLineOptionsForNewKafkaSpout(Map<String, Object> jsonConf) {
         logger.debug("json configuration: {}", jsonConf);
 
         List<String> commands = new ArrayList<>();
         String configKeyPrefix = "config.";
         commands.add("-t");
-        commands.add((String)jsonConf.get(configKeyPrefix + "topics"));
+        commands.add((String) jsonConf.get(configKeyPrefix + "topics"));
         commands.add("-g");
-        commands.add((String)jsonConf.get(configKeyPrefix + "groupid"));
+        commands.add((String) jsonConf.get(configKeyPrefix + "groupid"));
         commands.add("-b");
-        commands.add((String)jsonConf.get(configKeyPrefix + "bootstrap.servers"));
-        String securityProtocol = (String)jsonConf.get(configKeyPrefix + "security.protocol");
+        commands.add((String) jsonConf.get(configKeyPrefix + "bootstrap.servers"));
+        String securityProtocol = (String) jsonConf.get(configKeyPrefix + "security.protocol");
         if (securityProtocol != null && !securityProtocol.isEmpty()) {
             commands.add("-s");
             commands.add(securityProtocol);
@@ -101,21 +94,21 @@ public class TopologySpoutLag {
         return commands;
     }
 
-    private static List<String> getCommandLineOptionsForOldKafkaSpout (Map<String, Object> jsonConf, Map<String, Object> topologyConf) {
+    private static List<String> getCommandLineOptionsForOldKafkaSpout(Map<String, Object> jsonConf, Map<String, Object> topologyConf) {
         logger.debug("json configuration: {}", jsonConf);
 
         List<String> commands = new ArrayList<>();
         String configKeyPrefix = "config.";
         commands.add("-o");
         commands.add("-t");
-        commands.add((String)jsonConf.get(configKeyPrefix + "topics"));
+        commands.add((String) jsonConf.get(configKeyPrefix + "topics"));
         commands.add("-n");
-        commands.add((String)jsonConf.get(configKeyPrefix + "zkRoot"));
-        String zkServers = (String)jsonConf.get(configKeyPrefix + "zkServers");
+        commands.add((String) jsonConf.get(configKeyPrefix + "zkRoot"));
+        String zkServers = (String) jsonConf.get(configKeyPrefix + "zkServers");
         if (zkServers == null || zkServers.isEmpty()) {
             StringBuilder zkServersBuilder = new StringBuilder();
             Integer zkPort = ((Number) topologyConf.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
-            for (String zkServer: (List<String>) topologyConf.get(Config.STORM_ZOOKEEPER_SERVERS)) {
+            for (String zkServer : (List<String>) topologyConf.get(Config.STORM_ZOOKEEPER_SERVERS)) {
                 zkServersBuilder.append(zkServer + ":" + zkPort + ",");
             }
             zkServers = zkServersBuilder.toString();
@@ -124,12 +117,12 @@ public class TopologySpoutLag {
         commands.add(zkServers);
         if (jsonConf.get(configKeyPrefix + "leaders") != null) {
             commands.add("-p");
-            commands.add((String)jsonConf.get(configKeyPrefix + "partitions"));
+            commands.add((String) jsonConf.get(configKeyPrefix + "partitions"));
             commands.add("-l");
-            commands.add((String)jsonConf.get(configKeyPrefix + "leaders"));
+            commands.add((String) jsonConf.get(configKeyPrefix + "leaders"));
         } else {
             commands.add("-r");
-            commands.add((String)jsonConf.get(configKeyPrefix + "zkNodeBrokers"));
+            commands.add((String) jsonConf.get(configKeyPrefix + "zkNodeBrokers"));
             Boolean isWildCard = (Boolean) topologyConf.get("kafka.topic.wildcard.match");
             if (isWildCard != null && isWildCard.booleanValue()) {
                 commands.add("-w");
@@ -138,7 +131,8 @@ public class TopologySpoutLag {
         return commands;
     }
 
-    private static Map<String, Object> getLagResultForKafka (String spoutId, SpoutSpec spoutSpec, Map<String, Object> topologyConf, boolean old) throws IOException {
+    private static Map<String, Object> getLagResultForKafka(String spoutId, SpoutSpec spoutSpec, Map<String, Object> topologyConf,
+                                                            boolean old) throws IOException {
         ComponentCommon componentCommon = spoutSpec.get_common();
         String json = componentCommon.get_json_conf();
         Map<String, Object> result = null;
@@ -156,7 +150,8 @@ public class TopologySpoutLag {
             } catch (ParseException e) {
                 throw new IOException(e);
             }
-            commands.addAll(old ? getCommandLineOptionsForOldKafkaSpout(jsonMap, topologyConf) : getCommandLineOptionsForNewKafkaSpout(jsonMap));
+            commands.addAll(
+                old ? getCommandLineOptionsForOldKafkaSpout(jsonMap, topologyConf) : getCommandLineOptionsForNewKafkaSpout(jsonMap));
 
             logger.debug("Command to run: {}", commands);
 
@@ -187,11 +182,13 @@ public class TopologySpoutLag {
         return kafkaSpoutLagInfo;
     }
 
-    private static Map<String, Object> getLagResultForNewKafkaSpout (String spoutId, SpoutSpec spoutSpec, Map<String, Object> topologyConf) throws IOException {
+    private static Map<String, Object> getLagResultForNewKafkaSpout(String spoutId, SpoutSpec spoutSpec,
+                                                                    Map<String, Object> topologyConf) throws IOException {
         return getLagResultForKafka(spoutId, spoutSpec, topologyConf, false);
     }
 
-    private static Map<String, Object> getLagResultForOldKafkaSpout (String spoutId, SpoutSpec spoutSpec, Map<String, Object> topologyConf) throws IOException {
+    private static Map<String, Object> getLagResultForOldKafkaSpout(String spoutId, SpoutSpec spoutSpec,
+                                                                    Map<String, Object> topologyConf) throws IOException {
         return getLagResultForKafka(spoutId, spoutSpec, topologyConf, true);
     }
 }
