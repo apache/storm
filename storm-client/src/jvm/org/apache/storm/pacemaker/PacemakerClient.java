@@ -56,6 +56,7 @@ public class PacemakerClient implements ISaslClient {
     private HBMessage messages[];
     private LinkedBlockingQueue<Integer> availableMessageSlots;
     private ThriftNettyClientCodec.AuthMethod authMethod;
+    private static final int maxRetries = 10;
 
     private static Timer timer = new Timer(true);
 
@@ -169,7 +170,7 @@ public class PacemakerClient implements ISaslClient {
         return secret;
     }
 
-    public HBMessage send(HBMessage m) throws InterruptedException {
+    public HBMessage send(HBMessage m) throws PacemakerConnectionException, InterruptedException {
         LOG.debug("Sending message: {}", m.toString());
 
         int next = availableMessageSlots.take();
@@ -177,7 +178,8 @@ public class PacemakerClient implements ISaslClient {
             m.set_message_id(next);
             messages[next] = m;
             LOG.debug("Put message in slot: {}", Integer.toString(next));
-            do {
+            int retry = maxRetries;
+            while (true) {
                 try {
                     waitUntilReady();
                     Channel channel = channelRef.get();
@@ -185,23 +187,26 @@ public class PacemakerClient implements ISaslClient {
                         channel.write(m);
                         m.wait(1000);
                     }
-                } catch (PacemakerConnectionException exp) {
-                    LOG.error("error attempting to write to a channel {}", exp);
+                    if (messages[next] != m && messages[next] != null) {
+                        // messages[next] == null can happen if we lost the connection and subsequently reconnected or timed out.
+                        HBMessage ret = messages[next];
+                        messages[next] = null;
+                        LOG.debug("Got Response: {}", ret);
+                        return ret;
+                    }
+                } catch (PacemakerConnectionException e) {
+                    if (retry <= 0) {
+                        throw e;
+                    }
+                    LOG.error("error attempting to write to a channel {}.", e.getMessage());
                 }
-            } while (messages[next] == m);
+                if (retry <= 0) {
+                    throw new PacemakerConnectionException("couldn't get response after " + maxRetries + " attempts.");
+                }
+                retry--;
+                LOG.error("Not getting response or getting null response. Making {} more attempts.", retry);
+            }
         }
-
-        HBMessage ret = messages[next];
-        if (ret == null) {
-            // This can happen if we lost the connection and subsequently reconnected or timed out.
-            LOG.warn("Got null response. This can happen if we lost the connection and subsequently reconnected or timed out. "
-                    + "Resending message...");
-            ret = send(m);
-        }
-        messages[next] = null;
-        LOG.debug("Got Response: {}", ret);
-        return ret;
-
     }
 
     private void waitUntilReady() throws PacemakerConnectionException, InterruptedException {

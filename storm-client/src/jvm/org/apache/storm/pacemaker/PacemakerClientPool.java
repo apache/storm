@@ -54,17 +54,25 @@ public class PacemakerClientPool {
         }
     }
     
-    public HBMessage send(HBMessage m) throws InterruptedException {
+    public HBMessage send(HBMessage m) throws PacemakerConnectionException, InterruptedException {
+        try {
             return getWriteClient().send(m);
+        } catch (PacemakerConnectionException e) {
+            rotateClients();
+            throw e;
+        }
     }
 
     public List<HBMessage> sendAll(HBMessage m) throws PacemakerConnectionException, InterruptedException {
         List<HBMessage> responses = new ArrayList<HBMessage>();
         LOG.debug("Using servers: {}", servers);
         for(String s : servers) {
-            HBMessage response = getClientForServer(s).send(m);
-            responses.add(response);
-
+            try {
+                HBMessage response = getClientForServer(s).send(m);
+                responses.add(response);
+            } catch (PacemakerConnectionException e) {
+                LOG.warn("Failed to connect to the pacemaker server {}", s);
+            }
         }
         if(responses.size() == 0) {
             throw new PacemakerConnectionException("Failed to connect to any Pacemaker.");
@@ -77,6 +85,17 @@ public class PacemakerClientPool {
             client.shutdown();
             client.close();
         }
+    }
+
+    private void rotateClients() {
+        PacemakerClient c = getWriteClient();
+        String server = servers.peek();
+        // Servers should be rotated **BEFORE** the old client is removed from clientForServer
+        // or a race with getWriteClient() could cause it to be put back in the map.
+        servers.add(servers.remove());
+        clientForServer.remove(server);
+        c.shutdown();
+        c.close();
     }
 
     private PacemakerClient getWriteClient() {
