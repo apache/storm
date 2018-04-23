@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import org.junit.After;
@@ -25,23 +26,23 @@ import static org.junit.Assert.assertTrue;
 
 public class TestEventData {
 
-  @Before
-  public void setUp() throws Exception {
-  }
+    @Before
+    public void setUp() throws Exception {
+    }
 
-  @After
-  public void tearDown() throws Exception {
-  }
+    @After
+    public void tearDown() throws Exception {
+    }
 
-  @Test
-  public void testEventDataComparision() {
+    @Test
+    public void testEventDataComparision() {
 
-	MessageId messageId1 = MessageId.create(null, "3", 1);
-	EventDataWrap eventData1 = EventDataWrap.create(null, messageId1);
+        MessageId messageId1 = MessageId.create(null, "3", 1);
+        EventDataWrap eventData1 = EventDataWrap.create(null, messageId1);
 
-	MessageId messageId2 = MessageId.create(null, "13", 2);
-	EventDataWrap eventData2 = EventDataWrap.create(null, messageId2);
+        MessageId messageId2 = MessageId.create(null, "13", 2);
+        EventDataWrap eventData2 = EventDataWrap.create(null, messageId2);
 
-	assertTrue(eventData2.compareTo(eventData1) > 0);
-  }
+        assertTrue(eventData2.compareTo(eventData1) > 0);
+    }
 }

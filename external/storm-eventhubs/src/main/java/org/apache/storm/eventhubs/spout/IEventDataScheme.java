@@ -15,30 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import com.microsoft.azure.eventhubs.EventData;
-import org.apache.storm.tuple.Fields;
-
 import java.io.Serializable;
 import java.util.List;
+import org.apache.storm.tuple.Fields;
 
 public interface IEventDataScheme extends Serializable {
 
-  /**
-   * Deserialize an AMQP Message into a Tuple.
-   *
-   * @see #getOutputFields() for the list of fields the tuple will contain.
-   *
-   * @param eventData The EventData to Deserialize.
-   * @return A tuple containing the deserialized fields of the message.
-   */
-  List<Object> deserialize(EventData eventData);
+    /**
+     * Deserialize an AMQP Message into a Tuple.
+     *
+     * @param eventData The EventData to Deserialize.
+     * @return A tuple containing the deserialized fields of the message.
+     *
+     * @see #getOutputFields() for the list of fields the tuple will contain.
+     */
+    List<Object> deserialize(EventData eventData);
 
-  /**
-   * Retrieve the Fields that are present on tuples created by this object.
-   *
-   * @return The Fields that are present on tuples created by this object.
-   */
-  Fields getOutputFields();
+    /**
+     * Retrieve the Fields that are present on tuples created by this object.
+     *
+     * @return The Fields that are present on tuples created by this object.
+     */
+    Fields getOutputFields();
 }
