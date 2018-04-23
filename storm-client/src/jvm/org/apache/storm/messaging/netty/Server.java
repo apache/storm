@@ -97,6 +97,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         bootstrap.setOption("child.tcpNoDelay", true);
         bootstrap.setOption("child.receiveBufferSize", buffer_size);
         bootstrap.setOption("child.keepAlive", true);
+        bootstrap.setOption("reuseAddress", true);
         bootstrap.setOption("backlog", backlog);
 
         // Set up the pipeline factory.
