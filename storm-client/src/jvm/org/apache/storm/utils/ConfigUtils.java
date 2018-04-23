@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.utils;
@@ -28,10 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import java.util.function.BooleanSupplier;
-
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
@@ -48,9 +40,9 @@ public class ConfigUtils {
     private static ConfigUtils _instance = new ConfigUtils();
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out
-     * delegated methods, provide an instance of a subclass that overrides the
-     * implementation of the delegated method.
+     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * overrides the implementation of the delegated method.
+     *
      * @param u a ConfigUtils instance
      * @return the previously set instance
      */
@@ -76,6 +68,7 @@ public class ConfigUtils {
 
     /**
      * Returns a Collection of file names found under the given directory.
+     *
      * @param dir a directory
      * @return the Collection of file names
      */
@@ -86,6 +79,7 @@ public class ConfigUtils {
 
     /**
      * Returns a Collection of files found under the given directory.
+     *
      * @param dir a directory
      * @return the Collection of file names
      */
@@ -93,7 +87,7 @@ public class ConfigUtils {
         Collection<File> ret = new HashSet<>();
         File[] files = new File(dir).listFiles();
         if (files != null) {
-            for (File f: files) {
+            for (File f : files) {
                 ret.add(f);
             }
         }
@@ -257,7 +251,7 @@ public class ConfigUtils {
     }
 
     public static String workerArtifactsPidPath(Map<String, Object> conf, String id, Integer port) {
-        return (workerArtifactsRoot(conf, id, port) + FILE_SEPARATOR +  "worker.pid");
+        return (workerArtifactsRoot(conf, id, port) + FILE_SEPARATOR + "worker.pid");
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
@@ -271,7 +265,8 @@ public class ConfigUtils {
         return ret;
     }
 
-    public static Map<String, Object> overrideLoginConfigWithSystemProperty(Map<String, Object> conf) { // note that we delete the return value
+    public static Map<String, Object> overrideLoginConfigWithSystemProperty(
+        Map<String, Object> conf) { // note that we delete the return value
         String loginConfFile = System.getProperty("java.security.auth.login.config");
         if (loginConfFile != null) {
             conf.put("java.security.auth.login.config", loginConfFile);
@@ -296,7 +291,9 @@ public class ConfigUtils {
     }
 
     public static String getIdFromBlobKey(String key) {
-        if (key == null) return null;
+        if (key == null) {
+            return null;
+        }
         final String STORM_JAR_SUFFIX = "-stormjar.jar";
         final String STORM_CODE_SUFFIX = "-stormcode.ser";
         final String STORM_CONF_SUFFIX = "-stormconf.ser";
@@ -362,11 +359,13 @@ public class ConfigUtils {
 
     /**
      * Get the given config value as a List &lt;String&gt;, if possible.
+     *
      * @param name - the config key
      * @param conf - the config map
      * @return - the config value converted to a List &lt;String&gt; if found, otherwise null.
+     *
      * @throws IllegalArgumentException if conf is null
-     * @throws NullPointerException if name is null and the conf map doesn't support null keys
+     * @throws NullPointerException     if name is null and the conf map doesn't support null keys
      */
     public static List<String> getValueAsList(String name, Map<String, Object> conf) {
         if (null == conf) {
@@ -378,9 +377,9 @@ public class ConfigUtils {
             listValue = null;
         } else if (value instanceof Collection) {
             listValue = ((Collection<?>) value)
-                    .stream()
-                    .map(ObjectReader::getString)
-                    .collect(Collectors.toList());
+                .stream()
+                .map(ObjectReader::getString)
+                .collect(Collectors.toList());
         } else {
             listValue = Arrays.asList(ObjectReader.getString(value).split("\\s+"));
         }
@@ -400,7 +399,7 @@ public class ConfigUtils {
     }
 
     public String workerArtifactsRootImpl(Map<String, Object> conf) {
-        String artifactsDir = (String)conf.get(Config.STORM_WORKERS_ARTIFACTS_DIR);
+        String artifactsDir = (String) conf.get(Config.STORM_WORKERS_ARTIFACTS_DIR);
         if (artifactsDir == null) {
             return (getLogDir() + FILE_SEPARATOR + "workers-artifacts");
         } else {

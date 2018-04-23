@@ -1,25 +1,25 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.metric;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.metric.util.DataPointExpander;
@@ -30,24 +30,16 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-
 public class MetricsConsumerBolt implements IBolt {
     public static final Logger LOG = LoggerFactory.getLogger(MetricsConsumerBolt.class);
-
+    private final int _maxRetainMetricTuples;
+    private final Predicate<IMetricsConsumer.DataPoint> _filterPredicate;
+    private final DataPointExpander _expander;
+    private final BlockingQueue<MetricsTask> _taskQueue;
     IMetricsConsumer _metricsConsumer;
     String _consumerClassName;
     OutputCollector _collector;
     Object _registrationArgument;
-    private final int _maxRetainMetricTuples;
-    private final Predicate<IMetricsConsumer.DataPoint> _filterPredicate;
-    private final DataPointExpander _expander;
-
-    private final BlockingQueue<MetricsTask> _taskQueue;
     private Thread _taskExecuteThread;
     private volatile boolean _running = true;
 
@@ -70,10 +62,10 @@ public class MetricsConsumerBolt implements IBolt {
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         try {
-            _metricsConsumer = (IMetricsConsumer)Class.forName(_consumerClassName).newInstance();
+            _metricsConsumer = (IMetricsConsumer) Class.forName(_consumerClassName).newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Could not instantiate a class listed in config under section " +
-                Config.TOPOLOGY_METRICS_CONSUMER_REGISTER + " with fully qualified name " + _consumerClassName, e);
+                                       Config.TOPOLOGY_METRICS_CONSUMER_REGISTER + " with fully qualified name " + _consumerClassName, e);
         }
         _metricsConsumer.prepare(topoConf, _registrationArgument, context, collector);
         _collector = collector;
@@ -81,7 +73,7 @@ public class MetricsConsumerBolt implements IBolt {
         _taskExecuteThread.setDaemon(true);
         _taskExecuteThread.start();
     }
-    
+
     @Override
     public void execute(Tuple input) {
         IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) input.getValue(0);
@@ -90,7 +82,7 @@ public class MetricsConsumerBolt implements IBolt {
         List<IMetricsConsumer.DataPoint> filteredDataPoints = getFilteredDataPoints(expandedDataPoints);
         MetricsTask metricsTask = new MetricsTask(taskInfo, filteredDataPoints);
 
-        while (! _taskQueue.offer(metricsTask)) {
+        while (!_taskQueue.offer(metricsTask)) {
             _taskQueue.poll();
         }
 

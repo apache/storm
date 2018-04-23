@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
@@ -58,7 +57,7 @@ public class Thrift {
 
     private static StormTopology._Fields[] STORM_TOPOLOGY_FIELDS = null;
     private static StormTopology._Fields[] SPOUT_FIELDS =
-            { StormTopology._Fields.SPOUTS, StormTopology._Fields.STATE_SPOUTS };
+        { StormTopology._Fields.SPOUTS, StormTopology._Fields.STATE_SPOUTS };
 
     static {
         Set<_Fields> keys = StormTopology.metaDataMap.keySet();
@@ -71,61 +70,6 @@ public class Thrift {
 
     public static StormTopology._Fields[] getSpoutFields() {
         return SPOUT_FIELDS;
-    }
-
-    public static class SpoutDetails {
-        private IRichSpout spout;
-        private Integer parallelism;
-        private Map<String, Object> conf;
-
-        public SpoutDetails(IRichSpout spout, Integer parallelism, Map<String, Object> conf) {
-            this.spout = spout;
-            this.parallelism = parallelism;
-            this.conf = conf;
-        }
-
-        public IRichSpout getSpout() {
-            return spout;
-        }
-
-        public Integer getParallelism() {
-            return parallelism;
-        }
-
-        public Map<String, Object> getConf() {
-            return conf;
-        }
-    }
-
-    public static class BoltDetails {
-        private Object bolt;
-        private Map<String, Object> conf;
-        private Integer parallelism;
-        private Map<GlobalStreamId, Grouping> inputs;
-
-        public BoltDetails(Object bolt, Map<String, Object> conf, Integer parallelism,
-                           Map<GlobalStreamId, Grouping> inputs) {
-            this.bolt = bolt;
-            this.conf = conf;
-            this.parallelism = parallelism;
-            this.inputs = inputs;
-        }
-
-        public Object getBolt() {
-            return bolt;
-        }
-
-        public Map<String, Object> getConf() {
-            return conf;
-        }
-
-        public Map<GlobalStreamId, Grouping> getInputs() {
-            return inputs;
-        }
-
-        public Integer getParallelism() {
-            return parallelism;
-        }
     }
 
     public static StreamInfo directOutputFields(List<String> fields) {
@@ -249,7 +193,7 @@ public class Thrift {
     }
 
     public static ComponentCommon prepareComponentCommon(Map<GlobalStreamId, Grouping> inputs, Map<String,
-            StreamInfo> outputs, Integer parallelismHint) {
+        StreamInfo> outputs, Integer parallelismHint) {
         return prepareComponentCommon(inputs, outputs, parallelismHint, null);
     }
 
@@ -260,7 +204,7 @@ public class Thrift {
         if (inputs != null && !inputs.isEmpty()) {
             mappedInputs.putAll(inputs);
         }
-        if (outputs !=null && !outputs.isEmpty()) {
+        if (outputs != null && !outputs.isEmpty()) {
             mappedOutputs.putAll(outputs);
         }
         ComponentCommon component = new ComponentCommon(mappedInputs, mappedOutputs);
@@ -275,7 +219,7 @@ public class Thrift {
 
     public static SpoutSpec prepareSerializedSpoutDetails(IRichSpout spout, Map<String, StreamInfo> outputs) {
         return new SpoutSpec(ComponentObject.serialized_java
-                (Utils.javaSerialize(spout)), prepareComponentCommon(new HashMap<>(), outputs, null, null));
+            (Utils.javaSerialize(spout)), prepareComponentCommon(new HashMap<>(), outputs, null, null));
     }
 
     public static Bolt prepareSerializedBoltDetails(Map<GlobalStreamId, Grouping> inputs, IBolt bolt, Map<String, StreamInfo> outputs,
@@ -318,7 +262,7 @@ public class Thrift {
     }
 
     private static void addInputs(BoltDeclarer declarer, Map<GlobalStreamId, Grouping> inputs) {
-        for(Entry<GlobalStreamId, Grouping> entry : inputs.entrySet()) {
+        for (Entry<GlobalStreamId, Grouping> entry : inputs.entrySet()) {
             declarer.grouping(entry.getKey(), entry.getValue());
         }
     }
@@ -336,13 +280,68 @@ public class Thrift {
             BoltDetails spec = entry.getValue();
             BoltDeclarer boltDeclarer = null;
             if (spec.bolt instanceof IRichBolt) {
-                boltDeclarer = builder.setBolt(spoutId, (IRichBolt)spec.getBolt(), spec.getParallelism());
+                boltDeclarer = builder.setBolt(spoutId, (IRichBolt) spec.getBolt(), spec.getParallelism());
             } else {
-                boltDeclarer = builder.setBolt(spoutId, (IBasicBolt)spec.getBolt(), spec.getParallelism());
+                boltDeclarer = builder.setBolt(spoutId, (IBasicBolt) spec.getBolt(), spec.getParallelism());
             }
             boltDeclarer.addConfigurations(spec.getConf());
             addInputs(boltDeclarer, spec.getInputs());
         }
         return builder.createTopology();
+    }
+
+    public static class SpoutDetails {
+        private IRichSpout spout;
+        private Integer parallelism;
+        private Map<String, Object> conf;
+
+        public SpoutDetails(IRichSpout spout, Integer parallelism, Map<String, Object> conf) {
+            this.spout = spout;
+            this.parallelism = parallelism;
+            this.conf = conf;
+        }
+
+        public IRichSpout getSpout() {
+            return spout;
+        }
+
+        public Integer getParallelism() {
+            return parallelism;
+        }
+
+        public Map<String, Object> getConf() {
+            return conf;
+        }
+    }
+
+    public static class BoltDetails {
+        private Object bolt;
+        private Map<String, Object> conf;
+        private Integer parallelism;
+        private Map<GlobalStreamId, Grouping> inputs;
+
+        public BoltDetails(Object bolt, Map<String, Object> conf, Integer parallelism,
+                           Map<GlobalStreamId, Grouping> inputs) {
+            this.bolt = bolt;
+            this.conf = conf;
+            this.parallelism = parallelism;
+            this.inputs = inputs;
+        }
+
+        public Object getBolt() {
+            return bolt;
+        }
+
+        public Map<String, Object> getConf() {
+            return conf;
+        }
+
+        public Map<GlobalStreamId, Grouping> getInputs() {
+            return inputs;
+        }
+
+        public Integer getParallelism() {
+            return parallelism;
+        }
     }
 }

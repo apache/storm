@@ -1,32 +1,26 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.grouping;
 
 import com.google.common.collect.Lists;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.junit.Test;
-
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -100,7 +94,7 @@ public class ShuffleGroupingTest {
         grouper.prepare(context, null, availableTaskIds);
 
         List<Callable<int[]>> threadTasks = Lists.newArrayList();
-        for (int x=0; x < numThreads; x++) {
+        for (int x = 0; x < numThreads; x++) {
             Callable<int[]> threadTask = new Callable<int[]>() {
                 @Override
                 public int[] call() throws Exception {
@@ -130,7 +124,7 @@ public class ShuffleGroupingTest {
 
         // Wait for all tasks to complete
         int[] taskIdTotals = new int[numTasks];
-        for (Future taskResult: taskResults) {
+        for (Future taskResult : taskResults) {
             while (!taskResult.isDone()) {
                 Thread.sleep(1000);
             }

@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
@@ -36,27 +35,25 @@ import org.apache.storm.utils.Utils;
 import org.yaml.snakeyaml.Yaml;
 
 /**
- * Extensions of this class takes a
- * reference to one or more configuration files. The main() method should call
- * ConfigurableTopology.start() and it must instantiate a TopologyBuilder in the
- * run() method.
- * 
+ * Extensions of this class takes a reference to one or more configuration files. The main() method should call ConfigurableTopology.start()
+ * and it must instantiate a TopologyBuilder in the run() method.
+ *
  * <pre>
  * {
  *    public class MyTopology extends ConfigurableTopology {
  *
-  *   public static void main(String[] args) throws Exception {
-  *       ConfigurableTopology.start(new MyTopology(), args);
-  *   }
-  *
-  *   &#64;Override
-  *   protected int run(String[] args) {
-  *       TopologyBuilder builder = new TopologyBuilder();
-  *
-  *       // build topology as usual
-  *    
-  *       return submit("crawl", conf, builder);
-  *   }
+ *   public static void main(String[] args) throws Exception {
+ *       ConfigurableTopology.start(new MyTopology(), args);
+ *   }
+ *
+ *   &#64;Override
+ *   protected int run(String[] args) {
+ *       TopologyBuilder builder = new TopologyBuilder();
+ *
+ *       // build topology as usual
+ *
+ *       return submit("crawl", conf, builder);
+ *   }
  * }
  * </pre>
  **/
@@ -73,26 +70,54 @@ public abstract class ConfigurableTopology {
         }
     }
 
+    public static Config loadConf(String resource, Config conf)
+        throws FileNotFoundException {
+        Yaml yaml = new Yaml();
+        Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(
+            new FileInputStream(resource), Charset.defaultCharset()));
+        if (ret == null) {
+            ret = new HashMap<>();
+        }
+        // If the config consists of a single key 'config', its values are used
+        // instead. This means that the same config files can be used with Flux
+        // and the ConfigurableTopology.
+        else {
+            if (ret.size() == 1) {
+                Object confNode = ret.get("config");
+                if (confNode != null && confNode instanceof Map) {
+                    ret = (Map<String, Object>) ret;
+                }
+            }
+        }
+        conf.putAll(ret);
+        return conf;
+    }
+
     protected Config getConf() {
         return conf;
     }
 
     protected abstract int run(String args[]) throws Exception;
 
-    /** Submits the topology with the name taken from the configuration **/
+    /**
+     * Submits the topology with the name taken from the configuration
+     **/
     protected int submit(Config conf, TopologyBuilder builder) {
         String name = (String) Utils.get(conf, Config.TOPOLOGY_NAME, null);
-        if (StringUtils.isBlank(name))
+        if (StringUtils.isBlank(name)) {
             throw new RuntimeException(
-                    "No value found for " + Config.TOPOLOGY_NAME);
+                "No value found for " + Config.TOPOLOGY_NAME);
+        }
         return submit(name, conf, builder);
     }
 
-    /** Submits the topology under a specific name **/
+    /**
+     * Submits the topology under a specific name
+     **/
     protected int submit(String name, Config conf, TopologyBuilder builder) {
         try {
             StormSubmitter.submitTopology(name, conf,
-                    builder.createTopology());
+                                          builder.createTopology());
         } catch (Exception e) {
             e.printStackTrace();
             return -1;
@@ -124,28 +149,5 @@ public abstract class ConfigurableTopology {
         }
 
         return newArgs.toArray(new String[newArgs.size()]);
-    }
-
-    public static Config loadConf(String resource, Config conf)
-            throws FileNotFoundException {
-        Yaml yaml = new Yaml();
-        Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(
-                new FileInputStream(resource), Charset.defaultCharset()));
-        if (ret == null) {
-            ret = new HashMap<>();
-        }
-        // If the config consists of a single key 'config', its values are used
-        // instead. This means that the same config files can be used with Flux
-        // and the ConfigurableTopology.
-        else {
-            if (ret.size() == 1) {
-                Object confNode = ret.get("config");
-                if (confNode != null && confNode instanceof Map) {
-                    ret = (Map<String, Object>) ret;
-                }
-            }
-        }
-        conf.putAll(ret);
-        return conf;
     }
 }

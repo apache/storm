@@ -1,37 +1,38 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.security.auth.authorizer;
 
-import org.apache.storm.Config;
-import org.apache.storm.security.auth.*;
 import com.google.common.collect.ImmutableSet;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.storm.Config;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IAuthorizer;
+import org.apache.storm.security.auth.IGroupMappingServiceProvider;
+import org.apache.storm.security.auth.IPrincipalToLocal;
+import org.apache.storm.security.auth.ReqContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.*;
-
 
 public class ImpersonationAuthorizer implements IAuthorizer {
-    private static final Logger LOG = LoggerFactory.getLogger(ImpersonationAuthorizer.class);
     protected static final String WILD_CARD = "*";
-
+    private static final Logger LOG = LoggerFactory.getLogger(ImpersonationAuthorizer.class);
     protected Map<String, ImpersonationACL> userImpersonationACL;
     protected IPrincipalToLocal _ptol;
     protected IGroupMappingServiceProvider _groupMappingProvider;
@@ -40,7 +41,8 @@ public class ImpersonationAuthorizer implements IAuthorizer {
     public void prepare(Map<String, Object> conf) {
         userImpersonationACL = new HashMap<>();
 
-        Map<String, Map<String, List<String>>> userToHostAndGroup = (Map<String, Map<String, List<String>>>) conf.get(Config.NIMBUS_IMPERSONATION_ACL);
+        Map<String, Map<String, List<String>>> userToHostAndGroup =
+            (Map<String, Map<String, List<String>>>) conf.get(Config.NIMBUS_IMPERSONATION_ACL);
 
         if (userToHostAndGroup != null) {
             for (Map.Entry<String, Map<String, List<String>>> entry : userToHostAndGroup.entrySet()) {
@@ -68,15 +70,17 @@ public class ImpersonationAuthorizer implements IAuthorizer {
         InetAddress remoteAddress = context.remoteAddress();
 
         LOG.info("user = {}, principal = {} is attempting to impersonate user = {} for operation = {} from host = {}",
-                impersonatingUser, impersonatingPrincipal, userBeingImpersonated, operation, remoteAddress);
+                 impersonatingUser, impersonatingPrincipal, userBeingImpersonated, operation, remoteAddress);
 
         /**
          * no config is present for impersonating principal or user, do not permit impersonation.
          */
         if (!userImpersonationACL.containsKey(impersonatingPrincipal) && !userImpersonationACL.containsKey(impersonatingUser)) {
-            LOG.info("user = {}, principal = {} is trying to impersonate user {}, but config {} does not have entry for impersonating user or principal." +
-                    "Please see SECURITY.MD to learn how to configure users for impersonation."
-                    , impersonatingUser, impersonatingPrincipal, userBeingImpersonated, Config.NIMBUS_IMPERSONATION_ACL);
+            LOG.info(
+                "user = {}, principal = {} is trying to impersonate user {}, but config {} does not have entry for impersonating user or " +
+                "principal." +
+                "Please see SECURITY.MD to learn how to configure users for impersonation."
+                , impersonatingUser, impersonatingPrincipal, userBeingImpersonated, Config.NIMBUS_IMPERSONATION_ACL);
             return false;
         }
 
@@ -97,17 +101,17 @@ public class ImpersonationAuthorizer implements IAuthorizer {
         }
 
         LOG.debug("user = {}, principal = {} is allowed to impersonate groups = {} from hosts = {} ",
-                impersonatingUser, impersonatingPrincipal, authorizedGroups, authorizedHosts);
+                  impersonatingUser, impersonatingPrincipal, authorizedGroups, authorizedHosts);
 
         if (!isAllowedToImpersonateFromHost(authorizedHosts, remoteAddress)) {
             LOG.info("user = {}, principal = {} is not allowed to impersonate from host {} ",
-                    impersonatingUser, impersonatingPrincipal, remoteAddress);
+                     impersonatingUser, impersonatingPrincipal, remoteAddress);
             return false;
         }
 
         if (!isAllowedToImpersonateUser(authorizedGroups, userBeingImpersonated)) {
             LOG.info("user = {}, principal = {} is not allowed to impersonate any group that user {} is part of.",
-                    impersonatingUser, impersonatingPrincipal, userBeingImpersonated);
+                     impersonatingUser, impersonatingPrincipal, userBeingImpersonated);
             return false;
         }
 
@@ -117,13 +121,13 @@ public class ImpersonationAuthorizer implements IAuthorizer {
 
     private boolean isAllowedToImpersonateFromHost(Set<String> authorizedHosts, InetAddress remoteAddress) {
         return authorizedHosts.contains(WILD_CARD) ||
-                authorizedHosts.contains(remoteAddress.getCanonicalHostName()) ||
-                authorizedHosts.contains(remoteAddress.getHostName()) ||
-                authorizedHosts.contains(remoteAddress.getHostAddress());
+               authorizedHosts.contains(remoteAddress.getCanonicalHostName()) ||
+               authorizedHosts.contains(remoteAddress.getHostName()) ||
+               authorizedHosts.contains(remoteAddress.getHostAddress());
     }
 
     private boolean isAllowedToImpersonateUser(Set<String> authorizedGroups, String userBeingImpersonated) {
-        if(authorizedGroups.contains(WILD_CARD)) {
+        if (authorizedGroups.contains(WILD_CARD)) {
             return true;
         }
 
@@ -163,10 +167,10 @@ public class ImpersonationAuthorizer implements IAuthorizer {
         @Override
         public String toString() {
             return "ImpersonationACL{" +
-                    "impersonatingUser='" + impersonatingUser + '\'' +
-                    ", authorizedGroups=" + authorizedGroups +
-                    ", authorizedHosts=" + authorizedHosts +
-                    '}';
+                   "impersonatingUser='" + impersonatingUser + '\'' +
+                   ", authorizedGroups=" + authorizedGroups +
+                   ", authorizedHosts=" + authorizedHosts +
+                   '}';
         }
     }
 }

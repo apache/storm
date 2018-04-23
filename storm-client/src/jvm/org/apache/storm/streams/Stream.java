@@ -1,22 +1,21 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.streams;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.streams.operations.BiFunction;
 import org.apache.storm.streams.operations.CombinerAggregator;
@@ -49,11 +48,6 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
 /**
  * Represents a stream of values.
  *
@@ -61,11 +55,10 @@ import java.util.Set;
  */
 @InterfaceStability.Unstable
 public class Stream<T> {
-    private static final Logger LOG = LoggerFactory.getLogger(Stream.class);
-
     protected static final Fields KEY = new Fields("key");
     protected static final Fields VALUE = new Fields("value");
     protected static final Fields KEY_VALUE = new Fields("key", "value");
+    private static final Logger LOG = LoggerFactory.getLogger(Stream.class);
     // the stream builder
     protected final StreamBuilder streamBuilder;
     // the current node
@@ -116,10 +109,9 @@ public class Stream<T> {
     }
 
     /**
-     * Returns a stream consisting of the results of replacing each value of this stream with the contents
-     * produced by applying the provided mapping function to each value. This has the effect of applying
-     * a one-to-many transformation to the values of the stream, and then flattening the resulting elements
-     * into a new stream.
+     * Returns a stream consisting of the results of replacing each value of this stream with the contents produced by applying the provided
+     * mapping function to each value. This has the effect of applying a one-to-many transformation to the values of the stream, and then
+     * flattening the resulting elements into a new stream.
      *
      * @param function a mapping function to be applied to each value in this stream which produces new values.
      * @return the new stream
@@ -129,13 +121,14 @@ public class Stream<T> {
     }
 
     /**
-     * Returns a stream consisting of the results of replacing each value of this stream with the key-value pairs
-     * produced by applying the provided mapping function to each value.
+     * Returns a stream consisting of the results of replacing each value of this stream with the key-value pairs produced by applying the
+     * provided mapping function to each value.
      *
      * @param function the mapping function to be applied to each value in this stream which produces new key-value pairs.
      * @param <K>      the key type
      * @param <V>      the value type
      * @return the new stream of key-value pairs
+     *
      * @see #flatMap(FlatMapFunction)
      * @see #mapToPair(PairFunction)
      */
@@ -144,9 +137,8 @@ public class Stream<T> {
     }
 
     /**
-     * Returns a new stream consisting of the elements that fall within the window as specified by the window parameter.
-     * The {@link Window} specification could be used to specify sliding or tumbling windows based on
-     * time duration or event count. For example,
+     * Returns a new stream consisting of the elements that fall within the window as specified by the window parameter. The {@link Window}
+     * specification could be used to specify sliding or tumbling windows based on time duration or event count. For example,
      * <pre>
      * // time duration based sliding window
      * stream.window(SlidingWindows.of(Duration.minutes(10), Duration.minutes(1));
@@ -177,8 +169,8 @@ public class Stream<T> {
     }
 
     /**
-     * Returns a stream consisting of the elements of this stream, additionally performing the provided action on
-     * each element as they are consumed from the resulting stream.
+     * Returns a stream consisting of the elements of this stream, additionally performing the provided action on each element as they are
+     * consumed from the resulting stream.
      *
      * @param action the action to perform on the element as they are consumed from the stream
      * @return the new stream
@@ -190,9 +182,9 @@ public class Stream<T> {
     /**
      * Aggregates the values in this stream using the aggregator. This does a global aggregation of values across all partitions.
      * <p>
-     * If the stream is windowed, the aggregate result is emitted after each window activation and represents the
-     * aggregate of elements that fall within that window.
-     * If the stream is not windowed, the aggregate result is emitted as each new element in the stream is processed.
+     * If the stream is windowed, the aggregate result is emitted after each window activation and represents the aggregate of elements that
+     * fall within that window. If the stream is not windowed, the aggregate result is emitted as each new element in the stream is
+     * processed.
      * </p>
      *
      * @param aggregator the aggregator
@@ -205,12 +197,12 @@ public class Stream<T> {
     }
 
     /**
-     * Aggregates the values in this stream using the given initial value, accumulator and combiner. This does a global
-     * aggregation of values across all partitions.
+     * Aggregates the values in this stream using the given initial value, accumulator and combiner. This does a global aggregation of
+     * values across all partitions.
      * <p>
-     * If the stream is windowed, the aggregate result is emitted after each window activation and represents the
-     * aggregate of elements that fall within that window.
-     * If the stream is not windowed, the aggregate result is emitted as each new element in the stream is processed.
+     * If the stream is windowed, the aggregate result is emitted after each window activation and represents the aggregate of elements that
+     * fall within that window. If the stream is not windowed, the aggregate result is emitted as each new element in the stream is
+     * processed.
      * </p>
      *
      * @param initialValue the initial value of the result
@@ -228,9 +220,8 @@ public class Stream<T> {
     /**
      * Counts the number of values in this stream. This does a global count of values across all partitions.
      * <p>
-     * If the stream is windowed, the counts are emitted after each window activation and represents the
-     * count of elements that fall within that window.
-     * If the stream is not windowed, the count is emitted as each new element in the stream is processed.
+     * If the stream is windowed, the counts are emitted after each window activation and represents the count of elements that fall within
+     * that window. If the stream is not windowed, the count is emitted as each new element in the stream is processed.
      * </p>
      *
      * @return the new stream
@@ -240,12 +231,11 @@ public class Stream<T> {
     }
 
     /**
-     * Performs a reduction on the elements of this stream, by repeatedly applying the reducer.
-     * This does a global reduction of values across all partitions.
+     * Performs a reduction on the elements of this stream, by repeatedly applying the reducer. This does a global reduction of values
+     * across all partitions.
      * <p>
-     * If the stream is windowed, the result is emitted after each window activation and represents the
-     * reduction of elements that fall within that window.
-     * If the stream is not windowed, the result is emitted as each new element in the stream is processed.
+     * If the stream is windowed, the result is emitted after each window activation and represents the reduction of elements that fall
+     * within that window. If the stream is not windowed, the result is emitted as each new element in the stream is processed.
      * </p>
      *
      * @param reducer the reducer
@@ -256,8 +246,8 @@ public class Stream<T> {
     }
 
     /**
-     * Returns a new stream with the given value of parallelism. Further operations on this stream
-     * would execute at this level of parallelism.
+     * Returns a new stream with the given value of parallelism. Further operations on this stream would execute at this level of
+     * parallelism.
      *
      * @param parallelism the parallelism value
      * @return the new stream
@@ -275,12 +265,13 @@ public class Stream<T> {
     }
 
     /**
-     * Returns an array of streams by splitting the given stream into multiple branches based on the given
-     * predicates. The predicates are applied in the given order to the values of this stream and the result
-     * is forwarded to the corresponding (index based) result stream based on the (index of) predicate that matches.
+     * Returns an array of streams by splitting the given stream into multiple branches based on the given predicates. The predicates are
+     * applied in the given order to the values of this stream and the result is forwarded to the corresponding (index based) result stream
+     * based on the (index of) predicate that matches.
      * <p>
      * <b>Note:</b> If none of the predicates match a value, that value is dropped.
      * </p>
+     *
      * @param predicates the predicates
      * @return an array of result streams (branches) corresponding to the given predicates
      */
@@ -312,8 +303,8 @@ public class Stream<T> {
     }
 
     /**
-     * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as
-     * sinks in the stream, for e.g. a {@code RedisStoreBolt}. The bolt would have a parallelism of 1.
+     * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as sinks in the stream, for e.g. a {@code
+     * RedisStoreBolt}. The bolt would have a parallelism of 1.
      * <p>
      * <b>Note:</b> This would provide guarantees only based on what the bolt provides.
      * </p>
@@ -325,8 +316,8 @@ public class Stream<T> {
     }
 
     /**
-     * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as
-     * sinks in the stream, for e.g. a {@code RedisStoreBolt}.
+     * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as sinks in the stream, for e.g. a {@code
+     * RedisStoreBolt}.
      * <p>
      * <b>Note:</b> This would provide guarantees only based on what the bolt provides.
      * </p>
@@ -339,8 +330,8 @@ public class Stream<T> {
     }
 
     /**
-     * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as
-     * sinks in the stream, for e.g. a {@code RedisStoreBolt}. The bolt would have a parallelism of 1.
+     * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as sinks in the stream, for e.g. a {@code
+     * RedisStoreBolt}. The bolt would have a parallelism of 1.
      * <p>
      * <b>Note:</b> This would provide guarantees only based on what the bolt provides.
      * </p>
@@ -352,8 +343,8 @@ public class Stream<T> {
     }
 
     /**
-     * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as
-     * sinks in the stream, for e.g. a {@code RedisStoreBolt}.
+     * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as sinks in the stream, for e.g. a {@code
+     * RedisStoreBolt}.
      * <p>
      * <b>Note:</b> This would provide guarantees only based on what the bolt provides.
      * </p>
@@ -440,8 +431,8 @@ public class Stream<T> {
 
     protected Stream<T> partitionBy(Fields fields, int parallelism) {
         return new Stream<>(
-                streamBuilder,
-                addNode(node, new PartitionNode(stream, node.getOutputFields(), GroupingInfo.fields(fields)), parallelism));
+            streamBuilder,
+            addNode(node, new PartitionNode(stream, node.getOutputFields(), GroupingInfo.fields(fields)), parallelism));
     }
 
     private boolean shouldPartition() {
@@ -450,15 +441,15 @@ public class Stream<T> {
 
     private <A> Stream<A> combinePartition(CombinerAggregator<? super T, A, ?> aggregator) {
         return new Stream<>(streamBuilder,
-                addProcessorNode(new AggregateProcessor<>(aggregator, true), VALUE, true));
+                            addProcessorNode(new AggregateProcessor<>(aggregator, true), VALUE, true));
     }
 
     private <R> Stream<R> merge(CombinerAggregator<?, T, ? extends R> aggregator) {
         return new Stream<>(streamBuilder,
-                addProcessorNode(new MergeAggregateProcessor<>(aggregator), VALUE));
+                            addProcessorNode(new MergeAggregateProcessor<>(aggregator), VALUE));
     }
 
-    private  <A, R> Stream<R> aggregatePartition(CombinerAggregator<? super T, A, ? extends R> aggregator) {
+    private <A, R> Stream<R> aggregatePartition(CombinerAggregator<? super T, A, ? extends R> aggregator) {
         return new Stream<>(streamBuilder, addProcessorNode(new AggregateProcessor<>(aggregator), VALUE));
     }
 
@@ -479,10 +470,10 @@ public class Stream<T> {
                 if (!nonWindowed.isPresent()) {
                     parents.forEach(p -> {
                         Node localAggregateNode = makeProcessorNode(
-                                new AggregateProcessor<>(aggregator, true), VALUE, true);
+                            new AggregateProcessor<>(aggregator, true), VALUE, true);
                         streamBuilder.insert(p, localAggregateNode);
                     });
-                    return ((Stream<A>)global()).merge(aggregator);
+                    return ((Stream<A>) global()).merge(aggregator);
                 }
             }
             return global().aggregatePartition(aggregator);

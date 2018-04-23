@@ -1,23 +1,22 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.trident.windowing;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.coordination.BatchOutputCollector;
 import org.apache.storm.trident.operation.Aggregator;
 import org.apache.storm.trident.spout.IBatchID;
@@ -28,16 +27,9 @@ import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
- * This window manager uses {@code WindowsStore} for storing tuples and other trigger related information. It maintains
- * tuples cache of {@code maxCachedTuplesSize} without accessing store for getting them.
- *
+ * This window manager uses {@code WindowsStore} for storing tuples and other trigger related information. It maintains tuples cache of
+ * {@code maxCachedTuplesSize} without accessing store for getting them.
  */
 public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager<TridentBatchTuple> {
     private static final Logger LOG = LoggerFactory.getLogger(StoreBasedTridentWindowManager.class);
@@ -46,9 +38,8 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
 
     private final String windowTupleTaskId;
     private final TridentTupleView.FreshOutputFactory freshOutputFactory;
-
-    private Long maxCachedTuplesSize;
     private final Fields inputFields;
+    private Long maxCachedTuplesSize;
     private AtomicLong currentCachedTuplesSize = new AtomicLong();
 
     public StoreBasedTridentWindowManager(WindowConfig windowConfig, String windowTaskId, WindowsStore windowStore, Aggregator aggregator,
@@ -80,7 +71,7 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
             } else if (key.startsWith(windowTriggerTaskId)) {
                 triggerKeys.add(key);
                 LOG.debug("Received trigger with key [{}]", key);
-            } else if(key.startsWith(windowTriggerInprocessId)) {
+            } else if (key.startsWith(windowTriggerInprocessId)) {
                 attemptedTriggerKeys.add(key);
                 LOG.debug("Received earlier unsuccessful trigger [{}] from windows store [{}]", key);
             }
@@ -95,10 +86,10 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
 
         // get trigger values only if they have more than zero
         Iterable<Object> triggerObjects = windowStore.get(triggerKeys);
-        int i=0;
+        int i = 0;
         for (Object triggerObject : triggerObjects) {
             int id = lastPart(triggerKeys.get(i++));
-            if(!triggersToBeIgnored.contains(id)) {
+            if (!triggersToBeIgnored.contains(id)) {
                 LOG.info("Adding pending trigger value [{}]", triggerObject);
                 pendingTriggers.add(new TriggerResult(id, (List<List<Object>>) triggerObject));
             }
@@ -111,21 +102,21 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         if (lastSepIndex < 0) {
             throw new IllegalArgumentException("primaryKey does not have key separator '" + WindowsStore.KEY_SEPARATOR + "'");
         }
-        return Integer.parseInt(key.substring(lastSepIndex+1));
+        return Integer.parseInt(key.substring(lastSepIndex + 1));
     }
 
     private String secondLastPart(String key) {
         int lastSepIndex = key.lastIndexOf(WindowsStore.KEY_SEPARATOR);
         if (lastSepIndex < 0) {
-            throw new IllegalArgumentException("key "+key+" does not have key separator '" + WindowsStore.KEY_SEPARATOR + "'");
+            throw new IllegalArgumentException("key " + key + " does not have key separator '" + WindowsStore.KEY_SEPARATOR + "'");
         }
         String trimKey = key.substring(0, lastSepIndex);
         int secondLastSepIndex = trimKey.lastIndexOf(WindowsStore.KEY_SEPARATOR);
         if (secondLastSepIndex < 0) {
-            throw new IllegalArgumentException("key "+key+" does not have second key separator '" + WindowsStore.KEY_SEPARATOR + "'");
+            throw new IllegalArgumentException("key " + key + " does not have second key separator '" + WindowsStore.KEY_SEPARATOR + "'");
         }
 
-        return key.substring(secondLastSepIndex+1, lastSepIndex);
+        return key.substring(secondLastSepIndex + 1, lastSepIndex);
     }
 
     public void addTuplesBatch(Object batchId, List<TridentTuple> tuples) {
@@ -134,7 +125,7 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         for (int i = 0; i < tuples.size(); i++) {
             String key = keyOf(batchId);
             TridentTuple tridentTuple = tuples.get(i);
-            entries.add(new WindowsStore.Entry(key+i, tridentTuple.select(inputFields)));
+            entries.add(new WindowsStore.Entry(key + i, tridentTuple.select(inputFields)));
         }
 
         // tuples should be available in store before they are added to window manager
@@ -173,12 +164,12 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         List<String> keys = new ArrayList<>();
         for (TridentBatchTuple tridentBatchTuple : tridentBatchTuples) {
             TridentTuple tuple = collectTridentTupleOrKey(tridentBatchTuple, keys);
-            if(tuple != null) {
+            if (tuple != null) {
                 resultTuples.add(tuple);
             }
         }
 
-        if(keys.size() > 0) {
+        if (keys.size() > 0) {
             Iterable<Object> storedTupleValues = windowStore.get(keys);
             for (Object storedTupleValue : storedTupleValues) {
                 TridentTuple tridentTuple = freshOutputFactory.create((List<Object>) storedTupleValue);

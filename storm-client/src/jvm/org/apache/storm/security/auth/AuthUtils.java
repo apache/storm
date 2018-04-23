@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.security.auth;
@@ -51,16 +45,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AuthUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(AuthUtils.class);
     public static final String LOGIN_CONTEXT_SERVER = "StormServer";
     public static final String LOGIN_CONTEXT_CLIENT = "StormClient";
     public static final String LOGIN_CONTEXT_PACEMAKER_DIGEST = "PacemakerDigest";
     public static final String LOGIN_CONTEXT_PACEMAKER_SERVER = "PacemakerServer";
     public static final String LOGIN_CONTEXT_PACEMAKER_CLIENT = "PacemakerClient";
     public static final String SERVICE = "storm_thrift_server";
+    private static final Logger LOG = LoggerFactory.getLogger(AuthUtils.class);
+    private static final String USERNAME = "username";
+    private static final String PASSWORD = "password";
 
     /**
      * Construct a JAAS configuration object per storm configuration file
+     *
      * @param topoConf Storm configuration
      * @return JAAS configuration object
      */
@@ -68,12 +65,12 @@ public class AuthUtils {
         Configuration login_conf = null;
 
         //find login file configuration from Storm configuration
-        String loginConfigurationFile = (String)topoConf.get("java.security.auth.login.config");
-        if ((loginConfigurationFile != null) && (loginConfigurationFile.length()>0)) {
+        String loginConfigurationFile = (String) topoConf.get("java.security.auth.login.config");
+        if ((loginConfigurationFile != null) && (loginConfigurationFile.length() > 0)) {
             File config_file = new File(loginConfigurationFile);
             if (!config_file.canRead()) {
                 throw new RuntimeException("File " + loginConfigurationFile +
-                        " cannot be read.");
+                                           " cannot be read.");
             }
             try {
                 URI config_uri = config_file.toURI();
@@ -88,19 +85,20 @@ public class AuthUtils {
 
     /**
      * Get configurations for a section
+     *
      * @param configuration The config to pull the key/value pairs out of.
-     * @param section The app configuration entry name to get stuff from.
+     * @param section       The app configuration entry name to get stuff from.
      * @return Return array of config entries or null if configuration is null
      */
-    public static AppConfigurationEntry[] getEntries(Configuration configuration, 
-                                                String section) throws IOException {
+    public static AppConfigurationEntry[] getEntries(Configuration configuration,
+                                                     String section) throws IOException {
         if (configuration == null) {
             return null;
         }
 
         AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(section);
         if (configurationEntries == null) {
-            String errorMessage = "Could not find a '"+ section + "' entry in this configuration.";
+            String errorMessage = "Could not find a '" + section + "' entry in this configuration.";
             throw new IOException(errorMessage);
         }
         return configurationEntries;
@@ -108,21 +106,22 @@ public class AuthUtils {
 
     /**
      * Pull a set of keys out of a Configuration.
+     *
      * @param configuration The config to pull the key/value pairs out of.
-     * @param section The app configuration entry name to get stuff from.
+     * @param section       The app configuration entry name to get stuff from.
      * @return Return a map of the configs in conf.
      */
     public static SortedMap<String, ?> pullConfig(Configuration configuration,
-                                            String section) throws IOException {
+                                                  String section) throws IOException {
         AppConfigurationEntry[] configurationEntries = AuthUtils.getEntries(configuration, section);
 
         if (configurationEntries == null) {
             return null;
         }
-        
+
         TreeMap<String, Object> results = new TreeMap<>();
 
-        for (AppConfigurationEntry entry: configurationEntries) {
+        for (AppConfigurationEntry entry : configurationEntries) {
             Map<String, ?> options = entry.getOptions();
             for (String key : options.keySet()) {
                 results.put(key, options.get(key));
@@ -134,28 +133,31 @@ public class AuthUtils {
 
     /**
      * Pull a the value given section and key from Configuration
+     *
      * @param configuration The config to pull the key/value pairs out of.
-     * @param section The app configuration entry name to get stuff from.
-     * @param key The key to look up inside of the section
+     * @param section       The app configuration entry name to get stuff from.
+     * @param key           The key to look up inside of the section
      * @return Return a the String value of the configuration value
      */
     public static String get(Configuration configuration, String section, String key) throws IOException {
         AppConfigurationEntry[] configurationEntries = AuthUtils.getEntries(configuration, section);
 
-        if (configurationEntries == null){
+        if (configurationEntries == null) {
             return null;
         }
 
-        for (AppConfigurationEntry entry: configurationEntries) {
+        for (AppConfigurationEntry entry : configurationEntries) {
             Object val = entry.getOptions().get(key);
-            if (val != null)
-                return (String)val;
+            if (val != null) {
+                return (String) val;
+            }
         }
         return null;
     }
 
     /**
      * Construct a principal to local plugin
+     *
      * @param topoConf storm configuration
      * @return the plugin
      */
@@ -181,6 +183,7 @@ public class AuthUtils {
 
     /**
      * Construct a group mapping service provider plugin
+     *
      * @param conf daemon configuration
      * @return the plugin
      */
@@ -204,13 +207,14 @@ public class AuthUtils {
 
     /**
      * Get all of the configured Credential Renewer Plugins.
+     *
      * @param conf the storm configuration to use.
      * @return the configured credential renewers.
      */
     public static Collection<ICredentialsRenewer> GetCredentialRenewers(Map<String, Object> conf) {
         try {
             Set<ICredentialsRenewer> ret = new HashSet<>();
-            Collection<String> clazzes = (Collection<String>)conf.get(Config.NIMBUS_CREDENTIAL_RENEWERS);
+            Collection<String> clazzes = (Collection<String>) conf.get(Config.NIMBUS_CREDENTIAL_RENEWERS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
                     ICredentialsRenewer inst = ReflectionUtils.newInstance(clazz);
@@ -226,13 +230,14 @@ public class AuthUtils {
 
     /**
      * Get all the Nimbus Auto cred plugins.
+     *
      * @param conf nimbus configuration to use.
      * @return nimbus auto credential plugins.
      */
     public static Collection<INimbusCredentialPlugin> getNimbusAutoCredPlugins(Map<String, Object> conf) {
         try {
             Set<INimbusCredentialPlugin> ret = new HashSet<>();
-            Collection<String> clazzes = (Collection<String>)conf.get(Config.NIMBUS_AUTO_CRED_PLUGINS);
+            Collection<String> clazzes = (Collection<String>) conf.get(Config.NIMBUS_AUTO_CRED_PLUGINS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
                     INimbusCredentialPlugin inst = ReflectionUtils.newInstance(clazz);
@@ -248,13 +253,14 @@ public class AuthUtils {
 
     /**
      * Get all of the configured AutoCredential Plugins.
+     *
      * @param topoConf the storm configuration to use.
      * @return the configured auto credentials.
      */
     public static Collection<IAutoCredentials> GetAutoCredentials(Map<String, Object> topoConf) {
         try {
             Set<IAutoCredentials> autos = new HashSet<>();
-            Collection<String> clazzes = (Collection<String>)topoConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+            Collection<String> clazzes = (Collection<String>) topoConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
                     IAutoCredentials a = ReflectionUtils.newInstance(clazz);
@@ -262,7 +268,7 @@ public class AuthUtils {
                     autos.add(a);
                 }
             }
-            LOG.info("Got AutoCreds "+autos);
+            LOG.info("Got AutoCreds " + autos);
             return autos;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -271,6 +277,7 @@ public class AuthUtils {
 
     /**
      * Get the key used to store a WorkerToken in the credentials map
+     *
      * @param type the type of service to get.
      * @return the key as a String.
      */
@@ -280,11 +287,12 @@ public class AuthUtils {
 
     /**
      * Read a WorkerToken out of credentials for the given type.
+     *
      * @param credentials the credentials map.
-     * @param type the type of service we are looking for.
+     * @param type        the type of service we are looking for.
      * @return the deserialized WorkerToken or null if none could be found.
      */
-    public static WorkerToken readWorkerToken(Map<String,String> credentials, WorkerTokenServiceType type) {
+    public static WorkerToken readWorkerToken(Map<String, String> credentials, WorkerTokenServiceType type) {
         WorkerToken ret = null;
         String key = workerTokenCredentialsKey(type);
         String tokenStr = credentials.get(key);
@@ -296,27 +304,29 @@ public class AuthUtils {
 
     /**
      * Store a worker token in some credentials. It can be pulled back out by calling readWorkerToken.
+     *
      * @param credentials the credentials map.
-     * @param token the token you want to store.
+     * @param token       the token you want to store.
      */
-    public static void setWorkerToken(Map<String,String> credentials, WorkerToken token) {
+    public static void setWorkerToken(Map<String, String> credentials, WorkerToken token) {
         String key = workerTokenCredentialsKey(token.get_serviceType());
         credentials.put(key, Utils.serializeToString(token));
     }
 
     /**
      * Find a worker token in a given subject with a given token type.
+     *
      * @param subject what to look in.
-     * @param type the type of token to look for.
+     * @param type    the type of token to look for.
      * @return the token or null.
      */
     public static WorkerToken findWorkerToken(Subject subject, final WorkerTokenServiceType type) {
         Set<WorkerToken> creds = subject.getPrivateCredentials(WorkerToken.class);
-        synchronized(creds) {
+        synchronized (creds) {
             return creds.stream()
-                .filter((wt) ->
-                    wt.get_serviceType() == type)
-                .findAny().orElse(null);
+                        .filter((wt) ->
+                                    wt.get_serviceType() == type)
+                        .findAny().orElse(null);
         }
     }
 
@@ -333,9 +343,10 @@ public class AuthUtils {
 
     /**
      * Check if worker tokens should be enabled on the server side or not.
+     *
      * @param server a Thrift server to know if the transport support tokens or not.  No need to create a token if the transport does not
-     * support it.
-     * @param conf the daemon configuration to be sure the tokens are secure.
+     *               support it.
+     * @param conf   the daemon configuration to be sure the tokens are secure.
      * @return true if we can enable them, else false.
      */
     public static boolean areWorkerTokensEnabledServer(ThriftServer server, Map<String, Object> conf) {
@@ -344,8 +355,9 @@ public class AuthUtils {
 
     /**
      * Check if worker tokens should be enabled on the server side or not (for a given server).
+     *
      * @param connectionType the type of server this is for.
-     * @param conf the daemon configuration to be sure the tokens are secure.
+     * @param conf           the daemon configuration to be sure the tokens are secure.
      * @return true if we can enable them, else false.
      */
     public static boolean areWorkerTokensEnabledServer(ThriftConnectionType connectionType, Map<String, Object> conf) {
@@ -354,6 +366,7 @@ public class AuthUtils {
 
     /**
      * Turn a WorkerTokenInfo in a byte array.
+     *
      * @param wti what to serialize.
      * @return the resulting byte array.
      */
@@ -363,6 +376,7 @@ public class AuthUtils {
 
     /**
      * Get and deserialize the WorkerTokenInfo in the worker token.
+     *
      * @param wt the token.
      * @return the deserialized info.
      */
@@ -371,7 +385,7 @@ public class AuthUtils {
     }
 
     //Support for worker tokens Similar to an IAutoCredentials implementation
-    private static Subject insertWorkerTokens(Subject subject, Map<String,String> credentials) {
+    private static Subject insertWorkerTokens(Subject subject, Map<String, String> credentials) {
         if (credentials == null) {
             return subject;
         }
@@ -393,12 +407,13 @@ public class AuthUtils {
 
     /**
      * Populate a subject from credentials using the IAutoCredentials.
-     * @param subject the subject to populate or null if a new Subject should be created.
-     * @param autos the IAutoCredentials to call to populate the subject.
+     *
+     * @param subject     the subject to populate or null if a new Subject should be created.
+     * @param autos       the IAutoCredentials to call to populate the subject.
      * @param credentials the credentials to pull from
      * @return the populated subject.
      */
-    public static Subject populateSubject(Subject subject, Collection<IAutoCredentials> autos, Map<String,String> credentials) {
+    public static Subject populateSubject(Subject subject, Collection<IAutoCredentials> autos, Map<String, String> credentials) {
         try {
             if (subject == null) {
                 subject = new Subject();
@@ -414,11 +429,12 @@ public class AuthUtils {
 
     /**
      * Update a subject from credentials using the IAutoCredentials.
-     * @param subject the subject to update
-     * @param autos the IAutoCredentials to call to update the subject.
+     *
+     * @param subject     the subject to update
+     * @param autos       the IAutoCredentials to call to update the subject.
      * @param credentials the credentials to pull from
      */
-    public static void updateSubject(Subject subject, Collection<IAutoCredentials> autos, Map<String,String> credentials) {
+    public static void updateSubject(Subject subject, Collection<IAutoCredentials> autos, Map<String, String> credentials) {
         if (subject == null || autos == null) {
             throw new RuntimeException("The subject or auto credentials cannot be null when updating a subject with credentials");
         }
@@ -448,7 +464,7 @@ public class AuthUtils {
     }
 
     public static IHttpCredentialsPlugin GetHttpCredentialsPlugin(Map<String, Object> conf,
-            String klassName) {
+                                                                  String klassName) {
         try {
             IHttpCredentialsPlugin plugin = null;
             if (StringUtils.isNotBlank(klassName)) {
@@ -462,37 +478,34 @@ public class AuthUtils {
     }
 
     /**
-     * Construct an HttpServletRequest credential plugin specified by the UI
-     * storm configuration
+     * Construct an HttpServletRequest credential plugin specified by the UI storm configuration
+     *
      * @param conf storm configuration
      * @return the plugin
      */
     public static IHttpCredentialsPlugin GetUiHttpCredentialsPlugin(Map<String, Object> conf) {
-        String klassName = (String)conf.get(Config.UI_HTTP_CREDS_PLUGIN);
+        String klassName = (String) conf.get(Config.UI_HTTP_CREDS_PLUGIN);
         return AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
     }
 
     /**
-     * Construct an HttpServletRequest credential plugin specified by the DRPC
-     * storm configuration
+     * Construct an HttpServletRequest credential plugin specified by the DRPC storm configuration
+     *
      * @param conf storm configuration
      * @return the plugin
      */
     public static IHttpCredentialsPlugin GetDrpcHttpCredentialsPlugin(Map<String, Object> conf) {
-        String klassName = (String)conf.get(Config.DRPC_HTTP_CREDS_PLUGIN);
+        String klassName = (String) conf.get(Config.DRPC_HTTP_CREDS_PLUGIN);
         return klassName == null ? null : AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
     }
-
-    private static final String USERNAME = "username";
-    private static final String PASSWORD = "password";
 
     public static String makeDigestPayload(Configuration login_config, String config_section) {
         String username = null;
         String password = null;
         try {
             Map<String, ?> results = AuthUtils.pullConfig(login_config, config_section);
-            username = (String)results.get(USERNAME);
-            password = (String)results.get(PASSWORD);
+            username = (String) results.get(USERNAME);
+            password = (String) results.get(PASSWORD);
         } catch (Exception e) {
             LOG.error("Failed to pull username/password out of jaas conf", e);
         }
@@ -526,7 +539,7 @@ public class AuthUtils {
 
             ByteArrayInputStream bin = new ByteArrayInputStream(tgtBytes);
             ObjectInputStream in = new ObjectInputStream(bin);
-            ret = (KerberosTicket)in.readObject();
+            ret = (KerberosTicket) in.readObject();
             in.close();
         } catch (Exception e) {
             throw new RuntimeException(e);

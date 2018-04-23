@@ -1,32 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
-package org.apache.storm.messaging.netty;
 
-import org.apache.storm.Config;
-import org.apache.storm.grouping.Load;
-import org.apache.storm.messaging.ConnectionWithStatus;
-import org.apache.storm.messaging.IConnectionCallback;
-import org.apache.storm.messaging.TaskMessage;
-import org.apache.storm.metric.api.IMetric;
-import org.apache.storm.metric.api.IStatefulObject;
-import org.apache.storm.serialization.KryoValuesDeserializer;
-import org.apache.storm.serialization.KryoValuesSerializer;
-import org.apache.storm.utils.ObjectReader;
+package org.apache.storm.messaging.netty;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -40,7 +24,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-
+import org.apache.storm.Config;
+import org.apache.storm.grouping.Load;
+import org.apache.storm.messaging.ConnectionWithStatus;
+import org.apache.storm.messaging.IConnectionCallback;
+import org.apache.storm.messaging.TaskMessage;
+import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metric.api.IStatefulObject;
+import org.apache.storm.serialization.KryoValuesDeserializer;
+import org.apache.storm.serialization.KryoValuesSerializer;
+import org.apache.storm.utils.ObjectReader;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -53,22 +46,20 @@ import org.slf4j.LoggerFactory;
 class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    Map<String, Object> topoConf;
-    int port;
-    private final ConcurrentHashMap<String, AtomicInteger> messagesEnqueued = new ConcurrentHashMap<>();
-    private final AtomicInteger messagesDequeued = new AtomicInteger(0);
-    
-    volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server");
     final ChannelFactory factory;
     final ServerBootstrap bootstrap;
- 
-    private volatile boolean closing = false;
+    private final ConcurrentHashMap<String, AtomicInteger> messagesEnqueued = new ConcurrentHashMap<>();
+    private final AtomicInteger messagesDequeued = new AtomicInteger(0);
+    private final int boundPort;
+    Map<String, Object> topoConf;
+    int port;
+    volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server");
     KryoValuesSerializer _ser;
     KryoValuesDeserializer deser;
+    private volatile boolean closing = false;
     private IConnectionCallback _cb = null;
     private Supplier<Object> newConnectionResponse;
-    private final int boundPort;
-    
+
     Server(Map<String, Object> topoConf, int port) {
         this.topoConf = topoConf;
         this.port = port;
@@ -85,10 +76,10 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
         if (maxWorkers > 0) {
             factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                Executors.newCachedThreadPool(workerFactory), maxWorkers);
+                                                        Executors.newCachedThreadPool(workerFactory), maxWorkers);
         } else {
             factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                Executors.newCachedThreadPool(workerFactory));
+                                                        Executors.newCachedThreadPool(workerFactory));
         }
 
         LOG.info("Create Netty Server " + netty_name() + ", buffer_size: " + buffer_size + ", maxWorkers: " + maxWorkers);
@@ -104,10 +95,10 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
         // Bind and start to accept incoming connections.
         Channel channel = bootstrap.bind(new InetSocketAddress(port));
-        boundPort = ((InetSocketAddress)channel.getLocalAddress()).getPort();
+        boundPort = ((InetSocketAddress) channel.getLocalAddress()).getPort();
         allChannels.add(channel);
     }
-    
+
     private void addReceiveCount(String from, int amount) {
         //This is possibly lossy in the case where a value is deleted
         // because it has received no messages over the metrics collection
@@ -128,6 +119,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     /**
      * enqueue a received message
+     *
      * @throws InterruptedException
      */
     protected void enqueue(List<TaskMessage> msgs, String from) throws InterruptedException {
@@ -162,7 +154,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     public int getPort() {
         return boundPort;
     }
-    
+
     /**
      * close all channels, and release resources
      */
@@ -177,13 +169,13 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     @Override
     synchronized public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
         MessageBatch mb = new MessageBatch(1);
-        mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object)taskToLoad))));
+        mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object) taskToLoad))));
         allChannels.write(mb);
     }
 
     // this method expected to be thread safe
     @Override
-    synchronized public void sendBackPressureStatus(BackPressureStatus bpStatus)  {
+    synchronized public void sendBackPressureStatus(BackPressureStatus bpStatus) {
         LOG.info("Sending BackPressure status update to connected workers. BPStatus = {}", bpStatus);
         allChannels.write(bpStatus);
     }
@@ -200,28 +192,26 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     @Override
     public void send(Iterator<TaskMessage> msgs) {
-      throw new UnsupportedOperationException("Server connection should not send any messages");
+        throw new UnsupportedOperationException("Server connection should not send any messages");
     }
 
     public String netty_name() {
-      return "Netty-server-localhost-" + port;
+        return "Netty-server-localhost-" + port;
     }
 
     @Override
     public Status status() {
         if (closing) {
-          return Status.Closed;
-        }
-        else if (!connectionEstablished(allChannels)) {
+            return Status.Closed;
+        } else if (!connectionEstablished(allChannels)) {
             return Status.Connecting;
-        }
-        else {
+        } else {
             return Status.Ready;
         }
     }
 
     private boolean connectionEstablished(Channel channel) {
-      return channel != null && channel.isBound();
+        return channel != null && channel.isBound();
     }
 
     private boolean connectionEstablished(ChannelGroup allChannels) {
@@ -252,7 +242,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             }
         }
         ret.put("enqueued", enqueued);
-        
+
         // Report messageSizes metric, if enabled (non-null).
         if (_cb instanceof IMetric) {
             Object metrics = ((IMetric) _cb).getValueAndReset();
@@ -260,25 +250,27 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
                 ret.put("messageBytes", metrics);
             }
         }
-        
+
         return ret;
     }
 
-    /** Implementing IServer. **/
+    /**
+     * Implementing IServer.
+     **/
     public void channelConnected(Channel c) {
         if (newConnectionResponse != null) {
-            c.write( newConnectionResponse.get() ); // not synchronized since it is not yet in channel grp, so pvt to this thread
+            c.write(newConnectionResponse.get()); // not synchronized since it is not yet in channel grp, so pvt to this thread
         }
         allChannels.add(c);
     }
 
-    public void received(Object message, String remote, Channel channel)  throws InterruptedException {
-        List<TaskMessage>msgs = (List<TaskMessage>)message;
+    public void received(Object message, String remote, Channel channel) throws InterruptedException {
+        List<TaskMessage> msgs = (List<TaskMessage>) message;
         enqueue(msgs, remote);
     }
 
     public String name() {
-        return (String)topoConf.get(Config.TOPOLOGY_NAME);
+        return (String) topoConf.get(Config.TOPOLOGY_NAME);
     }
 
     public String secretKey() {

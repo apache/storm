@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.executor.bolt;
@@ -24,13 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.executor.ExecutorTransfer;
 import org.apache.storm.hooks.info.BoltAckInfo;
 import org.apache.storm.hooks.info.BoltFailInfo;
-import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.task.IOutputCollector;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.MessageId;
@@ -52,8 +44,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     private final Random random;
     private final boolean isEventLoggers;
     private final ExecutorTransfer xsfer;
-    private boolean ackingEnabled;
     private final boolean isDebug;
+    private boolean ackingEnabled;
 
     public BoltOutputCollectorImpl(BoltExecutor executor, Task taskData, Random random,
                                    boolean isEventLoggers, boolean ackingEnabled, boolean isDebug) {
@@ -115,7 +107,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
                 msgId = MessageId.makeUnanchored();
             }
             TupleImpl tupleExt = new TupleImpl(
-                    executor.getWorkerTopologyContext(), values, executor.getComponentId(), taskId, streamId, msgId);
+                executor.getWorkerTopologyContext(), values, executor.getComponentId(), taskId, streamId, msgId);
             xsfer.tryTransfer(new AddressedTuple(t, tupleExt), executor.getPendingEmits());
         }
         if (isEventLoggers) {
@@ -133,8 +125,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         Map<Long, Long> anchorsToIds = input.getMessageId().getAnchorsToIds();
         for (Map.Entry<Long, Long> entry : anchorsToIds.entrySet()) {
             task.sendUnanchored(Acker.ACKER_ACK_STREAM_ID,
-                new Values(entry.getKey(), Utils.bitXor(entry.getValue(), ackValue)),
-                executor.getExecutorTransfer(), executor.getPendingEmits());
+                                new Values(entry.getKey(), Utils.bitXor(entry.getValue(), ackValue)),
+                                executor.getExecutorTransfer(), executor.getPendingEmits());
         }
         long delta = tupleTimeDelta((TupleImpl) input);
         if (isDebug) {
@@ -146,7 +138,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             boltAckInfo.applyOn(task.getUserContext());
         }
         if (delta >= 0) {
-            executor.getStats().boltAckedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta, task.getTaskMetrics().getAcked(input.getSourceStreamId()));
+            executor.getStats().boltAckedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta,
+                                               task.getTaskMetrics().getAcked(input.getSourceStreamId()));
         }
     }
 
@@ -158,7 +151,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         Set<Long> roots = input.getMessageId().getAnchors();
         for (Long root : roots) {
             task.sendUnanchored(Acker.ACKER_FAIL_STREAM_ID,
-                new Values(root), executor.getExecutorTransfer(), executor.getPendingEmits());
+                                new Values(root), executor.getExecutorTransfer(), executor.getPendingEmits());
         }
         long delta = tupleTimeDelta((TupleImpl) input);
         if (isDebug) {
@@ -167,7 +160,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         BoltFailInfo boltFailInfo = new BoltFailInfo(input, taskId, delta);
         boltFailInfo.applyOn(task.getUserContext());
         if (delta >= 0) {
-            executor.getStats().boltFailedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta, task.getTaskMetrics().getFailed(input.getSourceStreamId()));
+            executor.getStats().boltFailedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta,
+                                                task.getTaskMetrics().getFailed(input.getSourceStreamId()));
         }
     }
 
@@ -176,7 +170,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         Set<Long> roots = input.getMessageId().getAnchors();
         for (Long root : roots) {
             task.sendUnanchored(Acker.ACKER_RESET_TIMEOUT_STREAM_ID, new Values(root),
-                executor.getExecutorTransfer(), executor.getPendingEmits());
+                                executor.getExecutorTransfer(), executor.getPendingEmits());
         }
     }
 

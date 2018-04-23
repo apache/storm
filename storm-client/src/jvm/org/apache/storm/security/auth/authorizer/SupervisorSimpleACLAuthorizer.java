@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.security.auth.authorizer;
@@ -34,8 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An authorization implementation that simply checks if a user is allowed to perform specific
- * operations.
+ * An authorization implementation that simply checks if a user is allowed to perform specific operations.
  */
 public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(SupervisorSimpleACLAuthorizer.class);
@@ -54,6 +47,7 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
 
     /**
      * Invoked once immediately after construction.
+     *
      * @param conf Storm configuration
      */
     @Override
@@ -63,19 +57,19 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
         nimbus = new HashSet<>();
 
         if (conf.containsKey(Config.NIMBUS_ADMINS)) {
-            admins.addAll((Collection<String>)conf.get(Config.NIMBUS_ADMINS));
+            admins.addAll((Collection<String>) conf.get(Config.NIMBUS_ADMINS));
         }
 
         if (conf.containsKey(Config.NIMBUS_ADMINS_GROUPS)) {
-            adminsGroups.addAll((Collection<String>)conf.get(Config.NIMBUS_ADMINS_GROUPS));
+            adminsGroups.addAll((Collection<String>) conf.get(Config.NIMBUS_ADMINS_GROUPS));
         }
 
         if (conf.containsKey(Config.NIMBUS_DAEMON_USERS)) {
-            nimbus.addAll((Collection<String>)conf.get(Config.NIMBUS_DAEMON_USERS));
+            nimbus.addAll((Collection<String>) conf.get(Config.NIMBUS_DAEMON_USERS));
         } else if (conf.containsKey(Config.NIMBUS_SUPERVISOR_USERS)) {
             LOG.warn("{} is not set falling back to using {}.", Config.NIMBUS_DAEMON_USERS, Config.NIMBUS_SUPERVISOR_USERS);
             //In almost all cases these should be the same, but warn the user just in case something goes wrong...
-            nimbus.addAll((Collection<String>)conf.get(Config.NIMBUS_SUPERVISOR_USERS));
+            nimbus.addAll((Collection<String>) conf.get(Config.NIMBUS_SUPERVISOR_USERS));
         } else {
             //If it is not set a lot of things are not really going to work all that well
             LOG.error("Could not find {} things might now work correctly...", Config.NIMBUS_DAEMON_USERS);
@@ -87,9 +81,10 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
 
     /**
      * permit() method is invoked for each incoming Thrift request.
-     * @param context request context includes info about
+     *
+     * @param context   request context includes info about
      * @param operation operation name
-     * @param topoConf configuration of targeted topology
+     * @param topoConf  configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
     @Override
@@ -102,7 +97,7 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
             try {
                 userGroups = groupMappingServiceProvider.getGroups(user);
             } catch (IOException e) {
-                LOG.warn("Error while trying to fetch user groups",e);
+                LOG.warn("Error while trying to fetch user groups", e);
             }
         }
 
@@ -129,7 +124,7 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
         Set<String> configuredUsers = new HashSet<>();
 
         if (topoConf.containsKey(userConfigKey)) {
-            configuredUsers.addAll((Collection<String>)topoConf.get(userConfigKey));
+            configuredUsers.addAll((Collection<String>) topoConf.get(userConfigKey));
         }
 
         if (configuredUsers.contains(principal) || configuredUsers.contains(user)) {
@@ -138,7 +133,7 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
 
         Set<String> configuredGroups = new HashSet<>();
         if (topoConf.containsKey(groupConfigKey) && topoConf.get(groupConfigKey) != null) {
-            configuredGroups.addAll((Collection<String>)topoConf.get(groupConfigKey));
+            configuredGroups.addAll((Collection<String>) topoConf.get(groupConfigKey));
         }
 
         return checkUserGroupAllowed(userGroups, configuredGroups);

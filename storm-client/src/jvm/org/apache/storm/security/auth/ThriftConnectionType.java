@@ -1,44 +1,37 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.security.auth;
 
+import java.util.Map;
+import org.apache.storm.Config;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.Config;
-
-import java.util.Map;
 
 /**
  * The purpose for which the Thrift server is created.
  */
 public enum ThriftConnectionType {
     NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, Config.NIMBUS_QUEUE_SIZE,
-        Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, Config.STORM_THRIFT_SOCKET_TIMEOUT_MS,
-        WorkerTokenServiceType.NIMBUS, true),
+           Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, Config.STORM_THRIFT_SOCKET_TIMEOUT_MS,
+           WorkerTokenServiceType.NIMBUS, true),
     SUPERVISOR(Config.SUPERVISOR_THRIFT_TRANSPORT_PLUGIN, Config.SUPERVISOR_THRIFT_PORT, Config.SUPERVISOR_QUEUE_SIZE,
-        Config.SUPERVISOR_THRIFT_THREADS, Config.SUPERVISOR_THRIFT_MAX_BUFFER_SIZE,
-        Config.SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS, WorkerTokenServiceType.SUPERVISOR, false),
+               Config.SUPERVISOR_THRIFT_THREADS, Config.SUPERVISOR_THRIFT_MAX_BUFFER_SIZE,
+               Config.SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS, WorkerTokenServiceType.SUPERVISOR, false),
     //A DRPC token only works for the invocations transport, not for the basic thrift transport.
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
          Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, null, false),
     DRPC_INVOCATIONS(Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null,
-         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, WorkerTokenServiceType.DRPC, false),
+                     Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, WorkerTokenServiceType.DRPC, false),
     LOCAL_FAKE;
 
     private final String transConf;
@@ -54,13 +47,13 @@ public enum ThriftConnectionType {
     ThriftConnectionType() {
         this(null, null, null, null, null, null, true, null, false);
     }
-    
+
     ThriftConnectionType(String transConf, String portConf, String qConf,
                          String threadsConf, String buffConf, String socketTimeoutConf,
                          WorkerTokenServiceType wtType, boolean impersonationAllowed) {
         this(transConf, portConf, qConf, threadsConf, buffConf, socketTimeoutConf, false, wtType, impersonationAllowed);
     }
-    
+
     ThriftConnectionType(String transConf, String portConf, String qConf,
                          String threadsConf, String buffConf, String socketTimeoutConf, boolean isFake,
                          WorkerTokenServiceType wtType, boolean impersonationAllowed) {
@@ -78,11 +71,11 @@ public enum ThriftConnectionType {
     public boolean isFake() {
         return isFake;
     }
-    
+
     public String getTransportPlugin(Map<String, Object> conf) {
-        String ret = (String)conf.get(transConf);
+        String ret = (String) conf.get(transConf);
         if (ret == null) {
-            ret = (String)conf.get(Config.STORM_THRIFT_TRANSPORT_PLUGIN);
+            ret = (String) conf.get(Config.STORM_THRIFT_TRANSPORT_PLUGIN);
         }
         return ret;
     }
@@ -98,7 +91,7 @@ public enum ThriftConnectionType {
         if (qConf == null) {
             return null;
         }
-        return (Integer)conf.get(qConf);
+        return (Integer) conf.get(qConf);
     }
 
     public int getNumThreads(Map<String, Object> conf) {
@@ -131,6 +124,7 @@ public enum ThriftConnectionType {
 
     /**
      * Check if SASL impersonation is allowed for this transport type.
+     *
      * @return true if it is else false.
      */
     public boolean isImpersonationAllowed() {

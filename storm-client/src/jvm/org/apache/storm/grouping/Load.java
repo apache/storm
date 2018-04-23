@@ -1,27 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.grouping;
 
-import java.io.Serializable;
-
 /**
- * Represents the load that a Bolt is currently under to help in
- * deciding where to route a tuple, to help balance the load.
+ * Represents the load that a Bolt is currently under to help in deciding where to route a tuple, to help balance the load.
  */
 public class Load {
     private boolean hasMetrics = false;
@@ -30,8 +22,9 @@ public class Load {
 
     /**
      * Create a new load
-     * @param hasMetrics have metrics been reported yet?
-     * @param boltLoad the load as reported by the bolt 0.0 no load 1.0 fully loaded
+     *
+     * @param hasMetrics     have metrics been reported yet?
+     * @param boltLoad       the load as reported by the bolt 0.0 no load 1.0 fully loaded
      * @param connectionLoad the load as reported by the connection to the bolt 0.0 no load 1.0 fully loaded.
      */
     public Load(boolean hasMetrics, double boltLoad, double connectionLoad) {
@@ -72,6 +65,6 @@ public class Load {
     }
 
     public String toString() {
-        return "[:load "+boltLoad+" "+connectionLoad+"]";
+        return "[:load " + boltLoad + " " + connectionLoad + "]";
     }
 }
