@@ -1,22 +1,15 @@
 /**
  * Copyright (c) 2009-2011 VMware, Inc. All Rights Reserved.
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.cassandra.testtools;
@@ -25,12 +18,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.service.CassandraDaemon;
 import org.apache.cassandra.utils.FBUtilities;
-
 import org.junit.rules.ExternalResource;
 
 /**
@@ -41,7 +32,8 @@ import org.junit.rules.ExternalResource;
  * This implementation is based on the springsource community project,
  * com.springsource.insight:insight-plugin-cassandra12.
  *
- * {@see <a href="https://github.com/spring-projects/spring-insight-plugins/blob/c2986b457b482cd08a77a26297c087df59535067/collection-plugins/cassandra12/src/test/java/com/springsource/insight/plugin/cassandra/embeded/EmbeddedCassandraService.java">
+ * {@see <a href="https://github.com/spring-projects/spring-insight-plugins/blob/c2986b457b482cd08a77a26297c087df59535067/collection
+ * -plugins/cassandra12/src/test/java/com/springsource/insight/plugin/cassandra/embeded/EmbeddedCassandraService.java">
  *     com.springsource.insight:insight-plugin-cassandra12
  *     </a>}
  *
@@ -52,10 +44,9 @@ import org.junit.rules.ExternalResource;
  */
 
 public class EmbeddedCassandraResource extends ExternalResource {
-    CassandraDaemon cassandraDaemon;
-
     private final String host;
     private final Integer nativeTransportPort;
+    CassandraDaemon cassandraDaemon;
 
     public EmbeddedCassandraResource() {
         try {
@@ -64,8 +55,7 @@ public class EmbeddedCassandraResource extends ExternalResource {
             cassandraDaemon.init(null);
             host = DatabaseDescriptor.getRpcAddress().getHostName();
             nativeTransportPort = DatabaseDescriptor.getNativeTransportPort();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -83,8 +73,7 @@ public class EmbeddedCassandraResource extends ExternalResource {
         if (FBUtilities.isWindows()) {
             cassandraDaemon.thriftServer.stop();
             cassandraDaemon.nativeServer.stop();
-        }
-        else {
+        } else {
             cassandraDaemon.stop();
         }
 

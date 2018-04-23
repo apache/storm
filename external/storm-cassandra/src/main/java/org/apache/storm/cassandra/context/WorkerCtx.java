@@ -1,21 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.cassandra.context;
 
 import java.io.Serializable;
@@ -54,7 +48,7 @@ public class WorkerCtx implements Serializable {
      */
     protected <T> BeanFactory<T> getBeanfactory(Class<T> clazz) {
         BeanFactory<T> factory = (BeanFactory<T>) this.componentCtx.get(clazz);
-        if( factory == null) throw new RuntimeException("Cannot resolve bean factory for class : " + clazz.getCanonicalName());
+        if (factory == null) throw new RuntimeException("Cannot resolve bean factory for class : " + clazz.getCanonicalName());
         factory.setStormContext(this);
         return factory;
     }
@@ -64,7 +58,7 @@ public class WorkerCtx implements Serializable {
      * @return
      */
     public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> topoConf) {
-        return getWorkerBean(clazz, topoConf,false);
+        return getWorkerBean(clazz, topoConf, false);
     }
 
     /**
@@ -77,13 +71,13 @@ public class WorkerCtx implements Serializable {
      * @return a instance of type {@link T}.
      */
     public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> topoConf, boolean force) {
-        if( force ) workerCtx.remove(clazz);
-        BeanFactory<T> factory = (BeanFactory<T>)  this.workerCtx.get(clazz);
-        if( factory == null) {
+        if (force) workerCtx.remove(clazz);
+        BeanFactory<T> factory = (BeanFactory<T>) this.workerCtx.get(clazz);
+        if (factory == null) {
             BeanFactory<T> instance = getBeanfactory(clazz).newInstance();
             workerCtx.putIfAbsent(clazz, instance);
             factory = (BeanFactory<T>) this.workerCtx.get(clazz);
         }
-        return factory.get((Map<String, Object>)topoConf);
+        return factory.get((Map<String, Object>) topoConf);
     }
 }
