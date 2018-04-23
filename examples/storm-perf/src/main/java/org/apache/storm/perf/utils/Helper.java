@@ -19,7 +19,6 @@
 package org.apache.storm.perf.utils;
 
 import java.util.Map;
-
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.Nimbus;
@@ -68,7 +67,9 @@ public class Helper {
         }
     }
 
-    /** Kill topo on Ctrl-C */
+    /**
+     * Kill topo on Ctrl-C
+     */
     public static void setupShutdownHook(final String topoName) {
         Map<String, Object> clusterConf = Utils.readStormConfig();
         final Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
@@ -86,7 +87,7 @@ public class Helper {
     }
 
     public static void runOnClusterAndPrintMetrics(int durationSec, String topoName, Map<String, Object> topoConf, StormTopology topology)
-             throws Exception {
+        throws Exception {
         // submit topology
         StormSubmitter.submitTopologyWithProgressBar(topoName, topoConf, topology);
         setupShutdownHook(topoName); // handle Ctrl-C

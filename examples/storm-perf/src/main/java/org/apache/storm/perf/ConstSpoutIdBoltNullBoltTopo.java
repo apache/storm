@@ -19,7 +19,6 @@
 package org.apache.storm.perf;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.bolt.DevNullBolt;
@@ -30,11 +29,8 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
 /**
- * ConstSpout -> IdBolt -> DevNullBolt
- * This topology measures speed of messaging between spouts->bolt  and  bolt->bolt
- * ConstSpout : Continuously emits a constant string
- * IdBolt : clones and emits input tuples
- * DevNullBolt : discards incoming tuples
+ * ConstSpout -> IdBolt -> DevNullBolt This topology measures speed of messaging between spouts->bolt  and  bolt->bolt ConstSpout :
+ * Continuously emits a constant string IdBolt : clones and emits input tuples DevNullBolt : discards incoming tuples
  */
 public class ConstSpoutIdBoltNullBoltTopo {
 
@@ -66,11 +62,11 @@ public class ConstSpoutIdBoltNullBoltTopo {
 
         int numBolt1 = Helper.getInt(conf, BOLT1_COUNT, 1);
         builder.setBolt(BOLT1_ID, bolt1, numBolt1)
-            .localOrShuffleGrouping(SPOUT_ID);
+               .localOrShuffleGrouping(SPOUT_ID);
 
         int numBolt2 = Helper.getInt(conf, BOLT2_COUNT, 1);
         builder.setBolt(BOLT2_ID, bolt2, numBolt2)
-            .localOrShuffleGrouping(BOLT1_ID);
+               .localOrShuffleGrouping(BOLT1_ID);
         System.err.printf("====> Using : numSpouts = %d , numBolt1 = %d, numBolt2=%d\n", numSpouts, numBolt1, numBolt2);
         return builder.createTopology();
     }
