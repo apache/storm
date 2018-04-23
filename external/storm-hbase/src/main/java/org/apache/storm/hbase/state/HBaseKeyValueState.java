@@ -20,7 +20,6 @@ package org.apache.storm.hbase.state;
 
 import com.google.common.collect.Maps;
 import com.google.common.primitives.UnsignedBytes;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +30,6 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Get;
@@ -51,14 +49,11 @@ import org.slf4j.LoggerFactory;
  * A Hbase based implementation that persists the state in HBase.
  */
 public class HBaseKeyValueState<K, V> implements KeyValueState<K, V> {
-    private static final Logger LOG = LoggerFactory.getLogger(HBaseKeyValueState.class);
-
-    public static byte[] STATE_QUALIFIER = "s".getBytes();
     public static final int ITERATOR_CHUNK_SIZE = 1000;
-
     public static final NavigableMap<byte[], byte[]> EMPTY_PENDING_COMMIT_MAP = Maps.unmodifiableNavigableMap(
-            new TreeMap<byte[], byte[]>(UnsignedBytes.lexicographicalComparator()));
-
+        new TreeMap<byte[], byte[]>(UnsignedBytes.lexicographicalComparator()));
+    private static final Logger LOG = LoggerFactory.getLogger(HBaseKeyValueState.class);
+    public static byte[] STATE_QUALIFIER = "s".getBytes();
     private static byte[] COMMIT_TXID_KEY = "commit".getBytes();
     private static byte[] PREPARE_TXID_KEY = "prepare".getBytes();
 
@@ -79,22 +74,22 @@ public class HBaseKeyValueState<K, V> implements KeyValueState<K, V> {
     /**
      * Constructor.
      *
-     * @param hbaseClient HBaseClient instance
+     * @param hbaseClient  HBaseClient instance
      * @param columnFamily column family to store State
-     * @param namespace namespace
+     * @param namespace    namespace
      */
     public HBaseKeyValueState(HBaseClient hbaseClient, String columnFamily, String namespace) {
         this(hbaseClient, columnFamily, namespace, new DefaultStateSerializer<K>(),
-                new DefaultStateSerializer<V>());
+             new DefaultStateSerializer<V>());
     }
 
     /**
      * Constructor.
      *
-     * @param hbaseClient HBaseClient instance
-     * @param columnFamily column family to store State
-     * @param namespace namespace
-     * @param keySerializer key serializer
+     * @param hbaseClient     HBaseClient instance
+     * @param columnFamily    column family to store State
+     * @param namespace       namespace
+     * @param keySerializer   key serializer
      * @param valueSerializer value serializer
      */
     public HBaseKeyValueState(HBaseClient hbaseClient, String columnFamily, String namespace,
@@ -173,7 +168,7 @@ public class HBaseKeyValueState<K, V> implements KeyValueState<K, V> {
         } else {
             HBaseProjectionCriteria criteria = new HBaseProjectionCriteria();
             HBaseProjectionCriteria.ColumnMetaData column = new HBaseProjectionCriteria.ColumnMetaData(columnFamily,
-                    STATE_QUALIFIER);
+                                                                                                       STATE_QUALIFIER);
             criteria.addColumn(column);
             Get get = hbaseClient.constructGetRequests(getRowKeyForStateKey(columnKey), criteria);
             try {
@@ -210,7 +205,8 @@ public class HBaseKeyValueState<K, V> implements KeyValueState<K, V> {
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
         return new HBaseKeyValueStateIterator<>(namespace, columnFamily, hbaseClient, pendingPrepare.entrySet().iterator(),
-                pendingCommit.entrySet().iterator(), ITERATOR_CHUNK_SIZE, encoder.getKeySerializer(), encoder.getValueSerializer());
+                                                pendingCommit.entrySet().iterator(), ITERATOR_CHUNK_SIZE, encoder.getKeySerializer(),
+                                                encoder.getValueSerializer());
     }
 
     @Override
@@ -316,7 +312,7 @@ public class HBaseKeyValueState<K, V> implements KeyValueState<K, V> {
         if (committedTxid != null) {
             if (txid <= committedTxid) {
                 throw new RuntimeException("Invalid txid '" + txid + "' for prepare. Txid '" + committedTxid
-                        + "' is already committed");
+                                           + "' is already committed");
             }
         }
     }
@@ -375,7 +371,7 @@ public class HBaseKeyValueState<K, V> implements KeyValueState<K, V> {
                 mutations.add(new Delete(getRowKeyForStateKey(rowKey)));
             } else {
                 List<Mutation> mutationsForRow = prepareMutateRow(getRowKeyForStateKey(rowKey), columnFamily,
-                        Collections.singletonMap(STATE_QUALIFIER, value));
+                                                                  Collections.singletonMap(STATE_QUALIFIER, value));
                 mutations.addAll(mutationsForRow);
             }
         }
@@ -402,7 +398,7 @@ public class HBaseKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     private void mutateRow(byte[] rowKey, byte[] columnFamily, Map<byte[], byte[]> map)
-            throws Exception {
+        throws Exception {
         mutateRow(rowKey, columnFamily, map, Durability.USE_DEFAULT);
     }
 
