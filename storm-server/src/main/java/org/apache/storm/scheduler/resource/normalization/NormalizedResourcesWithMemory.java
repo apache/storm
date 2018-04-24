@@ -25,4 +25,9 @@ public interface NormalizedResourcesWithMemory {
 
     double getTotalMemoryMb();
 
+    /**
+     * Set all resources to 0.
+     */
+    void clear();
+
 }

@@ -43,10 +43,18 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
         this.normalizedResources = new NormalizedResources(normalizedResourceMap);
     }
 
+    /**
+     * Create an offer with all resources set to 0.
+     */
     public NormalizedResourceOffer() {
-        this((Map<String, ? extends Number>) null);
+        normalizedResources = new NormalizedResources();
+        totalMemoryMb = 0.0;
     }
 
+    /**
+     * Copy Constructor.
+     * @param other what to copy.
+     */
     public NormalizedResourceOffer(NormalizedResourceOffer other) {
         this.totalMemoryMb = other.totalMemoryMb;
         this.normalizedResources = new NormalizedResources(other.normalizedResources);
@@ -57,6 +65,10 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
         return totalMemoryMb;
     }
 
+    /**
+     * Return these resources as a normalized map.
+     * @return the normalized map.
+     */
     public Map<String, Double> toNormalizedMap() {
         Map<String, Double> ret = normalizedResources.toNormalizedMap();
         ret.put(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, totalMemoryMb);
@@ -68,6 +80,10 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
         totalMemoryMb += other.getTotalMemoryMb();
     }
 
+    /**
+     * Remove the resources in other from this.
+     * @param other what to remove.
+     */
     public void remove(NormalizedResourcesWithMemory other) {
         normalizedResources.remove(other.getNormalizedResources());
         totalMemoryMb -= other.getTotalMemoryMb();
@@ -75,10 +91,10 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
             normalizedResources.throwBecauseResourceBecameNegative(
                 Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, totalMemoryMb, other.getTotalMemoryMb());
         }
-        ;
     }
 
     /**
+     * Calculate the average percentage used.
      * @see NormalizedResources#calculateAveragePercentageUsedBy(org.apache.storm.scheduler.resource.normalization.NormalizedResources,
      *     double, double).
      */
@@ -88,6 +104,7 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     }
 
     /**
+     * Calculate the min percentage used of the resource.
      * @see NormalizedResources#calculateMinPercentageUsedBy(org.apache.storm.scheduler.resource.normalization.NormalizedResources, double,
      *     double)
      */
@@ -96,6 +113,7 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     }
 
     /**
+     * Check if resources might be able to fit.
      * @see NormalizedResources#couldHoldIgnoringSharedMemory(org.apache.storm.scheduler.resource.normalization.NormalizedResources, double,
      *     double).
      */
@@ -111,5 +129,20 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     @Override
     public NormalizedResources getNormalizedResources() {
         return normalizedResources;
+    }
+
+    @Override
+    public String toString() {
+        return "Normalized resources: " + toNormalizedMap();
+    }
+
+    public void updateForRareResourceAffinity(NormalizedResourceRequest requestedResources) {
+        normalizedResources.updateForRareResourceAffinity(requestedResources.getNormalizedResources());
+    }
+
+    @Override
+    public void clear() {
+        this.totalMemoryMb = 0.0;
+        this.normalizedResources.clear();
     }
 }

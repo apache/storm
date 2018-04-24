@@ -60,9 +60,9 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         //order executors to be scheduled
         List<ExecutorDetails> orderedExecutors = this.orderExecutors(td, unassignedExecutors);
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
-        List<String> favoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES);
-        List<String> unFavoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES);
-        final List<ObjectResources> sortedNodes = sortAllNodes(td, null, favoredNodes, unFavoredNodes);
+        List<String> favoredNodesIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES));
+        List<String> unFavoredNodesIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES));
+        final Iterable<String> sortedNodes = sortAllNodes(td, null, favoredNodesIds, unFavoredNodesIds);
 
         for (ExecutorDetails exec : orderedExecutors) {
             LOG.debug(
@@ -70,14 +70,18 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
                 exec,
                 td.getExecutorToComponent().get(exec),
                 td.getTaskResourceReqList(exec));
-            scheduleExecutor(exec, td, scheduledTasks, sortedNodes);
+            if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+                return mkNotEnoughResources(td);
+            }
         }
 
         executorsNotScheduled.removeAll(scheduledTasks);
         LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
         // schedule left over system tasks
         for (ExecutorDetails exec : executorsNotScheduled) {
-            scheduleExecutor(exec, td, scheduledTasks, sortedNodes);
+            if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+                return mkNotEnoughResources(td);
+            }
         }
 
         SchedulingResult result;
