@@ -24,11 +24,11 @@ The following properties may be passed to storm configuration.
 | **cassandra.retryPolicy**                    | -               | DefaultRetryPolicy  |
 | **cassandra.reconnectionPolicy.baseDelayMs** | -               | 100 (ms)            |
 | **cassandra.reconnectionPolicy.maxDelayMs**  | -               | 60000 (ms)          |
-| **cassandra.ssl.security.protocol**          | -               |                     |
-| **cassandra.ssl.keystore.path**              | -               |                     |
-| **cassandra.ssl.keystore.password**          | -               |                     |
-| **cassandra.ssl.truststore.path**            | -               |                     |
-| **cassandra.ssl.truststore.password**        | -               |                     |
+| **cassandra.ssl.security.protocol**          | eg: null, SSL, SASL_SSL |                     |
+| **cassandra.ssl.keystore.path**              | path to keystore |                     |
+| **cassandra.ssl.keystore.password**          | keystore password |                     |
+| **cassandra.ssl.truststore.path**            | path to truststore |                     |
+| **cassandra.ssl.truststore.password**        | truststore password |                     |
 
 
 ### CassandraWriterBolt
