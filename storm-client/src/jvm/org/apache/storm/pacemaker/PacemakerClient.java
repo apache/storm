@@ -52,7 +52,7 @@ public class PacemakerClient implements ISaslClient {
     private LinkedBlockingQueue<Integer> availableMessageSlots;
     private ThriftNettyClientCodec.AuthMethod authMethod;
     private static final int maxRetries = 10;
-    
+
     private StormBoundedExponentialBackoffRetry backoff = new StormBoundedExponentialBackoffRetry(100, 5000, 20);
     private int retryTimes = 0;
 
@@ -106,8 +106,7 @@ public class PacemakerClient implements ISaslClient {
         ThreadFactory bossFactory = new NettyRenameThreadFactory("client-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("client-worker");
         NioClientSocketChannelFactory factory =
-            new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                                              Executors.newCachedThreadPool(workerFactory));
+            new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory), Executors.newCachedThreadPool(workerFactory));
         bootstrap = new ClientBootstrap(factory);
         bootstrap.setOption("tcpNoDelay", true);
         bootstrap.setOption("sendBufferSize", 5242880);
@@ -116,8 +115,7 @@ public class PacemakerClient implements ISaslClient {
         remote_addr = new InetSocketAddress(host, port);
         int thriftMessageMaxSize = (Integer) config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
         ChannelPipelineFactory pipelineFactory =
-            new ThriftNettyClientCodec(this, config, authMethod, host, thriftMessageMaxSize)
-                .pipelineFactory();
+            new ThriftNettyClientCodec(this, config, authMethod, host, thriftMessageMaxSize).pipelineFactory();
         bootstrap.setPipelineFactory(pipelineFactory);
         bootstrap.connect(remote_addr);
     }
@@ -242,11 +240,10 @@ public class PacemakerClient implements ISaslClient {
     public void reconnect() {
         final PacemakerClient client = this;
         timer.schedule(new TimerTask() {
-                           public void run() {
-                               client.doReconnect();
-                           }
-                       },
-                       backoff.getSleepTimeMs(retryTimes++, 0));
+            public void run() {
+                client.doReconnect();
+            }
+        }, backoff.getSleepTimeMs(retryTimes++, 0));
         ready.set(false);
         setupMessaging();
     }

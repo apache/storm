@@ -129,7 +129,7 @@ public class PaceMakerStateStorage implements IStateStorage {
                 }
                 LOG.debug("Successful set_worker_hb");
                 break;
-            } catch (HBExecutionException|PacemakerConnectionException e) {
+            } catch (HBExecutionException | PacemakerConnectionException e) {
                 if (retry <= 0) {
                     throw new RuntimeException(e);
                 }

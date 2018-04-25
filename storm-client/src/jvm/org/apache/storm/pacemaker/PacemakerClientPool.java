@@ -46,7 +46,7 @@ public class PacemakerClientPool {
             servers = new ConcurrentLinkedQueue<>();
         }
     }
-    
+
     public HBMessage send(HBMessage m) throws PacemakerConnectionException, InterruptedException {
         try {
             return getWriteClient().send(m);
@@ -59,7 +59,7 @@ public class PacemakerClientPool {
     public List<HBMessage> sendAll(HBMessage m) throws PacemakerConnectionException, InterruptedException {
         List<HBMessage> responses = new ArrayList<HBMessage>();
         LOG.debug("Using servers: {}", servers);
-        for(String s : servers) {
+        for (String s : servers) {
             try {
                 HBMessage response = getClientForServer(s).send(m);
                 responses.add(response);
