@@ -104,9 +104,6 @@ public class ClusterFactory extends BaseBeanFactory<Cluster> {
         SSLContext sslContext = getSslContext(sslProps.getTruststorePath(), sslProps.getTruststorePassword(), sslProps.getKeystorePath(),
                 sslProps.getKeystorePassword());
 
-        // Default cipher suites supported by C*
-        // String[] cipherSuites = { "TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA" };
-
         SSLOptions sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).build();
         return clusterBuilder.withSSL(sslOptions);
     }
