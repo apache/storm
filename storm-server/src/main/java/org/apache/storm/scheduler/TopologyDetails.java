@@ -136,7 +136,8 @@ public class TopologyDetails {
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
                 //the json_conf is populated by TopologyBuilder (e.g. boltDeclarer.setMemoryLoad)
-                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(bolt.getValue().get_common(), topologyConf);
+                NormalizedResourceRequest topologyResources =
+                        new NormalizedResourceRequest(bolt.getValue().get_common(), topologyConf, bolt.getKey());
                 for (Map.Entry<ExecutorDetails, String> anExecutorToComponent :
                     executorToComponent.entrySet()) {
                     if (bolt.getKey().equals(anExecutorToComponent.getValue())) {
@@ -148,7 +149,8 @@ public class TopologyDetails {
         // Extract spout resource info
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
-                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(spout.getValue().get_common(), topologyConf);
+                NormalizedResourceRequest topologyResources =
+                        new NormalizedResourceRequest(spout.getValue().get_common(), topologyConf, spout.getKey());
                 for (Map.Entry<ExecutorDetails, String> anExecutorToComponent :
                     executorToComponent.entrySet()) {
                     if (spout.getKey().equals(anExecutorToComponent.getValue())) {
@@ -168,8 +170,7 @@ public class TopologyDetails {
                     getExecutorToComponent().get(exec),
                     exec,
                     topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB),
-                        resourceList.get(exec)
-                    );
+                        resourceList.get(exec));
                 addDefaultResforExec(exec);
             }
         }
@@ -461,41 +462,8 @@ public class TopologyDetails {
      * Add default resource requirements for a executor.
      */
     private void addDefaultResforExec(ExecutorDetails exec) {
-        addResourcesForExec(exec, new NormalizedResourceRequest(topologyConf));
-    }
-
-    /**
-     * Some components might have different resource configs.
-     */
-    private void adjustResourcesForExec(ExecutorDetails exec, Map<String, Double> resourceListForExec) {
         String component = getExecutorToComponent().get(exec);
-        if (component.equals(Acker.ACKER_COMPONENT_ID)) {
-            if (topologyConf.containsKey(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB)) {
-                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB,
-                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB)));
-            }
-            if (topologyConf.containsKey(Config.TOPOLOGY_ACKER_RESOURCES_OFFHEAP_MEMORY_MB)) {
-                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB,
-                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_ACKER_RESOURCES_OFFHEAP_MEMORY_MB)));
-            }
-            if (topologyConf.containsKey(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT)) {
-                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT,
-                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT)));
-            }
-        } else if (component.startsWith(Constants.METRICS_COMPONENT_ID_PREFIX)) {
-            if (topologyConf.containsKey(Config.TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB)) {
-                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB,
-                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB)));
-            }
-            if (topologyConf.containsKey(Config.TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB)) {
-                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB,
-                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB)));
-            }
-            if (topologyConf.containsKey(Config.TOPOLOGY_METRICS_CONSUMER_CPU_PCORE_PERCENT)) {
-                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT,
-                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_METRICS_CONSUMER_CPU_PCORE_PERCENT)));
-            }
-        }
+        addResourcesForExec(exec, new NormalizedResourceRequest(topologyConf, component));
     }
 
     /**

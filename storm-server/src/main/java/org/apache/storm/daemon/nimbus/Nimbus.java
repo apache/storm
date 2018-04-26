@@ -144,11 +144,11 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.metric.api.DataPoint;
 import org.apache.storm.metric.api.IClusterMetricsConsumer;
 import org.apache.storm.metric.api.IClusterMetricsConsumer.ClusterInfo;
-import org.apache.storm.nimbus.AssignmentDistributionService;
 import org.apache.storm.metricstore.AggLevel;
 import org.apache.storm.metricstore.Metric;
 import org.apache.storm.metricstore.MetricStore;
 import org.apache.storm.metricstore.MetricStoreConfig;
+import org.apache.storm.nimbus.AssignmentDistributionService;
 import org.apache.storm.nimbus.DefaultTopologyValidator;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
@@ -1022,7 +1022,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                     Map<String, Object> topoConf) {
         NormalizedResourceRequest resources = compResourcesMap.get(compId);
         if (resources == null) {
-            compResourcesMap.put(compId, new NormalizedResourceRequest(topoConf));
+            compResourcesMap.put(compId, new NormalizedResourceRequest(topoConf, compId));
         }
     }
     
@@ -4190,13 +4190,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (compPageInfo.get_component_type() == ComponentType.SPOUT) {
                 NormalizedResourceRequest spoutResources = ResourceUtils.getSpoutResources(topology, topoConf, componentId);
                 if (spoutResources == null) {
-                    spoutResources = new NormalizedResourceRequest(topoConf);
+                    spoutResources = new NormalizedResourceRequest(topoConf, componentId);
                 }
                 compPageInfo.set_resources_map(spoutResources.toNormalizedMap());
             } else { //bolt
                 NormalizedResourceRequest boltResources = ResourceUtils.getBoltResources(topology, topoConf, componentId);
                 if (boltResources == null) {
-                    boltResources = new NormalizedResourceRequest(topoConf);
+                    boltResources = new NormalizedResourceRequest(topoConf, componentId);
                 }
                 compPageInfo.set_resources_map(boltResources.toNormalizedMap());
             }
