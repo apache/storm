@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
@@ -31,16 +26,18 @@ import org.slf4j.LoggerFactory;
 
 public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
 
+    private static final Logger LOG = LoggerFactory
+        .getLogger(KerberosSaslServerHandler.class);
     ISaslServer server;
-    /** Used for client or server's token to send or receive from each other. */
+    /**
+     * Used for client or server's token to send or receive from each other.
+     */
     private Map<String, Object> topoConf;
     private String jaas_section;
     private List<String> authorizedUsers;
 
-    private static final Logger LOG = LoggerFactory
-        .getLogger(KerberosSaslServerHandler.class);
-
-    public KerberosSaslServerHandler(ISaslServer server, Map<String, Object> topoConf, String jaas_section, List<String> authorizedUsers) throws IOException {
+    public KerberosSaslServerHandler(ISaslServer server, Map<String, Object> topoConf, String jaas_section,
+                                     List<String> authorizedUsers) throws IOException {
         this.server = server;
         this.topoConf = topoConf;
         this.jaas_section = jaas_section;
@@ -84,11 +81,11 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
                 }
 
                 byte[] responseBytes = saslNettyServer.response(((SaslMessageToken) msg)
-                                                                .getSaslToken());
+                                                                    .getSaslToken());
 
                 SaslMessageToken saslTokenMessageRequest = new SaslMessageToken(responseBytes);
 
-                if(saslTokenMessageRequest.getSaslToken() == null) {
+                if (saslTokenMessageRequest.getSaslToken() == null) {
                     channel.write(ControlMessage.SASL_COMPLETE_REQUEST);
                 } else {
                     // Send response to client.
@@ -106,8 +103,7 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
                     server.authenticated(channel);
                 }
                 return;
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 LOG.error("Failed to handle SaslMessageToken: ", ex);
                 throw ex;
             }
@@ -125,7 +121,7 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-        if(server != null) {
+        if (server != null) {
             server.closeChannel(e.getChannel());
         }
     }

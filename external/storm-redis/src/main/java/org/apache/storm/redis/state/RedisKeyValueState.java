@@ -1,60 +1,52 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.redis.state;
 
 import com.google.common.collect.Maps;
 import com.google.common.primitives.UnsignedBytes;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.storm.redis.common.commands.RedisCommands;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
+import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.container.RedisCommandsContainerBuilder;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
 import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.state.Serializer;
-import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.util.SafeEncoder;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.NavigableMap;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * A redis based implementation that persists the state in Redis.
  */
 public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     public static final int ITERATOR_CHUNK_SIZE = 100;
-
+    public static final NavigableMap<byte[], byte[]> EMPTY_PENDING_COMMIT_MAP = Maps.unmodifiableNavigableMap(
+        new TreeMap<byte[], byte[]>(UnsignedBytes.lexicographicalComparator()));
     private static final Logger LOG = LoggerFactory.getLogger(RedisKeyValueState.class);
     private static final String COMMIT_TXID_KEY = "commit";
     private static final String PREPARE_TXID_KEY = "prepare";
-    public static final NavigableMap<byte[], byte[]> EMPTY_PENDING_COMMIT_MAP = Maps.unmodifiableNavigableMap(
-            new TreeMap<byte[], byte[]>(UnsignedBytes.lexicographicalComparator()));
-
     private final byte[] namespace;
     private final byte[] prepareNamespace;
 
@@ -80,7 +72,8 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
         this(namespace, RedisCommandsContainerBuilder.build(poolConfig), keySerializer, valueSerializer);
     }
 
-    public RedisKeyValueState(String namespace, JedisClusterConfig jedisClusterConfig, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    public RedisKeyValueState(String namespace, JedisClusterConfig jedisClusterConfig, Serializer<K> keySerializer,
+                              Serializer<V> valueSerializer) {
         this(namespace, RedisCommandsContainerBuilder.build(jedisClusterConfig), keySerializer, valueSerializer);
     }
 
@@ -181,8 +174,9 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
 
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
-        return new RedisKeyValueStateIterator<K, V>(namespace, container, pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator(),
-                ITERATOR_CHUNK_SIZE, encoder.getKeySerializer(), encoder.getValueSerializer());
+        return new RedisKeyValueStateIterator<K, V>(namespace, container, pendingPrepare.entrySet().iterator(),
+                                                    pendingCommit.entrySet().iterator(),
+                                                    ITERATOR_CHUNK_SIZE, encoder.getKeySerializer(), encoder.getValueSerializer());
     }
 
     @Override
@@ -196,7 +190,7 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
             commands = container.getInstance();
             if (commands.exists(prepareNamespace)) {
                 LOG.debug("Prepared txn already exists, will merge", txid);
-                for (Map.Entry<byte[], byte[]> e: pendingCommit.entrySet()) {
+                for (Map.Entry<byte[], byte[]> e : pendingCommit.entrySet()) {
                     if (!currentPending.containsKey(e.getKey())) {
                         currentPending.put(e.getKey(), e.getValue());
                     }
@@ -226,7 +220,7 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
             if (!pendingCommit.isEmpty()) {
                 List<byte[]> keysToDelete = new ArrayList<>();
                 Map<byte[], byte[]> keysToAdd = new HashMap<>();
-                for(Map.Entry<byte[], byte[]> entry: pendingCommit.entrySet()) {
+                for (Map.Entry<byte[], byte[]> entry : pendingCommit.entrySet()) {
                     byte[] key = entry.getKey();
                     byte[] value = entry.getValue();
                     if (Arrays.equals(encoder.getTombstoneValue(), value)) {
@@ -306,7 +300,7 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
         if (committedTxid != null) {
             if (txid <= committedTxid) {
                 throw new RuntimeException("Invalid txid '" + txid + "' for prepare. Txid '" + committedTxid +
-                                                   "' is already committed");
+                                           "' is already committed");
             }
         }
     }

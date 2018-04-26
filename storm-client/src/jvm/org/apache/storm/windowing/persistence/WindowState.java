@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.windowing.persistence;
@@ -45,31 +39,30 @@ import org.slf4j.LoggerFactory;
  * A wrapper around the window related states that are checkpointed.
  */
 public class WindowState<T> extends AbstractCollection<Event<T>> {
-    private static final Logger LOG = LoggerFactory.getLogger(WindowState.class);
-
     // number of events per window-partition
     public static final int MAX_PARTITION_EVENTS = 1000;
     public static final int MIN_PARTITIONS = 10;
+    private static final Logger LOG = LoggerFactory.getLogger(WindowState.class);
     private static final String PARTITION_IDS_KEY = "pk";
     private final KeyValueState<String, Deque<Long>> partitionIdsState;
     private final KeyValueState<Long, WindowPartition<T>> windowPartitionsState;
     private final KeyValueState<String, Optional<?>> windowSystemState;
+    private final ReentrantLock partitionIdsLock = new ReentrantLock(true);
+    private final WindowPartitionLock windowPartitionsLock = new WindowPartitionLock();
+    private final long maxEventsInMemory;
     // ordered partition keys
     private volatile Deque<Long> partitionIds;
     private volatile long latestPartitionId;
     private volatile WindowPartition<T> latestPartition;
     private volatile WindowPartitionCache<Long, WindowPartition<T>> cache;
     private Supplier<Map<String, Optional<?>>> windowSystemStateSupplier;
-    private final ReentrantLock partitionIdsLock = new ReentrantLock(true);
-    private final WindowPartitionLock windowPartitionsLock = new WindowPartitionLock();
-    private final long maxEventsInMemory;
     private Set<Long> iteratorPins = new HashSet<>();
 
     public WindowState(KeyValueState<Long, WindowPartition<T>> windowPartitionsState,
-                KeyValueState<String, Deque<Long>> partitionIdsState,
-                KeyValueState<String, Optional<?>> windowSystemState,
-                Supplier<Map<String, Optional<?>>> windowSystemStateSupplier,
-                long maxEventsInMemory) {
+                       KeyValueState<String, Deque<Long>> partitionIdsState,
+                       KeyValueState<String, Optional<?>> windowSystemState,
+                       Supplier<Map<String, Optional<?>>> windowSystemStateSupplier,
+                       long maxEventsInMemory) {
         this.windowPartitionsState = windowPartitionsState;
         this.partitionIdsState = partitionIdsState;
         this.windowSystemState = windowSystemState;
@@ -224,7 +217,7 @@ public class WindowState<T> extends AbstractCollection<Event<T>> {
     private void initCache() {
         long size = maxEventsInMemory / MAX_PARTITION_EVENTS;
         LOG.info("maxEventsInMemory: {}, partition size: {}, number of partitions: {}",
-            maxEventsInMemory, MAX_PARTITION_EVENTS, size);
+                 maxEventsInMemory, MAX_PARTITION_EVENTS, size);
         cache = SimpleWindowPartitionCache.<Long, WindowPartition<T>>newBuilder()
             .maximumSize(size)
             .removalListener(new WindowPartitionCache.RemovalListener<Long, WindowPartition<T>>() {
@@ -318,7 +311,7 @@ public class WindowState<T> extends AbstractCollection<Event<T>> {
             }
         });
         Map<String, Optional<?>> state = windowSystemStateSupplier.get();
-        for (Map.Entry<String, Optional<?>> entry: state.entrySet()) {
+        for (Map.Entry<String, Optional<?>> entry : state.entrySet()) {
             windowSystemState.put(entry.getKey(), entry.getValue());
         }
     }

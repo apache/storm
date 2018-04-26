@@ -18,14 +18,21 @@
 
 package org.apache.storm.policy;
 
+import java.util.Map;
+import java.util.concurrent.locks.LockSupport;
 import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
 
-import java.util.Map;
-import java.util.concurrent.locks.LockSupport;
-
 public class WaitStrategyPark implements IWaitStrategy {
     private long parkTimeNanoSec;
+
+    public WaitStrategyPark() { // required for instantiation via reflection. must call prepare() thereafter
+    }
+
+    // Convenience alternative to prepare() for use in Tests
+    public WaitStrategyPark(long microsec) {
+        parkTimeNanoSec = microsec * 1_000;
+    }
 
     @Override
     public void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation) {
@@ -39,15 +46,6 @@ public class WaitStrategyPark implements IWaitStrategy {
             throw new IllegalArgumentException("Unknown wait situation : " + waitSituation);
         }
     }
-
-    public WaitStrategyPark() { // required for instantiation via reflection. must call prepare() thereafter
-    }
-
-    // Convenience alternative to prepare() for use in Tests
-    public WaitStrategyPark(long microsec) {
-        parkTimeNanoSec = microsec * 1_000;
-    }
-
 
     @Override
     public int idle(int idleCounter) throws InterruptedException {

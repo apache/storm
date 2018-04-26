@@ -18,6 +18,11 @@
 
 package org.apache.storm.utils;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.MapDifference.ValueDifference;
+import com.google.common.collect.Maps;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,7 +62,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,12 +69,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.MapDifference.ValueDifference;
-import com.google.common.collect.Maps;
-
+import javax.security.auth.Subject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.Config;
@@ -105,36 +104,30 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import com.google.common.annotations.VisibleForTesting;
-
-import javax.security.auth.Subject;
-
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
     private static final Set<Class> defaultAllowedExceptions = new HashSet<>();
     private static final List<String> LOCALHOST_ADDRESSES = Lists.newArrayList("localhost", "127.0.0.1", "0:0:0:0:0:0:0:1");
-
+    static SerializationDelegate serializationDelegate;
     private static ThreadLocal<TSerializer> threadSer = new ThreadLocal<TSerializer>();
     private static ThreadLocal<TDeserializer> threadDes = new ThreadLocal<TDeserializer>();
-
     private static ClassLoader cl = null;
     private static Map<String, Object> localConf;
-    static SerializationDelegate serializationDelegate;
+    // A singleton instance allows us to mock delegated static methods in our
+    // tests by subclassing.
+    private static Utils _instance = new Utils();
+    private static String memoizedLocalHostnameString = null;
 
     static {
         localConf = readStormConfig();
         serializationDelegate = getSerializationDelegate(localConf);
     }
 
-    // A singleton instance allows us to mock delegated static methods in our
-    // tests by subclassing.
-    private static Utils _instance = new Utils();
-
     /**
-     * Provide an instance of this class for delegates to use.  To mock out
-     * delegated methods, provide an instance of a subclass that overrides the
-     * implementation of the delegated method.
+     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * overrides the implementation of the delegated method.
+     *
      * @param u a Utils instance
      * @return the previously set instance
      */
@@ -162,7 +155,7 @@ public class Utils {
                 ret.add(resources.nextElement());
             }
             return ret;
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -184,10 +177,11 @@ public class Utils {
             }
 
             if (mustExist) {
-                if(confFileEmpty)
+                if (confFileEmpty) {
                     throw new RuntimeException("Config file " + name + " doesn't have any valid storm configs");
-                else
+                } else {
                     throw new RuntimeException("Could not find config file on classpath " + name);
+                }
             } else {
                 return new HashMap<>();
             }
@@ -205,10 +199,10 @@ public class Utils {
     }
 
     private static InputStream getConfigFileInputStream(String configFilePath)
-            throws IOException {
+        throws IOException {
         if (null == configFilePath) {
             throw new IOException(
-                    "Could not find config file, name not specified");
+                "Could not find config file, name not specified");
         }
 
         HashSet<URL> resources = new HashSet<URL>(findResources(configFilePath));
@@ -219,11 +213,11 @@ public class Utils {
             }
         } else if (resources.size() > 1) {
             throw new IOException(
-                    "Found multiple " + configFilePath
-                            + " resources. You're probably bundling the Storm jars with your topology jar. "
-                            + resources);
+                "Found multiple " + configFilePath
+                + " resources. You're probably bundling the Storm jars with your topology jar. "
+                + resources);
         } else {
-            LOG.debug("Using "+configFilePath+" from resources");
+            LOG.debug("Using " + configFilePath + " from resources");
             URL resource = resources.iterator().next();
             return resource.openStream();
         }
@@ -293,20 +287,18 @@ public class Utils {
     }
 
     /**
-     * Adds the user supplied function as a shutdown hook for cleanup.
-     * Also adds a function that sleeps for a second and then halts the
+     * Adds the user supplied function as a shutdown hook for cleanup. Also adds a function that sleeps for a second and then halts the
      * runtime to avoid any zombie process in case cleanup function hangs.
      */
-    public static void addShutdownHookWithForceKillIn1Sec (Runnable func) {
+    public static void addShutdownHookWithForceKillIn1Sec(Runnable func) {
         addShutdownHookWithDelayedForceKill(func, 1);
     }
 
     /**
-     * Adds the user supplied function as a shutdown hook for cleanup.
-     * Also adds a function that sleeps for numSecs and then halts the
+     * Adds the user supplied function as a shutdown hook for cleanup. Also adds a function that sleeps for numSecs and then halts the
      * runtime to avoid any zombie process in case cleanup function hangs.
      */
-    public static void addShutdownHookWithDelayedForceKill (Runnable func, int numSecs) {
+    public static void addShutdownHookWithDelayedForceKill(Runnable func, int numSecs) {
         Runnable sleepKill = new Runnable() {
             @Override
             public void run() {
@@ -329,21 +321,21 @@ public class Utils {
     }
 
     /**
-     * Creates a thread that calls the given code repeatedly, sleeping for an
-     * interval of seconds equal to the return value of the previous call.
+     * Creates a thread that calls the given code repeatedly, sleeping for an interval of seconds equal to the return value of the previous
+     * call.
      *
-     * The given afn may be a callable that returns the number of seconds to
-     * sleep, or it may be a Callable that returns another Callable that in turn
-     * returns the number of seconds to sleep. In the latter case isFactory.
+     * The given afn may be a callable that returns the number of seconds to sleep, or it may be a Callable that returns another Callable
+     * that in turn returns the number of seconds to sleep. In the latter case isFactory.
      *
-     * @param afn the code to call on each iteration
-     * @param isDaemon whether the new thread should be a daemon thread
-     * @param eh code to call when afn throws an exception
-     * @param priority the new thread's priority
-     * @param isFactory whether afn returns a callable instead of sleep seconds
+     * @param afn              the code to call on each iteration
+     * @param isDaemon         whether the new thread should be a daemon thread
+     * @param eh               code to call when afn throws an exception
+     * @param priority         the new thread's priority
+     * @param isFactory        whether afn returns a callable instead of sleep seconds
      * @param startImmediately whether to start the thread before returning
-     * @param threadName a suffix to be appended to the thread name
+     * @param threadName       a suffix to be appended to the thread name
      * @return the newly created thread
+     *
      * @see Thread
      */
     public static SmartThread asyncLoop(final Callable afn, boolean isDaemon, final Thread.UncaughtExceptionHandler eh,
@@ -355,14 +347,17 @@ public class Utils {
                     final Callable<Long> fn = isFactory ? (Callable<Long>) afn.call() : afn;
                     while (true) {
                         final Long s = fn.call();
-                        if (s==null) // then stop running it
+                        if (s == null) // then stop running it
+                        {
                             break;
-                        if (s>0)
+                        }
+                        if (s > 0) {
                             Time.sleep(s);
+                        }
                     }
                 } catch (Throwable t) {
                     if (Utils.exceptionCauseIsInstanceOf(
-                            InterruptedException.class, t)) {
+                        InterruptedException.class, t)) {
                         LOG.info("Async loop interrupted!");
                         return;
                     }
@@ -384,7 +379,7 @@ public class Utils {
         thread.setDaemon(isDaemon);
         thread.setPriority(priority);
         if (threadName != null && !threadName.isEmpty()) {
-            thread.setName(thread.getName() +"-"+ threadName);
+            thread.setName(thread.getName() + "-" + threadName);
         }
         if (startImmediately) {
             thread.start();
@@ -394,29 +389,33 @@ public class Utils {
 
     /**
      * Convenience method used when only the function and name suffix are given.
-     * @param afn the code to call on each iteration
+     *
+     * @param afn        the code to call on each iteration
      * @param threadName a suffix to be appended to the thread name
      * @return the newly created thread
+     *
      * @see Thread
      */
     public static SmartThread asyncLoop(final Callable afn, String threadName, final Thread.UncaughtExceptionHandler eh) {
         return asyncLoop(afn, false, eh, Thread.NORM_PRIORITY, false, true,
-                threadName);
+                         threadName);
     }
 
     /**
      * Convenience method used when only the function is given.
+     *
      * @param afn the code to call on each iteration
      * @return the newly created thread
      */
     public static SmartThread asyncLoop(final Callable afn) {
         return asyncLoop(afn, false, null, Thread.NORM_PRIORITY, false, true,
-                null);
+                         null);
     }
 
     /**
      * Checks if a throwable is an instance of a particular class
-     * @param klass The class you're expecting
+     *
+     * @param klass     The class you're expecting
      * @param throwable The throwable you expect to be an instance of klass
      * @return true if throwable is instance of klass, false otherwise.
      */
@@ -427,7 +426,7 @@ public class Utils {
     public static <T extends Throwable> T unwrapTo(Class<T> klass, Throwable t) {
         while (t != null) {
             if (klass.isInstance(t)) {
-                return (T)t;
+                return (T) t;
             }
             t = t.getCause();
         }
@@ -441,9 +440,9 @@ public class Utils {
         }
     }
 
-    public static RuntimeException wrapInRuntime(Exception e){
-        if (e instanceof RuntimeException){
-            return (RuntimeException)e;
+    public static RuntimeException wrapInRuntime(Exception e) {
+        if (e instanceof RuntimeException) {
+            return (RuntimeException) e;
         } else {
             return new RuntimeException(e);
         }
@@ -454,20 +453,19 @@ public class Utils {
     }
 
     /**
-     * Gets the storm.local.hostname value, or tries to figure out the local hostname
-     * if it is not set in the config.
+     * Gets the storm.local.hostname value, or tries to figure out the local hostname if it is not set in the config.
+     *
      * @return a string representation of the hostname.
      */
     public static String hostname() throws UnknownHostException {
         return _instance.hostnameImpl();
     }
 
-
-    public static String localHostname () throws UnknownHostException {
+    public static String localHostname() throws UnknownHostException {
         return _instance.localHostnameImpl();
     }
 
-    public static void exitProcess (int val, String msg) {
+    public static void exitProcess(int val, String msg) {
         String combinedErrorMessage = "Halting process: " + msg;
         LOG.error(combinedErrorMessage, new RuntimeException(combinedErrorMessage));
         Runtime.getRuntime().exit(val);
@@ -501,7 +499,7 @@ public class Utils {
             }
             Object ret = ois.readObject();
             ois.close();
-            return (T)ret;
+            return (T) ret;
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } catch (ClassNotFoundException e) {
@@ -524,9 +522,9 @@ public class Utils {
     public static <T> String join(Iterable<T> coll, String sep) {
         Iterator<T> it = coll.iterator();
         StringBuilder ret = new StringBuilder();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             ret.append(it.next());
-            if(it.hasNext()) {
+            if (it.hasNext()) {
                 ret.append(sep);
             }
         }
@@ -543,11 +541,12 @@ public class Utils {
 
     /**
      * Get the ACL for nimbus/supervisor.  The Super User ACL. This assumes that security is enabled.
+     *
      * @param conf the config to get the super User ACL from
      * @return the super user ACL.
      */
     public static ACL getSuperUserAcl(Map<String, Object> conf) {
-        String stormZKUser = (String)conf.get(Config.STORM_ZOOKEEPER_SUPERACL);
+        String stormZKUser = (String) conf.get(Config.STORM_ZOOKEEPER_SUPERACL);
         if (stormZKUser == null) {
             throw new IllegalArgumentException("Authentication is enabled but " + Config.STORM_ZOOKEEPER_SUPERACL + " is not set");
         }
@@ -556,6 +555,7 @@ public class Utils {
 
     /**
      * Get the ZK ACLs that a worker should use when writing to ZK.
+     *
      * @param conf the config for the topology.
      * @return the ACLs
      */
@@ -570,13 +570,14 @@ public class Utils {
 
     /**
      * Is the topology configured to have ZooKeeper authentication.
+     *
      * @param conf the topology configuration
      * @return true if ZK is configured else false
      */
     public static boolean isZkAuthenticationConfiguredTopology(Map<String, Object> conf) {
         return (conf != null
                 && conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME) != null
-                && !((String)conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME)).isEmpty());
+                && !((String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME)).isEmpty());
     }
 
     public static void handleUncaughtException(Throwable t) {
@@ -595,7 +596,7 @@ public class Utils {
             }
         }
 
-        if(allowedExceptions.contains(t.getClass())) {
+        if (allowedExceptions.contains(t.getClass())) {
             LOG.info("Swallowing {} {}", t.getClass(), t);
             return;
         }
@@ -639,7 +640,7 @@ public class Utils {
 
     private static TDeserializer getDes() {
         TDeserializer des = threadDes.get();
-        if(des == null) {
+        if (des == null) {
             des = new TDeserializer();
             threadDes.set(des);
         }
@@ -649,7 +650,7 @@ public class Utils {
     public static void sleep(long millis) {
         try {
             Time.sleep(millis);
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
@@ -662,13 +663,10 @@ public class Utils {
     /**
      * "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
      *
-     * Example usage in java:
-     *  Map<Integer, String> tasks;
-     *  Map<String, List<Integer>> componentTasks = Utils.reverse_map(tasks);
+     * Example usage in java: Map<Integer, String> tasks; Map<String, List<Integer>> componentTasks = Utils.reverse_map(tasks);
      *
-     * The order of he resulting list values depends on the ordering properties
-     * of the Map passed in. The caller is responsible for passing an ordered
-     * map if they expect the result to be consistently ordered as well.
+     * The order of he resulting list values depends on the ordering properties of the Map passed in. The caller is responsible for passing
+     * an ordered map if they expect the result to be consistently ordered as well.
      *
      * @param map to reverse
      * @return a reversed map
@@ -703,8 +701,8 @@ public class Utils {
     }
 
     /**
-     * Deletes a file or directory and its contents if it exists. Does not
-     * complain if the input is null or does not exist.
+     * Deletes a file or directory and its contents if it exists. Does not complain if the input is null or does not exist.
+     *
      * @param path the path to the file or directory
      */
     public static void forceDelete(String path) throws IOException {
@@ -721,6 +719,7 @@ public class Utils {
 
     /**
      * Serialize an object using the configured serialization and then base64 encode it into a string.
+     *
      * @param obj the object to encode
      * @return a string with the encoded object in it.
      */
@@ -729,11 +728,12 @@ public class Utils {
     }
 
     /**
-     * Deserialize an object stored in a string. The String is assumed to be a base64 encoded string
-     * containing the bytes to actually deserialize.
-     * @param str the encoded string.
+     * Deserialize an object stored in a string. The String is assumed to be a base64 encoded string containing the bytes to actually
+     * deserialize.
+     *
+     * @param str   the encoded string.
      * @param clazz the thrift class we are expecting.
-     * @param <T> The type of clazz
+     * @param <T>   The type of clazz
      * @return the decoded object
      */
     public static <T> T deserializeFromString(String str, Class<T> clazz) {
@@ -768,13 +768,13 @@ public class Utils {
     }
 
     /**
-     * Creates an instance of the pluggable SerializationDelegate or falls back to
-     * DefaultSerializationDelegate if something goes wrong.
+     * Creates an instance of the pluggable SerializationDelegate or falls back to DefaultSerializationDelegate if something goes wrong.
+     *
      * @param topoConf The config from which to pull the name of the pluggable class.
      * @return an instance of the class specified by storm.meta.serialization.delegate
      */
     private static SerializationDelegate getSerializationDelegate(Map<String, Object> topoConf) {
-        String delegateClassName = (String)topoConf.get(Config.STORM_META_SERIALIZATION_DELEGATE);
+        String delegateClassName = (String) topoConf.get(Config.STORM_META_SERIALIZATION_DELEGATE);
         SerializationDelegate delegate;
         try {
             Class delegateClass = Class.forName(delegateClassName);
@@ -871,10 +871,9 @@ public class Utils {
     }
 
     /**
-     * A cheap way to deterministically convert a number to a positive value. When the input is
-     * positive, the original value is returned. When the input number is negative, the returned
-     * positive value is the original value bit AND against Integer.MAX_VALUE(0x7fffffff) which
-     * is not its absolutely value.
+     * A cheap way to deterministically convert a number to a positive value. When the input is positive, the original value is returned.
+     * When the input number is negative, the returned positive value is the original value bit AND against Integer.MAX_VALUE(0x7fffffff)
+     * which is not its absolutely value.
      *
      * @param number a given number
      * @return a positive number.
@@ -901,17 +900,17 @@ public class Utils {
             InputStreamReader in = new InputStreamReader(new GZIPInputStream(bis));
             Object ret = JSONValue.parseWithException(in);
             in.close();
-            return (Map<String,Object>)ret;
+            return (Map<String, Object>) ret;
         } catch (IOException | ParseException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Creates a new map with a string value in the map replaced with an
-     * equivalently-lengthed string of '#'.  (If the object is not a string
-     * to string will be called on it and replaced)
-     * @param m The map that a value will be redacted from
+     * Creates a new map with a string value in the map replaced with an equivalently-lengthed string of '#'.  (If the object is not a
+     * string to string will be called on it and replaced)
+     *
+     * @param m   The map that a value will be redacted from
      * @param key The key pointing to the value to be redacted
      * @return a new map with the value redacted. The original map will not be modified.
      */
@@ -929,15 +928,15 @@ public class Utils {
 
     public static void setupDefaultUncaughtExceptionHandler() {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                public void uncaughtException(Thread thread, Throwable thrown) {
-                    try {
-                        handleUncaughtException(thrown);
-                    } catch (Error err) {
-                        LOG.error("Received error in main thread.. terminating server...", err);
-                        Runtime.getRuntime().exit(-2);
-                    }
+            public void uncaughtException(Thread thread, Throwable thrown) {
+                try {
+                    handleUncaughtException(thrown);
+                } catch (Error err) {
+                    LOG.error("Received error in main thread.. terminating server...", err);
+                    Runtime.getRuntime().exit(-2);
                 }
-            });
+            }
+        });
     }
 
     public static Map<String, Object> findAndReadConfigFile(String name) {
@@ -945,8 +944,7 @@ public class Utils {
     }
 
     /**
-     * "[[:a 1] [:b 1] [:c 2]} -> {1 [:a :b] 2 :c}"
-     * Reverses an assoc-list style Map like reverseMap(Map...)
+     * "[[:a 1] [:b 1] [:c 2]} -> {1 [:a :b] 2 :c}" Reverses an assoc-list style Map like reverseMap(Map...)
      *
      * @param listSeq to reverse
      * @return a reversed map
@@ -971,6 +969,7 @@ public class Utils {
 
     /**
      * parses the arguments to extract jvm heap memory size in MB.
+     *
      * @param options
      * @param defaultValue
      * @return the value of the JVM heap memory setting (in MB) in a java command.
@@ -988,19 +987,19 @@ public class Utils {
                     char unitChar = m.group(2).toLowerCase().charAt(0);
                     int unit;
                     switch (unitChar) {
-                    case 'k':
-                        unit = 1024;
-                        break;
-                    case 'm':
-                        unit = 1024 * 1024;
-                        break;
-                    case 'g':
-                        unit = 1024 * 1024 * 1024;
-                        break;
-                    default:
-                        unit = 1;
+                        case 'k':
+                            unit = 1024;
+                            break;
+                        case 'm':
+                            unit = 1024 * 1024;
+                            break;
+                        case 'g':
+                            unit = 1024 * 1024 * 1024;
+                            break;
+                        default:
+                            unit = 1;
                     }
-                    Double result =  value * unit / 1024.0 / 1024.0;
+                    Double result = value * unit / 1024.0 / 1024.0;
                     return (result < 1.0) ? 1.0 : result;
                 }
             }
@@ -1021,7 +1020,7 @@ public class Utils {
         if (obj instanceof Map) {
             return normalizeConf((Map<String, Object>) obj);
         } else if (obj instanceof Collection) {
-            List<Object> confList =  new ArrayList<>((Collection<Object>) obj);
+            List<Object> confList = new ArrayList<>((Collection<Object>) obj);
             for (int i = 0; i < confList.size(); i++) {
                 Object val = confList.get(i);
                 confList.set(i, normalizeConfValue(val));
@@ -1035,7 +1034,7 @@ public class Utils {
             return obj;
         }
     }
-    
+
     private static Map<String, Object> normalizeConf(Map<String, Object> conf) {
         if (conf == null) {
             return new HashMap<>();
@@ -1049,42 +1048,42 @@ public class Utils {
 
     @SuppressWarnings("unchecked")
     public static boolean isValidConf(Map<String, Object> topoConfIn) {
-	Map<String, Object> origTopoConf = normalizeConf(topoConfIn);
-	try {
-	    Map<String, Object> deserTopoConf = normalizeConf(
-		    (Map<String, Object>) JSONValue.parseWithException(JSONValue.toJSONString(topoConfIn)));
-	    return isValidConf(origTopoConf, deserTopoConf);
-	} catch (ParseException e) {
-	    LOG.error("Json serialized config could not be deserialized", e);
-	}
-	return false;
+        Map<String, Object> origTopoConf = normalizeConf(topoConfIn);
+        try {
+            Map<String, Object> deserTopoConf = normalizeConf(
+                (Map<String, Object>) JSONValue.parseWithException(JSONValue.toJSONString(topoConfIn)));
+            return isValidConf(origTopoConf, deserTopoConf);
+        } catch (ParseException e) {
+            LOG.error("Json serialized config could not be deserialized", e);
+        }
+        return false;
     }
 
     @VisibleForTesting
     static boolean isValidConf(Map<String, Object> orig, Map<String, Object> deser) {
-	MapDifference<String, Object> diff = Maps.difference(orig, deser);
-	if (diff.areEqual()) {
-	    return true;
-	}
-	for (Map.Entry<String, Object> entryOnLeft : diff.entriesOnlyOnLeft().entrySet()) {
-	    LOG.warn("Config property ({}) is found in original config, but missing from the "
-		    + "serialized-deserialized config. This is due to an internal error in "
-		    + "serialization. Name: {} - Value: {}",
-		    entryOnLeft.getKey(), entryOnLeft.getKey(), entryOnLeft.getValue());
-	}
-	for (Map.Entry<String, Object> entryOnRight : diff.entriesOnlyOnRight().entrySet()) {
-	    LOG.warn("Config property ({}) is not found in original config, but present in "
-		    + "serialized-deserialized config. This is due to an internal error in "
-		    + "serialization. Name: {} - Value: {}",
-		    entryOnRight.getKey(), entryOnRight.getKey(), entryOnRight.getValue());
-	}
-	for (Map.Entry<String, ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
-	    Object leftValue = entryDiffers.getValue().leftValue();
-	    Object rightValue = entryDiffers.getValue().rightValue();
-	    LOG.warn("Config value differs after json serialization. Name: {} - Original Value: {} - DeSer. Value: {}",
-	            entryDiffers.getKey(), leftValue, rightValue);
-	}
-	return false;
+        MapDifference<String, Object> diff = Maps.difference(orig, deser);
+        if (diff.areEqual()) {
+            return true;
+        }
+        for (Map.Entry<String, Object> entryOnLeft : diff.entriesOnlyOnLeft().entrySet()) {
+            LOG.warn("Config property ({}) is found in original config, but missing from the "
+                     + "serialized-deserialized config. This is due to an internal error in "
+                     + "serialization. Name: {} - Value: {}",
+                     entryOnLeft.getKey(), entryOnLeft.getKey(), entryOnLeft.getValue());
+        }
+        for (Map.Entry<String, Object> entryOnRight : diff.entriesOnlyOnRight().entrySet()) {
+            LOG.warn("Config property ({}) is not found in original config, but present in "
+                     + "serialized-deserialized config. This is due to an internal error in "
+                     + "serialization. Name: {} - Value: {}",
+                     entryOnRight.getKey(), entryOnRight.getKey(), entryOnRight.getValue());
+        }
+        for (Map.Entry<String, ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
+            Object leftValue = entryDiffers.getValue().leftValue();
+            Object rightValue = entryDiffers.getValue().rightValue();
+            LOG.warn("Config value differs after json serialization. Name: {} - Original Value: {} - DeSer. Value: {}",
+                     entryDiffers.getKey(), leftValue, rightValue);
+        }
+        return false;
     }
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
@@ -1094,7 +1093,7 @@ public class Utils {
                 return client.getClient().getTopologyInfo(topologyId);
             }
             return null;
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -1102,12 +1101,12 @@ public class Utils {
     public static String getTopologyId(String name, Nimbus.Iface client) {
         try {
             ClusterSummary summary = client.getClusterInfo();
-            for(TopologySummary s : summary.get_topologies()) {
-                if(s.get_name().equals(name)) {
+            for (TopologySummary s : summary.get_topologies()) {
+                if (s.get_name().equals(name)) {
                     return s.get_id();
                 }
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return null;
@@ -1115,6 +1114,7 @@ public class Utils {
 
     /**
      * Validate topology blobstore map.
+     *
      * @param topoConf Topology configuration
      * @throws InvalidTopologyException
      * @throws AuthorizationException
@@ -1128,13 +1128,14 @@ public class Utils {
 
     /**
      * Validate topology blobstore map.
+     *
      * @param topoConf Topology configuration
-     * @param client The NimbusBlobStore client. It must call prepare() before being used here.
+     * @param client   The NimbusBlobStore client. It must call prepare() before being used here.
      * @throws InvalidTopologyException
      * @throws AuthorizationException
      */
     public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, NimbusBlobStore client)
-            throws InvalidTopologyException, AuthorizationException {
+        throws InvalidTopologyException, AuthorizationException {
         Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
             for (String key : blobStoreMap.keySet()) {
@@ -1152,13 +1153,14 @@ public class Utils {
 
     /**
      * Validate topology blobstore map.
-     * @param topoConf Topology configuration
+     *
+     * @param topoConf  Topology configuration
      * @param blobStore The BlobStore
      * @throws InvalidTopologyException
      * @throws AuthorizationException
      */
     public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, BlobStore blobStore)
-            throws InvalidTopologyException, AuthorizationException {
+        throws InvalidTopologyException, AuthorizationException {
         Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
             Subject subject = ReqContext.context().subject();
@@ -1175,11 +1177,12 @@ public class Utils {
 
     /**
      * Gets some information, including stack trace, for a running thread.
+     *
      * @return A human-readable string of the dump.
      */
     public static String threadDump() {
         final StringBuilder dump = new StringBuilder();
-        final java.lang.management.ThreadMXBean threadMXBean =  ManagementFactory.getThreadMXBean();
+        final java.lang.management.ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         final java.lang.management.ThreadInfo[] threadInfos = threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds(), 100);
         for (java.lang.management.ThreadInfo threadInfo : threadInfos) {
             dump.append('"');
@@ -1209,28 +1212,30 @@ public class Utils {
 
     /**
      * Return a new instance of a pluggable specified in the conf.
-     * @param conf The conf to read from.
+     *
+     * @param conf      The conf to read from.
      * @param configKey The key pointing to the pluggable class
      * @return an instance of the class or null if it is not specified.
      */
     public static Object getConfiguredClass(Map<String, Object> conf, Object configKey) {
         if (conf.containsKey(configKey)) {
-            return ReflectionUtils.newInstance((String)conf.get(configKey));
+            return ReflectionUtils.newInstance((String) conf.get(configKey));
         }
         return null;
     }
 
     /**
-     * Is the cluster configured to interact with ZooKeeper in a secure way?
-     * This only works when called from within Nimbus or a Supervisor process.
+     * Is the cluster configured to interact with ZooKeeper in a secure way? This only works when called from within Nimbus or a Supervisor
+     * process.
+     *
      * @param conf the storm configuration, not the topology configuration
      * @return true if it is configured else false.
      */
     public static boolean isZkAuthenticationConfiguredStormServer(Map<String, Object> conf) {
         return null != System.getProperty("java.security.auth.login.config")
-                || (conf != null
-                && conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME) != null
-                && !((String)conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME)).isEmpty());
+               || (conf != null
+                   && conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME) != null
+                   && !((String) conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME)).isEmpty());
     }
 
     public static byte[] toCompressedJsonConf(Map<String, Object> topoConf) {
@@ -1245,12 +1250,13 @@ public class Utils {
         }
     }
 
-    public static double nullToZero (Double v) {
+    public static double nullToZero(Double v) {
         return (v != null ? v : 0);
     }
 
     /**
      * a or b the first one that is not null
+     *
      * @param a something
      * @param b something else
      * @return a or b the first one that is not null
@@ -1266,7 +1272,7 @@ public class Utils {
         TreeMap<Integer, Integer> ret = new TreeMap<Integer, Integer>();
         ret.put(base, numBases);
         if (numInc != 0) {
-            ret.put(base+1, numInc);
+            ret.put(base + 1, numInc);
         }
         return ret;
     }
@@ -1274,17 +1280,17 @@ public class Utils {
     /**
      * Fills up chunks out of a collection (given a maximum amount of chunks)
      *
-     * i.e. partitionFixed(5, [1,2,3]) -> [[1,2,3]]
-     *      partitionFixed(5, [1..9]) -> [[1,2], [3,4], [5,6], [7,8], [9]]
-     *      partitionFixed(3, [1..10]) -> [[1,2,3,4], [5,6,7], [8,9,10]]
+     * i.e. partitionFixed(5, [1,2,3]) -> [[1,2,3]] partitionFixed(5, [1..9]) -> [[1,2], [3,4], [5,6], [7,8], [9]] partitionFixed(3,
+     * [1..10]) -> [[1,2,3,4], [5,6,7], [8,9,10]]
+     *
      * @param maxNumChunks the maximum number of chunks to return
-     * @param coll the collection to be chunked up
+     * @param coll         the collection to be chunked up
      * @return a list of the chunks, which are themselves lists.
      */
     public static <T> List<List<T>> partitionFixed(int maxNumChunks, Collection<T> coll) {
         List<List<T>> ret = new ArrayList<>();
 
-        if(maxNumChunks == 0 || coll == null) {
+        if (maxNumChunks == 0 || coll == null) {
             return ret;
         }
 
@@ -1296,14 +1302,20 @@ public class Utils {
 
 
         Iterator<T> it = coll.iterator();
-        for(Integer chunkSize : sortedKeys) {
-            if(!it.hasNext()) { break; }
+        for (Integer chunkSize : sortedKeys) {
+            if (!it.hasNext()) {
+                break;
+            }
             Integer times = parts.get(chunkSize);
-            for(int i = 0; i < times; i++) {
-                if(!it.hasNext()) { break; }
+            for (int i = 0; i < times; i++) {
+                if (!it.hasNext()) {
+                    break;
+                }
                 List<T> chunkList = new ArrayList<>();
-                for(int j = 0; j < chunkSize; j++) {
-                    if(!it.hasNext()) { break; }
+                for (int j = 0; j < chunkSize; j++) {
+                    if (!it.hasNext()) {
+                        break;
+                    }
                     chunkList.add(it.next());
                 }
                 ret.add(chunkList);
@@ -1316,16 +1328,15 @@ public class Utils {
     public static Object readYamlFile(String yamlFile) {
         try (FileReader reader = new FileReader(yamlFile)) {
             return new Yaml(new SafeConstructor()).load(reader);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             LOG.error("Failed to read yaml file.", ex);
         }
         return null;
     }
 
     /**
-     * Gets an available port. Consider if it is possible to pass port 0 to the
-     * server instead of using this method, since there is no guarantee that the
-     * port returned by this method will remain free.
+     * Gets an available port. Consider if it is possible to pass port 0 to the server instead of using this method, since there is no
+     * guarantee that the port returned by this method will remain free.
      *
      * @param preferredPort
      * @return The preferred port if available, or a random available port
@@ -1334,7 +1345,7 @@ public class Utils {
         int localPort = -1;
         try (ServerSocket socket = new ServerSocket(preferredPort)) {
             localPort = socket.getLocalPort();
-        } catch(IOException exp) {
+        } catch (IOException exp) {
             if (preferredPort > 0) {
                 return getAvailablePort(0);
             }
@@ -1344,6 +1355,7 @@ public class Utils {
 
     /**
      * Shortcut to calling {@link #getAvailablePort(int) } with 0 as the preferred port
+     *
      * @return A random available port
      */
     public static int getAvailablePort() {
@@ -1352,15 +1364,16 @@ public class Utils {
 
     /**
      * Find the first item of coll for which pred.test(...) returns true.
+     *
      * @param pred The IPredicate to test for
      * @param coll The Collection of items to search through.
      * @return The first matching value in coll, or null if nothing matches.
      */
-    public static <T> T findOne (IPredicate<T> pred, Collection<T> coll) {
-        if(coll == null) {
+    public static <T> T findOne(IPredicate<T> pred, Collection<T> coll) {
+        if (coll == null) {
             return null;
         }
-        for(T elem : coll) {
+        for (T elem : coll) {
             if (pred.test(elem)) {
                 return elem;
             }
@@ -1368,7 +1381,7 @@ public class Utils {
         return null;
     }
 
-    public static <T, U> T findOne (IPredicate<T> pred, Map<U, T> map) {
+    public static <T, U> T findOne(IPredicate<T> pred, Map<U, T> map) {
         if (map == null) {
             return null;
         }
@@ -1376,7 +1389,7 @@ public class Utils {
     }
 
     public static Map<String, Object> parseJson(String json) {
-        if (json==null) {
+        if (json == null) {
             return new HashMap<>();
         } else {
             try {
@@ -1387,143 +1400,91 @@ public class Utils {
         }
     }
 
-    // Non-static impl methods exist for mocking purposes.
-    protected void forceDeleteImpl(String path) throws IOException {
-        LOG.debug("Deleting path {}", path);
-        if (checkFileExists(path)) {
-            try {
-                FileUtils.forceDelete(new File(path));
-            } catch (FileNotFoundException ignored) {}
-        }
-    }
-
-    // Non-static impl methods exist for mocking purposes.
-    public UptimeComputer makeUptimeComputerImpl() {
-        return new UptimeComputer();
-    }
-
-    // Non-static impl methods exist for mocking purposes.
-    protected String localHostnameImpl () throws UnknownHostException {
-        return InetAddress.getLocalHost().getCanonicalHostName();
-    }
-
-    private static String memoizedLocalHostnameString = null;
-
-    public static String memoizedLocalHostname () throws UnknownHostException {
+    public static String memoizedLocalHostname() throws UnknownHostException {
         if (memoizedLocalHostnameString == null) {
             memoizedLocalHostnameString = localHostname();
         }
         return memoizedLocalHostnameString;
     }
 
-    // Non-static impl methods exist for mocking purposes.
-    protected String hostnameImpl () throws UnknownHostException  {
-        if (localConf == null) {
-            return memoizedLocalHostname();
-        }
-        Object hostnameString = localConf.get(Config.STORM_LOCAL_HOSTNAME);
-        if (hostnameString == null || hostnameString.equals("")) {
-            return memoizedLocalHostname();
-        }
-        return (String)hostnameString;
-    }
-
-    /**
-     * A thread that can answer if it is sleeping in the case of simulated time.
-     * This class is not useful when simulated time is not being used.
-     */
-    public static class SmartThread extends Thread {
-        public boolean isSleeping() {
-            return Time.isThreadWaiting(this);
-        }
-        public SmartThread(Runnable r) {
-            super(r);
-        }
-    }
-
-    public static class UptimeComputer {
-        int startTime = 0;
-
-        public UptimeComputer() {
-            startTime = Time.currentTimeSecs();
-        }
-
-        public int upTime() {
-            return Time.deltaSecs(startTime);
-        }
-    }
-
     /**
      * Add version information to the given topology
+     *
      * @param topology the topology being submitted (MIGHT BE MODIFIED)
      * @return topology
      */
     public static StormTopology addVersions(StormTopology topology) {
         String stormVersion = VersionInfo.getVersion();
-        if (stormVersion != null && 
-                !"Unknown".equalsIgnoreCase(stormVersion) && 
-                !topology.is_set_storm_version()) {
+        if (stormVersion != null &&
+            !"Unknown".equalsIgnoreCase(stormVersion) &&
+            !topology.is_set_storm_version()) {
             topology.set_storm_version(stormVersion);
         }
-        
+
         String jdkVersion = System.getProperty("java.version");
         if (jdkVersion != null && !topology.is_set_jdk_version()) {
             topology.set_jdk_version(jdkVersion);
         }
         return topology;
     }
-    
+
     /**
      * Get a map of version to classpath from the conf Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP
-     * @param conf what to read it out of
+     *
+     * @param conf      what to read it out of
      * @param currentCP the current classpath for this version of storm (not included in the conf, but returned by this)
      * @return the map
      */
-    public static NavigableMap<SimpleVersion, List<String>> getConfiguredClasspathVersions(Map<String, Object> conf, List<String> currentCP) {
+    public static NavigableMap<SimpleVersion, List<String>> getConfiguredClasspathVersions(Map<String, Object> conf,
+                                                                                           List<String> currentCP) {
         TreeMap<SimpleVersion, List<String>> ret = new TreeMap<>();
-        Map<String, String> fromConf = (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections.emptyMap());
-        for (Map.Entry<String, String> entry: fromConf.entrySet()) {
+        Map<String, String> fromConf =
+            (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections.emptyMap());
+        for (Map.Entry<String, String> entry : fromConf.entrySet()) {
             ret.put(new SimpleVersion(entry.getKey()), Arrays.asList(entry.getValue().split(File.pathSeparator)));
         }
         ret.put(VersionInfo.OUR_VERSION, currentCP);
         return ret;
     }
-    
+
     /**
      * Get a map of version to worker main from the conf Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP
+     *
      * @param conf what to read it out of
      * @return the map
      */
     public static NavigableMap<SimpleVersion, String> getConfiguredWorkerMainVersions(Map<String, Object> conf) {
         TreeMap<SimpleVersion, String> ret = new TreeMap<>();
-        Map<String, String> fromConf = (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP, Collections.emptyMap());
-        for (Map.Entry<String, String> entry: fromConf.entrySet()) {
+        Map<String, String> fromConf =
+            (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP, Collections.emptyMap());
+        for (Map.Entry<String, String> entry : fromConf.entrySet()) {
             ret.put(new SimpleVersion(entry.getKey()), entry.getValue());
         }
 
         ret.put(VersionInfo.OUR_VERSION, "org.apache.storm.daemon.worker.Worker");
         return ret;
     }
-    
-    
+
     /**
      * Get a map of version to worker log writer from the conf Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP
+     *
      * @param conf what to read it out of
      * @return the map
      */
     public static NavigableMap<SimpleVersion, String> getConfiguredWorkerLogWriterVersions(Map<String, Object> conf) {
         TreeMap<SimpleVersion, String> ret = new TreeMap<>();
-        Map<String, String> fromConf = (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP, Collections.emptyMap());
-        for (Map.Entry<String, String> entry: fromConf.entrySet()) {
+        Map<String, String> fromConf =
+            (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP, Collections.emptyMap());
+        for (Map.Entry<String, String> entry : fromConf.entrySet()) {
             ret.put(new SimpleVersion(entry.getKey()), entry.getValue());
         }
 
         ret.put(VersionInfo.OUR_VERSION, "org.apache.storm.LogWriter");
         return ret;
     }
-    
-    
-    public static <T> T getCompatibleVersion(NavigableMap<SimpleVersion, T> versionedMap, SimpleVersion desiredVersion, String what, T defaultValue) {
+
+    public static <T> T getCompatibleVersion(NavigableMap<SimpleVersion, T> versionedMap, SimpleVersion desiredVersion, String what,
+                                             T defaultValue) {
         Entry<SimpleVersion, T> ret = versionedMap.ceilingEntry(desiredVersion);
         if (ret == null || ret.getKey().getMajor() != desiredVersion.getMajor()) {
             //Could not find a "fully" compatible version.  Look to see if there is a possibly compatible version right below it
@@ -1538,7 +1499,7 @@ public class Utils {
         }
         return ret.getValue();
     }
-    
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> readConfIgnoreNotFound(Yaml yaml, File f) throws IOException {
         Map<String, Object> ret = null;
@@ -1549,7 +1510,7 @@ public class Utils {
         }
         return ret;
     }
-    
+
     public static Map<String, Object> getConfigFromClasspath(List<String> cp, Map<String, Object> conf) throws IOException {
         if (cp == null || cp.isEmpty()) {
             return conf;
@@ -1560,7 +1521,7 @@ public class Utils {
 
         // Based on how Java handles the classpath
         // https://docs.oracle.com/javase/8/docs/technotes/tools/unix/classpath.html
-        for (String part: cp) {
+        for (String part : cp) {
             File f = new File(part);
 
             if (f.getName().equals("*")) {
@@ -1643,6 +1604,65 @@ public class Utils {
             }
         }
         return result;
+    }
+
+    // Non-static impl methods exist for mocking purposes.
+    protected void forceDeleteImpl(String path) throws IOException {
+        LOG.debug("Deleting path {}", path);
+        if (checkFileExists(path)) {
+            try {
+                FileUtils.forceDelete(new File(path));
+            } catch (FileNotFoundException ignored) {
+            }
+        }
+    }
+
+    // Non-static impl methods exist for mocking purposes.
+    public UptimeComputer makeUptimeComputerImpl() {
+        return new UptimeComputer();
+    }
+
+    // Non-static impl methods exist for mocking purposes.
+    protected String localHostnameImpl() throws UnknownHostException {
+        return InetAddress.getLocalHost().getCanonicalHostName();
+    }
+
+    // Non-static impl methods exist for mocking purposes.
+    protected String hostnameImpl() throws UnknownHostException {
+        if (localConf == null) {
+            return memoizedLocalHostname();
+        }
+        Object hostnameString = localConf.get(Config.STORM_LOCAL_HOSTNAME);
+        if (hostnameString == null || hostnameString.equals("")) {
+            return memoizedLocalHostname();
+        }
+        return (String) hostnameString;
+    }
+
+    /**
+     * A thread that can answer if it is sleeping in the case of simulated time. This class is not useful when simulated time is not being
+     * used.
+     */
+    public static class SmartThread extends Thread {
+        public SmartThread(Runnable r) {
+            super(r);
+        }
+
+        public boolean isSleeping() {
+            return Time.isThreadWaiting(this);
+        }
+    }
+
+    public static class UptimeComputer {
+        int startTime = 0;
+
+        public UptimeComputer() {
+            startTime = Time.currentTimeSecs();
+        }
+
+        public int upTime() {
+            return Time.deltaSecs(startTime);
+        }
     }
 
     private static class JarConfigReader {

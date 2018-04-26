@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.daemon;
 
 import java.io.IOException;
@@ -24,10 +19,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -53,21 +46,34 @@ import org.apache.storm.task.IBolt;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StormCommon {
+    public static final String SYSTEM_STREAM_ID = "__system";
+    public static final String EVENTLOGGER_COMPONENT_ID = "__eventlogger";
+    public static final String EVENTLOGGER_STREAM_ID = "__eventlog";
+    public static final String TOPOLOGY_METRICS_CONSUMER_CLASS = "class";
+    public static final String TOPOLOGY_METRICS_CONSUMER_ARGUMENT = "argument";
+    public static final String TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES = "max.retain.metric.tuples";
+    public static final String TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT = "parallelism.hint";
+    public static final String TOPOLOGY_METRICS_CONSUMER_WHITELIST = "whitelist";
+    public static final String TOPOLOGY_METRICS_CONSUMER_BLACKLIST = "blacklist";
+    public static final String TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE = "expandMapType";
+    public static final String TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR = "metricNameSeparator";
+    public static final String TOPOLOGY_EVENT_LOGGER_CLASS = "class";
+    public static final String TOPOLOGY_EVENT_LOGGER_ARGUMENTS = "arguments";
+    private static final Logger LOG = LoggerFactory.getLogger(StormCommon.class);
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
     private static StormCommon _instance = new StormCommon();
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out
-     * delegated methods, provide an instance of a subclass that overrides the
-     * implementation of the delegated method.
+     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * overrides the implementation of the delegated method.
      *
      * @param common a StormCommon instance
      * @return the previously set instance
@@ -77,25 +83,6 @@ public class StormCommon {
         _instance = common;
         return oldInstance;
     }
-
-    private static final Logger LOG = LoggerFactory.getLogger(StormCommon.class);
-
-    public static final String SYSTEM_STREAM_ID = "__system";
-
-    public static final String EVENTLOGGER_COMPONENT_ID = "__eventlogger";
-    public static final String EVENTLOGGER_STREAM_ID = "__eventlog";
-
-    public static final String TOPOLOGY_METRICS_CONSUMER_CLASS = "class";
-    public static final String TOPOLOGY_METRICS_CONSUMER_ARGUMENT = "argument";
-    public static final String TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES = "max.retain.metric.tuples";
-    public static final String TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT = "parallelism.hint";
-    public static final String TOPOLOGY_METRICS_CONSUMER_WHITELIST = "whitelist";
-    public static final String TOPOLOGY_METRICS_CONSUMER_BLACKLIST = "blacklist";
-    public static final String TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE = "expandMapType";
-    public static final String TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR = "metricNameSeparator";
-
-    public static final String TOPOLOGY_EVENT_LOGGER_CLASS = "class";
-    public static final String TOPOLOGY_EVENT_LOGGER_ARGUMENTS = "arguments";
 
     @Deprecated
     public static String getStormId(final IStormClusterState stormClusterState, final String topologyName) {
@@ -216,14 +203,14 @@ public class StormCommon {
                 String sourceComponentId = input.getKey().get_componentId();
                 if (!componentMap.keySet().contains(sourceComponentId)) {
                     throw new InvalidTopologyException("Component: [" + componentId +
-                            "] subscribes from non-existent component [" + sourceComponentId + "]");
+                                                       "] subscribes from non-existent component [" + sourceComponentId + "]");
                 }
 
                 ComponentCommon sourceComponent = getComponentCommon(componentMap.get(sourceComponentId));
                 if (!sourceComponent.get_streams().containsKey(sourceStreamId)) {
                     throw new InvalidTopologyException("Component: [" + componentId +
-                            "] subscribes from non-existent stream: " +
-                            "[" + sourceStreamId + "] of component [" + sourceComponentId + "]");
+                                                       "] subscribes from non-existent stream: " +
+                                                       "[" + sourceStreamId + "] of component [" + sourceComponentId + "]");
                 }
 
                 Grouping grouping = input.getValue();
@@ -234,8 +221,8 @@ public class StormCommon {
                     fields.removeAll(sourceOutputFields);
                     if (fields.size() != 0) {
                         throw new InvalidTopologyException("Component: [" + componentId +
-                                "] subscribes from stream: [" + sourceStreamId + "] of component " +
-                                "[" + sourceComponentId + "] + with non-existent fields: " + fields);
+                                                           "] subscribes from stream: [" + sourceStreamId + "] of component " +
+                                                           "[" + sourceComponentId + "] + with non-existent fields: " + fields);
                     }
                 }
             }
@@ -249,16 +236,16 @@ public class StormCommon {
 
         for (String id : spoutIds) {
             inputs.put(Utils.getGlobalStreamId(id, Acker.ACKER_INIT_STREAM_ID),
-                    Thrift.prepareFieldsGrouping(Arrays.asList("id")));
+                       Thrift.prepareFieldsGrouping(Arrays.asList("id")));
         }
 
         for (String id : boltIds) {
             inputs.put(Utils.getGlobalStreamId(id, Acker.ACKER_ACK_STREAM_ID),
-                    Thrift.prepareFieldsGrouping(Arrays.asList("id")));
+                       Thrift.prepareFieldsGrouping(Arrays.asList("id")));
             inputs.put(Utils.getGlobalStreamId(id, Acker.ACKER_FAIL_STREAM_ID),
-                    Thrift.prepareFieldsGrouping(Arrays.asList("id")));
+                       Thrift.prepareFieldsGrouping(Arrays.asList("id")));
             inputs.put(Utils.getGlobalStreamId(id, Acker.ACKER_RESET_TIMEOUT_STREAM_ID),
-                    Thrift.prepareFieldsGrouping(Arrays.asList("id")));
+                       Thrift.prepareFieldsGrouping(Arrays.asList("id")));
         }
         return inputs;
     }
@@ -267,13 +254,10 @@ public class StormCommon {
         return _instance.makeAckerBoltImpl();
     }
 
-    public IBolt makeAckerBoltImpl() {
-        return new Acker();
-    }
-
     @SuppressWarnings("unchecked")
     public static void addAcker(Map<String, Object> conf, StormTopology topology) {
-        int ackerNum = ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
+        int ackerNum =
+            ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
         Map<GlobalStreamId, Grouping> inputs = ackerInputs(topology);
 
         Map<String, StreamInfo> outputStreams = new HashMap<String, StreamInfo>();
@@ -298,16 +282,16 @@ public class StormCommon {
             ComponentCommon common = spout.get_common();
             Map<String, Object> spoutConf = componentConf(spout);
             spoutConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS,
-                    ObjectReader.getInt(conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)));
+                          ObjectReader.getInt(conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)));
             common.set_json_conf(JSONValue.toJSONString(spoutConf));
             common.put_to_streams(Acker.ACKER_INIT_STREAM_ID,
-                    Thrift.outputFields(Arrays.asList("id", "init-val", "spout-task")));
+                                  Thrift.outputFields(Arrays.asList("id", "init-val", "spout-task")));
             common.put_to_inputs(Utils.getGlobalStreamId(Acker.ACKER_COMPONENT_ID, Acker.ACKER_ACK_STREAM_ID),
-                    Thrift.prepareDirectGrouping());
+                                 Thrift.prepareDirectGrouping());
             common.put_to_inputs(Utils.getGlobalStreamId(Acker.ACKER_COMPONENT_ID, Acker.ACKER_FAIL_STREAM_ID),
-                    Thrift.prepareDirectGrouping());
+                                 Thrift.prepareDirectGrouping());
             common.put_to_inputs(Utils.getGlobalStreamId(Acker.ACKER_COMPONENT_ID, Acker.ACKER_RESET_TIMEOUT_STREAM_ID),
-                    Thrift.prepareDirectGrouping());
+                                 Thrift.prepareDirectGrouping());
         }
 
         topology.put_to_bolts(Acker.ACKER_COMPONENT_ID, acker);
@@ -343,7 +327,7 @@ public class StormCommon {
 
     public static List<String> eventLoggerBoltFields() {
         return Arrays.asList(EventLoggerBolt.FIELD_COMPONENT_ID, EventLoggerBolt.FIELD_MESSAGE_ID,
-                EventLoggerBolt.FIELD_TS, EventLoggerBolt.FIELD_VALUES);
+                             EventLoggerBolt.FIELD_TS, EventLoggerBolt.FIELD_VALUES);
     }
 
     public static Map<GlobalStreamId, Grouping> eventLoggerInputs(StormTopology topology) {
@@ -354,22 +338,22 @@ public class StormCommon {
 
         for (String id : allIds) {
             inputs.put(Utils.getGlobalStreamId(id, EVENTLOGGER_STREAM_ID),
-                    Thrift.prepareFieldsGrouping(Arrays.asList("component-id")));
+                       Thrift.prepareFieldsGrouping(Arrays.asList("component-id")));
         }
         return inputs;
     }
 
     public static void addEventLogger(Map<String, Object> conf, StormTopology topology) {
         Integer numExecutors = ObjectReader.getInt(conf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS),
-                ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
-        if (numExecutors==null || numExecutors==0) {
+                                                   ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
+        if (numExecutors == null || numExecutors == 0) {
             return;
         }
         HashMap<String, Object> componentConf = new HashMap<>();
         componentConf.put(Config.TOPOLOGY_TASKS, numExecutors);
         componentConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, ObjectReader.getInt(conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)));
         Bolt eventLoggerBolt = Thrift.prepareSerializedBoltDetails(
-                eventLoggerInputs(topology), new EventLoggerBolt(), null, numExecutors, componentConf);
+            eventLoggerInputs(topology), new EventLoggerBolt(), null, numExecutors, componentConf);
 
         for (Object component : allComponents(topology).values()) {
             ComponentCommon common = getComponentCommon(component);
@@ -413,9 +397,9 @@ public class StormCommon {
                     TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR), ".");
                 DataPointExpander expander = new DataPointExpander(expandMapType, metricNameSeparator);
                 MetricsConsumerBolt boltInstance = new MetricsConsumerBolt(className, argument,
-                    maxRetainMetricTuples, filterPredicate, expander);
+                                                                           maxRetainMetricTuples, filterPredicate, expander);
                 Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
-                    boltInstance, null, phintNum, metricsConsumerConf);
+                                                                               boltInstance, null, phintNum, metricsConsumerConf);
 
                 String id = className;
                 if (classOccurrencesMap.containsKey(className)) {
@@ -460,24 +444,6 @@ public class StormCommon {
         return _instance.systemTopologyImpl(topoConf, topology);
     }
 
-    protected StormTopology systemTopologyImpl(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
-        validateBasic(topology);
-
-        StormTopology ret = topology.deepCopy();
-        addAcker(topoConf, ret);
-        if (hasEventLoggers(topoConf)) {
-            addEventLogger(topoConf, ret);
-        }
-        addMetricComponents(topoConf, ret);
-        addSystemComponents(topoConf, ret);
-        addMetricStreams(ret);
-        addSystemStreams(ret);
-
-        validateStructure(ret);
-
-        return ret;
-    }
-
     public static boolean hasAckers(Map<String, Object> topoConf) {
         Object ackerNum = topoConf.get(Config.TOPOLOGY_ACKER_EXECUTORS);
         return ackerNum == null || ObjectReader.getInt(ackerNum) > 0;
@@ -493,36 +459,9 @@ public class StormCommon {
         return Thrift.getParallelismHint(common);
     }
 
-    public static Map<Integer, String> stormTaskInfo(StormTopology userTopology, Map<String, Object> topoConf) throws InvalidTopologyException {
+    public static Map<Integer, String> stormTaskInfo(StormTopology userTopology, Map<String, Object> topoConf) throws
+        InvalidTopologyException {
         return _instance.stormTaskInfoImpl(userTopology, topoConf);
-    }
-
-    /*
-     * Returns map from task -> componentId
-     */
-    protected Map<Integer, String> stormTaskInfoImpl(StormTopology userTopology, Map<String, Object> topoConf) throws InvalidTopologyException {
-        Map<Integer, String> taskIdToComponentId = new HashMap<>();
-
-        StormTopology systemTopology = systemTopology(topoConf, userTopology);
-        Map<String, Object> components = allComponents(systemTopology);
-        Map<String, Integer> componentIdToTaskNum = new TreeMap<>();
-        for (Map.Entry<String, Object> entry : components.entrySet()) {
-            Map<String, Object> conf = componentConf(entry.getValue());
-            Object taskNum = conf.get(Config.TOPOLOGY_TASKS);
-            componentIdToTaskNum.put(entry.getKey(), ObjectReader.getInt(taskNum));
-        }
-
-        int taskId = 1;
-        for (Map.Entry<String, Integer> entry : componentIdToTaskNum.entrySet()) {
-            String componentId = entry.getKey();
-            Integer taskNum = entry.getValue();
-            while (taskNum > 0) {
-                taskIdToComponentId.put(taskId, componentId);
-                taskNum--;
-                taskId++;
-            }
-        }
-        return taskIdToComponentId;
     }
 
     public static List<Integer> executorIdToTasks(List<Long> executorId) {
@@ -547,12 +486,89 @@ public class StormCommon {
     }
 
     public static IAuthorizer mkAuthorizationHandler(String klassName, Map<String, Object> conf)
-            throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+        throws IllegalAccessException, InstantiationException, ClassNotFoundException {
         return _instance.mkAuthorizationHandlerImpl(klassName, conf);
     }
 
+    @SuppressWarnings("unchecked")
+    public static WorkerTopologyContext makeWorkerContext(Map<String, Object> workerData) {
+        try {
+            StormTopology stormTopology = (StormTopology) workerData.get(Constants.SYSTEM_TOPOLOGY);
+            Map<String, Object> topoConf = (Map) workerData.get(Constants.STORM_CONF);
+            Map<Integer, String> taskToComponent = (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT);
+            Map<String, List<Integer>> componentToSortedTasks =
+                (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SORTED_TASKS);
+            Map<String, Map<String, Fields>> componentToStreamToFields =
+                (Map<String, Map<String, Fields>>) workerData.get(Constants.COMPONENT_TO_STREAM_TO_FIELDS);
+            String stormId = (String) workerData.get(Constants.STORM_ID);
+            Map<String, Object> conf = (Map) workerData.get(Constants.CONF);
+            Integer port = (Integer) workerData.get(Constants.PORT);
+            String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, stormId));
+            String pidDir = ConfigUtils.workerPidsRoot(conf, stormId);
+            List<Integer> workerTasks = (List<Integer>) workerData.get(Constants.TASK_IDS);
+            Map<String, Object> defaultResources = (Map<String, Object>) workerData.get(Constants.DEFAULT_SHARED_RESOURCES);
+            Map<String, Object> userResources = (Map<String, Object>) workerData.get(Constants.USER_SHARED_RESOURCES);
+            return new WorkerTopologyContext(stormTopology, topoConf, taskToComponent, componentToSortedTasks,
+                                             componentToStreamToFields, stormId, codeDir, pidDir, port, workerTasks, defaultResources,
+                                             userResources);
+        } catch (IOException e) {
+            throw Utils.wrapInRuntime(e);
+        }
+    }
+
+    public IBolt makeAckerBoltImpl() {
+        return new Acker();
+    }
+
+    protected StormTopology systemTopologyImpl(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
+        validateBasic(topology);
+
+        StormTopology ret = topology.deepCopy();
+        addAcker(topoConf, ret);
+        if (hasEventLoggers(topoConf)) {
+            addEventLogger(topoConf, ret);
+        }
+        addMetricComponents(topoConf, ret);
+        addSystemComponents(topoConf, ret);
+        addMetricStreams(ret);
+        addSystemStreams(ret);
+
+        validateStructure(ret);
+
+        return ret;
+    }
+
+    /*
+     * Returns map from task -> componentId
+     */
+    protected Map<Integer, String> stormTaskInfoImpl(StormTopology userTopology, Map<String, Object> topoConf) throws
+        InvalidTopologyException {
+        Map<Integer, String> taskIdToComponentId = new HashMap<>();
+
+        StormTopology systemTopology = systemTopology(topoConf, userTopology);
+        Map<String, Object> components = allComponents(systemTopology);
+        Map<String, Integer> componentIdToTaskNum = new TreeMap<>();
+        for (Map.Entry<String, Object> entry : components.entrySet()) {
+            Map<String, Object> conf = componentConf(entry.getValue());
+            Object taskNum = conf.get(Config.TOPOLOGY_TASKS);
+            componentIdToTaskNum.put(entry.getKey(), ObjectReader.getInt(taskNum));
+        }
+
+        int taskId = 1;
+        for (Map.Entry<String, Integer> entry : componentIdToTaskNum.entrySet()) {
+            String componentId = entry.getKey();
+            Integer taskNum = entry.getValue();
+            while (taskNum > 0) {
+                taskIdToComponentId.put(taskId, componentId);
+                taskNum--;
+                taskId++;
+            }
+        }
+        return taskIdToComponentId;
+    }
+
     protected IAuthorizer mkAuthorizationHandlerImpl(String klassName, Map<String, Object> conf)
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         IAuthorizer aznHandler = null;
         if (StringUtils.isNotBlank(klassName)) {
             Class<?> aznClass = Class.forName(klassName);
@@ -566,30 +582,5 @@ public class StormCommon {
         }
 
         return aznHandler;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static WorkerTopologyContext makeWorkerContext(Map<String, Object> workerData) {
-        try {
-            StormTopology stormTopology = (StormTopology) workerData.get(Constants.SYSTEM_TOPOLOGY);
-            Map<String, Object> topoConf = (Map) workerData.get(Constants.STORM_CONF);
-            Map<Integer, String> taskToComponent = (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT);
-            Map<String, List<Integer>> componentToSortedTasks =
-                    (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SORTED_TASKS);
-            Map<String, Map<String, Fields>> componentToStreamToFields =
-                    (Map<String, Map<String, Fields>>) workerData.get(Constants.COMPONENT_TO_STREAM_TO_FIELDS);
-            String stormId = (String) workerData.get(Constants.STORM_ID);
-            Map<String, Object> conf = (Map) workerData.get(Constants.CONF);
-            Integer port = (Integer) workerData.get(Constants.PORT);
-            String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, stormId));
-            String pidDir = ConfigUtils.workerPidsRoot(conf, stormId);
-            List<Integer> workerTasks = (List<Integer>) workerData.get(Constants.TASK_IDS);
-            Map<String, Object> defaultResources = (Map<String, Object>) workerData.get(Constants.DEFAULT_SHARED_RESOURCES);
-            Map<String, Object> userResources = (Map<String, Object>) workerData.get(Constants.USER_SHARED_RESOURCES);
-            return new WorkerTopologyContext(stormTopology, topoConf, taskToComponent, componentToSortedTasks,
-                    componentToStreamToFields, stormId, codeDir, pidDir, port, workerTasks, defaultResources, userResources);
-        } catch (IOException e) {
-            throw Utils.wrapInRuntime(e);
-        }
     }
 }

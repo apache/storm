@@ -18,17 +18,19 @@
 
 package org.apache.storm.zookeeper;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.CuratorEvent;
 import org.apache.curator.framework.api.CuratorEventType;
 import org.apache.curator.framework.api.CuratorListener;
 import org.apache.curator.framework.state.ConnectionStateListener;
-import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.VersionedData;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.CuratorUtils;
+import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -37,23 +39,17 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 public class ClientZookeeper {
-
-    private static Logger LOG = LoggerFactory.getLogger(ClientZookeeper.class);
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
     private static final ClientZookeeper INSTANCE = new ClientZookeeper();
+    private static Logger LOG = LoggerFactory.getLogger(ClientZookeeper.class);
     private static ClientZookeeper _instance = INSTANCE;
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out
-     * delegated methods, provide an instance of a subclass that overrides the
-     * implementation of the delegated method.
+     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * overrides the implementation of the delegated method.
      *
      * @param u a ClientZookeeper instance
      */
@@ -62,9 +58,8 @@ public class ClientZookeeper {
     }
 
     /**
-     * Resets the singleton instance to the default. This is helpful to reset
-     * the class to its original functionality when mocking is no longer
-     * desired.
+     * Resets the singleton instance to the default. This is helpful to reset the class to its original functionality when mocking is no
+     * longer desired.
      */
     public static void resetInstance() {
         _instance = INSTANCE;
@@ -81,7 +76,7 @@ public class ClientZookeeper {
 
     // Deletes the state inside the zookeeper for a key, for which the
     // contents of the key starts with nimbus host port information
-    public static void deleteNodeBlobstore(CuratorFramework zk, String parentPath, String hostPortInfo){
+    public static void deleteNodeBlobstore(CuratorFramework zk, String parentPath, String hostPortInfo) {
         String normalizedPatentPath = normalizePath(parentPath);
         List<String> childPathList = null;
         if (existsNode(zk, normalizedPatentPath, false)) {
@@ -106,7 +101,7 @@ public class ClientZookeeper {
         return ret;
     }
 
-    public static String createNode(CuratorFramework zk, String path, byte[] data, List<ACL> acls){
+    public static String createNode(CuratorFramework zk, String path, byte[] data, List<ACL> acls) {
         return createNode(zk, path, data, org.apache.zookeeper.CreateMode.PERSISTENT, acls);
     }
 
@@ -139,7 +134,7 @@ public class ClientZookeeper {
         return rtn;
     }
 
-    public static boolean existsNode(CuratorFramework zk, String path, boolean watch){
+    public static boolean existsNode(CuratorFramework zk, String path, boolean watch) {
         Stat stat = null;
         try {
             if (watch) {
@@ -153,7 +148,7 @@ public class ClientZookeeper {
         return stat != null;
     }
 
-    public static void deleteNode(CuratorFramework zk, String path){
+    public static void deleteNode(CuratorFramework zk, String path) {
         try {
             String npath = normalizePath(path);
             if (existsNode(zk, npath, false)) {
@@ -178,11 +173,11 @@ public class ClientZookeeper {
         return toksToPath(toks);
     }
 
-    public static boolean exists(CuratorFramework zk, String path, boolean watch){
+    public static boolean exists(CuratorFramework zk, String path, boolean watch) {
         return existsNode(zk, path, watch);
     }
 
-    public static Stat setData(CuratorFramework zk, String path, byte[] data){
+    public static Stat setData(CuratorFramework zk, String path, byte[] data) {
         try {
             String npath = normalizePath(path);
             return zk.setData().forPath(npath, data);
@@ -217,7 +212,7 @@ public class ClientZookeeper {
         }
     }
 
-    public static byte[] getData(CuratorFramework zk, String path, boolean watch){
+    public static byte[] getData(CuratorFramework zk, String path, boolean watch) {
         try {
             String npath = normalizePath(path);
             if (existsNode(zk, npath, watch)) {
@@ -239,8 +234,9 @@ public class ClientZookeeper {
 
     /**
      * Get the data along with a version
-     * @param zk the zk instance to use
-     * @param path the path to get it from
+     *
+     * @param zk    the zk instance to use
+     * @param path  the path to get it from
      * @param watch should a watch be enabled
      * @return null if no data is found, else the data with the version.
      */
@@ -275,7 +271,7 @@ public class ClientZookeeper {
         zk.getConnectionStateListenable().addListener(listener);
     }
 
-    public static void syncPath(CuratorFramework zk, String path){
+    public static void syncPath(CuratorFramework zk, String path) {
         try {
             zk.sync().forPath(normalizePath(path));
         } catch (Exception e) {
@@ -302,8 +298,8 @@ public class ClientZookeeper {
         }
     }
 
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root,
-                                          final WatcherCallBack watcher, Map<String, Object> authConf, DaemonType type) {
+    public CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root,
+                                         final WatcherCallBack watcher, Map<String, Object> authConf, DaemonType type) {
         CuratorFramework fk;
         if (authConf != null) {
             fk = CuratorUtils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf), type.getDefaultZkAcls(conf));

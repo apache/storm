@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.security.auth.sasl;
@@ -42,19 +36,21 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
 
     /**
      * Constructor with different password providers.
+     *
      * @param impersonationAllowed true if impersonation is allowed else false.
-     * @param providers what will provide a password.  They will be checked in order, and the first one to
-     *     return a password wins.
+     * @param providers            what will provide a password.  They will be checked in order, and the first one to return a password
+     *                             wins.
      */
-    public SimpleSaslServerCallbackHandler(boolean impersonationAllowed, PasswordProvider ... providers) {
+    public SimpleSaslServerCallbackHandler(boolean impersonationAllowed, PasswordProvider... providers) {
         this(impersonationAllowed, Arrays.asList(providers));
     }
 
     /**
      * Constructor with different password providers.
+     *
      * @param impersonationAllowed true if impersonation is allowed else false.
-     * @param providers what will provide a password.  They will be checked in order, and the first one to
-     *     return a password wins.
+     * @param providers            what will provide a password.  They will be checked in order, and the first one to return a password
+     *                             wins.
      */
     public SimpleSaslServerCallbackHandler(boolean impersonationAllowed, List<PasswordProvider> providers) {
         this.impersonationAllowed = impersonationAllowed;
@@ -88,7 +84,7 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
     }
 
     private Pair<String, Boolean> translateName(String orig) {
-        for (PasswordProvider provider: providers) {
+        for (PasswordProvider provider : providers) {
             try {
                 String ret = provider.userName(orig);
                 if (ret != null) {
@@ -128,7 +124,7 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
                 rc = (RealmCallback) callback;
             } else {
                 throw new UnsupportedCallbackException(callback,
-                    "Unrecognized SASL Callback");
+                                                       "Unrecognized SASL Callback");
             }
         }
 
@@ -172,7 +168,7 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
                 allowImpersonation = allowImpersonation && tmp.getSecond();
             }
             LOG.info("Successfully authenticated client: authenticationID = {} authorizationID = {}",
-                nid, zid);
+                     nid, zid);
 
             //if authorizationId is not set, set it to authenticationId.
             if (zid == null) {
@@ -186,10 +182,10 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
             //add the nid as the real user in reqContext's subject which will be used during authorization.
             if (!nid.equals(zid)) {
                 LOG.info("Impersonation attempt  authenticationID = {} authorizationID = {}",
-                    nid,  zid);
+                         nid, zid);
                 if (!allowImpersonation) {
                     throw new IllegalArgumentException(ac.getAuthenticationID() + " attempting to impersonate " + ac.getAuthorizationID()
-                        + ".  This is not allowed.");
+                                                       + ".  This is not allowed.");
                 }
                 ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(nid));
             } else {

@@ -1,28 +1,28 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.topology;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
-
 import com.google.common.collect.ImmutableMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import org.apache.storm.Config;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.streams.Pair;
@@ -48,17 +48,8 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-
+import static org.hamcrest.Matchers.contains;
+import static org.junit.Assert.assertThat;
 import static org.mockito.AdditionalAnswers.returnsArgAt;
 
 /**
@@ -128,7 +119,7 @@ public class PersistentWindowedBoltExecutorTest {
         Mockito.when(mockSystemState.iterator()).thenReturn(
             ImmutableMap.<String, Optional<?>>of("es", Optional.empty(), "ts", Optional.empty()).entrySet().iterator());
         executor.prepare(testStormConf, mockTopologyContext, mockOutputCollector,
-            mockWindowState, mockPartitionState, mockSystemState);
+                         mockWindowState, mockPartitionState, mockSystemState);
     }
 
     @Test
@@ -154,7 +145,7 @@ public class PersistentWindowedBoltExecutorTest {
         // late tuple emitted
         ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(mockOutputCollector, Mockito.times(1))
-            .emit(stringCaptor.capture(), anchorCaptor.capture(), valuesCaptor.capture());
+               .emit(stringCaptor.capture(), anchorCaptor.capture(), valuesCaptor.capture());
         Assert.assertEquals(LATE_STREAM, stringCaptor.getValue());
         Assert.assertEquals(Collections.singletonList(mockTuple), anchorCaptor.getValue());
         Assert.assertEquals(new Values(mockTuple), valuesCaptor.getValue());
@@ -201,14 +192,15 @@ public class PersistentWindowedBoltExecutorTest {
         Assert.assertEquals((long) expectedPartitionIds.get(0), (long) longCaptor.getValue());
         Assert.assertEquals(WINDOW_EVENT_COUNT, windowValuesCaptor.getValue().size());
         List<Tuple> tuples = windowValuesCaptor.getValue()
-            .getEvents().stream().map(Event::get).collect(Collectors.toList());
+                                               .getEvents().stream().map(Event::get).collect(Collectors.toList());
         Assert.assertArrayEquals(mockTuples.toArray(), tuples.toArray());
 
         // window system state
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(mockSystemState, Mockito.times(2)).put(keyCaptor.capture(), systemValuesCaptor.capture());
         Assert.assertEquals(EVICTION_STATE_KEY, keyCaptor.getAllValues().get(0));
-        Assert.assertEquals(Optional.of(Pair.of((long)WINDOW_EVENT_COUNT, (long)WINDOW_EVENT_COUNT)), systemValuesCaptor.getAllValues().get(0));
+        Assert.assertEquals(Optional.of(Pair.of((long) WINDOW_EVENT_COUNT, (long) WINDOW_EVENT_COUNT)),
+                            systemValuesCaptor.getAllValues().get(0));
         Assert.assertEquals(TRIGGER_STATE_KEY, keyCaptor.getAllValues().get(1));
         Assert.assertEquals(Optional.of(tupleTs), systemValuesCaptor.getAllValues().get(1));
     }
@@ -222,12 +214,12 @@ public class PersistentWindowedBoltExecutorTest {
         List<Tuple> mockTuples = getMockTuples(tupleCount);
         mockTuples.forEach(t -> executor.execute(t));
 
-        int numPartitions = tupleCount/WindowState.MAX_PARTITION_EVENTS;
-        int numEvictedPartitions =  numPartitions - WindowState.MIN_PARTITIONS;
+        int numPartitions = tupleCount / WindowState.MAX_PARTITION_EVENTS;
+        int numEvictedPartitions = numPartitions - WindowState.MIN_PARTITIONS;
         Mockito.verify(mockWindowState, Mockito.times(numEvictedPartitions)).put(longCaptor.capture(), windowValuesCaptor.capture());
         // number of evicted events
-        Assert.assertEquals(numEvictedPartitions*WindowState.MAX_PARTITION_EVENTS, windowValuesCaptor.getAllValues().stream()
-            .mapToInt(x -> x.size()).sum());
+        Assert.assertEquals(numEvictedPartitions * WindowState.MAX_PARTITION_EVENTS, windowValuesCaptor.getAllValues().stream()
+                                                                                                       .mapToInt(x -> x.size()).sum());
 
         Map<Long, WindowState.WindowPartition<Tuple>> partitionMap = new HashMap<>();
         windowValuesCaptor.getAllValues().forEach(v -> partitionMap.put(v.getId(), v));
@@ -236,7 +228,7 @@ public class PersistentWindowedBoltExecutorTest {
         Mockito.verify(mockPartitionState, Mockito.times(numPartitions)).put(stringCaptor.capture(), partitionValuesCaptor.capture());
         // partition ids 0 .. 19
         Assert.assertThat(partitionValuesCaptor.getAllValues().get(numPartitions - 1),
-            contains(LongStream.range(0, numPartitions).boxed().collect(Collectors.toList()).toArray(new Long[0])));
+                          contains(LongStream.range(0, numPartitions).boxed().collect(Collectors.toList()).toArray(new Long[0])));
 
         Mockito.when(mockWindowState.get(Mockito.any(), Mockito.any())).then(new Answer<Object>() {
             @Override
@@ -251,7 +243,7 @@ public class PersistentWindowedBoltExecutorTest {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
                 Object[] args = invocation.getArguments();
-                partitionMap.put((long)args[0], (WindowState.WindowPartition<Tuple>)args[1]);
+                partitionMap.put((long) args[0], (WindowState.WindowPartition<Tuple>) args[1]);
                 return null;
             }
         }).when(mockWindowState).put(Mockito.any(), Mockito.any());
@@ -260,7 +252,7 @@ public class PersistentWindowedBoltExecutorTest {
         long activationTs = tupleTs + 1000;
         executor.getWindowManager().add(new WaterMarkEvent<>(activationTs));
 
-        Mockito.verify(mockBolt, Mockito.times(tupleCount/WINDOW_EVENT_COUNT)).execute(Mockito.any());
+        Mockito.verify(mockBolt, Mockito.times(tupleCount / WINDOW_EVENT_COUNT)).execute(Mockito.any());
     }
 
     @Test

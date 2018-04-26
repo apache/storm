@@ -15,61 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.apache.storm.cluster.PaceMakerStateStorage;
-import org.apache.storm.generated.*;
+import org.apache.storm.generated.ClusterWorkerHeartbeat;
+import org.apache.storm.generated.HBMessage;
+import org.apache.storm.generated.HBMessageData;
+import org.apache.storm.generated.HBNodes;
+import org.apache.storm.generated.HBPulse;
+import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.pacemaker.PacemakerClient;
 import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-
 public class PaceMakerStateStorageFactoryTest {
     private PaceMakerClientProxy clientProxy;
     private PacemakerClientPoolProxy clientPoolProxy;
     private PaceMakerStateStorage stateStorage;
-
-    private class PaceMakerClientProxy extends PacemakerClient {
-        private HBMessage response;
-        private HBMessage captured;
-
-        public PaceMakerClientProxy(HBMessage response, HBMessage captured) {
-            this.response = response;
-            this.captured = captured;
-        }
-
-        @Override
-        public HBMessage send(HBMessage m) {
-            captured = m;
-            return response;
-        }
-
-        public HBMessage checkCaptured() {
-            return captured;
-        }
-    }
-
-    private class PacemakerClientPoolProxy extends PacemakerClientPool {
-        public PacemakerClientPoolProxy() {
-            super(new HashMap<>());
-        }
-        public PacemakerClient getWriteClient() {
-            return clientProxy;
-        }
-        public HBMessage send(HBMessage m) {
-            return clientProxy.send(m);
-        }
-        public List<HBMessage> sendAll(HBMessage m) {
-            List<HBMessage> response = new ArrayList<>();
-            response.add(clientProxy.send(m));
-            return response;
-        }
-    }
 
     public void createPaceMakerStateStorage(HBServerMessageType messageType, HBMessageData messageData) throws Exception {
         HBMessage response = new HBMessage(messageType, messageData);
@@ -148,6 +116,46 @@ public class PaceMakerStateStorageFactoryTest {
     public void testGetWorkerHbChildrenBadData() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, null);
         stateStorage.get_worker_hb_children("/foo", false);
+    }
+
+    private class PaceMakerClientProxy extends PacemakerClient {
+        private HBMessage response;
+        private HBMessage captured;
+
+        public PaceMakerClientProxy(HBMessage response, HBMessage captured) {
+            this.response = response;
+            this.captured = captured;
+        }
+
+        @Override
+        public HBMessage send(HBMessage m) {
+            captured = m;
+            return response;
+        }
+
+        public HBMessage checkCaptured() {
+            return captured;
+        }
+    }
+
+    private class PacemakerClientPoolProxy extends PacemakerClientPool {
+        public PacemakerClientPoolProxy() {
+            super(new HashMap<>());
+        }
+
+        public PacemakerClient getWriteClient() {
+            return clientProxy;
+        }
+
+        public HBMessage send(HBMessage m) {
+            return clientProxy.send(m);
+        }
+
+        public List<HBMessage> sendAll(HBMessage m) {
+            List<HBMessage> response = new ArrayList<>();
+            response.add(clientProxy.send(m));
+            return response;
+        }
     }
 
 }

@@ -15,87 +15,81 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 /**
  * This mock exercises PartitionManager
  */
 public class PartitionManagerCallerMock {
-  public static final String statePath = "/eventhubspout/TestTopo/namespace/entityname/partitions/1";
-  private IPartitionManager pm;
-  private IStateStore stateStore;
+    public static final String statePath = "/eventhubspout/TestTopo/namespace/entityname/partitions/1";
+    private IPartitionManager pm;
+    private IStateStore stateStore;
 
-  public PartitionManagerCallerMock(String partitionId) {
-    this(partitionId, 0);
-  }
-  
-  public PartitionManagerCallerMock(String partitionId, long enqueueTimeFilter) {
-    EventHubReceiverMock receiver = new EventHubReceiverMock(partitionId);
-    EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password",
-      "namespace", "entityname", 16, "zookeeper", 10, 1024, 1024, enqueueTimeFilter);
-    conf.setTopologyName("TestTopo");
-    stateStore = new StateStoreMock();
-    this.pm = new PartitionManager(conf, partitionId, stateStore, receiver);
-    
-    stateStore.open();
-    try {
-      pm.open();
+    public PartitionManagerCallerMock(String partitionId) {
+        this(partitionId, 0);
     }
-    catch (Exception ex) {
-    }
-  }
-  
-  /**
-   * Execute a sequence of calls to Partition Manager.
-   * 
-   * @param callSequence: is represented as a string of commands, 
-   * e.g. "r,r,r,r,a1,f2,...". The commands are:
-   * r[N]: receive() called N times
-   * aX: ack(X)
-   * fY: fail(Y)
-   * 
-   * @return the sequence of messages the receive call returns
-   */
-  public String execute(String callSequence) {
-    
-    String[] cmds = callSequence.split(",");
-    StringBuilder ret = new StringBuilder();
-    for(String cmd : cmds) {
-      if(cmd.startsWith("r")) {
-        int count = 1;
-        if(cmd.length() > 1) {
-          count = Integer.parseInt(cmd.substring(1));
+
+    public PartitionManagerCallerMock(String partitionId, long enqueueTimeFilter) {
+        EventHubReceiverMock receiver = new EventHubReceiverMock(partitionId);
+        EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password",
+                                                           "namespace", "entityname", 16, "zookeeper", 10, 1024, 1024, enqueueTimeFilter);
+        conf.setTopologyName("TestTopo");
+        stateStore = new StateStoreMock();
+        this.pm = new PartitionManager(conf, partitionId, stateStore, receiver);
+
+        stateStore.open();
+        try {
+            pm.open();
+        } catch (Exception ex) {
         }
-        for(int i=0; i<count; ++i) {
-          EventDataWrap ed = pm.receive();
-          if(ed == null) {
-            ret.append("null,");
-          }
-          else {
-            ret.append(ed.getMessageId().getOffset());
-            ret.append(",");
-          }
+    }
+
+    /**
+     * Execute a sequence of calls to Partition Manager.
+     *
+     * @param callSequence: is represented as a string of commands, e.g. "r,r,r,r,a1,f2,...". The commands are: r[N]: receive() called N
+     *                      times aX: ack(X) fY: fail(Y)
+     * @return the sequence of messages the receive call returns
+     */
+    public String execute(String callSequence) {
+
+        String[] cmds = callSequence.split(",");
+        StringBuilder ret = new StringBuilder();
+        for (String cmd : cmds) {
+            if (cmd.startsWith("r")) {
+                int count = 1;
+                if (cmd.length() > 1) {
+                    count = Integer.parseInt(cmd.substring(1));
+                }
+                for (int i = 0; i < count; ++i) {
+                    EventDataWrap ed = pm.receive();
+                    if (ed == null) {
+                        ret.append("null,");
+                    } else {
+                        ret.append(ed.getMessageId().getOffset());
+                        ret.append(",");
+                    }
+                }
+            } else if (cmd.startsWith("a")) {
+                pm.ack(cmd.substring(1));
+            } else if (cmd.startsWith("f")) {
+                pm.fail(cmd.substring(1));
+            }
         }
-      }
-      else if(cmd.startsWith("a")) {
-        pm.ack(cmd.substring(1));
-      }
-      else if(cmd.startsWith("f")) {
-        pm.fail(cmd.substring(1));
-      }
+        if (ret.length() > 0) {
+            ret.setLength(ret.length() - 1);
+        }
+        return ret.toString();
     }
-    if(ret.length() > 0) {
-      ret.setLength(ret.length()-1);
+
+    /**
+     * Exercise the IPartitionManager.checkpoint() method
+     *
+     * @return the offset that we write to state store
+     */
+    public String checkpoint() {
+        pm.checkpoint();
+        return stateStore.readData(statePath);
     }
-    return ret.toString();
-  }
-  
-  /**
-   * Exercise the IPartitionManager.checkpoint() method
-   * @return the offset that we write to state store
-   */
-  public String checkpoint() {
-    pm.checkpoint();
-    return stateStore.readData(statePath);
-  }
 }

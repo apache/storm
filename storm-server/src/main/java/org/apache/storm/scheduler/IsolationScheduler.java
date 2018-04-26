@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.scheduler;
 
 import java.util.ArrayList;
@@ -28,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import org.apache.commons.lang.Validate;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.Utils;
@@ -63,7 +57,8 @@ public class IsolationScheduler implements IScheduler {
 
     // get host -> all assignable worker slots for non-blacklisted machines (assigned or not assigned)
     // will then have a list of machines that need to be assigned (machine -> [topology, list of list of executors])
-    // match each spec to a machine (who has the right number of workers), free everything else on that machine and assign those slots (do one topology at a time)
+    // match each spec to a machine (who has the right number of workers), free everything else on that machine and assign those slots
+    // (do one topology at a time)
     // blacklist all machines who had production slots defined
     // log isolated topologies who weren't able to get enough slots / machines
     // run default scheduler on isolated topologies that didn't have enough slots + non-isolated topologies on remaining machines
@@ -85,9 +80,9 @@ public class IsolationScheduler implements IScheduler {
             int numWorkers = assignments.size();
 
             if (isoIds.contains(topologyId)
-                    && checkAssignmentTopology(assignments, topologyId)
-                    && distribution.containsKey(numWorkers)
-                    && checkAssignmentWorkerSpecs(assignments, workerSpecs)) {
+                && checkAssignmentTopology(assignments, topologyId)
+                && distribution.containsKey(numWorkers)
+                && checkAssignmentWorkerSpecs(assignments, workerSpecs)) {
                 decrementDistribution(distribution, numWorkers);
                 for (AssignmentInfo ass : assignments) {
                     workerSpecs.remove(ass.getExecutors());
@@ -127,9 +122,9 @@ public class IsolationScheduler implements IScheduler {
         List<String> failedTopologyIds = extractFailedTopologyIds(topologyWorkerSpecs);
         if (failedTopologyIds.size() > 0) {
             LOG.warn("Unable to isolate topologies " + failedTopologyIds
-                    + ". No machine had enough worker slots to run the remaining workers for these topologies. "
-                    + "Clearing all other resources and will wait for enough resources for "
-                    + "isolated topologies before allocating any other resources.");
+                     + ". No machine had enough worker slots to run the remaining workers for these topologies. "
+                     + "Clearing all other resources and will wait for enough resources for "
+                     + "isolated topologies before allocating any other resources.");
             // clear workers off all hosts that are not blacklisted
             Map<String, Set<WorkerSlot>> usedSlots = hostToUsedSlots(cluster);
             Set<Map.Entry<String, Set<WorkerSlot>>> entries = usedSlots.entrySet();
@@ -176,7 +171,7 @@ public class IsolationScheduler implements IScheduler {
 
     private List<String> extractFailedTopologyIds(Map<String, Set<Set<ExecutorDetails>>> isoTopologyWorkerSpecs) {
         List<String> failedTopologyIds = new ArrayList<String>();
-        for (Map.Entry<String, Set<Set<ExecutorDetails>>> topoWorkerSpecsEntry : isoTopologyWorkerSpecs.entrySet()){
+        for (Map.Entry<String, Set<Set<ExecutorDetails>>> topoWorkerSpecsEntry : isoTopologyWorkerSpecs.entrySet()) {
             Set<Set<ExecutorDetails>> workerSpecs = topoWorkerSpecsEntry.getValue();
             if (workerSpecs != null && !workerSpecs.isEmpty()) {
                 failedTopologyIds.add(topoWorkerSpecsEntry.getKey());
@@ -195,7 +190,7 @@ public class IsolationScheduler implements IScheduler {
     }
 
     private Map<String, List<AssignmentInfo>> hostAssignments(Cluster cluster) {
-        Collection<SchedulerAssignment> assignmentValues =  cluster.getAssignments().values();
+        Collection<SchedulerAssignment> assignmentValues = cluster.getAssignments().values();
         Map<String, List<AssignmentInfo>> hostAssignments = new HashMap<String, List<AssignmentInfo>>();
 
         for (SchedulerAssignment sa : assignmentValues) {
@@ -237,7 +232,7 @@ public class IsolationScheduler implements IScheduler {
                 bucketExecutors.put(bucketIndex, executors);
             }
             executors.add(executor);
-            bucketIndex = (bucketIndex+1) % numWorkers;
+            bucketIndex = (bucketIndex + 1) % numWorkers;
         }
 
         return new HashSet<Set<ExecutorDetails>>(bucketExecutors.values());
@@ -325,11 +320,11 @@ public class IsolationScheduler implements IScheduler {
             sortHostAssignSlots.add(new HostAssignableSlots(entry.getKey(), entry.getValue()));
         }
         Collections.sort(sortHostAssignSlots, new Comparator<HostAssignableSlots>() {
-                    @Override
-                    public int compare(HostAssignableSlots o1, HostAssignableSlots o2) {
-                        return o2.getWorkerSlots().size() - o1.getWorkerSlots().size();
-                    }
-                });
+            @Override
+            public int compare(HostAssignableSlots o1, HostAssignableSlots o2) {
+                return o2.getWorkerSlots().size() - o1.getWorkerSlots().size();
+            }
+        });
         Collections.shuffle(sortHostAssignSlots);
 
         return new LinkedList<HostAssignableSlots>(sortHostAssignSlots);

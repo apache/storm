@@ -19,7 +19,6 @@
 package org.apache.storm.perf;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.bolt.CountBolt;

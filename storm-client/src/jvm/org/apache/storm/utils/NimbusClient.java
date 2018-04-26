@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.utils;
@@ -23,7 +17,6 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.generated.Nimbus;
@@ -36,36 +29,48 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class NimbusClient extends ThriftClient {
+    private static final Logger LOG = LoggerFactory.getLogger(NimbusClient.class);
     private static volatile Nimbus.Iface _localOverrideClient = null;
-
-    public static final class LocalOverride implements AutoCloseable {
-        public LocalOverride(Nimbus.Iface client) {
-            _localOverrideClient = client;
-        }
-        
-        @Override
-        public void close() throws Exception {
-            _localOverrideClient = null;
-        }
-    }
-    
-    /**
-     * @return true of new clients will be overridden to connect to a local cluster
-     *     and not the configured remote cluster.
-     */
-    public static boolean isLocalOverride() {
-        return _localOverrideClient != null;
-    }
-    
-    private Nimbus.Iface _client;
+    private static String oldLeader = "";
     /**
      * Indicates if this is a special client that is overwritten for local mode.
      */
     public final boolean _isLocal;
-    private static final Logger LOG = LoggerFactory.getLogger(NimbusClient.class);
+    private Nimbus.Iface _client;
 
-    public interface WithNimbus {
-        public void run(Nimbus.Iface client) throws Exception;
+    public NimbusClient(Map<String, Object> conf, String host, int port) throws TTransportException {
+        this(conf, host, port, null, null);
+    }
+
+    public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
+        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, null);
+        _client = new Nimbus.Client(_protocol);
+        _isLocal = false;
+    }
+
+    public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
+        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
+        _client = new Nimbus.Client(_protocol);
+        _isLocal = false;
+    }
+
+    public NimbusClient(Map<String, Object> conf, String host) throws TTransportException {
+        super(conf, ThriftConnectionType.NIMBUS, host, null, null, null);
+        _client = new Nimbus.Client(_protocol);
+        _isLocal = false;
+    }
+
+    private NimbusClient(Nimbus.Iface client) {
+        super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE, "localhost", null, null, null);
+        _client = client;
+        _isLocal = true;
+    }
+
+    /**
+     * @return true of new clients will be overridden to connect to a local cluster and not the configured remote cluster.
+     */
+    public static boolean isLocalOverride() {
+        return _localOverrideClient != null;
     }
 
     public static void withConfiguredClient(WithNimbus cb) throws Exception {
@@ -84,16 +89,15 @@ public class NimbusClient extends ThriftClient {
     public static NimbusClient getConfiguredClient(Map<String, Object> conf) {
         return getConfiguredClientAs(conf, null);
     }
-    
+
     public static NimbusClient getConfiguredClient(Map<String, Object> conf, Integer timeout) {
         return getConfiguredClientAs(conf, null, timeout);
     }
 
-    private static String oldLeader = "";
-
     /**
      * Check to see if we should log the leader we are connecting to or not.  This typically happens when the leader changes or if debug
      * logging is enabled. The code remembers the last leader it was called with, but it should be transparent to the caller.
+     *
      * @param leader the leader we are trying to connect to.
      * @return true if it should be logged else false.
      */
@@ -127,7 +131,7 @@ public class NimbusClient extends ThriftClient {
         if (conf.containsKey(Config.STORM_DO_AS_USER)) {
             if (asUser != null && !asUser.isEmpty()) {
                 LOG.warn("You have specified a doAsUser as param {} and a doAsParam as config, config will take precedence.",
-                    asUser, conf.get(Config.STORM_DO_AS_USER));
+                         asUser, conf.get(Config.STORM_DO_AS_USER));
             }
             asUser = (String) conf.get(Config.STORM_DO_AS_USER);
         }
@@ -166,7 +170,7 @@ public class NimbusClient extends ThriftClient {
                 }
             } catch (Exception e) {
                 LOG.warn("Ignoring exception while trying to get leader nimbus info from " + host
-                                 + ". will retry with a different seed host.", e);
+                         + ". will retry with a different seed host.", e);
                 continue;
             } finally {
                 if (client != null) {
@@ -176,40 +180,27 @@ public class NimbusClient extends ThriftClient {
             throw new NimbusLeaderNotFoundException("Could not find a nimbus leader, please try again after some time.");
         }
         throw new NimbusLeaderNotFoundException(
-                "Could not find leader nimbus from seed hosts " + seeds + ". "
-                    + "Did you specify a valid list of nimbus hosts for config "
-                    + Config.NIMBUS_SEEDS + "?");
-    }
-
-    public NimbusClient(Map<String, Object> conf, String host, int port) throws TTransportException {
-        this(conf, host, port, null, null);
-    }
-
-    public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, null);
-        _client = new Nimbus.Client(_protocol);
-        _isLocal = false;
-    }
-
-    public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
-        _client = new Nimbus.Client(_protocol);
-        _isLocal = false;
-    }
-
-    public NimbusClient(Map<String, Object> conf, String host) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, null, null, null);
-        _client = new Nimbus.Client(_protocol);
-        _isLocal = false;
-    }
-    
-    private NimbusClient(Nimbus.Iface client) {
-        super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE, "localhost", null, null, null);
-        _client = client;
-        _isLocal = true;
+            "Could not find leader nimbus from seed hosts " + seeds + ". "
+            + "Did you specify a valid list of nimbus hosts for config "
+            + Config.NIMBUS_SEEDS + "?");
     }
 
     public Nimbus.Iface getClient() {
         return _client;
+    }
+
+    public interface WithNimbus {
+        public void run(Nimbus.Iface client) throws Exception;
+    }
+
+    public static final class LocalOverride implements AutoCloseable {
+        public LocalOverride(Nimbus.Iface client) {
+            _localOverrideClient = client;
+        }
+
+        @Override
+        public void close() throws Exception {
+            _localOverrideClient = null;
+        }
     }
 }

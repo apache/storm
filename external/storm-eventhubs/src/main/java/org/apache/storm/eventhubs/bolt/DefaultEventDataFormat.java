@@ -15,33 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.bolt;
 
 import org.apache.storm.tuple.Tuple;
 
 /**
- * A default implementation of IEventDataFormat that converts the tuple
- * into a delimited string.
+ * A default implementation of IEventDataFormat that converts the tuple into a delimited string.
  */
 public class DefaultEventDataFormat implements IEventDataFormat {
-  private static final long serialVersionUID = 1L;
-  private String delimiter = ",";
-  
-  public DefaultEventDataFormat withFieldDelimiter(String delimiter) {
-    this.delimiter = delimiter;
-    return this;
-  }
+    private static final long serialVersionUID = 1L;
+    private String delimiter = ",";
 
-  @Override
-  public byte[] serialize(Tuple tuple) {
-    StringBuilder sb = new StringBuilder();
-    for(Object obj : tuple.getValues()) {
-      if(sb.length() != 0) {
-        sb.append(delimiter);
-      }
-      sb.append(obj.toString());
+    public DefaultEventDataFormat withFieldDelimiter(String delimiter) {
+        this.delimiter = delimiter;
+        return this;
     }
-    return sb.toString().getBytes();
-  }
+
+    @Override
+    public byte[] serialize(Tuple tuple) {
+        StringBuilder sb = new StringBuilder();
+        for (Object obj : tuple.getValues()) {
+            if (sb.length() != 0) {
+                sb.append(delimiter);
+            }
+            sb.append(obj.toString());
+        }
+        return sb.toString().getBytes();
+    }
 
 }

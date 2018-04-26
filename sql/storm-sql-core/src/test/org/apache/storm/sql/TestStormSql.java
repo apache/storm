@@ -1,32 +1,24 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.sql;
 
-import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
-
+import com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import com.google.common.collect.ImmutableMap;
 import org.apache.calcite.tools.ValidationException;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.sql.javac.CompilingClassLoader;
@@ -41,77 +33,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
+
 public class TestStormSql {
 
     public static final int WAIT_TIMEOUT_MS = 1000 * 1000;
     public static final int WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED = 1000 * 10;
     public static final int WAIT_TIMEOUT_MS_ERROR_EXPECTED = 1000;
-
-    private static class MockDataSourceProvider implements DataSourcesProvider {
-        @Override
-        public String scheme() {
-            return "mock";
-        }
-
-        @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                      Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlExprDataSource();
-        }
-    }
-
-    private static class MockNestedDataSourceProvider implements DataSourcesProvider {
-        @Override
-        public String scheme() {
-            return "mocknested";
-        }
-
-        @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                      Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlTridentNestedDataSource();
-        }
-    }
-
-    private static class MockGroupDataSourceProvider implements DataSourcesProvider {
-        @Override
-        public String scheme() {
-            return "mockgroup";
-        }
-
-        @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                      Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlTridentGroupedDataSource();
-        }
-    }
-
-    private static class MockEmpDataSourceProvider implements DataSourcesProvider {
-        @Override
-        public String scheme() {
-            return "mockemp";
-        }
-
-        @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                      Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlTridentJoinDataSourceEmp();
-        }
-    }
-
-    private static class MockDeptDataSourceProvider implements DataSourcesProvider {
-        @Override
-        public String scheme() {
-            return "mockdept";
-        }
-
-        @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                      Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlTridentJoinDataSourceDept();
-        }
-    }
-
     private static LocalCluster cluster;
 
     @BeforeClass
@@ -166,8 +94,8 @@ public class TestStormSql {
         stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("CREATE EXTERNAL TABLE BAR (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("INSERT INTO BAR SELECT STREAM ID, MAPFIELD['c'], NESTEDMAPFIELD, ARRAYFIELD " +
-                "FROM FOO " +
-                "WHERE CAST(MAPFIELD['b'] AS INTEGER) = 2 AND CAST(ARRAYFIELD[2] AS INTEGER) = 200");
+                 "FROM FOO " +
+                 "WHERE CAST(MAPFIELD['b'] AS INTEGER) = 2 AND CAST(ARRAYFIELD[2] AS INTEGER) = 200");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
         List<List<Object>> values = getCollectedValues();
@@ -185,8 +113,8 @@ public class TestStormSql {
         stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("CREATE EXTERNAL TABLE BAR (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("INSERT INTO BAR SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
-                "FROM FOO " +
-                "WHERE CAST(MAPFIELD['a'] AS INTEGER) = 2");
+                 "FROM FOO " +
+                 "WHERE CAST(MAPFIELD['a'] AS INTEGER) = 2");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
         List<List<Object>> values = getCollectedValues();
@@ -202,8 +130,8 @@ public class TestStormSql {
         stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("CREATE EXTERNAL TABLE BAR (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("INSERT INTO BAR SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
-                "FROM FOO " +
-                "WHERE CAST(NESTEDMAPFIELD['b']['c'] AS INTEGER) = 4");
+                 "FROM FOO " +
+                 "WHERE CAST(NESTEDMAPFIELD['b']['c'] AS INTEGER) = 4");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
         List<List<Object>> values = getCollectedValues();
@@ -218,8 +146,8 @@ public class TestStormSql {
         stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("CREATE EXTERNAL TABLE BAR (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("INSERT INTO BAR SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
-                "FROM FOO " +
-                "WHERE CAST(ARRAYFIELD['a'] AS INTEGER) = 200");
+                 "FROM FOO " +
+                 "WHERE CAST(ARRAYFIELD['a'] AS INTEGER) = 200");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
         List<List<Object>> values = getCollectedValues();
@@ -234,8 +162,8 @@ public class TestStormSql {
         stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("CREATE EXTERNAL TABLE BAR (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("INSERT INTO BAR SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
-                "FROM FOO " +
-                "WHERE CAST(ARRAYFIELD[10] AS INTEGER) = 200");
+                 "FROM FOO " +
+                 "WHERE CAST(ARRAYFIELD[10] AS INTEGER) = 200");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
         List<List<Object>> values = getCollectedValues();
@@ -302,5 +230,70 @@ public class TestStormSql {
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED);
 
         Assert.fail("Should raise UnsupportedOperationException.");
+    }
+
+    private static class MockDataSourceProvider implements DataSourcesProvider {
+        @Override
+        public String scheme() {
+            return "mock";
+        }
+
+        @Override
+        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                      Properties properties, List<FieldInfo> fields) {
+            return new TestUtils.MockSqlExprDataSource();
+        }
+    }
+
+    private static class MockNestedDataSourceProvider implements DataSourcesProvider {
+        @Override
+        public String scheme() {
+            return "mocknested";
+        }
+
+        @Override
+        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                      Properties properties, List<FieldInfo> fields) {
+            return new TestUtils.MockSqlTridentNestedDataSource();
+        }
+    }
+
+    private static class MockGroupDataSourceProvider implements DataSourcesProvider {
+        @Override
+        public String scheme() {
+            return "mockgroup";
+        }
+
+        @Override
+        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                      Properties properties, List<FieldInfo> fields) {
+            return new TestUtils.MockSqlTridentGroupedDataSource();
+        }
+    }
+
+    private static class MockEmpDataSourceProvider implements DataSourcesProvider {
+        @Override
+        public String scheme() {
+            return "mockemp";
+        }
+
+        @Override
+        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                      Properties properties, List<FieldInfo> fields) {
+            return new TestUtils.MockSqlTridentJoinDataSourceEmp();
+        }
+    }
+
+    private static class MockDeptDataSourceProvider implements DataSourcesProvider {
+        @Override
+        public String scheme() {
+            return "mockdept";
+        }
+
+        @Override
+        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                      Properties properties, List<FieldInfo> fields) {
+            return new TestUtils.MockSqlTridentJoinDataSourceDept();
+        }
     }
 }

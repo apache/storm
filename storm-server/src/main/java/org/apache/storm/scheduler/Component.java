@@ -21,7 +21,6 @@ package org.apache.storm.scheduler;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.storm.generated.ComponentType;
 
 public class Component {
@@ -33,9 +32,10 @@ public class Component {
 
     /**
      * Create a new component.
-     * @param type the type of component this is
+     *
+     * @param type   the type of component this is
      * @param compId the id of the component
-     * @param execs the executors for this component.
+     * @param execs  the executors for this component.
      */
     public Component(ComponentType type, String compId, List<ExecutorDetails> execs) {
         this.type = type;
@@ -76,13 +76,13 @@ public class Component {
     @Override
     public String toString() {
         return "{id: "
-            + getId()
-            + " Parents: "
-            + getParents()
-            + " Children: "
-            + getChildren()
-            + " Execs: "
-            + getExecs()
-            + "}";
+               + getId()
+               + " Parents: "
+               + getParents()
+               + " Children: "
+               + getChildren()
+               + " Execs: "
+               + getExecs()
+               + "}";
     }
 }

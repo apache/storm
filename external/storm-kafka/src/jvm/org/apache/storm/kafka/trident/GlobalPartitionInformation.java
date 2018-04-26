@@ -1,35 +1,32 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka.trident;
 
 import com.google.common.base.Objects;
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import org.apache.storm.kafka.Broker;
 import org.apache.storm.kafka.Partition;
-
-import java.io.Serializable;
-import java.util.*;
 
 
 public class GlobalPartitionInformation implements Iterable<Partition>, Serializable {
 
-    private Map<Integer, Broker> partitionMap;
     public String topic;
-
+    private Map<Integer, Broker> partitionMap;
     //Flag to keep the Partition Path Id backward compatible with Old implementation of Partition.getId() == "partition_" + partition
     private Boolean bUseTopicNameForPartitionPathId;
 
@@ -49,16 +46,16 @@ public class GlobalPartitionInformation implements Iterable<Partition>, Serializ
         partitionMap.put(partitionId, broker);
     }
 
-    public Boolean getbUseTopicNameForPartitionPathId () {
+    public Boolean getbUseTopicNameForPartitionPathId() {
         return bUseTopicNameForPartitionPathId;
     }
 
     @Override
     public String toString() {
         return "GlobalPartitionInformation{" +
-                "topic=" + topic +
-                ", partitionMap=" + partitionMap +
-                '}';
+               "topic=" + topic +
+               ", partitionMap=" + partitionMap +
+               '}';
     }
 
     public Broker getBrokerFor(Integer partitionId) {
@@ -87,7 +84,7 @@ public class GlobalPartitionInformation implements Iterable<Partition>, Serializ
             @Override
             public Partition next() {
                 Map.Entry<Integer, Broker> next = iterator.next();
-                return new Partition(next.getValue(), topic , next.getKey(), bUseTopicNameForPartitionPathId);
+                return new Partition(next.getValue(), topic, next.getKey(), bUseTopicNameForPartitionPathId);
             }
 
             @Override

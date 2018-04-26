@@ -1,24 +1,18 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
-
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -29,7 +23,6 @@ import javax.security.sasl.RealmCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +31,7 @@ class SaslNettyServer {
     private static final Logger LOG = LoggerFactory
         .getLogger(SaslNettyServer.class);
 
-        private SaslServer saslServer;
+    private SaslServer saslServer;
 
     SaslNettyServer(String topologyName, byte[] token) throws IOException {
         LOG.debug("SaslNettyServer: Topology token is: {} with authmethod {}",
@@ -64,10 +57,34 @@ class SaslNettyServer {
         return saslServer.getAuthorizationID();
     }
 
-    /** CallbackHandler for SASL DIGEST-MD5 mechanism */
+    /**
+     * Used by SaslTokenMessage::processToken() to respond to server SASL tokens.
+     *
+     * @param token Server's SASL token
+     * @return token to send back to the server.
+     */
+    public byte[] response(byte[] token) {
+        try {
+            LOG.debug("response: Responding to input token of length: {}",
+                      token.length);
+            byte[] retval = saslServer.evaluateResponse(token);
+            LOG.debug("response: Response token length: {}", retval.length);
+            return retval;
+        } catch (SaslException e) {
+            LOG.error("response: Failed to evaluate client token of length: {} : {}",
+                      token.length, e);
+            return null;
+        }
+    }
+
+    /**
+     * CallbackHandler for SASL DIGEST-MD5 mechanism
+     */
     public static class SaslDigestCallbackHandler implements CallbackHandler {
 
-        /** Used to authenticate the clients */
+        /**
+         * Used to authenticate the clients
+         */
         private byte[] userPassword;
         private String userName;
 
@@ -130,28 +147,6 @@ class SaslNettyServer {
                     ac.setAuthorizedID(authzid);
                 }
             }
-        }
-    }
-
-    /**
-     * Used by SaslTokenMessage::processToken() to respond to server SASL
-     * tokens.
-     *
-     * @param token
-     *            Server's SASL token
-     * @return token to send back to the server.
-     */
-    public byte[] response(byte[] token) {
-        try {
-            LOG.debug("response: Responding to input token of length: {}",
-                      token.length);
-            byte[] retval = saslServer.evaluateResponse(token);
-            LOG.debug("response: Response token length: {}", retval.length);
-            return retval;
-        } catch (SaslException e) {
-            LOG.error("response: Failed to evaluate client token of length: {} : {}",
-                      token.length, e);
-            return null;
         }
     }
 }

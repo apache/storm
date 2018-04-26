@@ -15,27 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka;
 
-import org.apache.storm.utils.Utils;
-import org.apache.kafka.common.serialization.Serializer;
+package org.apache.storm.kafka;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import org.apache.kafka.common.serialization.Serializer;
+import org.apache.storm.utils.Utils;
 
 public class ByteBufferSerializer implements Serializer<ByteBuffer> {
-  @Override
-  public void configure(Map<String, ?> map, boolean b) {
+    @Override
+    public void configure(Map<String, ?> map, boolean b) {
 
-  }
+    }
 
-  @Override
-  public void close() {
+    @Override
+    public void close() {
 
-  }
+    }
 
-  @Override
-  public byte[] serialize(String s, ByteBuffer b) {
-    return Utils.toByteArray(b);
-  }
+    @Override
+    public byte[] serialize(String s, ByteBuffer b) {
+        return Utils.toByteArray(b);
+    }
 }

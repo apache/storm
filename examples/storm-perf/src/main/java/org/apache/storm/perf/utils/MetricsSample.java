@@ -20,7 +20,6 @@ package org.apache.storm.perf.utils;
 
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
@@ -160,7 +159,7 @@ public class MetricsSample {
         ret.spoutEmitted = spoutEmitted;
         ret.spoutTransferred = spoutTransferred;
         ret.sampleTime = System.currentTimeMillis();
-//        ret.numSupervisors = clusterSummary.get_supervisors_size();
+        //        ret.numSupervisors = clusterSummary.get_supervisors_size();
         ret.numWorkers = 0;
         ret.numExecutors = 0;
         ret.numTasks = 0;

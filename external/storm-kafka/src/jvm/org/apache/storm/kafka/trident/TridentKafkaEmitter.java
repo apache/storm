@@ -1,24 +1,27 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka.trident;
 
 import com.google.common.collect.ImmutableMap;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import kafka.javaapi.consumer.SimpleConsumer;
+import kafka.javaapi.message.ByteBufferMessageSet;
+import kafka.message.Message;
+import kafka.message.MessageAndOffset;
 import org.apache.storm.Config;
 import org.apache.storm.kafka.DynamicPartitionConnections;
 import org.apache.storm.kafka.FailedFetchException;
@@ -37,17 +40,6 @@ import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
-import kafka.javaapi.consumer.SimpleConsumer;
-import kafka.javaapi.message.ByteBufferMessageSet;
-import kafka.message.Message;
-import kafka.message.MessageAndOffset;
 
 public class TridentKafkaEmitter {
 
@@ -74,10 +66,10 @@ public class TridentKafkaEmitter {
 
 
     private Map<String, Object> failFastEmitNewPartitionBatch(
-            final TransactionAttempt attempt,
-            TridentCollector collector,
-            Partition partition,
-            Map<String, Object> lastMeta) {
+        final TransactionAttempt attempt,
+        TridentCollector collector,
+        Partition partition,
+        Map<String, Object> lastMeta) {
         SimpleConsumer consumer = _connections.register(partition);
         Map<String, Object> ret = doEmitNewPartitionBatch(consumer, partition, collector, lastMeta, attempt);
         Long offset = (Long) ret.get("offset");
@@ -86,7 +78,8 @@ public class TridentKafkaEmitter {
         return ret;
     }
 
-    private Map<String, Object> emitNewPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map<String, Object> lastMeta) {
+    private Map<String, Object> emitNewPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition,
+                                                      Map<String, Object> lastMeta) {
         try {
             return failFastEmitNewPartitionBatch(attempt, collector, partition, lastMeta);
         } catch (FailedFetchException e) {
@@ -107,16 +100,16 @@ public class TridentKafkaEmitter {
     }
 
     private Map<String, Object> doEmitNewPartitionBatch(SimpleConsumer consumer,
-            Partition partition,
-            TridentCollector collector,
-            Map<String, Object> lastMeta,
-            TransactionAttempt attempt) {
+                                                        Partition partition,
+                                                        TridentCollector collector,
+                                                        Map<String, Object> lastMeta,
+                                                        TransactionAttempt attempt) {
         LOG.debug("Emitting new partition batch - [transaction = {}], [lastMeta = {}]", attempt, lastMeta);
         long offset;
         if (lastMeta != null) {
             String lastInstanceId = null;
             Map<String, Object> lastTopoMeta = (Map<String, Object>)
-                    lastMeta.get("topology");
+                lastMeta.get("topology");
             if (lastTopoMeta != null) {
                 lastInstanceId = (String) lastTopoMeta.get("id");
             }
@@ -170,7 +163,8 @@ public class TridentKafkaEmitter {
     /**
      * re-emit the batch described by the meta data provided
      */
-    private void reEmitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map<String, Object> meta) {
+    private void reEmitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition,
+                                      Map<String, Object> meta) {
         LOG.info("re-emitting batch, attempt " + attempt);
         String instanceId = (String) meta.get("instanceId");
         if (!_config.ignoreZkOffsets || instanceId.equals(_topologyInstanceId)) {
@@ -241,7 +235,8 @@ public class TridentKafkaEmitter {
              * for defining the parameters of the next batch.
              */
             @Override
-            public Map<String, Object> emitPartitionBatch(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map<String, Object> map) {
+            public Map<String, Object> emitPartitionBatch(TransactionAttempt transactionAttempt, TridentCollector tridentCollector,
+                                                          Partition partition, Map<String, Object> map) {
                 return emitNewPartitionBatch(transactionAttempt, tridentCollector, partition, map);
             }
 
@@ -270,7 +265,8 @@ public class TridentKafkaEmitter {
              * Return the metadata that can be used to reconstruct this partition/batch in the future.
              */
             @Override
-            public Map<String, Object> emitPartitionBatchNew(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map<String, Object> map) {
+            public Map<String, Object> emitPartitionBatchNew(TransactionAttempt transactionAttempt, TridentCollector tridentCollector,
+                                                             Partition partition, Map<String, Object> map) {
                 return failFastEmitNewPartitionBatch(transactionAttempt, tridentCollector, partition, map);
             }
 
@@ -279,7 +275,8 @@ public class TridentKafkaEmitter {
              * the metadata created when it was first emitted.
              */
             @Override
-            public void emitPartitionBatch(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map<String, Object> map) {
+            public void emitPartitionBatch(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition,
+                                           Map<String, Object> map) {
                 reEmitPartitionBatch(transactionAttempt, tridentCollector, partition, map);
             }
 

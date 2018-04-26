@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.scheduler.resource.strategies.priority;
@@ -33,12 +27,44 @@ import org.slf4j.LoggerFactory;
 public class DefaultSchedulingPriorityStrategy implements ISchedulingPriorityStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultSchedulingPriorityStrategy.class);
 
+    protected SimulatedUser getSimulatedUserFor(User u, ISchedulingState cluster) {
+        return new SimulatedUser(u, cluster);
+    }
+
+    @Override
+    public List<TopologyDetails> getOrderedTopologies(ISchedulingState cluster, Map<String, User> userMap) {
+        double cpuAvail = cluster.getClusterTotalCpuResource();
+        double memAvail = cluster.getClusterTotalMemoryResource();
+
+        List<TopologyDetails> allUserTopologies = new ArrayList<>();
+        List<SimulatedUser> users = new ArrayList<>();
+        for (User u : userMap.values()) {
+            users.add(getSimulatedUserFor(u, cluster));
+        }
+        while (!users.isEmpty()) {
+            Collections.sort(users, new SimulatedUserComparator(cpuAvail, memAvail));
+            SimulatedUser u = users.get(0);
+            TopologyDetails td = u.getNextHighest();
+            if (td == null) {
+                users.remove(0);
+            } else {
+                double score = u.getScore(cpuAvail, memAvail);
+                td = u.simScheduleNextHighest();
+                LOG.info("SIM Scheduling {} with score of {}", td.getId(), score);
+                cpuAvail -= td.getTotalRequestedCpu();
+                memAvail -= (td.getTotalRequestedMemOffHeap() + td.getTotalRequestedMemOnHeap());
+                allUserTopologies.add(td);
+            }
+        }
+        return allUserTopologies;
+    }
+
     protected static class SimulatedUser {
+        public final double guaranteedCpu;
+        public final double guaranteedMemory;
         protected final LinkedList<TopologyDetails> tds = new LinkedList<>();
         private double assignedCpu = 0.0;
         private double assignedMemory = 0.0;
-        public final double guaranteedCpu;
-        public final double guaranteedMemory;
 
         public SimulatedUser(User other, ISchedulingState cluster) {
             tds.addAll(cluster.getTopologies().getTopologiesOwnedBy(other.getId()));
@@ -82,8 +108,8 @@ public class DefaultSchedulingPriorityStrategy implements ISchedulingPriorityStr
             }
             double wouldBeCpu = assignedCpu + td.getTotalRequestedCpu();
             double wouldBeMem = assignedMemory + td.getTotalRequestedMemOffHeap() + td.getTotalRequestedMemOnHeap();
-            double cpuScore = (wouldBeCpu - guaranteedCpu)/availableCpu;
-            double memScore = (wouldBeMem - guaranteedMemory)/availableMemory;
+            double cpuScore = (wouldBeCpu - guaranteedCpu) / availableCpu;
+            double memScore = (wouldBeMem - guaranteedMemory) / availableMemory;
             return Math.max(cpuScore, memScore);
         }
 
@@ -92,38 +118,6 @@ public class DefaultSchedulingPriorityStrategy implements ISchedulingPriorityStr
             return getScore(availableCpu, availableMemory, td);
         }
 
-    }
-
-    protected SimulatedUser getSimulatedUserFor(User u, ISchedulingState cluster) {
-        return new SimulatedUser(u, cluster);
-    }
-
-    @Override
-    public List<TopologyDetails> getOrderedTopologies(ISchedulingState cluster, Map<String, User> userMap) {
-        double cpuAvail = cluster.getClusterTotalCpuResource();
-        double memAvail = cluster.getClusterTotalMemoryResource();
-
-        List<TopologyDetails> allUserTopologies = new ArrayList<>();
-        List<SimulatedUser> users = new ArrayList<>();
-        for (User u : userMap.values()) {
-            users.add(getSimulatedUserFor(u, cluster));
-        }
-        while (!users.isEmpty()) {
-            Collections.sort(users, new SimulatedUserComparator(cpuAvail, memAvail));
-            SimulatedUser u = users.get(0);
-            TopologyDetails td = u.getNextHighest();
-            if (td == null) {
-                users.remove(0);
-            } else {
-                double score = u.getScore(cpuAvail, memAvail);
-                td = u.simScheduleNextHighest();
-                LOG.info("SIM Scheduling {} with score of {}", td.getId(), score);
-                cpuAvail -= td.getTotalRequestedCpu();
-                memAvail -= (td.getTotalRequestedMemOffHeap() + td.getTotalRequestedMemOnHeap());
-                allUserTopologies.add(td);
-            }
-        }
-        return allUserTopologies;
     }
 
     private static class SimulatedUserComparator implements Comparator<SimulatedUser> {

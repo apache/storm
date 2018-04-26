@@ -15,27 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.assignments;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
+import static org.junit.Assert.assertEquals;
 
 
 public class LocalAssignmentsBackendTest {
 
     @Test
-    public void testLocalAssignment(){
+    public void testLocalAssignment() {
         Map<String, Assignment> stormToAssignment = new HashMap<>();
         String storm1 = "storm1";
         String storm2 = "storm2";

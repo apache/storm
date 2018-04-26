@@ -1,59 +1,52 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.hive.bolt;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.hive.hcatalog.streaming.HiveEndPoint;
-import org.apache.hive.hcatalog.streaming.SerializationError;
-import org.apache.hive.hcatalog.streaming.StreamingException;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.utils.BatchHelper;
-import org.apache.storm.utils.TupleUtils;
-import org.apache.storm.Config;
-import org.apache.storm.hive.common.HiveWriter;
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import org.apache.storm.hive.common.HiveOptions;
-import org.apache.storm.hive.common.HiveUtils;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.List;
-import java.io.IOException;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hive.hcatalog.streaming.HiveEndPoint;
+import org.apache.hive.hcatalog.streaming.SerializationError;
+import org.apache.hive.hcatalog.streaming.StreamingException;
+import org.apache.storm.Config;
+import org.apache.storm.hive.common.HiveOptions;
+import org.apache.storm.hive.common.HiveUtils;
+import org.apache.storm.hive.common.HiveWriter;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.BatchHelper;
+import org.apache.storm.utils.TupleUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HiveBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(HiveBolt.class);
+    @VisibleForTesting
+    Map<HiveEndPoint, HiveWriter> allWriters;
     private OutputCollector collector;
     private HiveOptions options;
     private ExecutorService callTimeoutPool;
@@ -63,36 +56,33 @@ public class HiveBolt extends BaseRichBolt {
     private BatchHelper batchHelper;
     private boolean tokenAuthEnabled;
 
-    @VisibleForTesting
-    Map<HiveEndPoint, HiveWriter> allWriters;
-
     public HiveBolt(HiveOptions options) {
         this.options = options;
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector)  {
+    public void prepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) {
         try {
             tokenAuthEnabled = HiveUtils.isTokenAuthEnabled(conf);
             try {
                 ugi = HiveUtils.authenticate(tokenAuthEnabled, options.getKerberosKeytab(), options.getKerberosPrincipal());
-            } catch(HiveUtils.AuthenticationFailed ex) {
+            } catch (HiveUtils.AuthenticationFailed ex) {
                 LOG.error("Hive kerberos authentication failed " + ex.getMessage(), ex);
                 throw new IllegalArgumentException(ex);
             }
 
             this.collector = collector;
             this.batchHelper = new BatchHelper(options.getBatchSize(), collector);
-            allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
+            allWriters = new ConcurrentHashMap<HiveEndPoint, HiveWriter>();
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
-                                new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
+                                                                new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
 
             sendHeartBeat.set(true);
             heartBeatTimer = new Timer();
             setupHeartBeatTimer();
 
-        } catch(Exception e) {
+        } catch (Exception e) {
             LOG.warn("unable to make connection to hive ", e);
         }
     }
@@ -108,7 +98,7 @@ public class HiveBolt extends BaseRichBolt {
                 batchHelper.addBatch(tuple);
             }
 
-            if(batchHelper.shouldFlush()) {
+            if (batchHelper.shouldFlush()) {
                 flushAllWriters(true);
                 LOG.info("acknowledging tuples after writers flushed ");
                 batchHelper.ack();
@@ -116,11 +106,11 @@ public class HiveBolt extends BaseRichBolt {
             if (TupleUtils.isTick(tuple)) {
                 retireIdleWriters();
             }
-        } catch(SerializationError se) {
+        } catch (SerializationError se) {
             LOG.info("Serialization exception occurred, tuple is acknowledged but not written to Hive.", tuple);
             this.collector.reportError(se);
             collector.ack(tuple);
-        } catch(Exception e) {
+        } catch (Exception e) {
             batchHelper.fail(e);
             abortAndCloseWriters();
         }
@@ -147,13 +137,13 @@ public class HiveBolt extends BaseRichBolt {
             }
         }
 
-        ExecutorService toShutdown[] = {callTimeoutPool};
+        ExecutorService toShutdown[] = { callTimeoutPool };
         for (ExecutorService execService : toShutdown) {
             execService.shutdown();
             try {
                 while (!execService.isTerminated()) {
                     execService.awaitTermination(
-                                 options.getCallTimeOut(), TimeUnit.MILLISECONDS);
+                        options.getCallTimeOut(), TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException ex) {
                 LOG.warn("shutdown interrupted on " + execService, ex);
@@ -168,31 +158,33 @@ public class HiveBolt extends BaseRichBolt {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         Map<String, Object> conf = super.getComponentConfiguration();
-        if (conf == null)
+        if (conf == null) {
             conf = new Config();
+        }
 
-        if (options.getTickTupleInterval() > 0)
+        if (options.getTickTupleInterval() > 0) {
             conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, options.getTickTupleInterval());
+        }
 
         return conf;
     }
 
     private void setupHeartBeatTimer() {
-        if(options.getHeartBeatInterval()>0) {
+        if (options.getHeartBeatInterval() > 0) {
             heartBeatTimer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (sendHeartBeat.get()) {
-                                LOG.debug("Start sending heartbeat on all writers");
-                                sendHeartBeatOnAllWriters();
-                                setupHeartBeatTimer();
-                            }
-                        } catch (Exception e) {
-                            LOG.warn("Failed to heartbeat on HiveWriter ", e);
+                @Override
+                public void run() {
+                    try {
+                        if (sendHeartBeat.get()) {
+                            LOG.debug("Start sending heartbeat on all writers");
+                            sendHeartBeatOnAllWriters();
+                            setupHeartBeatTimer();
                         }
+                    } catch (Exception e) {
+                        LOG.warn("Failed to heartbeat on HiveWriter ", e);
                     }
-                }, options.getHeartBeatInterval() * 1000);
+                }
+            }, options.getHeartBeatInterval() * 1000);
         }
     }
 
@@ -204,7 +196,7 @@ public class HiveBolt extends BaseRichBolt {
 
     void flushAllWriters(boolean rollToNext)
         throws HiveWriter.CommitFailure, HiveWriter.TxnBatchFailure, HiveWriter.TxnFailure, InterruptedException {
-        for(HiveWriter writer: allWriters.values()) {
+        for (HiveWriter writer : allWriters.values()) {
             writer.flush(rollToNext);
         }
     }
@@ -213,7 +205,7 @@ public class HiveBolt extends BaseRichBolt {
         try {
             abortAllWriters();
             closeAllWriters();
-        }  catch(Exception ie) {
+        } catch (Exception ie) {
             LOG.warn("unable to close hive connections. ", ie);
         }
     }
@@ -222,11 +214,11 @@ public class HiveBolt extends BaseRichBolt {
      * Abort current Txn on all writers
      */
     private void abortAllWriters() throws InterruptedException, StreamingException, HiveWriter.TxnBatchFailure {
-        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
             try {
                 entry.getValue().abort();
             } catch (Exception e) {
-                LOG.error("Failed to abort hive transaction batch, HiveEndPoint " + entry.getValue() +" due to exception ", e);
+                LOG.error("Failed to abort hive transaction batch, HiveEndPoint " + entry.getValue() + " due to exception ", e);
             }
         }
     }
@@ -236,10 +228,10 @@ public class HiveBolt extends BaseRichBolt {
      */
     private void closeAllWriters() {
         //1) Retire writers
-        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
             try {
                 entry.getValue().close();
-            } catch(Exception e) {
+            } catch (Exception e) {
                 LOG.warn("unable to close writers. ", e);
             }
         }
@@ -251,14 +243,15 @@ public class HiveBolt extends BaseRichBolt {
     HiveWriter getOrCreateWriter(HiveEndPoint endPoint)
         throws HiveWriter.ConnectFailure, InterruptedException {
         try {
-            HiveWriter writer = allWriters.get( endPoint );
+            HiveWriter writer = allWriters.get(endPoint);
             if (writer == null) {
                 LOG.debug("Creating Writer to Hive end point : " + endPoint);
                 writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options, tokenAuthEnabled);
                 if (allWriters.size() > (options.getMaxOpenConnections() - 1)) {
-                    LOG.info("cached HiveEndPoint size {} exceeded maxOpenConnections {} ", allWriters.size(), options.getMaxOpenConnections());
+                    LOG.info("cached HiveEndPoint size {} exceeded maxOpenConnections {} ", allWriters.size(),
+                             options.getMaxOpenConnections());
                     int retired = retireIdleWriters();
-                    if(retired==0) {
+                    if (retired == 0) {
                         retireEldestWriter();
                     }
                 }
@@ -279,7 +272,7 @@ public class HiveBolt extends BaseRichBolt {
         LOG.info("Attempting close eldest writers");
         long oldestTimeStamp = System.currentTimeMillis();
         HiveEndPoint eldest = null;
-        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
             if (entry.getValue().getLastUsed() < oldestTimeStamp) {
                 eldest = entry.getKey();
                 oldestTimeStamp = entry.getValue().getLastUsed();
@@ -308,8 +301,8 @@ public class HiveBolt extends BaseRichBolt {
         long now = System.currentTimeMillis();
 
         //1) Find retirement candidates
-        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
-            if(now - entry.getValue().getLastUsed() > options.getIdleTimeout()) {
+        for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
+            if (now - entry.getValue().getLastUsed() > options.getIdleTimeout()) {
                 ++count;
                 retire(entry.getKey());
             }

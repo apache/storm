@@ -1,44 +1,41 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.hbase.trident.state;
 
-import org.apache.storm.Config;
-import org.apache.storm.topology.FailedException;
-import org.apache.storm.tuple.Values;
 import com.google.common.collect.Lists;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.Durability;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Mutation;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.storm.Config;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.bolt.mapper.HBaseValueMapper;
 import org.apache.storm.hbase.common.ColumnList;
 import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.hbase.trident.mapper.TridentHBaseMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.storm.tuple.Values;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HBaseState implements State {
 
@@ -57,49 +54,10 @@ public class HBaseState implements State {
         this.numPartitions = numPartitions;
     }
 
-    public static class Options implements Serializable {
-        private TridentHBaseMapper mapper;
-        private Durability durability = Durability.SKIP_WAL;
-        private HBaseProjectionCriteria projectionCriteria;
-        private HBaseValueMapper rowToStormValueMapper;
-        private String configKey;
-        private String tableName;
-
-        public Options withDurability(Durability durability) {
-            this.durability = durability;
-            return this;
-        }
-
-        public Options withProjectionCriteria(HBaseProjectionCriteria projectionCriteria) {
-            this.projectionCriteria = projectionCriteria;
-            return this;
-        }
-
-        public Options withConfigKey(String configKey) {
-            this.configKey = configKey;
-            return this;
-        }
-
-        public Options withTableName(String tableName) {
-            this.tableName = tableName;
-            return this;
-        }
-
-        public Options withRowToStormValueMapper(HBaseValueMapper rowToStormValueMapper) {
-            this.rowToStormValueMapper = rowToStormValueMapper;
-            return this;
-        }
-
-        public Options withMapper(TridentHBaseMapper mapper) {
-            this.mapper = mapper;
-            return this;
-        }
-    }
-
     protected void prepare() {
         final Configuration hbConfig = HBaseConfiguration.create();
         Map<String, Object> conf = (Map<String, Object>) map.get(options.configKey);
-        if(conf == null){
+        if (conf == null) {
             LOG.info("HBase configuration not found using key '" + options.configKey + "'");
             LOG.info("Using HBase config from first hbase-site.xml found on classpath.");
         } else {
@@ -156,7 +114,7 @@ public class HBaseState implements State {
 
         try {
             Result[] results = hBaseClient.batchGet(gets);
-            for(int i = 0; i < results.length; i++) {
+            for (int i = 0; i < results.length; i++) {
                 Result result = results[i];
                 TridentTuple tuple = tridentTuples.get(i);
                 List<Values> values = options.rowToStormValueMapper.toValues(tuple, result);
@@ -167,5 +125,44 @@ public class HBaseState implements State {
             throw new FailedException(e);
         }
         return batchRetrieveResult;
+    }
+
+    public static class Options implements Serializable {
+        private TridentHBaseMapper mapper;
+        private Durability durability = Durability.SKIP_WAL;
+        private HBaseProjectionCriteria projectionCriteria;
+        private HBaseValueMapper rowToStormValueMapper;
+        private String configKey;
+        private String tableName;
+
+        public Options withDurability(Durability durability) {
+            this.durability = durability;
+            return this;
+        }
+
+        public Options withProjectionCriteria(HBaseProjectionCriteria projectionCriteria) {
+            this.projectionCriteria = projectionCriteria;
+            return this;
+        }
+
+        public Options withConfigKey(String configKey) {
+            this.configKey = configKey;
+            return this;
+        }
+
+        public Options withTableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Options withRowToStormValueMapper(HBaseValueMapper rowToStormValueMapper) {
+            this.rowToStormValueMapper = rowToStormValueMapper;
+            return this;
+        }
+
+        public Options withMapper(TridentHBaseMapper mapper) {
+            this.mapper = mapper;
+            return this;
+        }
     }
 }

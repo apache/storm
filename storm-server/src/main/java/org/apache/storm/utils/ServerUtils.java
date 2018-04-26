@@ -91,9 +91,9 @@ public class ServerUtils {
     private static ServerUtils _instance = new ServerUtils();
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out
-     * delegated methods, provide an instance of a subclass that overrides the
-     * implementation of the delegated method.
+     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * overrides the implementation of the delegated method.
+     *
      * @param u a ServerUtils instance
      * @return the previously set instance
      */
@@ -109,8 +109,8 @@ public class ServerUtils {
             List<List<T>> rest = new ArrayList<List<T>>();
             for (List<T> node : nodeList) {
                 if (node != null && node.size() > 0) {
-                  first.add(node.get(0));
-                  rest.add(node.subList(1, node.size()));
+                    first.add(node.get(0));
+                    rest.add(node.subList(1, node.size()));
                 }
             }
             List<T> interleaveRest = interleaveAll(rest);
@@ -120,14 +120,14 @@ public class ServerUtils {
             return first;
         }
         return null;
-      }
+    }
 
     public static BlobStore getNimbusBlobStore(Map<String, Object> conf, NimbusInfo nimbusInfo) {
         return getNimbusBlobStore(conf, null, nimbusInfo);
     }
 
     public static BlobStore getNimbusBlobStore(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo) {
-        String type = (String)conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
+        String type = (String) conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
         if (type == null) {
             type = LocalFsBlobStore.class.getName();
         }
@@ -136,7 +136,7 @@ public class ServerUtils {
         // only enable cleanup of blobstore on nimbus
         nconf.put(Config.BLOBSTORE_CLEANUP_ENABLE, Boolean.TRUE);
 
-        if(store != null) {
+        if (store != null) {
             // store can be null during testing when mocking utils.
             store.prepare(nconf, baseDir, nimbusInfo);
         }
@@ -149,12 +149,13 @@ public class ServerUtils {
 
     /**
      * Returns the combined string, escaped for posix shell.
+     *
      * @param command the list of strings to be combined
      * @return the resulting command string
      */
-    public static String shellCmd (List<String> command) {
+    public static String shellCmd(List<String> command) {
         List<String> changedCommands = new ArrayList<>(command.size());
-        for (String str: command) {
+        for (String str : command) {
             if (str == null) {
                 continue;
             }
@@ -164,29 +165,29 @@ public class ServerUtils {
     }
 
     /**
-     * Takes an input dir or file and returns the disk usage on that local directory.
-     * Very basic implementation.
+     * Takes an input dir or file and returns the disk usage on that local directory. Very basic implementation.
      *
      * @param dir The input dir to get the disk space of this local dir
      * @return The total disk space of the input local directory
      */
     public static long getDU(File dir) {
         long size = 0;
-        if (!dir.exists())
+        if (!dir.exists()) {
             return 0;
+        }
         if (!dir.isDirectory()) {
             return dir.length();
         } else {
             File[] allFiles = dir.listFiles();
-            if(allFiles != null) {
+            if (allFiles != null) {
                 for (int i = 0; i < allFiles.length; i++) {
                     boolean isSymLink;
                     try {
                         isSymLink = org.apache.commons.io.FileUtils.isSymlink(allFiles[i]);
-                    } catch(IOException ioe) {
+                    } catch (IOException ioe) {
                         isSymLink = true;
                     }
-                    if(!isSymLink) {
+                    if (!isSymLink) {
                         size += getDU(allFiles[i]);
                     }
                 }
@@ -209,6 +210,7 @@ public class ServerUtils {
 
     /**
      * Meant to be called only by the supervisor for stormjar/stormconf/stormcode files.
+     *
      * @param key
      * @param localFile
      * @param cb
@@ -225,7 +227,7 @@ public class ServerUtils {
      * Extract dir from the jar to destdir
      *
      * @param jarpath Path to the jar file
-     * @param dir Directory in the jar to pull out
+     * @param dir     Directory in the jar to pull out
      * @param destdir Path to the directory where the extracted directory will be put
      */
     public static void extractDirFromJar(String jarpath, String dir, File destdir) {
@@ -233,8 +235,8 @@ public class ServerUtils {
     }
 
     /**
-     * Returns the value of java.class.path System property. Kept separate for
-     * testing.
+     * Returns the value of java.class.path System property. Kept separate for testing.
+     *
      * @return the classpath
      */
     public static String currentClasspath() {
@@ -245,16 +247,16 @@ public class ServerUtils {
      * Determines if a zip archive contains a particular directory.
      *
      * @param zipfile path to the zipped file
-     * @param target directory being looked for in the zip.
+     * @param target  directory being looked for in the zip.
      * @return boolean whether or not the directory exists in the zip.
      */
     public static boolean zipDoesContainDir(String zipfile, String target) throws IOException {
         List<ZipEntry> entries = (List<ZipEntry>) Collections.list(new ZipFile(zipfile).entries());
 
         String targetDir = target + "/";
-        for(ZipEntry entry : entries) {
+        for (ZipEntry entry : entries) {
             String name = entry.getName();
-            if(name.startsWith(targetDir)) {
+            if (name.startsWith(targetDir)) {
                 return true;
             }
         }
@@ -266,23 +268,24 @@ public class ServerUtils {
         return Files.getOwner(FileSystems.getDefault().getPath(path)).getName();
     }
 
-    public static String containerFilePath (String dir) {
+    public static String containerFilePath(String dir) {
         return dir + File.separator + "launch_container.sh";
     }
 
-    public static String scriptFilePath (String dir) {
+    public static String scriptFilePath(String dir) {
         return dir + File.separator + "storm-worker-script.sh";
     }
 
     /**
      * Writes a posix shell script file to be executed in its own process.
-     * @param dir the directory under which the script is to be written
-     * @param command the command the script is to execute
+     *
+     * @param dir         the directory under which the script is to be written
+     * @param command     the command the script is to execute
      * @param environment optional environment variables to set before running the script's command. May be  null.
      * @return the path to the script that has been written
      */
     public static String writeScript(String dir, List<String> command,
-                                     Map<String,String> environment) throws IOException {
+                                     Map<String, String> environment) throws IOException {
         String path = scriptFilePath(dir);
         try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
             out.write("#!/bin/bash");
@@ -294,14 +297,14 @@ public class ServerUtils {
                         v = "";
                     }
                     out.write(shellCmd(
-                            Arrays.asList(
-                                    "export",k+"="+v)));
+                        Arrays.asList(
+                            "export", k + "=" + v)));
                     out.write(";");
                     out.newLine();
                 }
             }
             out.newLine();
-            out.write("exec "+ shellCmd(command)+";");
+            out.write("exec " + shellCmd(command) + ";");
         }
         return path;
     }
@@ -336,11 +339,11 @@ public class ServerUtils {
         }
     }
 
-    public static void killProcessWithSigTerm (String pid) throws IOException {
+    public static void killProcessWithSigTerm(String pid) throws IOException {
         sendSignalToProcess(Long.parseLong(pid), SIGTERM);
     }
 
-    public static void forceKillProcess (String pid) throws IOException {
+    public static void forceKillProcess(String pid) throws IOException {
         sendSignalToProcess(Long.parseLong(pid), SIGKILL);
     }
 
@@ -370,14 +373,13 @@ public class ServerUtils {
     }
 
     /**
-     * Unpack matching files from a jar. Entries inside the jar that do
-     * not match the given pattern will be skipped.
+     * Unpack matching files from a jar. Entries inside the jar that do not match the given pattern will be skipped.
      *
      * @param jarFile the .jar file to unpack
-     * @param toDir the destination directory into which to unpack the jar
+     * @param toDir   the destination directory into which to unpack the jar
      */
     public static void unJar(File jarFile, File toDir)
-            throws IOException {
+        throws IOException {
         JarFile jar = new JarFile(jarFile);
         try {
             Enumeration<JarEntry> entries = jar.entries();
@@ -407,13 +409,13 @@ public class ServerUtils {
     /**
      * Copies from one stream to another.
      *
-     * @param in InputStream to read from
-     * @param out OutputStream to write to
+     * @param in       InputStream to read from
+     * @param out      OutputStream to write to
      * @param buffSize the size of the buffer
      */
     public static void copyBytes(InputStream in, OutputStream out, int buffSize)
-            throws IOException {
-        PrintStream ps = out instanceof PrintStream ? (PrintStream)out : null;
+        throws IOException {
+        PrintStream ps = out instanceof PrintStream ? (PrintStream) out : null;
         byte buf[] = new byte[buffSize];
         int bytesRead = in.read(buf);
         while (bytesRead >= 0) {
@@ -433,13 +435,12 @@ public class ServerUtils {
     private static void ensureDirectory(File dir) throws IOException {
         if (!dir.mkdirs() && !dir.isDirectory()) {
             throw new IOException("Mkdirs failed to create " +
-                    dir.toString());
+                                  dir.toString());
         }
     }
 
     /**
-     * Given a Tar File as input it will untar the file in a the untar directory
-     * passed as the second parameter
+     * Given a Tar File as input it will untar the file in a the untar directory passed as the second parameter
      * <p/>
      * This utility will untar ".tar" files and ".tar.gz","tgz" files.
      *
@@ -484,13 +485,13 @@ public class ServerUtils {
         } else {
             untarCommand.append(inFile.toString());
         }
-        String[] shellCmd = {"bash", "-c", untarCommand.toString()};
+        String[] shellCmd = { "bash", "-c", untarCommand.toString() };
         ShellUtils.ShellCommandExecutor shexec = new ShellUtils.ShellCommandExecutor(shellCmd);
         shexec.execute();
         int exitcode = shexec.getExitCode();
         if (exitcode != 0) {
             throw new IOException("Error untarring file " + inFile +
-                    ". Tar process exited with exit code " + exitcode);
+                                  ". Tar process exited with exit code " + exitcode);
         }
     }
 
@@ -500,7 +501,7 @@ public class ServerUtils {
         try {
             if (gzipped) {
                 inputStream = new BufferedInputStream(new GZIPInputStream(
-                        new FileInputStream(inFile)));
+                    new FileInputStream(inFile)));
             } else {
                 inputStream = new BufferedInputStream(new FileInputStream(inFile));
             }
@@ -511,7 +512,7 @@ public class ServerUtils {
                 }
             }
         } finally {
-            if(inputStream != null) {
+            if (inputStream != null) {
                 inputStream.close();
             }
         }
@@ -523,7 +524,7 @@ public class ServerUtils {
             File subDir = new File(outputDir, entry.getName());
             if (!subDir.mkdirs() && !subDir.isDirectory()) {
                 throw new IOException("Mkdirs failed to create tar internal dir "
-                        + outputDir);
+                                      + outputDir);
             }
             for (TarArchiveEntry e : entry.getDirectoryEntries()) {
                 unpackEntries(tis, e, subDir);
@@ -540,7 +541,7 @@ public class ServerUtils {
         int count;
         byte data[] = new byte[2048];
         BufferedOutputStream outputStream = new BufferedOutputStream(
-                new FileOutputStream(outputFile));
+            new FileOutputStream(outputFile));
 
         while ((count = tis.read(data)) != -1) {
             outputStream.write(data, 0, count);
@@ -556,14 +557,14 @@ public class ServerUtils {
         } else if (lowerDst.endsWith(".zip")) {
             unZip(localrsrc, dst);
         } else if (lowerDst.endsWith(".tar.gz") ||
-                lowerDst.endsWith(".tgz") ||
-                lowerDst.endsWith(".tar")) {
+                   lowerDst.endsWith(".tgz") ||
+                   lowerDst.endsWith(".tar")) {
             unTar(localrsrc, dst);
         } else {
             LOG.warn("Cannot unpack " + localrsrc);
             if (!localrsrc.renameTo(dst)) {
                 throw new IOException("Unable to rename file: [" + localrsrc
-                        + "] to [" + dst + "]");
+                                      + "] to [" + dst + "]");
             }
         }
         if (localrsrc.isFile()) {
@@ -572,9 +573,9 @@ public class ServerUtils {
     }
 
     /**
-     * Given a File input it will unzip the file in a the unzip directory
-     * passed as the second parameter
-     * @param inFile The zip file as input
+     * Given a File input it will unzip the file in a the unzip directory passed as the second parameter
+     *
+     * @param inFile   The zip file as input
      * @param unzipDir The unzip directory where to unzip the zip file.
      * @throws IOException
      */
@@ -617,14 +618,15 @@ public class ServerUtils {
     }
 
     /**
-     * Given a zip File input it will return its size
-     * Only works for zip files whose uncompressed size is less than 4 GB,
-     * otherwise returns the size module 2^32, per gzip specifications
+     * Given a zip File input it will return its size Only works for zip files whose uncompressed size is less than 4 GB, otherwise returns
+     * the size module 2^32, per gzip specifications
+     *
      * @param myFile The zip file as input
-     * @throws IOException
      * @return zip file size as a long
+     *
+     * @throws IOException
      */
-    public static long zipFileSize(File myFile) throws IOException{
+    public static long zipFileSize(File myFile) throws IOException {
         RandomAccessFile raf = new RandomAccessFile(myFile, "r");
         raf.seek(raf.length() - 4);
         long b4 = raf.read();
@@ -634,6 +636,102 @@ public class ServerUtils {
         long val = (b1 << 24) | (b2 << 16) + (b3 << 8) + b4;
         raf.close();
         return val;
+    }
+
+    private static boolean downloadResourcesAsSupervisorAttempt(ClientBlobStore cb, String key, String localFile) {
+        boolean isSuccess = false;
+        try (FileOutputStream out = new FileOutputStream(localFile);
+             InputStreamWithMeta in = cb.getBlob(key);) {
+            long fileSize = in.getFileLength();
+
+            byte[] buffer = new byte[1024];
+            int len;
+            int downloadFileSize = 0;
+            while ((len = in.read(buffer)) >= 0) {
+                out.write(buffer, 0, len);
+                downloadFileSize += len;
+            }
+
+            isSuccess = (fileSize == downloadFileSize);
+        } catch (TException | IOException e) {
+            LOG.error("An exception happened while downloading {} from blob store.", localFile, e);
+        }
+        if (!isSuccess) {
+            try {
+                Files.deleteIfExists(Paths.get(localFile));
+            } catch (IOException ex) {
+                LOG.error("Failed trying to delete the partially downloaded {}", localFile, ex);
+            }
+        }
+        return isSuccess;
+    }
+
+    /**
+     * Check if the scheduler is resource aware or not.
+     *
+     * @param conf The configuration
+     * @return True if it's resource aware; false otherwise
+     */
+    public static boolean isRAS(Map<String, Object> conf) {
+        if (conf.containsKey(DaemonConfig.STORM_SCHEDULER)) {
+            if (conf.get(DaemonConfig.STORM_SCHEDULER).equals("org.apache.storm.scheduler.resource.ResourceAwareScheduler")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology)
+        throws InvalidTopologyException {
+        return (int) Math.ceil(getEstimatedTotalHeapMemoryRequiredByTopo(topoConf, topology) /
+                               ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB)));
+    }
+
+    public static double getEstimatedTotalHeapMemoryRequiredByTopo(Map<String, Object> topoConf, StormTopology topology)
+        throws InvalidTopologyException {
+        Map<String, Integer> componentParallelism = getComponentParallelism(topoConf, topology);
+        double totalMemoryRequired = 0.0;
+
+        for (Map.Entry<String, NormalizedResourceRequest> entry : ResourceUtils.getBoltsResources(topology, topoConf).entrySet()) {
+            int parallelism = componentParallelism.getOrDefault(entry.getKey(), 1);
+            double memoryRequirement = entry.getValue().getOnHeapMemoryMb();
+            totalMemoryRequired += memoryRequirement * parallelism;
+        }
+
+        for (Map.Entry<String, NormalizedResourceRequest> entry : ResourceUtils.getSpoutsResources(topology, topoConf).entrySet()) {
+            int parallelism = componentParallelism.getOrDefault(entry.getKey(), 1);
+            double memoryRequirement = entry.getValue().getOnHeapMemoryMb();
+            totalMemoryRequired += memoryRequirement * parallelism;
+        }
+        return totalMemoryRequired;
+    }
+
+    public static Map<String, Integer> getComponentParallelism(Map<String, Object> topoConf, StormTopology topology)
+        throws InvalidTopologyException {
+        Map<String, Integer> ret = new HashMap<>();
+        Map<String, Object> components = StormCommon.allComponents(topology);
+        for (Map.Entry<String, Object> entry : components.entrySet()) {
+            ret.put(entry.getKey(), getComponentParallelism(topoConf, entry.getValue()));
+        }
+        return ret;
+    }
+
+    public static int getComponentParallelism(Map<String, Object> topoConf, Object component) throws InvalidTopologyException {
+        Map<String, Object> combinedConf = Utils.merge(topoConf, StormCommon.componentConf(component));
+        int numTasks = ObjectReader.getInt(combinedConf.get(Config.TOPOLOGY_TASKS), StormCommon.numStartExecutors(component));
+        Integer maxParallel = ObjectReader.getInt(combinedConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM), null);
+        int ret = numTasks;
+        if (maxParallel != null) {
+            ret = Math.min(maxParallel, numTasks);
+        }
+        return ret;
+    }
+
+    public static Subject principalNameToSubject(String name) {
+        SingleUserPrincipal principal = new SingleUserPrincipal(name);
+        Subject sub = new Subject();
+        sub.getPrincipals().add(principal);
+        return sub;
     }
 
     // Non-static impl methods exist for mocking purposes.
@@ -670,100 +768,5 @@ public class ServerUtils {
             }
             Utils.sleep(ATTEMPTS_INTERVAL_TIME);
         }
-    }
-
-    private static boolean downloadResourcesAsSupervisorAttempt(ClientBlobStore cb, String key, String localFile) {
-        boolean isSuccess = false;
-        try (FileOutputStream out = new FileOutputStream(localFile);
-             InputStreamWithMeta in = cb.getBlob(key);) {
-            long fileSize = in.getFileLength();
-
-            byte[] buffer = new byte[1024];
-            int len;
-            int downloadFileSize = 0;
-            while ((len = in.read(buffer)) >= 0) {
-                out.write(buffer, 0, len);
-                downloadFileSize += len;
-            }
-
-            isSuccess = (fileSize == downloadFileSize);
-        } catch (TException | IOException e) {
-            LOG.error("An exception happened while downloading {} from blob store.", localFile, e);
-        }
-        if (!isSuccess) {
-            try {
-                Files.deleteIfExists(Paths.get(localFile));
-            } catch (IOException ex) {
-                LOG.error("Failed trying to delete the partially downloaded {}", localFile, ex);
-            }
-        }
-        return isSuccess;
-    }
-
-    /**
-     * Check if the scheduler is resource aware or not.
-     * @param conf The configuration
-     * @return True if it's resource aware; false otherwise
-     */
-    public static boolean isRAS(Map<String, Object> conf) {
-        if (conf.containsKey(DaemonConfig.STORM_SCHEDULER)) {
-            if (conf.get(DaemonConfig.STORM_SCHEDULER).equals("org.apache.storm.scheduler.resource.ResourceAwareScheduler")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology)
-        throws InvalidTopologyException {
-        return (int) Math.ceil(getEstimatedTotalHeapMemoryRequiredByTopo(topoConf, topology) /
-                ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB)));
-    }
-
-    public static double getEstimatedTotalHeapMemoryRequiredByTopo(Map<String, Object> topoConf, StormTopology topology)
-        throws InvalidTopologyException {
-        Map<String, Integer> componentParallelism = getComponentParallelism(topoConf, topology);
-        double totalMemoryRequired = 0.0;
-
-        for (Map.Entry<String, NormalizedResourceRequest> entry: ResourceUtils.getBoltsResources(topology, topoConf).entrySet()) {
-            int parallelism = componentParallelism.getOrDefault(entry.getKey(), 1);
-            double memoryRequirement = entry.getValue().getOnHeapMemoryMb();
-            totalMemoryRequired += memoryRequirement * parallelism;
-        }
-
-        for (Map.Entry<String, NormalizedResourceRequest> entry: ResourceUtils.getSpoutsResources(topology, topoConf).entrySet()) {
-            int parallelism = componentParallelism.getOrDefault(entry.getKey(), 1);
-            double memoryRequirement = entry.getValue().getOnHeapMemoryMb();
-            totalMemoryRequired += memoryRequirement * parallelism;
-        }
-        return totalMemoryRequired;
-    }
-
-    public static Map<String, Integer> getComponentParallelism(Map<String, Object> topoConf, StormTopology topology)
-        throws InvalidTopologyException {
-        Map<String, Integer> ret = new HashMap<>();
-        Map<String, Object> components = StormCommon.allComponents(topology);
-        for (Map.Entry<String, Object> entry : components.entrySet()) {
-            ret.put(entry.getKey(), getComponentParallelism(topoConf, entry.getValue()));
-        }
-        return ret;
-    }
-
-    public static int getComponentParallelism(Map<String, Object> topoConf, Object component) throws InvalidTopologyException {
-        Map<String, Object> combinedConf = Utils.merge(topoConf, StormCommon.componentConf(component));
-        int numTasks = ObjectReader.getInt(combinedConf.get(Config.TOPOLOGY_TASKS), StormCommon.numStartExecutors(component));
-        Integer maxParallel = ObjectReader.getInt(combinedConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM), null);
-        int ret = numTasks;
-        if (maxParallel != null) {
-            ret = Math.min(maxParallel, numTasks);
-        }
-        return ret;
-    }
-
-    public static Subject principalNameToSubject(String name) {
-        SingleUserPrincipal principal = new SingleUserPrincipal(name);
-        Subject sub = new Subject();
-        sub.getPrincipals().add(principal);
-        return sub;
     }
 }

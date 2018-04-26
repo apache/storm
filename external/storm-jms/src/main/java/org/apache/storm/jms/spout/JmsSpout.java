@@ -34,7 +34,6 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
-
 import org.apache.storm.Config;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.jms.JmsTupleProducer;
@@ -48,10 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-
 /**
- * A Storm <code>Spout</code> implementation that listens to a JMS topic or
- * queue and outputs tuples based on the messages it receives.
+ * A Storm <code>Spout</code> implementation that listens to a JMS topic or queue and outputs tuples based on the messages it receives.
  *
  * <p><code>JmsSpout</code> instances rely on <code>JmsProducer</code>
  * implementations to obtain the JMS
@@ -59,8 +56,7 @@ import org.slf4j.LoggerFactory;
  * to connect to a JMS topic/queue.
  *
  * <p>When a <code>JmsSpout</code> receives a JMS message, it delegates to an
- * internal <code>JmsTupleProducer</code> instance to create a Storm tuple from
- * the incoming message.
+ * internal <code>JmsTupleProducer</code> instance to create a Storm tuple from the incoming message.
  *
  * <p>Typically, developers will supply a custom <code>JmsTupleProducer</code>
  * implementation appropriate for the expected message content.
@@ -68,13 +64,19 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("serial")
 public class JmsSpout extends BaseRichSpout implements MessageListener {
 
-    /** The logger object instance for this class. */
+    /**
+     * The logger object instance for this class.
+     */
     private static final Logger LOG = LoggerFactory.getLogger(JmsSpout.class);
 
-    /** The logger of the recovery task. */
+    /**
+     * The logger of the recovery task.
+     */
     private static final Logger RECOVERY_TASK_LOG = LoggerFactory.getLogger(RecoveryTask.class);
 
-    /** Time to sleep between queue polling attempts. */
+    /**
+     * Time to sleep between queue polling attempts.
+     */
     private static final int POLL_INTERVAL_MS = 50;
 
     /**
@@ -82,57 +84,110 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
      */
     private static final int DEFAULT_MESSAGE_TIMEOUT_SECS = 30;
 
-    /** Time to wait before queuing the first recovery task. */
+    /**
+     * Time to wait before queuing the first recovery task.
+     */
     private static final int RECOVERY_DELAY_MS = 10;
-
+    /**
+     * Used to safely recover failed JMS sessions across instances.
+     */
+    private final Serializable recoveryMutex = "RECOVERY_MUTEX";
     /**
      * The acknowledgment mode used for this instance.
      *
      * @see Session
      */
     private int jmsAcknowledgeMode = Session.AUTO_ACKNOWLEDGE;
-
-    /** Indicates whether or not this spout should run as a singleton. */
+    /**
+     * Indicates whether or not this spout should run as a singleton.
+     */
     private boolean distributed = true;
-
-    /** Used to generate tuples from incoming messages. */
+    /**
+     * Used to generate tuples from incoming messages.
+     */
     private JmsTupleProducer tupleProducer;
-
-    /** Encapsulates jms related classes needed to communicate with the mq. */
+    /**
+     * Encapsulates jms related classes needed to communicate with the mq.
+     */
     private JmsProvider jmsProvider;
-
-    /** Stores incoming messages for later sending. */
+    /**
+     * Stores incoming messages for later sending.
+     */
     private LinkedBlockingQueue<Message> queue;
-
-    /** Contains all message ids of messages that were not yet acked. */
+    /**
+     * Contains all message ids of messages that were not yet acked.
+     */
     private TreeSet<JmsMessageID> toCommit;
-
-    /** Maps between message ids of not-yet acked messages, and the messages. */
+    /**
+     * Maps between message ids of not-yet acked messages, and the messages.
+     */
     private HashMap<JmsMessageID, Message> pendingMessages;
-
-    /** Counter of handled messages. */
+    /**
+     * Counter of handled messages.
+     */
     private long messageSequence = 0;
-
-    /** The collector used to emit tuples. */
+    /**
+     * The collector used to emit tuples.
+     */
     private SpoutOutputCollector collector;
-
-    /** Connection to the jms queue. */
+    /**
+     * Connection to the jms queue.
+     */
     private transient Connection connection;
-
-    /** The active jms session. */
+    /**
+     * The active jms session.
+     */
     private transient Session session;
-
-    /** Indicates whether or not a message failed to be processed. */
+    /**
+     * Indicates whether or not a message failed to be processed.
+     */
     private boolean hasFailures = false;
-
-    /** Used to safely recover failed JMS sessions across instances. */
-    private final Serializable recoveryMutex = "RECOVERY_MUTEX";
-
-    /** Schedules recovery tasks periodically. */
+    /**
+     * Schedules recovery tasks periodically.
+     */
     private Timer recoveryTimer = null;
 
-    /** Time to wait between recovery attempts. */
+    /**
+     * Time to wait between recovery attempts.
+     */
     private long recoveryPeriodMs = -1; // default to disabled
+
+    /**
+     * Translate the {@code int} value of an acknowledgment to a {@code String}.
+     *
+     * @param deliveryMode the mode to translate.
+     * @return its {@code String} explanation (name).
+     *
+     * @see Session
+     */
+    private static String toDeliveryModeString(int deliveryMode) {
+        switch (deliveryMode) {
+            case Session.AUTO_ACKNOWLEDGE:
+                return "AUTO_ACKNOWLEDGE";
+            case Session.CLIENT_ACKNOWLEDGE:
+                return "CLIENT_ACKNOWLEDGE";
+            case Session.DUPS_OK_ACKNOWLEDGE:
+                return "DUPS_OK_ACKNOWLEDGE";
+            default:
+                return "UNKNOWN";
+
+        }
+    }
+
+    /**
+     * Returns the JMS Session acknowledgement mode for the JMS session associated with this spout. Can be either of:
+     * <ul>
+     * <li>{@link Session#AUTO_ACKNOWLEDGE}</li>
+     * <li>{@link Session#CLIENT_ACKNOWLEDGE}</li>
+     * <li>{@link Session#DUPS_OK_ACKNOWLEDGE}</li>
+     * <li>{@link Session#SESSION_TRANSACTED}</li>
+     * </ul>
+     *
+     * @return the int value of the acknowledgment mode.
+     */
+    public int getJmsAcknowledgeMode() {
+        return this.jmsAcknowledgeMode;
+    }
 
     /**
      * Sets the JMS Session acknowledgement mode for the JMS session.
@@ -155,34 +210,17 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
                 break;
             default:
                 throw new IllegalArgumentException(
-                        "Unknown Acknowledge mode: " + mode + " (See javax.jms.Session for valid values)");
+                    "Unknown Acknowledge mode: " + mode + " (See javax.jms.Session for valid values)");
 
         }
         this.jmsAcknowledgeMode = mode;
     }
 
     /**
-     * Returns the JMS Session acknowledgement mode for the JMS session
-     * associated with this spout. Can be either of:
-     * <ul>
-     * <li>{@link Session#AUTO_ACKNOWLEDGE}</li>
-     * <li>{@link Session#CLIENT_ACKNOWLEDGE}</li>
-     * <li>{@link Session#DUPS_OK_ACKNOWLEDGE}</li>
-     * <li>{@link Session#SESSION_TRANSACTED}</li>
-     * </ul>
-     *
-     * @return the int value of the acknowledgment mode.
-     */
-    public int getJmsAcknowledgeMode() {
-        return this.jmsAcknowledgeMode;
-    }
-
-    /**
      * Set {@link #jmsProvider}.
      *
      * <p>Set the <code>JmsProvider</code>
-     * implementation that this Spout will use to connect to
-     * a JMS <code>javax.jms.Desination</code>
+     * implementation that this Spout will use to connect to a JMS <code>javax.jms.Desination</code>
      *
      * @param provider the provider to use
      */
@@ -191,10 +229,8 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
     }
 
     /**
-     * Set the <code>JmsTupleProducer</code>
-     * implementation that will convert <code>javax.jms.Message</code>
-     * object to <code>org.apache.storm.tuple.Values</code> objects
-     * to be emitted.
+     * Set the <code>JmsTupleProducer</code> implementation that will convert <code>javax.jms.Message</code> object to
+     * <code>org.apache.storm.tuple.Values</code> objects to be emitted.
      *
      * @param producer the producer instance to use
      */
@@ -238,12 +274,12 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
         }
         // TODO get the default value from storm instead of hard coding 30 secs
         Long topologyTimeout =
-                ((Number) conf.getOrDefault(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, DEFAULT_MESSAGE_TIMEOUT_SECS)).longValue();
+            ((Number) conf.getOrDefault(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, DEFAULT_MESSAGE_TIMEOUT_SECS)).longValue();
         if ((TimeUnit.SECONDS.toMillis(topologyTimeout)) > this.recoveryPeriodMs) {
             LOG.warn("*** WARNING *** : "
-                    + "Recovery period (" + this.recoveryPeriodMs + " ms.) is less then the configured "
-                    + "'topology.message.timeout.secs' of " + topologyTimeout
-                    + " secs. This could lead to a message replay flood!");
+                     + "Recovery period (" + this.recoveryPeriodMs + " ms.) is less then the configured "
+                     + "'topology.message.timeout.secs' of " + topologyTimeout
+                     + " secs. This could lead to a message replay flood!");
         }
         this.queue = new LinkedBlockingQueue<Message>();
         this.toCommit = new TreeSet<JmsMessageID>();
@@ -288,10 +324,8 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
      * Generate the next tuple from a message.
      *
      * <p>This method polls the queue that's being filled asynchronously by the
-     * jms connection, every {@link #POLL_INTERVAL_MS} seconds. When a message
-     * arrives, a {@link Values} (tuple) is generated using
-     * {@link #tupleProducer}. It is emitted, and the message is saved to
-     * {@link #toCommit} and {@link #pendingMessages} for later handling.
+     * jms connection, every {@link #POLL_INTERVAL_MS} seconds. When a message arrives, a {@link Values} (tuple) is generated using {@link
+     * #tupleProducer}. It is emitted, and the message is saved to {@link #toCommit} and {@link #pendingMessages} for later handling.
      */
     public void nextTuple() {
         Message msg = this.queue.poll();
@@ -332,8 +366,7 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
      * Ack a successfully handled message by the matching {@link JmsMessageID}.
      *
      * <p>Acking means removing the message from the pending messages
-     * collections, and if it was the oldest pending message -
-     * ack it to the mq as well, so that it's the only one acked.
+     * collections, and if it was the oldest pending message - ack it to the mq as well, so that it's the only one acked.
      *
      * <p>Will only be called if we're transactional or not AUTO_ACKNOWLEDGE.
      */
@@ -392,8 +425,7 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
     }
 
     /**
-     * Returns <code>true</code> if the spout has received failures
-     * from which it has not yet recovered.
+     * Returns <code>true</code> if the spout has received failures from which it has not yet recovered.
      *
      * @return {@code true} if there were failures, {@code false} otherwise.
      */
@@ -409,8 +441,7 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
     }
 
     /**
-     * Sets the periodicity of the timer task that
-     * checks for failures and recovers the JMS session.
+     * Sets the periodicity of the timer task that checks for failures and recovers the JMS session.
      *
      * @param period desired wait period
      */
@@ -429,42 +460,18 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
      * Sets the "distributed" mode of this spout.
      *
      * <p>If <code>true</code> multiple instances of this spout <i>may</i> be
-     * created across the cluster
-     * (depending on the "parallelism_hint" in the topology configuration).
+     * created across the cluster (depending on the "parallelism_hint" in the topology configuration).
      *
      * <p>Setting this value to <code>false</code> essentially means this spout
-     * will run as a singleton within the cluster
-     * ("parallelism_hint" will be ignored).
+     * will run as a singleton within the cluster ("parallelism_hint" will be ignored).
      *
      * <p>In general, this should be set to <code>false</code> if the underlying
      * JMS destination is a topic, and <code>true</code> if it is a JMS queue.
      *
-     * @param isDistributed {@code true} if should be distributed, {@code false}
-     *                      otherwise.
+     * @param isDistributed {@code true} if should be distributed, {@code false} otherwise.
      */
     public void setDistributed(boolean isDistributed) {
         this.distributed = isDistributed;
-    }
-
-    /**
-     * Translate the {@code int} value of an acknowledgment to a {@code String}.
-     *
-     * @param deliveryMode the mode to translate.
-     * @return its {@code String} explanation (name).
-     * @see Session
-     */
-    private static String toDeliveryModeString(int deliveryMode) {
-        switch (deliveryMode) {
-            case Session.AUTO_ACKNOWLEDGE:
-                return "AUTO_ACKNOWLEDGE";
-            case Session.CLIENT_ACKNOWLEDGE:
-                return "CLIENT_ACKNOWLEDGE";
-            case Session.DUPS_OK_ACKNOWLEDGE:
-                return "DUPS_OK_ACKNOWLEDGE";
-            default:
-                return "UNKNOWN";
-
-        }
     }
 
     /**
@@ -477,8 +484,7 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
     /**
      * Check if the subscription requires messages to be acked.
      *
-     * @return {@code true} if there is a pending messages state, {@code false}
-     *         otherwise.
+     * @return {@code true} if there is a pending messages state, {@code false} otherwise.
      */
     private boolean isDurableSubscription() {
         return (this.jmsAcknowledgeMode != Session.AUTO_ACKNOWLEDGE);

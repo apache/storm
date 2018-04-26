@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.spout;
 
 import static org.apache.storm.spout.CheckPointState.State.COMMITTED;
@@ -30,53 +25,17 @@ import static org.apache.storm.spout.CheckPointState.State.PREPARING;
  *
  * </pre>
  *
- * During recovery, if a previous transaction is in PREPARING state, it is rolled back since all bolts in the topology
- * might not have prepared (saved) the data for commit. If the previous transaction is in COMMITTING state, it is
- * rolled forward (committed) since some bolts might have already committed the data.
+ * During recovery, if a previous transaction is in PREPARING state, it is rolled back since all bolts in the topology might not have
+ * prepared (saved) the data for commit. If the previous transaction is in COMMITTING state, it is rolled forward (committed) since some
+ * bolts might have already committed the data.
  * <p>
- * During normal flow, the state transitions from PREPARING to COMMITTING to COMMITTED. In case of failures the
- * prepare/commit operation is retried.
+ * During normal flow, the state transitions from PREPARING to COMMITTING to COMMITTED. In case of failures the prepare/commit operation is
+ * retried.
  * </p>
  */
 public class CheckPointState {
     private long txid;
     private State state;
-
-    public enum State {
-        /**
-         * The checkpoint spout has committed the transaction.
-         */
-        COMMITTED,
-        /**
-         * The checkpoint spout has started committing the transaction
-         * and the commit is in progress.
-         */
-        COMMITTING,
-        /**
-         * The checkpoint spout has started preparing the transaction for commit
-         * and the prepare is in progress.
-         */
-        PREPARING
-    }
-
-    public enum Action {
-        /**
-         * prepare transaction for commit
-         */
-        PREPARE,
-        /**
-         * commit the previously prepared transaction
-         */
-        COMMIT,
-        /**
-         * rollback the previously prepared transaction
-         */
-        ROLLBACK,
-        /**
-         * initialize the state
-         */
-        INITSTATE
-    }
 
     public CheckPointState(long txid, State state) {
         this.txid = txid;
@@ -145,12 +104,18 @@ public class CheckPointState {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         CheckPointState that = (CheckPointState) o;
 
-        if (txid != that.txid) return false;
+        if (txid != that.txid) {
+            return false;
+        }
         return state == that.state;
 
     }
@@ -165,8 +130,42 @@ public class CheckPointState {
     @Override
     public String toString() {
         return "CheckPointState{" +
-                "txid=" + txid +
-                ", state=" + state +
-                '}';
+               "txid=" + txid +
+               ", state=" + state +
+               '}';
+    }
+
+    public enum State {
+        /**
+         * The checkpoint spout has committed the transaction.
+         */
+        COMMITTED,
+        /**
+         * The checkpoint spout has started committing the transaction and the commit is in progress.
+         */
+        COMMITTING,
+        /**
+         * The checkpoint spout has started preparing the transaction for commit and the prepare is in progress.
+         */
+        PREPARING
+    }
+
+    public enum Action {
+        /**
+         * prepare transaction for commit
+         */
+        PREPARE,
+        /**
+         * commit the previously prepared transaction
+         */
+        COMMIT,
+        /**
+         * rollback the previously prepared transaction
+         */
+        ROLLBACK,
+        /**
+         * initialize the state
+         */
+        INITSTATE
     }
 }

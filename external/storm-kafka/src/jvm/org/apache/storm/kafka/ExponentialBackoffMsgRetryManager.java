@@ -1,23 +1,17 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
-import org.apache.storm.utils.Time;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,6 +19,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.storm.utils.Time;
 
 public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager {
 
@@ -34,7 +29,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     private int retryLimit;
 
     private Queue<MessageRetryRecord> waiting;
-    private Map<Long,MessageRetryRecord> records;
+    private Map<Long, MessageRetryRecord> records;
 
     public ExponentialBackoffMsgRetryManager() {
 
@@ -46,15 +41,15 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
         this.retryDelayMaxMs = spoutConfig.retryDelayMaxMs;
         this.retryLimit = spoutConfig.retryLimit;
         this.waiting = new PriorityQueue<MessageRetryRecord>(11, new RetryTimeComparator());
-        this.records = new ConcurrentHashMap<Long,MessageRetryRecord>();
+        this.records = new ConcurrentHashMap<Long, MessageRetryRecord>();
     }
 
     @Override
     public void failed(Long offset) {
         MessageRetryRecord oldRecord = this.records.get(offset);
         MessageRetryRecord newRecord = oldRecord == null ?
-                                       new MessageRetryRecord(offset) :
-                                       oldRecord.createNextRetryRecord();
+            new MessageRetryRecord(offset) :
+            oldRecord.createNextRetryRecord();
         this.records.put(offset, newRecord);
         this.waiting.add(newRecord);
     }
@@ -98,16 +93,16 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     public boolean shouldReEmitMsg(Long offset) {
         MessageRetryRecord record = this.records.get(offset);
         return record != null &&
-                this.waiting.contains(record) &&
-                Time.currentTimeMillis() >= record.retryTimeUTC;
+               this.waiting.contains(record) &&
+               Time.currentTimeMillis() >= record.retryTimeUTC;
     }
 
     @Override
     public boolean retryFurther(Long offset) {
         MessageRetryRecord record = this.records.get(offset);
-        return ! (record != null &&
-               this.retryLimit > 0 &&
-               this.retryLimit <= record.retryNum);
+        return !(record != null &&
+                 this.retryLimit > 0 &&
+                 this.retryLimit <= record.retryNum);
     }
 
     @Override
@@ -117,9 +112,9 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
 
     @Override
     public Set<Long> clearOffsetsBefore(Long kafkaOffset) {
-        Set<Long> invalidOffsets = new HashSet<Long>(); 
-        for(Long offset : records.keySet()){
-            if(offset < kafkaOffset){
+        Set<Long> invalidOffsets = new HashSet<Long>();
+        for (Long offset : records.keySet()) {
+            if (offset < kafkaOffset) {
                 MessageRetryRecord record = this.records.remove(offset);
                 if (record != null) {
                     this.waiting.remove(record);
@@ -128,6 +123,19 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
             }
         }
         return invalidOffsets;
+    }
+
+    private static class RetryTimeComparator implements Comparator<MessageRetryRecord> {
+
+        @Override
+        public int compare(MessageRetryRecord record1, MessageRetryRecord record2) {
+            return Long.valueOf(record1.retryTimeUTC).compareTo(Long.valueOf(record2.retryTimeUTC));
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return false;
+        }
     }
 
     /**
@@ -174,8 +182,8 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
             double delay = retryInitialDelayMs * delayMultiplier;
             Long maxLong = Long.MAX_VALUE;
             long delayThisRetryMs = delay >= maxLong.doubleValue()
-                                    ?  maxLong
-                                    : (long) delay;
+                ? maxLong
+                : (long) delay;
             return Math.min(delayThisRetryMs, retryDelayMaxMs);
         }
 
@@ -188,19 +196,6 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
         @Override
         public int hashCode() {
             return Long.valueOf(this.offset).hashCode();
-        }
-    }
-
-    private static class RetryTimeComparator implements Comparator<MessageRetryRecord> {
-
-        @Override
-        public int compare(MessageRetryRecord record1, MessageRetryRecord record2) {
-            return Long.valueOf(record1.retryTimeUTC).compareTo(Long.valueOf(record2.retryTimeUTC));
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return false;
         }
     }
 }

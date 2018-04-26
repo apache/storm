@@ -1,25 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.cassandra;
 
 import com.datastax.driver.core.Cluster;
+import java.util.Map;
 import org.apache.storm.cassandra.client.CassandraConf;
 import org.apache.storm.cassandra.client.ClusterFactory;
 import org.apache.storm.cassandra.client.SimpleClient;
@@ -29,8 +23,6 @@ import org.apache.storm.cassandra.context.BaseBeanFactory;
 import org.apache.storm.cassandra.context.WorkerCtx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  *
@@ -52,8 +44,9 @@ public class CassandraContext extends WorkerCtx implements SimpleClientProvider 
     @Override
     public SimpleClient getClient(Map<String, Object> config) {
         SimpleClient client = getWorkerBean(SimpleClient.class, config);
-        if (client.isClose() )
+        if (client.isClose()) {
             client = getWorkerBean(SimpleClient.class, config, true);
+        }
         return client;
     }
 
@@ -76,13 +69,14 @@ public class CassandraContext extends WorkerCtx implements SimpleClientProvider 
     public static final class ClientFactory extends BaseBeanFactory<SimpleClient> {
 
         private static final Logger LOG = LoggerFactory.getLogger(ClientFactory.class);
+
         /**
          * {@inheritDoc}
          */
         @Override
         protected SimpleClient make(Map<String, Object> topoConf) {
             Cluster cluster = this.context.getWorkerBean(Cluster.class, topoConf);
-            if( cluster.isClosed() ) {
+            if (cluster.isClosed()) {
                 LOG.warn("Cluster is closed - trigger new initialization!");
                 cluster = this.context.getWorkerBean(Cluster.class, topoConf, true);
             }

@@ -1,26 +1,32 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.streams;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.streams.operations.IdentityFunction;
@@ -44,18 +50,6 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * A builder for constructing a {@link StormTopology} via storm streams api (DSL)
  */
@@ -66,8 +60,8 @@ public class StreamBuilder {
     private final Table<Node, String, GroupingInfo> nodeGroupingInfo = HashBasedTable.create();
     private final Map<Node, WindowNode> windowInfo = new HashMap<>();
     private final List<ProcessorNode> curGroup = new ArrayList<>();
-    private int statefulProcessorCount = 0;
     private final Map<StreamBolt, BoltDeclarer> streamBolts = new HashMap<>();
+    private int statefulProcessorCount = 0;
     private String timestampFieldName = null;
 
     /**
@@ -88,8 +82,7 @@ public class StreamBuilder {
     }
 
     /**
-     * Creates a new {@link Stream} of tuples from the given {@link IRichSpout} with the given
-     * parallelism.
+     * Creates a new {@link Stream} of tuples from the given {@link IRichSpout} with the given parallelism.
      *
      * @param spout       the spout
      * @param parallelism the parallelism of the stream
@@ -105,8 +98,8 @@ public class StreamBuilder {
     }
 
     /**
-     * Creates a new {@link Stream} of values from the given {@link IRichSpout} by extracting field(s)
-     * from tuples via the supplied {@link TupleValueMapper}.
+     * Creates a new {@link Stream} of values from the given {@link IRichSpout} by extracting field(s) from tuples via the supplied {@link
+     * TupleValueMapper}.
      *
      * @param spout       the spout
      * @param valueMapper the value mapper
@@ -119,8 +112,8 @@ public class StreamBuilder {
 
 
     /**
-     * Creates a new {@link Stream} of values from the given {@link IRichSpout} by extracting field(s)
-     * from tuples via the supplied {@link TupleValueMapper} with the given parallelism.
+     * Creates a new {@link Stream} of values from the given {@link IRichSpout} by extracting field(s) from tuples via the supplied {@link
+     * TupleValueMapper} with the given parallelism.
      *
      * @param spout       the spout
      * @param valueMapper the value mapper
@@ -133,8 +126,8 @@ public class StreamBuilder {
     }
 
     /**
-     * Creates a new {@link PairStream} of key-value pairs from the given {@link IRichSpout} by extracting key and
-     * value from tuples via the supplied {@link PairValueMapper}.
+     * Creates a new {@link PairStream} of key-value pairs from the given {@link IRichSpout} by extracting key and value from tuples via the
+     * supplied {@link PairValueMapper}.
      *
      * @param spout           the spout
      * @param pairValueMapper the pair value mapper
@@ -147,8 +140,8 @@ public class StreamBuilder {
     }
 
     /**
-     * Creates a new {@link PairStream} of key-value pairs from the given {@link IRichSpout} by extracting key and
-     * value from tuples via the supplied {@link PairValueMapper} and with the given value of parallelism.
+     * Creates a new {@link PairStream} of key-value pairs from the given {@link IRichSpout} by extracting key and value from tuples via the
+     * supplied {@link PairValueMapper} and with the given value of parallelism.
      *
      * @param spout           the spout
      * @param pairValueMapper the pair value mapper
@@ -163,8 +156,7 @@ public class StreamBuilder {
 
 
     /**
-     * Builds a new {@link StormTopology} for the computation expressed
-     * via the stream api.
+     * Builds a new {@link StormTopology} for the computation expressed via the stream api.
      *
      * @return the storm topology
      */
@@ -233,8 +225,8 @@ public class StreamBuilder {
             if (child.getGroupingInfo() != null) {
                 if (!child.getGroupingInfo().equals(parent.getGroupingInfo())) {
                     throw new IllegalStateException("Trying to assign grouping info for node" +
-                            " with current grouping info: " + child.getGroupingInfo() +
-                            " to: " + parent.getGroupingInfo() + " Node: " + child);
+                                                    " with current grouping info: " + child.getGroupingInfo() +
+                                                    " to: " + parent.getGroupingInfo() + " Node: " + child);
                 }
             } else {
                 child.setGroupingInfo(parent.getGroupingInfo());
@@ -257,6 +249,7 @@ public class StreamBuilder {
              * can be mapped to the same StatefulBolt that UpdateStateByKeyProcessor is part of.
              */
             Map<Class<?>, Integer> p = new HashMap<>();
+
             {
                 p.put(SpoutNode.class, 0);
                 p.put(UpdateStateByKeyProcessor.class, 1);
@@ -266,6 +259,7 @@ public class StreamBuilder {
                 p.put(StateQueryProcessor.class, 5);
                 p.put(SinkNode.class, 6);
             }
+
             @Override
             public int compare(Node n1, Node n2) {
                 return getPriority(n1) - getPriority(n2);
@@ -294,7 +288,7 @@ public class StreamBuilder {
         if (processorNode.getProcessor() instanceof StatefulProcessor) {
             statefulProcessorCount++;
             Set<ProcessorNode> initialNodes = initialProcessors(
-                    curGroup.isEmpty() ? Collections.singletonList(processorNode) : curGroup);
+                curGroup.isEmpty() ? Collections.singletonList(processorNode) : curGroup);
             Set<Window<?, ?>> windows = getWindowParams(initialNodes);
             // if we get more than one stateful operation, we need to process the
             // current group so that we have one stateful operation per stateful bolt
@@ -318,9 +312,9 @@ public class StreamBuilder {
     private void splitStatefulProcessor(ProcessorNode processorNode, TopologyBuilder topologyBuilder) {
         for (Node parent : StreamUtil.<Node>getParents(graph, processorNode)) {
             ProcessorNode identity =
-                    new ProcessorNode(new MapProcessor<>(new IdentityFunction<>()),
-                            UniqueIdGen.getInstance().getUniqueStreamId(),
-                            parent.getOutputFields());
+                new ProcessorNode(new MapProcessor<>(new IdentityFunction<>()),
+                                  UniqueIdGen.getInstance().getUniqueStreamId(),
+                                  parent.getOutputFields());
             addNode(parent, identity);
             graph.removeEdge(parent, processorNode);
             processorNode.removeParentStreams(parent);
@@ -553,7 +547,7 @@ public class StreamBuilder {
                                                      BoltDeclarer boltDeclarer,
                                                      Set<ProcessorNode> initialProcessors) {
         LOG.debug("Wiring bolt with boltDeclarer {}, group {}, initialProcessors {}, nodeGroupingInfo {}",
-                boltDeclarer, group, initialProcessors, nodeGroupingInfo);
+                  boltDeclarer, group, initialProcessors, nodeGroupingInfo);
         Multimap<String, ProcessorNode> streamToInitialProcessor = ArrayListMultimap.create();
         Set<ProcessorNode> curSet = new HashSet<>(group);
         for (ProcessorNode curNode : initialProcessors) {

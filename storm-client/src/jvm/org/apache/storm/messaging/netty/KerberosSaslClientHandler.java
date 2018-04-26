@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
@@ -32,14 +27,17 @@ public class KerberosSaslClientHandler extends SimpleChannelUpstreamHandler {
 
     private static final Logger LOG = LoggerFactory
         .getLogger(KerberosSaslClientHandler.class);
-    private ISaslClient client;
     long start_time;
-    /** Used for client or server's token to send or receive from each other. */
+    private ISaslClient client;
+    /**
+     * Used for client or server's token to send or receive from each other.
+     */
     private Map<String, Object> topoConf;
     private String jaas_section;
     private String host;
 
-    public KerberosSaslClientHandler(ISaslClient client, Map<String, Object> topoConf, String jaas_section, String host) throws IOException {
+    public KerberosSaslClientHandler(ISaslClient client, Map<String, Object> topoConf, String jaas_section, String host) throws
+        IOException {
         this.client = client;
         this.topoConf = topoConf;
         this.jaas_section = jaas_section;
@@ -117,8 +115,7 @@ public class KerberosSaslClientHandler extends SimpleChannelUpstreamHandler {
                 LOG.warn("Unexpected control message: {}", msg);
             }
             return;
-        }
-        else if (event.getMessage() instanceof SaslMessageToken) {
+        } else if (event.getMessage() instanceof SaslMessageToken) {
             SaslMessageToken saslTokenMessage = (SaslMessageToken) event
                 .getMessage();
             LOG.debug("Responding to server's token of length: {}",

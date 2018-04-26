@@ -8,7 +8,7 @@
  * with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
@@ -31,8 +32,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -66,8 +65,6 @@ import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.ServerConfigUtils;
-import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
@@ -76,7 +73,6 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.VersionInfo;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +81,6 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private final Map<String, Object> conf;
     private final IContext sharedContext;
     private final IAuthorizer authorizationHandler;
-    private volatile boolean active;
     private final ISupervisor iSupervisor;
     private final Utils.UptimeComputer upTime;
     private final String stormVersion;
@@ -105,12 +100,13 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     // to really make this work well.
     private final ExecutorService heartbeatExecutor;
     private final AsyncLocalizer asyncLocalizer;
+    private volatile boolean active;
     private EventManager eventManager;
     private ReadClusterState readState;
     private ThriftServer thriftServer;
     //used for local cluster heartbeating
     private Nimbus.Iface localNimbus;
-    
+
     private Supervisor(ISupervisor iSupervisor)
         throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         this(Utils.readStormConfig(), null, iSupervisor);
@@ -118,13 +114,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
     /**
      * Constructor for supervisor daemon.
-     * @param conf config
+     *
+     * @param conf          config
      * @param sharedContext {@link IContext}
-     * @param iSupervisor {@link ISupervisor}
+     * @param iSupervisor   {@link ISupervisor}
      * @throws IOException
      */
     public Supervisor(Map<String, Object> conf, IContext sharedContext, ISupervisor iSupervisor)
-        throws IOException, IllegalAccessException, ClassNotFoundException, InstantiationException{
+        throws IOException, IllegalAccessException, ClassNotFoundException, InstantiationException {
         this.conf = conf;
         this.iSupervisor = iSupervisor;
         this.active = true;
@@ -133,17 +130,17 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.sharedContext = sharedContext;
         this.heartbeatExecutor = Executors.newFixedThreadPool(1);
         this.authorizationHandler = StormCommon.mkAuthorizationHandler(
-                                        (String) conf.get(DaemonConfig.SUPERVISOR_AUTHORIZER), conf);
+            (String) conf.get(DaemonConfig.SUPERVISOR_AUTHORIZER), conf);
         if (authorizationHandler == null && conf.get(DaemonConfig.NIMBUS_AUTHORIZER) != null) {
             throw new IllegalStateException("It looks like authorization is turned on for nimbus but not for the "
-                                                + "supervisor....");
+                                            + "supervisor....");
         }
-        
+
         iSupervisor.prepare(conf, ServerConfigUtils.supervisorIsupervisorDir(conf));
 
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(conf,
-                new ClusterStateContext(DaemonType.SUPERVISOR, conf));
+                                                                      new ClusterStateContext(DaemonType.SUPERVISOR, conf));
         } catch (Exception e) {
             LOG.error("supervisor can't create stormClusterState");
             throw Utils.wrapInRuntime(e);
@@ -175,6 +172,18 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     }
 
     /**
+     * supervisor daemon enter entrance.
+     *
+     * @param args
+     */
+    public static void main(String[] args) throws Exception {
+        Utils.setupDefaultUncaughtExceptionHandler();
+        @SuppressWarnings("resource")
+        Supervisor instance = new Supervisor(new StandaloneSupervisor());
+        instance.launchDaemon();
+    }
+
+    /**
      * Get the executor service that is supposed to be used for heart-beats.
      */
     public ExecutorService getHeartbeatExecutor() {
@@ -184,7 +193,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     public String getId() {
         return supervisorId;
     }
-    
+
     IContext getSharedContext() {
         return sharedContext;
     }
@@ -232,11 +241,11 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     public AtomicReference<Map<Long, LocalAssignment>> getCurrAssignment() {
         return currAssignment;
     }
-    
+
     AsyncLocalizer getAsyncLocalizer() {
         return asyncLocalizer;
     }
-    
+
     EventManager getEventManger() {
         return eventManager;
     }
@@ -245,14 +254,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         return this;
     }
 
+    public Nimbus.Iface getLocalNimbus() {
+        return this.localNimbus;
+    }
+
     public void setLocalNimbus(Nimbus.Iface nimbus) {
         this.localNimbus = nimbus;
     }
 
-    public Nimbus.Iface getLocalNimbus() {
-        return this.localNimbus;
-    }
-    
     /**
      * Launch the supervisor.
      */
@@ -276,7 +285,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             // This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
             // to date even if callbacks don't all work exactly right
             eventTimer.scheduleRecurring(0, 10,
-                    new EventManagerPushCallback(new SynchronizeAssignments(this, null, readState), eventManager));
+                                         new EventManagerPushCallback(new SynchronizeAssignments(this, null, readState), eventManager));
 
             // supervisor health check
             eventTimer.scheduleRecurring(30, 30, new SupervisorHealthCheck(this));
@@ -323,7 +332,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
     @VisibleForTesting
     public void checkAuthorization(String topoName, Map<String, Object> topoConf, String operation, ReqContext context)
-            throws AuthorizationException {
+        throws AuthorizationException {
         IAuthorizer aclHandler = authorizationHandler;
         if (context == null) {
             context = ReqContext.context();
@@ -337,19 +346,19 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
         if (context.isImpersonating()) {
             LOG.warn("principal: {} is trying to impersonate principal: {}", context.realPrincipal(),
-                    context.principal());
+                     context.principal());
             throw new AuthorizationException("Supervisor does not support impersonation");
         }
 
         if (aclHandler != null) {
             if (!aclHandler.permit(context, operation, checkConf)) {
                 ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(), context.principal(),
-                        operation, topoName, "access-denied");
-                throw new AuthorizationException( operation + (topoName != null ? " on topology " + topoName : "") +
-                        " is not authorized");
+                                             operation, topoName, "access-denied");
+                throw new AuthorizationException(operation + (topoName != null ? " on topology " + topoName : "") +
+                                                 " is not authorized");
             } else {
                 ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(), context.principal(),
-                        operation, topoName, "access-granted");
+                                             operation, topoName, "access-granted");
             }
         }
     }
@@ -366,58 +375,59 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
 
         TProcessor processor = new org.apache.storm.generated.Supervisor.Processor(
-                new org.apache.storm.generated.Supervisor.Iface() {
-                    @Override
-                    public void sendSupervisorAssignments(SupervisorAssignments assignments)
-                            throws AuthorizationException, TException {
-                        checkAuthorization("sendSupervisorAssignments");
-                        LOG.info("Got an assignments from master, will start to sync with assignments: {}", assignments);
-                        SynchronizeAssignments syn = new SynchronizeAssignments(getSupervisor(), assignments,
-                                                             getReadClusterState());
-                        getEventManger().add(syn);
-                    }
+            new org.apache.storm.generated.Supervisor.Iface() {
+                @Override
+                public void sendSupervisorAssignments(SupervisorAssignments assignments)
+                    throws AuthorizationException, TException {
+                    checkAuthorization("sendSupervisorAssignments");
+                    LOG.info("Got an assignments from master, will start to sync with assignments: {}", assignments);
+                    SynchronizeAssignments syn = new SynchronizeAssignments(getSupervisor(), assignments,
+                                                                            getReadClusterState());
+                    getEventManger().add(syn);
+                }
 
-                    @Override
-                    public Assignment getLocalAssignmentForStorm(String id)
-                            throws NotAliveException, AuthorizationException, TException {
-                        Map<String, Object> topoConf = null;
-                        try {
-                            topoConf = ConfigUtils.readSupervisorStormConf(conf, id);
-                        } catch (IOException e) {
-                            LOG.warn("Topology config is not localized yet...");
-                        }
-                        checkAuthorization(id, topoConf, "getLocalAssignmentForStorm");
-                        Assignment assignment = getStormClusterState().assignmentInfo(id, null);
-                        if (null == assignment) {
-                            throw new NotAliveException("No local assignment assigned for storm: "
-                                                            + id
-                                                            + " for node: "
-                                                            + getHostName());
-                        }
-                        return assignment;
+                @Override
+                public Assignment getLocalAssignmentForStorm(String id)
+                    throws NotAliveException, AuthorizationException, TException {
+                    Map<String, Object> topoConf = null;
+                    try {
+                        topoConf = ConfigUtils.readSupervisorStormConf(conf, id);
+                    } catch (IOException e) {
+                        LOG.warn("Topology config is not localized yet...");
                     }
+                    checkAuthorization(id, topoConf, "getLocalAssignmentForStorm");
+                    Assignment assignment = getStormClusterState().assignmentInfo(id, null);
+                    if (null == assignment) {
+                        throw new NotAliveException("No local assignment assigned for storm: "
+                                                    + id
+                                                    + " for node: "
+                                                    + getHostName());
+                    }
+                    return assignment;
+                }
 
-                    @Override
-                    public void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heartbeat)
-                            throws AuthorizationException, NotAliveException, TException {
-                        // do nothing except validate heartbeat for now.
-                        String id = heartbeat.get_storm_id();
-                        Map<String, Object> topoConf = null;
-                        try {
-                            topoConf = ConfigUtils.readSupervisorStormConf(conf, id);
-                        } catch (IOException e) {
-                            LOG.warn("Topology config is not localized yet...");
-                            throw new NotAliveException(id + " does not appear to be alive, you should probably exit");
-                        }
-                        checkAuthorization(id, topoConf, "sendSupervisorWorkerHeartbeat");
+                @Override
+                public void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heartbeat)
+                    throws AuthorizationException, NotAliveException, TException {
+                    // do nothing except validate heartbeat for now.
+                    String id = heartbeat.get_storm_id();
+                    Map<String, Object> topoConf = null;
+                    try {
+                        topoConf = ConfigUtils.readSupervisorStormConf(conf, id);
+                    } catch (IOException e) {
+                        LOG.warn("Topology config is not localized yet...");
+                        throw new NotAliveException(id + " does not appear to be alive, you should probably exit");
                     }
-                });
+                    checkAuthorization(id, topoConf, "sendSupervisorWorkerHeartbeat");
+                }
+            });
         this.thriftServer = new ThriftServer(conf, processor, ThriftConnectionType.SUPERVISOR);
         this.thriftServer.serve();
     }
 
     /**
      * Used for local cluster assignments distribution.
+     *
      * @param assignments {@link SupervisorAssignments}
      */
     public void sendSupervisorAssignments(SupervisorAssignments assignments) {
@@ -438,7 +448,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             }
         });
     }
-    
+
     @Override
     public void close() {
         try {
@@ -455,14 +465,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             }
             asyncLocalizer.close();
             getStormClusterState().disconnect();
-            if(thriftServer != null) {
+            if (thriftServer != null) {
                 this.thriftServer.stop();
             }
         } catch (Exception e) {
             LOG.error("Error Shutting down", e);
         }
     }
-    
+
     void killWorkers(Collection<String> workerIds, ContainerLauncher launcher) throws InterruptedException, IOException {
         HashSet<Killable> containers = new HashSet<>();
         for (String workerId : workerIds) {
@@ -482,14 +492,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         if (!containers.isEmpty()) {
             Time.sleepSecs(shutdownSleepSecs);
         }
-        for (Killable k: containers) {
+        for (Killable k : containers) {
             try {
                 k.forceKill();
                 long start = Time.currentTimeMillis();
                 while (!k.areAllProcessesDead()) {
                     if ((Time.currentTimeMillis() - start) > 10_000) {
-                        throw new RuntimeException("Giving up on killing " + k 
-                                + " after " + (Time.currentTimeMillis() - start) + " ms");
+                        throw new RuntimeException("Giving up on killing " + k
+                                                   + " after " + (Time.currentTimeMillis() - start) + " ms");
                     }
                     Time.sleep(100);
                     k.forceKill();
@@ -507,7 +517,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         } else {
             try {
                 ContainerLauncher launcher = ContainerLauncher.make(getConf(), getId(), getThriftServerPort(),
-                    getSharedContext());
+                                                                    getSharedContext());
                 killWorkers(SupervisorUtils.supervisorWorkerIds(conf), launcher);
             } catch (Exception e) {
                 throw Utils.wrapInRuntime(e);
@@ -522,20 +532,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
 
         return heartbeatTimer.isTimerWaiting()
-                && workerHeartbeatTimer.isTimerWaiting()
-                && eventTimer.isTimerWaiting()
-                && eventManager.waiting();
-    }
-
-    /**
-     * supervisor daemon enter entrance.
-     *
-     * @param args
-     */
-    public static void main(String[] args) throws Exception {
-        Utils.setupDefaultUncaughtExceptionHandler();
-        @SuppressWarnings("resource")
-        Supervisor instance = new Supervisor(new StandaloneSupervisor());
-        instance.launchDaemon();
+               && workerHeartbeatTimer.isTimerWaiting()
+               && eventTimer.isTimerWaiting()
+               && eventManager.waiting();
     }
 }

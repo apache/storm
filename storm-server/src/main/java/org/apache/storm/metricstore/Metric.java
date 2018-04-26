@@ -1,19 +1,12 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.metricstore;
@@ -22,7 +15,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,20 +92,20 @@ public class Metric implements Comparable<Metric> {
         Metric o = (Metric) other;
 
         return this == other
-                || (this.name.equals(o.getMetricName())
-                && this.timestamp == o.getTimestamp()
-                && this.topologyId.equals(o.getTopologyId())
-                && this.value == o.getValue()
-                && this.componentId.equals(o.getComponentId())
-                && this.executorId.equals(o.getExecutorId())
-                && this.hostname.equals(o.getHostname())
-                && this.streamId.equals(o.getStreamId())
-                && this.port == o.getPort()
-                && this.count == o.getCount()
-                && this.min == o.getMin()
-                && this.max == o.getMax()
-                && this.sum == o.getSum()
-                && this.aggLevel == o.getAggLevel());
+               || (this.name.equals(o.getMetricName())
+                   && this.timestamp == o.getTimestamp()
+                   && this.topologyId.equals(o.getTopologyId())
+                   && this.value == o.getValue()
+                   && this.componentId.equals(o.getComponentId())
+                   && this.executorId.equals(o.getExecutorId())
+                   && this.hostname.equals(o.getHostname())
+                   && this.streamId.equals(o.getStreamId())
+                   && this.port == o.getPort()
+                   && this.count == o.getCount()
+                   && this.min == o.getMin()
+                   && this.max == o.getMax()
+                   && this.sum == o.getSum()
+                   && this.aggLevel == o.getAggLevel());
     }
 
     public AggLevel getAggLevel() {
@@ -128,17 +120,6 @@ public class Metric implements Comparable<Metric> {
             throw new MetricException("AggLevel not set for metric");
         }
         this.aggLevel = aggLevel;
-    }
-
-    /**
-     *  Initialize the metric value.
-     */
-    public void setValue(double value) {
-        this.count = 1L;
-        this.min = value;
-        this.max = value;
-        this.sum = value;
-        this.value = value;
     }
 
     /**
@@ -204,6 +185,17 @@ public class Metric implements Comparable<Metric> {
         return this.value;
     }
 
+    /**
+     *  Initialize the metric value.
+     */
+    public void setValue(double value) {
+        this.count = 1L;
+        this.min = value;
+        this.max = value;
+        this.sum = value;
+        this.value = value;
+    }
+
     public String getMetricName() {
         return this.name;
     }
@@ -259,12 +251,12 @@ public class Metric implements Comparable<Metric> {
         sb.append("|");
         sb.append(this.streamId);
         return String.format("%s -- count: %d -- value: %f -- min: %f -- max: %f -- sum: %f",
-                sb.toString(),
-                this.count,
-                this.value,
-                this.min,
-                this.max,
-                this.sum);
+                             sb.toString(),
+                             this.count,
+                             this.value,
+                             this.min,
+                             this.max,
+                             this.sum);
     }
 }
 

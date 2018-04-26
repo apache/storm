@@ -15,19 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.spout;
 
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
+package org.apache.storm.spout;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
 
 public class RawScheme implements Scheme {
     public List<Object> deserialize(ByteBuffer ser) {
         // Maintain backward compatibility for 0.10
         byte[] b = Utils.toByteArray(ser);
-        return Utils.tuple(new Object[]{b});
+        return Utils.tuple(new Object[]{ b });
     }
 
     public Fields getOutputFields() {

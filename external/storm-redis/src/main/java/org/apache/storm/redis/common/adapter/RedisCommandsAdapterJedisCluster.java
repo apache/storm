@@ -18,14 +18,13 @@
 
 package org.apache.storm.redis.common.adapter;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Map;
 import org.apache.storm.redis.common.commands.RedisCommands;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Map;
 
 /**
  * Adapter class to make JedisCluster instance play with BinaryRedisCommands interface.

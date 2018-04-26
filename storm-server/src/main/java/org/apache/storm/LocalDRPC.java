@@ -15,10 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm;
 
 import java.util.Map;
-
 import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.daemon.drpc.DRPCThrift;
 import org.apache.storm.generated.AuthorizationException;
@@ -30,10 +30,8 @@ import org.apache.thrift.TException;
 
 /**
  * A Local way to test DRPC
- * 
- * try (LocalDRPC drpc = new LocalDRPC()) {
- *   // Do tests
- * }
+ *
+ * try (LocalDRPC drpc = new LocalDRPC()) { // Do tests }
  */
 public class LocalDRPC implements ILocalDRPC {
 
@@ -65,7 +63,7 @@ public class LocalDRPC implements ILocalDRPC {
     public void failRequest(String id) throws AuthorizationException, TException {
         drpc.failRequest(id, null);
     }
-    
+
 
     @Override
     public void failRequestV2(String id, DRPCExecutionException e) throws AuthorizationException, TException {
@@ -82,7 +80,7 @@ public class LocalDRPC implements ILocalDRPC {
         ServiceRegistry.unregisterService(this.serviceId);
         drpc.close();
     }
-    
+
     @Override
     public void shutdown() {
         close();

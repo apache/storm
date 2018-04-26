@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.trident;
 
 import java.io.Serializable;
-
 import org.apache.storm.eventhubs.spout.IEventHubReceiver;
 
 public interface ITridentPartitionManagerFactory extends Serializable {
-  ITridentPartitionManager create(IEventHubReceiver receiver);
+    ITridentPartitionManager create(IEventHubReceiver receiver);
 }

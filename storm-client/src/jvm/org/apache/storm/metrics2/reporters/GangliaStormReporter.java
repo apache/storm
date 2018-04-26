@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.metrics2.reporters;
@@ -31,8 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GangliaStormReporter extends ScheduledStormReporter {
-    private static final Logger LOG = LoggerFactory.getLogger(GangliaStormReporter.class);
-
     public static final String GANGLIA_HOST = "ganglia.host";
     public static final String GANGLIA_PORT = "ganglia.port";
     public static final String GANGLIA_PREFIXED_WITH = "ganglia.prefixed.with";
@@ -43,6 +35,35 @@ public class GangliaStormReporter extends ScheduledStormReporter {
     public static final String GANGLIA_DURATION_UNIT = "ganglia.duration.unit";
     public static final String GANGLIA_TTL = "ganglia.ttl";
     public static final String GANGLIA_UDP_GROUP = "ganglia.udp.group";
+    private static final Logger LOG = LoggerFactory.getLogger(GangliaStormReporter.class);
+
+    public static String getMetricsTargetUdpGroup(Map reporterConf) {
+        return ObjectReader.getString(reporterConf.get(GANGLIA_UDP_GROUP), null);
+    }
+
+    public static String getMetricsTargetUdpAddressingMode(Map reporterConf) {
+        return ObjectReader.getString(reporterConf.get(GANGLIA_UDP_ADDRESSING_MODE), null);
+    }
+
+    public static Integer getMetricsTargetTtl(Map reporterConf) {
+        return ObjectReader.getInt(reporterConf.get(GANGLIA_TTL), null);
+    }
+
+    public static Integer getGangliaDMax(Map reporterConf) {
+        return ObjectReader.getInt(reporterConf.get(GANGLIA_DMAX), null);
+    }
+
+    public static Integer getGangliaTMax(Map reporterConf) {
+        return ObjectReader.getInt(reporterConf.get(GANGLIA_TMAX), null);
+    }
+
+    private static Integer getMetricsTargetPort(Map reporterConf) {
+        return ObjectReader.getInt(reporterConf.get(GANGLIA_PORT), null);
+    }
+
+    private static String getMetricsPrefixedWith(Map reporterConf) {
+        return ObjectReader.getString(reporterConf.get(GANGLIA_PREFIXED_WITH), null);
+    }
 
     @Override
     public void prepare(MetricRegistry metricsRegistry, Map stormConf, Map reporterConf) {
@@ -90,7 +111,7 @@ public class GangliaStormReporter extends ScheduledStormReporter {
         Integer ttl = getMetricsTargetTtl(reporterConf);
 
         GMetric.UDPAddressingMode mode = udpAddressingMode.equalsIgnoreCase("multicast")
-                ? GMetric.UDPAddressingMode.MULTICAST : GMetric.UDPAddressingMode.UNICAST;
+            ? GMetric.UDPAddressingMode.MULTICAST : GMetric.UDPAddressingMode.UNICAST;
 
         try {
             GMetric sender = new GMetric(group, port, mode, ttl);
@@ -98,35 +119,6 @@ public class GangliaStormReporter extends ScheduledStormReporter {
         } catch (IOException ioe) {
             LOG.error("Exception in GangliaReporter config", ioe);
         }
-    }
-
-
-    public static String getMetricsTargetUdpGroup(Map reporterConf) {
-        return ObjectReader.getString(reporterConf.get(GANGLIA_UDP_GROUP), null);
-    }
-
-    public static String getMetricsTargetUdpAddressingMode(Map reporterConf) {
-        return ObjectReader.getString(reporterConf.get(GANGLIA_UDP_ADDRESSING_MODE), null);
-    }
-
-    public static Integer getMetricsTargetTtl(Map reporterConf) {
-        return ObjectReader.getInt(reporterConf.get(GANGLIA_TTL), null);
-    }
-
-    public static Integer getGangliaDMax(Map reporterConf) {
-        return ObjectReader.getInt(reporterConf.get(GANGLIA_DMAX), null);
-    }
-
-    public static Integer getGangliaTMax(Map reporterConf) {
-        return ObjectReader.getInt(reporterConf.get(GANGLIA_TMAX), null);
-    }
-
-    private static Integer getMetricsTargetPort(Map reporterConf) {
-        return ObjectReader.getInt(reporterConf.get(GANGLIA_PORT), null);
-    }
-
-    private static String getMetricsPrefixedWith(Map reporterConf) {
-        return ObjectReader.getString(reporterConf.get(GANGLIA_PREFIXED_WITH), null);
     }
 
 }

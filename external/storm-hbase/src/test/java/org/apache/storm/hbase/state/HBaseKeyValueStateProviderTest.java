@@ -18,11 +18,10 @@
 
 package org.apache.storm.hbase.state;
 
-import org.apache.storm.Config;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.storm.Config;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -38,7 +37,7 @@ public class HBaseKeyValueStateProviderTest {
         HBaseKeyValueStateProvider provider = new HBaseKeyValueStateProvider();
         Map<String, String> stormConf = new HashMap<>();
         stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
-                " \"tableName\": \"table\", \"columnFamily\": \"cf\"}");
+                                                             " \"tableName\": \"table\", \"columnFamily\": \"cf\"}");
 
         try {
             HBaseKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
@@ -53,7 +52,7 @@ public class HBaseKeyValueStateProviderTest {
         HBaseKeyValueStateProvider provider = new HBaseKeyValueStateProvider();
         Map<String, String> stormConf = new HashMap<>();
         stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
-                " \"hbaseConfigKey\": \"hbaseConfKey\", \"columnFamily\": \"cf\"}");
+                                                             " \"hbaseConfigKey\": \"hbaseConfKey\", \"columnFamily\": \"cf\"}");
 
         try {
             HBaseKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
@@ -68,7 +67,7 @@ public class HBaseKeyValueStateProviderTest {
         HBaseKeyValueStateProvider provider = new HBaseKeyValueStateProvider();
         Map<String, String> stormConf = new HashMap<>();
         stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
-                " \"hbaseConfigKey\": \"hbaseConfKey\", \"tableName\": \"table\"}");
+                                                             " \"hbaseConfigKey\": \"hbaseConfKey\", \"tableName\": \"table\"}");
 
         try {
             HBaseKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
@@ -83,8 +82,8 @@ public class HBaseKeyValueStateProviderTest {
         HBaseKeyValueStateProvider provider = new HBaseKeyValueStateProvider();
         Map<String, String> stormConf = new HashMap<>();
         stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
-                " \"hbaseConfigKey\": \"hbaseConfKey\", \"tableName\": \"table\"," +
-                " \"columnFamily\": \"columnFamily\"}");
+                                                             " \"hbaseConfigKey\": \"hbaseConfKey\", \"tableName\": \"table\"," +
+                                                             " \"columnFamily\": \"columnFamily\"}");
 
         HBaseKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
         assertEquals("String", config.keyClass);

@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.security.auth.sasl;
@@ -93,19 +87,21 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             workQueue = new ArrayBlockingQueue(queueSize);
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
-            60, TimeUnit.SECONDS, workQueue);
+                                                                            60, TimeUnit.SECONDS, workQueue);
         serverArgs.executorService(executorService);
         return new TThreadPoolServer(serverArgs);
     }
 
     /**
      * Create the transport factory needed for serving.  All subclass must implement this method.
+     *
      * @param impersonationAllowed true if SASL impersonation should be allowed, else false.
      * @return server transport factory
+     *
      * @throws IOException on any error.
      */
     protected abstract TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException;
-    
+
     @Override
     public int getPort() {
         return this.port;
@@ -113,9 +109,8 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
 
 
     /**
-     * Processor that pulls the SaslServer object out of the transport, and
-     * assumes the remote user's UGI before calling through to the original
-     * processor. This is used on the server side to set the UGI for each specific call.
+     * Processor that pulls the SaslServer object out of the transport, and assumes the remote user's UGI before calling through to the
+     * original processor. This is used on the server side to set the UGI for each specific call.
      */
     private static class TUGIWrapProcessor implements TProcessor {
         final TProcessor wrapped;
@@ -130,14 +125,14 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
 
             TTransport trans = inProt.getTransport();
             //Sasl transport
-            TSaslServerTransport saslTrans = (TSaslServerTransport)trans;
+            TSaslServerTransport saslTrans = (TSaslServerTransport) trans;
 
             if (trans instanceof NoOpTTrasport) {
                 return false;
             }
 
             //remote address
-            TSocket tsocket = (TSocket)saslTrans.getUnderlyingTransport();
+            TSocket tsocket = (TSocket) saslTrans.getUnderlyingTransport();
             Socket socket = tsocket.getSocket();
             reqContext.setRemoteAddress(socket.getInetAddress());
 
@@ -157,7 +152,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         private final String name;
 
         public User(String name) {
-            this.name =  name;
+            this.name = name;
         }
 
         /**

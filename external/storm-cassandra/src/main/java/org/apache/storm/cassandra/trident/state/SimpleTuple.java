@@ -1,30 +1,23 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
-package org.apache.storm.cassandra.trident.state;
 
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.ITuple;
+package org.apache.storm.cassandra.trident.state;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.ITuple;
 
 /**
  * Utility class for passing around ordered key/value data with an immutable key set.
@@ -60,15 +53,9 @@ public class SimpleTuple implements ITuple, Serializable {
         int index = keys.indexOf(key);
         if (index >= 0) {
             values.set(index, value);
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Field " + key + " does not exist.");
         }
-        return this;
-    }
-
-    public SimpleTuple setValues(List<Object> values) {
-        this.values = new ArrayList<>(values);
         return this;
     }
 
@@ -204,6 +191,11 @@ public class SimpleTuple implements ITuple, Serializable {
     @Override
     public List<Object> getValues() {
         return Collections.unmodifiableList(values);
+    }
+
+    public SimpleTuple setValues(List<Object> values) {
+        this.values = new ArrayList<>(values);
+        return this;
     }
 
     public List<String> getKeys() {

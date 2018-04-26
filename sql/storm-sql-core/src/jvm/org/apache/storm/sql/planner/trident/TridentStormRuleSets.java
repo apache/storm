@@ -17,10 +17,12 @@
  *  * limitations under the License.
  *
  */
+
 package org.apache.storm.sql.planner.trident;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import java.util.Iterator;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.rules.CalcMergeRule;
 import org.apache.calcite.rel.rules.FilterCalcMergeRule;
@@ -36,55 +38,53 @@ import org.apache.calcite.rel.rules.SortRemoveRule;
 import org.apache.calcite.rel.rules.UnionEliminatorRule;
 import org.apache.calcite.rel.stream.StreamRules;
 import org.apache.calcite.tools.RuleSet;
+import org.apache.storm.sql.planner.trident.rules.TridentAggregateRule;
 import org.apache.storm.sql.planner.trident.rules.TridentCalcRule;
 import org.apache.storm.sql.planner.trident.rules.TridentFilterRule;
-import org.apache.storm.sql.planner.trident.rules.TridentScanRule;
-import org.apache.storm.sql.planner.trident.rules.TridentAggregateRule;
 import org.apache.storm.sql.planner.trident.rules.TridentJoinRule;
 import org.apache.storm.sql.planner.trident.rules.TridentModifyRule;
 import org.apache.storm.sql.planner.trident.rules.TridentProjectRule;
-
-import java.util.Iterator;
+import org.apache.storm.sql.planner.trident.rules.TridentScanRule;
 
 public class TridentStormRuleSets {
     private static final ImmutableSet<RelOptRule> calciteToStormConversionRules =
-            ImmutableSet.<RelOptRule>builder().add(
-                    SortRemoveRule.INSTANCE,
+        ImmutableSet.<RelOptRule>builder().add(
+            SortRemoveRule.INSTANCE,
 
-                    FilterToCalcRule.INSTANCE,
-                    ProjectToCalcRule.INSTANCE,
-                    FilterCalcMergeRule.INSTANCE,
-                    ProjectCalcMergeRule.INSTANCE,
-                    CalcMergeRule.INSTANCE,
+            FilterToCalcRule.INSTANCE,
+            ProjectToCalcRule.INSTANCE,
+            FilterCalcMergeRule.INSTANCE,
+            ProjectCalcMergeRule.INSTANCE,
+            CalcMergeRule.INSTANCE,
 
-                    PruneEmptyRules.FILTER_INSTANCE,
-                    PruneEmptyRules.PROJECT_INSTANCE,
-                    PruneEmptyRules.UNION_INSTANCE,
+            PruneEmptyRules.FILTER_INSTANCE,
+            PruneEmptyRules.PROJECT_INSTANCE,
+            PruneEmptyRules.UNION_INSTANCE,
 
-                    ProjectFilterTransposeRule.INSTANCE,
-                    FilterProjectTransposeRule.INSTANCE,
-                    ProjectRemoveRule.INSTANCE,
+            ProjectFilterTransposeRule.INSTANCE,
+            FilterProjectTransposeRule.INSTANCE,
+            ProjectRemoveRule.INSTANCE,
 
-                    ReduceExpressionsRule.FILTER_INSTANCE,
-                    ReduceExpressionsRule.PROJECT_INSTANCE,
-                    ReduceExpressionsRule.CALC_INSTANCE,
+            ReduceExpressionsRule.FILTER_INSTANCE,
+            ReduceExpressionsRule.PROJECT_INSTANCE,
+            ReduceExpressionsRule.CALC_INSTANCE,
 
-                    // merge and push unions rules
-                    UnionEliminatorRule.INSTANCE,
+            // merge and push unions rules
+            UnionEliminatorRule.INSTANCE,
 
-                    TridentScanRule.INSTANCE,
-                    TridentFilterRule.INSTANCE,
-                    TridentProjectRule.INSTANCE,
-                    TridentAggregateRule.INSTANCE,
-                    TridentJoinRule.INSTANCE,
-                    TridentModifyRule.INSTANCE,
-                    TridentCalcRule.INSTANCE
-            ).build();
+            TridentScanRule.INSTANCE,
+            TridentFilterRule.INSTANCE,
+            TridentProjectRule.INSTANCE,
+            TridentAggregateRule.INSTANCE,
+            TridentJoinRule.INSTANCE,
+            TridentModifyRule.INSTANCE,
+            TridentCalcRule.INSTANCE
+        ).build();
 
     public static RuleSet[] getRuleSets() {
         return new RuleSet[]{
-                new StormRuleSet(StreamRules.RULES),
-                new StormRuleSet(ImmutableSet.<RelOptRule>builder().addAll(StreamRules.RULES).addAll(calciteToStormConversionRules).build())
+            new StormRuleSet(StreamRules.RULES),
+            new StormRuleSet(ImmutableSet.<RelOptRule>builder().addAll(StreamRules.RULES).addAll(calciteToStormConversionRules).build())
         };
     }
 
@@ -97,8 +97,8 @@ public class TridentStormRuleSets {
 
         public StormRuleSet(ImmutableList<RelOptRule> rules) {
             this.rules = ImmutableSet.<RelOptRule>builder()
-                    .addAll(rules)
-                    .build();
+                .addAll(rules)
+                .build();
         }
 
         @Override

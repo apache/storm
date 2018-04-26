@@ -20,7 +20,6 @@ package org.apache.storm.perf.bolt;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;

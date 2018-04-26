@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.scheduler.blacklist.strategies;
@@ -24,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.SupervisorDetails;
@@ -39,11 +32,9 @@ import org.slf4j.LoggerFactory;
 
 public class DefaultBlacklistStrategy implements IBlacklistStrategy {
 
-    private static Logger LOG = LoggerFactory.getLogger(DefaultBlacklistStrategy.class);
-
     public static final int DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME = 1800;
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT = 3;
-
+    private static Logger LOG = LoggerFactory.getLogger(DefaultBlacklistStrategy.class);
     private IReporter reporter;
 
     private int toleranceCount;
@@ -55,11 +46,11 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
     @Override
     public void prepare(Map<String, Object> conf) {
         toleranceCount = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT),
-                DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
+                                             DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
         resumeTime = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME), DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
 
         String reporterClassName = ObjectReader.getString(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_REPORTER),
-                LogReporter.class.getName());
+                                                          LogReporter.class.getName());
         reporter = (IReporter) initializeInstance(reporterClassName, "blacklist reporter");
 
         nimbusMonitorFreqSecs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS));
@@ -133,7 +124,7 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
 
             if (shortage > 0) {
                 LOG.info("total needed num of workers :{}, available num of slots not in blacklist :{}, num blacklist :{}, " +
-                        "will release some blacklist.", totalNeedNumWorkers, availableSlotsNotInBlacklistCount, blacklist.size());
+                         "will release some blacklist.", totalNeedNumWorkers, availableSlotsNotInBlacklistCount, blacklist.size());
 
                 //release earliest blacklist
                 Set<String> readyToRemove = new HashSet<>();

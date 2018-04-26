@@ -20,7 +20,6 @@
 package org.apache.storm.sql;
 
 import java.util.function.Predicate;
-
 import org.apache.calcite.sql.SqlNode;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
@@ -36,6 +35,13 @@ public class StormSqlLocalClusterImpl {
 
     public StormSqlLocalClusterImpl() {
         sqlContext = new StormSqlContext();
+    }
+
+    private static void waitForCompletion(long timeout, Predicate<Void> cond) throws Exception {
+        long start = TestUtils.monotonicNow();
+        while (TestUtils.monotonicNow() - start < timeout && !cond.test(null)) {
+            Thread.sleep(100);
+        }
     }
 
     public void runLocal(LocalCluster localCluster, Iterable<String> statements,
@@ -62,19 +68,12 @@ public class StormSqlLocalClusterImpl {
                 try (LocalCluster.LocalTopology stormTopo = localCluster.submitTopology("storm-sql", conf, topo.build())) {
                     waitForCompletion(waitTimeoutMs, waitCondition);
                 } finally {
-                    while(localCluster.getClusterInfo().get_topologies_size() > 0) {
+                    while (localCluster.getClusterInfo().get_topologies_size() > 0) {
                         Thread.sleep(10);
                     }
                     Utils.resetClassLoaderForJavaDeSerialize();
                 }
             }
-        }
-    }
-
-    private static void waitForCompletion(long timeout, Predicate<Void> cond) throws Exception {
-        long start = TestUtils.monotonicNow();
-        while (TestUtils.monotonicNow() - start < timeout && !cond.test(null)) {
-            Thread.sleep(100);
         }
     }
 }

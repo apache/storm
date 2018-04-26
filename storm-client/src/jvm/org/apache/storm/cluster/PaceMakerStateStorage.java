@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.cluster;
 
 import java.util.ArrayList;
@@ -22,7 +23,12 @@ import java.util.HashSet;
 import java.util.List;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.callback.ZKStateChangedCallback;
-import org.apache.storm.generated.*;
+import org.apache.storm.generated.ClusterWorkerHeartbeat;
+import org.apache.storm.generated.HBExecutionException;
+import org.apache.storm.generated.HBMessage;
+import org.apache.storm.generated.HBMessageData;
+import org.apache.storm.generated.HBPulse;
+import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.pacemaker.PacemakerConnectionException;
 import org.apache.storm.utils.Utils;
@@ -32,11 +38,10 @@ import org.slf4j.LoggerFactory;
 
 public class PaceMakerStateStorage implements IStateStorage {
 
+    private static final int maxRetries = 10;
     private static Logger LOG = LoggerFactory.getLogger(PaceMakerStateStorage.class);
-
     private PacemakerClientPool pacemakerClientPool;
     private IStateStorage stateStorage;
-    private static final int maxRetries = 10;
 
     public PaceMakerStateStorage(PacemakerClientPool pacemakerClientPool, IStateStorage stateStorage) throws Exception {
         this.pacemakerClientPool = pacemakerClientPool;
@@ -124,7 +129,7 @@ public class PaceMakerStateStorage implements IStateStorage {
                 }
                 LOG.debug("Successful set_worker_hb");
                 break;
-            } catch (HBExecutionException|PacemakerConnectionException e) {
+            } catch (HBExecutionException | PacemakerConnectionException e) {
                 if (retry <= 0) {
                     throw new RuntimeException(e);
                 }
@@ -148,7 +153,7 @@ public class PaceMakerStateStorage implements IStateStorage {
 
                 HBMessage message = new HBMessage(HBServerMessageType.GET_PULSE, HBMessageData.path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
-                for(HBMessage response : responses) {
+                for (HBMessage response : responses) {
                     if (response.get_type() != HBServerMessageType.GET_PULSE_RESPONSE) {
                         LOG.error("get_worker_hb: Invalid Response Type");
                         continue;
@@ -156,20 +161,20 @@ public class PaceMakerStateStorage implements IStateStorage {
                     // We got at least one GET_PULSE_RESPONSE message.
                     got_response = true;
                     byte[] details = response.get_data().get_pulse().get_details();
-                    if(details == null) {
+                    if (details == null) {
                         continue;
                     }
                     ClusterWorkerHeartbeat cwh = Utils.deserialize(details, ClusterWorkerHeartbeat.class);
-                    if(cwh != null && cwh.get_time_secs() > latest_time_secs) {
+                    if (cwh != null && cwh.get_time_secs() > latest_time_secs) {
                         latest_time_secs = cwh.get_time_secs();
                         ret = details;
                     }
                 }
-                if(!got_response) {
+                if (!got_response) {
                     throw new HBExecutionException("Failed to get a response.");
                 }
                 return ret;
-            } catch (HBExecutionException|PacemakerConnectionException e) {
+            } catch (HBExecutionException | PacemakerConnectionException e) {
                 if (retry <= 0) {
                     throw new RuntimeException(e);
                 }
@@ -191,12 +196,12 @@ public class PaceMakerStateStorage implements IStateStorage {
 
                 HBMessage message = new HBMessage(HBServerMessageType.GET_ALL_NODES_FOR_PATH, HBMessageData.path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
-                for(HBMessage response : responses) {
+                for (HBMessage response : responses) {
                     if (response.get_type() != HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE) {
                         LOG.error("get_worker_hb_children: Invalid Response Type");
                         continue;
                     }
-                    if(response.get_data().get_nodes().get_pulseIds() != null) {
+                    if (response.get_data().get_nodes().get_pulseIds() != null) {
                         retSet.addAll(response.get_data().get_nodes().get_pulseIds());
                     }
                 }
@@ -226,28 +231,25 @@ public class PaceMakerStateStorage implements IStateStorage {
                 HBMessage message = new HBMessage(HBServerMessageType.DELETE_PATH, HBMessageData.path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
                 boolean allSucceeded = true;
-                for(HBMessage response : responses) {
+                for (HBMessage response : responses) {
                     if (response.get_type() != HBServerMessageType.DELETE_PATH_RESPONSE) {
                         LOG.debug("Failed to delete heartbeat {}", response);
                         allSucceeded = false;
-                    }
-                    else {
+                    } else {
                         someSucceeded = true;
                     }
                 }
-                if(allSucceeded) {
+                if (allSucceeded) {
                     break;
-                }
-                else {
+                } else {
                     throw new HBExecutionException("Failed to delete from all pacemakers.");
                 }
-            } catch (HBExecutionException|PacemakerConnectionException e) {
+            } catch (HBExecutionException | PacemakerConnectionException e) {
                 if (retry <= 0) {
-                    if(someSucceeded) {
+                    if (someSucceeded) {
                         LOG.warn("Unable to delete_worker_hb from every pacemaker.");
                         break;
-                    }
-                    else {
+                    } else {
                         LOG.error("Unable to delete_worker_hb from any pacemaker.");
                         throw new RuntimeException(e);
                     }

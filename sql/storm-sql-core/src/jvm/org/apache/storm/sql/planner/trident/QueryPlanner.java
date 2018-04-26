@@ -17,8 +17,13 @@
  *  * limitations under the License.
  *
  */
+
 package org.apache.storm.sql.planner.trident;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -43,21 +48,16 @@ import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
+import org.apache.storm.sql.AbstractTridentProcessor;
 import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.planner.StormRelDataTypeSystem;
 import org.apache.storm.sql.planner.UnsupportedOperatorsVisitor;
 import org.apache.storm.sql.planner.trident.rel.TridentLogicalConvention;
 import org.apache.storm.sql.planner.trident.rel.TridentRel;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.sql.AbstractTridentProcessor;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.fluent.IAggregatableStream;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 public class QueryPlanner {
 
@@ -66,7 +66,7 @@ public class QueryPlanner {
     private final Planner planner;
 
     private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
-            RelDataTypeSystem.DEFAULT);
+        RelDataTypeSystem.DEFAULT);
 
     public QueryPlanner(SchemaPlus schema) {
         final List<RelTraitDef> traitDefs = new ArrayList<RelTraitDef>();
@@ -77,18 +77,18 @@ public class QueryPlanner {
         List<SqlOperatorTable> sqlOperatorTables = new ArrayList<>();
         sqlOperatorTables.add(SqlStdOperatorTable.instance());
         sqlOperatorTables.add(new CalciteCatalogReader(CalciteSchema.from(schema),
-                false,
-                Collections.<String>emptyList(), typeFactory));
+                                                       false,
+                                                       Collections.<String>emptyList(), typeFactory));
 
         FrameworkConfig config = Frameworks.newConfigBuilder()
-                .defaultSchema(schema)
-                .operatorTable(new ChainedSqlOperatorTable(sqlOperatorTables))
-                .traitDefs(traitDefs)
-                .context(Contexts.EMPTY_CONTEXT)
-                .ruleSets(TridentStormRuleSets.getRuleSets())
-                .costFactory(null)
-                .typeSystem(StormRelDataTypeSystem.STORM_REL_DATATYPE_SYSTEM)
-                .build();
+                                           .defaultSchema(schema)
+                                           .operatorTable(new ChainedSqlOperatorTable(sqlOperatorTables))
+                                           .traitDefs(traitDefs)
+                                           .context(Contexts.EMPTY_CONTEXT)
+                                           .ruleSets(TridentStormRuleSets.getRuleSets())
+                                           .costFactory(null)
+                                           .typeSystem(StormRelDataTypeSystem.STORM_REL_DATATYPE_SYSTEM)
+                                           .build();
         this.planner = Frameworks.getPlanner(config);
     }
 

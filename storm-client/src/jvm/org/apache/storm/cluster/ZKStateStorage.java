@@ -18,16 +18,14 @@
 
 package org.apache.storm.cluster;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.state.*;
 import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.Config;
 import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
@@ -53,26 +51,6 @@ public class ZKStateStorage implements IStateStorage {
     private boolean isNimbus;
     private Map<String, Object> authConf;
     private Map<String, Object> conf;
-
-    private class ZkWatcherCallBack implements WatcherCallBack{
-        @Override
-        public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path) {
-            if (active.get()) {
-                if (!(state.equals(Watcher.Event.KeeperState.SyncConnected))) {
-                    LOG.debug("Received event {} : {}: {} with disconnected Zookeeper.", state, type, path);
-                } else {
-                    LOG.debug("Received event {} : {} : {}", state, type, path);
-                }
-
-                if (!type.equals(Watcher.Event.EventType.None)) {
-                    for (Map.Entry<String, ZKStateChangedCallback> e : callbacks.entrySet()) {
-                        ZKStateChangedCallback fn = e.getValue();
-                        fn.changed(type, path);
-                    }
-                }
-            }
-        }
-    }
 
     public ZKStateStorage(Map<String, Object> conf, Map<String, Object> authConf, ClusterStateContext context) throws Exception {
         this.conf = conf;
@@ -100,13 +78,14 @@ public class ZKStateStorage implements IStateStorage {
     @SuppressWarnings("unchecked")
     private CuratorFramework mkZk(DaemonType type) {
         return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
-            conf.get(Config.STORM_ZOOKEEPER_PORT), "", new DefaultWatcherCallBack(), authConf, type);
+                                        conf.get(Config.STORM_ZOOKEEPER_PORT), "", new DefaultWatcherCallBack(), authConf, type);
     }
 
     @SuppressWarnings("unchecked")
     private CuratorFramework mkZk(WatcherCallBack watcher, DaemonType type) throws NumberFormatException {
         return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
-            conf.get(Config.STORM_ZOOKEEPER_PORT), String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)), watcher, authConf, type);
+                                        conf.get(Config.STORM_ZOOKEEPER_PORT), String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)),
+                                        watcher, authConf, type);
     }
 
     @Override
@@ -250,5 +229,25 @@ public class ZKStateStorage implements IStateStorage {
     @Override
     public void sync_path(String path) {
         ClientZookeeper.syncPath(zkWriter, path);
+    }
+
+    private class ZkWatcherCallBack implements WatcherCallBack {
+        @Override
+        public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path) {
+            if (active.get()) {
+                if (!(state.equals(Watcher.Event.KeeperState.SyncConnected))) {
+                    LOG.debug("Received event {} : {}: {} with disconnected Zookeeper.", state, type, path);
+                } else {
+                    LOG.debug("Received event {} : {} : {}", state, type, path);
+                }
+
+                if (!type.equals(Watcher.Event.EventType.None)) {
+                    for (Map.Entry<String, ZKStateChangedCallback> e : callbacks.entrySet()) {
+                        ZKStateChangedCallback fn = e.getValue();
+                        fn.changed(type, path);
+                    }
+                }
+            }
+        }
     }
 }

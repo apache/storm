@@ -1,26 +1,30 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
-
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import kafka.javaapi.consumer.SimpleConsumer;
+import kafka.javaapi.message.ByteBufferMessageSet;
+import kafka.message.MessageAndOffset;
 import org.apache.storm.Config;
 import org.apache.storm.kafka.KafkaSpout.EmitState;
 import org.apache.storm.kafka.trident.MaxMetric;
@@ -31,12 +35,6 @@ import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
-
-import kafka.javaapi.consumer.SimpleConsumer;
-import kafka.javaapi.message.ByteBufferMessageSet;
-import kafka.message.MessageAndOffset;
 
 public class PartitionManager {
     private static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
@@ -50,11 +48,8 @@ public class PartitionManager {
     // Count of messages which were not retried because failedMsgRetryManager didn't consider offset eligible for
     // retry
     private final CountMetric _messageIneligibleForRetryCount;
-    Long _emittedToOffset;
-    // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
-    private SortedMap<Long,Long> _pending = new TreeMap<Long,Long>();
     private final FailedMsgRetryManager _failedMsgRetryManager;
-
+    Long _emittedToOffset;
     // retryRecords key = Kafka offset, value = retry info for the given message
     Long _committedTo;
     LinkedList<MessageAndOffset> _waitingToEmit = new LinkedList<MessageAndOffset>();
@@ -66,15 +61,16 @@ public class PartitionManager {
     ZkState _state;
     Map _topoConf;
     long numberFailed, numberAcked;
+    // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
+    private SortedMap<Long, Long> _pending = new TreeMap<Long, Long>();
 
     public PartitionManager(
-            DynamicPartitionConnections connections,
-            String topologyInstanceId,
-            ZkState state,
-            Map<String, Object> topoConf,
-            SpoutConfig spoutConfig,
-            Partition id)
-    {
+        DynamicPartitionConnections connections,
+        String topologyInstanceId,
+        ZkState state,
+        Map<String, Object> topoConf,
+        SpoutConfig spoutConfig,
+        Partition id) {
         this(connections, topologyInstanceId, state, topoConf, spoutConfig, id, null);
     }
 
@@ -82,13 +78,13 @@ public class PartitionManager {
      * @param previousManager previous partition manager if manager for partition is being recreated
      */
     public PartitionManager(
-            DynamicPartitionConnections connections,
-            String topologyInstanceId,
-            ZkState state,
-            Map<String, Object> topoConf,
-            SpoutConfig spoutConfig,
-            Partition id,
-            PartitionManager previousManager) {
+        DynamicPartitionConnections connections,
+        String topologyInstanceId,
+        ZkState state,
+        Map<String, Object> topoConf,
+        SpoutConfig spoutConfig,
+        Partition id,
+        PartitionManager previousManager) {
         _partition = id;
         _connections = connections;
         _spoutConfig = spoutConfig;
@@ -105,16 +101,16 @@ public class PartitionManager {
             _waitingToEmit = previousManager._waitingToEmit;
             _pending = previousManager._pending;
             LOG.info("Recreating PartitionManager based on previous manager, _waitingToEmit size: {}, _pending size: {}",
-                    _waitingToEmit.size(),
-                    _pending.size());
+                     _waitingToEmit.size(),
+                     _pending.size());
         } else {
             try {
                 _failedMsgRetryManager = (FailedMsgRetryManager) Class.forName(spoutConfig.failedMsgRetryManagerClass).newInstance();
                 _failedMsgRetryManager.prepare(spoutConfig, _topoConf);
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(String.format("Failed to create an instance of <%s> from: <%s>",
-                        FailedMsgRetryManager.class,
-                        spoutConfig.failedMsgRetryManagerClass), e);
+                                                                 FailedMsgRetryManager.class,
+                                                                 spoutConfig.failedMsgRetryManagerClass), e);
             }
 
             String jsonTopologyId = null;
@@ -142,7 +138,8 @@ public class PartitionManager {
                 LOG.info("Topology change detected and ignore zookeeper offsets set to true, using configuration to determine offset");
             } else {
                 _committedTo = jsonOffset;
-                LOG.info("Read last commit offset from zookeeper: " + _committedTo + "; old topology_id: " + jsonTopologyId + " - new topology_id: " + topologyInstanceId);
+                LOG.info("Read last commit offset from zookeeper: " + _committedTo + "; old topology_id: " + jsonTopologyId +
+                         " - new topology_id: " + topologyInstanceId);
             }
 
             if (currentOffset - _committedTo > spoutConfig.maxOffsetBehind || _committedTo <= 0) {
@@ -150,7 +147,8 @@ public class PartitionManager {
                 Long lastCommittedOffset = _committedTo;
                 _committedTo = currentOffset;
                 LOG.info("Commit offset " + lastCommittedOffset + " is more than " +
-                        spoutConfig.maxOffsetBehind + " behind latest offset " + currentOffset + ", resetting to startOffsetTime=" + spoutConfig.startOffsetTime);
+                         spoutConfig.maxOffsetBehind + " behind latest offset " + currentOffset + ", resetting to startOffsetTime=" +
+                         spoutConfig.startOffsetTime);
             }
 
             LOG.info("Starting Kafka " + _consumer.host() + " " + id + " from offset " + _committedTo);
@@ -191,13 +189,14 @@ public class PartitionManager {
 
             Iterable<List<Object>> tups;
             if (_spoutConfig.scheme instanceof MessageMetadataSchemeAsMultiScheme) {
-                tups = KafkaUtils.generateTuples((MessageMetadataSchemeAsMultiScheme) _spoutConfig.scheme, toEmit.message(), _partition, toEmit.offset());
+                tups = KafkaUtils.generateTuples((MessageMetadataSchemeAsMultiScheme) _spoutConfig.scheme, toEmit.message(), _partition,
+                                                 toEmit.offset());
             } else {
                 tups = KafkaUtils.generateTuples(_spoutConfig, toEmit.message(), _partition.topic);
             }
 
             if ((tups != null) && tups.iterator().hasNext()) {
-               if (!Strings.isNullOrEmpty(_spoutConfig.outputStreamId)) {
+                if (!Strings.isNullOrEmpty(_spoutConfig.outputStreamId)) {
                     for (List<Object> tup : tups) {
                         collector.emit(_spoutConfig.outputStreamId, tup, new KafkaMessageId(_partition, toEmit.offset()));
                     }
@@ -305,16 +304,17 @@ public class PartitionManager {
     public void fail(Long offset) {
         if (offset < _emittedToOffset - _spoutConfig.maxOffsetBehind) {
             LOG.info(
-                    "Skipping failed tuple at offset={}" +
-                        " because it's more than maxOffsetBehind={}" +
-                        " behind _emittedToOffset={} for {}",
+                "Skipping failed tuple at offset={}" +
+                " because it's more than maxOffsetBehind={}" +
+                " behind _emittedToOffset={} for {}",
                 offset,
                 _spoutConfig.maxOffsetBehind,
                 _emittedToOffset,
                 _partition
             );
         } else {
-            LOG.debug("Failing at offset={} with _pending.size()={} pending and _emittedToOffset={} for {}", offset, _pending.size(), _emittedToOffset, _partition);
+            LOG.debug("Failing at offset={} with _pending.size()={} pending and _emittedToOffset={} for {}", offset, _pending.size(),
+                      _emittedToOffset, _partition);
             numberFailed++;
             if (numberAcked == 0 && numberFailed > _spoutConfig.maxOffsetBehind) {
                 throw new RuntimeException("Too many tuple failures");
@@ -337,19 +337,22 @@ public class PartitionManager {
     public void commit() {
         long lastCompletedOffset = lastCompletedOffset();
         if (_committedTo != lastCompletedOffset) {
-            LOG.debug("Writing last completed offset ({}) to ZK for {} for topology: {}", lastCompletedOffset, _partition, _topologyInstanceId);
+            LOG.debug("Writing last completed offset ({}) to ZK for {} for topology: {}", lastCompletedOffset, _partition,
+                      _topologyInstanceId);
             Map<Object, Object> data = (Map<Object, Object>) ImmutableMap.builder()
-                    .put("topology", ImmutableMap.of("id", _topologyInstanceId,
-                            "name", _topoConf.get(Config.TOPOLOGY_NAME)))
-                    .put("offset", lastCompletedOffset)
-                    .put("partition", _partition.partition)
-                    .put("broker", ImmutableMap.of("host", _partition.host.host,
-                            "port", _partition.host.port))
-                    .put("topic", _partition.topic).build();
+                                                                         .put("topology", ImmutableMap.of("id", _topologyInstanceId,
+                                                                                                          "name", _topoConf
+                                                                                                              .get(Config.TOPOLOGY_NAME)))
+                                                                         .put("offset", lastCompletedOffset)
+                                                                         .put("partition", _partition.partition)
+                                                                         .put("broker", ImmutableMap.of("host", _partition.host.host,
+                                                                                                        "port", _partition.host.port))
+                                                                         .put("topic", _partition.topic).build();
             _state.writeJSON(committedPath(), data);
 
             _committedTo = lastCompletedOffset;
-            LOG.debug("Wrote last completed offset ({}) to ZK for {} for topology: {}", lastCompletedOffset, _partition, _topologyInstanceId);
+            LOG.debug("Wrote last completed offset ({}) to ZK for {} for topology: {}", lastCompletedOffset, _partition,
+                      _topologyInstanceId);
         } else {
             LOG.debug("No new offset for {} for topology: {}", _partition, _topologyInstanceId);
         }
@@ -377,7 +380,7 @@ public class PartitionManager {
 
     public void close() {
         commit();
-        _connections.unregister(_partition.host, _partition.topic , _partition.partition);
+        _connections.unregister(_partition.host, _partition.topic, _partition.partition);
     }
 
     static class KafkaMessageId implements Serializable {

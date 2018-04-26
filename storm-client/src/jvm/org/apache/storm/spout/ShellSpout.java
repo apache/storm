@@ -1,22 +1,28 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.spout;
 
+import com.google.common.util.concurrent.MoreExecutors;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.Config;
 import org.apache.storm.generated.ShellComponent;
 import org.apache.storm.metric.api.IMetric;
@@ -28,19 +34,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ShellLogHandler;
 import org.apache.storm.utils.ShellProcess;
 import org.apache.storm.utils.ShellUtils;
-
-import java.util.Arrays;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TimerTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +51,7 @@ public class ShellSpout implements ISpout {
     private volatile RuntimeException _exception;
 
     private TopologyContext _context;
-    
+
     private SpoutMsg _spoutMsg;
 
     private int workerTimeoutMills;
@@ -85,11 +78,10 @@ public class ShellSpout implements ISpout {
     }
 
     /**
-     * Set if the current working directory of the child process should change
-     * to the resources dir from extracted from the jar, or if it should stay
-     * the same as the worker process to access things from the blob store.
-     * @param changeDirectory true change the directory (default) false
-     * leave the directory the same as the worker process.
+     * Set if the current working directory of the child process should change to the resources dir from extracted from the jar, or if it
+     * should stay the same as the worker process to access things from the blob store.
+     *
+     * @param changeDirectory true change the directory (default) false leave the directory the same as the worker process.
      */
     public void changeChildCWD(boolean changeDirectory) {
         this.changeDirectory = changeDirectory;
@@ -114,7 +106,7 @@ public class ShellSpout implements ISpout {
         Number subpid = _process.launch(topoConf, context, changeDirectory);
         LOG.info("Launched subprocess with pid " + subpid);
 
-        _logHandler =  ShellUtils.getLogHandler(topoConf);
+        _logHandler = ShellUtils.getLogHandler(topoConf);
         _logHandler.setUpContext(ShellSpout.class, _process, _context);
 
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
@@ -151,24 +143,24 @@ public class ShellSpout implements ISpout {
         querySubprocess();
     }
 
-    
+
     private void handleMetrics(ShellMsg shellMsg) {
         //get metric name
         String name = shellMsg.getMetricName();
         if (name.isEmpty()) {
             throw new RuntimeException("Receive Metrics name is empty");
         }
-        
+
         //get metric by name
         IMetric iMetric = _context.getRegisteredMetricByName(name);
         if (iMetric == null) {
-            throw new RuntimeException("Could not find metric by name["+name+"] ");
+            throw new RuntimeException("Could not find metric by name[" + name + "] ");
         }
-        if ( !(iMetric instanceof IShellMetric)) {
-            throw new RuntimeException("Metric["+name+"] is not IShellMetric, can not call by RPC");
+        if (!(iMetric instanceof IShellMetric)) {
+            throw new RuntimeException("Metric[" + name + "] is not IShellMetric, can not call by RPC");
         }
-        IShellMetric iShellMetric = (IShellMetric)iMetric;
-        
+        IShellMetric iShellMetric = (IShellMetric) iMetric;
+
         //call updateMetricFromRPC with params
         Object paramsObj = shellMsg.getMetricParams();
         try {
@@ -177,7 +169,7 @@ public class ShellSpout implements ISpout {
             throw re;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }       
+        }
     }
 
     private void querySubprocess() {
@@ -236,7 +228,7 @@ public class ShellSpout implements ISpout {
         LOG.info("Start checking heartbeat...");
         // prevent timer to check heartbeat based on last thing before activate
         setHeartbeat();
-        if (heartBeatExecutorService.isShutdown()){
+        if (heartBeatExecutorService.isShutdown()) {
             //In case deactivate was called before
             heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
         }
@@ -271,8 +263,8 @@ public class ShellSpout implements ISpout {
         String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
         _exception = new RuntimeException(processInfo, exception);
         String message = String.format("Halting process: ShellSpout died. Command: %s, ProcessInfo %s",
-            Arrays.toString(_command),
-            processInfo);
+                                       Arrays.toString(_command),
+                                       processInfo);
         LOG.error(message, exception);
         _collector.reportError(exception);
         if (_running || (exception instanceof Error)) { //don't exit if not running, unless it is an Error
@@ -294,7 +286,7 @@ public class ShellSpout implements ISpout {
             boolean isWaitingOnSubprocess = waitingOnSubprocess.get();
 
             LOG.debug("last heartbeat : {}, waiting subprocess now : {}, worker timeout (ms) : {}",
-                    lastHeartbeat, isWaitingOnSubprocess, workerTimeoutMills);
+                      lastHeartbeat, isWaitingOnSubprocess, workerTimeoutMills);
 
             if (isWaitingOnSubprocess && currentTimestamp - lastHeartbeat > workerTimeoutMills) {
                 spout.die(new RuntimeException("subprocess heartbeat timeout"));

@@ -18,6 +18,10 @@
 
 package org.apache.storm.utils;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.curator.ensemble.exhibitor.ExhibitorEnsembleProvider;
 import org.apache.curator.ensemble.fixed.FixedEnsembleProvider;
 import org.apache.curator.framework.AuthInfo;
@@ -27,11 +31,6 @@ import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class CuratorUtilsTest {
     @Test
@@ -46,9 +45,9 @@ public class CuratorUtilsTest {
         config.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING, expectedCeiling);
 
         CuratorFramework curator = CuratorUtils.newCurator(config, Arrays.asList("bogus_server"), 42, "",
-            DaemonType.WORKER.getDefaultZkAcls(config));
+                                                           DaemonType.WORKER.getDefaultZkAcls(config));
         StormBoundedExponentialBackoffRetry policy =
-                (StormBoundedExponentialBackoffRetry) curator.getZookeeperClient().getRetryPolicy();
+            (StormBoundedExponentialBackoffRetry) curator.getZookeeperClient().getRetryPolicy();
         Assert.assertEquals(policy.getBaseSleepTimeMs(), expectedInterval);
         Assert.assertEquals(policy.getN(), expectedRetries);
         Assert.assertEquals(policy.getSleepTimeMs(10, 0), expectedCeiling);
@@ -86,7 +85,7 @@ public class CuratorUtilsTest {
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
         Map<String, Object> conf = new HashMap<String, Object>();
         if (withExhibitor) {
-            conf.put(Config.STORM_EXHIBITOR_SERVERS,"foo");
+            conf.put(Config.STORM_EXHIBITOR_SERVERS, "foo");
             conf.put(Config.STORM_EXHIBITOR_PORT, 0);
             conf.put(Config.STORM_EXHIBITOR_URIPATH, "/exhibitor");
             conf.put(Config.STORM_EXHIBITOR_POLL, 0);

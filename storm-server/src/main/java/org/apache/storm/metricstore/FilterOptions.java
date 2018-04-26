@@ -1,19 +1,12 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.metricstore;
@@ -39,32 +32,28 @@ public class FilterOptions {
     public FilterOptions() {
     }
 
-    public void setTopologyId(String topoId) {
-        this.topologyId = topoId;
-    }
-
     public String getTopologyId() {
         return this.topologyId;
     }
 
-    public void setComponentId(String component) {
-        this.componentId = component;
+    public void setTopologyId(String topoId) {
+        this.topologyId = topoId;
     }
 
     public String getComponentId() {
         return this.componentId;
     }
 
-    public void setStartTime(Long time) {
-        this.startTime = time;
+    public void setComponentId(String component) {
+        this.componentId = component;
     }
 
     public long getStartTime() {
         return this.startTime;
     }
 
-    public void setEndTime(Long time) {
-        this.endTime = time;
+    public void setStartTime(Long time) {
+        this.startTime = time;
     }
 
     /**
@@ -77,44 +66,48 @@ public class FilterOptions {
         return this.endTime;
     }
 
-    public void setMetricName(String name) {
-        this.metricName = name;
+    public void setEndTime(Long time) {
+        this.endTime = time;
     }
 
     public String getMetricName() {
         return this.metricName;
     }
 
-    public void setExecutorId(String id) {
-        this.executorId = id;
+    public void setMetricName(String name) {
+        this.metricName = name;
     }
 
     public String getExecutorId() {
         return this.executorId;
     }
 
-    public void setHostId(String id) {
-        this.hostId = id;
+    public void setExecutorId(String id) {
+        this.executorId = id;
     }
 
     public String getHostId() {
         return this.hostId;
     }
 
-    public void setPort(Integer p) {
-        this.port = p;
+    public void setHostId(String id) {
+        this.hostId = id;
     }
 
     public Integer getPort() {
         return this.port;
     }
 
-    public void setStreamId(String id) {
-        this.streamId = id;
+    public void setPort(Integer p) {
+        this.port = p;
     }
 
     public String getStreamId() {
         return this.streamId;
+    }
+
+    public void setStreamId(String id) {
+        this.streamId = id;
     }
 
     /**
@@ -125,16 +118,6 @@ public class FilterOptions {
             this.aggLevels = new HashSet<>(1);
         }
         this.aggLevels.add(level);
-    }
-
-    /**
-     *  Set the aggregation levels to search for.
-     */
-    public void setAggLevels(Set<AggLevel> levels) throws MetricException {
-        this.aggLevels = levels;
-        if (this.aggLevels == null || this.aggLevels.isEmpty()) {
-            throw new MetricException("Cannot search for empty AggLevel");
-        }
     }
 
     /**
@@ -150,5 +133,15 @@ public class FilterOptions {
             aggLevels.add(AggLevel.AGG_LEVEL_60_MIN);
         }
         return this.aggLevels;
+    }
+
+    /**
+     *  Set the aggregation levels to search for.
+     */
+    public void setAggLevels(Set<AggLevel> levels) throws MetricException {
+        this.aggLevels = levels;
+        if (this.aggLevels == null || this.aggLevels.isEmpty()) {
+            throw new MetricException("Cannot search for empty AggLevel");
+        }
     }
 }

@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.security.auth.authorizer;
@@ -24,66 +18,58 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.storm.Config;
-import org.apache.storm.security.auth.IAuthorizer;
-import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.security.auth.IPrincipalToLocal;
+import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
-
+import org.apache.storm.security.auth.IPrincipalToLocal;
+import org.apache.storm.security.auth.ReqContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An authorization implementation that simply checks if a user is allowed to perform specific
- * operations.
+ * An authorization implementation that simply checks if a user is allowed to perform specific operations.
  */
 public class SimpleACLAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleACLAuthorizer.class);
 
     protected Set<String> userCommands = new HashSet<>(Arrays.asList(
-            "submitTopology",
-            "fileUpload",
-            "getNimbusConf",
-            "getClusterInfo",
-            "getSupervisorPageInfo",
-            "getOwnerResourceSummaries"));
+        "submitTopology",
+        "fileUpload",
+        "getNimbusConf",
+        "getClusterInfo",
+        "getSupervisorPageInfo",
+        "getOwnerResourceSummaries"));
     protected Set<String> supervisorCommands = new HashSet<>(Arrays.asList(
-            "fileDownload",
-            "processWorkerMetrics",
-            "getSupervisorAssignments",
-            "sendSupervisorWorkerHeartbeats"));
+        "fileDownload",
+        "processWorkerMetrics",
+        "getSupervisorAssignments",
+        "sendSupervisorWorkerHeartbeats"));
     protected Set<String> topoReadOnlyCommands = new HashSet<>(Arrays.asList(
-            "getTopologyConf",
-            "getTopology",
-            "getUserTopology",
-            "getTopologyInfo",
-            "getTopologyPageInfo",
-            "getComponentPageInfo",
-            "getWorkerProfileActionExpiry",
-            "getComponentPendingProfileActions",
-            "getLogConfig"));
+        "getTopologyConf",
+        "getTopology",
+        "getUserTopology",
+        "getTopologyInfo",
+        "getTopologyPageInfo",
+        "getComponentPageInfo",
+        "getWorkerProfileActionExpiry",
+        "getComponentPendingProfileActions",
+        "getLogConfig"));
     protected Set<String> topoCommands = new HashSet<>(Arrays.asList(
-            "killTopology",
-            "rebalance",
-            "activate",
-            "deactivate",
-            "uploadNewCredentials",
-            "setLogConfig",
-            "setWorkerProfiler",
-            "startProfiling",
-            "stopProfiling",
-            "dumpProfile",
-            "dumpJstack",
-            "dumpHeap",
-            "debug",
-            "sendSupervisorWorkerHeartbeat"));
-
-    {
-        topoCommands.addAll(topoReadOnlyCommands);
-    }
-
+        "killTopology",
+        "rebalance",
+        "activate",
+        "deactivate",
+        "uploadNewCredentials",
+        "setLogConfig",
+        "setWorkerProfiler",
+        "startProfiling",
+        "stopProfiling",
+        "dumpProfile",
+        "dumpJstack",
+        "dumpHeap",
+        "debug",
+        "sendSupervisorWorkerHeartbeat"));
     protected Set<String> admins;
     protected Set<String> adminsGroups;
     protected Set<String> supervisors;
@@ -92,8 +78,13 @@ public class SimpleACLAuthorizer implements IAuthorizer {
     protected IPrincipalToLocal ptol;
     protected IGroupMappingServiceProvider groupMappingServiceProvider;
 
+    {
+        topoCommands.addAll(topoReadOnlyCommands);
+    }
+
     /**
      * Invoked once immediately after construction.
+     *
      * @param conf Storm configuration
      */
     @Override
@@ -105,23 +96,23 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         nimbusGroups = new HashSet<>();
 
         if (conf.containsKey(Config.NIMBUS_ADMINS)) {
-            admins.addAll((Collection<String>)conf.get(Config.NIMBUS_ADMINS));
+            admins.addAll((Collection<String>) conf.get(Config.NIMBUS_ADMINS));
         }
 
         if (conf.containsKey(Config.NIMBUS_ADMINS_GROUPS)) {
-            adminsGroups.addAll((Collection<String>)conf.get(Config.NIMBUS_ADMINS_GROUPS));
+            adminsGroups.addAll((Collection<String>) conf.get(Config.NIMBUS_ADMINS_GROUPS));
         }
 
         if (conf.containsKey(Config.NIMBUS_SUPERVISOR_USERS)) {
-            supervisors.addAll((Collection<String>)conf.get(Config.NIMBUS_SUPERVISOR_USERS));
+            supervisors.addAll((Collection<String>) conf.get(Config.NIMBUS_SUPERVISOR_USERS));
         }
 
         if (conf.containsKey(Config.NIMBUS_USERS)) {
-            nimbusUsers.addAll((Collection<String>)conf.get(Config.NIMBUS_USERS));
+            nimbusUsers.addAll((Collection<String>) conf.get(Config.NIMBUS_USERS));
         }
 
         if (conf.containsKey(Config.NIMBUS_GROUPS)) {
-            nimbusGroups.addAll((Collection<String>)conf.get(Config.NIMBUS_GROUPS));
+            nimbusGroups.addAll((Collection<String>) conf.get(Config.NIMBUS_GROUPS));
         }
 
         ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
@@ -130,9 +121,10 @@ public class SimpleACLAuthorizer implements IAuthorizer {
 
     /**
      * permit() method is invoked for each incoming Thrift request.
-     * @param context request context includes info about
+     *
+     * @param context   request context includes info about
      * @param operation operation name
-     * @param topoConf configuration of targeted topology
+     * @param topoConf  configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
     @Override
@@ -145,7 +137,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             try {
                 userGroups = groupMappingServiceProvider.getGroups(user);
             } catch (IOException e) {
-                LOG.warn("Error while trying to fetch user groups",e);
+                LOG.warn("Error while trying to fetch user groups", e);
             }
         }
 
@@ -167,7 +159,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             }
 
             if (topoReadOnlyCommands.contains(operation) && checkTopoPermission(principal, user, userGroups,
-                    topoConf, Config.TOPOLOGY_READONLY_USERS, Config.TOPOLOGY_READONLY_GROUPS)) {
+                                                                                topoConf, Config.TOPOLOGY_READONLY_USERS,
+                                                                                Config.TOPOLOGY_READONLY_GROUPS)) {
                 return true;
             }
         }
@@ -179,7 +172,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         Set<String> configuredUsers = new HashSet<>();
 
         if (topoConf.containsKey(userConfigKey)) {
-            configuredUsers.addAll((Collection<String>)topoConf.get(userConfigKey));
+            configuredUsers.addAll((Collection<String>) topoConf.get(userConfigKey));
         }
 
         if (configuredUsers.contains(principal) || configuredUsers.contains(user)) {
@@ -188,7 +181,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
 
         Set<String> configuredGroups = new HashSet<>();
         if (topoConf.containsKey(groupConfigKey) && topoConf.get(groupConfigKey) != null) {
-            configuredGroups.addAll((Collection<String>)topoConf.get(groupConfigKey));
+            configuredGroups.addAll((Collection<String>) topoConf.get(groupConfigKey));
         }
 
         return checkUserGroupAllowed(userGroups, configuredGroups);

@@ -19,7 +19,6 @@
 package org.apache.storm.daemon.supervisor.timer;
 
 import java.util.Map;
-
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.healthcheck.HealthChecker;
 import org.slf4j.Logger;

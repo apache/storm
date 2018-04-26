@@ -15,6 +15,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.monitor;
 
 /**
@@ -27,7 +28,8 @@ public class OldKafkaSpoutOffsetQuery {
     private final boolean isWildCardTopic; //if the topic is a wildcard
     private final String brokersZkPath; //zk node prefix where kafka stores all broker information
     private final String partitions; //comma separated list of partitions corresponding to leaders below (for StaticHosts)
-    private final String leaders; //comma separated list of leader brokers and port corresponding to the partitions above (for StaticHosts) e.g.
+    private final String leaders;
+        //comma separated list of leader brokers and port corresponding to the partitions above (for StaticHosts) e.g.
     // hostname1:9092,hostname2:9092
 
     public OldKafkaSpoutOffsetQuery(String topic, String zkServers, String zkPath, boolean isWildCardTopic, String brokersZkPath) {
@@ -39,8 +41,9 @@ public class OldKafkaSpoutOffsetQuery {
 
     }
 
-    private OldKafkaSpoutOffsetQuery(String topic, String zkServers, String zkPath, boolean isWildCardTopic, String brokersZkPath, String partitions, String
-            leaders) {
+    private OldKafkaSpoutOffsetQuery(String topic, String zkServers, String zkPath, boolean isWildCardTopic, String brokersZkPath,
+                                     String partitions, String
+                                         leaders) {
         this.topic = topic;
         this.zkServers = zkServers;
         this.zkPath = zkPath;
@@ -53,14 +56,14 @@ public class OldKafkaSpoutOffsetQuery {
     @Override
     public String toString() {
         return "OldKafkaSpoutOffsetQuery{" +
-                "topic='" + topic + '\'' +
-                ", zkServers='" + zkServers + '\'' +
-                ", zkPath='" + zkPath + '\'' +
-                ", isWildCardTopic=" + isWildCardTopic +
-                ", brokersZkPath='" + brokersZkPath + '\'' +
-                ", partitions='" + partitions + '\'' +
-                ", leaders='" + leaders + '\'' +
-                '}';
+               "topic='" + topic + '\'' +
+               ", zkServers='" + zkServers + '\'' +
+               ", zkPath='" + zkPath + '\'' +
+               ", isWildCardTopic=" + isWildCardTopic +
+               ", brokersZkPath='" + brokersZkPath + '\'' +
+               ", partitions='" + partitions + '\'' +
+               ", leaders='" + leaders + '\'' +
+               '}';
     }
 
     @Override

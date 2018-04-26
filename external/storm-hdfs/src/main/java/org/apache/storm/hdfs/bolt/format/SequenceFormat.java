@@ -15,15 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt.format;
 
-import org.apache.storm.tuple.Tuple;
-
 import java.io.Serializable;
+import org.apache.storm.tuple.Tuple;
 
 /**
  * Interface for converting <code>Tuple</code> objects to HDFS sequence file key-value pairs.
- *
  */
 public interface SequenceFormat extends Serializable {
     /**
@@ -35,6 +34,7 @@ public interface SequenceFormat extends Serializable {
 
     /**
      * Value class used by implementation (e.g. Text.class, etc.)
+     *
      * @return
      */
     Class valueClass();
@@ -49,6 +49,7 @@ public interface SequenceFormat extends Serializable {
 
     /**
      * Given a tuple, return the value that should be written to the sequence file.
+     *
      * @param tuple
      * @return
      */

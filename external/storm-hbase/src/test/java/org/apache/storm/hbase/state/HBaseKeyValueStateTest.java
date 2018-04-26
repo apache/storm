@@ -19,16 +19,13 @@
 package org.apache.storm.hbase.state;
 
 import com.google.common.primitives.UnsignedBytes;
+import java.util.NavigableMap;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.state.DefaultStateSerializer;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +46,7 @@ public class HBaseKeyValueStateTest {
         mockMap = new ConcurrentSkipListMap<>(UnsignedBytes.lexicographicalComparator());
         mockClient = HBaseClientTestUtil.mockedHBaseClient(mockMap);
         keyValueState = new HBaseKeyValueState<>(mockClient, COLUMN_FAMILY, NAMESPACE,
-                new DefaultStateSerializer<String>(), new DefaultStateSerializer<String>());
+                                                 new DefaultStateSerializer<String>(), new DefaultStateSerializer<String>());
     }
 
     @Test
@@ -80,38 +77,38 @@ public class HBaseKeyValueStateTest {
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(1);
         keyValueState.put("c", "3");
-        assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
+        assertArrayEquals(new String[]{ "1", "2", "3" }, getValues());
         keyValueState.rollback();
-        assertArrayEquals(new String[]{null, null, null}, getValues());
+        assertArrayEquals(new String[]{ null, null, null }, getValues());
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(1);
         keyValueState.commit(1);
         keyValueState.put("c", "3");
-        assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
+        assertArrayEquals(new String[]{ "1", "2", "3" }, getValues());
         keyValueState.rollback();
-        assertArrayEquals(new String[]{"1", "2", null}, getValues());
+        assertArrayEquals(new String[]{ "1", "2", null }, getValues());
         keyValueState.put("c", "3");
         assertEquals("2", keyValueState.delete("b"));
         assertEquals("3", keyValueState.delete("c"));
-        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        assertArrayEquals(new String[]{ "1", null, null }, getValues());
         keyValueState.prepareCommit(2);
-        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        assertArrayEquals(new String[]{ "1", null, null }, getValues());
         keyValueState.commit(2);
-        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        assertArrayEquals(new String[]{ "1", null, null }, getValues());
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(3);
         keyValueState.put("c", "3");
-        assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
+        assertArrayEquals(new String[]{ "1", "2", "3" }, getValues());
         keyValueState.rollback();
-        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        assertArrayEquals(new String[]{ "1", null, null }, getValues());
     }
 
     private String[] getValues() {
         return new String[]{
-                keyValueState.get("a"),
-                keyValueState.get("b"),
-                keyValueState.get("c")
+            keyValueState.get("a"),
+            keyValueState.get("b"),
+            keyValueState.get("c")
         };
     }
 }

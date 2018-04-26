@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.hbase.trident;
 
 import org.apache.hadoop.hbase.client.Durability;
@@ -39,21 +34,21 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 public class WordCountTrident {
-    public static StormTopology buildTopology(String hbaseRoot){
+    public static StormTopology buildTopology(String hbaseRoot) {
         Fields fields = new Fields("word", "count");
         FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
-                new Values("storm", 1),
-                new Values("trident", 1),
-                new Values("needs", 1),
-                new Values("javadoc", 1)
+                                                    new Values("storm", 1),
+                                                    new Values("trident", 1),
+                                                    new Values("needs", 1),
+                                                    new Values("javadoc", 1)
         );
         spout.setCycle(true);
 
         TridentHBaseMapper tridentHBaseMapper = new SimpleTridentHBaseMapper()
-                .withColumnFamily("cf")
-                .withColumnFields(new Fields("word"))
-                .withCounterFields(new Fields("count"))
-                .withRowKeyField("word");
+            .withColumnFamily("cf")
+            .withColumnFields(new Fields("word"))
+            .withCounterFields(new Fields("count"))
+            .withRowKeyField("word");
 
         HBaseValueMapper rowToStormValueMapper = new WordCountValueMapper();
 
@@ -61,23 +56,23 @@ public class WordCountTrident {
         projectionCriteria.addColumn(new HBaseProjectionCriteria.ColumnMetaData("cf", "count"));
 
         HBaseState.Options options = new HBaseState.Options()
-                .withConfigKey(hbaseRoot)
-                .withDurability(Durability.SYNC_WAL)
-                .withMapper(tridentHBaseMapper)
-                .withProjectionCriteria(projectionCriteria)
-                .withRowToStormValueMapper(rowToStormValueMapper)
-                .withTableName("WordCount");
+            .withConfigKey(hbaseRoot)
+            .withDurability(Durability.SYNC_WAL)
+            .withMapper(tridentHBaseMapper)
+            .withProjectionCriteria(projectionCriteria)
+            .withRowToStormValueMapper(rowToStormValueMapper)
+            .withTableName("WordCount");
 
         StateFactory factory = new HBaseStateFactory(options);
 
         TridentTopology topology = new TridentTopology();
         Stream stream = topology.newStream("spout1", spout);
 
-        stream.partitionPersist(factory, fields,  new HBaseUpdater(), new Fields());
+        stream.partitionPersist(factory, fields, new HBaseUpdater(), new Fields());
 
         TridentState state = topology.newStaticState(factory);
-        stream = stream.stateQuery(state, new Fields("word"), new HBaseQuery(), new Fields("columnName","columnValue"));
-        stream.each(new Fields("word","columnValue"), new PrintFunction(), new Fields());
+        stream = stream.stateQuery(state, new Fields("word"), new HBaseQuery(), new Fields("columnName", "columnValue"));
+        stream.each(new Fields("word", "columnValue"), new PrintFunction(), new Fields());
         return topology.build();
     }
 
@@ -85,7 +80,7 @@ public class WordCountTrident {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
         String topoName = "wordCounter";
-        
+
         if (args.length == 2) {
             topoName = args[1];
         } else if (args.length > 2) {

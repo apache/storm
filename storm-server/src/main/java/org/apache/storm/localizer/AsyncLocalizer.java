@@ -29,7 +29,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,18 +67,19 @@ public class AsyncLocalizer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncLocalizer.class);
 
     private static final CompletableFuture<Void> ALL_DONE_FUTURE = new CompletableFuture<>();
+    private static final int ATTEMPTS_INTERVAL_TIME = 100;
 
     static {
         ALL_DONE_FUTURE.complete(null);
     }
 
-    private final boolean isLocalMode;
     // track resources - user to resourceSet
     //ConcurrentHashMap is explicitly used everywhere in this class because it uses locks to guarantee atomicity for compute and
     // computeIfAbsent where as ConcurrentMap allows for a retry of the function passed in, and would require the function to have
     // no side effects.
     protected final ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> userFiles = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> userArchives = new ConcurrentHashMap<>();
+    private final boolean isLocalMode;
     // topology to tracking of topology dir and resources
     private final ConcurrentHashMap<String, CompletableFuture<Void>> blobPending;
     private final Map<String, Object> conf;
@@ -87,16 +87,14 @@ public class AsyncLocalizer implements AutoCloseable {
     private final boolean symlinksDisabled;
     private final ConcurrentHashMap<String, LocallyCachedBlob> topologyBlobs = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, CompletableFuture<Void>> topologyBasicDownloaded = new ConcurrentHashMap<>();
-
     private final Path localBaseDir;
     private final int blobDownloadRetries;
     private final ScheduledExecutorService execService;
-
+    private final long cacheCleanupPeriod;
     // cleanup
     @VisibleForTesting
     protected long cacheTargetSize;
-    private final long cacheCleanupPeriod;
-    
+
     @VisibleForTesting
     AsyncLocalizer(Map<String, Object> conf, AdvancedFSOps ops, String baseDir) throws IOException {
 
@@ -106,7 +104,7 @@ public class AsyncLocalizer implements AutoCloseable {
         localBaseDir = Paths.get(baseDir);
         // default cache size 10GB, converted to Bytes
         cacheTargetSize = ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_TARGET_SIZE_MB),
-            10 * 1024).longValue() << 20;
+                                              10 * 1024).longValue() << 20;
         // default 30 seconds. (we cache the size so it is cheap to do)
         cacheCleanupPeriod = ObjectReader.getInt(conf.get(
             DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS), 30 * 1000).longValue();
@@ -117,10 +115,10 @@ public class AsyncLocalizer implements AutoCloseable {
             DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_MAX_RETRIES), 3);
 
         execService = Executors.newScheduledThreadPool(threadPoolSize,
-            new ThreadFactoryBuilder().setNameFormat("AsyncLocalizer Executor - %d").build());
+                                                       new ThreadFactoryBuilder().setNameFormat("AsyncLocalizer Executor - %d").build());
         reconstructLocalizedResources();
 
-        symlinksDisabled = (boolean)conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
+        symlinksDisabled = (boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
         blobPending = new ConcurrentHashMap<>();
     }
 
@@ -131,40 +129,43 @@ public class AsyncLocalizer implements AutoCloseable {
     @VisibleForTesting
     LocallyCachedBlob getTopoJar(final String topologyId) {
         return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormJarKey(topologyId),
-            (tjk) -> {
-                try {
-                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                        LocallyCachedTopologyBlob.TopologyBlobType.TOPO_JAR);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+                                             (tjk) -> {
+                                                 try {
+                                                     return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                                                                                          LocallyCachedTopologyBlob.TopologyBlobType
+                                                                                              .TOPO_JAR);
+                                                 } catch (IOException e) {
+                                                     throw new RuntimeException(e);
+                                                 }
+                                             });
     }
 
     @VisibleForTesting
     LocallyCachedBlob getTopoCode(final String topologyId) {
         return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormCodeKey(topologyId),
-            (tck) -> {
-                try {
-                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                        LocallyCachedTopologyBlob.TopologyBlobType.TOPO_CODE);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+                                             (tck) -> {
+                                                 try {
+                                                     return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                                                                                          LocallyCachedTopologyBlob.TopologyBlobType
+                                                                                              .TOPO_CODE);
+                                                 } catch (IOException e) {
+                                                     throw new RuntimeException(e);
+                                                 }
+                                             });
     }
 
     @VisibleForTesting
     LocallyCachedBlob getTopoConf(final String topologyId) {
         return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormConfKey(topologyId),
-            (tck) -> {
-                try {
-                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                        LocallyCachedTopologyBlob.TopologyBlobType.TOPO_CONF);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+                                             (tck) -> {
+                                                 try {
+                                                     return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                                                                                          LocallyCachedTopologyBlob.TopologyBlobType
+                                                                                              .TOPO_CONF);
+                                                 } catch (IOException e) {
+                                                     throw new RuntimeException(e);
+                                                 }
+                                             });
     }
 
     private LocalizedResource getUserArchive(String user, String key) {
@@ -181,33 +182,35 @@ public class AsyncLocalizer implements AutoCloseable {
 
     /**
      * Request that all of the blobs necessary for this topology be downloaded.
+     *
      * @param assignment the assignment that needs the blobs
-     * @param port the port the assignment is a part of
-     * @param cb a callback for when the blobs change.  This is only for blobs that are tied to the lifetime of the worker.
+     * @param port       the port the assignment is a part of
+     * @param cb         a callback for when the blobs change.  This is only for blobs that are tied to the lifetime of the worker.
      * @return a Future that indicates when they are all downloaded.
+     *
      * @throws IOException if there was an error while trying doing it.
      */
     public CompletableFuture<Void> requestDownloadTopologyBlobs(final LocalAssignment assignment, final int port,
-                                                                             final BlobChangingCallback cb) throws IOException {
+                                                                final BlobChangingCallback cb) throws IOException {
         final PortAndAssignment pna = new PortAndAssignment(port, assignment);
         final String topologyId = pna.getToplogyId();
 
         CompletableFuture<Void> baseBlobs = requestDownloadBaseTopologyBlobs(pna, cb);
         return baseBlobs.thenComposeAsync((v) ->
-            blobPending.compute(topologyId, (tid, old) -> {
-                CompletableFuture<Void> ret = old;
-                if (ret == null) {
-                    ret = CompletableFuture.supplyAsync(new DownloadBlobs(pna, cb), execService);
-                } else {
-                    try {
-                        addReferencesToBlobs(pna, cb);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                LOG.debug("Reserved blobs {} {}", topologyId, ret);
-                return ret;
-            }));
+                                              blobPending.compute(topologyId, (tid, old) -> {
+                                                  CompletableFuture<Void> ret = old;
+                                                  if (ret == null) {
+                                                      ret = CompletableFuture.supplyAsync(new DownloadBlobs(pna, cb), execService);
+                                                  } else {
+                                                      try {
+                                                          addReferencesToBlobs(pna, cb);
+                                                      } catch (Exception e) {
+                                                          throw new RuntimeException(e);
+                                                      }
+                                                  }
+                                                  LOG.debug("Reserved blobs {} {}", topologyId, ret);
+                                                  return ret;
+                                              }));
     }
 
     @VisibleForTesting
@@ -225,19 +228,17 @@ public class AsyncLocalizer implements AutoCloseable {
         topoConf.addReference(pna, cb);
 
         return topologyBasicDownloaded.computeIfAbsent(topologyId,
-            (tid) -> downloadOrUpdate(topoJar, topoCode, topoConf));
+                                                       (tid) -> downloadOrUpdate(topoJar, topoCode, topoConf));
     }
 
-    private static final int ATTEMPTS_INTERVAL_TIME = 100;
-
-    private CompletableFuture<Void> downloadOrUpdate(LocallyCachedBlob ... blobs) {
+    private CompletableFuture<Void> downloadOrUpdate(LocallyCachedBlob... blobs) {
         return downloadOrUpdate(Arrays.asList(blobs));
     }
 
     private CompletableFuture<Void> downloadOrUpdate(Collection<? extends LocallyCachedBlob> blobs) {
-        CompletableFuture<Void> [] all = new CompletableFuture[blobs.size()];
+        CompletableFuture<Void>[] all = new CompletableFuture[blobs.size()];
         int i = 0;
-        for (final LocallyCachedBlob blob: blobs) {
+        for (final LocallyCachedBlob blob : blobs) {
             all[i] = CompletableFuture.runAsync(() -> {
                 LOG.debug("STARTING download of {}", blob);
                 try (ClientBlobStore blobStore = getClientBlobStore()) {
@@ -296,7 +297,7 @@ public class AsyncLocalizer implements AutoCloseable {
                 futures.add(downloadOrUpdate(map.values()));
             }
         }
-        for (CompletableFuture<?> f: futures) {
+        for (CompletableFuture<?> f : futures) {
             try {
                 f.get();
             } catch (Exception e) {
@@ -312,8 +313,7 @@ public class AsyncLocalizer implements AutoCloseable {
     }
 
     /**
-     * Start any background threads needed.  This includes updating blobs and cleaning up
-     * unused blobs over the configured size limit.
+     * Start any background threads needed.  This includes updating blobs and cleaning up unused blobs over the configured size limit.
      */
     public void start() {
         execService.scheduleWithFixedDelay(this::updateBlobs, 30, 30, TimeUnit.SECONDS);
@@ -364,6 +364,267 @@ public class AsyncLocalizer implements AutoCloseable {
         if (!localResourceList.isEmpty()) {
             getBlobs(localResourceList, pna, cb);
         }
+    }
+
+    /**
+     * Do everything needed to recover the state in the AsyncLocalizer for a running topology.
+     *
+     * @param currentAssignment the assignment for the topology.
+     * @param port              the port the assignment is on.
+     * @param cb                a callback for when the blobs are updated.  This will only be for blobs that indicate that if they change
+     *                          the worker should be restarted.
+     * @throws IOException on any error trying to recover the state.
+     */
+    public void recoverRunningTopology(final LocalAssignment currentAssignment, final int port,
+                                       final BlobChangingCallback cb) throws IOException {
+        final PortAndAssignment pna = new PortAndAssignment(port, currentAssignment);
+        final String topologyId = pna.getToplogyId();
+
+        LocallyCachedBlob topoJar = getTopoJar(topologyId);
+        topoJar.addReference(pna, cb);
+
+        LocallyCachedBlob topoCode = getTopoCode(topologyId);
+        topoCode.addReference(pna, cb);
+
+        LocallyCachedBlob topoConf = getTopoConf(topologyId);
+        topoConf.addReference(pna, cb);
+
+        CompletableFuture<Void> localResource = blobPending.computeIfAbsent(topologyId, (tid) -> ALL_DONE_FUTURE);
+
+        try {
+            addReferencesToBlobs(pna, cb);
+        } catch (KeyNotFoundException | AuthorizationException e) {
+            LOG.error("Could not recover all blob references for {}", pna);
+        }
+
+        LOG.debug("Recovered blobs {} {}", topologyId, localResource);
+    }
+
+    /**
+     * Remove this assignment/port as blocking resources from being cleaned up.
+     *
+     * @param assignment the assignment the resources are for
+     * @param port       the port the topology is running on
+     * @throws IOException on any error
+     */
+    public void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
+        PortAndAssignment pna = new PortAndAssignment(port, assignment);
+        final String topologyId = assignment.get_topology_id();
+        LOG.debug("Releasing slot for {} {}", topologyId, port);
+
+        String topoJarKey = ConfigUtils.masterStormJarKey(topologyId);
+        String topoCodeKey = ConfigUtils.masterStormCodeKey(topologyId);
+        String topoConfKey = ConfigUtils.masterStormConfKey(topologyId);
+
+        LocallyCachedBlob topoJar = topologyBlobs.get(topoJarKey);
+        if (topoJar != null) {
+            topoJar.removeReference(pna);
+        }
+
+        LocallyCachedBlob topoCode = topologyBlobs.get(topoCodeKey);
+        if (topoCode != null) {
+            topoCode.removeReference(pna);
+        }
+
+        LocallyCachedBlob topoConfBlob = topologyBlobs.get(topoConfKey);
+        if (topoConfBlob != null) {
+            topoConfBlob.removeReference(pna);
+        }
+
+        for (LocalResource lr : getLocalResources(pna)) {
+            try {
+                removeBlobReference(lr.getBlobName(), pna, lr.shouldUncompress());
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+        }
+    }
+
+    // baseDir/supervisor/usercache/user1/
+    @VisibleForTesting
+    File getLocalUserDir(String userName) {
+        return LocalizedResource.getLocalUserDir(localBaseDir, userName).toFile();
+    }
+
+    // baseDir/supervisor/usercache/user1/filecache
+    @VisibleForTesting
+    File getLocalUserFileCacheDir(String userName) {
+        return LocalizedResource.getLocalUserFileCacheDir(localBaseDir, userName).toFile();
+    }
+
+    private void recoverLocalizedArchivesForUser(String user) throws IOException {
+        for (String key : LocalizedResource.getLocalizedArchiveKeys(localBaseDir, user)) {
+            getUserArchive(user, key);
+        }
+    }
+
+    private void recoverLocalizedFilesForUser(String user) throws IOException {
+        for (String key : LocalizedResource.getLocalizedFileKeys(localBaseDir, user)) {
+            getUserFile(user, key);
+        }
+    }
+
+    // Check to see if there are any existing files already localized.
+    private void reconstructLocalizedResources() {
+        try {
+            LOG.info("Reconstruct localized resources");
+            Collection<String> users = LocalizedResource.getLocalizedUsers(localBaseDir);
+            if (!(users == null || users.isEmpty())) {
+                for (String user : users) {
+                    LOG.debug("reconstructing resources owned by {}", user);
+                    recoverLocalizedFilesForUser(user);
+                    recoverLocalizedArchivesForUser(user);
+                }
+            } else {
+                LOG.debug("No left over resources found for any user");
+            }
+        } catch (Exception e) {
+            LOG.error("ERROR reconstructing localized resources", e);
+        }
+    }
+
+    // ignores invalid user/topo/key
+    void removeBlobReference(String key, PortAndAssignment pna,
+                             boolean uncompress) throws AuthorizationException, KeyNotFoundException {
+        String user = pna.getOwner();
+        String topo = pna.getToplogyId();
+        ConcurrentMap<String, LocalizedResource> lrsrcSet = uncompress ? userArchives.get(user) : userFiles.get(user);
+        if (lrsrcSet != null) {
+            LocalizedResource lrsrc = lrsrcSet.get(key);
+            if (lrsrc != null) {
+                LOG.debug("removing blob reference to: {} for topo: {}", key, topo);
+                lrsrc.removeReference(pna);
+            } else {
+                LOG.warn("trying to remove non-existent blob, key: " + key + " for user: " + user
+                         + " topo: " + topo);
+            }
+        } else {
+            LOG.warn("trying to remove blob for non-existent resource set for user: " + user + " key: "
+                     + key + " topo: " + topo);
+        }
+    }
+
+    protected ClientBlobStore getClientBlobStore() {
+        return ServerUtils.getClientBlobStoreForSupervisor(conf);
+    }
+
+    /**
+     * This function either returns the blobs in the existing cache or if they don't exist in the cache, it downloads them in parallel (up
+     * to SUPERVISOR_BLOBSTORE_DOWNLOAD_THREAD_COUNT) and will block until all of them have been downloaded.
+     */
+    List<LocalizedResource> getBlobs(List<LocalResource> localResources, PortAndAssignment pna, BlobChangingCallback cb)
+        throws AuthorizationException, KeyNotFoundException, IOException {
+        if ((boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
+            throw new KeyNotFoundException("symlinks are disabled so blobs cannot be downloaded.");
+        }
+        String user = pna.getOwner();
+        ArrayList<LocalizedResource> results = new ArrayList<>();
+        List<CompletableFuture<?>> futures = new ArrayList<>();
+
+        try {
+            for (LocalResource localResource : localResources) {
+                String key = localResource.getBlobName();
+                boolean uncompress = localResource.shouldUncompress();
+                LocalizedResource lrsrc = uncompress ? getUserArchive(user, key) : getUserFile(user, key);
+
+                // go off to blobstore and get it
+                // assume dir passed in exists and has correct permission
+                LOG.debug("fetching blob: {}", key);
+                futures.add(downloadOrUpdate(lrsrc));
+                results.add(lrsrc);
+                lrsrc.addReference(pna, localResource.needsCallback() ? cb : null);
+            }
+
+            for (CompletableFuture<?> futureRsrc : futures) {
+                futureRsrc.get();
+            }
+        } catch (ExecutionException e) {
+            Utils.unwrapAndThrow(AuthorizationException.class, e);
+            Utils.unwrapAndThrow(KeyNotFoundException.class, e);
+            throw new IOException("Error getting blobs", e);
+        } catch (RejectedExecutionException re) {
+            throw new IOException("RejectedExecutionException: ", re);
+        } catch (InterruptedException ie) {
+            throw new IOException("Interrupted Exception", ie);
+        }
+        return results;
+    }
+
+    private void forEachTopologyDistDir(ConsumePathAndId consumer) throws IOException {
+        Path stormCodeRoot = Paths.get(ConfigUtils.supervisorStormDistRoot(conf));
+        if (Files.exists(stormCodeRoot) && Files.isDirectory(stormCodeRoot)) {
+            try (DirectoryStream<Path> children = Files.newDirectoryStream(stormCodeRoot)) {
+                for (Path child : children) {
+                    if (Files.isDirectory(child)) {
+                        String topologyId = child.getFileName().toString();
+                        consumer.accept(child, topologyId);
+                    }
+                }
+            }
+        }
+    }
+
+    @VisibleForTesting
+    void cleanup() {
+        LocalizedResourceRetentionSet toClean = new LocalizedResourceRetentionSet(cacheTargetSize);
+        // need one large set of all and then clean via LRU
+        for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userArchives.entrySet()) {
+            toClean.addResources(t.getValue());
+            LOG.debug("Resources to be cleaned after adding {} archives : {}", t.getKey(), toClean);
+        }
+
+        for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userFiles.entrySet()) {
+            toClean.addResources(t.getValue());
+            LOG.debug("Resources to be cleaned after adding {} files : {}", t.getKey(), toClean);
+        }
+
+        toClean.addResources(topologyBlobs);
+        try (ClientBlobStore store = getClientBlobStore()) {
+            toClean.cleanup(store);
+        }
+
+        HashSet<String> safeTopologyIds = new HashSet<>();
+        for (String blobKey : topologyBlobs.keySet()) {
+            safeTopologyIds.add(ConfigUtils.getIdFromBlobKey(blobKey));
+        }
+
+        //Deleting this early does not hurt anything
+        topologyBasicDownloaded.keySet().removeIf(topoId -> !safeTopologyIds.contains(topoId));
+        blobPending.keySet().removeIf(topoId -> !safeTopologyIds.contains(topoId));
+
+        try {
+            forEachTopologyDistDir((p, topologyId) -> {
+                if (!safeTopologyIds.contains(topologyId)) {
+                    fsOps.deleteIfExists(p.toFile());
+                }
+            });
+        } catch (Exception e) {
+            LOG.error("Could not read topology directories for cleanup", e);
+        }
+
+        LOG.debug("Resource cleanup: {}", toClean);
+        Set<String> allUsers = new HashSet<>(userArchives.keySet());
+        allUsers.addAll(userFiles.keySet());
+        for (String user : allUsers) {
+            ConcurrentMap<String, LocalizedResource> filesForUser = userFiles.get(user);
+            ConcurrentMap<String, LocalizedResource> archivesForUser = userArchives.get(user);
+            if ((filesForUser == null || filesForUser.size() == 0)
+                && (archivesForUser == null || archivesForUser.size() == 0)) {
+
+                LOG.debug("removing empty set: {}", user);
+                try {
+                    LocalizedResource.completelyRemoveUnusedUser(localBaseDir, user);
+                    userFiles.remove(user);
+                    userArchives.remove(user);
+                } catch (IOException e) {
+                    LOG.error("Error trying to delete cached user files", e);
+                }
+            }
+        }
+    }
+
+    private interface ConsumePathAndId {
+        void accept(Path path, String topologyId) throws IOException;
     }
 
     private class DownloadBlobs implements Supplier<Void> {
@@ -422,267 +683,6 @@ public class AsyncLocalizer implements AutoCloseable {
             } catch (Exception e) {
                 LOG.warn("Caught Exception While Downloading (rethrowing)... ", e);
                 throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
-     * Do everything needed to recover the state in the AsyncLocalizer for a running topology.
-     * @param currentAssignment the assignment for the topology.
-     * @param port the port the assignment is on.
-     * @param cb a callback for when the blobs are updated.  This will only be for blobs that
-     *     indicate that if they change the worker should be restarted.
-     * @throws IOException on any error trying to recover the state.
-     */
-    public void recoverRunningTopology(final LocalAssignment currentAssignment, final int port,
-                                                    final BlobChangingCallback cb) throws IOException {
-        final PortAndAssignment pna = new PortAndAssignment(port, currentAssignment);
-        final String topologyId = pna.getToplogyId();
-
-        LocallyCachedBlob topoJar = getTopoJar(topologyId);
-        topoJar.addReference(pna, cb);
-
-        LocallyCachedBlob topoCode = getTopoCode(topologyId);
-        topoCode.addReference(pna, cb);
-
-        LocallyCachedBlob topoConf = getTopoConf(topologyId);
-        topoConf.addReference(pna, cb);
-
-        CompletableFuture<Void> localResource = blobPending.computeIfAbsent(topologyId, (tid) -> ALL_DONE_FUTURE);
-
-        try {
-            addReferencesToBlobs(pna, cb);
-        } catch (KeyNotFoundException | AuthorizationException e) {
-            LOG.error("Could not recover all blob references for {}", pna);
-        }
-
-        LOG.debug("Recovered blobs {} {}", topologyId, localResource);
-    }
-
-    /**
-     * Remove this assignment/port as blocking resources from being cleaned up.
-     *
-     * @param assignment the assignment the resources are for
-     * @param port the port the topology is running on
-     * @throws IOException on any error
-     */
-    public void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
-        PortAndAssignment pna = new PortAndAssignment(port, assignment);
-        final String topologyId = assignment.get_topology_id();
-        LOG.debug("Releasing slot for {} {}", topologyId, port);
-
-        String topoJarKey = ConfigUtils.masterStormJarKey(topologyId);
-        String topoCodeKey = ConfigUtils.masterStormCodeKey(topologyId);
-        String topoConfKey = ConfigUtils.masterStormConfKey(topologyId);
-
-        LocallyCachedBlob topoJar = topologyBlobs.get(topoJarKey);
-        if (topoJar != null) {
-            topoJar.removeReference(pna);
-        }
-
-        LocallyCachedBlob topoCode = topologyBlobs.get(topoCodeKey);
-        if (topoCode != null) {
-            topoCode.removeReference(pna);
-        }
-
-        LocallyCachedBlob topoConfBlob = topologyBlobs.get(topoConfKey);
-        if (topoConfBlob != null) {
-            topoConfBlob.removeReference(pna);
-        }
-
-        for (LocalResource lr : getLocalResources(pna)) {
-            try {
-                removeBlobReference(lr.getBlobName(), pna, lr.shouldUncompress());
-            } catch (Exception e) {
-                throw new IOException(e);
-            }
-        }
-    }
-
-    // baseDir/supervisor/usercache/user1/
-    @VisibleForTesting
-    File getLocalUserDir(String userName) {
-        return LocalizedResource.getLocalUserDir(localBaseDir, userName).toFile();
-    }
-
-    // baseDir/supervisor/usercache/user1/filecache
-    @VisibleForTesting
-    File getLocalUserFileCacheDir(String userName) {
-        return LocalizedResource.getLocalUserFileCacheDir(localBaseDir, userName).toFile();
-    }
-
-    private void recoverLocalizedArchivesForUser(String user) throws IOException {
-        for (String key: LocalizedResource.getLocalizedArchiveKeys(localBaseDir, user)) {
-            getUserArchive(user, key);
-        }
-    }
-
-    private void recoverLocalizedFilesForUser(String user) throws IOException {
-        for (String key: LocalizedResource.getLocalizedFileKeys(localBaseDir, user)) {
-            getUserFile(user, key);
-        }
-    }
-
-    // Check to see if there are any existing files already localized.
-    private void reconstructLocalizedResources() {
-        try {
-            LOG.info("Reconstruct localized resources");
-            Collection<String> users = LocalizedResource.getLocalizedUsers(localBaseDir);
-            if (!(users == null || users.isEmpty())) {
-                for (String user : users) {
-                    LOG.debug("reconstructing resources owned by {}", user);
-                    recoverLocalizedFilesForUser(user);
-                    recoverLocalizedArchivesForUser(user);
-                }
-            } else {
-                LOG.debug("No left over resources found for any user");
-            }
-        } catch (Exception e) {
-            LOG.error("ERROR reconstructing localized resources", e);
-        }
-    }
-
-    // ignores invalid user/topo/key
-    void removeBlobReference(String key, PortAndAssignment pna,
-                                          boolean uncompress) throws AuthorizationException, KeyNotFoundException {
-        String user = pna.getOwner();
-        String topo = pna.getToplogyId();
-        ConcurrentMap<String, LocalizedResource> lrsrcSet = uncompress ? userArchives.get(user) : userFiles.get(user);
-        if (lrsrcSet != null) {
-            LocalizedResource lrsrc = lrsrcSet.get(key);
-            if (lrsrc != null) {
-                LOG.debug("removing blob reference to: {} for topo: {}", key, topo);
-                lrsrc.removeReference(pna);
-            } else {
-                LOG.warn("trying to remove non-existent blob, key: " + key + " for user: " + user
-                    + " topo: " + topo);
-            }
-        } else {
-            LOG.warn("trying to remove blob for non-existent resource set for user: " + user + " key: "
-                + key + " topo: " + topo);
-        }
-    }
-
-    protected ClientBlobStore getClientBlobStore() {
-        return ServerUtils.getClientBlobStoreForSupervisor(conf);
-    }
-
-    /**
-     * This function either returns the blobs in the existing cache or if they don't exist in the
-     * cache, it downloads them in parallel (up to SUPERVISOR_BLOBSTORE_DOWNLOAD_THREAD_COUNT)
-     * and will block until all of them have been downloaded.
-     */
-    List<LocalizedResource> getBlobs(List<LocalResource> localResources, PortAndAssignment pna, BlobChangingCallback cb)
-        throws AuthorizationException, KeyNotFoundException, IOException {
-        if ((boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
-            throw new KeyNotFoundException("symlinks are disabled so blobs cannot be downloaded.");
-        }
-        String user = pna.getOwner();
-        ArrayList<LocalizedResource> results = new ArrayList<>();
-        List<CompletableFuture<?>> futures = new ArrayList<>();
-
-        try {
-            for (LocalResource localResource: localResources) {
-                String key = localResource.getBlobName();
-                boolean uncompress = localResource.shouldUncompress();
-                LocalizedResource lrsrc = uncompress ? getUserArchive(user, key) : getUserFile(user, key);
-
-                // go off to blobstore and get it
-                // assume dir passed in exists and has correct permission
-                LOG.debug("fetching blob: {}", key);
-                futures.add(downloadOrUpdate(lrsrc));
-                results.add(lrsrc);
-                lrsrc.addReference(pna, localResource.needsCallback() ? cb : null);
-            }
-
-            for (CompletableFuture<?> futureRsrc: futures) {
-                futureRsrc.get();
-            }
-        } catch (ExecutionException e) {
-            Utils.unwrapAndThrow(AuthorizationException.class, e);
-            Utils.unwrapAndThrow(KeyNotFoundException.class, e);
-            throw new IOException("Error getting blobs", e);
-        } catch (RejectedExecutionException re) {
-            throw new IOException("RejectedExecutionException: ", re);
-        } catch (InterruptedException ie) {
-            throw new IOException("Interrupted Exception", ie);
-        }
-        return results;
-    }
-
-    private interface ConsumePathAndId {
-        void accept(Path path, String topologyId) throws IOException;
-    }
-
-    private void forEachTopologyDistDir(ConsumePathAndId consumer) throws IOException {
-        Path stormCodeRoot = Paths.get(ConfigUtils.supervisorStormDistRoot(conf));
-        if (Files.exists(stormCodeRoot) && Files.isDirectory(stormCodeRoot)) {
-            try (DirectoryStream<Path> children = Files.newDirectoryStream(stormCodeRoot)) {
-                for (Path child : children) {
-                    if (Files.isDirectory(child)) {
-                        String topologyId = child.getFileName().toString();
-                        consumer.accept(child, topologyId);
-                    }
-                }
-            }
-        }
-    }
-
-    @VisibleForTesting
-    void cleanup() {
-        LocalizedResourceRetentionSet toClean = new LocalizedResourceRetentionSet(cacheTargetSize);
-        // need one large set of all and then clean via LRU
-        for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userArchives.entrySet()) {
-            toClean.addResources(t.getValue());
-            LOG.debug("Resources to be cleaned after adding {} archives : {}", t.getKey(), toClean);
-        }
-
-        for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userFiles.entrySet()) {
-            toClean.addResources(t.getValue());
-            LOG.debug("Resources to be cleaned after adding {} files : {}", t.getKey(), toClean);
-        }
-
-        toClean.addResources(topologyBlobs);
-        try (ClientBlobStore store = getClientBlobStore()) {
-            toClean.cleanup(store);
-        }
-
-        HashSet<String> safeTopologyIds = new HashSet<>();
-        for (String blobKey : topologyBlobs.keySet()) {
-            safeTopologyIds.add(ConfigUtils.getIdFromBlobKey(blobKey));
-        }
-
-        //Deleting this early does not hurt anything
-        topologyBasicDownloaded.keySet().removeIf(topoId -> !safeTopologyIds.contains(topoId));
-        blobPending.keySet().removeIf(topoId -> !safeTopologyIds.contains(topoId));
-
-        try {
-            forEachTopologyDistDir((p, topologyId) -> {
-                if (!safeTopologyIds.contains(topologyId)) {
-                    fsOps.deleteIfExists(p.toFile());
-                }
-            });
-        } catch (Exception e) {
-            LOG.error("Could not read topology directories for cleanup", e);
-        }
-
-        LOG.debug("Resource cleanup: {}", toClean);
-        Set<String> allUsers = new HashSet<>(userArchives.keySet());
-        allUsers.addAll(userFiles.keySet());
-        for (String user: allUsers) {
-            ConcurrentMap<String, LocalizedResource> filesForUser = userFiles.get(user);
-            ConcurrentMap<String, LocalizedResource> archivesForUser = userArchives.get(user);
-            if ((filesForUser == null || filesForUser.size() == 0)
-                && (archivesForUser == null || archivesForUser.size() == 0)) {
-
-                LOG.debug("removing empty set: {}", user);
-                try {
-                    LocalizedResource.completelyRemoveUnusedUser(localBaseDir, user);
-                    userFiles.remove(user);
-                    userArchives.remove(user);
-                } catch (IOException e) {
-                    LOG.error("Error trying to delete cached user files", e);
-                }
             }
         }
     }
