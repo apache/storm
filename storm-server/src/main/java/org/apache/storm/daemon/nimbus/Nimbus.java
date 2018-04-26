@@ -64,7 +64,6 @@ import org.apache.storm.StormTimer;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
-import org.apache.storm.blobstore.BlobSynchronizer;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.blobstore.KeySequenceNumber;
 import org.apache.storm.blobstore.LocalFsBlobStore;
@@ -255,7 +254,22 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final Meter shutdownCalls = StormMetricsRegistry.registerMeter("nimbus:num-shutdown-calls");
     private static final Meter processWorkerMetricsCalls = StormMetricsRegistry.registerMeter("nimbus:process-worker-metric-calls");
     private static final String STORM_VERSION = VersionInfo.getVersion();
-    private static final Subject NIMBUS_SUBJECT = new Subject();
+
+    public static List<ACL> getNimbusAcls(Map<String, Object> conf) {
+        List<ACL> acls = null;
+        if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
+            acls = ZK_ACLS;
+        }
+        return acls;
+    }
+
+    public static final Subject NIMBUS_SUBJECT = new Subject();
+
+    static {
+        NIMBUS_SUBJECT.getPrincipals().add(new NimbusPrincipal());
+        NIMBUS_SUBJECT.setReadOnly();
+    }
+    
     private static final TopologyStateTransition NOOP_TRANSITION = (arg, nimbus, topoId, base) -> null;
     private static final TopologyStateTransition INACTIVE_TRANSITION = (arg, nimbus, topoId, base) -> Nimbus.make(TopologyStatus.INACTIVE);
     private static final TopologyStateTransition ACTIVE_TRANSITION = (arg, nimbus, topoId, base) -> Nimbus.make(TopologyStatus.ACTIVE);
@@ -511,14 +525,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Utils.getConfiguredClasspathVersions(conf, EMPTY_STRING_LIST));// We don't use the classpath part of this, so just an empty list
     }
 
-    private static List<ACL> getNimbusAcls(Map<String, Object> conf) {
-        List<ACL> acls = null;
-        if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
-            acls = ZK_ACLS;
-        }
-        return acls;
-    }
-
     // TOPOLOGY STATE TRANSITIONS
     private static StormBase make(TopologyStatus status) {
         StormBase ret = new StormBase();
@@ -652,9 +658,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         return ret;
     }
-
-    private static int getVersionForKey(String key, NimbusInfo nimbusInfo,
-                                        CuratorFramework zkClient) throws KeyNotFoundException {
+    public static int getVersionForKey(String key, NimbusInfo nimbusInfo,
+        CuratorFramework zkClient) throws KeyNotFoundException {
         KeySequenceNumber kseq = new KeySequenceNumber(key, nimbusInfo);
         return kseq.getKeySequenceNumber(zkClient);
     }
@@ -918,9 +923,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static void rmBlobKey(BlobStore store, String key, IStormClusterState state) {
         try {
             store.deleteBlob(key, NIMBUS_SUBJECT);
-            if (store instanceof LocalFsBlobStore) {
-                state.removeBlobstoreKey(key);
-            }
         } catch (Exception e) {
             //Yes eat the exception
             LOG.info("Exception {}", e);
@@ -1411,20 +1413,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             try (FileInputStream fin = new FileInputStream(tmpJarLocation)) {
                 store.createBlob(jarKey, fin, new SettableBlobMeta(BlobStoreAclHandler.DEFAULT), subject);
             }
-            if (store instanceof LocalFsBlobStore) {
-                clusterState.setupBlobstore(jarKey, hostPortInfo, getVersionForKey(jarKey, hostPortInfo, zkClient));
-            }
         }
 
         topoCache.addTopoConf(topoId, subject, topoConf);
-        if (store instanceof LocalFsBlobStore) {
-            clusterState.setupBlobstore(confKey, hostPortInfo, getVersionForKey(confKey, hostPortInfo, zkClient));
-        }
-
         topoCache.addTopology(topoId, subject, topology);
-        if (store instanceof LocalFsBlobStore) {
-            clusterState.setupBlobstore(codeKey, hostPortInfo, getVersionForKey(codeKey, hostPortInfo, zkClient));
-        }
     }
 
     private void updateTopologyResources(String topoId, Map<String, Map<String, Double>> resourceOverrides, Subject subject)
@@ -2422,40 +2414,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 
-    /**
-     * Sets up blobstore state for all current keys.
-     *
-     * @throws KeyNotFoundException
-     * @throws AuthorizationException
-     */
-    private void setupBlobstore() throws AuthorizationException, KeyNotFoundException {
-        IStormClusterState state = stormClusterState;
-        BlobStore store = blobStore;
-        Set<String> localKeys = new HashSet<>();
-        for (Iterator<String> it = store.listKeys(); it.hasNext(); ) {
-            localKeys.add(it.next());
-        }
-        Set<String> activeKeys = new HashSet<>(state.activeKeys());
-        Set<String> activeLocalKeys = new HashSet<>(localKeys);
-        activeLocalKeys.retainAll(activeKeys);
-        Set<String> keysToDelete = new HashSet<>(localKeys);
-        keysToDelete.removeAll(activeKeys);
-        NimbusInfo nimbusInfo = nimbusHostPortInfo;
-        LOG.debug("Deleting keys not on the zookeeper {}", keysToDelete);
-        for (String toDelete : keysToDelete) {
-            store.deleteBlob(toDelete, NIMBUS_SUBJECT);
-        }
-        LOG.debug("Creating list of key entries for blobstore inside zookeeper {} local {}", activeKeys, activeLocalKeys);
-        for (String key : activeLocalKeys) {
-            try {
-                state.setupBlobstore(key, nimbusInfo, getVersionForKey(key, nimbusInfo, zkClient));
-            } catch (KeyNotFoundException e) {
-                // invalid key, remove it from blobstore
-                store.deleteBlob(key, NIMBUS_SUBJECT);
-            }
-        }
-    }
-
     private void addTopoToHistoryLog(String topoId, Map<String, Object> topoConf) {
         LOG.info("Adding topo to history log: {}", topoId);
         LocalState state = topologyHistoryState;
@@ -2538,34 +2496,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             }
         }
-    }
-
-    private void blobSync() throws Exception {
-        if ("distributed".equals(conf.get(Config.STORM_CLUSTER_MODE))) {
-            if (!isLeader()) {
-                IStormClusterState state = stormClusterState;
-                NimbusInfo nimbusInfo = nimbusHostPortInfo;
-                BlobStore store = blobStore;
-                Set<String> allKeys = new HashSet<>();
-                for (Iterator<String> it = store.listKeys(); it.hasNext(); ) {
-                    allKeys.add(it.next());
-                }
-                Set<String> zkKeys = new HashSet<>(state.blobstore(() -> {
-                    try {
-                        this.blobSync();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }));
-                LOG.debug("blob-sync blob-store-keys {} zookeeper-keys {}", allKeys, zkKeys);
-                BlobSynchronizer sync = new BlobSynchronizer(store, conf);
-                sync.setNimbusInfo(nimbusInfo);
-                sync.setBlobStoreKeySet(allKeys);
-                sync.setZookeeperKeySet(zkKeys);
-                sync.setZkClient(zkClient);
-                sync.syncBlobs();
-            } //else not leader (NOOP)
-        } //else local (NOOP)
     }
 
     private SupervisorSummary makeSupervisorSummary(String supervisorId, SupervisorInfo info) {
@@ -2731,20 +2661,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             state.addNimbusHost(hpi.getHost(),
                                 new NimbusSummary(hpi.getHost(), hpi.getPort(), Time.currentTimeSecs(), false, STORM_VERSION));
             leaderElector.addToLeaderLockQueue();
-
-            if (store instanceof LocalFsBlobStore) {
-                //register call back for blob-store
-                state.blobstore(() -> {
-                    try {
-                        blobSync();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-                setupBlobstore();
-            }
-
-            for (ClusterMetricsConsumerExecutor exec : clusterConsumerExceutors) {
+            this.blobStore.startSyncBlobs();
+            
+            for (ClusterMetricsConsumerExecutor exec: clusterConsumerExceutors) {
                 exec.prepare();
             }
 
@@ -2770,25 +2689,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             // Schedule Nimbus inbox cleaner
             final int jarExpSecs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_INBOX_JAR_EXPIRATION_SECS));
             timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CLEANUP_INBOX_FREQ_SECS)),
-                                    () -> {
-                                        try {
-                                            cleanInbox(getInbox(), jarExpSecs);
-                                        } catch (Exception e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    });
-
-            //Schedule nimbus code sync thread to sync code from other nimbuses.
-            if (store instanceof LocalFsBlobStore) {
-                timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS)),
-                                        () -> {
-                                            try {
-                                                blobSync();
-                                            } catch (Exception e) {
-                                                throw new RuntimeException(e);
-                                            }
-                                        });
-            }
+                    () -> {
+                        try {
+                            cleanInbox(getInbox(), jarExpSecs);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+            
 
             // Schedule topology history cleaner
             Integer interval = ObjectReader.getInt(conf.get(DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS), null);
@@ -3577,10 +3485,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public void deleteBlob(String key) throws AuthorizationException, KeyNotFoundException, TException {
         try {
             blobStore.deleteBlob(key, getSubject());
-            if (blobStore instanceof LocalFsBlobStore) {
-                stormClusterState.removeBlobstoreKey(key);
-                stormClusterState.removeKeyVersion(key);
-            }
             LOG.info("Deleted blob for key {}", key);
         } catch (Exception e) {
             LOG.warn("delete blob exception.", e);
@@ -3667,7 +3571,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             BlobStore store = blobStore;
             NimbusInfo ni = nimbusHostPortInfo;
             if (store instanceof LocalFsBlobStore) {
-                state.setupBlobstore(key, ni, getVersionForKey(key, ni, zkClient));
+                state.setupBlob(key, ni, getVersionForKey(key, ni, zkClient));
             }
             LOG.debug("Created state in zookeeper {} {} {}", state, store, ni);
         } catch (Exception e) {

@@ -18,21 +18,34 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.UnknownHostException;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.security.auth.Subject;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.cluster.DaemonType;
+import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.cluster.ClusterStateContext;
+import org.apache.storm.cluster.ClusterUtils;
+import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
-import org.apache.storm.generated.SettableBlobMeta;
+
+import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.zookeeper.Zookeeper;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +53,9 @@ import org.slf4j.LoggerFactory;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
+import static org.apache.storm.daemon.nimbus.Nimbus.NIMBUS_SUBJECT;
+import static org.apache.storm.daemon.nimbus.Nimbus.getNimbusAcls;
+import static org.apache.storm.daemon.nimbus.Nimbus.getVersionForKey;
 
 /**
  * Provides a local file system backed blob store implementation for Nimbus.
@@ -70,6 +86,9 @@ public class LocalFsBlobStore extends BlobStore {
     private FileBlobStoreImpl fbs;
     private Map<String, Object> conf;
     private CuratorFramework zkClient;
+    private IStormClusterState stormClusterState;
+    private Timer timer;
+    private ILeaderElector leaderElector;
 
     @Override
     public void prepare(Map<String, Object> conf, String overrideBase, NimbusInfo nimbusInfo) {
@@ -86,6 +105,106 @@ public class LocalFsBlobStore extends BlobStore {
             throw new RuntimeException(e);
         }
         _aclHandler = new BlobStoreAclHandler(conf);
+        try {
+            this.stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        timer = new Timer();
+        try {
+            this.leaderElector = Zookeeper.zkLeaderElector(conf, zkClient, this, null, stormClusterState, getNimbusAcls(conf));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Sets up blobstore state for all current keys.
+     * @throws KeyNotFoundException
+     * @throws AuthorizationException
+     */
+    private void setupBlobstore() throws AuthorizationException, KeyNotFoundException {
+        IStormClusterState state = stormClusterState;
+        BlobStore store = this;
+        Set<String> localKeys = new HashSet<>();
+        for (Iterator<String> it = store.listKeys(); it.hasNext();) {
+            localKeys.add(it.next());
+        }
+        Set<String> activeKeys = new HashSet<>(state.activeKeys());
+        Set<String> activeLocalKeys = new HashSet<>(localKeys);
+        activeLocalKeys.retainAll(activeKeys);
+        Set<String> keysToDelete = new HashSet<>(localKeys);
+        keysToDelete.removeAll(activeKeys);
+        NimbusInfo nimbusInfo = this.nimbusInfo;
+        LOG.debug("Deleting keys not on the zookeeper {}", keysToDelete);
+        for (String toDelete: keysToDelete) {
+            store.deleteBlob(toDelete, NIMBUS_SUBJECT);
+        }
+        LOG.debug("Creating list of key entries for blobstore inside zookeeper {} local {}", activeKeys, activeLocalKeys);
+        for (String key: activeLocalKeys) {
+            try {
+                state.setupBlob(key, nimbusInfo, getVersionForKey(key, nimbusInfo, zkClient));
+            } catch (KeyNotFoundException e) {
+                // invalid key, remove it from blobstore
+                store.deleteBlob(key, NIMBUS_SUBJECT);
+            }
+        }
+    }
+
+
+    private void blobSync() throws Exception {
+        if ("distributed".equals(conf.get(Config.STORM_CLUSTER_MODE))) {
+            if (!this.leaderElector.isLeader()) {
+                IStormClusterState state = stormClusterState;
+                NimbusInfo nimbusInfo = this.nimbusInfo;
+                BlobStore store = this;
+                Set<String> allKeys = new HashSet<>();
+                for (Iterator<String> it = store.listKeys(); it.hasNext();) {
+                    allKeys.add(it.next());
+                }
+                Set<String> zkKeys = new HashSet<>(state.blobstore(() -> {
+                    try {
+                        this.blobSync();
+                    } catch(Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
+                LOG.debug("blob-sync blob-store-keys {} zookeeper-keys {}", allKeys, zkKeys);
+                LocalFsBlobStoreSynchronizer sync = new LocalFsBlobStoreSynchronizer(store, conf);
+                sync.setNimbusInfo(nimbusInfo);
+                sync.setBlobStoreKeySet(allKeys);
+                sync.setZookeeperKeySet(zkKeys);
+                sync.setZkClient(zkClient);
+                sync.syncBlobs();
+            } //else not leader (NOOP)
+        } //else local (NOOP)
+    }
+
+
+    @Override
+    public  void startSyncBlobs() throws KeyNotFoundException, AuthorizationException {
+        //register call back for blob-store
+        this.stormClusterState.blobstore(() -> {
+            try {
+                blobSync();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        setupBlobstore();
+
+        //Schedule nimbus code sync thread to sync code from other nimbuses.
+        this.timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    blobSync();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, 0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS)));
+
     }
 
     @Override
@@ -105,8 +224,11 @@ public class LocalFsBlobStore extends BlobStore {
             mOut.write(Utils.thriftSerialize(meta));
             mOut.close();
             mOut = null;
-            return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX + key, true));
+            this.stormClusterState.setupBlob(key, this.nimbusInfo, getVersionForKey(key, this.nimbusInfo, zkClient));
+            return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX+key, true));
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (KeyNotFoundException e) {
             throw new RuntimeException(e);
         } finally {
             if (mOut != null) {
@@ -234,6 +356,8 @@ public class LocalFsBlobStore extends BlobStore {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        this.stormClusterState.removeBlobstoreKey(key);
+        this.stormClusterState.removeKeyVersion(key);
     }
 
     private void checkPermission(String key, Subject who, int mask) throws KeyNotFoundException, AuthorizationException {

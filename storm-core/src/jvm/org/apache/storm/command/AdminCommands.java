@@ -83,12 +83,6 @@ public class AdminCommands {
         while (corruptTopologies.hasNext()) {
             String corruptId = corruptTopologies.next();
             stormClusterState.removeStorm(corruptId);
-            if (nimbusBlobStore instanceof LocalFsBlobStore) {
-                Iterator<String> blobKeys = getKeyListFromId(corruptId).iterator();
-                while (blobKeys.hasNext()) {
-                    stormClusterState.removeBlobstoreKey(blobKeys.next());
-                }
-            }
         }
     }
 

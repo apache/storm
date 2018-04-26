@@ -76,6 +76,15 @@ public abstract class BlobStore implements Shutdownable {
     public abstract void prepare(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo);
 
     /**
+     * Start the syncing blobs between the local running instance of the BlobStore and others.
+     * A no-op for the HdfsBlobStore where HDFS itself does the syncing
+     * but for the LocalFsBlobStore ZK state updates are run periodically here.
+     */
+    public void startSyncBlobs() throws KeyNotFoundException, AuthorizationException {
+        // NO-OP by default
+    }
+
+    /**
      * Creates the blob.
      *
      * @param key  Key for the blob.

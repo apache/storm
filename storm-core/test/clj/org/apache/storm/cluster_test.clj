@@ -234,10 +234,10 @@
       (is (= {"b" "b"} (.get_creds (.credentials state "storm1" nil))))
 
       (is (= [] (.blobstoreInfo state "")))
-      (.setupBlobstore state "key1" nimbusInfo1 (Integer/parseInt "1"))
+      (.setupBlob state "key1" nimbusInfo1 (Integer/parseInt "1"))
       (is (= ["key1"] (.blobstoreInfo state "")))
       (is (= [(str (.toHostPortString nimbusInfo1) "-1")] (.blobstoreInfo state "key1")))
-      (.setupBlobstore state "key1" nimbusInfo2 (Integer/parseInt "1"))
+      (.setupBlob state "key1" nimbusInfo2 (Integer/parseInt "1"))
       (is (= #{(str (.toHostPortString nimbusInfo1) "-1")
                (str (.toHostPortString nimbusInfo2) "-1")} (set (.blobstoreInfo state "key1"))))
       (.removeBlobstoreKey state "key1")

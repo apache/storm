@@ -31,8 +31,10 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.security.auth.NimbusPrincipal;
 import org.apache.storm.security.auth.SingleUserPrincipal;
+import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.utils.Utils;
 import org.junit.After;
 import org.junit.Before;
@@ -44,22 +46,103 @@ import org.slf4j.LoggerFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
-public class BlobStoreTest {
-    public static final int READ = 0x01;
-    public static final int WRITE = 0x02;
-    public static final int ADMIN = 0x04;
-    private static final Logger LOG = LoggerFactory.getLogger(BlobStoreTest.class);
-    private static Map<String, Object> conf = new HashMap();
-    URI base;
-    File baseFile;
+public class LocalFsBlobStoreTest {
+  private static final Logger LOG = LoggerFactory.getLogger(LocalFsBlobStoreTest.class);
+  URI base;
+  File baseFile;
+  private static Map<String, Object> conf = new HashMap();
+  public static final int READ = 0x01;
+  public static final int WRITE = 0x02;
+  public static final int ADMIN = 0x04;
+  private InProcessZookeeper zk;
 
-    // Method which initializes nimbus admin
-    public static void initializeConfigs() {
-        conf.put(Config.NIMBUS_ADMINS, "admin");
-        conf.put(Config.NIMBUS_SUPERVISOR_USERS, "supervisor");
+  @Before
+  public void init() {
+    initializeConfigs();
+    baseFile = new File("target/blob-store-test-"+UUID.randomUUID());
+    base = baseFile.toURI();
+    try {
+      zk = new InProcessZookeeper();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
+  }
+
+  @After
+  public void cleanup() throws IOException {
+    FileUtils.deleteDirectory(baseFile);
+    try {
+      zk.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  // Method which initializes nimbus admin
+  public static void initializeConfigs() {
+    conf.put(Config.NIMBUS_ADMINS,"admin");
+    conf.put(Config.NIMBUS_SUPERVISOR_USERS,"supervisor");
+  }
+
+  private LocalFsBlobStore initLocalFs() {
+    LocalFsBlobStore store = new LocalFsBlobStore();
+    // Spy object that tries to mock the real object store
+    LocalFsBlobStore spy = spy(store);
+    Mockito.doNothing().when(spy).checkForBlobUpdate("test");
+    Mockito.doNothing().when(spy).checkForBlobUpdate("other");
+    Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-subject-WE");
+    Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-subject-DEF");
+    Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-acls");
+    Map<String, Object> conf = Utils.readStormConfig();
+    conf.put(Config.STORM_ZOOKEEPER_PORT, zk.getPort());
+    conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
+    conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN,"org.apache.storm.security.auth.DefaultPrincipalToLocal");
+    spy.prepare(conf, null, mock(NimbusInfo.class));
+    return spy;
+  }
+
+  @Test
+  public void testLocalFsWithAuth() throws Exception {
+    testWithAuthentication(initLocalFs());
+  }
+
+  @Test
+  public void testBasicLocalFs() throws Exception {
+    testBasic(initLocalFs());
+  }
+
+  @Test
+  public void testMultipleLocalFs() throws Exception {
+    testMultiple(initLocalFs());
+  }
+
+  @Test
+  public void testDeleteAfterFailedCreate() throws Exception{
+    //Check that a blob can be deleted when a temporary file exists in the blob directory
+    LocalFsBlobStore store = initLocalFs();
+
+    String key = "test";
+    SettableBlobMeta metadata = new SettableBlobMeta(BlobStoreAclHandler
+            .WORLD_EVERYTHING);
+    try (AtomicOutputStream out = store.createBlob(key, metadata, null)) {
+        out.write(1);
+        File blobDir = store.getKeyDataDir(key);
+        Files.createFile(blobDir.toPath().resolve("tempFile.tmp"));
+    }
+
+    store.deleteBlob("test",null);
+
+  }
+
+  public Subject getSubject(String name) {
+    Subject subject = new Subject();
+    SingleUserPrincipal user = new SingleUserPrincipal(name);
+    subject.getPrincipals().add(user);
+    return subject;
+  }
 
     // Gets Nimbus Subject with NimbusPrincipal set on it
     public static Subject getNimbusSubject() {
@@ -112,78 +195,10 @@ public class BlobStoreTest {
         assertEquals(value, readInt(store, key));
     }
 
-    @Before
-    public void init() {
-        initializeConfigs();
-        baseFile = new File("target/blob-store-test-" + UUID.randomUUID());
-        base = baseFile.toURI();
-    }
-
-    @After
-    public void cleanup() throws IOException {
-        FileUtils.deleteDirectory(baseFile);
-    }
-
     // Checks for assertion when we turn on security
     public void readAssertEqualsWithAuth(BlobStore store, Subject who, String key, int value)
         throws IOException, KeyNotFoundException, AuthorizationException {
         assertEquals(value, readInt(store, who, key));
-    }
-
-    private LocalFsBlobStore initLocalFs() {
-        LocalFsBlobStore store = new LocalFsBlobStore();
-        // Spy object that tries to mock the real object store
-        LocalFsBlobStore spy = spy(store);
-        Mockito.doNothing().when(spy).checkForBlobUpdate("test");
-        Mockito.doNothing().when(spy).checkForBlobUpdate("other");
-        Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-subject-WE");
-        Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-subject-DEF");
-        Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-acls");
-        Map<String, Object> conf = Utils.readStormConfig();
-        conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
-        conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "org.apache.storm.security.auth.DefaultPrincipalToLocal");
-        spy.prepare(conf, null, null);
-        return spy;
-    }
-
-    @Test
-    public void testLocalFsWithAuth() throws Exception {
-        testWithAuthentication(initLocalFs());
-    }
-
-    @Test
-    public void testBasicLocalFs() throws Exception {
-        testBasic(initLocalFs());
-    }
-
-    @Test
-    public void testMultipleLocalFs() throws Exception {
-        testMultiple(initLocalFs());
-    }
-
-    @Test
-    public void testDeleteAfterFailedCreate() throws Exception {
-        //Check that a blob can be deleted when a temporary file exists in the blob directory
-        LocalFsBlobStore store = initLocalFs();
-
-        String key = "test";
-        SettableBlobMeta metadata = new SettableBlobMeta(BlobStoreAclHandler
-                                                             .WORLD_EVERYTHING);
-        try (AtomicOutputStream out = store.createBlob(key, metadata, null)) {
-            out.write(1);
-            File blobDir = store.getKeyDataDir(key);
-            Files.createFile(blobDir.toPath().resolve("tempFile.tmp"));
-        }
-
-        store.deleteBlob("test", null);
-
-    }
-
-    public Subject getSubject(String name) {
-        Subject subject = new Subject();
-        SingleUserPrincipal user = new SingleUserPrincipal(name);
-        subject.getPrincipals().add(user);
-        return subject;
     }
 
     // Check for Blobstore with authentication
