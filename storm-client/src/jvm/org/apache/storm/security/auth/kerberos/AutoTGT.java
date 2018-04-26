@@ -90,11 +90,15 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
                 }
 
                 if (!tgt.isForwardable()) {
-                    throw new RuntimeException("The TGT found is not forwardable");
+                    throw new RuntimeException("The TGT found is not forwardable. Please use -f option.");
                 }
 
                 if (!tgt.isRenewable()) {
-                    throw new RuntimeException("The TGT found is not renewable");
+                    throw new RuntimeException("The TGT found is not renewable. Please use -r option.");
+                }
+
+                if (tgt.getClientAddresses() != null) {
+                    throw new RuntimeException("The TGT found is not address-less. Please use -A option.");
                 }
 
                 LOG.info("Pushing TGT for " + tgt.getClient() + " to topology.");
