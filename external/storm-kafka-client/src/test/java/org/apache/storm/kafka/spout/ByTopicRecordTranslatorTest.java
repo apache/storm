@@ -49,6 +49,13 @@ public class ByTopicRecordTranslatorTest {
             return new Values(record.key(), record.value());
         }
     };
+
+    public static Func<ConsumerRecord<String, String>, List<Object>> NULL_FUNC = new Func<ConsumerRecord<String, String>, List<Object>>() {
+        @Override
+        public List<Object> apply(ConsumerRecord<String, String> record) {
+            return null;
+        }
+    };
     
     @Test
     public void testBasic() {
@@ -73,6 +80,14 @@ public class ByTopicRecordTranslatorTest {
         ConsumerRecord<String, String> cr3 = new ConsumerRecord<>("TOPIC 2", 100, 100, "THE KEY", "THE VALUE");
         assertEquals(new Fields("key", "value"), trans.getFieldsFor("key-value-stream"));
         assertEquals(Arrays.asList("THE KEY", "THE VALUE"), trans.apply(cr3));
+    }
+
+    @Test
+    public void testNullTranslation() {
+        ByTopicRecordTranslator<String, String> trans =
+                new ByTopicRecordTranslator<>(NULL_FUNC, new Fields("key"));
+        ConsumerRecord<String, String> cr = new ConsumerRecord<>("TOPIC 1", 100, 100, "THE KEY", "THE VALUE");
+        assertEquals(null, trans.apply(cr));
     }
     
     @Test(expected = IllegalArgumentException.class)
