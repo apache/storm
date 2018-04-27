@@ -219,6 +219,15 @@
             </roles>
             <timezone>-8</timezone>
         </developer>
+        <developer>
+            <id>Ethanlm</id>
+            <name>Ethan Li</name>
+            <email>ethanli@apache.org</email>
+            <roles>	
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
 
     </developers>
 
