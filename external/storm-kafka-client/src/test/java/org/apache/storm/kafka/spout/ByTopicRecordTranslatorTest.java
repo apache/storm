@@ -52,6 +52,14 @@ public class ByTopicRecordTranslatorTest {
         assertEquals(new Fields("key", "value"), trans.getFieldsFor("key-value-stream"));
         assertEquals(Arrays.asList("THE KEY", "THE VALUE"), trans.apply(cr3));
     }
+
+    @Test
+    public void testNullTranslation() {
+        ByTopicRecordTranslator<String, String> trans =
+                new ByTopicRecordTranslator<>((r) -> null, new Fields("key"));
+        ConsumerRecord<String, String> cr = new ConsumerRecord<>("TOPIC 1", 100, 100, "THE KEY", "THE VALUE");
+        assertEquals(null, trans.apply(cr));
+    }
     
     @Test(expected = IllegalArgumentException.class)
     public void testFieldCollision() {
