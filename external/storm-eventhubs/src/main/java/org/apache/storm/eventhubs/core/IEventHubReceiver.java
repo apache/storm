@@ -30,12 +30,10 @@ import com.microsoft.azure.eventhubs.EventHubException;
 public interface IEventHubReceiver {
 
 	/**
-	 * Open / Establish connection to Eventhub given filters. The partition to
+	 * Open / Establish connection with the given Event Hub filters. The partition to
 	 * receive events from will be specified in an implementation specific way.
 	 * 
-	 * @param filter
-	 *            offset or timestamp based filter
-	 * @throws EventHubException
+	 * @param filter offset or timestamp based filter
 	 * @see {@link IEventFilter} {@link OffsetFilter} {@link TimestampFilter}
 	 */
 	void open(IEventFilter filter) throws IOException, EventHubException ;
@@ -48,14 +46,14 @@ public interface IEventHubReceiver {
 	/**
 	 * Check if connection to eventhub is active
 	 * 
-	 * @return
+	 * @return boolean indicating if the receiver is open
 	 */
 	boolean isOpen();
 
 	/**
-	 * Receive 'one' event from EventHub for processing from a target partition
+	 * Receives events from EventHub for processing from a target partition
 	 * 
-	 * @return
+	 * @return List of EventData
 	 */
 	Iterable<EventData> receive();
 

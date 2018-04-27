@@ -18,10 +18,15 @@
 package org.apache.storm.eventhubs.bolt;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
+import com.microsoft.azure.eventhubs.EventData;
+import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.EventHubException;
+import com.microsoft.azure.eventhubs.PartitionSender;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -29,11 +34,6 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.eventhubs.EventHubClient;
-import com.microsoft.azure.eventhubs.PartitionSender;
-import com.microsoft.azure.eventhubs.EventHubException;
 
 /**
  * A bolt that writes event message to EventHub.
@@ -74,12 +74,12 @@ public class EventHubBolt extends BaseRichBolt {
      *
      * @param userName      UserName to connect as
      * @param password      Password to use
-     * @param namespace     target namespace for the service bus
+     * @param namespace     event hub namespace
      * @param entityPath    Name of the event hub
-     * @param partitionMode number of partitions
+     * @param useTaskIndexAsPartitionId Use TaskIndex from TopologyContext to create Event Hub Sender
      */
-    public EventHubBolt(String userName, String password, String namespace, String entityPath, boolean partitionMode) {
-        boltConfig = new EventHubBoltConfig(userName, password, namespace, entityPath, partitionMode);
+    public EventHubBolt(String userName, String password, String namespace, String entityPath, boolean useTaskIndexAsPartitionId) {
+        boltConfig = new EventHubBoltConfig(userName, password, namespace, entityPath, useTaskIndexAsPartitionId);
     }
 
     /**
@@ -95,13 +95,14 @@ public class EventHubBolt extends BaseRichBolt {
     public void prepare(Map<String, Object> config, TopologyContext context,
                         OutputCollector collector) {
         this.collector = collector;
-        logger.info(String.format("Conn String: %s, PartitionMode: %s", boltConfig.getConnectionString(),
-                String.valueOf(boltConfig.getPartitionMode())));
+        logger.info(String.format("Connection String: %s, PartitionMode: %s",
+                removeSecretFromConnectionString(boltConfig.getConnectionString()),
+                String.valueOf(boltConfig.getUseTaskIndexAsPartitionId())));
         try {
             executorService = Executors.newSingleThreadExecutor();
             ehClient = EventHubClient.createSync(boltConfig.getConnectionString(), executorService);
-            if (boltConfig.getPartitionMode()) {
-                String partitionId = String.valueOf(context.getThisTaskIndex());
+            if (boltConfig.getUseTaskIndexAsPartitionId()) {
+                final String partitionId = String.valueOf(context.getThisTaskIndex());
                 logger.info("Writing to partition id: " + partitionId);
                 sender = ehClient.createPartitionSenderSync(partitionId);
             }
@@ -114,7 +115,7 @@ public class EventHubBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         try {
-            EventData sendEvent = EventData.create(boltConfig.getEventDataFormat().serialize(tuple));
+            final EventData sendEvent = EventData.create(boltConfig.getEventDataFormat().serialize(tuple));
             if (sender == null) {
                 ehClient.sendSync(sendEvent);
             } else {
@@ -130,31 +131,55 @@ public class EventHubBolt extends BaseRichBolt {
     @Override
     public void cleanup() {
         logger.debug("EventHubBolt cleanup");
-        try {
-            ehClient.close().whenCompleteAsync((voidargs, error) -> {
-                try {
-                    if (error != null) {
-                        logger.error("Exception during EventHubBolt cleanup phase" + error.toString());
-                    }
-                    if (sender != null) {
-                        sender.closeSync();
-                    }
-                } catch (Exception e) {
-                    logger.error("Exception during EventHubBolt cleanup phase" + e.toString());
-                }
-            }).get();
 
+        if (sender != null) {
+            try {
+                sender.closeSync();
+            } catch (EventHubException e) {
+                logger.error("Exception occurred while cleaning up sender" + e.toString());
+            } finally {
+                sender = null;
+            }
+        }
+
+        if (ehClient != null) {
+            try {
+                ehClient.closeSync();
+            } catch (EventHubException e) {
+                logger.error("Exception occurred during EventHubClient cleanup phase" + e.toString());
+            } finally {
+                ehClient = null;
+            }
+        }
+
+        if (executorService != null) {
             executorService.shutdown();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Exception occured during cleanup phase" + e.toString());
-        } finally {
-            sender = null;
-            ehClient = null;
+
+            try {
+                executorService.awaitTermination(2, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                logger.warn("Exception occurred while terminating ExecutorService: " + e.toString());
+            } finally {
+                executorService = null;
+            }
         }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
 
+    }
+
+    String removeSecretFromConnectionString(final String connectionString) {
+        final ConnectionStringBuilder newConnectionStringBuilder = new ConnectionStringBuilder(connectionString);
+        if (newConnectionStringBuilder.getSasKeyName() != null || !newConnectionStringBuilder.getSasKeyName().isEmpty()) {
+            newConnectionStringBuilder.setSasKeyName("--removing_for_log--");
+        }
+
+        if (newConnectionStringBuilder.getSharedAccessSignature() != null || !newConnectionStringBuilder.getSharedAccessSignature().isEmpty()) {
+            newConnectionStringBuilder.setSharedAccessSignature("--removing_for_log--");
+        }
+
+        return newConnectionStringBuilder.toString();
     }
 }

@@ -146,33 +146,6 @@ public class EventHubConfig implements Serializable {
     }
 
     /**
-     * Returns configured receivercredits used when connecting to EventHub Note:
-     * <p>
-     * This is a legacy setting that will soon be deprecated. Please use the
-     * {@link EventHubConfig#setReceiveEventsMaxCount(int)} instead.
-     * </p>
-     *
-     * @return
-     * @deprecated
-     */
-    public int getReceiverCredits() {
-        return receiverCredits;
-    }
-
-    /**
-     * Configures receivercredits used when connecting to EventHub
-     * <p>
-     * Note: This is a legacy setting that will soon be deprecated. Please use the
-     * {@link EventHubConfig#setReceiveEventsMaxCount(int)} instead.
-     * </p>
-     *
-     * @deprecated
-     */
-    public void setReceiverCredits(int receiverCredits) {
-        this.receiverCredits = receiverCredits;
-    }
-
-    /**
      * Returns the configured the size of the pending queue for each partition.
      * While the pending queue is at full capacity no new receive calls will be made
      * to EventHub. The default value for it is
@@ -304,7 +277,7 @@ public class EventHubConfig implements Serializable {
     }
 
     /**
-     * Consumer group name to use when receiveing events from EventHub
+     * Consumer group name to use when receiving events from EventHub
      *
      * @return consumer group name
      */

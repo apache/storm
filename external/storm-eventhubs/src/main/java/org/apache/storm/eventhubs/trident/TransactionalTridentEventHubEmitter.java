@@ -52,7 +52,7 @@ public class TransactionalTridentEventHubEmitter
     private final String COUNT_KEY = "count";
 
     public TransactionalTridentEventHubEmitter(EventHubSpoutConfig spoutConfig) {
-        this(spoutConfig, spoutConfig.getReceiverCredits(), null, null);
+        this(spoutConfig, spoutConfig.getReceiveEventsMaxCount(), null, null);
     }
 
     public TransactionalTridentEventHubEmitter(final EventHubSpoutConfig spoutConfig, int batchSize,

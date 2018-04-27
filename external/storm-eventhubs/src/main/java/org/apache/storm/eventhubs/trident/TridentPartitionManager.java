@@ -66,13 +66,13 @@ public class TridentPartitionManager implements ITridentPartitionManager {
 
     @Override
     public List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, EventHubException {
-        List<EventHubMessage> batch = new ArrayList<EventHubMessage>(spoutConfig.getReceiveEventsMaxCount());
+        final List<EventHubMessage> batch = new ArrayList<EventHubMessage>(spoutConfig.getReceiveEventsMaxCount());
         if (!offset.equals(lastOffset) || !receiver.isOpen()) {
             close();
             open(offset);
         }
 
-        Iterable<EventData> messages = receiver.receive(count);
+        final Iterable<EventData> messages = receiver.receive(count);
 
         for (EventData ed : messages) {
             EventHubMessage ehm = new EventHubMessage(ed, partitionId);

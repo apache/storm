@@ -18,11 +18,13 @@
 package org.apache.storm.eventhubs.core;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.microsoft.azure.eventhubs.EventHubException;
 import org.apache.storm.metric.api.CountMetric;
@@ -43,6 +45,8 @@ import com.microsoft.azure.eventhubs.PartitionReceiver;
  */
 public class EventHubReceiverImpl implements IEventHubReceiver {
 	private static final Logger logger = LoggerFactory.getLogger(EventHubReceiverImpl.class);
+
+	private final Iterable<EventData> emptyEventBatch = new LinkedList<>();
 
 	private final EventHubConfig eventHubConfig;
 	private final String partitionId;
@@ -87,25 +91,30 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 
 	@Override
 	public void close() {
-		if (receiver == null)
-			return;
 
 		try {
-			receiver.close().whenCompleteAsync((voidargs, error) -> {
-				try {
-					if (error != null) {
-						logger.error("Exception during receiver close phase: " + error.toString());
-					}
-					ehClient.closeSync();
-				} catch (Exception e) {
-					logger.error("Exception during ehclient close phase: " + e.toString());
-				}
-			}).get();
-		} catch (InterruptedException | ExecutionException e) {
-			logger.warn("Exception occured during close phase: " + e.toString());
+			if (receiver != null) {
+				receiver.closeSync();
+			}
+		} catch (EventHubException e) {
+			logger.warn("Exception occurred while closing PartitionReceiver: " + e.toString());
+		}
+
+		try {
+			if (ehClient != null) {
+				ehClient.closeSync();
+			}
+		} catch (EventHubException e) {
+			logger.warn("Exception occurred while closing EventHubClient: " + e.toString());
 		}
 
 		executorService.shutdown();
+
+		try {
+			executorService.awaitTermination(2, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			logger.warn("Exception occurred while terminating ExecutorService: " + e.toString());
+		}
 
 		logger.info("closed eventhub receiver: partitionId=" + partitionId);
 		ehClient = null;
@@ -125,28 +134,31 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 
 	@Override
 	public Iterable<EventData> receive(int batchSize) {
-		long start = System.currentTimeMillis();
+		final long start = System.currentTimeMillis();
 		Iterable<EventData> receivedEvents = null;
 
 		try {
 			receivedEvents = receiver.receiveSync(batchSize);
+
 			if (receivedEvents != null) {
+				final long end = System.currentTimeMillis();
+				final long millis = (end - start);
+				receiveApiLatencyMean.update(millis);
+				receiveApiCallCount.incr();
+
 				logger.debug("Batchsize: " + batchSize + ", Received event count: " + Iterables.size(receivedEvents));
 			}
 		} catch (EventHubException e) {
-			logger.error("Exception occured during receive" + e.toString());
+			logger.error("Exception occured during receive: " + e.toString());
 			return null;
 		}
-		long end = System.currentTimeMillis();
-		long millis = (end - start);
-		receiveApiLatencyMean.update(millis);
-		receiveApiCallCount.incr();
-		return receivedEvents;
+
+		return receivedEvents == null ? this.emptyEventBatch : receivedEvents;
 	}
 
 	@Override
 	public Map<String, Object> getMetricsData() {
-		Map<String, Object> ret = new HashMap<String, Object>();
+		final Map<String, Object> ret = new HashMap<String, Object>();
 		ret.put(partitionId + "/receiveApiLatencyMean", receiveApiLatencyMean.getValueAndReset());
 		ret.put(partitionId + "/receiveApiCallCount", receiveApiCallCount.getValueAndReset());
 		ret.put(partitionId + "/receiveMessageCount", receiveMessageCount.getValueAndReset());

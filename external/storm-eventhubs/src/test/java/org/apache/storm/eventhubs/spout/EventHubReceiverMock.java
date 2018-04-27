@@ -108,7 +108,7 @@ public class EventHubReceiverMock implements IEventHubReceiver {
 		List<EventData> retList = new LinkedList<EventData>();
 		for (int i = 0; i < batchSize; ++i) {
 			currentOffset++;
-			EventData edata = getEventData("message" + currentOffset, String.valueOf(currentOffset),
+			final EventData edata = getEventData("message" + currentOffset, String.valueOf(currentOffset),
 					(long) currentOffset, new Date());
 			retList.add(edata);
 		}

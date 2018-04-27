@@ -93,15 +93,14 @@ public class SimplePartitionManager implements IPartitionManager {
 
     @Override
     public EventHubMessage receive() {
-        EventHubMessage msg = null;
-
-        Iterable<EventData> receivedEvent = receiver.receive(1);
-        EventData lastEvent = Iterables.getLast(receivedEvent);
+        final Iterable<EventData> receivedEvent = receiver.receive(1);
+        final EventData lastEvent = Iterables.getLast(receivedEvent);
         if (lastEvent != null) {
-            msg = new EventHubMessage(lastEvent, partitionId);
-            lastOffset = msg.getOffset();
+            lastOffset = lastEvent.getSystemProperties().getOffset();
+            return new EventHubMessage(lastEvent, partitionId);
         }
-        return msg;
+
+        return null;
     }
 
     @Override

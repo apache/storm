@@ -64,15 +64,14 @@ public class EventHubMessage implements Comparable<EventHubMessage> {
         }
 
         applicationProperties = eventdata.getProperties();
-        EventData.SystemProperties props = eventdata.getSystemProperties();
-        systemProperties = props;
+        systemProperties = eventdata.getSystemProperties();
 
-        if (systemProperties != null) {
-            offset = props.getOffset();
-            partitionKey = props.getPartitionKey();
-            enqueuedTime = props.getEnqueuedTime();
-            sequenceNumber = props.getSequenceNumber();
-            publisher = props.getPublisher();
+        if (eventdata.getSystemProperties() != null) {
+            offset = eventdata.getSystemProperties().getOffset();
+            partitionKey = eventdata.getSystemProperties().getPartitionKey();
+            enqueuedTime = eventdata.getSystemProperties().getEnqueuedTime();
+            sequenceNumber = eventdata.getSystemProperties().getSequenceNumber();
+            publisher = eventdata.getSystemProperties().getPublisher();
         } else {
             this.offset = null;
             this.partitionKey = null;

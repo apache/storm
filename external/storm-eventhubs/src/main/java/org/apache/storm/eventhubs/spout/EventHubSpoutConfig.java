@@ -59,7 +59,7 @@ public class EventHubSpoutConfig extends EventHubConfig {
                                int partitionCount, String zkConnectionString, int checkpointIntervalInSeconds, int receiverCredits) {
         this(username, password, namespace, entityPath, partitionCount, zkConnectionString);
         setCheckpointIntervalInSeconds(checkpointIntervalInSeconds);
-        setReceiverCredits(receiverCredits);
+        setReceiveEventsMaxCount(receiverCredits);
     }
 
     public EventHubSpoutConfig(String username, String password, String namespace, String entityPath,
