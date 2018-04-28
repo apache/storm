@@ -241,7 +241,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     @Override
     public List<KafkaTridentSpoutTopicPartition> getPartitionsForTask(int taskId, int numTasks,
-        List<Map<String, Object>> allPartitionInfo) {
+        List<KafkaTridentSpoutTopicPartition> allPartitionInfo) {
         final Set<TopicPartition> assignedTps = kafkaConsumer.assignment();
         LOG.debug("Consumer [{}], running on task with index [{}], has assigned topic-partitions {}", kafkaConsumer, taskId, assignedTps);
         final List<KafkaTridentSpoutTopicPartition> taskTps = newKafkaTridentSpoutTopicPartitions(assignedTps);
