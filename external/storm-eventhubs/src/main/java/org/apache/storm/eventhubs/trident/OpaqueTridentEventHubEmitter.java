@@ -63,12 +63,11 @@ public class OpaqueTridentEventHubEmitter implements IOpaquePartitionedTridentSp
   }
 
   @Override
-  public List<Partition> getPartitionsForTask(int taskId, int numTasks, Partitions allPartitionInfo) {
-    final List<Partition> orderedPartitions = getOrderedPartitions(allPartitionInfo);
-    final List<Partition> taskPartitions = new ArrayList<>(orderedPartitions == null ? 0 : orderedPartitions.size());
-    if (orderedPartitions != null) {
-      for (int i = taskId; i < orderedPartitions.size(); i += numTasks) {
-        taskPartitions.add(orderedPartitions.get(i));
+  public List<Partition> getPartitionsForTask(int taskId, int numTasks, List<Partition> allPartitionInfoSorted) {
+    final List<Partition> taskPartitions = new ArrayList<>(allPartitionInfoSorted == null ? 0 : allPartitionInfoSorted.size());
+    if (allPartitionInfoSorted != null) {
+      for (int i = taskId; i < allPartitionInfoSorted.size(); i += numTasks) {
+        taskPartitions.add(allPartitionInfoSorted.get(i));
       }
     }
     return taskPartitions;
