@@ -41,8 +41,12 @@ public class SimpleRecordTranslator<K, V> implements RecordTranslator<K, V> {
     
     @Override
     public List<Object> apply(ConsumerRecord<K, V> record) {
+        List<Object> vals = func.apply(record);
+        if (vals == null) {
+            return null;
+        }
         KafkaTuple ret = new KafkaTuple();
-        ret.addAll(func.apply(record));
+        ret.addAll(vals);
         return ret.routedTo(stream);
     }
 
