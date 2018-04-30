@@ -684,6 +684,7 @@ public class DaemonConfig implements Validated {
 
     /**
      * A number representing the maximum number of workers any single topology can acquire.
+     * This will be ignored if the Resource Aware Scheduler is used.
      */
     @isInteger
     @isPositiveNumber(includeZero = true)

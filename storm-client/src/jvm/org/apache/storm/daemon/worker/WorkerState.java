@@ -731,6 +731,25 @@ public class WorkerState {
         return this.outboundTasks;
     }
 
+    /**
+     * Check if this worker has remote outbound tasks.
+     * @return true if this worker has remote outbound tasks; false otherwise.
+     */
+    public boolean hasRemoteOutboundTasks() {
+        Set<Integer> remoteTasks = Sets.difference(new HashSet<>(outboundTasks), new HashSet<>(localTaskIds));
+        return !remoteTasks.isEmpty();
+    }
+
+    /**
+     * If all the tasks are local tasks, the topology has only one worker.
+     * @return true if this worker is the single worker; false otherwise.
+     */
+    public boolean isSingleWorker() {
+        Set<Integer> nonLocalTasks = Sets.difference(getTaskToComponent().keySet(),
+                new HashSet<>(localTaskIds));
+        return nonLocalTasks.isEmpty();
+    }
+
     public void haltWorkerTransfer() {
         workerTransfer.haltTransferThd();
     }

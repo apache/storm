@@ -184,6 +184,10 @@ The user can set some default configurations for the Resource Aware Scheduler in
     topology.worker.max.heap.size.mb: 768.0
 ```
 
+### Warning
+
+If Resource Aware Scheduling is enabled, it will dynamically calculate the number of workers and the `topology.workers` setting is ignored.
+
 <div id='Topology-Priorities-and-Per-User-Resource'/>
 
 ## Topology Priorities and Per User Resource 

@@ -180,7 +180,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * How many processes should be spawned around the cluster to execute this topology. Each process will execute some number of tasks as
      * threads within them. This parameter should be used in conjunction with the parallelism hints on each component in the topology to
-     * tune the performance of a topology.
+     * tune the performance of a topology. The number of workers will be dynamically calculated when the Resource Aware scheduler is used,
+     * in which case this parameter will not be honored.
      */
     @isInteger
     @isPositiveNumber
@@ -331,9 +332,10 @@ public class Config extends HashMap<String, Object> {
     /**
      * How many executors to spawn for ackers.
      *
-     * <p>By not setting this variable or setting it as null, Storm will set the number of acker executors
-     * to be equal to the number of workers configured for this topology. If this variable is set to 0, then Storm will immediately ack
-     * tuples as soon as they come off the spout, effectively disabling reliability.</p>
+     * <p>By not setting this variable or setting it as null, Storm will set the number of acker executors to be equal to
+     * the number of workers configured for this topology (or the estimated number of workers if the Resource Aware Scheduler is used).
+     * If this variable is set to 0, then Storm will immediately ack tuples as soon as they come off the spout,
+     * effectively disabling reliability.</p>
      */
     @isInteger
     @isPositiveNumber(includeZero = true)
@@ -351,8 +353,9 @@ public class Config extends HashMap<String, Object> {
     /**
      * How many executors to spawn for event logger.
      *
-     * <p>By not setting this variable or setting it as null, Storm will set the number of eventlogger executors
-     * to be equal to the number of workers configured for this topology. If this variable is set to 0, event logging will be disabled.</p>
+     * <p>By setting it as null, Storm will set the number of eventlogger executors to be equal to the number of workers
+     * configured for this topology (or the estimated number of workers if the Resource Aware Scheduler is used).
+     * If this variable is set to 0, event logging will be disabled.</p>
      */
     @isInteger
     @isPositiveNumber(includeZero = true)
