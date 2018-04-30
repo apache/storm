@@ -51,6 +51,7 @@ public class ReturnResults extends BaseRichBolt {
     public void execute(Tuple input) {
         String result = (String) input.getValue(0);
         String returnInfo = (String) input.getValue(1);
+        LOG.debug("Request Info: {}, Result: {}", returnInfo, result);
         if (returnInfo != null) {
             Map<String, Object> retMap;
             try {
@@ -63,6 +64,7 @@ public class ReturnResults extends BaseRichBolt {
             final String host = (String) retMap.get("host");
             final int port = ObjectReader.getInt(retMap.get("port"));
             String id = (String) retMap.get("id");
+            LOG.debug("Request Id: {}, Result: {}", id, result);
             DistributedRPCInvocations.Iface client = getDRPCClient(host, port);
 
             int retryCnt = 0;
@@ -70,6 +72,7 @@ public class ReturnResults extends BaseRichBolt {
             while (retryCnt < maxRetries) {
                 retryCnt++;
                 try {
+                    LOG.debug("Trying to publish Request Id: {}, Result: {}, to DRPC {}", id, result, host);
                     client.result(id, result);
                     _collector.ack(input);
                     break;
