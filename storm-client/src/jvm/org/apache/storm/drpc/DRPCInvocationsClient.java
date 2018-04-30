@@ -20,6 +20,7 @@ import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.generated.DistributedRPCInvocations;
 import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -32,7 +33,8 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
     private int port;
 
     public DRPCInvocationsClient(Map<String, Object> conf, String host, int port) throws TTransportException {
-        super(conf, ThriftConnectionType.DRPC_INVOCATIONS, host, port, null);
+        super(conf, ThriftConnectionType.DRPC_INVOCATIONS, host, port, ObjectReader
+            .getInt(conf.getOrDefault(org.apache.storm.Config.TOPOLOGY_DRPC_INVOCATIONS_THRIFT_SOCKET_TIMEOUT_MS, 60000), 60000));
         this.host = host;
         this.port = port;
         client.set(new DistributedRPCInvocations.Client(_protocol));

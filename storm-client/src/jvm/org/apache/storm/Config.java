@@ -1002,6 +1002,12 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String DRPC_INVOCATIONS_THREADS = "drpc.invocations.threads";
     /**
+     * ForTopology level DRPC Invocation Client, how long before a Thrift Client socket hangs before timeout and restart the socket with
+     * default of 60000 milliseconds.
+     */
+    @isInteger
+    public static final String TOPOLOGY_DRPC_INVOCATIONS_THRIFT_SOCKET_TIMEOUT_MS = "topology.drpc.invocations.thrift.socket.timeout.ms";
+    /**
      * Initialization parameters for the group mapping service plugin. Provides a way for a
      * @link{STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN}
      * implementation to access optional settings.

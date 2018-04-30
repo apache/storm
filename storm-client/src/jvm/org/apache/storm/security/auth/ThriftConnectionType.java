@@ -29,9 +29,10 @@ public enum ThriftConnectionType {
                Config.SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS, WorkerTokenServiceType.SUPERVISOR, false),
     //A DRPC token only works for the invocations transport, not for the basic thrift transport.
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
-         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, null, false),
-    DRPC_INVOCATIONS(Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null,
-                     Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, WorkerTokenServiceType.DRPC, false),
+         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, null, false), DRPC_INVOCATIONS(
+        Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null, Config.DRPC_INVOCATIONS_THREADS,
+        Config.DRPC_MAX_BUFFER_SIZE, Config.TOPOLOGY_DRPC_INVOCATIONS_THRIFT_SOCKET_TIMEOUT_MS, WorkerTokenServiceType.DRPC,
+        false),
     LOCAL_FAKE;
 
     private final String transConf;
