@@ -86,6 +86,7 @@ public class LocalizedResource extends LocallyCachedBlob {
     private final IAdvancedFSOps fsOps;
     private final String user;
     private final Map<String, Object> conf;
+    private final boolean symLinksDisabled;
     // size of the resource
     private long size = -1;
 
@@ -95,6 +96,7 @@ public class LocalizedResource extends LocallyCachedBlob {
         Path base = getLocalUserFileCacheDir(localBaseDir, user);
         this.baseDir = uncompressed ? getCacheDirForArchives(base) : getCacheDirForFiles(base);
         this.conf = conf;
+        this.symLinksDisabled = (boolean)conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
         this.user = user;
         this.fsOps = fsOps;
         versionFilePath = constructVersionFileName(baseDir, key);
@@ -273,7 +275,7 @@ public class LocalizedResource extends LocallyCachedBlob {
             }
         }
         if (uncompressed) {
-            ServerUtils.unpack(downloadFile.toFile(), finalLocation.toFile());
+            ServerUtils.unpack(downloadFile.toFile(), finalLocation.toFile(), symLinksDisabled);
             LOG.debug("Uncompressed {} to: {}", downloadFile, finalLocation);
         }
         setBlobPermissions(conf, user, finalLocation);
