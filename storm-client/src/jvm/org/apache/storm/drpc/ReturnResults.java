@@ -12,9 +12,7 @@
 
 package org.apache.storm.drpc;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.generated.AuthorizationException;
@@ -27,7 +25,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServiceRegistry;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
@@ -41,7 +38,7 @@ public class ReturnResults extends BaseRichBolt {
     OutputCollector _collector;
     boolean local;
     Map<String, Object> _conf;
-    Map<List, DRPCInvocationsClient> _clients = new HashMap<List, DRPCInvocationsClient>();
+    Map<String, DRPCInvocationsClient> _clients = new HashMap<>();
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
@@ -66,25 +63,7 @@ public class ReturnResults extends BaseRichBolt {
             final String host = (String) retMap.get("host");
             final int port = ObjectReader.getInt(retMap.get("port"));
             String id = (String) retMap.get("id");
-            DistributedRPCInvocations.Iface client;
-            if (local) {
-                client = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(host);
-            } else {
-                List server = new ArrayList() {{
-                    add(host);
-                    add(port);
-                }};
-
-                if (!_clients.containsKey(server)) {
-                    try {
-                        _clients.put(server, new DRPCInvocationsClient(_conf, host, port));
-                    } catch (TTransportException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-                client = _clients.get(server);
-            }
-
+            DistributedRPCInvocations.Iface client = getDRPCClient(host, port);
 
             int retryCnt = 0;
             int maxRetries = 3;
@@ -103,21 +82,32 @@ public class ReturnResults extends BaseRichBolt {
                         LOG.error("Failed to return results to DRPC server", tex);
                         _collector.fail(input);
                     }
-                    reconnectClient((DRPCInvocationsClient) client);
+                    client = getDRPCClient(host, port);
                 }
             }
         }
     }
 
-    private void reconnectClient(DRPCInvocationsClient client) {
-        if (client instanceof DRPCInvocationsClient) {
-            try {
-                LOG.info("reconnecting... ");
-                client.reconnectClient(); //Blocking call
-            } catch (TException e2) {
-                LOG.error("Failed to connect to DRPC server", e2);
+    private DistributedRPCInvocations.Iface getDRPCClient(String host, int port) {
+        DistributedRPCInvocations.Iface client;
+        if (local) {
+            client = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(host);
+        } else {
+            String server = getServer(host, port);
+            if (!_clients.containsKey(server)) {
+                try {
+                    _clients.put(server, new DRPCInvocationsClient(_conf, host, port));
+                } catch (org.apache.thrift.transport.TTransportException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
+            client = _clients.get(server);
         }
+        return client;
+    }
+
+    private String getServer(String host, int port) {
+        return host + port;
     }
 
     @Override
