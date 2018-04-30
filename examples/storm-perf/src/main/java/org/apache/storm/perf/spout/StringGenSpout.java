@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -30,23 +29,31 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 
-/** Spout pre-computes a list with 30k fixed length random strings.
- *  Emits sequentially from this list, over and over again.
+/**
+ * Spout pre-computes a list with 30k fixed length random strings. Emits sequentially from this list, over and over again.
  */
 
 public class StringGenSpout extends BaseRichSpout {
 
     private static final String DEFAULT_FIELD_NAME = "str";
-    private int strLen;
     private final int strCount = 30_000;
+    ArrayList<String> records;
+    private int strLen;
     private String fieldName = DEFAULT_FIELD_NAME;
     private SpoutOutputCollector collector = null;
-    ArrayList<String> records;
     private int curr = 0;
     private int count = 0;
 
     public StringGenSpout(int strLen) {
         this.strLen = strLen;
+    }
+
+    private static ArrayList<String> genStringList(int strLen, int count) {
+        ArrayList<String> result = new ArrayList<String>(count);
+        for (int i = 0; i < count; i++) {
+            result.add(RandomStringUtils.random(strLen));
+        }
+        return result;
     }
 
     public StringGenSpout withFieldName(String fieldName) {
@@ -66,18 +73,10 @@ public class StringGenSpout extends BaseRichSpout {
         this.collector = collector;
     }
 
-    private static ArrayList<String> genStringList(int strLen, int count) {
-        ArrayList<String> result = new ArrayList<String>(count);
-        for (int i = 0; i < count; i++) {
-            result.add( RandomStringUtils.random(strLen) );
-        }
-        return result;
-    }
-
     @Override
     public void nextTuple() {
         List<Object> tuple;
-        if(curr < strCount) {
+        if (curr < strCount) {
             tuple = Collections.singletonList((Object) records.get(curr));
             ++curr;
             collector.emit(tuple, ++count);

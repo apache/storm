@@ -1,30 +1,22 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.hbase.common;
 
 import com.google.common.collect.Lists;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Delete;
@@ -51,7 +43,7 @@ public class HBaseClient implements Closeable {
 
     private HTable table;
 
-    public HBaseClient(Map<String, Object> map , final Configuration configuration, final String tableName) {
+    public HBaseClient(Map<String, Object> map, final Configuration configuration, final String tableName) {
         try {
             UserProvider provider = HBaseSecurityUtil.login(map, configuration);
             this.table = Utils.getTable(provider, configuration, tableName);
@@ -69,16 +61,16 @@ public class HBaseClient implements Closeable {
             for (ColumnList.Column col : cols.getColumns()) {
                 if (col.getTs() > 0) {
                     put.add(
-                            col.getFamily(),
-                            col.getQualifier(),
-                            col.getTs(),
-                            col.getValue()
+                        col.getFamily(),
+                        col.getQualifier(),
+                        col.getTs(),
+                        col.getValue()
                     );
                 } else {
                     put.add(
-                            col.getFamily(),
-                            col.getQualifier(),
-                            col.getValue()
+                        col.getFamily(),
+                        col.getQualifier(),
+                        col.getValue()
                     );
                 }
             }
@@ -90,9 +82,9 @@ public class HBaseClient implements Closeable {
             inc.setDurability(durability);
             for (ColumnList.Counter cnt : cols.getCounters()) {
                 inc.addColumn(
-                        cnt.getFamily(),
-                        cnt.getQualifier(),
-                        cnt.getIncrement()
+                    cnt.getFamily(),
+                    cnt.getQualifier(),
+                    cnt.getIncrement()
                 );
             }
             mutations.add(inc);

@@ -1,12 +1,7 @@
-
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
@@ -28,83 +23,119 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.storm.Config;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.storm.Config;
 import org.apache.storm.hdfs.common.HdfsUtils;
 import org.apache.storm.hdfs.security.HdfsSecurityUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HdfsSpout extends BaseRichSpout {
 
+    // other members
+    private static final Logger LOG = LoggerFactory.getLogger(HdfsSpout.class);
+    private final AtomicBoolean commitTimeElapsed = new AtomicBoolean(false);
+    HashMap<MessageId, List<Object>> inflight = new HashMap<>();
+    LinkedBlockingQueue<HdfsUtils.Pair<MessageId, List<Object>>> retryList = new LinkedBlockingQueue<>();
+    HdfsUtils.Pair<Path, FileLock.LogEntry> lastExpiredLock = null;
     // user configurable
     private String hdfsUri;            // required
     private String readerType;         // required
     private Fields outputFields;       // required
-
     private String sourceDir;        // required
     private Path sourceDirPath;        // required
-
     private String archiveDir;       // required
     private Path archiveDirPath;       // required
-
     private String badFilesDir;      // required
     private Path badFilesDirPath;      // required
-
     private String lockDir;
     private Path lockDirPath;
-
     private int commitFrequencyCount = Configs.DEFAULT_COMMIT_FREQ_COUNT;
     private int commitFrequencySec = Configs.DEFAULT_COMMIT_FREQ_SEC;
     private int maxOutstanding = Configs.DEFAULT_MAX_OUTSTANDING;
     private int lockTimeoutSec = Configs.DEFAULT_LOCK_TIMEOUT;
     private boolean clocksInSync = true;
-
     private String inprogress_suffix = ".inprogress"; // not configurable to prevent change between topology restarts
     private String ignoreSuffix = ".ignore";
-
     private String outputStreamName = null;
-
-    // other members
-    private static final Logger LOG = LoggerFactory.getLogger(HdfsSpout.class);
-
     private ProgressTracker tracker = null;
-
     private FileSystem hdfs;
     private FileReader reader;
-
     private SpoutOutputCollector collector;
-    HashMap<MessageId, List<Object>> inflight = new HashMap<>();
-    LinkedBlockingQueue<HdfsUtils.Pair<MessageId, List<Object>>> retryList = new LinkedBlockingQueue<>();
-
     private Configuration hdfsConfig;
-
     private Map<String, Object> conf = null;
     private FileLock lock;
     private String spoutId = null;
-
-    HdfsUtils.Pair<Path, FileLock.LogEntry> lastExpiredLock = null;
     private long lastExpiredLockTime = 0;
-
     private long tupleCounter = 0;
     private boolean ackEnabled = false;
     private int acksSinceLastCommit = 0;
-    private final AtomicBoolean commitTimeElapsed = new AtomicBoolean(false);
     private Timer commitTimer;
     private boolean fileReadCompletely = true;
 
     private String configKey = Configs.DEFAULT_HDFS_CONFIG_KEY; // key for hdfs Kerberos configs
 
     public HdfsSpout() {
+    }
+
+    private static String getFileProgress(FileReader reader) {
+        return reader.getFilePath() + " " + reader.getFileOffset();
+    }
+
+    private static void releaseLockAndLog(FileLock fLock, String spoutId) {
+        try {
+            if (fLock != null) {
+                fLock.release();
+                LOG.debug("Spout {} released FileLock. SpoutId = {}", fLock.getLockFile(), spoutId);
+            }
+        } catch (IOException e) {
+            LOG.error("Unable to delete lock file : " + fLock.getLockFile() + " SpoutId =" + spoutId, e);
+        }
+    }
+
+    private static void validateOrMakeDir(FileSystem fs, Path dir, String dirDescription) {
+        try {
+            if (fs.exists(dir)) {
+                if (!fs.isDirectory(dir)) {
+                    LOG.error(dirDescription + " directory is a file, not a dir. " + dir);
+                    throw new RuntimeException(dirDescription + " directory is a file, not a dir. " + dir);
+                }
+            } else if (!fs.mkdirs(dir)) {
+                LOG.error("Unable to create " + dirDescription + " directory " + dir);
+                throw new RuntimeException("Unable to create " + dirDescription + " directory " + dir);
+            }
+        } catch (IOException e) {
+            LOG.error("Unable to create " + dirDescription + " directory " + dir, e);
+            throw new RuntimeException("Unable to create " + dirDescription + " directory " + dir, e);
+        }
+    }
+
+    static void checkValidReader(String readerType) {
+        if (readerType.equalsIgnoreCase(Configs.TEXT) || readerType.equalsIgnoreCase(Configs.SEQ)) {
+            return;
+        }
+        try {
+            Class<?> classType = Class.forName(readerType);
+            classType.getConstructor(FileSystem.class, Path.class, Map.class);
+            if (!FileReader.class.isAssignableFrom(classType)) {
+                LOG.error(readerType + " not a FileReader");
+                throw new IllegalArgumentException(readerType + " not a FileReader.");
+            }
+            return;
+        } catch (ClassNotFoundException e) {
+            LOG.error(readerType + " not found in classpath.", e);
+            throw new IllegalArgumentException(readerType + " not found in classpath.", e);
+        } catch (NoSuchMethodException e) {
+            LOG.error(readerType + " is missing the expected constructor for Readers.", e);
+            throw new IllegalArgumentException(readerType + " is missing the expected constuctor for Readers.");
+        }
     }
 
     public HdfsSpout setHdfsUri(String hdfsUri) {
@@ -211,8 +242,8 @@ public class HdfsSpout extends BaseRichSpout {
 
         if (ackEnabled && tracker.size() >= maxOutstanding) {
             LOG.warn("Waiting for more ACKs before generating new tuples. "
-                + "Progress tracker size has reached limit {}, SpoutID {}",
-                 maxOutstanding, spoutId);
+                     + "Progress tracker size has reached limit {}, SpoutID {}",
+                     maxOutstanding, spoutId);
             // Don't emit anything .. allow configured spout wait strategy to kick in
             return;
         }
@@ -260,7 +291,7 @@ public class HdfsSpout extends BaseRichSpout {
                 return;
             } catch (ParseException e) {
                 LOG.error("Parsing error when processing at file location " + getFileProgress(reader)
-                    + ". Skipping remainder of file.", e);
+                          + ". Skipping remainder of file.", e);
                 markFileAsBad(reader.getFilePath());
                 // Note: We don't return from this method on ParseException to avoid triggering the
                 // spout wait strategy (due to no emits). Instead we go back into the loop and
@@ -301,10 +332,6 @@ public class HdfsSpout extends BaseRichSpout {
         commitTimer.schedule(timerTask, commitFrequencySec * 1000);
     }
 
-    private static String getFileProgress(FileReader reader) {
-        return reader.getFilePath() + " " + reader.getFileOffset();
-    }
-
     private void markFileAsDone(Path filePath) {
         try {
             Path newFile = renameCompletedFile(reader.getFilePath());
@@ -321,7 +348,8 @@ public class HdfsSpout extends BaseRichSpout {
         String originalName = new Path(fileNameMinusSuffix).getName();
         Path newFile = new Path(badFilesDirPath + Path.SEPARATOR + originalName);
 
-        LOG.info("Moving bad file {} to {}. Processed it till offset {}. SpoutID= {}", originalName, newFile, tracker.getCommitPosition(), spoutId);
+        LOG.info("Moving bad file {} to {}. Processed it till offset {}. SpoutID= {}", originalName, newFile, tracker.getCommitPosition(),
+                 spoutId);
         try {
             if (!hdfs.rename(file, newFile)) { // seems this can fail by returning false or throwing exception
                 throw new IOException("Move failed for bad file: " + file); // convert false ret value to exception
@@ -341,17 +369,6 @@ public class HdfsSpout extends BaseRichSpout {
         reader = null;
         releaseLockAndLog(lock, spoutId);
         lock = null;
-    }
-
-    private static void releaseLockAndLog(FileLock fLock, String spoutId) {
-        try {
-            if (fLock != null) {
-                fLock.release();
-                LOG.debug("Spout {} released FileLock. SpoutId = {}", fLock.getLockFile(), spoutId);
-            }
-        } catch (IOException e) {
-            LOG.error("Unable to delete lock file : " + fLock.getLockFile() + " SpoutId =" + spoutId, e);
-        }
     }
 
     protected void emitData(List<Object> tuple, MessageId id) {
@@ -512,46 +529,8 @@ public class HdfsSpout extends BaseRichSpout {
         this.commitTimer.cancel();
     }
 
-    private static void validateOrMakeDir(FileSystem fs, Path dir, String dirDescription) {
-        try {
-            if (fs.exists(dir)) {
-                if (!fs.isDirectory(dir)) {
-                    LOG.error(dirDescription + " directory is a file, not a dir. " + dir);
-                    throw new RuntimeException(dirDescription + " directory is a file, not a dir. " + dir);
-                }
-            } else if (!fs.mkdirs(dir)) {
-                LOG.error("Unable to create " + dirDescription + " directory " + dir);
-                throw new RuntimeException("Unable to create " + dirDescription + " directory " + dir);
-            }
-        } catch (IOException e) {
-            LOG.error("Unable to create " + dirDescription + " directory " + dir, e);
-            throw new RuntimeException("Unable to create " + dirDescription + " directory " + dir, e);
-        }
-    }
-
     private String getDefaultLockDir(Path sourceDirPath) {
         return sourceDirPath.toString() + Path.SEPARATOR + Configs.DEFAULT_LOCK_DIR;
-    }
-
-    static void checkValidReader(String readerType) {
-        if (readerType.equalsIgnoreCase(Configs.TEXT) || readerType.equalsIgnoreCase(Configs.SEQ)) {
-            return;
-        }
-        try {
-            Class<?> classType = Class.forName(readerType);
-            classType.getConstructor(FileSystem.class, Path.class, Map.class);
-            if (!FileReader.class.isAssignableFrom(classType)) {
-                LOG.error(readerType + " not a FileReader");
-                throw new IllegalArgumentException(readerType + " not a FileReader.");
-            }
-            return;
-        } catch (ClassNotFoundException e) {
-            LOG.error(readerType + " not found in classpath.", e);
-            throw new IllegalArgumentException(readerType + " not found in classpath.", e);
-        } catch (NoSuchMethodException e) {
-            LOG.error(readerType + " is missing the expected constructor for Readers.", e);
-            throw new IllegalArgumentException(readerType + " is missing the expected constuctor for Readers.");
-        }
     }
 
     @Override

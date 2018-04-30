@@ -1,12 +1,7 @@
-
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
@@ -14,18 +9,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.apache.storm.hdfs.spout;
 
-import org.apache.hadoop.fs.CommonConfigurationKeys;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hdfs.HdfsConfiguration;
-import org.apache.storm.hdfs.common.HdfsUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+package org.apache.storm.hdfs.spout;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -33,19 +18,33 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import org.apache.hadoop.fs.CommonConfigurationKeys;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
+import org.apache.storm.hdfs.common.HdfsUtils;
 import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
+import org.junit.Test;
 
 public class TestFileLock {
 
+    private final Path filesDir = new Path("/tmp/filesdir");
+    private final Path locksDir = new Path("/tmp/locksdir");
     @Rule
     public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule();
-
     private FileSystem fs;
     private HdfsConfiguration conf = new HdfsConfiguration();
 
-    private final Path filesDir = new Path("/tmp/filesdir");
-    private final Path locksDir = new Path("/tmp/locksdir");
+    public static void closeUnderlyingLockFile(FileLock lock) throws ReflectiveOperationException {
+        Method m = FileLock.class.getDeclaredMethod("forceCloseLockFile");
+        m.setAccessible(true);
+        m.invoke(lock);
+    }
 
     @Before
     public void setup() throws IOException {
@@ -307,12 +306,6 @@ public class TestFileLock {
         }
     }
 
-    public static void closeUnderlyingLockFile(FileLock lock) throws ReflectiveOperationException {
-        Method m = FileLock.class.getDeclaredMethod("forceCloseLockFile");
-        m.setAccessible(true);
-        m.invoke(lock);
-    }
-
     /**
      * return null if file not found
      */
@@ -340,9 +333,9 @@ public class TestFileLock {
 
     class FileLockingThread extends Thread {
 
-        private int thdNum;
         private final FileSystem fs;
         public boolean cleanExit = false;
+        private int thdNum;
         private Path fileToLock;
         private Path locksDir;
         private String spoutId;

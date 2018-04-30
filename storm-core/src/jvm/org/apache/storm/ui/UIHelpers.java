@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.ui;
 
 import com.google.common.base.Joiner;
@@ -50,17 +45,19 @@ import org.json.simple.JSONValue;
 public class UIHelpers {
 
     private static final Object[][] PRETTY_SEC_DIVIDERS = {
-            new Object[]{"s", 60},
-            new Object[]{"m", 60},
-            new Object[]{"h", 24},
-            new Object[]{"d", null}};
+        new Object[]{ "s", 60 },
+        new Object[]{ "m", 60 },
+        new Object[]{ "h", 24 },
+        new Object[]{ "d", null }
+    };
 
     private static final Object[][] PRETTY_MS_DIVIDERS = {
-            new Object[]{"ms", 1000},
-            new Object[]{"s", 60},
-            new Object[]{"m", 60},
-            new Object[]{"h", 24},
-            new Object[]{"d", null}};
+        new Object[]{ "ms", 1000 },
+        new Object[]{ "s", 60 },
+        new Object[]{ "m", 60 },
+        new Object[]{ "h", 24 },
+        new Object[]{ "d", null }
+    };
 
     public static String prettyUptimeStr(String val, Object[][] dividers) {
         int uptime = Integer.parseInt(val);
@@ -111,13 +108,13 @@ public class UIHelpers {
 
     public static Map<String, Object> unauthorizedUserJson(String user) {
         return ImmutableMap.of(
-                "error", "No Authorization",
-                "errorMessage", String.format("User %s is not authorized.", user));
+            "error", "No Authorization",
+            "errorMessage", String.format("User %s is not authorized.", user));
     }
 
     private static ServerConnector mkSslConnector(Server server, Integer port, String ksPath, String ksPassword, String ksType,
-                                                     String keyPassword, String tsPath, String tsPassword, String tsType,
-                                                     Boolean needClientAuth, Boolean wantClientAuth, Integer headerBufferSize) {
+                                                  String keyPassword, String tsPath, String tsPassword, String tsType,
+                                                  Boolean needClientAuth, Boolean wantClientAuth, Integer headerBufferSize) {
         SslContextFactory factory = new SslContextFactory();
         factory.setExcludeCipherSuites("SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA");
         factory.setExcludeProtocols("SSLv3");
@@ -145,8 +142,8 @@ public class UIHelpers {
             httpsConfig.setRequestHeaderSize(headerBufferSize);
         }
         ServerConnector sslConnector = new ServerConnector(server,
-                new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString()),
-                new HttpConnectionFactory(httpsConfig));
+                                                           new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString()),
+                                                           new HttpConnectionFactory(httpsConfig));
         sslConnector.setPort(port);
         return sslConnector;
     }
@@ -155,7 +152,7 @@ public class UIHelpers {
                                  String keyPassword, String tsPath, String tsPassword, String tsType,
                                  Boolean needClientAuth, Boolean wantClientAuth) {
         configSsl(server, port, ksPath, ksPassword, ksType, keyPassword,
-                tsPath, tsPassword, tsType, needClientAuth, wantClientAuth, null);
+                  tsPath, tsPassword, tsType, needClientAuth, wantClientAuth, null);
     }
 
     public static void configSsl(Server server, Integer port, String ksPath, String ksPassword, String ksType,
@@ -163,7 +160,7 @@ public class UIHelpers {
                                  Boolean needClientAuth, Boolean wantClientAuth, Integer headerBufferSize) {
         if (port > 0) {
             server.addConnector(mkSslConnector(server, port, ksPath, ksPassword, ksType, keyPassword,
-                    tsPath, tsPassword, tsType, needClientAuth, wantClientAuth, headerBufferSize));
+                                               tsPath, tsPassword, tsType, needClientAuth, wantClientAuth, headerBufferSize));
         }
     }
 
@@ -171,7 +168,9 @@ public class UIHelpers {
         FilterHolder filterHolder = new FilterHolder(new CrossOriginFilter());
         filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
         filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "GET, POST, PUT");
-        filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin, Content-Type, Content-Length, Accept, Origin");
+        filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM,
+                                      "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin, Content-Type, Content-Length, " +
+                                      "Accept, Origin");
         filterHolder.setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*");
         return filterHolder;
     }
@@ -183,7 +182,7 @@ public class UIHelpers {
     public static void configFilter(Server server, Servlet servlet, List<FilterConfiguration> filtersConfs) {
         configFilter(server, servlet, filtersConfs, null);
     }
-    
+
     public static void configFilter(Server server, Servlet servlet, List<FilterConfiguration> filtersConfs, Map<String, String> params) {
         if (filtersConfs != null) {
             ServletHolder servletHolder = new ServletHolder(servlet);
@@ -197,7 +196,7 @@ public class UIHelpers {
             server.setHandler(context);
         }
     }
-    
+
     public static void configFilters(ServletContextHandler context, List<FilterConfiguration> filtersConfs) {
         context.addFilter(corsFilterHandle(), "/*", EnumSet.allOf(DispatcherType.class));
         for (FilterConfiguration filterConf : filtersConfs) {
@@ -256,7 +255,8 @@ public class UIHelpers {
      * Modified version of run-jetty
      * Assumes configurator sets handler.
      */
-    public static void stormRunJetty(Integer port, String host, Integer httpsPort, Integer headerBufferSize, IConfigurator configurator) throws Exception {
+    public static void stormRunJetty(Integer port, String host, Integer httpsPort, Integer headerBufferSize,
+                                     IConfigurator configurator) throws Exception {
         Server s = jettyCreateServer(port, host, httpsPort, headerBufferSize);
         if (configurator != null) {
             configurator.execute(s);
@@ -276,7 +276,9 @@ public class UIHelpers {
         Map<String, String> headersResult = new HashMap<>();
         headersResult.put("Cache-Control", "no-cache, no-store");
         headersResult.put("Access-Control-Allow-Origin", "*");
-        headersResult.put("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Access-Controler-Allow-Origin, X-Requested-By, X-Csrf-Token, Authorization, X-Requested-With");
+        headersResult.put("Access-Control-Allow-Headers",
+                          "Content-Type, Access-Control-Allow-Headers, Access-Controler-Allow-Origin, X-Requested-By, X-Csrf-Token, " +
+                          "Authorization, X-Requested-With");
         if (callback != null) {
             headersResult.put("Content-Type", "application/javascript;charset=utf-8");
         } else {

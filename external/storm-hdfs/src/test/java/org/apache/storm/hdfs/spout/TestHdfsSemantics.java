@@ -1,12 +1,7 @@
-
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
@@ -14,12 +9,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
+
 package org.apache.storm.hdfs.spout;
 
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.notNull;
-
+import java.io.IOException;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileAlreadyExistsException;
@@ -28,24 +21,24 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException;
 import org.apache.hadoop.ipc.RemoteException;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.IOException;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
-import org.junit.Rule;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.notNull;
 
 public class TestHdfsSemantics {
 
+    private final HdfsConfiguration conf = new HdfsConfiguration();
+    private final Path dir = new Path("/tmp/filesdir");
     @Rule
     public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule();
-
     private FileSystem fs;
-    private final HdfsConfiguration conf = new HdfsConfiguration();
-
-    private final Path dir = new Path("/tmp/filesdir");
 
     @Before
     public void setup() throws IOException {
@@ -63,7 +56,7 @@ public class TestHdfsSemantics {
     @Test
     public void testDeleteSemantics() throws Exception {
         Path file = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
-//    try {
+        //    try {
         // 1) Delete absent file - should return false
         Assert.assertFalse(fs.exists(file));
         try {
@@ -130,7 +123,7 @@ public class TestHdfsSemantics {
         }
 
         //2 try to append to a closed file
-        try (FSDataOutputStream os2 = fs.append(file1)) { 
+        try (FSDataOutputStream os2 = fs.append(file1)) {
             assertThat(os2, notNull());
         }
     }

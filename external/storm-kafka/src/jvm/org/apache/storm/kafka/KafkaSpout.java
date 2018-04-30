@@ -1,24 +1,23 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
 import com.google.common.base.Strings;
-
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.storm.Config;
 import org.apache.storm.kafka.PartitionManager.KafkaMessageId;
 import org.apache.storm.kafka.trident.GlobalPartitionInformation;
@@ -30,27 +29,16 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
 // TODO: need to add blacklisting
 // TODO: need to make a best effort to not re-emit messages if don't have to
 public class KafkaSpout extends BaseRichSpout {
-    static enum EmitState {
-        EMITTED_MORE_LEFT,
-        EMITTED_END,
-        NO_EMITTED
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
-
     SpoutConfig _spoutConfig;
     SpoutOutputCollector _collector;
     PartitionCoordinator _coordinator;
     DynamicPartitionConnections _connections;
     ZkState _state;
-
     long _lastUpdateMs = 0;
-
     int _currPartitionIndex = 0;
 
     public KafkaSpout(SpoutConfig spoutConf) {
@@ -81,12 +69,12 @@ public class KafkaSpout extends BaseRichSpout {
         int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
         if (_spoutConfig.hosts instanceof StaticHosts) {
             _coordinator = new StaticCoordinator(_connections, conf,
-                    _spoutConfig, _state, context.getThisTaskIndex(),
-                    totalTasks, context.getThisTaskId(), topologyInstanceId);
+                                                 _spoutConfig, _state, context.getThisTaskIndex(),
+                                                 totalTasks, context.getThisTaskId(), topologyInstanceId);
         } else {
             _coordinator = new ZkCoordinator(_connections, conf,
-                    _spoutConfig, _state, context.getThisTaskIndex(),
-                    totalTasks, context.getThisTaskId(), topologyInstanceId);
+                                             _spoutConfig, _state, context.getThisTaskIndex(),
+                                             totalTasks, context.getThisTaskId(), topologyInstanceId);
         }
 
         context.registerMetric("kafkaOffset", new IMetric() {
@@ -158,7 +146,7 @@ public class KafkaSpout extends BaseRichSpout {
     }
 
     private PartitionManager getManagerForPartition(int partition) {
-        for (PartitionManager partitionManager: _coordinator.getMyManagedPartitions()) {
+        for (PartitionManager partitionManager : _coordinator.getMyManagedPartitions()) {
             if (partitionManager.getPartition().partition == partition) {
                 return partitionManager;
             }
@@ -203,7 +191,7 @@ public class KafkaSpout extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-       if (!Strings.isNullOrEmpty(_spoutConfig.outputStreamId)) {
+        if (!Strings.isNullOrEmpty(_spoutConfig.outputStreamId)) {
             declarer.declareStream(_spoutConfig.outputStreamId, _spoutConfig.scheme.getOutputFields());
         } else {
             declarer.declare(_spoutConfig.scheme.getOutputFields());
@@ -211,7 +199,7 @@ public class KafkaSpout extends BaseRichSpout {
     }
 
     @Override
-    public Map<String, Object> getComponentConfiguration () {
+    public Map<String, Object> getComponentConfiguration() {
         Map<String, Object> configuration = super.getComponentConfiguration();
         if (configuration == null) {
             configuration = new HashMap<>();
@@ -240,7 +228,7 @@ public class KafkaSpout extends BaseRichSpout {
             List<Partition> partitions = globalPartitionInformation.getOrderedPartitions();
             StringBuilder staticPartitions = new StringBuilder();
             StringBuilder leaderHosts = new StringBuilder();
-            for (Partition partition: partitions) {
+            for (Partition partition : partitions) {
                 staticPartitions.append(partition.partition + ",");
                 leaderHosts.append(partition.host.host + ":" + partition.host.port).append(",");
             }
@@ -256,6 +244,12 @@ public class KafkaSpout extends BaseRichSpout {
         for (PartitionManager manager : _coordinator.getMyManagedPartitions()) {
             manager.commit();
         }
+    }
+
+    static enum EmitState {
+        EMITTED_MORE_LEFT,
+        EMITTED_END,
+        NO_EMITTED
     }
 
 }

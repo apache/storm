@@ -1,38 +1,29 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
 import kafka.api.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.storm.kafka.trident.GlobalPartitionInformation;
+import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.utils.Utils;
 import org.junit.After;
 import org.junit.Assert;
@@ -42,13 +33,14 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.storm.kafka.trident.GlobalPartitionInformation;
-import org.apache.storm.spout.SchemeAsMultiScheme;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
-import com.google.common.collect.ImmutableMap;
 public class KafkaUtilsTest {
-    private String TEST_TOPIC = "testTopic";
     private static final Logger LOG = LoggerFactory.getLogger(KafkaUtilsTest.class);
+    private String TEST_TOPIC = "testTopic";
     private KafkaTestBroker broker;
     private SimpleConsumer simpleConsumer;
     private KafkaConfig config;
@@ -73,7 +65,8 @@ public class KafkaUtilsTest {
 
     @Test(expected = FailedFetchException.class)
     public void topicDoesNotExist() throws Exception {
-        KafkaUtils.fetchMessages(config, simpleConsumer, new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), 0);
+        KafkaUtils
+            .fetchMessages(config, simpleConsumer, new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), 0);
     }
 
     @Test(expected = FailedFetchException.class)
@@ -82,7 +75,9 @@ public class KafkaUtilsTest {
         broker.shutdown();
         SimpleConsumer simpleConsumer = new SimpleConsumer("localhost", port, 100, 1024, "testClient");
         try {
-            KafkaUtils.fetchMessages(config, simpleConsumer, new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), OffsetRequest.LatestTime());
+            KafkaUtils
+                .fetchMessages(config, simpleConsumer, new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0),
+                               OffsetRequest.LatestTime());
         } finally {
             simpleConsumer.close();
         }
@@ -94,7 +89,9 @@ public class KafkaUtilsTest {
         createTopicAndSendMessage(value);
         long offset = KafkaUtils.getOffset(simpleConsumer, config.topic, 0, OffsetRequest.LatestTime()) - 1;
         ByteBufferMessageSet messageAndOffsets = KafkaUtils.fetchMessages(config, simpleConsumer,
-                new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), offset);
+                                                                          new Partition(
+                                                                              Broker.fromString(broker.getBrokerConnectionString()),
+                                                                              TEST_TOPIC, 0), offset);
         String message = new String(Utils.toByteArray(messageAndOffsets.iterator().next().message().payload()));
         assertThat(message, is(equalTo(value)));
     }
@@ -103,7 +100,7 @@ public class KafkaUtilsTest {
     public void fetchMessagesWithInvalidOffsetAndDefaultHandlingDisabled() throws Exception {
         config.useStartOffsetTimeIfOffsetOutOfRange = false;
         KafkaUtils.fetchMessages(config, simpleConsumer,
-                new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), -99);
+                                 new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), -99);
     }
 
     @Test(expected = TopicOffsetOutOfRangeException.class)
@@ -112,7 +109,7 @@ public class KafkaUtilsTest {
         String value = "test";
         createTopicAndSendMessage(value);
         KafkaUtils.fetchMessages(config, simpleConsumer,
-                new Partition(Broker.fromString(broker.getBrokerConnectionString()), "newTopic", 0), -99);
+                                 new Partition(Broker.fromString(broker.getBrokerConnectionString()), "newTopic", 0), -99);
     }
 
     @Test
@@ -187,21 +184,21 @@ public class KafkaUtilsTest {
             assertEquals(value, lists.iterator().next().get(0));
         }
     }
-    
+
     @Test
     public void generateTuplesWithMessageAndMetadataScheme() {
         String value = "value";
         Partition mockPartition = Mockito.mock(Partition.class);
         mockPartition.partition = 0;
         long offset = 0L;
-        
+
         MessageMetadataSchemeAsMultiScheme scheme = new MessageMetadataSchemeAsMultiScheme(new StringMessageAndMetadataScheme());
-        
+
         createTopicAndSendMessage(null, value);
         ByteBufferMessageSet messageAndOffsets = getLastMessage();
         for (MessageAndOffset msg : messageAndOffsets) {
             Iterable<List<Object>> lists = KafkaUtils.generateTuples(scheme, msg.message(), mockPartition, offset);
-            List<Object> values = lists.iterator().next(); 
+            List<Object> values = lists.iterator().next();
             assertEquals("Message is incorrect", value, values.get(0));
             assertEquals("Partition is incorrect", mockPartition.partition, values.get(1));
             assertEquals("Offset is incorrect", offset, values.get(2));
@@ -210,12 +207,14 @@ public class KafkaUtilsTest {
 
     private ByteBufferMessageSet getLastMessage() {
         long offsetOfLastMessage = KafkaUtils.getOffset(simpleConsumer, config.topic, 0, OffsetRequest.LatestTime()) - 1;
-        return KafkaUtils.fetchMessages(config, simpleConsumer, new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), offsetOfLastMessage);
+        return KafkaUtils
+            .fetchMessages(config, simpleConsumer, new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0),
+                           offsetOfLastMessage);
     }
 
     private void runGetValueOnlyTuplesTest() {
         String value = "value";
-        
+
         createTopicAndSendMessage(null, value);
         ByteBufferMessageSet messageAndOffsets = getLastMessage();
         for (MessageAndOffset msg : messageAndOffsets) {
@@ -264,13 +263,13 @@ public class KafkaUtilsTest {
     public void assignAllPartitionsToOneTask() {
         runPartitionToTaskMappingTest(32, 32);
     }
-    
+
     public void runPartitionToTaskMappingTest(int numPartitions, int partitionsPerTask) {
         GlobalPartitionInformation globalPartitionInformation = TestUtils.buildPartitionInfo(numPartitions);
         List<GlobalPartitionInformation> partitions = new ArrayList<GlobalPartitionInformation>();
         partitions.add(globalPartitionInformation);
         int numTasks = numPartitions / partitionsPerTask;
-        for (int i = 0 ; i < numTasks ; i++) {
+        for (int i = 0; i < numTasks; i++) {
             assertEquals(partitionsPerTask, KafkaUtils.calculatePartitionsForTask(partitions, numTasks, i, i).size());
         }
     }
@@ -285,7 +284,7 @@ public class KafkaUtilsTest {
         assertEquals(0, KafkaUtils.calculatePartitionsForTask(partitions, numTasks, 1, 1).size());
     }
 
-    @Test (expected = IllegalArgumentException.class )
+    @Test(expected = IllegalArgumentException.class)
     public void assignInvalidTask() {
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(TEST_TOPIC);
         List<GlobalPartitionInformation> partitions = new ArrayList<GlobalPartitionInformation>();

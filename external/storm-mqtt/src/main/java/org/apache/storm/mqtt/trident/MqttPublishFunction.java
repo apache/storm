@@ -1,40 +1,33 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.mqtt.trident;
 
+import java.util.Map;
 import org.apache.storm.Config;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.topology.FailedException;
 import org.apache.storm.mqtt.MqttMessage;
-import org.apache.storm.mqtt.common.MqttOptions;
 import org.apache.storm.mqtt.MqttTupleMapper;
+import org.apache.storm.mqtt.common.MqttOptions;
 import org.apache.storm.mqtt.common.MqttPublisher;
 import org.apache.storm.mqtt.common.SslUtils;
 import org.apache.storm.mqtt.ssl.KeyStoreLoader;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-import java.util.Map;
 
 public class MqttPublishFunction extends BaseFunction {
     private static final Logger LOG = LoggerFactory.getLogger(MqttPublishFunction.class);
@@ -47,7 +40,7 @@ public class MqttPublishFunction extends BaseFunction {
     private transient String topologyName;
 
 
-    public MqttPublishFunction(MqttOptions options, MqttTupleMapper mapper, KeyStoreLoader keyStoreLoader, boolean retain){
+    public MqttPublishFunction(MqttOptions options, MqttTupleMapper mapper, KeyStoreLoader keyStoreLoader, boolean retain) {
         this.options = options;
         this.mapper = mapper;
         this.retain = retain;
@@ -61,7 +54,7 @@ public class MqttPublishFunction extends BaseFunction {
 
     @Override
     public void prepare(Map<String, Object> conf, TridentOperationContext context) {
-        this.topologyName = (String)conf.get(Config.TOPOLOGY_NAME);
+        this.topologyName = (String) conf.get(Config.TOPOLOGY_NAME);
         this.publisher = new MqttPublisher(this.options, this.keyStoreLoader, this.retain);
         try {
             this.publisher.connectMqtt(this.topologyName + "-" + context.getPartitionIndex());

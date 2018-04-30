@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,44 +18,28 @@
 
 package org.apache.storm.rocketmq;
 
-import org.apache.rocketmq.common.message.MessageExt;
+import java.lang.reflect.Field;
+import java.util.Arrays;
 
-public class ConsumerMessage {
-    private String id;
-    private MessageExt data;
-    private long timestamp;
-    private int retries;
+import org.apache.storm.Testing;
+import org.apache.storm.testing.MkTupleParam;
+import org.apache.storm.tuple.Tuple;
 
-    public ConsumerMessage(String id, MessageExt data) {
-        this.id = id;
-        this.data = data;
+public class TestUtils {
+    public static void setFieldValue(Object obj, String fieldName, Object value) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(obj, value);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public ConsumerMessage(MessageExt data) {
-        this(data.getMsgId(), data);
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public MessageExt getData() {
-        return data;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public int getRetries() {
-        return retries;
-    }
-
-    public void setRetries(int retries) {
-        this.retries = retries;
+    public static Tuple generateTestTuple(String field1, String field2, Object value1, Object value2) {
+        MkTupleParam param = new MkTupleParam();
+        param.setFields(field1, field2);
+        Tuple testTuple = Testing.testTuple(Arrays.asList(value1, value2), param);
+        return testTuple;
     }
 }

@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.command;
@@ -21,7 +15,6 @@ package org.apache.storm.command;
 import com.google.common.collect.Sets;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.blobstore.BlobStore;
@@ -45,7 +38,7 @@ public class AdminCommands {
     private static IStormClusterState stormClusterState;
     private static Map<String, Object> conf;
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
 
         if (args.length == 0) {
             throw new IllegalArgumentException("Missing command. Supported command is remove_corrupt_topologies");
@@ -58,7 +51,7 @@ public class AdminCommands {
                 removeCorruptTopologies();
                 break;
             default:
-                LOG.error("****** "+ command + " is not supported. Supported Admin command - \"remove_corrupt_topologies\" ******");
+                LOG.error("****** " + command + " is not supported. Supported Admin command - \"remove_corrupt_topologies\" ******");
                 throw new UnsupportedOperationException(command + " is not a supported admin command.");
         }
 
@@ -66,7 +59,7 @@ public class AdminCommands {
 
     private static void initialize() {
         conf = Utils.readStormConfig();
-        nimbusBlobStore = ServerUtils.getNimbusBlobStore (conf, NimbusInfo.fromConf(conf));
+        nimbusBlobStore = ServerUtils.getNimbusBlobStore(conf, NimbusInfo.fromConf(conf));
         try {
             stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
         } catch (Exception e) {
@@ -75,24 +68,24 @@ public class AdminCommands {
         }
     }
 
-    private static Set<String> getKeyListFromId( String corruptId) {
+    private static Set<String> getKeyListFromId(String corruptId) {
         Set<String> keyLists = new HashSet<>();
         keyLists.add(ConfigUtils.masterStormCodeKey(corruptId));
         keyLists.add(ConfigUtils.masterStormConfKey(corruptId));
-        if(!ConfigUtils.isLocalMode(conf)) {
+        if (!ConfigUtils.isLocalMode(conf)) {
             ConfigUtils.masterStormJarKey(corruptId);
         }
         return keyLists;
     }
 
-    private static void removeCorruptTopologies( ) {
+    private static void removeCorruptTopologies() {
         Iterator<String> corruptTopologies = listCorruptTopologies();
-        while(corruptTopologies.hasNext()) {
+        while (corruptTopologies.hasNext()) {
             String corruptId = corruptTopologies.next();
             stormClusterState.removeStorm(corruptId);
-            if(nimbusBlobStore instanceof LocalFsBlobStore) {
+            if (nimbusBlobStore instanceof LocalFsBlobStore) {
                 Iterator<String> blobKeys = getKeyListFromId(corruptId).iterator();
-                while(blobKeys.hasNext()) {
+                while (blobKeys.hasNext()) {
                     stormClusterState.removeBlobstoreKey(blobKeys.next());
                 }
             }
@@ -109,7 +102,7 @@ public class AdminCommands {
         Set<String> activeTopologyIds = new HashSet<>(stormClusterState.activeStorms());
         Sets.SetView<String> diffTopology = Sets.difference(activeTopologyIds, blobStoreTopologyIds);
         LOG.info("active-topology-ids [{}] blob-topology-ids [{}] diff-topology [{}]",
-                activeTopologyIds.toString(), blobStoreTopologyIds.toString(),diffTopology.toString());
+                 activeTopologyIds.toString(), blobStoreTopologyIds.toString(), diffTopology.toString());
         return diffTopology.iterator();
     }
 }

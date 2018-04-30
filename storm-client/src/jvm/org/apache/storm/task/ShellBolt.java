@@ -15,8 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.task;
 
+import com.google.common.util.concurrent.MoreExecutors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.generated.ShellComponent;
@@ -31,44 +46,25 @@ import org.apache.storm.utils.ShellBoltMessageQueue;
 import org.apache.storm.utils.ShellLogHandler;
 import org.apache.storm.utils.ShellProcess;
 import org.apache.storm.utils.ShellUtils;
-
-import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A bolt that shells out to another process to process tuples. ShellBolt
- * communicates with that process over stdio using a special protocol. An ~100
- * line library is required to implement that protocol, and adapter libraries
- * currently exist for Ruby and Python.
+ * A bolt that shells out to another process to process tuples. ShellBolt communicates with that process over stdio using a special
+ * protocol. An ~100 line library is required to implement that protocol, and adapter libraries currently exist for Ruby and Python.
  *
- * To run a ShellBolt on a cluster, the scripts that are shelled out to must be
- * in the resources directory within the jar submitted to the master.
- * During development/testing on a local machine, that resources directory just
- * needs to be on the classpath.
+ * To run a ShellBolt on a cluster, the scripts that are shelled out to must be in the resources directory within the jar submitted to the
+ * master. During development/testing on a local machine, that resources directory just needs to be on the classpath.
  *
- * When creating topologies using the Java API, subclass this bolt and implement
- * the IRichBolt interface to create components for the topology that use other languages. For example:
+ * When creating topologies using the Java API, subclass this bolt and implement the IRichBolt interface to create components for the
+ * topology that use other languages. For example:
  *
  *
- * ```java
- * public class MyBolt extends ShellBolt implements IRichBolt {
- *      public MyBolt() {
- *          super("python", "mybolt.py");
- *      }
+ * ```java public class MyBolt extends ShellBolt implements IRichBolt { public MyBolt() { super("python", "mybolt.py"); }
  *
- *      public void declareOutputFields(OutputFieldsDeclarer declarer) {
- *          declarer.declare(new Fields("field1", "field2"));
- *      }
- * }
- * ```
+ * public void declareOutputFields(OutputFieldsDeclarer declarer) { declarer.declare(new Fields("field1", "field2")); } } ```
  */
 public class ShellBolt implements IBolt {
     public static final String HEARTBEAT_STREAM_ID = "__heartbeat";
@@ -89,7 +85,7 @@ public class ShellBolt implements IBolt {
 
     private Thread _readerThread;
     private Thread _writerThread;
-    
+
     private TopologyContext _context;
 
     private int workerTimeoutMills;
@@ -117,11 +113,10 @@ public class ShellBolt implements IBolt {
     }
 
     /**
-     * Set if the current working directory of the child process should change
-     * to the resources dir from extracted from the jar, or if it should stay
-     * the same as the worker process to access things from the blob store.
-     * @param changeDirectory true change the directory (default) false
-     * leave the directory the same as the worker process.
+     * Set if the current working directory of the child process should change to the resources dir from extracted from the jar, or if it
+     * should stay the same as the worker process to access things from the blob store.
+     *
+     * @param changeDirectory true change the directory (default) false leave the directory the same as the worker process.
      */
     public void changeChildCWD(boolean changeDirectory) {
         this.changeDirectory = changeDirectory;
@@ -134,7 +129,7 @@ public class ShellBolt implements IBolt {
         }
         Object maxPending = topoConf.get(Config.TOPOLOGY_SHELLBOLT_MAX_PENDING);
         if (maxPending != null) {
-            this._pendingWrites = new ShellBoltMessageQueue(((Number)maxPending).intValue());
+            this._pendingWrites = new ShellBoltMessageQueue(((Number) maxPending).intValue());
         }
 
         _rand = new Random();
@@ -157,7 +152,7 @@ public class ShellBolt implements IBolt {
         Number subpid = _process.launch(topoConf, context, changeDirectory);
         LOG.info("Launched subprocess with pid " + subpid);
 
-        _logHandler =  ShellUtils.getLogHandler(topoConf);
+        _logHandler = ShellUtils.getLogHandler(topoConf);
         _logHandler.setUpContext(ShellBolt.class, _process, _context);
 
         // reader
@@ -186,7 +181,7 @@ public class ShellBolt implements IBolt {
             BoltMsg boltMsg = createBoltMessage(input, genId);
 
             _pendingWrites.putBoltMsg(boltMsg);
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             // It's likely that Bolt is shutting down so no need to throw RuntimeException
             // just ignore
         }
@@ -213,7 +208,7 @@ public class ShellBolt implements IBolt {
 
     private void handleAck(Object id) {
         Tuple acked = _inputs.remove(id);
-        if(acked==null) {
+        if (acked == null) {
             throw new RuntimeException("Acked a non-existent or already acked/failed id: " + id);
         }
         _collector.ack(acked);
@@ -221,7 +216,7 @@ public class ShellBolt implements IBolt {
 
     private void handleFail(Object id) {
         Tuple failed = _inputs.remove(id);
-        if(failed==null) {
+        if (failed == null) {
             throw new RuntimeException("Failed a non-existent or already acked/failed id: " + id);
         }
         _collector.fail(failed);
@@ -244,14 +239,14 @@ public class ShellBolt implements IBolt {
             }
         }
 
-        if(shellMsg.getTask() == 0) {
+        if (shellMsg.getTask() == 0) {
             List<Integer> outtasks = _collector.emit(shellMsg.getStream(), anchors, shellMsg.getTuple());
             if (shellMsg.areTaskIdsNeeded()) {
                 _pendingWrites.putTaskIds(outtasks);
             }
         } else {
             _collector.emitDirect((int) shellMsg.getTask(),
-                    shellMsg.getStream(), anchors, shellMsg.getTuple());
+                                  shellMsg.getStream(), anchors, shellMsg.getTuple());
         }
     }
 
@@ -261,17 +256,17 @@ public class ShellBolt implements IBolt {
         if (name.isEmpty()) {
             throw new RuntimeException("Receive Metrics name is empty");
         }
-        
+
         //get metric by name
         IMetric iMetric = _context.getRegisteredMetricByName(name);
         if (iMetric == null) {
-            throw new RuntimeException("Could not find metric by name["+name+"] ");
+            throw new RuntimeException("Could not find metric by name[" + name + "] ");
         }
-        if ( !(iMetric instanceof IShellMetric)) {
-            throw new RuntimeException("Metric["+name+"] is not IShellMetric, can not call by RPC");
+        if (!(iMetric instanceof IShellMetric)) {
+            throw new RuntimeException("Metric[" + name + "] is not IShellMetric, can not call by RPC");
         }
-        IShellMetric iShellMetric = (IShellMetric)iMetric;
-        
+        IShellMetric iShellMetric = (IShellMetric) iMetric;
+
         //call updateMetricFromRPC with params
         Object paramsObj = shellMsg.getMetricParams();
         try {
@@ -280,7 +275,7 @@ public class ShellBolt implements IBolt {
             throw re;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }       
+        }
     }
 
     private void setHeartbeat() {
@@ -295,8 +290,8 @@ public class ShellBolt implements IBolt {
         String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
         _exception = new RuntimeException(processInfo, exception);
         String message = String.format("Halting process: ShellBolt died. Command: %s, ProcessInfo %s",
-                Arrays.toString(_command),
-                processInfo);
+                                       Arrays.toString(_command),
+                                       processInfo);
         LOG.error(message, exception);
         _collector.reportError(exception);
         if (!_isLocalMode && (_running || (exception instanceof Error))) { //don't exit if not running, unless it is an Error
@@ -317,7 +312,7 @@ public class ShellBolt implements IBolt {
             long lastHeartbeat = getLastHeartbeat();
 
             LOG.debug("BOLT - current time : {}, last heartbeat : {}, worker timeout (ms) : {}",
-                    currentTimeMillis, lastHeartbeat, workerTimeoutMills);
+                      currentTimeMillis, lastHeartbeat, workerTimeoutMills);
 
             if (currentTimeMillis - lastHeartbeat > workerTimeoutMills) {
                 bolt.die(new RuntimeException("subprocess heartbeat timeout"));

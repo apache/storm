@@ -15,16 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.state;
 
-import org.apache.storm.spout.CheckPointState;
-import org.junit.Test;
+package org.apache.storm.state;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.storm.spout.CheckPointState;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link DefaultStateSerializer}

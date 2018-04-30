@@ -1,28 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.solr.mapper;
 
-import static org.apache.storm.solr.schema.SolrFieldTypeFinder.FieldTypeWrapper;
-
 import java.util.LinkedList;
 import java.util.List;
-
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
@@ -36,73 +27,24 @@ import org.apache.storm.tuple.ITuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.storm.solr.schema.SolrFieldTypeFinder.FieldTypeWrapper;
+
 public class SolrFieldsMapper implements SolrMapper {
     private static final Logger log = LoggerFactory.getLogger(SolrFieldsMapper.class);
     private String collection;
     private SolrFieldTypeFinder typeFinder;
     private String multiValueFieldToken;
 
-    public static class Builder {
-        private String collection;
-        private SolrFieldTypeFinder typeFinder;
-        private String multiValueFieldToken = "|";
-
-        /**
-         * {@link SolrFieldsMapper} builder class.
-         * @param schemaBuilder Solr {@link Schema} builder class
-         * @param collection Name of the Solr collection to update using the SolrRequest
-         */
-        public Builder(SchemaBuilder schemaBuilder, String collection) {
-            setTypeFinder(schemaBuilder);
-            this.collection = collection;
-        }
-
-        /**
-         * {@link SolrFieldsMapper} builder class.
-         * @param schemaBuilder Solr {@link Schema} builder class
-         * @param solrClient {@link SolrClient} implementation from where to extract the default Solr collection, if any defined.
-         */
-        public Builder(SchemaBuilder schemaBuilder, SolrClient solrClient) {
-            setTypeFinder(schemaBuilder);
-        }
-
-        //TODO Handle the case where there may be no schema
-        private void setTypeFinder(SchemaBuilder schemaBuilder) {
-            typeFinder = new SolrFieldTypeFinder(schemaBuilder);
-        }
-
-         // Sets {@link SolrFieldsMapper} to use the default Solr collection if there is one defined
-        private void setDefaultCollection(SolrClient solrClient) {
-            String defaultCollection = null;
-            if (solrClient instanceof CloudSolrClient) {
-                defaultCollection = ((CloudSolrClient) solrClient).getDefaultCollection();
-            }
-            this.collection = defaultCollection;
-        }
-
-        /**
-         * Sets the token that separates multivalue fields in tuples. The default token is |
-         * */
-        public Builder setMultiValueFieldToken(String multiValueFieldToken) {
-            this.multiValueFieldToken = multiValueFieldToken;
-            return this;
-        }
-
-        public SolrFieldsMapper build() {
-            return new SolrFieldsMapper(this);
-        }
-    }
-
     private SolrFieldsMapper(Builder builder) {
         this.collection = builder.collection;
         this.typeFinder = builder.typeFinder;
         this.multiValueFieldToken = builder.multiValueFieldToken;
         log.debug("Created {} with the following configuration: [{}] "
-                + this.getClass().getSimpleName(), this.toString());
+                  + this.getClass().getSimpleName(), this.toString());
     }
 
     @Override
-    public void configure()  {
+    public void configure() {
         typeFinder.initialize();
     }
 
@@ -178,9 +120,60 @@ public class SolrFieldsMapper implements SolrMapper {
     @Override
     public String toString() {
         return "SolrFieldsMapper{" +
-                "collection='" + collection + '\'' +
-                ", typeFinder=" + typeFinder +
-                ", multiValueFieldToken='" + multiValueFieldToken + '\'' +
-                '}';
+               "collection='" + collection + '\'' +
+               ", typeFinder=" + typeFinder +
+               ", multiValueFieldToken='" + multiValueFieldToken + '\'' +
+               '}';
+    }
+
+    public static class Builder {
+        private String collection;
+        private SolrFieldTypeFinder typeFinder;
+        private String multiValueFieldToken = "|";
+
+        /**
+         * {@link SolrFieldsMapper} builder class.
+         * @param schemaBuilder Solr {@link Schema} builder class
+         * @param collection Name of the Solr collection to update using the SolrRequest
+         */
+        public Builder(SchemaBuilder schemaBuilder, String collection) {
+            setTypeFinder(schemaBuilder);
+            this.collection = collection;
+        }
+
+        /**
+         * {@link SolrFieldsMapper} builder class.
+         * @param schemaBuilder Solr {@link Schema} builder class
+         * @param solrClient {@link SolrClient} implementation from where to extract the default Solr collection, if any defined.
+         */
+        public Builder(SchemaBuilder schemaBuilder, SolrClient solrClient) {
+            setTypeFinder(schemaBuilder);
+        }
+
+        //TODO Handle the case where there may be no schema
+        private void setTypeFinder(SchemaBuilder schemaBuilder) {
+            typeFinder = new SolrFieldTypeFinder(schemaBuilder);
+        }
+
+        // Sets {@link SolrFieldsMapper} to use the default Solr collection if there is one defined
+        private void setDefaultCollection(SolrClient solrClient) {
+            String defaultCollection = null;
+            if (solrClient instanceof CloudSolrClient) {
+                defaultCollection = ((CloudSolrClient) solrClient).getDefaultCollection();
+            }
+            this.collection = defaultCollection;
+        }
+
+        /**
+         * Sets the token that separates multivalue fields in tuples. The default token is |
+         * */
+        public Builder setMultiValueFieldToken(String multiValueFieldToken) {
+            this.multiValueFieldToken = multiValueFieldToken;
+            return this;
+        }
+
+        public SolrFieldsMapper build() {
+            return new SolrFieldsMapper(this);
+        }
     }
 }

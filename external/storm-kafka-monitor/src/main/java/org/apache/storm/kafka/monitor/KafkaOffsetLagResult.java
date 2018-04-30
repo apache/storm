@@ -61,12 +61,12 @@ public class KafkaOffsetLagResult implements JSONAware {
     @Override
     public String toString() {
         return "KafkaOffsetLagResult{" +
-                "topic='" + topic + '\'' +
-                ", partition=" + partition +
-                ", consumerCommittedOffset=" + consumerCommittedOffset +
-                ", logHeadOffset=" + logHeadOffset +
-                ", lag=" + lag +
-                '}';
+               "topic='" + topic + '\'' +
+               ", partition=" + partition +
+               ", consumerCommittedOffset=" + consumerCommittedOffset +
+               ", logHeadOffset=" + logHeadOffset +
+               ", lag=" + lag +
+               '}';
     }
 
     @Override
@@ -97,6 +97,6 @@ public class KafkaOffsetLagResult implements JSONAware {
     @Override
     public String toJSONString() {
         return "{\"topic\":\"" + topic + "\",\"partition\":" + partition + ",\"consumerCommittedOffset\":" + consumerCommittedOffset + "," +
-                "\"logHeadOffset\":" + logHeadOffset + ",\"lag\":" + lag + "}";
+               "\"logHeadOffset\":" + logHeadOffset + ",\"lag\":" + lag + "}";
     }
 }

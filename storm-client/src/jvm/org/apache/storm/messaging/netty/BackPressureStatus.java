@@ -18,31 +18,30 @@
 
 package org.apache.storm.messaging.netty;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.serialization.KryoValuesSerializer;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicLong;
-
 // Instances of this type are sent from NettyWorker to upstream WorkerTransfer to indicate BackPressure situation
 public class BackPressureStatus {
-    public static final short IDENTIFIER = (short)-600;
+    public static final short IDENTIFIER = (short) -600;
     private static final int SIZE_OF_ID = 2; // size if IDENTIFIER
     private static final int SIZE_OF_INT = 4;
 
     private static AtomicLong bpCount = new AtomicLong(0);
-
-    public String workerId;
     public final long id;                  // monotonically increasing id for correlating sent/recvd msgs. ok if restarts from 0 on crash.
+    public String workerId;
     public Collection<Integer> bpTasks;    // task Ids experiencing BP. can be null
     public Collection<Integer> nonBpTasks; // task Ids no longer experiencing BP. can be null
 
     public BackPressureStatus() {
         this.id = bpCount.incrementAndGet();
     }
+
     public BackPressureStatus(String workerId, Collection<Integer> bpTasks, Collection<Integer> nonBpTasks) {
         this.workerId = workerId;
         this.id = bpCount.incrementAndGet();
@@ -50,15 +49,17 @@ public class BackPressureStatus {
         this.nonBpTasks = nonBpTasks;
     }
 
+    public static BackPressureStatus read(byte[] bytes, KryoValuesDeserializer deserializer) {
+        return (BackPressureStatus) deserializer.deserializeObject(bytes);
+    }
+
     @Override
     public String toString() {
         return "{worker=" + workerId + ", bpStatusId=" + id + ", bpTasks=" + bpTasks + ", nonBpTasks=" + nonBpTasks + '}';
     }
 
-    /** Encoded as
-     *  -600 ... short(2)
-     *  len ... int(4)
-     *  payload ... byte[]     *
+    /**
+     * Encoded as -600 ... short(2) len ... int(4) payload ... byte[]     *
      */
     public ChannelBuffer buffer(KryoValuesSerializer ser) throws IOException {
         byte[] serializedBytes = ser.serializeObject(this);
@@ -67,9 +68,5 @@ public class BackPressureStatus {
         buff.writeInt(serializedBytes.length);
         buff.writeBytes(serializedBytes);
         return buff;
-    }
-
-    public static BackPressureStatus read(byte[] bytes, KryoValuesDeserializer deserializer) {
-        return (BackPressureStatus) deserializer.deserializeObject(bytes);
     }
 }

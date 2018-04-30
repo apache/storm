@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm;
@@ -39,7 +33,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class TickTupleTest {
     private final static Logger LOG = LoggerFactory.getLogger(TickTupleTest.class);
@@ -48,11 +43,11 @@ public class TickTupleTest {
 
     @Test
     public void testTickTupleWorksWithSystemBolt() throws Exception {
-        try (ILocalCluster cluster = new LocalCluster.Builder().withSimulatedTime().build()){
+        try (ILocalCluster cluster = new LocalCluster.Builder().withSimulatedTime().build()) {
             StormTopology topology = createNoOpTopology();
             Config topoConf = new Config();
             topoConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
-            try (ILocalTopology topo = cluster.submitTopology("test", topoConf,  topology)) {
+            try (ILocalTopology topo = cluster.submitTopology("test", topoConf, topology)) {
                 //Give the topology some time to come up
                 long time = 0;
                 int timeout = Math.max(Testing.TEST_TIMEOUT_MS, 100_000);
@@ -65,11 +60,18 @@ public class TickTupleTest {
                 for (int i = 0; i < 5; i++) {
                     cluster.advanceClusterTime(1);
                     time += 1_000;
-                    assertEquals("Iteration " + i, (Long)time, tickTupleTimes.poll(100, TimeUnit.MILLISECONDS));
+                    assertEquals("Iteration " + i, (Long) time, tickTupleTimes.poll(100, TimeUnit.MILLISECONDS));
                 }
             }
             assertNull("The bolt got a tuple that is not a tick tuple " + nonTickTuple.get(), nonTickTuple.get());
         }
+    }
+
+    private StormTopology createNoOpTopology() {
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("Spout", new NoopSpout());
+        builder.setBolt("Bolt", new NoopBolt()).fieldsGrouping("Spout", new Fields("tuple"));
+        return builder.createTopology();
     }
 
     private static class NoopSpout extends BaseRichSpout {
@@ -110,12 +112,5 @@ public class TickTupleTest {
 
         @Override
         public void declareOutputFields(OutputFieldsDeclarer ofd) {}
-    }
-
-    private StormTopology createNoOpTopology() {
-        TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("Spout", new NoopSpout());
-        builder.setBolt("Bolt", new NoopBolt()).fieldsGrouping("Spout", new Fields("tuple"));
-        return builder.createTopology();
     }
 }

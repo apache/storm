@@ -19,7 +19,6 @@
 package org.apache.storm.starter;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.starter.bolt.PrinterBolt;
@@ -40,17 +39,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A simple example that demonstrates the usage of {@link org.apache.storm.topology.IStatefulWindowedBolt} to
- * save the state of the windowing operation to avoid re-computation in case of failures.
+ * A simple example that demonstrates the usage of {@link org.apache.storm.topology.IStatefulWindowedBolt} to save the state of the
+ * windowing operation to avoid re-computation in case of failures.
  * <p>
  * The framework internally manages the window boundaries and does not invoke
- * {@link org.apache.storm.topology.IWindowedBolt#execute(TupleWindow)} for the already evaluated windows in case of restarts
- * during failures. The {@link org.apache.storm.topology.IStatefulBolt#initState(State)}
+ * {@link org.apache.storm.topology.IWindowedBolt#execute(TupleWindow)}
+ * for the already evaluated windows in case of restarts during failures. The
+ * {@link org.apache.storm.topology.IStatefulBolt#initState(State)}
  * is invoked with the previously saved state of the bolt after prepare, before the execute() method is invoked.
  * </p>
  */
 public class StatefulWindowingTopology {
     private static final Logger LOG = LoggerFactory.getLogger(StatefulWindowingTopology.class);
+
+    public static void main(String[] args) throws Exception {
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("spout", new RandomIntegerSpout());
+        builder.setBolt("sumbolt", new WindowSumBolt().withWindow(new Count(5), new Count(3))
+                                                      .withMessageIdField("msgid"), 1).shuffleGrouping("spout");
+        builder.setBolt("printer", new PrinterBolt(), 1).shuffleGrouping("sumbolt");
+        Config conf = new Config();
+        conf.setDebug(false);
+        //conf.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyValueStateProvider");
+
+        String topoName = "test";
+        if (args != null && args.length > 0) {
+            topoName = args[0];
+        }
+        conf.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
+    }
 
     private static class WindowSumBolt extends BaseStatefulWindowedBolt<KeyValueState<String, Long>> {
         private KeyValueState<String, Long> state;
@@ -83,24 +101,6 @@ public class StatefulWindowingTopology {
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
             declarer.declare(new Fields("sum"));
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-        TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new RandomIntegerSpout());
-        builder.setBolt("sumbolt", new WindowSumBolt().withWindow(new Count(5), new Count(3))
-                .withMessageIdField("msgid"), 1).shuffleGrouping("spout");
-        builder.setBolt("printer", new PrinterBolt(), 1).shuffleGrouping("sumbolt");
-        Config conf = new Config();
-        conf.setDebug(false);
-        //conf.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyValueStateProvider");
-        
-        String topoName = "test";
-        if (args != null && args.length > 0) {
-            topoName = args[0];
-        }
-        conf.setNumWorkers(1);
-        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
     }
 
 }

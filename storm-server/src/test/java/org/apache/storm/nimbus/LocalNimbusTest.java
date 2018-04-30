@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.nimbus;
 
 import java.util.ArrayList;
@@ -41,6 +42,19 @@ import org.junit.Test;
  * Tests local cluster with nimbus and a plugin for {@link Config#STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN}.
  */
 public class LocalNimbusTest {
+
+    public static StormTopology createTestTopology() {
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("words", new TestWordSpout(), generateParallelismHint());
+        builder.setBolt("count", new TestWordCounter(), generateParallelismHint()).shuffleGrouping("words");
+        builder.setBolt("globalCount", new TestGlobalCount(), generateParallelismHint()).shuffleGrouping("count");
+
+        return builder.createTopology();
+    }
+
+    private static int generateParallelismHint() {
+        return new Random().nextInt(9) + 1;
+    }
 
     @Test
     public void testSubmitTopologyToLocalNimbus() throws Exception {
@@ -68,19 +82,6 @@ public class LocalNimbusTest {
         }
     }
 
-    public static StormTopology createTestTopology() {
-        TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("words", new TestWordSpout(), generateParallelismHint());
-        builder.setBolt("count", new TestWordCounter(), generateParallelismHint()).shuffleGrouping("words");
-        builder.setBolt("globalCount", new TestGlobalCount(), generateParallelismHint()).shuffleGrouping("count");
-
-        return builder.createTopology();
-    }
-
-    private static int generateParallelismHint() {
-        return new Random().nextInt(9)+1;
-    }
-
     public static class InmemoryTopologySubmitterHook implements ISubmitterHook {
         public static final List<TopologyDetails> submittedTopologies = new ArrayList<>();
 
@@ -106,8 +107,9 @@ public class LocalNimbusTest {
 
             TopologyDetails that = (TopologyDetails) o;
 
-            if (topologyName != null ? !topologyName.equals(that.topologyName) : that.topologyName != null)
+            if (topologyName != null ? !topologyName.equals(that.topologyName) : that.topologyName != null) {
                 return false;
+            }
             return !(stormTopology != null ? !stormTopology.equals(that.stormTopology) : that.stormTopology != null);
 
         }
@@ -122,9 +124,9 @@ public class LocalNimbusTest {
         @Override
         public String toString() {
             return "TopologyDetails{" +
-                    "topologyName='" + topologyName + '\'' +
-                    ", stormTopology=" + stormTopology +
-                    '}';
+                   "topologyName='" + topologyName + '\'' +
+                   ", stormTopology=" + stormTopology +
+                   '}';
         }
     }
 }

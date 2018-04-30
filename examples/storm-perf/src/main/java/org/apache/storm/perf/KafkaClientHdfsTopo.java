@@ -19,7 +19,6 @@
 package org.apache.storm.perf;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hdfs.bolt.HdfsBolt;
@@ -80,8 +79,9 @@ public class KafkaClientHdfsTopo {
         String topicName = getStr(config, KAFKA_TOPIC);
 
         KafkaSpoutConfig<String, String> spoutConfig = KafkaSpoutConfig.builder(bootstrapHosts, topicName)
-            .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST)
-            .build();
+                                                                       .setFirstPollOffsetStrategy(
+                                                                           KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST)
+                                                                       .build();
 
         KafkaSpout<String, String> spout = new KafkaSpout<>(spoutConfig);
 
@@ -106,7 +106,7 @@ public class KafkaClientHdfsTopo {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-            .localOrShuffleGrouping(SPOUT_ID);
+               .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }

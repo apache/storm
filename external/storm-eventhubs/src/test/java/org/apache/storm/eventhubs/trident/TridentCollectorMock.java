@@ -15,43 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.trident;
 
 import java.util.List;
-
 import org.apache.storm.trident.operation.TridentCollector;
 
 /**
  * A mock of TridentCollector
  */
 public class TridentCollectorMock implements TridentCollector {
-  StringBuilder buffer;
-  
-  public TridentCollectorMock() {
-    buffer = new StringBuilder();
-  }
-  
-  @Override
-  public void emit(List<Object> tuples) {
-    for(Object o: tuples) {
-      buffer.append(o.toString());
+    StringBuilder buffer;
+
+    public TridentCollectorMock() {
+        buffer = new StringBuilder();
     }
-  }
 
-  @Override
-  public void flush() {
-    // NO-OP
-  }
+    @Override
+    public void emit(List<Object> tuples) {
+        for (Object o : tuples) {
+            buffer.append(o.toString());
+        }
+    }
 
-  @Override
-  public void reportError(Throwable arg0) {
-  }
+    @Override
+    public void flush() {
+        // NO-OP
+    }
 
-  public void clear() {
-    buffer.setLength(0);
-  }
-  
-  public String getBuffer() {
-    return buffer.toString();
-  }
+    @Override
+    public void reportError(Throwable arg0) {
+    }
+
+    public void clear() {
+        buffer.setLength(0);
+    }
+
+    public String getBuffer() {
+        return buffer.toString();
+    }
 }

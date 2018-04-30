@@ -19,7 +19,6 @@
 package org.apache.storm.perf;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.bolt.DevNullBolt;
@@ -89,7 +88,8 @@ public class ConstSpoutNullBoltTopo {
         //  For reference : numbers taken on MacBook Pro mid 2015
         //    -- ACKer=0:  ~8 mill/sec (batchSz=2k & recvQsize=50k).  6.7 mill/sec (batchSz=1 & recvQsize=1k)
         //    -- ACKer=1:  ~1 mill/sec,   lat= ~1 microsec  (batchSz=1 & bolt.wait.strategy=Park bolt.wait.park.micros=0)
-        //    -- ACKer=1:  ~1.3 mill/sec, lat= ~11 micros   (batchSz=1 & receive.buffer.size=1k, bolt.wait & bp.wait = Progressive[defaults])
+        //    -- ACKer=1:  ~1.3 mill/sec, lat= ~11 micros   (batchSz=1 & receive.buffer.size=1k, bolt.wait & bp.wait =
+        // Progressive[defaults])
         //    -- ACKer=1:  ~1.6 mill/sec, lat= ~300 micros  (batchSz=500 & bolt.wait.strategy=Park bolt.wait.park.micros=0)
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 500);

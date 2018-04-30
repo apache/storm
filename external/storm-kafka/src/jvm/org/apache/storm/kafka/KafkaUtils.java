@@ -1,32 +1,18 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
 import com.google.common.base.Preconditions;
-
-import org.apache.storm.kafka.trident.GlobalPartitionInformation;
-import org.apache.storm.kafka.trident.IBrokerReader;
-import org.apache.storm.kafka.trident.StaticBrokerReader;
-import org.apache.storm.kafka.trident.ZkBrokerReader;
-import org.apache.storm.metric.api.IMetric;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
@@ -39,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import kafka.api.FetchRequest;
 import kafka.api.FetchRequestBuilder;
 import kafka.api.PartitionOffsetRequestInfo;
@@ -49,6 +34,13 @@ import kafka.javaapi.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.Message;
+import org.apache.storm.kafka.trident.GlobalPartitionInformation;
+import org.apache.storm.kafka.trident.IBrokerReader;
+import org.apache.storm.kafka.trident.StaticBrokerReader;
+import org.apache.storm.kafka.trident.ZkBrokerReader;
+import org.apache.storm.metric.api.IMetric;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class KafkaUtils {
@@ -57,7 +49,7 @@ public class KafkaUtils {
     private static final int NO_OFFSET = -5;
 
     //suppress default constructor for noninstantiablility
-    private KafkaUtils(){
+    private KafkaUtils() {
         throw new AssertionError();
     }
 
@@ -80,7 +72,7 @@ public class KafkaUtils {
         Map<TopicAndPartition, PartitionOffsetRequestInfo> requestInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
         requestInfo.put(topicAndPartition, new PartitionOffsetRequestInfo(startOffsetTime, 1));
         OffsetRequest request = new OffsetRequest(
-                requestInfo, kafka.api.OffsetRequest.CurrentVersion(), consumer.clientId());
+            requestInfo, kafka.api.OffsetRequest.CurrentVersion(), consumer.clientId());
 
         long[] offsets = consumer.getOffsetsBefore(request).offsets(topic, partition);
         if (offsets.length > 0) {
@@ -88,6 +80,110 @@ public class KafkaUtils {
         } else {
             return NO_OFFSET;
         }
+    }
+
+    public static ByteBufferMessageSet fetchMessages(KafkaConfig config, SimpleConsumer consumer, Partition partition, long offset)
+        throws TopicOffsetOutOfRangeException, FailedFetchException, RuntimeException {
+        ByteBufferMessageSet msgs = null;
+        String topic = partition.topic;
+        int partitionId = partition.partition;
+        FetchRequestBuilder builder = new FetchRequestBuilder();
+        FetchRequest fetchRequest = builder.addFetch(topic, partitionId, offset, config.fetchSizeBytes).
+            clientId(config.clientId).maxWait(config.fetchMaxWait).minBytes(config.minFetchByte).build();
+        FetchResponse fetchResponse;
+        try {
+            fetchResponse = consumer.fetch(fetchRequest);
+        } catch (Exception e) {
+            if (e instanceof ConnectException ||
+                e instanceof SocketTimeoutException ||
+                e instanceof IOException ||
+                e instanceof UnresolvedAddressException
+                ) {
+                LOG.warn("Network error when fetching messages:", e);
+                throw new FailedFetchException(e);
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+        if (fetchResponse.hasError()) {
+            KafkaError error = KafkaError.getError(fetchResponse.errorCode(topic, partitionId));
+            if (error.equals(KafkaError.OFFSET_OUT_OF_RANGE) && config.useStartOffsetTimeIfOffsetOutOfRange) {
+                String msg = partition + " Got fetch request with offset out of range: [" + offset + "]";
+                LOG.warn(msg);
+                throw new TopicOffsetOutOfRangeException(msg);
+            } else {
+                String message = "Error fetching data from [" + partition + "] for topic [" + topic + "]: [" + error + "]";
+                LOG.error(message);
+                throw new FailedFetchException(message);
+            }
+        } else {
+            msgs = fetchResponse.messageSet(topic, partitionId);
+        }
+        LOG.debug("Messages fetched. [config = {}], [consumer = {}], [partition = {}], [offset = {}], [msgs = {}]", config, consumer,
+                  partition, offset, msgs);
+        return msgs;
+    }
+
+    public static Iterable<List<Object>> generateTuples(KafkaConfig kafkaConfig, Message msg, String topic) {
+        Iterable<List<Object>> tups;
+        ByteBuffer payload = msg.payload();
+        if (payload == null) {
+            return null;
+        }
+        ByteBuffer key = msg.key();
+        if (key != null && kafkaConfig.scheme instanceof KeyValueSchemeAsMultiScheme) {
+            tups = ((KeyValueSchemeAsMultiScheme) kafkaConfig.scheme).deserializeKeyAndValue(key, payload);
+        } else {
+            if (kafkaConfig.scheme instanceof StringMultiSchemeWithTopic) {
+                tups = ((StringMultiSchemeWithTopic) kafkaConfig.scheme).deserializeWithTopic(topic, payload);
+            } else {
+                tups = kafkaConfig.scheme.deserialize(payload);
+            }
+        }
+        return tups;
+    }
+
+    public static Iterable<List<Object>> generateTuples(MessageMetadataSchemeAsMultiScheme scheme, Message msg, Partition partition,
+                                                        long offset) {
+        ByteBuffer payload = msg.payload();
+        if (payload == null) {
+            return null;
+        }
+        return scheme.deserializeMessageWithMetadata(payload, partition, offset);
+    }
+
+    public static List<Partition> calculatePartitionsForTask(List<GlobalPartitionInformation> partitons,
+                                                             int totalTasks, int taskIndex, int taskId) {
+        Preconditions.checkArgument(taskIndex < totalTasks, "task index must be less that total tasks");
+        List<Partition> taskPartitions = new ArrayList<Partition>();
+        List<Partition> partitions = new ArrayList<Partition>();
+        for (GlobalPartitionInformation partitionInformation : partitons) {
+            partitions.addAll(partitionInformation.getOrderedPartitions());
+        }
+        int numPartitions = partitions.size();
+        if (numPartitions < totalTasks) {
+            LOG.warn("there are more tasks than partitions (tasks: " + totalTasks + "; partitions: " + numPartitions +
+                     "), some tasks will be idle");
+        }
+        for (int i = taskIndex; i < numPartitions; i += totalTasks) {
+            Partition taskPartition = partitions.get(i);
+            taskPartitions.add(taskPartition);
+        }
+        logPartitionMapping(totalTasks, taskIndex, taskPartitions, taskId);
+        return taskPartitions;
+    }
+
+    private static void logPartitionMapping(int totalTasks, int taskIndex, List<Partition> taskPartitions, int taskId) {
+        String taskPrefix = taskPrefix(taskIndex, totalTasks, taskId);
+        if (taskPartitions.isEmpty()) {
+            LOG.warn(taskPrefix + " no partitions assigned");
+        } else {
+            LOG.info(taskPrefix + " assigned " + taskPartitions);
+        }
+    }
+
+    public static String taskPrefix(int taskIndex, int totalTasks, int taskId) {
+        return "Task [" + (taskIndex + 1) + "/" + totalTasks + "], Task-ID: " + taskId;
     }
 
     public static class KafkaOffsetMetric implements IMetric {
@@ -103,20 +199,12 @@ public class KafkaUtils {
             _partitionToOffset.put(partition, offsetData);
         }
 
-        private class TopicMetrics {
-            long totalSpoutLag = 0;
-            long totalEarliestTimeOffset = 0;
-            long totalLatestTimeOffset = 0;
-            long totalLatestEmittedOffset = 0;
-            long totalLatestCompletedOffset = 0;
-        }
-
         @Override
         public Object getValueAndReset() {
             try {
                 HashMap<String, Long> ret = new HashMap<>();
                 if (_partitions != null && _partitions.size() == _partitionToOffset.size()) {
-                    Map<String,TopicMetrics> topicMetricsMap = new TreeMap<String, TopicMetrics>();
+                    Map<String, TopicMetrics> topicMetricsMap = new TreeMap<String, TopicMetrics>();
                     for (Map.Entry<Partition, PartitionManager.OffsetData> e : _partitionToOffset.entrySet()) {
                         Partition partition = e.getKey();
                         SimpleConsumer consumer = _connections.getConnection(partition);
@@ -124,8 +212,10 @@ public class KafkaUtils {
                             LOG.warn("partitionToOffset contains partition not found in _connections. Stale partition data?");
                             return null;
                         }
-                        long latestTimeOffset = getOffset(consumer, partition.topic, partition.partition, kafka.api.OffsetRequest.LatestTime());
-                        long earliestTimeOffset = getOffset(consumer, partition.topic, partition.partition, kafka.api.OffsetRequest.EarliestTime());
+                        long latestTimeOffset =
+                            getOffset(consumer, partition.topic, partition.partition, kafka.api.OffsetRequest.LatestTime());
+                        long earliestTimeOffset =
+                            getOffset(consumer, partition.topic, partition.partition, kafka.api.OffsetRequest.EarliestTime());
                         if (latestTimeOffset == KafkaUtils.NO_OFFSET) {
                             LOG.warn("No data found in Kafka Partition " + partition.getId());
                             return null;
@@ -146,7 +236,7 @@ public class KafkaUtils {
                         ret.put(metricPath + "/" + "latestCompletedOffset", latestCompletedOffset);
 
                         if (!topicMetricsMap.containsKey(partition.topic)) {
-                            topicMetricsMap.put(partition.topic,new TopicMetrics());
+                            topicMetricsMap.put(partition.topic, new TopicMetrics());
                         }
 
                         TopicMetrics topicMetrics = topicMetricsMap.get(partition.topic);
@@ -157,7 +247,7 @@ public class KafkaUtils {
                         topicMetrics.totalLatestCompletedOffset += latestCompletedOffset;
                     }
 
-                    for(Map.Entry<String, TopicMetrics> e : topicMetricsMap.entrySet()) {
+                    for (Map.Entry<String, TopicMetrics> e : topicMetricsMap.entrySet()) {
                         String topic = e.getKey();
                         TopicMetrics topicMetrics = e.getValue();
                         ret.put(topic + "/" + "totalSpoutLag", topicMetrics.totalSpoutLag);
@@ -186,108 +276,13 @@ public class KafkaUtils {
                 }
             }
         }
-    }
 
-    public static ByteBufferMessageSet fetchMessages(KafkaConfig config, SimpleConsumer consumer, Partition partition, long offset)
-            throws TopicOffsetOutOfRangeException, FailedFetchException,RuntimeException {
-        ByteBufferMessageSet msgs = null;
-        String topic = partition.topic;
-        int partitionId = partition.partition;
-        FetchRequestBuilder builder = new FetchRequestBuilder();
-        FetchRequest fetchRequest = builder.addFetch(topic, partitionId, offset, config.fetchSizeBytes).
-                clientId(config.clientId).maxWait(config.fetchMaxWait).minBytes(config.minFetchByte).build();
-        FetchResponse fetchResponse;
-        try {
-            fetchResponse = consumer.fetch(fetchRequest);
-        } catch (Exception e) {
-            if (e instanceof ConnectException ||
-                    e instanceof SocketTimeoutException ||
-                    e instanceof IOException ||
-                    e instanceof UnresolvedAddressException
-                    ) {
-                LOG.warn("Network error when fetching messages:", e);
-                throw new FailedFetchException(e);
-            } else {
-                throw new RuntimeException(e);
-            }
+        private class TopicMetrics {
+            long totalSpoutLag = 0;
+            long totalEarliestTimeOffset = 0;
+            long totalLatestTimeOffset = 0;
+            long totalLatestEmittedOffset = 0;
+            long totalLatestCompletedOffset = 0;
         }
-        if (fetchResponse.hasError()) {
-            KafkaError error = KafkaError.getError(fetchResponse.errorCode(topic, partitionId));
-            if (error.equals(KafkaError.OFFSET_OUT_OF_RANGE) && config.useStartOffsetTimeIfOffsetOutOfRange) {
-                String msg = partition + " Got fetch request with offset out of range: [" + offset + "]";
-                LOG.warn(msg);
-                throw new TopicOffsetOutOfRangeException(msg);
-            } else {
-                String message = "Error fetching data from [" + partition + "] for topic [" + topic + "]: [" + error + "]";
-                LOG.error(message);
-                throw new FailedFetchException(message);
-            }
-        } else {
-            msgs = fetchResponse.messageSet(topic, partitionId);
-        }
-        LOG.debug("Messages fetched. [config = {}], [consumer = {}], [partition = {}], [offset = {}], [msgs = {}]", config, consumer, partition, offset, msgs);
-        return msgs;
-    }
-
-
-    public static Iterable<List<Object>> generateTuples(KafkaConfig kafkaConfig, Message msg, String topic) {
-        Iterable<List<Object>> tups;
-        ByteBuffer payload = msg.payload();
-        if (payload == null) {
-            return null;
-        }
-        ByteBuffer key = msg.key();
-        if (key != null && kafkaConfig.scheme instanceof KeyValueSchemeAsMultiScheme) {
-            tups = ((KeyValueSchemeAsMultiScheme) kafkaConfig.scheme).deserializeKeyAndValue(key, payload);
-        } else {
-            if (kafkaConfig.scheme instanceof StringMultiSchemeWithTopic) {
-                tups = ((StringMultiSchemeWithTopic)kafkaConfig.scheme).deserializeWithTopic(topic, payload);
-            } else {
-                tups = kafkaConfig.scheme.deserialize(payload);
-            }
-        }
-        return tups;
-    }
-    
-    public static Iterable<List<Object>> generateTuples(MessageMetadataSchemeAsMultiScheme scheme, Message msg, Partition partition, long offset) {
-        ByteBuffer payload = msg.payload();
-        if (payload == null) {
-            return null;
-        }
-        return scheme.deserializeMessageWithMetadata(payload, partition, offset);
-    }
-
-
-    public static List<Partition> calculatePartitionsForTask(List<GlobalPartitionInformation> partitons,
-            int totalTasks, int taskIndex, int taskId) {
-        Preconditions.checkArgument(taskIndex < totalTasks, "task index must be less that total tasks");
-        List<Partition> taskPartitions = new ArrayList<Partition>();
-        List<Partition> partitions = new ArrayList<Partition>();
-        for(GlobalPartitionInformation partitionInformation : partitons) {
-            partitions.addAll(partitionInformation.getOrderedPartitions());
-        }
-        int numPartitions = partitions.size();
-        if (numPartitions < totalTasks) {
-            LOG.warn("there are more tasks than partitions (tasks: " + totalTasks + "; partitions: " + numPartitions + "), some tasks will be idle");
-        }
-        for (int i = taskIndex; i < numPartitions; i += totalTasks) {
-            Partition taskPartition = partitions.get(i);
-            taskPartitions.add(taskPartition);
-        }
-        logPartitionMapping(totalTasks, taskIndex, taskPartitions, taskId);
-        return taskPartitions;
-    }
-
-    private static void logPartitionMapping(int totalTasks, int taskIndex, List<Partition> taskPartitions, int taskId) {
-        String taskPrefix = taskPrefix(taskIndex, totalTasks, taskId);
-        if (taskPartitions.isEmpty()) {
-            LOG.warn(taskPrefix + " no partitions assigned");
-        } else {
-            LOG.info(taskPrefix + " assigned " + taskPartitions);
-        }
-    }
-
-    public static String taskPrefix(int taskIndex, int totalTasks, int taskId) {
-        return "Task [" + (taskIndex + 1) + "/" + totalTasks + "], Task-ID: " + taskId;
     }
 }

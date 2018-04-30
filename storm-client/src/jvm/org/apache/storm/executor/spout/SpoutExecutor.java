@@ -1,31 +1,23 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.executor.spout;
 
 import com.google.common.collect.ImmutableMap;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
@@ -66,18 +58,18 @@ public class SpoutExecutor extends Executor {
 
     private final IWaitStrategy spoutWaitStrategy;
     private final IWaitStrategy backPressureWaitStrategy;
-    private Integer maxSpoutPending;
     private final AtomicBoolean lastActive;
-    private List<ISpout> spouts;
-    private List<SpoutOutputCollector> outputCollectors;
     private final MutableLong emittedCount;
     private final MutableLong emptyEmitStreak;
     private final SpoutThrottlingMetrics spoutThrottlingMetrics;
     private final boolean hasAckers;
-    private RotatingMap<Long, TupleInfo> pending;
-    SpoutOutputCollectorImpl spoutOutputCollector;
     private final SpoutExecutorStats stats;
     private final BuiltinMetrics builtInMetrics;
+    SpoutOutputCollectorImpl spoutOutputCollector;
+    private Integer maxSpoutPending;
+    private List<ISpout> spouts;
+    private List<SpoutOutputCollector> outputCollectors;
+    private RotatingMap<Long, TupleInfo> pending;
     private long threadId = 0;
 
     public SpoutExecutor(final WorkerState workerData, final List<Long> executorId, Map<String, String> credentials) {
@@ -93,7 +85,7 @@ public class SpoutExecutor extends Executor {
         this.emptyEmitStreak = new MutableLong(0);
         this.spoutThrottlingMetrics = new SpoutThrottlingMetrics();
         this.stats = new SpoutExecutorStats(
-                ConfigUtils.samplingRate(this.getTopoConf()),ObjectReader.getInt(this.getTopoConf().get(Config.NUM_STAT_BUCKETS)));
+            ConfigUtils.samplingRate(this.getTopoConf()), ObjectReader.getInt(this.getTopoConf().get(Config.NUM_STAT_BUCKETS)));
         this.builtInMetrics = new BuiltinSpoutMetrics(stats);
     }
 
@@ -139,8 +131,8 @@ public class SpoutExecutor extends Executor {
             }
             ISpout spoutObject = (ISpout) taskData.getTaskObject();
             spoutOutputCollector = new SpoutOutputCollectorImpl(
-                    spoutObject, this, taskData, emittedCount,
-                    hasAckers, rand, hasEventLoggers, isDebug, pending);
+                spoutObject, this, taskData, emittedCount,
+                hasAckers, rand, hasEventLoggers, isDebug, pending);
             SpoutOutputCollector outputCollector = new SpoutOutputCollector(spoutOutputCollector);
             this.outputCollectors.add(outputCollector);
 
@@ -163,11 +155,12 @@ public class SpoutExecutor extends Executor {
     public Callable<Long> call() throws Exception {
         init(idToTask, idToTaskBase);
         return new Callable<Long>() {
-            int recvqCheckSkips = 0;
             final int recvqCheckSkipCountMax = getSpoutRecvqCheckSkipCount();
+            int recvqCheckSkips = 0;
             int swIdleCount = 0; // counter for spout wait strategy
             int bpIdleCount = 0; // counter for back pressure wait strategy
             int rmspCount = 0;
+
             @Override
             public Long call() throws Exception {
                 int receiveCount = 0;
@@ -350,7 +343,7 @@ public class SpoutExecutor extends Executor {
             }
             if (hasAckers && timeDelta != null) {
                 executor.getStats().spoutAckedTuple(tupleInfo.getStream(), timeDelta,
-                        taskData.getTaskMetrics().getAcked(tupleInfo.getStream()));
+                                                    taskData.getTaskMetrics().getAcked(tupleInfo.getStream()));
             }
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
@@ -368,7 +361,7 @@ public class SpoutExecutor extends Executor {
             new SpoutFailInfo(tupleInfo.getMessageId(), taskId, timeDelta).applyOn(taskData.getUserContext());
             if (timeDelta != null) {
                 executor.getStats().spoutFailedTuple(tupleInfo.getStream(), timeDelta,
-                        taskData.getTaskMetrics().getFailed(tupleInfo.getStream()));
+                                                     taskData.getTaskMetrics().getFailed(tupleInfo.getStream()));
             }
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);

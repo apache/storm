@@ -15,52 +15,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.trident;
 
 import java.util.Map;
-
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 import org.apache.storm.eventhubs.spout.IEventDataScheme;
-
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;
-import org.apache.storm.eventhubs.trident.Partition;
+import org.apache.storm.tuple.Fields;
 
 /**
  * Transactional Trident EventHub Spout
  */
-public class TransactionalTridentEventHubSpout implements 
-  IPartitionedTridentSpout<Partitions, Partition, Map<String, Object>> {
-  private static final long serialVersionUID = 1L;
-  private final IEventDataScheme scheme;
-  private final EventHubSpoutConfig spoutConfig;
-  
-  public TransactionalTridentEventHubSpout(EventHubSpoutConfig config) {
-    spoutConfig = config;
-    scheme = spoutConfig.getEventDataScheme();
-  }
-  
-  @Override
-  public Map<String, Object> getComponentConfiguration() {
-    return null;
-  }
+public class TransactionalTridentEventHubSpout implements
+                                               IPartitionedTridentSpout<Partitions, Partition, Map<String, Object>> {
+    private static final long serialVersionUID = 1L;
+    private final IEventDataScheme scheme;
+    private final EventHubSpoutConfig spoutConfig;
 
-  @Override
-  public IPartitionedTridentSpout.Coordinator<Partitions> getCoordinator(
-      Map<String, Object> conf, TopologyContext context) {
-    return new org.apache.storm.eventhubs.trident.Coordinator(spoutConfig);
-  }
+    public TransactionalTridentEventHubSpout(EventHubSpoutConfig config) {
+        spoutConfig = config;
+        scheme = spoutConfig.getEventDataScheme();
+    }
 
-  @Override
-  public IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, Object>> getEmitter(
-      Map<String, Object> conf, TopologyContext context) {
-    return new TransactionalTridentEventHubEmitter(spoutConfig);
-  }
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        return null;
+    }
 
-  @Override
-  public Fields getOutputFields() {
-    return scheme.getOutputFields();
-  }
+    @Override
+    public IPartitionedTridentSpout.Coordinator<Partitions> getCoordinator(
+        Map<String, Object> conf, TopologyContext context) {
+        return new org.apache.storm.eventhubs.trident.Coordinator(spoutConfig);
+    }
+
+    @Override
+    public IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, Object>> getEmitter(
+        Map<String, Object> conf, TopologyContext context) {
+        return new TransactionalTridentEventHubEmitter(spoutConfig);
+    }
+
+    @Override
+    public Fields getOutputFields() {
+        return scheme.getOutputFields();
+    }
 
 }

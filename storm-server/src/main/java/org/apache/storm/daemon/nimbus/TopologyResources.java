@@ -1,26 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.daemon.nimbus;
 
 import java.util.Collection;
 import java.util.Map;
-
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.WorkerResources;
@@ -29,44 +22,6 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 
 public final class TopologyResources {
-    private static Collection<WorkerResources> getWorkerResources(SchedulerAssignment assignment) {
-        Collection<WorkerResources> ret = null;
-        if (assignment != null) {
-            Map<WorkerSlot, WorkerResources> allResources = assignment.getScheduledResources();
-            if (allResources != null) {
-                ret = allResources.values();
-            }
-        }
-        return ret;
-    }
-
-    private static Collection<WorkerResources> getWorkerResources(Assignment assignment) {
-        Collection<WorkerResources> ret = null;
-        if (assignment != null) {
-            Map<NodeInfo, WorkerResources> allResources = assignment.get_worker_resources();
-            if (allResources != null) {
-                ret = allResources.values();
-            }
-        }
-        return ret;
-    }
-
-    private static Map<String, Double> getNodeIdToSharedOffHeap(SchedulerAssignment assignment) {
-        Map<String, Double> ret = null;
-        if (assignment != null) {
-            ret = assignment.getNodeIdToTotalSharedOffHeapMemory();
-        }
-        return ret;
-    }
-
-    private static Map<String, Double> getNodeIdToSharedOffHeap(Assignment assignment) {
-        Map<String, Double> ret = null;
-        if (assignment != null) {
-            ret = assignment.get_total_shared_off_heap();
-        }
-        return ret;
-    }
-
     private final double requestedMemOnHeap;
     private final double requestedMemOffHeap;
     private final double requestedSharedMemOnHeap;
@@ -81,7 +36,6 @@ public final class TopologyResources {
     private double assignedNonSharedMemOnHeap;
     private double assignedNonSharedMemOffHeap;
     private double assignedCpu;
-
     private TopologyResources(TopologyDetails td, Collection<WorkerResources> workers,
                               Map<String, Double> sharedOffHeap) {
         requestedMemOnHeap = td.getTotalRequestedMemOnHeap();
@@ -125,15 +79,12 @@ public final class TopologyResources {
             assignedMemOffHeap += sharedOff;
         }
     }
-
     public TopologyResources(TopologyDetails td, SchedulerAssignment assignment) {
         this(td, getWorkerResources(assignment), getNodeIdToSharedOffHeap(assignment));
     }
-
     public TopologyResources(TopologyDetails td, Assignment assignment) {
         this(td, getWorkerResources(assignment), getNodeIdToSharedOffHeap(assignment));
     }
-
     public TopologyResources() {
         this(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
@@ -167,6 +118,44 @@ public final class TopologyResources {
         this.assignedNonSharedMemOnHeap = assignedNonSharedMemOnHeap;
         this.assignedNonSharedMemOffHeap = assignedNonSharedMemOffHeap;
         this.assignedCpu = assignedCpu;
+    }
+
+    private static Collection<WorkerResources> getWorkerResources(SchedulerAssignment assignment) {
+        Collection<WorkerResources> ret = null;
+        if (assignment != null) {
+            Map<WorkerSlot, WorkerResources> allResources = assignment.getScheduledResources();
+            if (allResources != null) {
+                ret = allResources.values();
+            }
+        }
+        return ret;
+    }
+
+    private static Collection<WorkerResources> getWorkerResources(Assignment assignment) {
+        Collection<WorkerResources> ret = null;
+        if (assignment != null) {
+            Map<NodeInfo, WorkerResources> allResources = assignment.get_worker_resources();
+            if (allResources != null) {
+                ret = allResources.values();
+            }
+        }
+        return ret;
+    }
+
+    private static Map<String, Double> getNodeIdToSharedOffHeap(SchedulerAssignment assignment) {
+        Map<String, Double> ret = null;
+        if (assignment != null) {
+            ret = assignment.getNodeIdToTotalSharedOffHeapMemory();
+        }
+        return ret;
+    }
+
+    private static Map<String, Double> getNodeIdToSharedOffHeap(Assignment assignment) {
+        Map<String, Double> ret = null;
+        if (assignment != null) {
+            ret = assignment.get_total_shared_off_heap();
+        }
+        return ret;
     }
 
     public double getRequestedMemOnHeap() {
@@ -209,6 +198,10 @@ public final class TopologyResources {
         return assignedSharedMemOnHeap;
     }
 
+    public void setAssignedSharedMemOnHeap(double assignedSharedMemOnHeap) {
+        this.assignedSharedMemOnHeap = assignedSharedMemOnHeap;
+    }
+
     public double getRequestedSharedMemOnHeap() {
         return requestedSharedMemOnHeap;
     }
@@ -223,10 +216,6 @@ public final class TopologyResources {
 
     public double getRequestedNonSharedMemOffHeap() {
         return requestedNonSharedMemOffHeap;
-    }
-
-    public void setAssignedSharedMemOnHeap(double assignedSharedMemOnHeap) {
-        this.assignedSharedMemOnHeap = assignedSharedMemOnHeap;
     }
 
     public double getAssignedSharedMemOffHeap() {

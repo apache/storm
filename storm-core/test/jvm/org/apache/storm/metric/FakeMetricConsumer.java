@@ -1,38 +1,38 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.metric;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
-
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.task.IErrorReporter;
 import org.apache.storm.task.TopologyContext;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 public class FakeMetricConsumer implements IMetricsConsumer {
 
     public static final Table<String, String, Multimap<Integer, Object>> buffer = HashBasedTable.create();
+
+    public static Map<Integer, Collection<Object>> getTaskIdToBuckets(String componentName, String metricName) {
+        synchronized (buffer) {
+            Multimap<Integer, Object> taskIdToBuckets = buffer.get(componentName, metricName);
+            return (null != taskIdToBuckets) ? taskIdToBuckets.asMap() : null;
+        }
+    }
 
     @Override
     public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
@@ -77,12 +77,5 @@ public class FakeMetricConsumer implements IMetricsConsumer {
             expanded.put(dp.name, dp.value);
         }
         return expanded;
-    }
-
-    public static Map<Integer, Collection<Object>> getTaskIdToBuckets(String componentName, String metricName) {
-        synchronized (buffer) {
-            Multimap<Integer, Object> taskIdToBuckets = buffer.get(componentName, metricName);
-            return (null != taskIdToBuckets) ? taskIdToBuckets.asMap() : null;
-        }
     }
 }

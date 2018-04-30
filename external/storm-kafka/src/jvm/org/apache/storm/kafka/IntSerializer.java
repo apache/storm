@@ -15,28 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.kafka;
 
+import java.util.Map;
 import org.apache.kafka.common.serialization.Serializer;
 
-import java.util.Map;
-
 public class IntSerializer implements Serializer<Integer> {
-  @Override
-  public void configure(Map<String, ?> map, boolean b) {
-  }
+    @Override
+    public void configure(Map<String, ?> map, boolean b) {
+    }
 
-  @Override
-  public byte[] serialize(String topic, Integer val) {
-    return new byte[] {
+    @Override
+    public byte[] serialize(String topic, Integer val) {
+        return new byte[]{
             (byte) (val >>> 24),
             (byte) (val >>> 16),
             (byte) (val >>> 8),
             val.byteValue()
         };
-  }
+    }
 
-  @Override
-  public void close() {
-  }
+    @Override
+    public void close() {
+    }
 }

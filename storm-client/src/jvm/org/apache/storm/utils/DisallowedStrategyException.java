@@ -22,9 +22,9 @@ import java.util.List;
 
 public class DisallowedStrategyException extends RuntimeException {
     private String attemptedClass;
-    private List<String>allowedStrategies;
+    private List<String> allowedStrategies;
 
-    
+
     public DisallowedStrategyException(String attemptedClass, List<String> allowedStrategies) {
         this.attemptedClass = attemptedClass;
         this.allowedStrategies = allowedStrategies;
@@ -36,5 +36,5 @@ public class DisallowedStrategyException extends RuntimeException {
 
     public List<String> getAllowedStrategies() {
         return allowedStrategies;
-    }    
+    }
 }

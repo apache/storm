@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.mqtt.common;
 
 import java.io.Serializable;
@@ -34,7 +29,7 @@ public class MqttOptions implements Serializable {
     private boolean willRetain = false;
 
     private long reconnectDelay = 10;
-    private long reconnectDelayMax = 30*1000;
+    private long reconnectDelayMax = 30 * 1000;
     private double reconnectBackOffMultiplier = 2.0f;
     private long reconnectAttemptsMax = -1;
     private long connectAttemptsMax = -1;
@@ -205,7 +200,7 @@ public class MqttOptions implements Serializable {
         this.password = password;
     }
 
-    public int getQos(){
+    public int getQos() {
         return this.qos;
     }
 
@@ -213,14 +208,14 @@ public class MqttOptions implements Serializable {
      * Sets the quality of service to use for MQTT messages. Defaults to 1 (at least once).
      * @param qos
      */
-    public void setQos(int qos){
-        if(qos < 0 || qos > 2){
+    public void setQos(int qos) {
+        if (qos < 0 || qos > 2) {
             throw new IllegalArgumentException("MQTT QoS must be >= 0 and <= 2");
         }
         this.qos = qos;
     }
 
-    public int getWillQos(){
+    public int getWillQos() {
         return this.willQos;
     }
 
@@ -229,14 +224,14 @@ public class MqttOptions implements Serializable {
      *
      * @param qos
      */
-    public void setWillQos(int qos){
-        if(qos < 0 || qos > 2){
+    public void setWillQos(int qos) {
+        if (qos < 0 || qos > 2) {
             throw new IllegalArgumentException("MQTT Will QoS must be >= 0 and <= 2");
         }
         this.willQos = qos;
     }
 
-    public boolean getWillRetain(){
+    public boolean getWillRetain() {
         return this.willRetain;
     }
 
@@ -244,7 +239,7 @@ public class MqttOptions implements Serializable {
      * Set to true if you want the Will message to be published with the retain option.
      * @param retain
      */
-    public void setWillRetain(boolean retain){
+    public void setWillRetain(boolean retain) {
         this.willRetain = retain;
     }
 
@@ -277,12 +272,12 @@ public class MqttOptions implements Serializable {
             return this;
         }
 
-        public Builder willRetain(boolean retain){
+        public Builder willRetain(boolean retain) {
             this.options.willRetain = retain;
             return this;
         }
 
-        public Builder willQos(int qos){
+        public Builder willQos(int qos) {
             this.options.setWillQos(qos);
             return this;
         }
@@ -322,7 +317,7 @@ public class MqttOptions implements Serializable {
             return this;
         }
 
-        public Builder qos(int qos){
+        public Builder qos(int qos) {
             this.options.setQos(qos);
             return this;
         }

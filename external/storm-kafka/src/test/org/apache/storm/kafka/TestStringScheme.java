@@ -15,26 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka;
 
-import org.junit.Test;
+package org.apache.storm.kafka;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 public class TestStringScheme {
-  @Test
-  public void testDeserializeString() {
-    String s = "foo";
-    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-    ByteBuffer direct = ByteBuffer.allocateDirect(bytes.length);
-    direct.put(bytes);
-    direct.flip();
-    String s1 = StringScheme.deserializeString(ByteBuffer.wrap(bytes));
-    String s2 = StringScheme.deserializeString(direct);
-    assertEquals(s, s1);
-    assertEquals(s, s2);
-  }
+    @Test
+    public void testDeserializeString() {
+        String s = "foo";
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer direct = ByteBuffer.allocateDirect(bytes.length);
+        direct.put(bytes);
+        direct.flip();
+        String s1 = StringScheme.deserializeString(ByteBuffer.wrap(bytes));
+        String s2 = StringScheme.deserializeString(direct);
+        assertEquals(s, s1);
+        assertEquals(s, s2);
+    }
 }

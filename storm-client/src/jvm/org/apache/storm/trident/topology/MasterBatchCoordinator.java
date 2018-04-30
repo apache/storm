@@ -1,22 +1,23 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.trident.topology;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import org.apache.storm.Config;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -30,46 +31,32 @@ import org.apache.storm.utils.WindowedTimeThrottler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-
-public class MasterBatchCoordinator extends BaseRichSpout { 
+public class MasterBatchCoordinator extends BaseRichSpout {
     public static final Logger LOG = LoggerFactory.getLogger(MasterBatchCoordinator.class);
-    
+
     public static final long INIT_TXID = 1L;
-    
-    
+
+
     public static final String BATCH_STREAM_ID = "$batch";
     public static final String COMMIT_STREAM_ID = "$commit";
     public static final String SUCCESS_STREAM_ID = "$success";
 
     private static final String CURRENT_TX = "currtx";
     private static final String CURRENT_ATTEMPTS = "currattempts";
-    
-    private List<TransactionalState> _states = new ArrayList();
-    
     TreeMap<Long, TransactionStatus> _activeTx = new TreeMap<Long, TransactionStatus>();
     TreeMap<Long, Integer> _attemptIds;
-    
-    private SpoutOutputCollector _collector;
     Long _currTransaction;
     int _maxTransactionActive;
-    
     List<ITridentSpout.BatchCoordinator> _coordinators = new ArrayList();
-    
-    
     List<String> _managedSpoutIds;
     List<ITridentSpout> _spouts;
     WindowedTimeThrottler _throttler;
-    
     boolean _active = true;
-    
+    private List<TransactionalState> _states = new ArrayList();
+    private SpoutOutputCollector _collector;
+
     public MasterBatchCoordinator(List<String> spoutIds, List<ITridentSpout> spouts) {
-        if(spoutIds.isEmpty()) {
+        if (spoutIds.isEmpty()) {
             throw new IllegalArgumentException("Must manage at least one spout");
         }
         _managedSpoutIds = spoutIds;
@@ -77,7 +64,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         LOG.debug("Created {}", this);
     }
 
-    public List<String> getManagedSpoutIds(){
+    public List<String> getManagedSpoutIds() {
         return _managedSpoutIds;
     }
 
@@ -90,26 +77,26 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     public void deactivate() {
         _active = false;
     }
-        
+
     @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        _throttler = new WindowedTimeThrottler((Number)conf.get(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS), 1);
-        for(String spoutId: _managedSpoutIds) {
+        _throttler = new WindowedTimeThrottler((Number) conf.get(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS), 1);
+        for (String spoutId : _managedSpoutIds) {
             _states.add(TransactionalState.newCoordinatorState(conf, spoutId));
         }
         _currTransaction = getStoredCurrTransaction();
 
         _collector = collector;
         Number active = (Number) conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING);
-        if(active==null) {
+        if (active == null) {
             _maxTransactionActive = 1;
         } else {
             _maxTransactionActive = active.intValue();
         }
         _attemptIds = getStoredCurrAttempts(_currTransaction, _maxTransactionActive);
 
-        
-        for(int i=0; i<_spouts.size(); i++) {
+
+        for (int i = 0; i < _spouts.size(); i++) {
             String txId = _managedSpoutIds.get(i);
             _coordinators.add(_spouts.get(i).getCoordinator(txId, conf, context));
         }
@@ -118,7 +105,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
 
     @Override
     public void close() {
-        for(TransactionalState state: _states) {
+        for (TransactionalState state : _states) {
             state.close();
         }
         LOG.debug("Closed {}", this);
@@ -134,17 +121,17 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         TransactionAttempt tx = (TransactionAttempt) msgId;
         TransactionStatus status = _activeTx.get(tx.getTransactionId());
         LOG.debug("Ack. [tx_attempt = {}], [tx_status = {}], [{}]", tx, status, this);
-        if(status!=null && tx.equals(status.attempt)) {
-            if(status.status==AttemptStatus.PROCESSING) {
+        if (status != null && tx.equals(status.attempt)) {
+            if (status.status == AttemptStatus.PROCESSING) {
                 status.status = AttemptStatus.PROCESSED;
                 LOG.debug("Changed status. [tx_attempt = {}] [tx_status = {}]", tx, status);
-            } else if(status.status==AttemptStatus.COMMITTING) {
+            } else if (status.status == AttemptStatus.COMMITTING) {
                 _activeTx.remove(tx.getTransactionId());
                 _attemptIds.remove(tx.getTransactionId());
                 _collector.emit(SUCCESS_STREAM_ID, new Values(tx));
                 _currTransaction = nextTransactionId(tx.getTransactionId());
-                for(TransactionalState state: _states) {
-                    state.setData(CURRENT_TX, _currTransaction);                    
+                for (TransactionalState state : _states) {
+                    state.setData(CURRENT_TX, _currTransaction);
                 }
                 LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], [{}]", SUCCESS_STREAM_ID, tx, status, this);
             }
@@ -157,12 +144,12 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         TransactionAttempt tx = (TransactionAttempt) msgId;
         TransactionStatus stored = _activeTx.remove(tx.getTransactionId());
         LOG.debug("Fail. [tx_attempt = {}], [tx_status = {}], [{}]", tx, stored, this);
-        if(stored!=null && tx.equals(stored.attempt)) {
+        if (stored != null && tx.equals(stored.attempt)) {
             _activeTx.tailMap(tx.getTransactionId()).clear();
             sync();
         }
     }
-    
+
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         // in partitioned example, in case an emitter task receives a later transaction than it's emitted so far,
@@ -171,43 +158,44 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         declarer.declareStream(COMMIT_STREAM_ID, new Fields("tx"));
         declarer.declareStream(SUCCESS_STREAM_ID, new Fields("tx"));
     }
-    
+
     private void sync() {
         // note that sometimes the tuples active may be less than max_spout_pending, e.g.
         // max_spout_pending = 3
         // tx 1, 2, 3 active, tx 2 is acked. there won't be a commit for tx 2 (because tx 1 isn't committed yet),
         // and there won't be a batch for tx 4 because there's max_spout_pending tx active
         TransactionStatus maybeCommit = _activeTx.get(_currTransaction);
-        if(maybeCommit!=null && maybeCommit.status == AttemptStatus.PROCESSED) {
+        if (maybeCommit != null && maybeCommit.status == AttemptStatus.PROCESSED) {
             maybeCommit.status = AttemptStatus.COMMITTING;
             _collector.emit(COMMIT_STREAM_ID, new Values(maybeCommit.attempt), maybeCommit.attempt);
             LOG.debug("Emitted on [stream = {}], [tx_status = {}], [{}]", COMMIT_STREAM_ID, maybeCommit, this);
         }
-        
-        if(_active) {
-            if(_activeTx.size() < _maxTransactionActive) {
+
+        if (_active) {
+            if (_activeTx.size() < _maxTransactionActive) {
                 Long curr = _currTransaction;
-                for(int i=0; i<_maxTransactionActive; i++) {
-                    if(!_activeTx.containsKey(curr) && isReady(curr)) {
+                for (int i = 0; i < _maxTransactionActive; i++) {
+                    if (!_activeTx.containsKey(curr) && isReady(curr)) {
                         // by using a monotonically increasing attempt id, downstream tasks
                         // can be memory efficient by clearing out state for old attempts
                         // as soon as they see a higher attempt id for a transaction
                         Integer attemptId = _attemptIds.get(curr);
-                        if(attemptId==null) {
+                        if (attemptId == null) {
                             attemptId = 0;
                         } else {
                             attemptId++;
                         }
                         _attemptIds.put(curr, attemptId);
-                        for(TransactionalState state: _states) {
+                        for (TransactionalState state : _states) {
                             state.setData(CURRENT_ATTEMPTS, _attemptIds);
                         }
-                        
+
                         TransactionAttempt attempt = new TransactionAttempt(curr, attemptId);
                         final TransactionStatus newTransactionStatus = new TransactionStatus(attempt);
                         _activeTx.put(curr, newTransactionStatus);
                         _collector.emit(BATCH_STREAM_ID, new Values(attempt), attempt);
-                        LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], [{}]", BATCH_STREAM_ID, attempt, newTransactionStatus, this);
+                        LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], [{}]", BATCH_STREAM_ID, attempt,
+                                  newTransactionStatus, this);
                         _throttler.markEvent();
                     }
                     curr = nextTransactionId(curr);
@@ -215,12 +203,16 @@ public class MasterBatchCoordinator extends BaseRichSpout {
             }
         }
     }
-    
+
     private boolean isReady(long txid) {
-        if(_throttler.isThrottled()) return false;
+        if (_throttler.isThrottled()) {
+            return false;
+        }
         //TODO: make this strategy configurable?... right now it goes if anyone is ready
-        for(ITridentSpout.BatchCoordinator coord: _coordinators) {
-            if(coord.isReady(txid)) return true;
+        for (ITridentSpout.BatchCoordinator coord : _coordinators) {
+            if (coord.isReady(txid)) {
+                return true;
+            }
         }
         return false;
     }
@@ -232,54 +224,34 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         ret.registerSerialization(TransactionAttempt.class);
         return ret;
     }
-    
-    private static enum AttemptStatus {
-        PROCESSING,
-        PROCESSED,
-        COMMITTING
-    }
-    
-    private static class TransactionStatus {
-        TransactionAttempt attempt;
-        AttemptStatus status;
-        
-        public TransactionStatus(TransactionAttempt attempt) {
-            this.attempt = attempt;
-            this.status = AttemptStatus.PROCESSING;
-        }
 
-        @Override
-        public String toString() {
-            return attempt.toString() + " <" + status.toString() + ">";
-        }        
-    }
-    
-    
     private Long nextTransactionId(Long id) {
         return id + 1;
-    }  
-    
+    }
+
     private Long getStoredCurrTransaction() {
         Long ret = INIT_TXID;
-        for(TransactionalState state: _states) {
+        for (TransactionalState state : _states) {
             Long curr = (Long) state.getData(CURRENT_TX);
-            if(curr!=null && curr.compareTo(ret) > 0) {
+            if (curr != null && curr.compareTo(ret) > 0) {
                 ret = curr;
             }
         }
         return ret;
     }
-    
+
     private TreeMap<Long, Integer> getStoredCurrAttempts(long currTransaction, int maxBatches) {
         TreeMap<Long, Integer> ret = new TreeMap<Long, Integer>();
-        for(TransactionalState state: _states) {
+        for (TransactionalState state : _states) {
             Map<Object, Number> attempts = (Map) state.getData(CURRENT_ATTEMPTS);
-            if(attempts==null) attempts = new HashMap();
-            for(Entry<Object, Number> e: attempts.entrySet()) {
+            if (attempts == null) {
+                attempts = new HashMap();
+            }
+            for (Entry<Object, Number> e : attempts.entrySet()) {
                 // this is because json doesn't allow numbers as keys...
                 // TODO: replace json with a better form of encoding
                 Number txidObj;
-                if(e.getKey() instanceof String) {
+                if (e.getKey() instanceof String) {
                     txidObj = Long.parseLong((String) e.getKey());
                 } else {
                     txidObj = (Number) e.getKey();
@@ -287,9 +259,9 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                 long txid = ((Number) txidObj).longValue();
                 int attemptId = ((Number) e.getValue()).intValue();
                 Integer curr = ret.get(txid);
-                if(curr==null || attemptId > curr) {
+                if (curr == null || attemptId > curr) {
                     ret.put(txid, attemptId);
-                }                
+                }
             }
         }
         ret.headMap(currTransaction).clear();
@@ -300,17 +272,38 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     @Override
     public String toString() {
         return "MasterBatchCoordinator{" +
-                "_states=" + _states +
-                ", _activeTx=" + _activeTx +
-                ", _attemptIds=" + _attemptIds +
-                ", _collector=" + _collector +
-                ", _currTransaction=" + _currTransaction +
-                ", _maxTransactionActive=" + _maxTransactionActive +
-                ", _coordinators=" + _coordinators +
-                ", _managedSpoutIds=" + _managedSpoutIds +
-                ", _spouts=" + _spouts +
-                ", _throttler=" + _throttler +
-                ", _active=" + _active +
-                "}";
+               "_states=" + _states +
+               ", _activeTx=" + _activeTx +
+               ", _attemptIds=" + _attemptIds +
+               ", _collector=" + _collector +
+               ", _currTransaction=" + _currTransaction +
+               ", _maxTransactionActive=" + _maxTransactionActive +
+               ", _coordinators=" + _coordinators +
+               ", _managedSpoutIds=" + _managedSpoutIds +
+               ", _spouts=" + _spouts +
+               ", _throttler=" + _throttler +
+               ", _active=" + _active +
+               "}";
+    }
+
+    private static enum AttemptStatus {
+        PROCESSING,
+        PROCESSED,
+        COMMITTING
+    }
+
+    private static class TransactionStatus {
+        TransactionAttempt attempt;
+        AttemptStatus status;
+
+        public TransactionStatus(TransactionAttempt attempt) {
+            this.attempt = attempt;
+            this.status = AttemptStatus.PROCESSING;
+        }
+
+        @Override
+        public String toString() {
+            return attempt.toString() + " <" + status.toString() + ">";
+        }
     }
 }

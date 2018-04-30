@@ -1,37 +1,31 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
-package org.apache.storm.hbase.bolt;
 
-import org.apache.storm.Config;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.commons.lang.Validate;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.storm.hbase.bolt.mapper.HBaseMapper;
-import org.apache.storm.hbase.common.HBaseClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.apache.storm.hbase.bolt;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang.Validate;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.storm.Config;
+import org.apache.storm.hbase.bolt.mapper.HBaseMapper;
+import org.apache.storm.hbase.common.HBaseClient;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // TODO support more configuration options, for now we're defaulting to the hbase-*.xml files found on the classpath
 public abstract class AbstractHBaseBolt extends BaseRichBolt {
@@ -55,15 +49,15 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
         this.collector = collector;
         final Configuration hbConfig = HBaseConfiguration.create();
 
-        Map<String, Object> conf = (Map<String, Object>)topoConf.get(this.configKey);
-        if(conf == null) {
+        Map<String, Object> conf = (Map<String, Object>) topoConf.get(this.configKey);
+        if (conf == null) {
             throw new IllegalArgumentException("HBase configuration not found using key '" + this.configKey + "'");
         }
 
-        if(conf.get("hbase.rootdir") == null) {
+        if (conf.get("hbase.rootdir") == null) {
             LOG.warn("No 'hbase.rootdir' value found in configuration! Using HBase defaults.");
         }
-        for(String key : conf.keySet()) {
+        for (String key : conf.keySet()) {
             hbConfig.set(key, String.valueOf(conf.get(key)));
         }
 

@@ -18,9 +18,8 @@
 
 package org.apache.storm.dependency;
 
-import org.apache.commons.lang.StringUtils;
-
 import java.util.UUID;
+import org.apache.commons.lang.StringUtils;
 
 public class DependencyBlobStoreUtils {
 

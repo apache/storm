@@ -1,26 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.daemon.worker;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -32,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
@@ -89,13 +80,164 @@ import org.slf4j.LoggerFactory;
 public class WorkerState {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
+    private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
     private static long dropCount = 0;
-
     final Map<String, Object> conf;
     final IContext mqContext;
+    final IConnection receiver;
+    final String topologyId;
+    final String assignmentId;
+    final int supervisorPort;
+    final int port;
+    final String workerId;
+    final IStateStorage stateStorage;
+    final IStormClusterState stormClusterState;
+    // when worker bootup, worker will start to setup initial connections to
+    // other workers. When all connection is ready, we will enable this flag
+    // and spout and bolt will be activated.
+    // used in worker only, keep it as atomic
+    final AtomicBoolean isWorkerActive;
+    final AtomicBoolean isTopologyActive;
+    final AtomicReference<Map<String, DebugOptions>> stormComponentToDebug;
+    // local executors and localTaskIds running in this worker
+    final Set<List<Long>> localExecutors;
+    final ArrayList<Integer> localTaskIds;
+    // [taskId]-> JCQueue :  initialized after local executors are initialized
+    final Map<Integer, JCQueue> localReceiveQueues = new HashMap<>();
+    final Map<String, Object> topologyConf;
+    final StormTopology topology;
+    final StormTopology systemTopology;
+    final Map<Integer, String> taskToComponent;
+    final Map<String, Map<String, Fields>> componentToStreamToFields;
+    final Map<String, List<Integer>> componentToSortedTasks;
+    final ConcurrentMap<String, Long> blobToLastKnownVersion;
+    final ReentrantReadWriteLock endpointSocketLock;
+    final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
+    final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
+    final Map<List<Long>, JCQueue> executorReceiveQueueMap;
+    // executor id is in form [start_task_id end_task_id]
+    // short executor id is start_task_id
+    final Map<Integer, JCQueue> shortExecutorReceiveQueueMap;
+    final Map<Integer, Integer> taskToShortExecutor;
+    final Runnable suicideCallback;
+    final Utils.UptimeComputer uptime;
+    final Map<String, Object> defaultSharedResources;
+    final Map<String, Object> userSharedResources;
+    final LoadMapping loadMapping;
+    final AtomicReference<Map<String, VersionedData<Assignment>>> assignmentVersions;
+    // Timers
+    final StormTimer heartbeatTimer = mkHaltingTimer("heartbeat-timer");
+    final StormTimer refreshLoadTimer = mkHaltingTimer("refresh-load-timer");
+    final StormTimer refreshConnectionsTimer = mkHaltingTimer("refresh-connections-timer");
+    final StormTimer refreshCredentialsTimer = mkHaltingTimer("refresh-credentials-timer");
+    final StormTimer checkForUpdatedBlobsTimer = mkHaltingTimer("check-for-updated-blobs-timer");
+    final StormTimer resetLogLevelsTimer = mkHaltingTimer("reset-log-levels-timer");
+    final StormTimer refreshActiveTimer = mkHaltingTimer("refresh-active-timer");
+    final StormTimer executorHeartbeatTimer = mkHaltingTimer("executor-heartbeat-timer");
+    final StormTimer flushTupleTimer = mkHaltingTimer("flush-tuple-timer");
+    final StormTimer userTimer = mkHaltingTimer("user-timer");
+    final StormTimer backPressureCheckTimer = mkHaltingTimer("backpressure-check-timer");
     private final WorkerTransfer workerTransfer;
     private final BackPressureTracker bpTracker;
     private final List<IWorkerHook> deserializedWorkerHooks;
+    // global variables only used internally in class
+    private final Set<Integer> outboundTasks;
+    private final AtomicLong nextLoadUpdate = new AtomicLong(0);
+    private final boolean trySerializeLocal;
+    private final Collection<IAutoCredentials> autoCredentials;
+
+    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId,
+                       int supervisorPort, int port, String workerId, Map<String, Object> topologyConf, IStateStorage stateStorage,
+                       IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials) throws IOException,
+        InvalidTopologyException {
+        this.autoCredentials = autoCredentials;
+        this.conf = conf;
+        this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
+        this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
+        this.receiver = this.mqContext.bind(topologyId, port);
+        this.topologyId = topologyId;
+        this.assignmentId = assignmentId;
+        this.supervisorPort = supervisorPort;
+        this.port = port;
+        this.workerId = workerId;
+        this.stateStorage = stateStorage;
+        this.stormClusterState = stormClusterState;
+        this.isWorkerActive = new AtomicBoolean(false);
+        this.isTopologyActive = new AtomicBoolean(false);
+        this.stormComponentToDebug = new AtomicReference<>();
+        this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors);
+        this.shortExecutorReceiveQueueMap = new HashMap<>();
+        this.localTaskIds = new ArrayList<>();
+        this.blobToLastKnownVersion = new ConcurrentHashMap<>();
+        for (Map.Entry<List<Long>, JCQueue> entry : executorReceiveQueueMap.entrySet()) {
+            this.shortExecutorReceiveQueueMap.put(entry.getKey().get(0).intValue(), entry.getValue());
+            this.localTaskIds.addAll(StormCommon.executorIdToTasks(entry.getKey()));
+        }
+        Collections.sort(localTaskIds);
+        this.topologyConf = topologyConf;
+        this.topology = ConfigUtils.readSupervisorTopology(conf, topologyId, AdvancedFSOps.make(conf));
+        this.systemTopology = StormCommon.systemTopology(topologyConf, topology);
+        this.taskToComponent = StormCommon.stormTaskInfo(topology, topologyConf);
+        this.componentToStreamToFields = new HashMap<>();
+        for (String c : ThriftTopologyUtils.getComponentIds(systemTopology)) {
+            Map<String, Fields> streamToFields = new HashMap<>();
+            for (Map.Entry<String, StreamInfo> stream :
+                ThriftTopologyUtils.getComponentCommon(systemTopology, c).get_streams().entrySet()) {
+                streamToFields.put(stream.getKey(), new Fields(stream.getValue().get_output_fields()));
+            }
+            componentToStreamToFields.put(c, streamToFields);
+        }
+        this.componentToSortedTasks = Utils.reverseMap(taskToComponent);
+        this.componentToSortedTasks.values().forEach(Collections::sort);
+        this.endpointSocketLock = new ReentrantReadWriteLock();
+        this.cachedNodeToPortSocket = new AtomicReference<>(new HashMap<>());
+        this.cachedTaskToNodePort = new AtomicReference<>(new HashMap<>());
+        this.taskToShortExecutor = new HashMap<>();
+        for (List<Long> executor : this.localExecutors) {
+            for (Integer task : StormCommon.executorIdToTasks(executor)) {
+                taskToShortExecutor.put(task, executor.get(0).intValue());
+            }
+        }
+        this.suicideCallback = Utils.mkSuicideFn();
+        this.uptime = Utils.makeUptimeComputer();
+        this.defaultSharedResources = makeDefaultResources();
+        this.userSharedResources = makeUserResources();
+        this.loadMapping = new LoadMapping();
+        this.assignmentVersions = new AtomicReference<>(new HashMap<>());
+        this.outboundTasks = workerOutboundTasks();
+        this.trySerializeLocal = topologyConf.containsKey(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE)
+                                 && (Boolean) topologyConf.get(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
+        if (trySerializeLocal) {
+            LOG.warn("WILL TRY TO SERIALIZE ALL TUPLES (Turn off {} for production", Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
+        }
+        int maxTaskId = getMaxTaskId(componentToSortedTasks);
+        this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
+        this.bpTracker = new BackPressureTracker(workerId, localTaskIds);
+        this.deserializedWorkerHooks = deserializeWorkerHooks();
+    }
+
+    private static double getQueueLoad(JCQueue q) {
+        JCQueue.QueueMetrics qMetrics = q.getMetrics();
+        return ((double) qMetrics.population()) / qMetrics.capacity();
+    }
+
+    public static boolean isConnectionReady(IConnection connection) {
+        return !(connection instanceof ConnectionWithStatus)
+               || ((ConnectionWithStatus) connection).status() == ConnectionWithStatus.Status.Ready;
+    }
+
+    private static int getMaxTaskId(Map<String, List<Integer>> componentToSortedTasks) {
+        int maxTaskId = -1;
+        for (List<Integer> integers : componentToSortedTasks.values()) {
+            if (!integers.isEmpty()) {
+                int tempMax = integers.stream().max(Integer::compareTo).get();
+                if (tempMax > maxTaskId) {
+                    maxTaskId = tempMax;
+                }
+            }
+        }
+        return maxTaskId;
+    }
 
     public List<IWorkerHook> getDeserializedWorkerHooks() {
         return deserializedWorkerHooks;
@@ -201,52 +343,6 @@ public class WorkerState {
         return userSharedResources;
     }
 
-    final IConnection receiver;
-    final String topologyId;
-    final String assignmentId;
-    final int supervisorPort;
-    final int port;
-    final String workerId;
-    final IStateStorage stateStorage;
-    final IStormClusterState stormClusterState;
-
-    // when worker bootup, worker will start to setup initial connections to
-    // other workers. When all connection is ready, we will enable this flag
-    // and spout and bolt will be activated.
-    // used in worker only, keep it as atomic
-    final AtomicBoolean isWorkerActive;
-    final AtomicBoolean isTopologyActive;
-    final AtomicReference<Map<String, DebugOptions>> stormComponentToDebug;
-
-    // local executors and localTaskIds running in this worker
-    final Set<List<Long>> localExecutors;
-    final ArrayList<Integer> localTaskIds;
-
-    // [taskId]-> JCQueue :  initialized after local executors are initialized
-    final Map<Integer, JCQueue> localReceiveQueues = new HashMap<>();
-
-    final Map<String, Object> topologyConf;
-    final StormTopology topology;
-    final StormTopology systemTopology;
-    final Map<Integer, String> taskToComponent;
-    final Map<String, Map<String, Fields>> componentToStreamToFields;
-    final Map<String, List<Integer>> componentToSortedTasks;
-    final ConcurrentMap<String, Long> blobToLastKnownVersion;
-    final ReentrantReadWriteLock endpointSocketLock;
-    final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
-    final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
-    final Map<List<Long>, JCQueue> executorReceiveQueueMap;
-    // executor id is in form [start_task_id end_task_id]
-    // short executor id is start_task_id
-    final Map<Integer, JCQueue> shortExecutorReceiveQueueMap;
-    final Map<Integer, Integer> taskToShortExecutor;
-    final Runnable suicideCallback;
-    final Utils.UptimeComputer uptime;
-    final Map<String, Object> defaultSharedResources;
-    final Map<String, Object> userSharedResources;
-    final LoadMapping loadMapping;
-    final AtomicReference<Map<String, VersionedData<Assignment>>> assignmentVersions;
-
     public LoadMapping getLoadMapping() {
         return loadMapping;
     }
@@ -257,96 +353,6 @@ public class WorkerState {
 
     public StormTimer getUserTimer() {
         return userTimer;
-    }
-
-    // Timers
-    final StormTimer heartbeatTimer = mkHaltingTimer("heartbeat-timer");
-    final StormTimer refreshLoadTimer = mkHaltingTimer("refresh-load-timer");
-    final StormTimer refreshConnectionsTimer = mkHaltingTimer("refresh-connections-timer");
-    final StormTimer refreshCredentialsTimer = mkHaltingTimer("refresh-credentials-timer");
-    final StormTimer checkForUpdatedBlobsTimer = mkHaltingTimer("check-for-updated-blobs-timer");
-    final StormTimer resetLogLevelsTimer = mkHaltingTimer("reset-log-levels-timer");
-    final StormTimer refreshActiveTimer = mkHaltingTimer("refresh-active-timer");
-    final StormTimer executorHeartbeatTimer = mkHaltingTimer("executor-heartbeat-timer");
-    final StormTimer flushTupleTimer = mkHaltingTimer("flush-tuple-timer");
-    final StormTimer userTimer = mkHaltingTimer("user-timer");
-    final StormTimer backPressureCheckTimer = mkHaltingTimer("backpressure-check-timer");
-
-    // global variables only used internally in class
-    private final Set<Integer> outboundTasks;
-    private final AtomicLong nextLoadUpdate = new AtomicLong(0);
-
-    private final boolean trySerializeLocal;
-    private final Collection<IAutoCredentials> autoCredentials;
-    private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
-
-    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId,
-        int supervisorPort, int port, String workerId, Map<String, Object> topologyConf, IStateStorage stateStorage,
-        IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials) throws IOException, InvalidTopologyException {
-        this.autoCredentials = autoCredentials;
-        this.conf = conf;
-        this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
-        this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
-        this.receiver = this.mqContext.bind(topologyId, port);
-        this.topologyId = topologyId;
-        this.assignmentId = assignmentId;
-        this.supervisorPort = supervisorPort;
-        this.port = port;
-        this.workerId = workerId;
-        this.stateStorage = stateStorage;
-        this.stormClusterState = stormClusterState;
-        this.isWorkerActive = new AtomicBoolean(false);
-        this.isTopologyActive = new AtomicBoolean(false);
-        this.stormComponentToDebug = new AtomicReference<>();
-        this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors);
-        this.shortExecutorReceiveQueueMap = new HashMap<>();
-        this.localTaskIds = new ArrayList<>();
-        this.blobToLastKnownVersion = new ConcurrentHashMap<>();
-        for (Map.Entry<List<Long>, JCQueue> entry : executorReceiveQueueMap.entrySet()) {
-            this.shortExecutorReceiveQueueMap.put(entry.getKey().get(0).intValue(), entry.getValue());
-            this.localTaskIds.addAll(StormCommon.executorIdToTasks(entry.getKey()));
-        }
-        Collections.sort(localTaskIds);
-        this.topologyConf = topologyConf;
-        this.topology = ConfigUtils.readSupervisorTopology(conf, topologyId, AdvancedFSOps.make(conf));
-        this.systemTopology = StormCommon.systemTopology(topologyConf, topology);
-        this.taskToComponent = StormCommon.stormTaskInfo(topology, topologyConf);
-        this.componentToStreamToFields = new HashMap<>();
-        for (String c : ThriftTopologyUtils.getComponentIds(systemTopology)) {
-            Map<String, Fields> streamToFields = new HashMap<>();
-            for (Map.Entry<String, StreamInfo> stream :
-                    ThriftTopologyUtils.getComponentCommon(systemTopology, c).get_streams().entrySet()) {
-                streamToFields.put(stream.getKey(), new Fields(stream.getValue().get_output_fields()));
-            }
-            componentToStreamToFields.put(c, streamToFields);
-        }
-        this.componentToSortedTasks = Utils.reverseMap(taskToComponent);
-        this.componentToSortedTasks.values().forEach(Collections::sort);
-        this.endpointSocketLock = new ReentrantReadWriteLock();
-        this.cachedNodeToPortSocket = new AtomicReference<>(new HashMap<>());
-        this.cachedTaskToNodePort = new AtomicReference<>(new HashMap<>());
-        this.taskToShortExecutor = new HashMap<>();
-        for (List<Long> executor : this.localExecutors) {
-            for (Integer task : StormCommon.executorIdToTasks(executor)) {
-                taskToShortExecutor.put(task, executor.get(0).intValue());
-            }
-        }
-        this.suicideCallback = Utils.mkSuicideFn();
-        this.uptime = Utils.makeUptimeComputer();
-        this.defaultSharedResources = makeDefaultResources();
-        this.userSharedResources = makeUserResources();
-        this.loadMapping = new LoadMapping();
-        this.assignmentVersions = new AtomicReference<>(new HashMap<>());
-        this.outboundTasks = workerOutboundTasks();
-        this.trySerializeLocal = topologyConf.containsKey(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE)
-            && (Boolean) topologyConf.get(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
-        if (trySerializeLocal) {
-            LOG.warn("WILL TRY TO SERIALIZE ALL TUPLES (Turn off {} for production", Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
-        }
-        int maxTaskId = getMaxTaskId(componentToSortedTasks);
-        this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
-        this.bpTracker = new BackPressureTracker(workerId, localTaskIds);
-        this.deserializedWorkerHooks = deserializeWorkerHooks();
     }
 
     public void refreshConnections() {
@@ -388,11 +394,11 @@ public class WorkerState {
             Map<NodeInfo, IConnection> next = new HashMap<>(prev);
             for (NodeInfo nodeInfo : newConnections) {
                 next.put(nodeInfo,
-                    mqContext.connect(
-                        topologyId,
-                        assignment.get_node_host().get(nodeInfo.get_node()),    // Host
-                        nodeInfo.get_port().iterator().next().intValue(),       // Port
-                        workerTransfer.getRemoteBackPressureStatus()));
+                         mqContext.connect(
+                             topologyId,
+                             assignment.get_node_host().get(nodeInfo.get_node()),    // Host
+                             nodeInfo.get_port().iterator().next().intValue(),       // Port
+                             workerTransfer.getRemoteBackPressureStatus()));
             }
             return next;
         });
@@ -426,7 +432,7 @@ public class WorkerState {
         StormBase base = stormClusterState.stormBase(topologyId, callback);
         isTopologyActive.set(
             (null != base)
-                    && (base.get_status() == TopologyStatus.ACTIVE) && (isWorkerActive.get()));
+            && (base.get_status() == TopologyStatus.ACTIVE) && (isWorkerActive.get()));
         if (null != base) {
             Map<String, DebugOptions> debugOptionsMap = new HashMap<>(base.get_component_debug());
             for (DebugOptions debugOptions : debugOptionsMap.values()) {
@@ -440,11 +446,6 @@ public class WorkerState {
             stormComponentToDebug.set(debugOptionsMap);
             LOG.debug("Events debug options {}", stormComponentToDebug.get());
         }
-    }
-
-    private static double getQueueLoad(JCQueue q) {
-        JCQueue.QueueMetrics qMetrics = q.getMetrics();
-        return ((double) qMetrics.population()) / qMetrics.capacity();
     }
 
     public void refreshLoad(List<IRunningExecutor> execs) {
@@ -477,31 +478,29 @@ public class WorkerState {
         }
     }
 
-
     /**
-     * we will wait all connections to be ready and then activate the spout/bolt
-     * when the worker bootup.
+     * we will wait all connections to be ready and then activate the spout/bolt when the worker bootup.
      */
     public void activateWorkerWhenAllConnectionsReady() {
         int delaySecs = 0;
         int recurSecs = 1;
         refreshActiveTimer.schedule(delaySecs,
-            () -> {
-                if (areAllConnectionsReady()) {
-                    LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
-                    isWorkerActive.set(Boolean.TRUE);
-                } else {
-                    refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
-                }
-            }
+                                    () -> {
+                                        if (areAllConnectionsReady()) {
+                                            LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
+                                            isWorkerActive.set(Boolean.TRUE);
+                                        } else {
+                                            refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
+                                        }
+                                    }
         );
     }
 
     public void registerCallbacks() {
         LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
         receiver.registerRecv(new DeserializingConnectionCallback(topologyConf,
-            getWorkerTopologyContext(),
-            this::transferLocalBatch));
+                                                                  getWorkerTopologyContext(),
+                                                                  this::transferLocalBatch));
         // Send curr BackPressure status to new clients
         receiver.registerNewConnectionResponse(
             () -> {
@@ -565,8 +564,9 @@ public class WorkerState {
     private void dropMessage(AddressedTuple tuple, JCQueue queue) {
         ++dropCount;
         queue.recordMsgDrop();
-        LOG.warn("Dropping message as overflow threshold has reached for Q = {}. OverflowCount = {}. Total Drop Count= {}, Dropped Message : {}",
-                queue.getName(), queue.getOverflowCount(), dropCount, tuple);
+        LOG.warn(
+            "Dropping message as overflow threshold has reached for Q = {}. OverflowCount = {}. Total Drop Count= {}, Dropped Message : {}",
+            queue.getName(), queue.getOverflowCount(), dropCount, tuple);
     }
 
     public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {
@@ -580,9 +580,9 @@ public class WorkerState {
             String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
             String pidDir = ConfigUtils.workerPidsRoot(conf, topologyId);
             return new WorkerTopologyContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
-                componentToStreamToFields, topologyId, codeDir, pidDir, port, localTaskIds,
-                defaultSharedResources,
-                userSharedResources, cachedTaskToNodePort, assignmentId);
+                                             componentToStreamToFields, topologyId, codeDir, pidDir, port, localTaskIds,
+                                             defaultSharedResources,
+                                             userSharedResources, cachedTaskToNodePort, assignmentId);
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -621,15 +621,10 @@ public class WorkerState {
 
     public boolean areAllConnectionsReady() {
         return cachedNodeToPortSocket.get().values()
-            .stream()
-            .map(WorkerState::isConnectionReady)
-            .reduce((left, right) -> left && right)
-            .orElse(true);
-    }
-
-    public static boolean isConnectionReady(IConnection connection) {
-        return !(connection instanceof ConnectionWithStatus)
-            || ((ConnectionWithStatus) connection).status() == ConnectionWithStatus.Status.Ready;
+                                     .stream()
+                                     .map(WorkerState::isConnectionReady)
+                                     .reduce((left, right) -> left && right)
+                                     .orElse(true);
     }
 
     public Collection<IAutoCredentials> getAutoCredentials() {
@@ -654,7 +649,7 @@ public class WorkerState {
     private Assignment getLocalAssignment(Map<String, Object> conf, IStormClusterState stormClusterState, String topologyId) {
         if (!ConfigUtils.isLocalMode(conf)) {
             try (SupervisorClient supervisorClient = SupervisorClient.getConfiguredClient(conf, Utils.hostname(),
-                    supervisorPort)) {
+                                                                                          supervisorPort)) {
                 Assignment assignment = supervisorClient.getClient().getLocalAssignmentForStorm(topologyId);
                 return assignment;
             } catch (Throwable tr1) {
@@ -673,7 +668,8 @@ public class WorkerState {
 
         if (recvBatchSize > recvQueueSize / 2) {
             throw new IllegalArgumentException(Config.TOPOLOGY_PRODUCER_BATCH_SIZE + ":" + recvBatchSize
-                    + " is greater than half of " + Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE + ":" + recvQueueSize);
+                                               + " is greater than half of " + Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE + ":" +
+                                               recvQueueSize);
         }
 
         IWaitStrategy backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
@@ -681,8 +677,8 @@ public class WorkerState {
         for (List<Long> executor : executors) {
             int port = this.getPort();
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
-                recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
-                    this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, this.getPort()));
+                                                      recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
+                                                      this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, this.getPort()));
 
         }
         return receiveQueueMap;
@@ -695,10 +691,10 @@ public class WorkerState {
 
     private Map<String, Object> makeUserResources() {
         /* TODO: need to invoke a hook provided by the topology, giving it a chance to create user resources.
-        * this would be part of the initialization hook
-        * need to separate workertopologycontext into WorkerContext and WorkerUserContext.
-        * actually just do it via interfaces. just need to make sure to hide setResource from tasks
-        */
+         * this would be part of the initialization hook
+         * need to separate workertopologycontext into WorkerContext and WorkerUserContext.
+         * actually just do it via interfaces. just need to make sure to hide setResource from tasks
+         */
         return new HashMap<>();
     }
 
@@ -735,21 +731,27 @@ public class WorkerState {
         return this.outboundTasks;
     }
 
-    public void haltWorkerTransfer() {
-        workerTransfer.haltTransferThd();
+    /**
+     * Check if this worker has remote outbound tasks.
+     * @return true if this worker has remote outbound tasks; false otherwise.
+     */
+    public boolean hasRemoteOutboundTasks() {
+        Set<Integer> remoteTasks = Sets.difference(new HashSet<>(outboundTasks), new HashSet<>(localTaskIds));
+        return !remoteTasks.isEmpty();
     }
 
-    private static int getMaxTaskId(Map<String, List<Integer>> componentToSortedTasks) {
-        int maxTaskId = -1;
-        for (List<Integer> integers : componentToSortedTasks.values()) {
-            if (!integers.isEmpty()) {
-                int tempMax = integers.stream().max(Integer::compareTo).get();
-                if (tempMax > maxTaskId) {
-                    maxTaskId = tempMax;
-                }
-            }
-        }
-        return maxTaskId;
+    /**
+     * If all the tasks are local tasks, the topology has only one worker.
+     * @return true if this worker is the single worker; false otherwise.
+     */
+    public boolean isSingleWorker() {
+        Set<Integer> nonLocalTasks = Sets.difference(getTaskToComponent().keySet(),
+                new HashSet<>(localTaskIds));
+        return nonLocalTasks.isEmpty();
+    }
+
+    public void haltWorkerTransfer() {
+        workerTransfer.haltTransferThd();
     }
 
     public JCQueue getTransferQueue() {

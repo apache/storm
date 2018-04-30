@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.starter;
@@ -22,7 +16,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.task.OutputCollector;
@@ -39,53 +32,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
 public class ResourceAwareExampleTopology {
-    public static class ExclamationBolt extends BaseRichBolt {
-        //Have a crummy cache to show off shared memory accounting
-        private static final ConcurrentHashMap<String, String> myCrummyCache =
-            new ConcurrentHashMap<>();
-        private static final int CACHE_SIZE = 100_000;
-        OutputCollector _collector;
-
-        protected static String getFromCache(String key) {
-            return myCrummyCache.get(key);
-        }
-
-        protected static void addToCache(String key, String value) {
-            myCrummyCache.putIfAbsent(key, value);
-            int numToRemove = myCrummyCache.size() - CACHE_SIZE;
-            if (numToRemove > 0) {
-                //Remove something randomly...
-                Iterator<Entry<String, String>> it = myCrummyCache.entrySet().iterator();
-                for (; numToRemove > 0 && it.hasNext(); numToRemove--) {
-                    it.next();
-                    it.remove();
-                }
-            }
-        }
-
-        @Override
-        public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
-            _collector = collector;
-        }
-
-        @Override
-        public void execute(Tuple tuple) {
-            String orig = tuple.getString(0);
-            String ret = getFromCache(orig);
-            if (ret == null) {
-                ret = orig + "!!!";
-                addToCache(orig, ret);
-            }
-            _collector.emit(tuple, new Values(ret));
-            _collector.ack(tuple);
-        }
-
-        @Override
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("word"));
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
@@ -153,5 +99,52 @@ public class ResourceAwareExampleTopology {
         }
 
         StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
+    }
+
+    public static class ExclamationBolt extends BaseRichBolt {
+        //Have a crummy cache to show off shared memory accounting
+        private static final ConcurrentHashMap<String, String> myCrummyCache =
+            new ConcurrentHashMap<>();
+        private static final int CACHE_SIZE = 100_000;
+        OutputCollector _collector;
+
+        protected static String getFromCache(String key) {
+            return myCrummyCache.get(key);
+        }
+
+        protected static void addToCache(String key, String value) {
+            myCrummyCache.putIfAbsent(key, value);
+            int numToRemove = myCrummyCache.size() - CACHE_SIZE;
+            if (numToRemove > 0) {
+                //Remove something randomly...
+                Iterator<Entry<String, String>> it = myCrummyCache.entrySet().iterator();
+                for (; numToRemove > 0 && it.hasNext(); numToRemove--) {
+                    it.next();
+                    it.remove();
+                }
+            }
+        }
+
+        @Override
+        public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
+            _collector = collector;
+        }
+
+        @Override
+        public void execute(Tuple tuple) {
+            String orig = tuple.getString(0);
+            String ret = getFromCache(orig);
+            if (ret == null) {
+                ret = orig + "!!!";
+                addToCache(orig, ret);
+            }
+            _collector.emit(tuple, new Values(ret));
+            _collector.ack(tuple);
+        }
+
+        @Override
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+            declarer.declare(new Fields("word"));
+        }
     }
 }

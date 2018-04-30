@@ -19,20 +19,19 @@
 
 package org.apache.storm.sql;
 
-import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
-
 import java.util.concurrent.Callable;
-
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.utils.Utils;
 
+import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
+
 public final class SqlTestUtil {
 
     public static void runTridentTopology(LocalCluster cluster, final int expectedValueSize, AbstractTridentProcessor proc,
-                                    TridentTopology topo) throws Exception {
+                                          TridentTopology topo) throws Exception {
         final Config conf = new Config();
         conf.setMaxSpoutPending(20);
 
@@ -49,7 +48,7 @@ public final class SqlTestUtil {
                 }
             });
         } finally {
-            while(cluster.getClusterInfo().get_topologies_size() > 0) {
+            while (cluster.getClusterInfo().get_topologies_size() > 0) {
                 Thread.sleep(10);
             }
             Utils.resetClassLoaderForJavaDeSerialize();

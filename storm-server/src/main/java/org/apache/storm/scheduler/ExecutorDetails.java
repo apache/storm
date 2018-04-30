@@ -40,8 +40,8 @@ public class ExecutorDetails {
         if (other == null || !(other instanceof ExecutorDetails)) {
             return false;
         }
-        
-        ExecutorDetails executor = (ExecutorDetails)other;
+
+        ExecutorDetails executor = (ExecutorDetails) other;
         return (this.startTask == executor.startTask) && (this.endTask == executor.endTask);
     }
 
@@ -49,7 +49,7 @@ public class ExecutorDetails {
     public int hashCode() {
         return this.startTask + 13 * this.endTask;
     }
-    
+
     @Override
     public String toString() {
         return "[" + this.startTask + ", " + this.endTask + "]";

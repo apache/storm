@@ -25,8 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This allows you to submit a Runnable with a key.  If the previous submission for that key has not yet run,
- * it will be replaced with the latest one.
+ * This allows you to submit a Runnable with a key.  If the previous submission for that key has not yet run, it will be replaced with the
+ * latest one.
  */
 public class OnlyLatestExecutor<K> {
     private static final Logger LOG = LoggerFactory.getLogger(OnlyLatestExecutor.class);
@@ -40,8 +40,9 @@ public class OnlyLatestExecutor<K> {
 
     /**
      * Run something in the future, but replace it with the latest if it is taking too long
+     *
      * @param key what to use to dedupe things.
-     * @param r what you want to run.
+     * @param r   what you want to run.
      */
     public void execute(final K key, Runnable r) {
         Runnable old = latest.put(key, r);
@@ -55,6 +56,6 @@ public class OnlyLatestExecutor<K> {
             });
         } else {
             LOG.debug("Replacing runnable for {} - {}", key, r);
-	}
+        }
     }
 }

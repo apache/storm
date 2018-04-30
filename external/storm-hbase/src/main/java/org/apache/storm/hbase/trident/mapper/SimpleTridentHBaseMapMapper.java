@@ -37,7 +37,7 @@ public class SimpleTridentHBaseMapMapper implements TridentHBaseMapMapper {
                 bos.write(String.valueOf(key).getBytes());
             }
             bos.close();
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException("IOException creating HBase row key.", e);
         }
         return bos.toByteArray();

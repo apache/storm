@@ -19,7 +19,6 @@
 package org.apache.storm.perf.utils;
 
 import java.util.Map;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -36,7 +35,7 @@ public class IdentityBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        collector.emit(tuple, tuple.getValues() );
+        collector.emit(tuple, tuple.getValues());
         collector.ack(tuple);
     }
 

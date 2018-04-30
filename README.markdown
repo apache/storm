@@ -113,6 +113,7 @@ under the License.
 * Hugo da Cruz Louro ([@hmcl](https://github.com/hmcl))
 * Stig Rohde Døssing ([@srdo](https://github.com/srdo/))
 * Roshan Naik ([@roshannaik](http://github.com/roshannaik))
+* Ethan Li ([@Ethanlm](https://github.com/Ethanlm))
 
 ## Acknowledgements
 

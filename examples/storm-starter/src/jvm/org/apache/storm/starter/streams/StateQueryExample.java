@@ -1,24 +1,18 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.starter.streams;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -53,27 +47,28 @@ public class StateQueryExample {
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
         StreamState<String, Long> ss = builder.newStream(new TestWordSpout(), new ValueMapper<String>(0), 2)
-                /*
-                 * Transform the stream of words to a stream of (word, 1) pairs
-                 */
-                .mapToPair(w -> Pair.of(w, 1))
-                /*
-                 *  Update the count in the state. Here the first argument 0L is the initial value for the count and
-                 *  the second argument is a function that increments the count for each value received.
-                 */
-                .updateStateByKey(0L, (count, val) -> count + 1);
+                                              /*
+                                               * Transform the stream of words to a stream of (word, 1) pairs
+                                               */
+                                              .mapToPair(w -> Pair.of(w, 1))
+                                              /*
+                                               *  Update the count in the state. Here the first argument 0L is the initial value for the
+                                               *  count and
+                                               *  the second argument is a function that increments the count for each value received.
+                                               */
+                                              .updateStateByKey(0L, (count, val) -> count + 1);
 
         /*
          * A stream of words emitted by the QuerySpout is used as
          * the keys to query the state.
          */
         builder.newStream(new QuerySpout(), new ValueMapper<String>(0))
-                /*
-                 * Queries the state and emits the
-                 * matching (key, value) as results. The stream state returned
-                 * by the updateStateByKey is passed as the argument to stateQuery.
-                 */
-                .stateQuery(ss).print();
+               /*
+                * Queries the state and emits the
+                * matching (key, value) as results. The stream state returned
+                * by the updateStateByKey is passed as the argument to stateQuery.
+                */
+               .stateQuery(ss).print();
 
         Config config = new Config();
         // use redis based state store for persistence
@@ -87,8 +82,8 @@ public class StateQueryExample {
     }
 
     private static class QuerySpout extends BaseRichSpout {
+        private final String[] words = { "nathan", "mike" };
         private SpoutOutputCollector collector;
-        private final String[] words = {"nathan", "mike"};
 
         @Override
         public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {

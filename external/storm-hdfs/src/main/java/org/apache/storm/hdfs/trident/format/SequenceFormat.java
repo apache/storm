@@ -15,16 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.trident.format;
 
+import java.io.Serializable;
 import org.apache.hadoop.io.Writable;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-import java.io.Serializable;
-
 /**
  * Interface for converting <code>TridentTuple</code> objects to HDFS sequence file key-value pairs.
- *
  */
 public interface SequenceFormat extends Serializable {
     /**
@@ -36,6 +35,7 @@ public interface SequenceFormat extends Serializable {
 
     /**
      * Value class used by implementation (e.g. Text.class, etc.)
+     *
      * @return
      */
     Class valueClass();
@@ -50,6 +50,7 @@ public interface SequenceFormat extends Serializable {
 
     /**
      * Given a tuple, return the value that should be written to the sequence file.
+     *
      * @param tuple
      * @return
      */

@@ -1,210 +1,50 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.trident.tuple;
 
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Arrays;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
 
 /**
  * Extends AbstractList so that it can be emitted directly as Storm tuples
  */
 public class TridentTupleView extends AbstractList<Object> implements TridentTuple {
+    public static final TridentTupleView EMPTY_TUPLE = new TridentTupleView(null, new ValuePointer[0], new HashMap());
     private final ValuePointer[] _index;
     private final Map<String, ValuePointer> _fieldIndex;
     private final List<List<Object>> _delegates;
-
-    public static class ProjectionFactory implements Factory {
-        Map<String, ValuePointer> _fieldIndex;
-        ValuePointer[] _index;
-        Factory _parent;
-
-        public ProjectionFactory(Factory parent, Fields projectFields) {
-            _parent = parent;
-            if(projectFields==null) projectFields = new Fields();
-            Map<String, ValuePointer> parentFieldIndex = parent.getFieldIndex();
-            _fieldIndex = new HashMap<>();
-            for(String f: projectFields) {
-                _fieldIndex.put(f, parentFieldIndex.get(f));
-            }            
-            _index = ValuePointer.buildIndex(projectFields, _fieldIndex);
-        }
-        
-        public TridentTuple create(TridentTuple parent) {
-            if(_index.length==0) return EMPTY_TUPLE;
-            else return new TridentTupleView(((TridentTupleView)parent)._delegates, _index, _fieldIndex);
-        }
-
-        @Override
-        public Map<String, ValuePointer> getFieldIndex() {
-            return _fieldIndex;
-        }
-
-        @Override
-        public int numDelegates() {
-            return _parent.numDelegates();
-        }
-
-        @Override
-        public List<String> getOutputFields() {
-            return indexToFieldsList(_index);
-        }
-    }
-    
-    public static class FreshOutputFactory  implements Factory {
-        Map<String, ValuePointer> _fieldIndex;
-        ValuePointer[] _index;
-
-        public FreshOutputFactory(Fields selfFields) {
-            _fieldIndex = new HashMap<>();
-            for(int i=0; i<selfFields.size(); i++) {
-                String field = selfFields.get(i);
-                _fieldIndex.put(field, new ValuePointer(0, i, field));
-            }
-            _index = ValuePointer.buildIndex(selfFields, _fieldIndex);
-        }
-        
-        public TridentTuple create(List<Object> selfVals) {
-            return new TridentTupleView(Arrays.asList(selfVals), _index, _fieldIndex);
-        }
-
-        @Override
-        public Map<String, ValuePointer> getFieldIndex() {
-            return _fieldIndex;
-        }
-
-        @Override
-        public int numDelegates() {
-            return 1;
-        }
-        
-        @Override
-        public List<String> getOutputFields() {
-            return indexToFieldsList(_index);
-        }        
-    }
-    
-    public static class OperationOutputFactory implements Factory {
-        Map<String, ValuePointer> _fieldIndex;
-        ValuePointer[] _index;
-        Factory _parent;
-
-        public OperationOutputFactory(Factory parent, Fields selfFields) {
-            _parent = parent;
-            _fieldIndex = new HashMap<>(parent.getFieldIndex());
-            int myIndex = parent.numDelegates();
-            for(int i=0; i<selfFields.size(); i++) {
-                String field = selfFields.get(i);
-                _fieldIndex.put(field, new ValuePointer(myIndex, i, field));
-            }
-            List<String> myOrder = new ArrayList<>(parent.getOutputFields());
-            
-            Set<String> parentFieldsSet = new HashSet<>(myOrder);
-            for(String f: selfFields) {
-                if(parentFieldsSet.contains(f)) {
-                    throw new IllegalArgumentException(
-                            "Additive operations cannot add fields with same name as already exists. "
-                            + "Tried adding " + selfFields + " to " + parent.getOutputFields());
-                }
-                myOrder.add(f);
-            }
-            
-            _index = ValuePointer.buildIndex(new Fields(myOrder), _fieldIndex);
-        }
-        
-        public TridentTuple create(TridentTupleView parent, List<Object> selfVals) {
-            List<List<Object>> curr = new ArrayList<>(parent._delegates);
-            curr.add(selfVals);
-            return new TridentTupleView(curr, _index, _fieldIndex);
-        }
-
-        @Override
-        public Map<String, ValuePointer> getFieldIndex() {
-            return _fieldIndex;
-        }
-
-        @Override
-        public int numDelegates() {
-            return _parent.numDelegates() + 1;
-        }
-
-        @Override
-        public List<String> getOutputFields() {
-            return indexToFieldsList(_index);
-        }
-    }
-    
-    public static class RootFactory implements Factory {
-        ValuePointer[] index;
-        Map<String, ValuePointer> fieldIndex;
-        
-        public RootFactory(Fields inputFields) {
-            index = new ValuePointer[inputFields.size()];
-            int i=0;
-            for(String f: inputFields) {
-                index[i] = new ValuePointer(0, i, f);
-                i++;
-            }
-            fieldIndex = ValuePointer.buildFieldIndex(index);
-        }
-        
-        public TridentTuple create(Tuple parent) {            
-            return new TridentTupleView(Arrays.asList(parent.getValues()), index, fieldIndex);
-        }
-
-        @Override
-        public Map<String, ValuePointer> getFieldIndex() {
-            return fieldIndex;
-        }
-
-        @Override
-        public int numDelegates() {
-            return 1;
-        }
-        
-        @Override
-        public List<String> getOutputFields() {
-            return indexToFieldsList(this.index);
-        }
-    }
-    
-    private static List<String> indexToFieldsList(ValuePointer[] index) {
-        List<String> ret = new ArrayList<>();
-        for(ValuePointer p: index) {
-            ret.add(p.field);
-        }
-        return ret;
-    }
-    
-    public static final TridentTupleView EMPTY_TUPLE = new TridentTupleView(null, new ValuePointer[0], new HashMap());
 
     // index and fieldIndex are precomputed, delegates built up over many operations using persistent data structures
     public TridentTupleView(List delegates, ValuePointer[] index, Map<String, ValuePointer> fieldIndex) {
         _delegates = delegates;
         _index = index;
         _fieldIndex = fieldIndex;
+    }
+
+    private static List<String> indexToFieldsList(ValuePointer[] index) {
+        List<String> ret = new ArrayList<>();
+        for (ValuePointer p : index) {
+            ret.add(p.field);
+        }
+        return ret;
     }
 
     public static TridentTuple createFreshTuple(Fields fields, List<Object> values) {
@@ -220,7 +60,7 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
     @Override
     public List<Object> getValues() {
         return this;
-    }    
+    }
 
     @Override
     public int size() {
@@ -250,8 +90,8 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
     @Override
     public Object get(int i) {
         return getValue(i);
-    }    
-    
+    }
+
     @Override
     public Object getValue(int i) {
         return getValueByPointer(_index[i]);
@@ -354,5 +194,164 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
 
     private Object getValueByPointer(ValuePointer ptr) {
         return _delegates.get(ptr.delegateIndex).get(ptr.index);
+    }
+
+    public static class ProjectionFactory implements Factory {
+        Map<String, ValuePointer> _fieldIndex;
+        ValuePointer[] _index;
+        Factory _parent;
+
+        public ProjectionFactory(Factory parent, Fields projectFields) {
+            _parent = parent;
+            if (projectFields == null) {
+                projectFields = new Fields();
+            }
+            Map<String, ValuePointer> parentFieldIndex = parent.getFieldIndex();
+            _fieldIndex = new HashMap<>();
+            for (String f : projectFields) {
+                _fieldIndex.put(f, parentFieldIndex.get(f));
+            }
+            _index = ValuePointer.buildIndex(projectFields, _fieldIndex);
+        }
+
+        public TridentTuple create(TridentTuple parent) {
+            if (_index.length == 0) {
+                return EMPTY_TUPLE;
+            } else {
+                return new TridentTupleView(((TridentTupleView) parent)._delegates, _index, _fieldIndex);
+            }
+        }
+
+        @Override
+        public Map<String, ValuePointer> getFieldIndex() {
+            return _fieldIndex;
+        }
+
+        @Override
+        public int numDelegates() {
+            return _parent.numDelegates();
+        }
+
+        @Override
+        public List<String> getOutputFields() {
+            return indexToFieldsList(_index);
+        }
+    }
+
+    public static class FreshOutputFactory implements Factory {
+        Map<String, ValuePointer> _fieldIndex;
+        ValuePointer[] _index;
+
+        public FreshOutputFactory(Fields selfFields) {
+            _fieldIndex = new HashMap<>();
+            for (int i = 0; i < selfFields.size(); i++) {
+                String field = selfFields.get(i);
+                _fieldIndex.put(field, new ValuePointer(0, i, field));
+            }
+            _index = ValuePointer.buildIndex(selfFields, _fieldIndex);
+        }
+
+        public TridentTuple create(List<Object> selfVals) {
+            return new TridentTupleView(Arrays.asList(selfVals), _index, _fieldIndex);
+        }
+
+        @Override
+        public Map<String, ValuePointer> getFieldIndex() {
+            return _fieldIndex;
+        }
+
+        @Override
+        public int numDelegates() {
+            return 1;
+        }
+
+        @Override
+        public List<String> getOutputFields() {
+            return indexToFieldsList(_index);
+        }
+    }
+
+    public static class OperationOutputFactory implements Factory {
+        Map<String, ValuePointer> _fieldIndex;
+        ValuePointer[] _index;
+        Factory _parent;
+
+        public OperationOutputFactory(Factory parent, Fields selfFields) {
+            _parent = parent;
+            _fieldIndex = new HashMap<>(parent.getFieldIndex());
+            int myIndex = parent.numDelegates();
+            for (int i = 0; i < selfFields.size(); i++) {
+                String field = selfFields.get(i);
+                _fieldIndex.put(field, new ValuePointer(myIndex, i, field));
+            }
+            List<String> myOrder = new ArrayList<>(parent.getOutputFields());
+
+            Set<String> parentFieldsSet = new HashSet<>(myOrder);
+            for (String f : selfFields) {
+                if (parentFieldsSet.contains(f)) {
+                    throw new IllegalArgumentException(
+                        "Additive operations cannot add fields with same name as already exists. "
+                        + "Tried adding " + selfFields + " to " + parent.getOutputFields());
+                }
+                myOrder.add(f);
+            }
+
+            _index = ValuePointer.buildIndex(new Fields(myOrder), _fieldIndex);
+        }
+
+        public TridentTuple create(TridentTupleView parent, List<Object> selfVals) {
+            List<List<Object>> curr = new ArrayList<>(parent._delegates);
+            curr.add(selfVals);
+            return new TridentTupleView(curr, _index, _fieldIndex);
+        }
+
+        @Override
+        public Map<String, ValuePointer> getFieldIndex() {
+            return _fieldIndex;
+        }
+
+        @Override
+        public int numDelegates() {
+            return _parent.numDelegates() + 1;
+        }
+
+        @Override
+        public List<String> getOutputFields() {
+            return indexToFieldsList(_index);
+        }
+    }
+
+    public static class RootFactory implements Factory {
+        ValuePointer[] index;
+        Map<String, ValuePointer> fieldIndex;
+
+        public RootFactory(Fields inputFields) {
+            index = new ValuePointer[inputFields.size()];
+            int i = 0;
+            for (String f : inputFields) {
+                index[i] = new ValuePointer(0, i, f);
+                i++;
+            }
+            fieldIndex = ValuePointer.buildFieldIndex(index);
+        }
+
+        public TridentTuple create(Tuple parent) {
+            return new TridentTupleView(Arrays.asList(parent.getValues()), index, fieldIndex);
+        }
+
+        @Override
+        public Map<String, ValuePointer> getFieldIndex() {
+            return fieldIndex;
+        }
+
+        @Override
+        public int numDelegates() {
+            return 1;
+        }
+
+        @Override
+        public List<String> getOutputFields() {
+            return indexToFieldsList(this.index);
+        }
     }
 }

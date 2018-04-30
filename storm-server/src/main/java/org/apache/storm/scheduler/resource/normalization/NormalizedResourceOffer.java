@@ -74,12 +74,13 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
         if (totalMemoryMb < 0.0) {
             normalizedResources.throwBecauseResourceBecameNegative(
                 Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, totalMemoryMb, other.getTotalMemoryMb());
-        };
+        }
+        ;
     }
 
     /**
      * @see NormalizedResources#calculateAveragePercentageUsedBy(org.apache.storm.scheduler.resource.normalization.NormalizedResources,
-     * double, double).
+     *     double, double).
      */
     public double calculateAveragePercentageUsedBy(NormalizedResourceOffer used) {
         return normalizedResources.calculateAveragePercentageUsedBy(
@@ -88,7 +89,7 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
 
     /**
      * @see NormalizedResources#calculateMinPercentageUsedBy(org.apache.storm.scheduler.resource.normalization.NormalizedResources, double,
-     * double)
+     *     double)
      */
     public double calculateMinPercentageUsedBy(NormalizedResourceOffer used) {
         return normalizedResources.calculateMinPercentageUsedBy(used.getNormalizedResources(), getTotalMemoryMb(), used.getTotalMemoryMb());
@@ -96,7 +97,7 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
 
     /**
      * @see NormalizedResources#couldHoldIgnoringSharedMemory(org.apache.storm.scheduler.resource.normalization.NormalizedResources, double,
-     * double).
+     *     double).
      */
     public boolean couldHoldIgnoringSharedMemory(NormalizedResourcesWithMemory other) {
         return normalizedResources.couldHoldIgnoringSharedMemory(

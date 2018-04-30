@@ -20,7 +20,6 @@ package org.apache.storm.scheduler;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -116,7 +114,7 @@ public class EvenScheduler implements IScheduler {
 
         //allow requesting slots number bigger than available slots
         int toIndex = (totalSlotsToUse - aliveAssigned.size())
-            > sortedList.size() ? sortedList.size() : (totalSlotsToUse - aliveAssigned.size());
+                      > sortedList.size() ? sortedList.size() : (totalSlotsToUse - aliveAssigned.size());
         List<WorkerSlot> reassignSlots = sortedList.subList(0, toIndex);
 
         Set<ExecutorDetails> aliveExecutors = new HashSet<ExecutorDetails>();

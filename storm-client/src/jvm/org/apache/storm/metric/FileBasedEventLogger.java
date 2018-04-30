@@ -18,6 +18,7 @@
 
 package org.apache.storm.metric;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +32,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
@@ -63,9 +62,9 @@ public class FileBasedEventLogger implements IEventLogger {
 
     private void setUpFlushTask() {
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("event-logger-flush-%d")
-                .setDaemon(true)
-                .build();
+            .setNameFormat("event-logger-flush-%d")
+            .setDaemon(true)
+            .build();
 
         flushScheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
         Runnable runnable = new Runnable() {

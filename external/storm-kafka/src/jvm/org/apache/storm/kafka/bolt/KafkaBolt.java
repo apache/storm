@@ -1,43 +1,36 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.kafka.bolt;
 
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.clients.producer.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.mapper.TupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
 import org.apache.storm.kafka.bolt.selector.KafkaTopicSelector;
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
-import java.util.Map;
-import java.util.Properties;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -57,13 +50,11 @@ import java.util.Properties;
 @Deprecated
 public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
-    private static final Logger LOG = LoggerFactory.getLogger(KafkaBolt.class);
-
     public static final String TOPIC = "topic";
-
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaBolt.class);
     private KafkaProducer<K, V> producer;
     private OutputCollector collector;
-    private TupleToKafkaMapper<K,V> mapper;
+    private TupleToKafkaMapper<K, V> mapper;
     private KafkaTopicSelector topicSelector;
     private Properties boltSpecfiedProperties = new Properties();
     /**
@@ -76,18 +67,18 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     private boolean async = true;
 
     public KafkaBolt() {}
-    
-    public KafkaBolt<K,V> withTupleToKafkaMapper(TupleToKafkaMapper<K,V> mapper) {
+
+    public KafkaBolt<K, V> withTupleToKafkaMapper(TupleToKafkaMapper<K, V> mapper) {
         this.mapper = mapper;
         return this;
     }
 
-    public KafkaBolt<K,V> withTopicSelector(KafkaTopicSelector selector) {
+    public KafkaBolt<K, V> withTopicSelector(KafkaTopicSelector selector) {
         this.topicSelector = selector;
         return this;
     }
 
-    public KafkaBolt<K,V> withProducerProperties(Properties producerProperties) {
+    public KafkaBolt<K, V> withProducerProperties(Properties producerProperties) {
         this.boltSpecfiedProperties = producerProperties;
         return this;
     }
@@ -95,13 +86,13 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         //for backward compatibility.
-        if(mapper == null) {
-            this.mapper = new FieldNameBasedTupleToKafkaMapper<K,V>();
+        if (mapper == null) {
+            this.mapper = new FieldNameBasedTupleToKafkaMapper<K, V>();
         }
 
         //for backward compatibility.
-        if(topicSelector == null) {
-            if(topoConf.containsKey(TOPIC)) {
+        if (topicSelector == null) {
+            if (topoConf.containsKey(TOPIC)) {
                 this.topicSelector = new DefaultTopicSelector((String) topoConf.get(TOPIC));
             } else {
                 throw new IllegalArgumentException("topic should be specified in bolt's configuration");
@@ -121,7 +112,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
             key = mapper.getKeyFromTuple(input);
             message = mapper.getMessageFromTuple(input);
             topic = topicSelector.getTopic(input);
-            if (topic != null ) {
+            if (topic != null) {
                 Callback callback = null;
 
                 if (!fireAndForget && async) {

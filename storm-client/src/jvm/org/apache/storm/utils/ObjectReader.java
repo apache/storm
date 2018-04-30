@@ -28,7 +28,9 @@ public class ObjectReader {
         if (o == null) {
             return new ArrayList<String>();
         } else if (o instanceof String) {
-            return new ArrayList<String>() {{ add((String) o); }};
+            return new ArrayList<String>() {{
+                add((String) o);
+            }};
         } else if (o instanceof Collection) {
             List<String> answer = new ArrayList<String>();
             for (Object v : (Collection) o) {
@@ -61,8 +63,8 @@ public class ObjectReader {
         }
 
         if (o instanceof Integer ||
-                o instanceof Short ||
-                o instanceof Byte) {
+            o instanceof Short ||
+            o instanceof Byte) {
             return ((Number) o).intValue();
         } else if (o instanceof Long) {
             final long l = (Long) o;
@@ -85,7 +87,7 @@ public class ObjectReader {
             return defaultValue;
         }
         if (o instanceof Number) {
-            return ((Number)o).longValue();
+            return ((Number) o).longValue();
         } else if (o instanceof String) {
             return Long.valueOf((String) o);
         }

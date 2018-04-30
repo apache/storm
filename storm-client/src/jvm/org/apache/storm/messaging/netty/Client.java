@@ -1,22 +1,33 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.messaging.netty;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
@@ -42,23 +53,6 @@ import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -66,12 +60,10 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * Implementation details:
  *
- * - Sending messages, i.e. writing to the channel, is performed asynchronously.
- * - Messages are sent in batches to optimize for network throughput at the expense of network latency.  The message
- *   batch size is configurable.
- * - Connecting and reconnecting are performed asynchronously.
- *     - Note: The current implementation drops any messages that are being enqueued for sending if the connection to
- *       the remote destination is currently unavailable.
+ * - Sending messages, i.e. writing to the channel, is performed asynchronously. - Messages are sent in batches to optimize for network
+ * throughput at the expense of network latency.  The message batch size is configurable. - Connecting and reconnecting are performed
+ * asynchronously. - Note: The current implementation drops any messages that are being enqueued for sending if the connection to the remote
+ * destination is currently unavailable.
  */
 public class Client extends ConnectionWithStatus implements IStatefulObject, ISaslClient {
     private static final long PENDING_MESSAGES_FLUSH_TIMEOUT_MS = 600000L;
@@ -81,77 +73,62 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private static final String PREFIX = "Netty-Client-";
     private static final long NO_DELAY_MS = 0L;
     private static final Timer timer = new Timer("Netty-ChannelAlive-Timer", true);
-
-    KryoValuesSerializer ser;
-    KryoValuesDeserializer deser;
-
+    protected final String dstAddressPrefixedName;
     private final Map<String, Object> topoConf;
     private final StormBoundedExponentialBackoffRetry retryPolicy;
     private final ClientBootstrap bootstrap;
     private final InetSocketAddress dstAddress;
-    protected final String dstAddressPrefixedName;
     //The actual name of the host we are trying to connect to so that
     // when we remove ourselves from the connection cache there is no concern that
     // the resolved host name is different.
     private final String dstHost;
-    private volatile Map<Integer, Double> serverLoad = null;
-
     /**
      * The channel used for all write operations from this client to the remote destination.
      */
     private final AtomicReference<Channel> channelRef = new AtomicReference<>();
-
     /**
      * Total number of connection attempts.
      */
     private final AtomicInteger totalConnectionAttempts = new AtomicInteger(0);
-
     /**
      * Number of connection attempts since the last disconnect.
      */
     private final AtomicInteger connectionAttempts = new AtomicInteger(0);
-
     /**
      * Number of messages successfully sent to the remote destination.
      */
     private final AtomicInteger messagesSent = new AtomicInteger(0);
-
     /**
      * Number of messages that could not be sent to the remote destination.
      */
     private final AtomicInteger messagesLost = new AtomicInteger(0);
-
     /**
-     * Periodically checks for connected channel in order to avoid loss
-     * of messages
+     * Periodically checks for connected channel in order to avoid loss of messages
      */
     private final long CHANNEL_ALIVE_INTERVAL_MS = 30000L;
-
     /**
      * Number of messages buffered in memory.
      */
     private final AtomicLong pendingMessages = new AtomicLong(0);
-
     /**
      * Whether the SASL channel is ready.
      */
     private final AtomicBoolean saslChannelReady = new AtomicBoolean(false);
-
+    private final Context context;
+    private final HashedWheelTimer scheduler;
+    private final MessageBuffer batcher;
+    // wait strategy when the netty channel is not writable
+    private final IWaitStrategy waitStrategy;
+    KryoValuesSerializer ser;
+    KryoValuesDeserializer deser;
+    private volatile Map<Integer, Double> serverLoad = null;
     /**
      * This flag is set to true if and only if a client instance is being closed.
      */
     private volatile boolean closing = false;
 
-    private final Context context;
-
-    private final HashedWheelTimer scheduler;
-
-    private final MessageBuffer batcher;
-
-    // wait strategy when the netty channel is not writable
-    private final IWaitStrategy waitStrategy;
-
-    Client(Map<String, Object> topoConf, AtomicBoolean[] remoteBpStatus, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
+    Client(Map<String, Object> topoConf, AtomicBoolean[] remoteBpStatus, ChannelFactory factory, HashedWheelTimer scheduler, String host,
+           int port, Context context) {
         this.topoConf = topoConf;
         closing = false;
         this.scheduler = scheduler;
@@ -162,7 +139,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         // if SASL authentication is disabled, saslChannelReady is initialized as true; otherwise false
         saslChannelReady.set(!ObjectReader.getBoolean(topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION), false));
         LOG.info("Creating Netty Client, connecting to {}:{}, bufferSize: {}, lowWatermark: {}, highWatermark: {}",
-            host, port, bufferSize, lowWatermark, highWatermark);
+                 host, port, bufferSize, lowWatermark, highWatermark);
         int messageBatchSize = ObjectReader.getInt(topoConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
 
         int maxReconnectionAttempts = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES));
@@ -190,10 +167,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     /**
-     * This thread helps us to check for channel connection periodically.
-     * This is performed just to know whether the destination address
-     * is alive or attempts to refresh connections if not alive. This
-     * solution is better than what we have now in case of a bad channel.
+     * This thread helps us to check for channel connection periodically. This is performed just to know whether the destination address is
+     * alive or attempts to refresh connections if not alive. This solution is better than what we have now in case of a bad channel.
      */
     private void launchChannelAliveThread() {
         // netty TimerTask is already defined and hence a fully
@@ -202,7 +177,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             public void run() {
                 try {
                     LOG.debug("running timer task, address {}", dstAddress);
-                    if(closing) {
+                    if (closing) {
                         this.cancel();
                         return;
                     }
@@ -258,8 +233,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     /**
-     * Note:  Storm will check via this method whether a worker can be activated safely during the initial startup of a
-     * topology.  The worker will only be activated once all of the its connections are ready.
+     * Note:  Storm will check via this method whether a worker can be activated safely during the initial startup of a topology.  The
+     * worker will only be activated once all of the its connections are ready.
      */
     @Override
     public Status status() {
@@ -317,7 +292,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         if (closing) {
             int numMessages = iteratorSize(msgs);
             LOG.error("Dropping {} messages because the Netty client to {} is being closed", numMessages,
-                    dstAddressPrefixedName);
+                      dstAddressPrefixedName);
             return;
         }
 
@@ -437,7 +412,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
                     messagesSent.getAndAdd(batch.size());
                 } else {
                     LOG.error("failed to send {} messages to {}: {}", numMessages, dstAddressPrefixedName,
-                            future.getCause());
+                              future.getCause());
                     closeChannelAndReconnect(future.getChannel());
                     messagesLost.getAndAdd(numMessages);
                 }
@@ -447,8 +422,9 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     /**
-     * Schedule a reconnect if we closed a non-null channel, and acquired the right to
-     * provide a replacement by successfully setting a null to the channel field
+     * Schedule a reconnect if we closed a non-null channel, and acquired the right to provide a replacement by successfully setting a null
+     * to the channel field
+     *
      * @param channel
      * @return if the call scheduled a re-connect task
      */
@@ -467,7 +443,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     public int getPort() {
         return dstAddress.getPort();
     }
-    
+
     /**
      * Gracefully close this client.
      */
@@ -485,7 +461,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     private void waitForPendingMessagesToBeSent() {
         LOG.info("waiting up to {} ms to send {} pending messages to {}",
-                PENDING_MESSAGES_FLUSH_TIMEOUT_MS, pendingMessages.get(), dstAddressPrefixedName);
+                 PENDING_MESSAGES_FLUSH_TIMEOUT_MS, pendingMessages.get(), dstAddressPrefixedName);
         long totalPendingMsgs = pendingMessages.get();
         long startMs = System.currentTimeMillis();
         while (pendingMessages.get() != 0) {
@@ -493,7 +469,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
                 long deltaMs = System.currentTimeMillis() - startMs;
                 if (deltaMs > PENDING_MESSAGES_FLUSH_TIMEOUT_MS) {
                     LOG.error("failed to send all pending messages to {} within timeout, {} of {} messages were not " +
-                            "sent", dstAddressPrefixedName, pendingMessages.get(), totalPendingMsgs);
+                              "sent", dstAddressPrefixedName, pendingMessages.get(), totalPendingMsgs);
                     break;
                 }
                 Thread.sleep(PENDING_MESSAGES_FLUSH_INTERVAL_MS);
@@ -521,7 +497,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         Map<Integer, Double> loadCache = serverLoad;
         Map<Integer, Load> ret = new HashMap<Integer, Load>();
         if (loadCache != null) {
-            double clientLoad = Math.min(pendingMessages.get(), 1024)/1024.0;
+            double clientLoad = Math.min(pendingMessages.get(), 1024) / 1024.0;
             for (Integer task : tasks) {
                 Double found = loadCache.get(task);
                 if (found != null) {
@@ -552,9 +528,11 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         return topoConf;
     }
 
-    /** ISaslClient interface **/
+    /**
+     * ISaslClient interface
+     **/
     public void channelConnected(Channel channel) {
-//        setChannel(channel);
+        //        setChannel(channel);
     }
 
     public void channelReady() {
@@ -562,13 +540,16 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     public String name() {
-        return (String)topoConf.get(Config.TOPOLOGY_NAME);
+        return (String) topoConf.get(Config.TOPOLOGY_NAME);
     }
 
     public String secretKey() {
         return SaslUtils.getSecretKey(topoConf);
     }
-    /** end **/
+
+    /**
+     * end
+     **/
 
     private String srcAddressName() {
         String name = null;
@@ -589,6 +570,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     /**
      * Called by Netty thread on change in channel interest
+     *
      * @param channel
      */
     public void notifyInterestChanged(Channel channel) {
@@ -596,9 +578,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     /**
-     * Asynchronously establishes a Netty connection to the remote address
-     * This task runs on a single thread shared among all clients, and thus
-     * should not perform operations that block.
+     * Asynchronously establishes a Netty connection to the remote address This task runs on a single thread shared among all clients, and
+     * thus should not perform operations that block.
      */
     private class Connect implements TimerTask {
 
@@ -610,7 +591,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
         private void reschedule(Throwable t) {
             String baseMsg = String.format("connection attempt %s to %s failed", connectionAttempts,
-                    dstAddressPrefixedName);
+                                           dstAddressPrefixedName);
             String failureMsg = (t == null) ? baseMsg : baseMsg + ": " + t.toString();
             LOG.error(failureMsg);
             long nextDelayMs = retryPolicy.getSleepTimeMs(connectionAttempts.get(), 0);
@@ -636,9 +617,10 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
                             boolean setChannel = channelRef.compareAndSet(null, newChannel);
                             checkState(setChannel);
                             LOG.debug("successfully connected to {}, {} [attempt {}]", address.toString(), newChannel.toString(),
-                                    connectionAttempt);
+                                      connectionAttempt);
                             if (messagesLost.get() > 0) {
-                                LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(), messagesLost.get());
+                                LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(),
+                                         messagesLost.get());
                             }
                         } else {
                             Throwable cause = future.getCause();
@@ -652,7 +634,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             } else {
                 close();
                 throw new RuntimeException("Giving up to scheduleConnect to " + dstAddressPrefixedName + " after " +
-                        connectionAttempts + " failed attempts. " + messagesLost.get() + " messages were lost");
+                                           connectionAttempts + " failed attempts. " + messagesLost.get() + " messages were lost");
 
             }
         }

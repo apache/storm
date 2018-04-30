@@ -26,7 +26,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.log4j.Logger;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.Utils;
@@ -160,9 +159,9 @@ public class BasicMetricsCollector implements AutoCloseable {
                 this.maxLatency = latency;
             }
             metrics.put(SPOUT_AVG_COMPLETE_LATENCY,
-                String.format(SPOUT_AVG_LATENCY_FORMAT, latency));
+                        String.format(SPOUT_AVG_LATENCY_FORMAT, latency));
             metrics.put(SPOUT_MAX_COMPLETE_LATENCY,
-                String.format(SPOUT_MAX_LATENCY_FORMAT, this.maxLatency));
+                        String.format(SPOUT_MAX_LATENCY_FORMAT, this.maxLatency));
 
         }
     }
@@ -192,10 +191,12 @@ public class BasicMetricsCollector implements AutoCloseable {
             header.add(SPOUT_MAX_COMPLETE_LATENCY);
         }
 
-        writer.println("\n------------------------------------------------------------------------------------------------------------------");
+        writer.println(
+            "\n------------------------------------------------------------------------------------------------------------------");
         String str = Utils.join(header, ",");
         writer.println(str);
-        writer.println("------------------------------------------------------------------------------------------------------------------");
+        writer
+            .println("------------------------------------------------------------------------------------------------------------------");
         writer.flush();
     }
 
@@ -211,28 +212,28 @@ public class BasicMetricsCollector implements AutoCloseable {
 
     boolean collectTopologyStats(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-            || items.contains(MetricsItem.TOPOLOGY_STATS);
+               || items.contains(MetricsItem.TOPOLOGY_STATS);
     }
 
     boolean collectExecutorStats(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-            || items.contains(MetricsItem.XSFER_RATE)
-            || items.contains(MetricsItem.SPOUT_LATENCY);
+               || items.contains(MetricsItem.XSFER_RATE)
+               || items.contains(MetricsItem.SPOUT_LATENCY);
     }
 
     boolean collectThroughput(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-            || items.contains(MetricsItem.XSFER_RATE);
+               || items.contains(MetricsItem.XSFER_RATE);
     }
 
     boolean collectSpoutThroughput(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-            || items.contains(MetricsItem.SPOUT_THROUGHPUT);
+               || items.contains(MetricsItem.SPOUT_THROUGHPUT);
     }
 
     boolean collectSpoutLatency(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-            || items.contains(MetricsItem.SPOUT_LATENCY);
+               || items.contains(MetricsItem.SPOUT_LATENCY);
     }
 
     public enum MetricsItem {

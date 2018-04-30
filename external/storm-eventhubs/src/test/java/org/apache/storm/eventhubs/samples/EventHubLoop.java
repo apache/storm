@@ -15,38 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.samples;
 
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.topology.TopologyBuilder;
+package org.apache.storm.eventhubs.samples;
 
 import org.apache.storm.eventhubs.bolt.EventHubBolt;
 import org.apache.storm.eventhubs.bolt.EventHubBoltConfig;
 import org.apache.storm.eventhubs.spout.EventHubSpout;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.topology.TopologyBuilder;
 
 /**
  * A sample topology that loops message back to EventHub
  */
 public class EventHubLoop extends EventCount {
 
-  @Override
-  protected StormTopology buildTopology(EventHubSpout eventHubSpout) {
-    TopologyBuilder topologyBuilder = new TopologyBuilder();
+    public static void main(String[] args) throws Exception {
+        EventHubLoop scenario = new EventHubLoop();
+        scenario.runScenario(args);
+    }
 
-    topologyBuilder.setSpout("EventHubsSpout", eventHubSpout, spoutConfig.getPartitionCount())
-      .setNumTasks(spoutConfig.getPartitionCount());
-    EventHubBoltConfig boltConfig = new EventHubBoltConfig(spoutConfig.getConnectionString(),
-        spoutConfig.getEntityPath(), true);
-    
-    EventHubBolt eventHubBolt = new EventHubBolt(boltConfig);
-    int boltTasks = spoutConfig.getPartitionCount();
-    topologyBuilder.setBolt("EventHubsBolt", eventHubBolt, boltTasks)
-      .localOrShuffleGrouping("EventHubsSpout").setNumTasks(boltTasks);
-    return topologyBuilder.createTopology();
-  }
-  
-  public static void main(String[] args) throws Exception {
-    EventHubLoop scenario = new EventHubLoop();
-    scenario.runScenario(args);
-  }
+    @Override
+    protected StormTopology buildTopology(EventHubSpout eventHubSpout) {
+        TopologyBuilder topologyBuilder = new TopologyBuilder();
+
+        topologyBuilder.setSpout("EventHubsSpout", eventHubSpout, spoutConfig.getPartitionCount())
+                       .setNumTasks(spoutConfig.getPartitionCount());
+        EventHubBoltConfig boltConfig = new EventHubBoltConfig(spoutConfig.getConnectionString(),
+                                                               spoutConfig.getEntityPath(), true);
+
+        EventHubBolt eventHubBolt = new EventHubBolt(boltConfig);
+        int boltTasks = spoutConfig.getPartitionCount();
+        topologyBuilder.setBolt("EventHubsBolt", eventHubBolt, boltTasks)
+                       .localOrShuffleGrouping("EventHubsSpout").setNumTasks(boltTasks);
+        return topologyBuilder.createTopology();
+    }
 }

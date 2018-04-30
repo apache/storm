@@ -1,35 +1,32 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.security.auth.kerberos;
 
+import java.io.IOException;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.security.auth.callback.*;
-import javax.security.auth.login.AppConfigurationEntry;
-import javax.security.auth.login.Configuration;
-import javax.security.sasl.AuthorizeCallback;
-import java.io.IOException;
 
 /**
  * SASL server side callback handler for kerberos auth.
@@ -47,7 +44,7 @@ public class ServerCallbackHandler implements CallbackHandler {
         AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
             String errorMessage = "Could not find a '" + AuthUtils.LOGIN_CONTEXT_SERVER
-                + "' entry in this configuration: Server cannot start.";
+                                  + "' entry in this configuration: Server cannot start.";
             LOG.error(errorMessage);
             throw new IOException(errorMessage);
         }
@@ -68,14 +65,14 @@ public class ServerCallbackHandler implements CallbackHandler {
                 //Ignored...
             } else {
                 throw new UnsupportedCallbackException(callback,
-                    "Unrecognized SASL Callback");
+                                                       "Unrecognized SASL Callback");
             }
         }
 
         String userName = "UNKNOWN";
         if (nc != null) {
             LOG.debug("handleNameCallback");
-             userName = nc.getDefaultName();
+            userName = nc.getDefaultName();
             nc.setName(nc.getDefaultName());
         }
 
@@ -86,7 +83,7 @@ public class ServerCallbackHandler implements CallbackHandler {
         if (ac != null) {
             String authenticationID = ac.getAuthenticationID();
             LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationID,
-                ac.getAuthorizationID());
+                      ac.getAuthorizationID());
 
             //if authorizationId is not set, set it to authenticationId.
             if (ac.getAuthorizationID() == null) {
@@ -98,7 +95,7 @@ public class ServerCallbackHandler implements CallbackHandler {
             if (!ac.getAuthenticationID().equals(ac.getAuthorizationID())) {
                 if (!impersonationAllowed) {
                     throw new IllegalArgumentException(ac.getAuthenticationID() + " attempting to impersonate " + ac.getAuthorizationID()
-                        + ".  This is not allowed by this server.");
+                                                       + ".  This is not allowed by this server.");
                 }
                 ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(ac.getAuthenticationID()));
             } else {

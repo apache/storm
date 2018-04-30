@@ -1,24 +1,42 @@
-
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.GenericRecordBuilder;
+import org.apache.avro.io.DatumReader;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.storm.Config;
+import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
+import org.apache.storm.hdfs.bolt.format.FileNameFormat;
+import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
+import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
+import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -27,46 +45,33 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericRecordBuilder;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.file.DataFileReader;
-import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
-import org.apache.storm.hdfs.bolt.format.FileNameFormat;
-import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
-import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
-import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
-import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
-import org.junit.Before;
 import org.junit.After;
-import org.junit.Test;
 import org.junit.Assert;
-
-import org.mockito.Mock;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hdfs.MiniDFSCluster;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.FSDataInputStream;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AvroGenericRecordBoltTest {
 
+    private static final String testRoot = "/unittest";
+    private static final String schemaV1 = "{\"type\":\"record\","
+                                           + "\"name\":\"myrecord\","
+                                           + "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"},"
+                                           + "{ \"name\":\"int1\", \"type\":\"int\" }]}";
+    private static final String schemaV2 = "{\"type\":\"record\","
+                                           + "\"name\":\"myrecord\","
+                                           + "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"},"
+                                           + "{ \"name\":\"bar\", \"type\":\"string\", \"default\":\"baz\" },"
+                                           + "{ \"name\":\"int1\", \"type\":\"int\" }]}";
+    private static Schema schema1;
+    private static Schema schema2;
+    private static Tuple tuple1;
+    private static Tuple tuple2;
     @Rule
     public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule(() -> {
         Configuration conf = new Configuration();
@@ -81,24 +86,8 @@ public class AvroGenericRecordBoltTest {
     private OutputCollector collector;
     @Mock
     private TopologyContext topologyContext;
-
     private DistributedFileSystem fs;
     private String hdfsURI;
-    private static final String testRoot = "/unittest";
-    private static Schema schema1;
-    private static Schema schema2;
-    private static Tuple tuple1;
-    private static Tuple tuple2;
-    private static final String schemaV1 = "{\"type\":\"record\","
-        + "\"name\":\"myrecord\","
-        + "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"},"
-        + "{ \"name\":\"int1\", \"type\":\"int\" }]}";
-
-    private static final String schemaV2 = "{\"type\":\"record\","
-        + "\"name\":\"myrecord\","
-        + "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"},"
-        + "{ \"name\":\"bar\", \"type\":\"string\", \"default\":\"baz\" },"
-        + "{ \"name\":\"int1\", \"type\":\"int\" }]}";
 
     @BeforeClass
     public static void setupClass() {
@@ -117,6 +106,18 @@ public class AvroGenericRecordBoltTest {
         builder2.set("foo1", "bar2");
         builder2.set("int1", 2);
         tuple2 = generateTestTuple(builder2.build());
+    }
+
+    private static Tuple generateTestTuple(GenericRecord record) {
+        TopologyBuilder builder = new TopologyBuilder();
+        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(),
+                                                                            new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+            @Override
+            public Fields getComponentOutputFields(String componentId, String streamId) {
+                return new Fields("record");
+            }
+        };
+        return new TupleImpl(topologyContext, new Values(record), topologyContext.getComponentId(1), 1, "");
     }
 
     @Before
@@ -218,18 +219,6 @@ public class AvroGenericRecordBoltTest {
             .withFileNameFormat(fieldsFileNameFormat)
             .withRotationPolicy(rotationPolicy)
             .withSyncPolicy(fieldsSyncPolicy);
-    }
-
-    private static Tuple generateTestTuple(GenericRecord record) {
-        TopologyBuilder builder = new TopologyBuilder();
-        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(),
-            new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
-            @Override
-            public Fields getComponentOutputFields(String componentId, String streamId) {
-                return new Fields("record");
-            }
-        };
-        return new TupleImpl(topologyContext, new Values(record), topologyContext.getComponentId(1), 1, "");
     }
 
     private void verifyAllAvroFiles(String path) throws IOException {

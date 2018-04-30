@@ -1,29 +1,23 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm;
-import org.apache.storm.daemon.Shutdownable;
-import org.apache.storm.utils.Utils;
 
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
+import org.apache.storm.daemon.Shutdownable;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +26,13 @@ import org.slf4j.LoggerFactory;
  * in place of actual processes (in cluster mode).
  */
 public class ProcessSimulator {
+    protected static ConcurrentHashMap<String, Shutdownable> processMap = new ConcurrentHashMap<String, Shutdownable>();
     private static Logger LOG = LoggerFactory.getLogger(ProcessSimulator.class);
     private static Object lock = new Object();
-    protected static ConcurrentHashMap<String, Shutdownable> processMap = new ConcurrentHashMap<String, Shutdownable>();
 
     /**
      * Register a process' handle
-     * 
+     *
      * @param pid
      * @param shutdownable
      */
@@ -48,7 +42,7 @@ public class ProcessSimulator {
 
     /**
      * Get all process handles
-     * 
+     *
      * @return
      */
     public static Collection<Shutdownable> getAllProcessHandles() {
@@ -57,7 +51,7 @@ public class ProcessSimulator {
 
     /**
      * Kill a process
-     * 
+     *
      * @param pid
      */
     public static void killProcess(String pid) {
@@ -85,7 +79,7 @@ public class ProcessSimulator {
                     LOG.warn("process {} not killed (Ignoring InterruptedException)", pid, e);
                 } else if (Utils.exceptionCauseIsInstanceOf(ClosedByInterruptException.class, e)) {
                     LOG.warn("process {} not killed (Ignoring ClosedByInterruptException)", pid, e);
-                } else if (e instanceof RuntimeException){
+                } else if (e instanceof RuntimeException) {
                     throw e;
                 } else {
                     //TODO once everything is in java this should not be possible any more

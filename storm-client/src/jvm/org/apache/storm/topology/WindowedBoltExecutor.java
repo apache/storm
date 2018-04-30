@@ -1,22 +1,28 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.topology;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.spout.CheckpointSpout;
@@ -47,18 +53,6 @@ import org.apache.storm.windowing.WindowManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
-
 import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
 import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
@@ -66,11 +60,13 @@ import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
  * An {@link IWindowedBolt} wrapper that does the windowing of tuples.
  */
 public class WindowedBoltExecutor implements IRichBolt {
+    public static final String LATE_TUPLE_FIELD = "late_tuple";
     private static final Logger LOG = LoggerFactory.getLogger(WindowedBoltExecutor.class);
     private static final int DEFAULT_WATERMARK_EVENT_INTERVAL_MS = 1000; // 1s
     private static final int DEFAULT_MAX_LAG_MS = 0; // no lag
-    public static final String LATE_TUPLE_FIELD = "late_tuple";
     private final IWindowedBolt bolt;
+    // package level for unit tests
+    transient WaterMarkEventGenerator<Tuple> waterMarkEventGenerator;
     private transient WindowedOutputCollector windowedOutputCollector;
     private transient WindowLifecycleListener<Tuple> listener;
     private transient WindowManager<Tuple> windowManager;
@@ -78,10 +74,8 @@ public class WindowedBoltExecutor implements IRichBolt {
     private TimestampExtractor timestampExtractor;
     private transient String lateTupleStream;
     private transient TriggerPolicy<Tuple, ?> triggerPolicy;
-    private transient EvictionPolicy<Tuple,?> evictionPolicy;
+    private transient EvictionPolicy<Tuple, ?> evictionPolicy;
     private transient Duration windowLengthDuration;
-    // package level for unit tests
-    transient WaterMarkEventGenerator<Tuple> waterMarkEventGenerator;
 
     public WindowedBoltExecutor(IWindowedBolt bolt) {
         this.bolt = bolt;
@@ -113,16 +107,16 @@ public class WindowedBoltExecutor implements IRichBolt {
     private void ensureDurationLessThanTimeout(int duration, int timeout) {
         if (duration > timeout) {
             throw new IllegalArgumentException("Window duration (length + sliding interval) value " + duration +
-                                                       " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS +
-                                                       " value " + timeout);
+                                               " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS +
+                                               " value " + timeout);
         }
     }
 
     private void ensureCountLessThanMaxPending(int count, int maxPending) {
         if (count > maxPending) {
             throw new IllegalArgumentException("Window count (length + sliding interval) value " + count +
-                                                       " is more than " + Config.TOPOLOGY_MAX_SPOUT_PENDING +
-                                                       " value " + maxPending);
+                                               " is more than " + Config.TOPOLOGY_MAX_SPOUT_PENDING +
+                                               " value " + maxPending);
         }
     }
 
@@ -167,14 +161,15 @@ public class WindowedBoltExecutor implements IRichBolt {
             windowLengthCount = new Count(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT)).intValue());
         } else if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS)) {
             windowLengthDuration = new Duration(
-                    ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS)).intValue(),
-                    TimeUnit.MILLISECONDS);
+                ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS)).intValue(),
+                TimeUnit.MILLISECONDS);
         }
         // sliding interval
         if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT)) {
             slidingIntervalCount = new Count(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT)).intValue());
         } else if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS)) {
-            slidingIntervalDuration = new Duration(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS)).intValue(), TimeUnit.MILLISECONDS);
+            slidingIntervalDuration =
+                new Duration(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS)).intValue(), TimeUnit.MILLISECONDS);
         } else {
             // default is a sliding window of count 1
             slidingIntervalCount = new Count(1);
@@ -185,7 +180,8 @@ public class WindowedBoltExecutor implements IRichBolt {
             lateTupleStream = (String) topoConf.get(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
             if (lateTupleStream != null) {
                 if (!context.getThisStreams().contains(lateTupleStream)) {
-                    throw new IllegalArgumentException("Stream for late tuples must be defined with the builder method withLateTupleStream");
+                    throw new IllegalArgumentException(
+                        "Stream for late tuples must be defined with the builder method withLateTupleStream");
                 }
             }
             // max lag
@@ -213,7 +209,7 @@ public class WindowedBoltExecutor implements IRichBolt {
                  slidingIntervalCount, slidingIntervalDuration);
         evictionPolicy = getEvictionPolicy(windowLengthCount, windowLengthDuration);
         triggerPolicy = getTriggerPolicy(slidingIntervalCount, slidingIntervalDuration,
-                                                              manager, evictionPolicy);
+                                         manager, evictionPolicy);
         manager.setEvictionPolicy(evictionPolicy);
         manager.setTriggerPolicy(triggerPolicy);
         return manager;
@@ -254,7 +250,7 @@ public class WindowedBoltExecutor implements IRichBolt {
     }
 
     private TriggerPolicy<Tuple, ?> getTriggerPolicy(Count slidingIntervalCount, Duration slidingIntervalDuration,
-                                                  WindowManager<Tuple> manager, EvictionPolicy<Tuple, ?> evictionPolicy) {
+                                                     WindowManager<Tuple> manager, EvictionPolicy<Tuple, ?> evictionPolicy) {
         if (slidingIntervalCount != null) {
             if (isTupleTs()) {
                 return new WatermarkCountTriggerPolicy<>(slidingIntervalCount.value, manager, evictionPolicy, manager);
@@ -390,8 +386,7 @@ public class WindowedBoltExecutor implements IRichBolt {
     }
 
     /**
-     * Creates an {@link OutputCollector} wrapper that automatically
-     * anchors the tuples to inputTuples while emitting.
+     * Creates an {@link OutputCollector} wrapper that automatically anchors the tuples to inputTuples while emitting.
      */
     private static class WindowedOutputCollector extends OutputCollector {
         private List<Tuple> inputTuples;

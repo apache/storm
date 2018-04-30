@@ -1,34 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
-package org.apache.storm.hdfs.trident;
 
-import org.apache.storm.Config;
-import org.apache.storm.tuple.Fields;
-import org.apache.commons.io.FileUtils;
-import org.apache.storm.hdfs.trident.format.DelimitedRecordFormat;
-import org.apache.storm.hdfs.trident.format.FileNameFormat;
-import org.apache.storm.hdfs.trident.format.RecordFormat;
-import org.apache.storm.hdfs.trident.rotation.FileRotationPolicy;
-import org.apache.storm.hdfs.trident.rotation.FileSizeRotationPolicy;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.apache.storm.trident.tuple.TridentTuple;
+package org.apache.storm.hdfs.trident;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +23,18 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.FileUtils;
+import org.apache.storm.Config;
+import org.apache.storm.hdfs.trident.format.DelimitedRecordFormat;
+import org.apache.storm.hdfs.trident.format.FileNameFormat;
+import org.apache.storm.hdfs.trident.format.RecordFormat;
+import org.apache.storm.hdfs.trident.rotation.FileRotationPolicy;
+import org.apache.storm.hdfs.trident.rotation.FileSizeRotationPolicy;
+import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.Fields;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -56,30 +50,6 @@ public class HdfsStateTest {
     private static final String INDEX_FILE_PREFIX = ".index.";
     private final TestFileNameFormat fileNameFormat = new TestFileNameFormat();
 
-    private static class TestFileNameFormat implements FileNameFormat {
-        private String currentFileName = "";
-
-        @Override
-        public void prepare(Map<String, Object> conf, int partitionIndex, int numPartitions) {
-
-        }
-
-        @Override
-        public String getName(long rotation, long timeStamp) {
-            currentFileName = FILE_NAME_PREFIX + Long.toString(rotation);
-            return currentFileName;
-        }
-
-        @Override
-        public String getPath() {
-            return TEST_OUT_DIR;
-        }
-
-        public String getCurrentFileName() {
-            return currentFileName;
-        }
-    }
-
     private HdfsState createHdfsState() {
 
         Fields hdfsFields = new Fields("f1");
@@ -89,10 +59,10 @@ public class HdfsStateTest {
         FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(5.0f, FileSizeRotationPolicy.Units.MB);
 
         HdfsState.Options options = new HdfsState.HdfsFileOptions()
-                .withFileNameFormat(fileNameFormat)
-                .withRecordFormat(recordFormat)
-                .withRotationPolicy(rotationPolicy)
-                .withFsUrl("file://" + TEST_OUT_DIR);
+            .withFileNameFormat(fileNameFormat)
+            .withRecordFormat(recordFormat)
+            .withRotationPolicy(rotationPolicy)
+            .withFsUrl("file://" + TEST_OUT_DIR);
 
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_NAME, TEST_TOPOLOGY_NAME);
@@ -122,7 +92,6 @@ public class HdfsStateTest {
     public void setUp() {
         FileUtils.deleteQuietly(new File(TEST_OUT_DIR));
     }
-
 
     @Test
     public void testPrepare() throws Exception {
@@ -212,12 +181,36 @@ public class HdfsStateTest {
         /*
          * total tuples should be
          * recovered (batch-1 + batch-2) + replayed (batch-3)
-        */
+         */
         List<String> lines = getLinesFromCurrentDataFile();
         int preReplayCount = batch1Count + batch2Count + batch3Count;
         int expectedTupleCount = batch1Count + batch2Count + batch3ReplayCount;
 
         Assert.assertNotEquals(preReplayCount, lines.size());
         Assert.assertEquals(expectedTupleCount, lines.size());
+    }
+
+    private static class TestFileNameFormat implements FileNameFormat {
+        private String currentFileName = "";
+
+        @Override
+        public void prepare(Map<String, Object> conf, int partitionIndex, int numPartitions) {
+
+        }
+
+        @Override
+        public String getName(long rotation, long timeStamp) {
+            currentFileName = FILE_NAME_PREFIX + Long.toString(rotation);
+            return currentFileName;
+        }
+
+        @Override
+        public String getPath() {
+            return TEST_OUT_DIR;
+        }
+
+        public String getCurrentFileName() {
+            return currentFileName;
+        }
     }
 }

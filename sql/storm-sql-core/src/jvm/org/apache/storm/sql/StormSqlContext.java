@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
@@ -62,7 +61,7 @@ import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 
 public class StormSqlContext {
     private final JavaTypeFactory typeFactory = new StormSqlTypeFactoryImpl(
-            RelDataTypeSystem.DEFAULT);
+        RelDataTypeSystem.DEFAULT);
     private final SchemaPlus schema = Frameworks.createRootSchema(true);
     private boolean hasUdf = false;
     private Map<String, ISqlTridentDataSource> dataSources = new HashMap<>();
@@ -73,7 +72,7 @@ public class StormSqlContext {
         for (ColumnDefinition col : n.fieldList()) {
             builder.field(col.name(), col.type(), col.constraint());
             RelDataType dataType = col.type().deriveType(typeFactory);
-            Class<?> javaType = (Class<?>)typeFactory.getJavaClass(dataType);
+            Class<?> javaType = (Class<?>) typeFactory.getJavaClass(dataType);
             ColumnConstraint constraint = col.constraint();
             boolean isPrimary = constraint != null && constraint instanceof ColumnConstraint.PrimaryKey;
             fields.add(new FieldInfo(col.name(), javaType, isPrimary));
@@ -86,24 +85,24 @@ public class StormSqlContext {
         schema.add(n.tableName(), table);
 
         ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(n.location(), n
-                .inputFormatClass(), n.outputFormatClass(), n.properties(), fields);
+            .inputFormatClass(), n.outputFormatClass(), n.properties(), fields);
         if (ds == null) {
             throw new RuntimeException("Failed to find data source for " + n
-                    .tableName() + " URI: " + n.location());
+                .tableName() + " URI: " + n.location());
         } else if (dataSources.containsKey(n.tableName())) {
             throw new RuntimeException("Duplicated definition for table " + n
-                    .tableName());
+                .tableName());
         }
         dataSources.put(n.tableName(), ds);
     }
 
     public void interpretCreateFunction(SqlCreateFunction sqlCreateFunction) throws ClassNotFoundException {
-        if(sqlCreateFunction.jarName() != null) {
+        if (sqlCreateFunction.jarName() != null) {
             throw new UnsupportedOperationException("UDF 'USING JAR' not implemented");
         }
         Method method;
         Function function;
-        if ((method=findMethod(sqlCreateFunction.className(), "evaluate")) != null) {
+        if ((method = findMethod(sqlCreateFunction.className(), "evaluate")) != null) {
             function = ScalarFunctionImpl.create(method);
         } else if (findMethod(sqlCreateFunction.className(), "add") != null) {
             function = AggregateFunctionImpl.create(Class.forName(sqlCreateFunction.className()));
@@ -134,10 +133,10 @@ public class StormSqlContext {
             List<SqlOperatorTable> sqlOperatorTables = new ArrayList<>();
             sqlOperatorTables.add(SqlStdOperatorTable.instance());
             sqlOperatorTables.add(new CalciteCatalogReader(CalciteSchema.from(schema),
-                    false,
-                    Collections.<String>emptyList(), typeFactory));
+                                                           false,
+                                                           Collections.<String>emptyList(), typeFactory));
             return Frameworks.newConfigBuilder().defaultSchema(schema)
-                    .operatorTable(new ChainedSqlOperatorTable(sqlOperatorTables)).build();
+                             .operatorTable(new ChainedSqlOperatorTable(sqlOperatorTables)).build();
         } else {
             return Frameworks.newConfigBuilder().defaultSchema(schema).build();
         }

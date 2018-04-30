@@ -15,20 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.serialization;
 
 import com.esotericsoftware.kryo.Kryo;
 
 /**
- * Provides a way using a service loader to register Kryo
- * serializers with the SerializationFactory without needing
- * to modify the config.  This allows for language bindings
- * libraries or platforms to include their own registration
- * without impacting a clients config.
+ * Provides a way using a service loader to register Kryo serializers with the SerializationFactory without needing to modify the config.
+ * This allows for language bindings libraries or platforms to include their own registration without impacting a clients config.
  */
 public interface SerializationRegister {
     /**
      * Register any serializers needed with the kryo instance
+     *
      * @param kryo what to register the serializers with.
      */
     public void register(Kryo kryo) throws Exception;

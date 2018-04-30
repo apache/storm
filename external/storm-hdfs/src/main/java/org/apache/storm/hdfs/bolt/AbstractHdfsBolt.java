@@ -1,28 +1,26 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt;
 
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,18 +32,14 @@ import org.apache.storm.hdfs.common.NullPartitioner;
 import org.apache.storm.hdfs.common.Partitioner;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.apache.storm.hdfs.security.HdfsSecurityUtil;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public abstract class AbstractHdfsBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHdfsBolt.class);
@@ -68,14 +62,13 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     protected String configKey;
     protected transient Object writeLock;
     protected transient Timer rotationTimer; // only used for TimedRotationPolicy
-    private List<Tuple> tupleBatch = new LinkedList<>();
     protected long offset = 0;
     protected Integer fileRetryCount = DEFAULT_RETRY_COUNT;
     protected Integer tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
     protected Integer maxOpenFiles = DEFAULT_MAX_OPEN_FILES;
     protected Partitioner partitioner = new NullPartitioner();
-
     protected transient Configuration hdfsConfig;
+    private List<Tuple> tupleBatch = new LinkedList<>();
 
     protected void rotateOutputFile(Writer writer) throws IOException {
         LOG.info("Rotating output file...");
@@ -98,7 +91,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
      * @param topologyContext
      * @param collector
      */
-    public final void prepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector){
+    public final void prepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) {
         this.writeLock = new Object();
         if (this.syncPolicy == null) throw new IllegalStateException("SyncPolicy must be specified.");
         if (this.rotationPolicy == null) throw new IllegalStateException("RotationPolicy must be specified.");
@@ -111,21 +104,21 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         this.collector = collector;
         this.fileNameFormat.prepare(conf, topologyContext);
         this.hdfsConfig = new Configuration();
-        Map<String, Object> map = (Map<String, Object>)conf.get(this.configKey);
-        if(map != null){
-            for(String key : map.keySet()){
+        Map<String, Object> map = (Map<String, Object>) conf.get(this.configKey);
+        if (map != null) {
+            for (String key : map.keySet()) {
                 this.hdfsConfig.set(key, String.valueOf(map.get(key)));
             }
         }
 
-        try{
+        try {
             HdfsSecurityUtil.login(conf, hdfsConfig);
             doPrepare(conf, topologyContext, collector);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Error preparing HdfsBolt: " + e.getMessage(), e);
         }
 
-        if(this.rotationPolicy instanceof TimedRotationPolicy){
+        if (this.rotationPolicy instanceof TimedRotationPolicy) {
             startTimedRotationPolicy();
         }
     }
@@ -280,7 +273,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     }
 
     private void startTimedRotationPolicy() {
-        long interval = ((TimedRotationPolicy)this.rotationPolicy).getInterval();
+        long interval = ((TimedRotationPolicy) this.rotationPolicy).getInterval();
         this.rotationTimer = new Timer(true);
         TimerTask task = new TimerTask() {
             @Override
@@ -295,8 +288,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
         final String partitionPath = this.partitioner.getPartitionPath(tuple);
         final int rotation;
-        if (rotationCounterMap.containsKey(partitionPath))
-        {
+        if (rotationCounterMap.containsKey(partitionPath)) {
             rotation = rotationCounterMap.get(partitionPath) + 1;
         } else {
             rotation = 0;
@@ -304,10 +296,11 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         rotationCounterMap.put(partitionPath, rotation);
 
         return new Path(this.fsUrl + this.fileNameFormat.getPath() + partitionPath,
-                this.fileNameFormat.getName(rotation, System.currentTimeMillis()));
+                        this.fileNameFormat.getName(rotation, System.currentTimeMillis()));
     }
 
-    abstract protected void doPrepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) throws IOException;
+    abstract protected void doPrepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) throws
+        IOException;
 
     abstract protected String getWriterKey(Tuple tuple);
 
@@ -318,7 +311,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         final OutputCollector collector;
 
         public WritersMap(long maxWriters, OutputCollector collector) {
-            super((int)maxWriters, 0.75f, true);
+            super((int) maxWriters, 0.75f, true);
             this.maxWriters = maxWriters;
             this.collector = collector;
         }

@@ -1,24 +1,22 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.redis.state;
 
 import com.google.common.primitives.UnsignedBytes;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import org.apache.storm.redis.common.adapter.RedisCommandsAdapterJedis;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
 import org.apache.storm.state.DefaultStateEncoder;
@@ -28,11 +26,6 @@ import org.junit.Before;
 import org.junit.Test;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
-
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
@@ -79,15 +72,15 @@ public class RedisKeyValueStateIteratorTest {
         putEncodedKeyValueToMap(chunkMap, "key2".getBytes(), "value2".getBytes());
 
         ScanResult<Map.Entry<byte[], byte[]>> scanResultFirst = new ScanResult<>(
-                "12345".getBytes(), new ArrayList<>(chunkMap.entrySet()));
+            "12345".getBytes(), new ArrayList<>(chunkMap.entrySet()));
         ScanResult<Map.Entry<byte[], byte[]>> scanResultSecond = new ScanResult<>(
-                ScanParams.SCAN_POINTER_START_BINARY, new ArrayList<Map.Entry<byte[], byte[]>>());
+            ScanParams.SCAN_POINTER_START_BINARY, new ArrayList<Map.Entry<byte[], byte[]>>());
         when(mockJedis.hscan(eq(namespace), any(byte[].class), any(ScanParams.class)))
-                .thenReturn(scanResultFirst, scanResultSecond);
+            .thenReturn(scanResultFirst, scanResultSecond);
 
         RedisKeyValueStateIterator<byte[], byte[]> kvIterator =
-                new RedisKeyValueStateIterator<>(namespace, mockContainer, pendingPrepare.entrySet().iterator(),
-                        pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
+            new RedisKeyValueStateIterator<>(namespace, mockContainer, pendingPrepare.entrySet().iterator(),
+                                             pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
 
         assertNextEntry(kvIterator, "key0".getBytes(), "value0".getBytes());
 
@@ -112,17 +105,17 @@ public class RedisKeyValueStateIteratorTest {
         putEncodedKeyValueToMap(chunkMap, "key2".getBytes(), "value2".getBytes());
 
         ScanResult<Map.Entry<byte[], byte[]>> scanResultFirst = new ScanResult<>(
-                "12345".getBytes(), new ArrayList<Map.Entry<byte[], byte[]>>());
+            "12345".getBytes(), new ArrayList<Map.Entry<byte[], byte[]>>());
         ScanResult<Map.Entry<byte[], byte[]>> scanResultSecond = new ScanResult<>(
-                "23456".getBytes(), new ArrayList<Map.Entry<byte[], byte[]>>());
+            "23456".getBytes(), new ArrayList<Map.Entry<byte[], byte[]>>());
         ScanResult<Map.Entry<byte[], byte[]>> scanResultThird = new ScanResult<>(
-                ScanParams.SCAN_POINTER_START_BINARY, new ArrayList<>(chunkMap.entrySet()));
+            ScanParams.SCAN_POINTER_START_BINARY, new ArrayList<>(chunkMap.entrySet()));
         when(mockJedis.hscan(eq(namespace), any(byte[].class), any(ScanParams.class)))
-                .thenReturn(scanResultFirst, scanResultSecond, scanResultThird);
+            .thenReturn(scanResultFirst, scanResultSecond, scanResultThird);
 
         RedisKeyValueStateIterator<byte[], byte[]> kvIterator =
-                new RedisKeyValueStateIterator<>(namespace, mockContainer, pendingPrepare.entrySet().iterator(),
-                        pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
+            new RedisKeyValueStateIterator<>(namespace, mockContainer, pendingPrepare.entrySet().iterator(),
+                                             pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
 
         assertNextEntry(kvIterator, "key0".getBytes(), "value0".getBytes());
 
@@ -152,17 +145,17 @@ public class RedisKeyValueStateIteratorTest {
         putEncodedKeyValueToMap(chunkMap2, "key4".getBytes(), "value4".getBytes());
 
         ScanResult<Map.Entry<byte[], byte[]>> scanResultFirst = new ScanResult<>(
-                "12345".getBytes(), new ArrayList<>(chunkMap.entrySet()));
+            "12345".getBytes(), new ArrayList<>(chunkMap.entrySet()));
         ScanResult<Map.Entry<byte[], byte[]>> scanResultSecond = new ScanResult<>(
-                "23456".getBytes(), new ArrayList<>(chunkMap2.entrySet()));
+            "23456".getBytes(), new ArrayList<>(chunkMap2.entrySet()));
         ScanResult<Map.Entry<byte[], byte[]>> scanResultThird = new ScanResult<>(
-                ScanParams.SCAN_POINTER_START_BINARY, new ArrayList<Map.Entry<byte[], byte[]>>());
+            ScanParams.SCAN_POINTER_START_BINARY, new ArrayList<Map.Entry<byte[], byte[]>>());
         when(mockJedis.hscan(eq(namespace), any(byte[].class), any(ScanParams.class)))
-                .thenReturn(scanResultFirst, scanResultSecond, scanResultThird);
+            .thenReturn(scanResultFirst, scanResultSecond, scanResultThird);
 
         RedisKeyValueStateIterator<byte[], byte[]> kvIterator =
-                new RedisKeyValueStateIterator<>(namespace, mockContainer, pendingPrepare.entrySet().iterator(),
-                        pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
+            new RedisKeyValueStateIterator<>(namespace, mockContainer, pendingPrepare.entrySet().iterator(),
+                                             pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
 
         // keys shouldn't appear twice
 
@@ -184,13 +177,13 @@ public class RedisKeyValueStateIteratorTest {
         NavigableMap<byte[], byte[]> pendingCommit = getBinaryTreeMap();
 
         ScanResult<Map.Entry<byte[], byte[]>> scanResult = new ScanResult<>(
-                ScanParams.SCAN_POINTER_START_BINARY, new ArrayList<Map.Entry<byte[], byte[]>>());
+            ScanParams.SCAN_POINTER_START_BINARY, new ArrayList<Map.Entry<byte[], byte[]>>());
         when(mockJedis.hscan(eq(namespace), any(byte[].class), any(ScanParams.class)))
-                .thenReturn(scanResult);
+            .thenReturn(scanResult);
 
         RedisKeyValueStateIterator<byte[], byte[]> kvIterator =
-                new RedisKeyValueStateIterator<>(namespace, mockContainer, pendingPrepare.entrySet().iterator(),
-                        pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
+            new RedisKeyValueStateIterator<>(namespace, mockContainer, pendingPrepare.entrySet().iterator(),
+                                             pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
 
         assertFalse(kvIterator.hasNext());
     }
