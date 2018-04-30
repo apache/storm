@@ -861,52 +861,9 @@ public class Utils {
      * @param jarFile the .jar file to unpack
      * @param toDir the destination directory into which to unpack the jar
      */
-    public static void unJar(File jarFile, File toDir)
-            throws IOException {
-        JarFile jar = new JarFile(jarFile);
-        try {
-            Enumeration<JarEntry> entries = jar.entries();
-            while (entries.hasMoreElements()) {
-                final JarEntry entry = entries.nextElement();
-                if (!entry.isDirectory()) {
-                    InputStream in = jar.getInputStream(entry);
-                    try {
-                        File file = new File(toDir, entry.getName());
-                        ensureDirectory(file.getParentFile());
-                        OutputStream out = new FileOutputStream(file);
-                        try {
-                            copyBytes(in, out, 8192);
-                        } finally {
-                            out.close();
-                        }
-                    } finally {
-                        in.close();
-                    }
-                }
-            }
-        } finally {
-            jar.close();
-        }
-    }
-
-    /**
-     * Copies from one stream to another.
-     *
-     * @param in InputStream to read from
-     * @param out OutputStream to write to
-     * @param buffSize the size of the buffer
-     */
-    public static void copyBytes(InputStream in, OutputStream out, int buffSize)
-            throws IOException {
-        PrintStream ps = out instanceof PrintStream ? (PrintStream)out : null;
-        byte buf[] = new byte[buffSize];
-        int bytesRead = in.read(buf);
-        while (bytesRead >= 0) {
-            out.write(buf, 0, bytesRead);
-            if ((ps != null) && ps.checkError()) {
-                throw new IOException("Unable to write to output stream.");
-            }
-            bytesRead = in.read(buf);
+    public static void unJar(File jarFile, File toDir) throws IOException {
+        try (JarFile jar = new JarFile(jarFile)) {
+            extractZipFile(jar, toDir, null);
         }
     }
 
@@ -930,20 +887,17 @@ public class Utils {
      *
      * @param inFile   The tar file as input.
      * @param untarDir The untar directory where to untar the tar file.
+     * @param symlinksDisabled true if symlinks should be disabled, else false.
      * @throws IOException
      */
-    public static void unTar(File inFile, File untarDir) throws IOException {
-        if (!untarDir.mkdirs()) {
-            if (!untarDir.isDirectory()) {
-                throw new IOException("Mkdirs failed to create " + untarDir);
-            }
-        }
+    public static void unTar(File inFile, File untarDir, boolean symlinksDisabled) throws IOException {
+        ensureDirectory(untarDir);
 
         boolean gzipped = inFile.toString().endsWith("gz");
-        if (isOnWindows()) {
+        if (Utils.isOnWindows() || symlinksDisabled) {
             // Tar is not native to Windows. Use simple Java based implementation for
             // tests and simple tar archives
-            unTarUsingJava(inFile, untarDir, gzipped);
+            unTarUsingJava(inFile, untarDir, gzipped, symlinksDisabled);
         } else {
             // spawn tar utility to untar archive for full fledged unix behavior such
             // as resolving symlinks in tar archives
@@ -980,7 +934,9 @@ public class Utils {
     }
 
     private static void unTarUsingJava(File inFile, File untarDir,
-                                       boolean gzipped) throws IOException {
+                                       boolean gzipped, boolean symlinksDisabled) throws IOException {
+        final String base = untarDir.getCanonicalPath();
+        LOG.trace("java untar {} to {}", inFile, base);
         InputStream inputStream = null;
         try {
             if (gzipped) {
@@ -991,7 +947,7 @@ public class Utils {
             }
             try (TarArchiveInputStream tis = new TarArchiveInputStream(inputStream)) {
                 for (TarArchiveEntry entry = tis.getNextTarEntry(); entry != null; ) {
-                    unpackEntries(tis, entry, untarDir);
+                    unpackEntries(tis, entry, untarDir, base, symlinksDisabled);
                     entry = tis.getNextTarEntry();
                 }
             }
@@ -1003,35 +959,82 @@ public class Utils {
     }
 
     private static void unpackEntries(TarArchiveInputStream tis,
-                                      TarArchiveEntry entry, File outputDir) throws IOException {
-        if (entry.isDirectory()) {
-            File subDir = new File(outputDir, entry.getName());
-            if (!subDir.mkdirs() && !subDir.isDirectory()) {
-                throw new IOException("Mkdirs failed to create tar internal dir "
-                        + outputDir);
-            }
-            for (TarArchiveEntry e : entry.getDirectoryEntries()) {
-                unpackEntries(tis, e, subDir);
-            }
+                                      TarArchiveEntry entry, File outputDir, final String base,
+                                      boolean symlinksDisabled) throws IOException {
+        File target = new File(outputDir, entry.getName());
+        String found = target.getCanonicalPath();
+        if (!found.startsWith(base)) {
+            LOG.error("Invalid location {} is outside of {}", found, base);
             return;
         }
-        File outputFile = new File(outputDir, entry.getName());
-        if (!outputFile.getParentFile().exists()) {
-            if (!outputFile.getParentFile().mkdirs()) {
-                throw new IOException("Mkdirs failed to create tar internal dir "
-                                      + outputDir);
+        if (entry.isDirectory()) {
+            LOG.trace("Extracting dir {}", target);
+            ensureDirectory(target);
+            for (TarArchiveEntry e : entry.getDirectoryEntries()) {
+                unpackEntries(tis, e, target, base, symlinksDisabled);
+            }
+        } else if (entry.isSymbolicLink()) {
+            if (symlinksDisabled) {
+                LOG.info("Symlinks disabled skipping {}", target);
+            } else {
+                Path src = target.toPath();
+                Path dest = Paths.get(entry.getLinkName());
+                LOG.trace("Extracting sym link {} to {}", target, dest);
+                // Create symbolic link relative to tar parent dir
+                Files.createSymbolicLink(src, dest);
+            }
+        } else if (entry.isFile()) {
+            LOG.trace("Extracting file {}", target);
+            ensureDirectory(target.getParentFile());
+            try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(target))) {
+                IOUtils.copy(tis, outputStream);
+            }
+        } else {
+            LOG.error("{} is not a currently supported tar entry type.", entry);
+        }
+
+        Path p = target.toPath();
+        if (Files.exists(p)) {
+            try {
+                //We created it so lets chmod it properly
+                int mode = entry.getMode();
+                Files.setPosixFilePermissions(p, parsePerms(mode));
+            } catch (UnsupportedOperationException e) {
+                //Ignored the file system we are on does not support this, so don't do it.
             }
         }
-        int count;
-        byte data[] = new byte[2048];
-        BufferedOutputStream outputStream = new BufferedOutputStream(
-                new FileOutputStream(outputFile));
+    }
 
-        while ((count = tis.read(data)) != -1) {
-            outputStream.write(data, 0, count);
+    private static Set<PosixFilePermission> parsePerms(int mode) {
+        Set<PosixFilePermission> ret = new HashSet<>();
+        if ((mode & 0001) > 0) {
+            ret.add(PosixFilePermission.OTHERS_EXECUTE);
         }
-        outputStream.flush();
-        outputStream.close();
+        if ((mode & 0002) > 0) {
+            ret.add(PosixFilePermission.OTHERS_WRITE);
+        }
+        if ((mode & 0004) > 0) {
+            ret.add(PosixFilePermission.OTHERS_READ);
+        }
+        if ((mode & 0010) > 0) {
+            ret.add(PosixFilePermission.GROUP_EXECUTE);
+        }
+        if ((mode & 0020) > 0) {
+            ret.add(PosixFilePermission.GROUP_WRITE);
+        }
+        if ((mode & 0040) > 0) {
+            ret.add(PosixFilePermission.GROUP_READ);
+        }
+        if ((mode & 0100) > 0) {
+            ret.add(PosixFilePermission.OWNER_EXECUTE);
+        }
+        if ((mode & 0200) > 0) {
+            ret.add(PosixFilePermission.OWNER_WRITE);
+        }
+        if ((mode & 0400) > 0) {
+            ret.add(PosixFilePermission.OWNER_READ);
+        }
+        return ret;
     }
 
     public static boolean isOnWindows() {
@@ -1045,16 +1048,21 @@ public class Utils {
         return Paths.get(path).isAbsolute();
     }
 
-    public static void unpack(File localrsrc, File dst) throws IOException {
+    public static void unpack(File localrsrc, File dst, boolean symLinksDisabled) throws IOException {
         String lowerDst = localrsrc.getName().toLowerCase();
-        if (lowerDst.endsWith(".jar")) {
+        if (lowerDst.endsWith(".jar") ||
+            lowerDst.endsWith("_jar")) {
             unJar(localrsrc, dst);
-        } else if (lowerDst.endsWith(".zip")) {
+        } else if (lowerDst.endsWith(".zip") ||
+            lowerDst.endsWith("_zip")) {
             unZip(localrsrc, dst);
         } else if (lowerDst.endsWith(".tar.gz") ||
-                lowerDst.endsWith(".tgz") ||
-                lowerDst.endsWith(".tar")) {
-            unTar(localrsrc, dst);
+            lowerDst.endsWith("_tar_gz") ||
+            lowerDst.endsWith(".tgz") ||
+            lowerDst.endsWith("_tgz") ||
+            lowerDst.endsWith(".tar") ||
+            lowerDst.endsWith("_tar")) {
+            unTar(localrsrc, dst, symLinksDisabled);
         } else {
             LOG.warn("Cannot unpack " + localrsrc);
             if (!localrsrc.renameTo(dst)) {
@@ -1064,6 +1072,35 @@ public class Utils {
         }
         if (localrsrc.isFile()) {
             localrsrc.delete();
+        }
+    }
+
+    private static void extractZipFile(ZipFile zipFile, File toDir, String prefix) throws IOException {
+        ensureDirectory(toDir);
+        final String base = toDir.getCanonicalPath();
+
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            if (!entry.isDirectory()) {
+                if (prefix != null && !entry.getName().startsWith(prefix)) {
+                    //No need to extract it, it is not what we are looking for.
+                    continue;
+                }
+                File file = new File(toDir, entry.getName());
+                String found = file.getCanonicalPath();
+                if (!found.startsWith(base)) {
+                    LOG.error("Invalid location {} is outside of {}", found, base);
+                    continue;
+                }
+
+                try (InputStream in = zipFile.getInputStream(entry)) {
+                    ensureDirectory(file.getParentFile());
+                    try (OutputStream out = new FileOutputStream(file)) {
+                        IOUtils.copy(in, out);
+                    }
+                }
+            }
         }
     }
 
@@ -1398,45 +1435,12 @@ public class Utils {
      * Given a File input it will unzip the file in a the unzip directory
      * passed as the second parameter
      * @param inFile The zip file as input
-     * @param unzipDir The unzip directory where to unzip the zip file.
+     * @param toDir The unzip directory where to unzip the zip file.
      * @throws IOException
      */
-    public static void unZip(File inFile, File unzipDir) throws IOException {
-        Enumeration<? extends ZipEntry> entries;
-        ZipFile zipFile = new ZipFile(inFile);
-
-        try {
-            entries = zipFile.entries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                if (!entry.isDirectory()) {
-                    InputStream in = zipFile.getInputStream(entry);
-                    try {
-                        File file = new File(unzipDir, entry.getName());
-                        if (!file.getParentFile().mkdirs()) {
-                            if (!file.getParentFile().isDirectory()) {
-                                throw new IOException("Mkdirs failed to create " +
-                                                      file.getParentFile().toString());
-                            }
-                        }
-                        OutputStream out = new FileOutputStream(file);
-                        try {
-                            byte[] buffer = new byte[8192];
-                            int i;
-                            while ((i = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, i);
-                            }
-                        } finally {
-                            out.close();
-                        }
-                    } finally {
-                        in.close();
-                    }
-                }
-            }
-        } finally {
-            zipFile.close();
-        }
+    public static void unZip(File inFile, File toDir) throws IOException {
+        try (ZipFile zipFile = new ZipFile(inFile)) {
+            extractZipFile(zipFile, toDir, null);        }
     }
 
     /**
@@ -1910,21 +1914,10 @@ public class Utils {
     public static void extractDirFromJar(String jarpath, String dir, File destdir) {
         _instance.extractDirFromJarImpl(jarpath, dir, destdir);
     }
-    
+
     public void extractDirFromJarImpl(String jarpath, String dir, File destdir) {
         try (JarFile jarFile = new JarFile(jarpath)) {
-            Enumeration<JarEntry> jarEnums = jarFile.entries();
-            while (jarEnums.hasMoreElements()) {
-                JarEntry entry = jarEnums.nextElement();
-                if (!entry.isDirectory() && entry.getName().startsWith(dir)) {
-                    File aFile = new File(destdir, entry.getName());
-                    aFile.getParentFile().mkdirs();
-                    try (FileOutputStream out = new FileOutputStream(aFile);
-                         InputStream in = jarFile.getInputStream(entry)) {
-                        IOUtils.copy(in, out);
-                    }
-                }
-            }
+            extractZipFile(jarFile, destdir, dir);
         } catch (IOException e) {
             LOG.info("Could not extract {} from {}", dir, jarpath);
         }

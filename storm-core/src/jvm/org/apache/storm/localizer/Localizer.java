@@ -543,7 +543,7 @@ public class Localizer {
           out.close();
           in.close();
           if (uncompress) {
-            Utils.unpack(new File(downloadFile), new File(localFileWithVersion));
+            Utils.unpack(new File(downloadFile), new File(localFileWithVersion), (boolean)OR(_conf.get(Config.DISABLE_SYMLINKS), false));
             LOG.debug("uncompressed " + downloadFile + " to: " + localFileWithVersion);
           }
 
