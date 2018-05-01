@@ -53,7 +53,7 @@ public class TridentKafkaStateFactory<K, V> implements StateFactory {
     }
 
     @Override
-    public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    public State makeState(@SuppressWarnings("rawtypes") Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
         LOG.info("makeState(partitonIndex={}, numpartitions={}", partitionIndex, numPartitions);
         TridentKafkaState<K, V> state = new TridentKafkaState<>();
         state.withKafkaTopicSelector(this.topicSelector)

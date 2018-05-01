@@ -118,7 +118,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this.context = context;
 
         // Spout internals

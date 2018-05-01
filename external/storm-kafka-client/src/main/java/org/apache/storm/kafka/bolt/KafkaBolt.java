@@ -99,12 +99,12 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(@SuppressWarnings("rawtypes") Map topoConf, TopologyContext context, OutputCollector collector) {
         LOG.info("Preparing bolt with configuration {}", this);
         //for backward compatibility.
         if (mapper == null) {
             LOG.info("Mapper not specified. Setting default mapper to {}", FieldNameBasedTupleToKafkaMapper.class.getSimpleName());
-            this.mapper = new FieldNameBasedTupleToKafkaMapper<K,V>();
+            this.mapper = new FieldNameBasedTupleToKafkaMapper<>();
         }
 
         //for backward compatibility.
