@@ -8,7 +8,15 @@ This includes the new Apache Kafka consumer API.
 
 ## Compatibility
 
-Apache Kafka versions 0.10 onwards
+Apache Kafka versions 0.10 onwards. 
+Note that unlike Storm 1.x, this module requires Java 8.
+Compatible Storm versions are listed below, for each active Storm release line.
+
+| Storm release line | Earliest supported version |
+| --- | --- |
+| 1.1.x | 1.1.3 |
+| 1.2.x | 1.2.2 |
+| 2.x | 2.0.0 |
 
 ## Writing to Kafka as part of your topology
 You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you

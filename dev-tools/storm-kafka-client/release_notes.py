@@ -19,7 +19,7 @@
 
 Depends on https://pypi.python.org/pypi/jira/, please use pip to install this module.
 
-Generates release notes for a Storm release by generating an HTML doc containing some introductory information about the
+Generates release notes for a Storm-kafka-client release by generating an HTML doc containing some introductory information about the
  release with links to the Storm docs followed by a list of issues resolved in the release. The script will fail if it finds
  any unresolved issues still marked with the target release. You should run this script after either resolving all issues or
  moving outstanding issues to a later release.
@@ -57,7 +57,7 @@ def issue_link(issue):
 
 if __name__ == "__main__":
     apache = JIRA(JIRA_BASE_URL)
-    issues = get_issues(apache, 'project=STORM and fixVersion=%s and component!=storm-kafka-client' % version)
+    issues = get_issues(apache, 'project=STORM and fixVersion=%s and component=storm-kafka-client' % version)
     if not issues:
         print >>sys.stderr, "Didn't find any issues for the target fix version"
         sys.exit(1)
@@ -101,11 +101,11 @@ if __name__ == "__main__":
     print "<html lang=\"en\">"
     print "<head>"
     print "<meta charset=\"utf-8\">"
-    print "<title>Storm %(version)s Release Notes</title>" % { 'version': version }
+    print "<title>Storm-kafka-client %(version)s Release Notes</title>" % { 'version': version }
     print "</head>"
     print "<body>"
-    print "<h1>Release Notes for Storm %s</h1>" % version
-    print """<p>JIRA issues addressed in the %(version)s release of Storm. Documentation for this
+    print "<h1>Release Notes for Storm-kafka-client %s</h1>" % version
+    print """<p>JIRA issues addressed in the %(version)s release of Storm-kafka-client. Documentation for this
     release is available at the <a href="http://storm.apache.org/">Apache Storm
     project site</a>.</p>""" % { 'version': version }
     for itype, issues in by_group:

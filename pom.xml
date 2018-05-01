@@ -324,8 +324,10 @@
         <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
 
         <!-- kafka version used by new storm-kafka-client spout code -->
-        <storm.kafka.client.version>0.10.1.0</storm.kafka.client.version>
-
+        <kafka.client.version>0.10.1.0</kafka.client.version>
+        <!-- version of the storm-kafka-client artifact to use when building dependent modules -->
+        <!-- TODO: This should not be a snapshot version since storm-kafka-client is released independently -->
+        <storm.kafka.client.version>2.0.0-SNAPSHOT</storm.kafka.client.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
@@ -383,7 +385,6 @@
         <module>external/storm-cassandra</module>
         <module>external/storm-mqtt</module>
         <module>external/storm-mongodb</module>
-        <module>external/storm-kafka-client</module>
         <module>external/storm-kafka-migration</module>
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
@@ -1075,7 +1076,7 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
-                <version>${storm.kafka.client.version}</version>
+                <version>${kafka.client.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
