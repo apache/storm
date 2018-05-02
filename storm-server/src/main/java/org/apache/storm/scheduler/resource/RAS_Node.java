@@ -206,7 +206,8 @@ public class RAS_Node {
     }
 
     public int totalSlotsUsed(String topId) {
-        return getUsedSlots(topId).size();
+        Collection<WorkerSlot> usedSlots = getUsedSlots(topId);
+        return usedSlots == null ? 0 : usedSlots.size();
     }
 
     public int totalSlots() {

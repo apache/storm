@@ -97,9 +97,11 @@ public class CgroupCenter implements CgroupOperation {
     @Override
     public boolean isSubSystemEnabled(SubSystemType subSystemType) {
         Set<SubSystem> subSystems = this.getSubSystems();
-        for (SubSystem subSystem : subSystems) {
-            if (subSystem.getType() == subSystemType) {
-                return true;
+        if (subSystems != null){
+            for (SubSystem subSystem : subSystems) {
+                if (subSystem.getType() == subSystemType) {
+                    return true;
+                }
             }
         }
         return false;
@@ -113,6 +115,9 @@ public class CgroupCenter implements CgroupOperation {
     @Override
     public Hierarchy getHierarchyWithSubSystems(List<SubSystemType> subSystems) {
         List<Hierarchy> hierarchies = this.getHierarchies();
+        if (hierarchies == null) {
+            return null;
+        }
         for (Hierarchy hierarchy : hierarchies) {
             Hierarchy ret = hierarchy;
             for (SubSystemType subSystem : subSystems) {
