@@ -99,6 +99,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
      */
     private static boolean checkConstraintsSatisfied(Cluster cluster, TopologyDetails topo) {
         LOG.info("Checking constraints...");
+        assert (cluster.getAssignmentById(topo.getId()) != null);
         Map<ExecutorDetails, WorkerSlot> result = cluster.getAssignmentById(topo.getId()).getExecutorToSlot();
         Map<ExecutorDetails, String> execToComp = topo.getExecutorToComponent();
         //get topology constraints
@@ -136,6 +137,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
 
     private static boolean checkSpreadSchedulingValid(Cluster cluster, TopologyDetails topo) {
         LOG.info("Checking for a valid scheduling...");
+        assert (cluster.getAssignmentById(topo.getId()) != null);
         Map<ExecutorDetails, WorkerSlot> result = cluster.getAssignmentById(topo.getId()).getExecutorToSlot();
         Map<ExecutorDetails, String> execToComp = topo.getExecutorToComponent();
         Map<WorkerSlot, HashSet<ExecutorDetails>> workerExecMap = new HashMap<>();
@@ -174,6 +176,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
      */
     private static boolean checkResourcesCorrect(Cluster cluster, TopologyDetails topo) {
         LOG.info("Checking Resources...");
+        assert (cluster.getAssignmentById(topo.getId()) != null);
         Map<ExecutorDetails, WorkerSlot> result = cluster.getAssignmentById(topo.getId()).getExecutorToSlot();
         Map<RAS_Node, Collection<ExecutorDetails>> nodeToExecs = new HashMap<>();
         Map<ExecutorDetails, WorkerSlot> mergedExecToWorker = new HashMap<>();
