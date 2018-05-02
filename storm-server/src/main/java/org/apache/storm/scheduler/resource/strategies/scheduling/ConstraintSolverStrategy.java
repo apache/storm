@@ -13,6 +13,7 @@
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import com.google.common.annotations.VisibleForTesting;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
@@ -202,7 +204,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             double cpuUsed = 0.0;
             double memoryUsed = 0.0;
             for (ExecutorDetails exec : execs) {
-                cpuUsed += topo.getTotalCpuReqTask(exec);
+                Double execCpu = topo.getTotalCpuReqTask(exec);
+                if (execCpu != null) {
+                	cpuUsed += execCpu;
+                }
                 memoryUsed += topo.getTotalMemReqTask(exec);
             }
             if (node.getAvailableCpuResources() != (node.getTotalCpuResources() - cpuUsed)) {

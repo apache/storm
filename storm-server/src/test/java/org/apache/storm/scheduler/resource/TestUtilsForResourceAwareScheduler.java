@@ -440,7 +440,10 @@ public class TestUtilsForResourceAwareScheduler {
             for (Map.Entry<SupervisorDetails, List<ExecutorDetails>> entry : supervisorToExecutors.entrySet()) {
                 Double supervisorUsedCpu = 0.0;
                 for (ExecutorDetails executor : entry.getValue()) {
-                    supervisorUsedCpu += topology.getTotalCpuReqTask(executor);
+                	Double execCpu = topology.getTotalCpuReqTask(executor);
+                    if (execCpu != null) {
+                        supervisorUsedCpu += execCpu;
+                    }
                 }
                 superToCpu.put(entry.getKey(), superToCpu.get(entry.getKey()) + supervisorUsedCpu);
             }
