@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.storm.Config;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAuthorizer;
@@ -129,7 +130,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
      */
     @Override
     public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
-        String principal = context.principal().getName();
+    	String principal = context.principal() != null ? context.principal().getName() : null;
         String user = ptol.toLocal(context.principal());
         Set<String> userGroups = new HashSet<>();
 

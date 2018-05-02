@@ -89,7 +89,7 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
      */
     @Override
     public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
-        String principal = context.principal().getName();
+        String principal = context.principal() != null ? context.principal().getName() : null;
         String user = ptol.toLocal(context.principal());
         Set<String> userGroups = new HashSet<>();
 
