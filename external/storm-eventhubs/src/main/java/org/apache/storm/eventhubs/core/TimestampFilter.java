@@ -21,7 +21,7 @@ package org.apache.storm.eventhubs.core;
 import java.time.Instant;
 
 public class TimestampFilter implements IEventFilter {
-    Instant time = null;
+    final Instant time;
 
     public TimestampFilter(Instant time) {
         this.time = time;

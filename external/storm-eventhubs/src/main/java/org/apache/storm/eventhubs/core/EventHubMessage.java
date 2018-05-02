@@ -18,6 +18,7 @@
 package org.apache.storm.eventhubs.core;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -35,7 +36,7 @@ import com.microsoft.azure.eventhubs.EventData;
  * properties set, and the system properties (partition key, offset, enqueue
  * time, sequence number, and publisher) set on the Eventhub message.
  */
-public class EventHubMessage implements Comparable<EventHubMessage> {
+public class EventHubMessage implements Comparable<EventHubMessage>, Serializable {
     private final byte[] content;
     private final String partitionId;
     private final String partitionKey;

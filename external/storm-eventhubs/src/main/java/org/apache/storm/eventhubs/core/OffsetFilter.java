@@ -19,7 +19,7 @@
 package org.apache.storm.eventhubs.core;
 
 public class OffsetFilter implements IEventFilter {
-    String offset = null;
+    final String offset;
 
     public OffsetFilter(String offset) {
         this.offset = offset;

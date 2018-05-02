@@ -212,7 +212,7 @@ public class EventHubSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        List<IPartitionManager> partitionManagers = partitionCoordinator.getMyPartitionManagers();
+        final List<IPartitionManager> partitionManagers = partitionCoordinator.getMyPartitionManagers();
         EventHubMessage ehm = null;
 
         for (int i = 0; i < partitionManagers.size(); i++) {
@@ -230,8 +230,8 @@ public class EventHubSpout extends BaseRichSpout {
         }
 
         if (ehm != null) {
-            MessageId messageId = ehm.getMessageId();
-            List<Object> tuples = eventHubConfig.getEventDataScheme().deserialize(ehm);
+            final MessageId messageId = ehm.getMessageId();
+            final List<Object> tuples = eventHubConfig.getEventDataScheme().deserialize(ehm);
             collector.emit(tuples, messageId);
         }
 
