@@ -91,22 +91,23 @@ int main(int argc, char **argv) {
     fprintf(ERRORFILE, "Configuration file %s not found.\n", orig_conf_file);
     exit(INVALID_CONFIG_FILE);
   }
+  if (do_check_setup) {
+    fprintf(LOGFILE, "Using configuration file %s \n", conf_file);
+  }
   if (check_configuration_permissions(conf_file) != 0) {
     exit(INVALID_CONFIG_FILE);
   }
   read_config(conf_file);
-  free(conf_file);
-  conf_file = NULL;
 
-  // look up the node manager group in the config file
-  char *nm_group = get_value(LAUNCHER_GROUP_KEY);
-  if (nm_group == NULL) {
+  // look up the worker launcher group in the config file
+  char *wl_group = get_value(LAUNCHER_GROUP_KEY);
+  if (wl_group == NULL) {
     fprintf(ERRORFILE, "Can't get configured value for %s.\n", LAUNCHER_GROUP_KEY);
     exit(INVALID_CONFIG_FILE);
   }
-  struct group *group_info = getgrnam(nm_group);
+  struct group *group_info = getgrnam(wl_group);
   if (group_info == NULL) {
-    fprintf(ERRORFILE, "Can't get group information for %s - %s.\n", nm_group,
+    fprintf(ERRORFILE, "Can't get group information for %s - %s.\n", wl_group,
             strerror(errno));
     fflush(LOGFILE);
     exit(INVALID_CONFIG_FILE);
@@ -119,9 +120,15 @@ int main(int argc, char **argv) {
   setgid(group_info->gr_gid);
 
   if (check_executor_permissions(executable_file) != 0) {
-    fprintf(ERRORFILE, "Invalid permissions on worker-launcher binary.\n");
+    fprintf(LOGFILE, "worker-launcher config file: %s \n", conf_file);
+    free(conf_file);
+    conf_file = NULL;
+    fprintf(ERRORFILE, "ERROR: Invalid permissions on worker-launcher binary.\n");
     return INVALID_CONTAINER_EXEC_PERMISSIONS;
   }
+
+  free(conf_file);
+  conf_file = NULL;
 
   if (do_check_setup != 0) {
     // basic setup checks done
