@@ -91,7 +91,7 @@ public class LocalFsBlobStore extends BlobStore {
     private ILeaderElector leaderElector;
 
     @Override
-    public void prepare(Map<String, Object> conf, String overrideBase, NimbusInfo nimbusInfo) {
+    public void prepare(Map<String, Object> conf, String overrideBase, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
         this.conf = conf;
         this.nimbusInfo = nimbusInfo;
         zkClient = BlobStoreUtils.createZKClient(conf, DaemonType.NIMBUS);
@@ -111,11 +111,7 @@ public class LocalFsBlobStore extends BlobStore {
             e.printStackTrace();
         }
         timer = new Timer();
-        try {
-            this.leaderElector = Zookeeper.zkLeaderElector(conf, zkClient, this, null, stormClusterState, getNimbusAcls(conf));
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
+        this.leaderElector = leaderElector;
     }
 
     /**
@@ -441,6 +437,7 @@ public class LocalFsBlobStore extends BlobStore {
             if (!keyList.contains(key)) {
                 if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + key) != null) {
                     Set<NimbusInfo> nimbusSet = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
+                    nimbusSet.remove(this.nimbusInfo);
                     if (BlobStoreUtils.downloadMissingBlob(conf, this, key, nimbusSet)) {
                         LOG.debug("Updating blobs state");
                         BlobStoreUtils.createStateInZookeeper(conf, key, nimbusInfo);

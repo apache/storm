@@ -30,6 +30,7 @@ import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
@@ -73,7 +74,7 @@ public abstract class BlobStore implements Shutdownable {
      * @param baseDir    The directory path to store the blobs
      * @param nimbusInfo Contains the nimbus host, port and leadership information.
      */
-    public abstract void prepare(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo);
+    public abstract void prepare(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo, ILeaderElector leaderElector);
 
     /**
      * Start the syncing blobs between the local running instance of the BlobStore and others.

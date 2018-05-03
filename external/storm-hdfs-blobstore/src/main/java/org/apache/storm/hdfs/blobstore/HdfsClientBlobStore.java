@@ -51,7 +51,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     public void prepare(Map<String, Object> conf) {
         this._conf = conf;
         _blobStore = new HdfsBlobStore();
-        _blobStore.prepare(conf, null, null);
+        _blobStore.prepare(conf, null, null, null);
     }
 
     @Override

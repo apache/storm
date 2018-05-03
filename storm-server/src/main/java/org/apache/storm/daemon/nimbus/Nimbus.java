@@ -480,13 +480,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.heartbeatsRecoveryStrategy = WorkerHeartbeatsRecoveryStrategyFactory.getStrategy(conf);
         this.downloaders = fileCacheMap(conf);
         this.uploaders = fileCacheMap(conf);
-        if (blobStore == null) {
-            blobStore = ServerUtils.getNimbusBlobStore(conf, this.nimbusHostPortInfo);
-        }
-        this.blobStore = blobStore;
-        if (topoCache == null) {
-            topoCache = new TopoCache(blobStore, conf);
-        }
         this.topoCache = topoCache;
         this.blobDownloaders = makeBlobCacheMap(conf);
         this.blobUploaders = makeBlobCacheMap(conf);
@@ -501,10 +494,22 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.underlyingScheduler = makeScheduler(conf, inimbus);
         this.scheduler = wrapAsBlacklistScheduler(conf, underlyingScheduler);
         this.zkClient = makeZKClient(conf);
+
         if (leaderElector == null) {
             leaderElector = Zookeeper.zkLeaderElector(conf, zkClient, blobStore, topoCache, stormClusterState, getNimbusAcls(conf));
         }
         this.leaderElector = leaderElector;
+        if (blobStore == null) {
+            blobStore = ServerUtils.getNimbusBlobStore(conf, this.nimbusHostPortInfo, this.leaderElector);
+        }
+        this.blobStore = blobStore;
+        if (topoCache == null) {
+            topoCache = new TopoCache(blobStore, conf);
+        }
+
+        if (leaderElector == null) {
+            leaderElector = Zookeeper.zkLeaderElector(conf, zkClient, blobStore, topoCache, stormClusterState, getNimbusAcls(conf));
+        }
         this.assignmentsDistributer = AssignmentDistributionService.getInstance(conf);
         this.idToSchedStatus = new AtomicReference<>(new HashMap<>());
         this.nodeIdToResources = new AtomicReference<>(new HashMap<>());
