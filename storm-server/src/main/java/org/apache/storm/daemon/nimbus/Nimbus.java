@@ -374,11 +374,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     // END TOPOLOGY STATE TRANSITIONS
 
-    static {
-        NIMBUS_SUBJECT.getPrincipals().add(new NimbusPrincipal());
-        NIMBUS_SUBJECT.setReadOnly();
-    }
-
     private final Map<String, Object> conf;
     private final NavigableMap<SimpleVersion, List<String>> supervisorClasspaths;
     private final NimbusInfo nimbusHostPortInfo;

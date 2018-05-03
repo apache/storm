@@ -100,7 +100,7 @@ public class LocalFsBlobStoreTest {
     conf.put(Config.STORM_ZOOKEEPER_PORT, zk.getPort());
     conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
     conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN,"org.apache.storm.security.auth.DefaultPrincipalToLocal");
-    spy.prepare(conf, null, mock(NimbusInfo.class));
+    spy.prepare(conf, null, mock(NimbusInfo.class), null);
     return spy;
   }
 

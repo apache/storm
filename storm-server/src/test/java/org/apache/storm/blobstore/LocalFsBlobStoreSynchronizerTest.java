@@ -75,7 +75,7 @@ public class LocalFsBlobStoreSynchronizerTest {
         conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
         conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "org.apache.storm.security.auth.DefaultPrincipalToLocal");
         this.conf = conf;
-        store.prepare(conf, null, null);
+        store.prepare(conf, null, null, null);
         return store;
     }
 

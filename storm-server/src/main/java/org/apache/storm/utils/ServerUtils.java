@@ -75,8 +75,8 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.nimbus.ILeaderElector;
+import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.security.auth.SingleUserPrincipal;
@@ -97,7 +97,8 @@ public class ServerUtils {
     private static ServerUtils _instance = new ServerUtils();
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * Provide an instance of this class for delegates to use.
+     * To mock out delegated methods, provide an instance of a subclass that
      * overrides the implementation of the delegated method.
      *
      * @param u a ServerUtils instance

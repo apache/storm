@@ -722,7 +722,7 @@ public class AsyncLocalizerTest {
         LocalFsBlobStore spy = spy(bs);
         Mockito.doReturn(true).when(spy).checkForBlobOrDownload(key1);
         Mockito.doNothing().when(spy).checkForBlobUpdate(key1);
-        spy.prepare(conf, null, null);
+        spy.prepare(conf, null, null, null);
         spy.getBlob(key1, null);
     }
 
