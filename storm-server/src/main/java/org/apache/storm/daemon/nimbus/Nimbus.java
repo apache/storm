@@ -280,12 +280,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         state.removeStorm(topoId);
         notifySupervisorsAsKilled(state, oldAssignment, nimbus.getAssignmentsDistributer());
         BlobStore store = nimbus.getBlobStore();
-        if (store instanceof LocalFsBlobStore) {
-            for (String key : Nimbus.getKeyListFromId(nimbus.getConf(), topoId)) {
-                state.removeBlobstoreKey(key);
-                state.removeKeyVersion(key);
-            }
-        }
         nimbus.getHeartbeatsCache().getAndUpdate(new Dissoc<>(topoId));
         return null;
     };
@@ -480,7 +474,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.heartbeatsRecoveryStrategy = WorkerHeartbeatsRecoveryStrategyFactory.getStrategy(conf);
         this.downloaders = fileCacheMap(conf);
         this.uploaders = fileCacheMap(conf);
-        this.topoCache = topoCache;
         this.blobDownloaders = makeBlobCacheMap(conf);
         this.blobUploaders = makeBlobCacheMap(conf);
         this.blobListers = makeBlobListCacheMap(conf);
@@ -495,21 +488,19 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.scheduler = wrapAsBlacklistScheduler(conf, underlyingScheduler);
         this.zkClient = makeZKClient(conf);
 
+        if (blobStore == null) {
+            blobStore = ServerUtils.getNimbusBlobStore(conf, this.nimbusHostPortInfo, null);
+        }
+        this.blobStore = blobStore;
         if (leaderElector == null) {
             leaderElector = Zookeeper.zkLeaderElector(conf, zkClient, blobStore, topoCache, stormClusterState, getNimbusAcls(conf));
         }
         this.leaderElector = leaderElector;
-        if (blobStore == null) {
-            blobStore = ServerUtils.getNimbusBlobStore(conf, this.nimbusHostPortInfo, this.leaderElector);
-        }
-        this.blobStore = blobStore;
+        this.blobStore.setLeaderElector(this.leaderElector);
         if (topoCache == null) {
             topoCache = new TopoCache(blobStore, conf);
         }
-
-        if (leaderElector == null) {
-            leaderElector = Zookeeper.zkLeaderElector(conf, zkClient, blobStore, topoCache, stormClusterState, getNimbusAcls(conf));
-        }
+        this.topoCache = topoCache;
         this.assignmentsDistributer = AssignmentDistributionService.getInstance(conf);
         this.idToSchedStatus = new AtomicReference<>(new HashMap<>());
         this.nodeIdToResources = new AtomicReference<>(new HashMap<>());

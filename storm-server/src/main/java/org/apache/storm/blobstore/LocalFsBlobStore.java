@@ -298,6 +298,16 @@ public class LocalFsBlobStore extends BlobStore {
         return rbm;
     }
 
+    /**
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi
+     *
+     * @param leaderElector
+     */
+    @Override
+    public void setLeaderElector(ILeaderElector leaderElector) {
+        this.leaderElector = leaderElector;
+    }
+
     @Override
     public void setBlobMeta(String key, SettableBlobMeta meta, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);

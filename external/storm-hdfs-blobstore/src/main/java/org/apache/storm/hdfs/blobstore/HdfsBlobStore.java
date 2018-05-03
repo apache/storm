@@ -279,6 +279,16 @@ public class HdfsBlobStore extends BlobStore {
         return rbm;
     }
 
+    /**
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi
+     *
+     * @param leaderElector
+     */
+    @Override
+    public void setLeaderElector(ILeaderElector leaderElector) {
+        // NO-OP
+    }
+
     @Override
     public void setBlobMeta(String key, SettableBlobMeta meta, Subject who)
             throws AuthorizationException, KeyNotFoundException {

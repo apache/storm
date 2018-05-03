@@ -124,6 +124,12 @@ public abstract class BlobStore implements Shutdownable {
     public abstract ReadableBlobMeta getBlobMeta(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
 
     /**
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi
+     * @param leaderElector
+     */
+
+    public abstract void setLeaderElector(ILeaderElector leaderElector);
+    /**
      * Sets the metadata with renewed acls for the blob.
      *
      * @param key  Key for the blob.
