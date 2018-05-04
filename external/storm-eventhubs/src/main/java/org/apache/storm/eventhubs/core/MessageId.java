@@ -17,7 +17,9 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.core;
 
-public class MessageId {
+import java.io.Serializable;
+
+public class MessageId implements Serializable {
 
     private final String partitionId;
     private final String offset;
