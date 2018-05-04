@@ -101,7 +101,6 @@ public class HdfsSpout extends BaseRichSpout {
     private final AtomicBoolean commitTimeElapsed = new AtomicBoolean(false);
     private Timer commitTimer;
     private boolean fileReadCompletely = true;
-    private boolean newReader = false;
 
     private String configKey = Configs.DEFAULT_HDFS_CONFIG_KEY; // key for hdfs Kerberos configs
 
@@ -222,6 +221,7 @@ public class HdfsSpout extends BaseRichSpout {
         while (true) {
             try {
                 // 3) Select a new file if one is not open already
+                boolean newReader = false;
                 if (reader == null) {
                     reader = pickNextFile();
                     if (reader == null) {

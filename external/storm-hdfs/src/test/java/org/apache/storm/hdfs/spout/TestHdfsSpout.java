@@ -164,14 +164,13 @@ public class TestHdfsSpout {
         try (AutoCloseableHdfsSpout closeableSpout = makeSpout(Configs.TEXT, TextFileReader.defaultFields)) {
             HdfsSpout spout = closeableSpout.spout;
             spout.setCommitFrequencyCount(1);
-            spout.setCommitFrequencySec(1);
 
             Map<String, Object> conf = getCommonConfigs();
             conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
             openSpout(spout, 0, conf);
 
             // consume empty file
-            runSpout(spout, "r6");
+            runSpout(spout, "r1");
             Path arc1 = new Path(archive.toString() + "/file_empty.txt");
             checkCollectorOutput_txt((MockCollector) spout.getCollector(), arc1);
 
