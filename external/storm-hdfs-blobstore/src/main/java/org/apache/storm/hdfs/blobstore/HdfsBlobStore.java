@@ -32,6 +32,7 @@ import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -114,7 +115,7 @@ public class HdfsBlobStore extends BlobStore {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, String overrideBase, NimbusInfo nimbusInfo) {
+    public void prepare(Map<String, Object> conf, String overrideBase, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
         this.conf = conf;
         prepareInternal(conf, overrideBase, null);
     }
@@ -276,6 +277,16 @@ public class HdfsBlobStore extends BlobStore {
             throw new RuntimeException(e);
         }
         return rbm;
+    }
+
+    /**
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi
+     *
+     * @param leaderElector
+     */
+    @Override
+    public void setLeaderElector(ILeaderElector leaderElector) {
+        // NO-OP
     }
 
     @Override

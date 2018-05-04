@@ -40,13 +40,13 @@ import static org.junit.Assert.assertTrue;
 
 /**
  *  Unit tests for most of the testable utility methods
- *  and BlobSynchronizer class methods
+ *  and LocalFsBlobStoreSynchronizer class methods
  */
-public class BlobSynchronizerTest {
-    private static Map<String, Object> conf = new HashMap();
-    private URI base;
-    private File baseFile;
-    private NIOServerCnxnFactory factory;
+public class LocalFsBlobStoreSynchronizerTest {
+  private URI base;
+  private File baseFile;
+  private static Map<String, Object> conf = new HashMap();
+  private NIOServerCnxnFactory factory;
 
     // Method which initializes nimbus admin
     public static void initializeConfigs() {
@@ -75,31 +75,31 @@ public class BlobSynchronizerTest {
         conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
         conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "org.apache.storm.security.auth.DefaultPrincipalToLocal");
         this.conf = conf;
-        store.prepare(conf, null, null);
+        store.prepare(conf, null, null, null);
         return store;
     }
 
-    @Test
-    public void testBlobSynchronizerForKeysToDownload() {
-        BlobStore store = initLocalFs();
-        BlobSynchronizer sync = new BlobSynchronizer(store, conf);
-        // test for keylist to download
-        Set<String> zkSet = new HashSet<String>();
-        zkSet.add("key1");
-        Set<String> blobStoreSet = new HashSet<String>();
-        blobStoreSet.add("key1");
-        Set<String> resultSet = sync.getKeySetToDownload(blobStoreSet, zkSet);
-        assertTrue("Not Empty", resultSet.isEmpty());
-        zkSet.add("key1");
-        blobStoreSet.add("key2");
-        resultSet = sync.getKeySetToDownload(blobStoreSet, zkSet);
-        assertTrue("Not Empty", resultSet.isEmpty());
-        blobStoreSet.remove("key1");
-        blobStoreSet.remove("key2");
-        zkSet.add("key1");
-        resultSet = sync.getKeySetToDownload(blobStoreSet, zkSet);
-        assertTrue("Unexpected keys to download", (resultSet.size() == 1) && (resultSet.contains("key1")));
-    }
+  @Test
+  public void testBlobSynchronizerForKeysToDownload() {
+    BlobStore store = initLocalFs();
+    LocalFsBlobStoreSynchronizer sync = new LocalFsBlobStoreSynchronizer(store, conf);
+    // test for keylist to download
+    Set<String> zkSet = new HashSet<String>();
+    zkSet.add("key1");
+    Set<String> blobStoreSet = new HashSet<String>();
+    blobStoreSet.add("key1");
+    Set<String> resultSet = sync.getKeySetToDownload(blobStoreSet, zkSet);
+    assertTrue("Not Empty", resultSet.isEmpty());
+    zkSet.add("key1");
+    blobStoreSet.add("key2");
+    resultSet =  sync.getKeySetToDownload(blobStoreSet, zkSet);
+    assertTrue("Not Empty", resultSet.isEmpty());
+    blobStoreSet.remove("key1");
+    blobStoreSet.remove("key2");
+    zkSet.add("key1");
+    resultSet =  sync.getKeySetToDownload(blobStoreSet, zkSet);
+    assertTrue("Unexpected keys to download", (resultSet.size() == 1) && (resultSet.contains("key1")));
+  }
 
     @Test
     public void testGetLatestSequenceNumber() throws Exception {

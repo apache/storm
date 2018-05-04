@@ -30,6 +30,7 @@ import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
@@ -73,7 +74,16 @@ public abstract class BlobStore implements Shutdownable {
      * @param baseDir    The directory path to store the blobs
      * @param nimbusInfo Contains the nimbus host, port and leadership information.
      */
-    public abstract void prepare(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo);
+    public abstract void prepare(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo, ILeaderElector leaderElector);
+
+    /**
+     * Start the syncing blobs between the local running instance of the BlobStore and others.
+     * A no-op for the HdfsBlobStore where HDFS itself does the syncing
+     * but for the LocalFsBlobStore ZK state updates are run periodically here.
+     */
+    public void startSyncBlobs() throws KeyNotFoundException, AuthorizationException {
+        // NO-OP by default
+    }
 
     /**
      * Creates the blob.
@@ -113,6 +123,12 @@ public abstract class BlobStore implements Shutdownable {
      */
     public abstract ReadableBlobMeta getBlobMeta(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
 
+    /**
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi
+     * @param leaderElector
+     */
+
+    public abstract void setLeaderElector(ILeaderElector leaderElector);
     /**
      * Sets the metadata with renewed acls for the blob.
      *

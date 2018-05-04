@@ -92,10 +92,10 @@ public class MigrateBlobs {
         
         /* CREATE THE BLOBSTORES */
         LocalFsBlobStore lfsBlobStore = new LocalFsBlobStore();
-        lfsBlobStore.prepare(lfsConf, null, NimbusInfo.fromConf(lfsConf));
+        lfsBlobStore.prepare(lfsConf, null, NimbusInfo.fromConf(lfsConf), null);
         
         HdfsBlobStore hdfsBlobStore = new HdfsBlobStore();
-        hdfsBlobStore.prepare(hdfsConf, null, null);
+        hdfsBlobStore.prepare(hdfsConf, null, null, null);
         
         
         /* LOOK AT LOCAL BLOBSTORE */

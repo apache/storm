@@ -697,7 +697,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setupBlobstore(String key, NimbusInfo nimbusInfo, Integer versionInfo) {
+    public void setupBlob(String key, NimbusInfo nimbusInfo, Integer versionInfo) {
         String path = ClusterUtils.blobstorePath(key) + ClusterUtils.ZK_SEPERATOR + nimbusInfo.toHostPortString() + "-" + versionInfo;
         LOG.info("set-path: {}", path);
         stateStorage.mkdirs(ClusterUtils.blobstorePath(key), defaultAcls);

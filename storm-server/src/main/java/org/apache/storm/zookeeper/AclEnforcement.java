@@ -109,7 +109,7 @@ public class AclEnforcement {
 
             Map<String, Id> topoToZkCreds = new HashMap<>();
             //Now lets get the creds for the topos so we can verify those as well.
-            BlobStore bs = ServerUtils.getNimbusBlobStore(conf, NimbusInfo.fromConf(conf));
+            BlobStore bs = ServerUtils.getNimbusBlobStore(conf, NimbusInfo.fromConf(conf), null);
             try {
                 Subject nimbusSubject = new Subject();
                 nimbusSubject.getPrincipals().add(new NimbusPrincipal());
