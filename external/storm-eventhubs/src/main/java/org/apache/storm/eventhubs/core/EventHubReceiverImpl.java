@@ -135,7 +135,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 	@Override
 	public Iterable<EventData> receive(int batchSize) {
 		final long start = System.currentTimeMillis();
-		Iterable<EventData> receivedEvents = null;
+		final Iterable<EventData> receivedEvents;
 
 		try {
 			receivedEvents = receiver.receiveSync(batchSize);

@@ -28,14 +28,15 @@ import com.google.common.collect.Iterables;
 import com.microsoft.azure.eventhubs.EventData;
 
 /**
- * A simple partition manager that does not re-send failed messages
+ * A simple partition manager that does not handle/re-send failed messages
  */
 public class SimplePartitionManager implements IPartitionManager {
     private static final Logger logger = LoggerFactory.getLogger(SimplePartitionManager.class);
     protected static final String statePathPrefix = "/eventhubspout";
 
+    private String lastOffset = FieldConstants.DefaultStartingOffset;
+
     protected final IEventHubReceiver receiver;
-    protected String lastOffset = FieldConstants.DefaultStartingOffset;
     protected String committedOffset = FieldConstants.DefaultStartingOffset;
 
     protected final EventHubConfig config;
@@ -55,10 +56,10 @@ public class SimplePartitionManager implements IPartitionManager {
     @Override
     public void open() throws Exception {
         // read from state store, if not found, use startingOffset
-        String offset = stateStore.readData(statePath);
+        final String offset = stateStore.readData(statePath);
         logger.debug("read offset from state store: " + offset);
 
-        IEventFilter filter;
+        final IEventFilter filter;
         if (offset == null && config.getEnqueueTimeFilter() != 0) {
             filter = new TimestampFilter(Instant.ofEpochMilli(config.getEnqueueTimeFilter()));
         } else {
@@ -76,7 +77,7 @@ public class SimplePartitionManager implements IPartitionManager {
 
     @Override
     public void checkpoint() {
-        String completedOffset = getCompletedOffset();
+        final String completedOffset = getCompletedOffset();
         if (committedOffset.equals(completedOffset)) {
             logger.debug("No checkpointing needed. Completed Offset: " + completedOffset);
             return;
@@ -96,7 +97,7 @@ public class SimplePartitionManager implements IPartitionManager {
         final Iterable<EventData> receivedEvent = receiver.receive(1);
         final EventData lastEvent = Iterables.getLast(receivedEvent);
         if (lastEvent != null) {
-            lastOffset = lastEvent.getSystemProperties().getOffset();
+            this.lastOffset = lastEvent.getSystemProperties().getOffset();
             return new EventHubMessage(lastEvent, partitionId);
         }
 
@@ -109,7 +110,7 @@ public class SimplePartitionManager implements IPartitionManager {
 
     @Override
     public void fail(String offset) {
-        logger.warn("fail on " + offset);
+        logger.warn("ignored fail on offset: " + offset + ", partitionId: " + partitionId);
     }
 
     private String getPartitionStatePath() {

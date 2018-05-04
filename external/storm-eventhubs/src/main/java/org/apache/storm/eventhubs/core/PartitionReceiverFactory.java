@@ -19,11 +19,13 @@
 package org.apache.storm.eventhubs.core;
 
 import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.EventHubException;
 import com.microsoft.azure.eventhubs.EventPosition;
 import com.microsoft.azure.eventhubs.PartitionReceiver;
-import com.microsoft.azure.eventhubs.EventHubException;
+import com.microsoft.azure.eventhubs.ReceiverOptions;
 
 public final class PartitionReceiverFactory {
+
 
     public static PartitionReceiver createReceiver(EventHubClient ehClient, IEventFilter filter,
                                                    EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
@@ -37,21 +39,26 @@ public final class PartitionReceiverFactory {
 
     private static PartitionReceiver createOffsetReceiver(EventHubClient ehClient, OffsetFilter filter,
                                                           EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
-
+        final ReceiverOptions options = new ReceiverOptions();
+        options.setReceiverRuntimeMetricEnabled(true);
         return ehClient.createEpochReceiverSync(
                 eventHubConfig.getConsumerGroupName(),
                 partitionId,
                 EventPosition.fromOffset(filter.getOffset(), false),
-                1);
+                1,
+                options);
     }
 
     private static PartitionReceiver createTimestampReceiver(EventHubClient ehClient, TimestampFilter filter,
                                                              EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
 
+        final ReceiverOptions options = new ReceiverOptions();
+        options.setReceiverRuntimeMetricEnabled(true);
         return ehClient.createEpochReceiverSync(
                 eventHubConfig.getConsumerGroupName(),
                 partitionId,
                 EventPosition.fromEnqueuedTime(filter.getTime()),
-                1);
+                1,
+                options);
     }
 }

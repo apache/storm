@@ -17,10 +17,7 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.core;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeSet;
-
+import com.google.common.collect.Iterables;
 import org.apache.storm.eventhubs.state.IStateStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,105 +25,109 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.minlog.Log;
 import com.microsoft.azure.eventhubs.EventData;
 
+/**
+ * Reliable Partition Manager. Emits only 1 event at-a-time per partition.
+ * Waits for the ack/fail - before returning next event.
+ * If SPOUT reports failure on the event - it will re-emit until MAX_RETRY.
+ */
 public class PartitionManager extends SimplePartitionManager {
     private static final Logger logger = LoggerFactory.getLogger(PartitionManager.class);
+    private final int maxRetryCount = 10;
 
-    // all sent events are stored in pending
-    private final Map<String, EventHubMessage> pending;
+    private Object messageExchangeLock;
 
-    // all failed events are put in toResend, which is sorted by event's offset
-    private final TreeSet<EventHubMessage> toResend;
+    private EventHubMessage lastAckedMessage;
+    private EventHubMessage lastEmittedMessage;
+    private EventHubMessage lastFailedMessage;
 
-    private final TreeSet<EventHubMessage> waitingToEmit;
+    private int currentRetryCount;
 
     public PartitionManager(EventHubConfig ehConfig, String partitionId, IStateStore stateStore,
                             IEventHubReceiver receiver) {
         super(ehConfig, partitionId, stateStore, receiver);
 
-        this.pending = new LinkedHashMap<String, EventHubMessage>();
-        this.toResend = new TreeSet<EventHubMessage>();
-        this.waitingToEmit = new TreeSet<EventHubMessage>();
-    }
-
-    private void fill() {
-        Iterable<EventData> receivedEvents = receiver.receive(config.getReceiveEventsMaxCount());
-        if (receivedEvents == null || receivedEvents.spliterator().getExactSizeIfKnown() == 0) {
-            logger.debug("No messages received from EventHub.");
-            return;
-        }
-
-        String startOffset = null;
-        String endOffset = null;
-        for (EventData ed : receivedEvents) {
-            EventHubMessage ehm = new EventHubMessage(ed, partitionId);
-            startOffset = (startOffset == null) ? ehm.getOffset() : startOffset;
-            endOffset = ehm.getOffset();
-            waitingToEmit.add(ehm);
-        }
-
-        logger.debug("Received Messages Start Offset: " + startOffset + ", End Offset: " + endOffset);
+        this.currentRetryCount = 0;
+        this.messageExchangeLock = new Object();
     }
 
     @Override
     public EventHubMessage receive() {
-        logger.debug("Retrieving messages for partition: " + partitionId);
-        int countToRetrieve = pending.size() - config.getMaxPendingMsgsPerPartition();
+        logger.debug("Retrieving message from partition: " + partitionId);
 
-        if (countToRetrieve >= 0) {
-            Log.debug("Pending queue has more than " + config.getMaxPendingMsgsPerPartition()
-                    + " messages. No new events will be retrieved from EventHub.");
-            return null;
-        }
-
-        EventHubMessage ehm = null;
-        if (!toResend.isEmpty()) {
-            ehm = toResend.pollFirst();
-        } else {
-            if (waitingToEmit.isEmpty()) {
-                fill();
+        synchronized (this.messageExchangeLock) {
+            if (this.lastEmittedMessage != null) {
+                Log.debug(
+                        "There is 1 pending event which is not ACKed. No new events will be retrieved from EventHub Partition: "
+                                + this.partitionId);
+                return null;
             }
-            ehm = waitingToEmit.pollFirst();
-        }
 
-        if (ehm == null) {
-            logger.debug("No messages pending or waiting for reprocessing.");
-            return null;
-        }
+            if (this.lastFailedMessage != null) {
+                this.lastEmittedMessage = this.lastFailedMessage;
+                this.lastFailedMessage = null;
+                this.currentRetryCount++;
+                return this.lastEmittedMessage;
+            }
 
-        lastOffset = ehm.getOffset();
-        pending.put(lastOffset, ehm);
-        return ehm;
+            final Iterable<EventData> receivedEvents = receiver.receive(1);
+            if (receivedEvents == null || !receivedEvents.iterator().hasNext()) {
+                logger.debug("No messages received from EventHub, PartitionId: " + partitionId);
+                return null;
+            }
+
+            final EventHubMessage ehm = new EventHubMessage(Iterables.getLast(receivedEvents), partitionId);
+            this.lastEmittedMessage = ehm;
+            return ehm;
+        }
     }
 
     @Override
     public void ack(String offset) {
-        pending.remove(offset);
+        synchronized (this.messageExchangeLock) {
+            if (!this.lastEmittedMessage.getOffset().equalsIgnoreCase(offset)) {
+                throw new RuntimeException(
+                        String.format(
+                                "InconsistentState: Offset ACKed by Storm (%s) & emitted by SPOUT (%s) were different.",
+                                offset,
+                                this.lastEmittedMessage.getOffset()));
+            }
+
+            this.lastAckedMessage = this.lastEmittedMessage;
+            this.currentRetryCount = 0;
+            this.lastEmittedMessage = null;
+        }
     }
 
     @Override
     public void fail(String offset) {
-        logger.warn("fail on " + offset);
-        toResend.add(pending.remove(offset));
+        synchronized (this.messageExchangeLock) {
+            logger.warn(String.format("fail on offset: %s, partitionId: %s", offset, this.partitionId));
+            if (!this.lastEmittedMessage.getOffset().equalsIgnoreCase(offset)) {
+                throw new RuntimeException(
+                        String.format(
+                                "InconsistentState: Offset FAILed by Storm (%s) & emitted by SPOUT (%s) were different.",
+                                offset,
+                                this.lastEmittedMessage.getOffset()));
+            }
+
+            if (this.currentRetryCount > maxRetryCount) {
+                throw new RuntimeException(
+                        String.format("Even after %s retries, processing the offset: %s did not succeed.",
+                                maxRetryCount,
+                                offset));
+            }
+
+            this.lastFailedMessage = this.lastEmittedMessage;
+            this.lastEmittedMessage = null;
+        }
     }
 
     @Override
     protected String getCompletedOffset() {
-        String offset = null;
-
-        if (pending.size() > 0) {
-            // find the smallest offset in pending list
-            offset = pending.keySet().iterator().next();
+        synchronized (this.messageExchangeLock) {
+            return this.lastAckedMessage != null
+                    ? this.lastAckedMessage.getOffset()
+                    : FieldConstants.DefaultStartingOffset;
         }
-        if (toResend.size() > 0) {
-            // find the smallest offset in toResend list
-            String offset2 = toResend.first().getOffset();
-            if (offset == null || offset2.compareTo(offset) < 0) {
-                offset = offset2;
-            }
-        }
-        if (offset == null) {
-            offset = lastOffset;
-        }
-        return offset;
     }
 }

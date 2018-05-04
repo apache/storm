@@ -217,10 +217,10 @@ public class EventHubSpout extends BaseRichSpout {
 
         for (int i = 0; i < partitionManagers.size(); i++) {
             currentPartitionIndex = (currentPartitionIndex + 1) % partitionManagers.size();
-            IPartitionManager partitionManager = partitionManagers.get(currentPartitionIndex);
+            final IPartitionManager partitionManager = partitionManagers.get(currentPartitionIndex);
             if (partitionManager == null) {
                 throw new RuntimeException(
-                        "A PartitionManager for partitionid: " + currentPartitionIndex + " doesn't exist.");
+                        "PartitionManager doesn't exist for partitionid: " + currentPartitionIndex);
             }
 
             ehm = partitionManager.receive();
@@ -240,17 +240,17 @@ public class EventHubSpout extends BaseRichSpout {
 
     @Override
     public void ack(final Object msgId) {
-        MessageId messageId = (MessageId) msgId;
-        IPartitionManager partitionManager = partitionCoordinator.getPartitionManager(messageId.getPartitionId());
-        String offset = messageId.getOffset();
+        final MessageId messageId = (MessageId) msgId;
+        final IPartitionManager partitionManager = partitionCoordinator.getPartitionManager(messageId.getPartitionId());
+        final String offset = messageId.getOffset();
         partitionManager.ack(offset);
     }
 
     @Override
     public void fail(final Object msgId) {
-        MessageId messageId = (MessageId) msgId;
-        IPartitionManager partitionManager = partitionCoordinator.getPartitionManager(messageId.getPartitionId());
-        String offset = messageId.getOffset();
+        final MessageId messageId = (MessageId) msgId;
+        final IPartitionManager partitionManager = partitionCoordinator.getPartitionManager(messageId.getPartitionId());
+        final String offset = messageId.getOffset();
         partitionManager.fail(offset);
     }
 

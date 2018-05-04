@@ -41,7 +41,7 @@ public interface IPartitionManager {
     void close();
 
     /**
-     * returns a list of {@link EventData} from an EventHub partition
+     * returns one {@link EventData} from an EventHub partition
      *
      * @return {@link EventData}
      */

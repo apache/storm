@@ -39,7 +39,6 @@ public class EventHubConfig implements Serializable {
     protected int partitionCount;
     protected String zkConnectionString = null;
     protected int checkpointIntervalInSeconds = 10;
-    protected int receiverCredits = 1024;
     protected int maxPendingMsgsPerPartition = FieldConstants.DEFAULT_MAX_PENDING_PER_PARTITION;
     protected int receiveEventsMaxCount = FieldConstants.DEFAULT_RECEIVE_MAX_CAP;
     protected int prefetchCount = FieldConstants.DEFAULT_PREFETCH_COUNT;
