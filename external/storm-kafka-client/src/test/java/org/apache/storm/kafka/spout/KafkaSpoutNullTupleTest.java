@@ -18,13 +18,10 @@
 package org.apache.storm.kafka.spout;
 
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Time;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.mockito.Matchers.any;
@@ -32,6 +29,8 @@ import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+
+import org.apache.storm.kafka.NullRecordTranslator;
 
 public class KafkaSpoutNullTupleTest extends KafkaSpoutAbstractTest {
 
@@ -42,11 +41,10 @@ public class KafkaSpoutNullTupleTest extends KafkaSpoutAbstractTest {
 
     @Override
     KafkaSpoutConfig<String, String> createSpoutConfig() {
-
         return KafkaSpoutConfig.builder("127.0.0.1:" + kafkaUnitRule.getKafkaUnit().getKafkaPort(),
                 Pattern.compile(SingleTopicKafkaSpoutConfiguration.TOPIC))
                 .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
-                .setRecordTranslator(new NullRecordExtractor())
+                .setRecordTranslator(new NullRecordTranslator<String, String>())
                 .build();
     }
 
@@ -71,33 +69,5 @@ public class KafkaSpoutNullTupleTest extends KafkaSpoutAbstractTest {
 
         verifyAllMessagesCommitted(messageCount);
     }
-
-    private class NullRecordExtractor implements RecordTranslator {
-
-        @Override
-        public List<Object> apply(ConsumerRecord record) {
-            return null;
-
-        }
-
-        @Override
-        public Fields getFieldsFor(String stream) {
-            return new Fields("topic", "key", "value");
-        }
-
-        /**
-         * @return the list of streams that this will handle.
-         */
-        @Override
-        public List<String> streams() {
-            return null;
-        }
-
-        @Override
-        public Object apply(Object record) {
-            return null;
-        }
-    }
-
 
 }
