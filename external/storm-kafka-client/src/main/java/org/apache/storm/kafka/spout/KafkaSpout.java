@@ -503,9 +503,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 /*if a null tuple is not configured to be emitted, it should be marked as emitted and acked immediately
                 * to allow its offset to be commited to Kafka*/
                 LOG.debug("Not emitting null tuple for record [{}] as defined in configuration.", record);
-                msgId.setNullTuple(true);
-                offsetManagers.get(tp).addToEmitMsgs(msgId.offset());
-                ack(msgId);
+                if (isAtLeastOnceProcessing()) {
+                    msgId.setNullTuple(true);
+                    offsetManagers.get(tp).addToEmitMsgs(msgId.offset());
+                    ack(msgId);
+                }
             }
         }
         return false;
