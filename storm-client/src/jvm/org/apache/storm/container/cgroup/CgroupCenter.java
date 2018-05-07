@@ -97,7 +97,7 @@ public class CgroupCenter implements CgroupOperation {
     @Override
     public boolean isSubSystemEnabled(SubSystemType subSystemType) {
         Set<SubSystem> subSystems = this.getSubSystems();
-        if (subSystems != null){
+        if (subSystems != null) {
             for (SubSystem subSystem : subSystems) {
                 if (subSystem.getType() == subSystemType) {
                     return true;
