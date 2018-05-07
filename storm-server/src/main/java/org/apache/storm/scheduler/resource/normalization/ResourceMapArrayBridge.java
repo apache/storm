@@ -65,7 +65,7 @@ public class ResourceMapArrayBridge {
     }
 
     /**
-     * Create an array that has all values 0;
+     * Create an array that has all values 0.
      * @return the empty array.
      */
     public double[] empty() {

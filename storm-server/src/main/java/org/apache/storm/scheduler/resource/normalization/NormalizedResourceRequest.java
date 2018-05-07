@@ -134,6 +134,10 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
         return topologyResources;
     }
 
+    /**
+     * Convert to a map that is used by configuration and the UI.
+     * @return a map with the key as the resource name and the value the resource amount.
+     */
     public Map<String, Double> toNormalizedMap() {
         Map<String, Double> ret = this.normalizedResources.toNormalizedMap();
         ret.put(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, offHeap);
@@ -168,6 +172,10 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
         offHeap += other.offHeap;
     }
 
+    /**
+     * Add the resources from a worker to those in this.
+     * @param value the resources on the worker.
+     */
     public void add(WorkerResources value) {
         this.normalizedResources.add(value);
         //The resources are already normalized

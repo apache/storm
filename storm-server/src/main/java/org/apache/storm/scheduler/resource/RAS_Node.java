@@ -53,6 +53,14 @@ public class RAS_Node {
     private boolean isAlive;
     private SupervisorDetails sup;
 
+    /**
+     * Create a new node.
+     * @param nodeId the id of the node.
+     * @param sup the supervisor this is for.
+     * @param cluster the cluster this is a part of.
+     * @param workerIdToWorker the mapping of slots already assigned to this node.
+     * @param assignmentMap the mapping of executors already assigned to this node.
+     */
     public RAS_Node(
         String nodeId,
         SupervisorDetails sup,
@@ -99,26 +107,6 @@ public class RAS_Node {
         }
     }
 
-    public static int countFreeSlotsAlive(Collection<RAS_Node> nodes) {
-        int total = 0;
-        for (RAS_Node n : nodes) {
-            if (n.isAlive()) {
-                total += n.totalSlotsFree();
-            }
-        }
-        return total;
-    }
-
-    public static int countTotalSlotsAlive(Collection<RAS_Node> nodes) {
-        int total = 0;
-        for (RAS_Node n : nodes) {
-            if (n.isAlive()) {
-                total += n.totalSlots();
-            }
-        }
-        return total;
-    }
-
     public String getId() {
         return nodeId;
     }
@@ -135,6 +123,10 @@ public class RAS_Node {
         return ret;
     }
 
+    /**
+     * Get the IDs of all free slots on this node.
+     * @return the ids of the free slots.
+     */
     public Collection<String> getFreeSlotsId() {
         if (!isAlive) {
             return new HashSet<>();
@@ -164,6 +156,11 @@ public class RAS_Node {
         return workerIdsToWorkers(getUsedSlotsId());
     }
 
+    /**
+     * Get slots used by the given topology.
+     * @param topId the id of the topology to get.
+     * @return the slots currently assigned to that topology on this node.
+     */
     public Collection<WorkerSlot> getUsedSlots(String topId) {
         Collection<WorkerSlot> ret = null;
         if (topIdToUsedSlots.get(topId) != null) {

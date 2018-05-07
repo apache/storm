@@ -25,13 +25,11 @@ package org.apache.storm.testing;
  * add the annotation @Category(PerformanceTest.class) to the class definition as well as to its hierarchy of superclasses.
  * For example:
  * <p/>
- *
- *
  * @ Category(PerformanceTest.class)<br/>
  * public class MyPerformanceTest {<br/>
  *  ...<br/>
  * }
- *
+ * <p/>
  *  In general performance tests should have a time limit on them, but the time limit should be liberal enough to account
  *  for running on CI systems like travis ci, or the apache jenkins build.
  */

@@ -44,6 +44,10 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
         final ExistingScheduleFunc existingScheduleFunc) {
         AllResources affinityBasedAllResources = new AllResources(allResources);
+        NormalizedResourceRequest requestedResources = topologyDetails.getTotalResources(exec);
+        for (ObjectResources objectResources : affinityBasedAllResources.objectResources) {
+            objectResources.availableResources.updateForRareResourceAffinity(requestedResources);
+        }
 
         TreeSet<ObjectResources> sortedObjectResources =
             new TreeSet<>((o1, o2) -> {

@@ -347,10 +347,15 @@ public class NormalizedResources {
         return min * 100.0;
     }
 
-    public void updateForRareResourceAffinity(NormalizedResources other) {
-        int length = Math.min(this.otherResources.length, other.otherResources.length);
+    /**
+     * If a node or rack has a kind of resource not in a request, make that resource negative so when sorting that node or rack will
+     * be less likely to be selected.
+     * @param request the requested resources.
+     */
+    public void updateForRareResourceAffinity(NormalizedResources request) {
+        int length = Math.min(this.otherResources.length, request.otherResources.length);
         for (int i = 0; i < length; i++) {
-            if (other.getResourceAt(i) == 0.0) {
+            if (request.getResourceAt(i) == 0.0) {
                 this.otherResources[i] = -1 * this.otherResources[i];
             }
         }

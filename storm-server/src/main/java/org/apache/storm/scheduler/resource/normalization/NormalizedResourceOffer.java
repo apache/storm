@@ -96,7 +96,7 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     /**
      * Calculate the average percentage used.
      * @see NormalizedResources#calculateAveragePercentageUsedBy(org.apache.storm.scheduler.resource.normalization.NormalizedResources,
-     *     double, double).
+     *     double, double)
      */
     public double calculateAveragePercentageUsedBy(NormalizedResourceOffer used) {
         return normalizedResources.calculateAveragePercentageUsedBy(
@@ -115,7 +115,7 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     /**
      * Check if resources might be able to fit.
      * @see NormalizedResources#couldHoldIgnoringSharedMemory(org.apache.storm.scheduler.resource.normalization.NormalizedResources, double,
-     *     double).
+     *     double)
      */
     public boolean couldHoldIgnoringSharedMemory(NormalizedResourcesWithMemory other) {
         return normalizedResources.couldHoldIgnoringSharedMemory(
@@ -136,6 +136,11 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
         return "Normalized resources: " + toNormalizedMap();
     }
 
+    /**
+     * If a node or rack has a kind of resource not in a request, make that resource negative so when sorting that node or rack will
+     * be less likely to be selected.
+     * @param requestedResources the requested resources.
+     */
     public void updateForRareResourceAffinity(NormalizedResourceRequest requestedResources) {
         normalizedResources.updateForRareResourceAffinity(requestedResources.getNormalizedResources());
     }
