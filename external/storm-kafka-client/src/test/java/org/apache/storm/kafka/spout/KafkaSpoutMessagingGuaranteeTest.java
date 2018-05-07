@@ -21,8 +21,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
@@ -44,6 +46,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.storm.kafka.NullRecordTranslator;
 import org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.kafka.spout.internal.CommitMetadataManager;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -64,7 +67,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
 
     @Captor
     private ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> commitCapture;
-
+    
     private final TopologyContext contextMock = mock(TopologyContext.class);
     private final SpoutOutputCollector collectorMock = mock(SpoutOutputCollector.class);
     private final Map<String, Object> conf = new HashMap<>();
@@ -96,7 +99,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
         inOrder.verify(consumerMock).poll(anyLong());
         inOrder.verify(consumerMock).commitSync(commitCapture.capture());
         inOrder.verify(collectorMock).emit(eq(SingleTopicKafkaSpoutConfiguration.STREAM), anyList());
-
+        
         CommitMetadataManager metadataManager = new CommitMetadataManager(contextMock, KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE);
         Map<TopicPartition, OffsetAndMetadata> committedOffsets = commitCapture.getValue();
         assertThat(committedOffsets.get(partition).offset(), is(0L));
@@ -191,7 +194,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
             .setTupleTrackingEnforced(true)
             .build();
         try (SimulatedTime time = new SimulatedTime()) {
-            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock,partition);
 
             when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition,
                 SpoutWithMockedConsumerSetupHelper.<String, String>createRecords(partition, 0, 1))));
@@ -204,13 +207,13 @@ public class KafkaSpoutMessagingGuaranteeTest {
             assertThat("Should have captured a message id", msgIdCaptor.getValue(), not(nullValue()));
 
             spout.ack(msgIdCaptor.getValue());
-
+            
             Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + spoutConfig.getOffsetsCommitPeriodMs());
-
+            
             when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.<TopicPartition, List<ConsumerRecord<String, String>>>emptyMap()));
-
+            
             spout.nextTuple();
-
+            
             verify(consumerMock, never()).commitSync(argThat(new ArgumentMatcher<Map<TopicPartition, OffsetAndMetadata>>() {
                 @Override
                 public boolean matches(Object arg) {
@@ -228,32 +231,60 @@ public class KafkaSpoutMessagingGuaranteeTest {
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.NO_GUARANTEE)
             .setTupleTrackingEnforced(true)
             .build();
-
+        
         try (SimulatedTime time = new SimulatedTime()) {
-            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock,partition);
 
             when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition,
                 SpoutWithMockedConsumerSetupHelper.<String, String>createRecords(partition, 0, 1))));
 
             spout.nextTuple();
-
+            
             when(consumerMock.position(partition)).thenReturn(1L);
 
             ArgumentCaptor<KafkaSpoutMessageId> msgIdCaptor = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
             verify(collectorMock).emit(eq(SingleTopicKafkaSpoutConfiguration.STREAM), anyList(), msgIdCaptor.capture());
             assertThat("Should have captured a message id", msgIdCaptor.getValue(), not(nullValue()));
-
+            
             Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + spoutConfig.getOffsetsCommitPeriodMs());
-
+            
             spout.nextTuple();
-
+            
             verify(consumerMock).commitAsync(commitCapture.capture(), isNull(OffsetCommitCallback.class));
-
+            
             CommitMetadataManager metadataManager = new CommitMetadataManager(contextMock, KafkaSpoutConfig.ProcessingGuarantee.NO_GUARANTEE);
             Map<TopicPartition, OffsetAndMetadata> committedOffsets = commitCapture.getValue();
             assertThat(committedOffsets.get(partition).offset(), is(1L));
             assertThat(committedOffsets.get(partition).metadata(), is(metadataManager.getCommitMetadata()));
         }
+    }
+
+    private void doFilterNullTupleTest(KafkaSpoutConfig.ProcessingGuarantee processingGuaranteee) {
+        //STORM-3059
+        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
+            .setProcessingGuarantee(processingGuaranteee)
+            .setTupleTrackingEnforced(true)
+            .setRecordTranslator(new NullRecordTranslator<String, String>())
+            .build();
+        
+        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
+
+        when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition,
+            SpoutWithMockedConsumerSetupHelper.<String, String>createRecords(partition, 0, 1))));
+
+        spout.nextTuple();
+        
+        verify(collectorMock, never()).emit(anyString(), anyList(), any());
+    }
+    
+    @Test
+    public void testAtMostOnceModeCanFilterNullTuples() {
+        doFilterNullTupleTest(KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE);
+    }
+    
+    @Test
+    public void testNoGuaranteeModeCanFilterNullTuples() {
+        doFilterNullTupleTest(KafkaSpoutConfig.ProcessingGuarantee.NO_GUARANTEE);
     }
 
 }
