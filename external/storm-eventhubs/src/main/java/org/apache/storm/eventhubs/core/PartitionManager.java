@@ -17,117 +17,164 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.core;
 
-import com.google.common.collect.Iterables;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.TreeSet;
+
 import org.apache.storm.eventhubs.state.IStateStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.minlog.Log;
+
 import com.microsoft.azure.eventhubs.EventData;
 
-/**
- * Reliable Partition Manager. Emits only 1 event at-a-time per partition.
- * Waits for the ack/fail - before returning next event.
- * If SPOUT reports failure on the event - it will re-emit until MAX_RETRY.
- */
 public class PartitionManager extends SimplePartitionManager {
     private static final Logger logger = LoggerFactory.getLogger(PartitionManager.class);
-    private final int maxRetryCount = 10;
 
-    private Object messageExchangeLock;
+    // all sent events are stored in pendingAcks
+    private final Map<String, EventHubMessage> pendingAcks;
 
-    private EventHubMessage lastAckedMessage;
-    private EventHubMessage lastEmittedMessage;
-    private EventHubMessage lastFailedMessage;
+    // all failed events are tracked in failed, & is sorted by event's offset
+    private final TreeSet<EventHubMessage> failed;
+    private final StreamCheckpointTracker checkpointTracker;
+    private final FirstEventTracker firstEventTracker;
 
-    private int currentRetryCount;
-
-    public PartitionManager(EventHubConfig ehConfig, String partitionId, IStateStore stateStore,
+    public PartitionManager(EventHubConfig ehConfig,
+                            String partitionId,
+                            IStateStore stateStore,
                             IEventHubReceiver receiver) {
         super(ehConfig, partitionId, stateStore, receiver);
 
-        this.currentRetryCount = 0;
-        this.messageExchangeLock = new Object();
+        this.pendingAcks = new LinkedHashMap<String, EventHubMessage>();
+        this.failed = new TreeSet<EventHubMessage>();
+        this.checkpointTracker = new StreamCheckpointTracker();
+        this.firstEventTracker = new FirstEventTracker();
     }
 
     @Override
     public EventHubMessage receive() {
-        logger.debug("Retrieving message from partition: " + partitionId);
+        logger.debug("Retrieving messages for partition: " + partitionId);
 
-        synchronized (this.messageExchangeLock) {
-            if (this.lastEmittedMessage != null) {
-                Log.debug(
-                        "There is 1 pending event which is not ACKed. No new events will be retrieved from EventHub Partition: "
-                                + this.partitionId);
-                return null;
-            }
-
-            if (this.lastFailedMessage != null) {
-                this.lastEmittedMessage = this.lastFailedMessage;
-                this.lastFailedMessage = null;
-                this.currentRetryCount++;
-                return this.lastEmittedMessage;
-            }
-
-            final Iterable<EventData> receivedEvents = receiver.receive(1);
-            if (receivedEvents == null || !receivedEvents.iterator().hasNext()) {
-                logger.debug("No messages received from EventHub, PartitionId: " + partitionId);
-                return null;
-            }
-
-            final EventHubMessage ehm = new EventHubMessage(Iterables.getLast(receivedEvents), partitionId);
-            this.lastEmittedMessage = ehm;
-            return ehm;
+        if (pendingAcks.size() - config.getMaxPendingMsgsPerPartition() >= 0) {
+            Log.debug("Pending queue has more than " + config.getMaxPendingMsgsPerPartition()
+                    + " messages. No new events will be retrieved from EventHub.");
+            return null;
         }
+
+        final EventHubMessage ehm;
+        if (!failed.isEmpty()) {
+            ehm = failed.pollFirst();
+        } else {
+            final Iterable<EventData> events = this.receiver.receive(1);
+            ehm = (events == null || !events.iterator().hasNext())
+                    ? null
+                    : new EventHubMessage(events.iterator().next(), this.partitionId);
+        }
+
+        if (ehm == null) {
+            logger.debug("No messages available from EventHub or waiting for reprocessing.");
+            return null;
+        }
+
+        this.firstEventTracker.set(ehm);
+        pendingAcks.put(ehm.getOffset(), ehm);
+        return ehm;
     }
 
     @Override
     public void ack(String offset) {
-        synchronized (this.messageExchangeLock) {
-            if (!this.lastEmittedMessage.getOffset().equalsIgnoreCase(offset)) {
-                throw new RuntimeException(
-                        String.format(
-                                "InconsistentState: Offset ACKed by Storm (%s) & emitted by SPOUT (%s) were different.",
-                                offset,
-                                this.lastEmittedMessage.getOffset()));
-            }
-
-            this.lastAckedMessage = this.lastEmittedMessage;
-            this.currentRetryCount = 0;
-            this.lastEmittedMessage = null;
+        final EventHubMessage ackedMessage = pendingAcks.remove(offset);
+        if (this.firstEventTracker.isFirstEvent(offset)) {
+            this.checkpointTracker.setFirstCheckpoint(ackedMessage);
+        } else {
+            this.checkpointTracker.add(ackedMessage);
         }
     }
 
     @Override
     public void fail(String offset) {
-        synchronized (this.messageExchangeLock) {
-            logger.warn(String.format("fail on offset: %s, partitionId: %s", offset, this.partitionId));
-            if (!this.lastEmittedMessage.getOffset().equalsIgnoreCase(offset)) {
-                throw new RuntimeException(
-                        String.format(
-                                "InconsistentState: Offset FAILed by Storm (%s) & emitted by SPOUT (%s) were different.",
-                                offset,
-                                this.lastEmittedMessage.getOffset()));
-            }
-
-            if (this.currentRetryCount > maxRetryCount) {
-                throw new RuntimeException(
-                        String.format("Even after %s retries, processing the offset: %s did not succeed.",
-                                maxRetryCount,
-                                offset));
-            }
-
-            this.lastFailedMessage = this.lastEmittedMessage;
-            this.lastEmittedMessage = null;
-        }
+        logger.warn("fail on " + offset);
+        failed.add(pendingAcks.remove(offset));
     }
 
     @Override
     protected String getCompletedOffset() {
-        synchronized (this.messageExchangeLock) {
-            return this.lastAckedMessage != null
-                    ? this.lastAckedMessage.getOffset()
-                    : FieldConstants.DefaultStartingOffset;
+        return this.checkpointTracker.getCheckpoint();
+    }
+
+    static class StreamCheckpointTracker {
+        private final PriorityQueue<EventHubMessage> minHeap;
+        private volatile EventHubMessage nextCheckpoint;
+
+        public StreamCheckpointTracker() {
+            this.nextCheckpoint = null;
+            this.minHeap = new PriorityQueue<>(new Comparator<EventHubMessage>() {
+                @Override
+                public int compare(final EventHubMessage ehm1, final EventHubMessage ehm2) {
+                    return (int) (ehm1.getSequenceNumber() - ehm2.getSequenceNumber());
+                }
+            });
+        }
+
+        public void setFirstCheckpoint(final EventHubMessage eventHubMessage) {
+            if (this.nextCheckpoint != null) {
+                throw new IllegalStateException("first checkpoint should be set only once");
+            }
+
+            this.nextCheckpoint = eventHubMessage;
+        }
+
+        public void add(final EventHubMessage eventHubMessage) {
+            this.minHeap.add(eventHubMessage);
+
+            if (nextCheckpoint != null) {
+                while (!minHeap.isEmpty()
+                        && minHeap.peek().getSequenceNumber() == nextCheckpoint.getSequenceNumber() + 1) {
+                    this.nextCheckpoint = minHeap.poll();
+                }
+            }
+        }
+
+        public String getCheckpoint() {
+            return this.nextCheckpoint == null
+                    ? null
+                    : this.nextCheckpoint.getOffset();
+        }
+    }
+
+    static class FirstEventTracker {
+        private volatile boolean isFirstEventSet;
+        private volatile boolean isFirstEventMatched;
+        private volatile EventHubMessage firstEvent;
+
+        public FirstEventTracker() {
+            this.isFirstEventSet = false;
+            this.isFirstEventMatched = false;
+            this.firstEvent = null;
+        }
+
+        public void set(final EventHubMessage firstEvent) {
+            if (!this.isFirstEventSet) {
+                this.firstEvent = firstEvent;
+                this.isFirstEventSet = true;
+            }
+        }
+
+        public boolean isFirstEvent(final String offset) {
+            if (this.isFirstEventMatched) {
+                return false;
+            }
+
+            if (this.firstEvent != null
+                    && this.firstEvent.getOffset().compareToIgnoreCase(offset) == 0) {
+                this.isFirstEventMatched = true;
+                return true;
+            }
+
+            return false;
         }
     }
 }
