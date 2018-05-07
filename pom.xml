@@ -309,7 +309,6 @@
         <hdrhistogram.version>2.1.7</hdrhistogram.version>
         <hamcrest.version>2.0.0.0</hamcrest.version>
         <cassandra.version>2.1.7</cassandra.version>
-        <druid.version>0.8.2</druid.version>
         <elasticsearch.version>5.2.2</elasticsearch.version>
         <calcite.version>1.11.0</calcite.version>
         <mongodb.version>3.2.0</mongodb.version>
@@ -388,7 +387,6 @@
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-kinesis</module>
-        <module>external/storm-druid</module>
         <module>external/storm-jms</module>
         <module>external/storm-pmml</module>
         <module>external/storm-rocketmq</module>
