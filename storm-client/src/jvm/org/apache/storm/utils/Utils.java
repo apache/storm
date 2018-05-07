@@ -358,7 +358,7 @@ public class Utils {
                 } catch (Throwable t) {
                     if (Utils.exceptionCauseIsInstanceOf(
                         InterruptedException.class, t)) {
-                        LOG.info("Async loop interrupted!");
+                        LOG.error("Async loop interrupted!", t);
                         return;
                     }
                     LOG.error("Async loop died!", t);
