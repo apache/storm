@@ -150,7 +150,7 @@ public class EventHubSpout extends BaseRichSpout {
             final TopologyContext context,
             final SpoutOutputCollector collector) {
         LOGGER.debug("EventHubSpout start: open()");
-        String topologyName = (String) config.get(Config.TOPOLOGY_NAME);
+        final String topologyName = (String) config.get(Config.TOPOLOGY_NAME);
         this.eventHubConfig.setTopologyName(topologyName);
 
         int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();

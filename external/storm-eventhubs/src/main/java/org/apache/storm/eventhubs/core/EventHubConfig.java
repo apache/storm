@@ -19,7 +19,6 @@ package org.apache.storm.eventhubs.core;
 
 import java.io.Serializable;
 
-import org.apache.storm.eventhubs.format.EventHubMessageDataScheme;
 import org.apache.storm.eventhubs.format.IEventDataScheme;
 import org.apache.storm.eventhubs.format.StringEventDataScheme;
 

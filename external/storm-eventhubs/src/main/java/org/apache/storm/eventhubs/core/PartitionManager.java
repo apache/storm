@@ -129,12 +129,12 @@ public class PartitionManager extends SimplePartitionManager {
         }
 
         public void add(final EventHubMessage eventHubMessage) {
-            this.minHeap.add(eventHubMessage);
+            this.minHeap.offer(eventHubMessage);
 
             if (nextCheckpoint != null) {
-                while (!minHeap.isEmpty()
-                        && minHeap.peek().getSequenceNumber() == nextCheckpoint.getSequenceNumber() + 1) {
-                    this.nextCheckpoint = minHeap.poll();
+                while (!this.minHeap.isEmpty()
+                        && this.minHeap.peek().getSequenceNumber() == nextCheckpoint.getSequenceNumber() + 1) {
+                    this.nextCheckpoint = this.minHeap.poll();
                 }
             }
         }
