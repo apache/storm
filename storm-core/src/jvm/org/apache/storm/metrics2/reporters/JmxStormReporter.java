@@ -19,7 +19,6 @@ package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
-import org.apache.storm.Config;
 import org.apache.storm.daemon.metrics.MetricsUtils;
 import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.Utils;
@@ -68,7 +67,7 @@ public class JmxStormReporter implements StormReporter {
     }
 
     public static String getMetricsJMXDomain(Map reporterConf) {
-        return Utils.getString(reporterConf.get(Config.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN), null);
+        return Utils.getString(reporterConf.get(JMX_DOMAIN), null);
     }
 
     @Override
