@@ -44,16 +44,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>2.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>2.1</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.storm</groupId>
       <artifactId>flux-core</artifactId>
       <version>${project.version}</version>
@@ -66,17 +56,14 @@
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-broker</artifactId>
-      <version>5.9.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-mqtt</artifactId>
-      <version>5.9.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-kahadb-store</artifactId>
-      <version>5.9.0</version>
     </dependency>
   </dependencies>
   <build>

@@ -40,6 +40,7 @@ import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.metrics.ScanMetrics;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.common.ColumnList;
 import org.apache.storm.hbase.common.HBaseClient;
@@ -341,7 +342,7 @@ public class HBaseClientTestUtil {
             }
 
             @Override
-            public Result next() throws IOException {
+            public Result next() {
                 if (results.size() <= position) {
                     return null;
                 }
@@ -349,7 +350,7 @@ public class HBaseClientTestUtil {
             }
 
             @Override
-            public Result[] next(int nbRows) throws IOException {
+            public Result[] next(int nbRows) {
                 List<Result> bulkResult = new ArrayList<>();
                 for (int i = 0; i < nbRows; i++) {
                     Result result = next();
@@ -364,7 +365,17 @@ public class HBaseClientTestUtil {
 
             @Override
             public void close() {
+                //NO-OP
+            }
 
+            @Override
+            public boolean renewLease() {
+                return true;
+            }
+
+            @Override
+            public ScanMetrics getScanMetrics() {
+                return null;
             }
 
             @Override

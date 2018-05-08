@@ -206,6 +206,7 @@ import org.apache.zookeeper.data.ACL;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @VisibleForTesting
@@ -255,7 +256,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final Meter processWorkerMetricsCalls = StormMetricsRegistry.registerMeter("nimbus:process-worker-metric-calls");
     private static final String STORM_VERSION = VersionInfo.getVersion();
 
-    public static List<ACL> getNimbusAcls(Map<String, Object> conf) {
+    private static List<ACL> getNimbusAcls(Map<String, Object> conf) {
         List<ACL> acls = null;
         if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
             acls = ZK_ACLS;
@@ -529,13 +530,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @SuppressWarnings("deprecation")
     private static <T extends AutoCloseable> TimeCacheMap<String, T> fileCacheMap(Map<String, Object> conf) {
         return new TimeCacheMap<>(ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_FILE_COPY_EXPIRATION_SECS), 600),
-                                  (id, stream) -> {
-                                      try {
-                                          stream.close();
-                                      } catch (Exception e) {
-                                          throw new RuntimeException(e);
-                                      }
-                                  });
+            (id, stream) -> {
+                try {
+                    stream.close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     private static <K, V> Map<K, V> mapDiff(Map<? extends K, ? extends V> first, Map<? extends K, ? extends V> second) {
@@ -1102,6 +1103,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     public static void main(String[] args) throws Exception {
+        SysOutOverSLF4J.sendSystemOutAndErrToSLF4J();
         Utils.setupDefaultUncaughtExceptionHandler();
         launch(new StandaloneINimbus());
     }

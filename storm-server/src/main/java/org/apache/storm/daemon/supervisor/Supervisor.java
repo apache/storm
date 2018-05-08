@@ -75,6 +75,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class Supervisor implements DaemonCommon, AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(Supervisor.class);
@@ -177,6 +178,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
      * @param args
      */
     public static void main(String[] args) throws Exception {
+        SysOutOverSLF4J.sendSystemOutAndErrToSLF4J();
         Utils.setupDefaultUncaughtExceptionHandler();
         @SuppressWarnings("resource")
         Supervisor instance = new Supervisor(new StandaloneSupervisor());
