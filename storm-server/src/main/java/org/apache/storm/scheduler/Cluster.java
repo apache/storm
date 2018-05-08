@@ -47,6 +47,9 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The current state of the storm cluster.  Cluster is not currently thread safe.
+ */
 public class Cluster implements ISchedulingState {
     private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
     private static final Function<String, Set<WorkerSlot>> MAKE_SET = (x) -> new HashSet<>();
