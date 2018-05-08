@@ -27,8 +27,6 @@ import org.apache.storm.eventhubs.state.IStateStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.minlog.Log;
-
 import com.microsoft.azure.eventhubs.EventData;
 
 public class PartitionManager extends SimplePartitionManager {
@@ -58,9 +56,9 @@ public class PartitionManager extends SimplePartitionManager {
     public EventHubMessage receive() {
         logger.debug("Retrieving messages for partition: " + partitionId);
 
-        if (pendingAcks.size() - config.getMaxPendingMsgsPerPartition() >= 0) {
-            Log.debug("Pending queue has more than " + config.getMaxPendingMsgsPerPartition()
-                    + " messages. No new events will be retrieved from EventHub.");
+        if (pendingAcks.size() >= config.getMaxPendingMsgsPerPartition()) {
+            logger.debug(String.format("Pending queue full(" + config.getMaxPendingMsgsPerPartition()
+                    + ") - no new events will be received from EventHub Partition: %s.", this.partitionId));
             return null;
         }
 
@@ -75,12 +73,15 @@ public class PartitionManager extends SimplePartitionManager {
         }
 
         if (ehm == null) {
-            logger.debug("No messages available from EventHub or waiting for reprocessing.");
+            logger.debug(
+                    String.format("No messages available from EventHubPartition: %s, or waiting for reprocessing.",
+                    this.partitionId));
             return null;
         }
 
         this.firstEventTracker.set(ehm);
         pendingAcks.put(ehm.getOffset(), ehm);
+
         return ehm;
     }
 
@@ -96,7 +97,7 @@ public class PartitionManager extends SimplePartitionManager {
 
     @Override
     public void fail(String offset) {
-        logger.warn("fail on " + offset);
+        logger.warn(String.format("fail on offset: %s, for partition: %s", offset, this.partitionId));
         failed.add(pendingAcks.remove(offset));
     }
 

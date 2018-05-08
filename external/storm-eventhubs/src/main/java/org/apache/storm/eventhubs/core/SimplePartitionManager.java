@@ -78,14 +78,14 @@ public class SimplePartitionManager implements IPartitionManager {
     @Override
     public void checkpoint() {
         final String completedOffset = getCompletedOffset();
-        if (committedOffset.equals(completedOffset)) {
-            logger.debug("No checkpointing needed. Completed Offset: " + completedOffset);
+        if (completedOffset == null || this.committedOffset.equals(completedOffset)) {
+            logger.debug("No check-pointing needed. Completed Offset: " + (completedOffset == null ? "null" : completedOffset));
             return;
         }
 
-        logger.debug("saving Offset: " + completedOffset + ", to path: " + statePath);
+        logger.info("saving Offset: " + completedOffset + ", to path: " + statePath);
         stateStore.saveData(statePath, completedOffset);
-        committedOffset = completedOffset;
+        this.committedOffset = completedOffset;
     }
 
     protected String getCompletedOffset() {

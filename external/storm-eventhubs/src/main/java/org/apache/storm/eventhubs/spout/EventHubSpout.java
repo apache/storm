@@ -231,8 +231,8 @@ public class EventHubSpout extends BaseRichSpout {
 
         if (ehm != null) {
             final MessageId messageId = ehm.getMessageId();
-            final List<Object> tuples = eventHubConfig.getEventDataScheme().deserialize(ehm);
-            collector.emit(tuples, messageId);
+            final List<Object> tuple = eventHubConfig.getEventDataScheme().deserialize(ehm);
+            collector.emit(tuple, messageId);
         }
 
         checkpointIfNeeded();
@@ -281,11 +281,11 @@ public class EventHubSpout extends BaseRichSpout {
     }
 
     private void checkpointIfNeeded() {
-        long nextCheckpointTime = lastCheckpointTime + checkpointIntervalInSeconds * 1000;
+        final long nextCheckpointTime = this.lastCheckpointTime + (checkpointIntervalInSeconds * 1000);
         if (nextCheckpointTime < System.currentTimeMillis()) {
 
-            checkpoint();
-            lastCheckpointTime = System.currentTimeMillis();
+            this.checkpoint();
+            this.lastCheckpointTime = System.currentTimeMillis();
         }
     }
 
