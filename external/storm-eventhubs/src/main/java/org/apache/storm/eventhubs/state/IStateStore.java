@@ -22,7 +22,7 @@ import java.io.Serializable;
 /**
  * Contracts for persisting checkpoint data
  */
-public interface IStateStore extends Serializable {
+public interface IStateStore {
 
     /**
      * Open/initialize connection to the persistent store.

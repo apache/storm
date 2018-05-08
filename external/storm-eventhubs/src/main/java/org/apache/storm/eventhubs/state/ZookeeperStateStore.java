@@ -31,7 +31,6 @@ import com.microsoft.azure.eventhubs.impl.StringUtil;
  * @see IStateStore
  */
 public class ZookeeperStateStore implements IStateStore {
-    private static final long serialVersionUID = -995647135239199102L;
     private static final Logger logger = LoggerFactory.getLogger(ZookeeperStateStore.class);
     private static final int DEFAULT_RETRIES = 3;
     private static final int DEFAULT_RETRY_INTERVAL_MS = 100;
@@ -45,7 +44,7 @@ public class ZookeeperStateStore implements IStateStore {
      *
      * @param zookeeperConnectionString Zookeeper connection string
      */
-    public ZookeeperStateStore(String zookeeperConnectionString) {
+    public ZookeeperStateStore(final String zookeeperConnectionString) {
         this(zookeeperConnectionString, DEFAULT_RETRIES, DEFAULT_RETRY_INTERVAL_MS);
     }
 
@@ -56,7 +55,7 @@ public class ZookeeperStateStore implements IStateStore {
      * @param retries          number of times to retry for transient failures
      * @param retryInterval    Sleep interval (in ms) between retry attempts
      */
-    public ZookeeperStateStore(String connectionString, int retries, int retryInterval) {
+    public ZookeeperStateStore(final String connectionString, final int retries, final int retryInterval) {
         zookeeperConnectionString = StringUtil.isNullOrWhiteSpace(connectionString) ? ZK_LOCAL_URL : connectionString;
         logger.debug("using ZKConnectionString: " + zookeeperConnectionString);
 

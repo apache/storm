@@ -61,12 +61,13 @@ public class EventHubSpout extends BaseRichSpout {
 
     private final EventHubSpoutConfig eventHubConfig;
     private final int checkpointIntervalInSeconds;
+    private final IPartitionManagerFactory pmFactory;
+    private final IEventHubReceiverFactory recvFactory;
 
-    private IStateStore stateStore;
-    private IPartitionCoordinator partitionCoordinator;
-    private IPartitionManagerFactory pmFactory;
-    private IEventHubReceiverFactory recvFactory;
-    private SpoutOutputCollector collector;
+    private transient IStateStore stateStore;
+    private transient IPartitionCoordinator partitionCoordinator;
+    private transient SpoutOutputCollector collector;
+
     private long lastCheckpointTime;
     private int currentPartitionIndex = -1;
 
@@ -101,32 +102,9 @@ public class EventHubSpout extends BaseRichSpout {
         this.eventHubConfig = spoutConfig;
         this.checkpointIntervalInSeconds = spoutConfig.getCheckpointIntervalInSeconds();
         this.lastCheckpointTime = System.currentTimeMillis();
-        stateStore = store;
-        this.pmFactory = pmFactory;
-        if (this.pmFactory == null) {
-            this.pmFactory = new IPartitionManagerFactory() {
-                private static final long serialVersionUID = -3134660797825594845L;
-
-                @Override
-                public IPartitionManager create(EventHubConfig ehConfig, String partitionId, IStateStore stateStore,
-                                                IEventHubReceiver receiver) {
-                    return new PartitionManager(spoutConfig, partitionId, stateStore, receiver);
-                }
-            };
-        }
-        this.recvFactory = recvFactory;
-        if (this.recvFactory == null) {
-            this.recvFactory = new IEventHubReceiverFactory() {
-
-                private static final long serialVersionUID = 7215384402396274196L;
-
-                @Override
-                public IEventHubReceiver create(EventHubConfig spoutConfig, String partitionId) {
-                    return new EventHubReceiverImpl(spoutConfig, partitionId);
-                }
-
-            };
-        }
+        this.stateStore = store;
+        this.pmFactory = pmFactory == null ? new PartitionManagerFactory() : pmFactory;
+        this.recvFactory = recvFactory == null ? new EventHubReceiverFactory() : recvFactory;
     }
 
     /**
@@ -144,28 +122,24 @@ public class EventHubSpout extends BaseRichSpout {
             final int taskIndex,
             final SpoutOutputCollector collector) throws Exception {
         this.collector = collector;
-        if (stateStore == null) {
-            String zkEndpointAddress = eventHubConfig.getZkConnectionString();
-            if (StringUtils.isBlank(zkEndpointAddress)) {
-                @SuppressWarnings("unchecked")
-                List<String> zkServers = (List<String>) config.get(Config.STORM_ZOOKEEPER_SERVERS);
-                Integer zkPort = ((Number) config.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
-                zkEndpointAddress = String.join(",",
-                        zkServers.stream().map(x -> x + ":" + zkPort).collect(Collectors.toList()));
-            }
+        if (this.stateStore == null) {
+            final String zkEndpointAddress = !StringUtils.isBlank(this.eventHubConfig.getZkConnectionString())
+                    ? this.eventHubConfig.getZkConnectionString()
+                    : this.getZooKeeperEndpointAddress(config);
 
-            stateStore = new ZookeeperStateStore(zkEndpointAddress,
+            this.stateStore = new ZookeeperStateStore(zkEndpointAddress,
                     Integer.parseInt(config.get(Config.STORM_ZOOKEEPER_RETRY_TIMES).toString()),
                     Integer.parseInt(config.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL).toString()));
         }
-        stateStore.open();
+        this.stateStore.open();
 
         LOGGER.info("TaskIndex: " + taskIndex + ", TotalTasks: " + totalTasks + ", Total Partitions:"
-                + eventHubConfig.getPartitionCount());
-        partitionCoordinator = new StaticPartitionCoordinator(eventHubConfig, taskIndex, totalTasks, stateStore,
-                pmFactory, recvFactory);
+                + this.eventHubConfig.getPartitionCount());
+        this.partitionCoordinator = new StaticPartitionCoordinator(
+                this.eventHubConfig, taskIndex, totalTasks, this.stateStore,
+                this.pmFactory, this.recvFactory);
 
-        for (IPartitionManager partitionManager : partitionCoordinator.getMyPartitionManagers()) {
+        for (final IPartitionManager partitionManager : partitionCoordinator.getMyPartitionManagers()) {
             partitionManager.open();
         }
     }
@@ -177,13 +151,13 @@ public class EventHubSpout extends BaseRichSpout {
             final SpoutOutputCollector collector) {
         LOGGER.debug("EventHubSpout start: open()");
         String topologyName = (String) config.get(Config.TOPOLOGY_NAME);
-        eventHubConfig.setTopologyName(topologyName);
+        this.eventHubConfig.setTopologyName(topologyName);
 
         int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
         int taskIndex = context.getThisTaskIndex();
-        if (totalTasks > eventHubConfig.getPartitionCount()) {
+        if (totalTasks > this.eventHubConfig.getPartitionCount()) {
             throw new RuntimeException("Total tasks of EventHubSpout " + totalTasks
-                    + " is greater than partition count: " + eventHubConfig.getPartitionCount());
+                    + " is greater than partition count: " + this.eventHubConfig.getPartitionCount());
         }
 
         LOGGER.info(
@@ -292,6 +266,35 @@ public class EventHubSpout extends BaseRichSpout {
     private void checkpoint() {
         for (IPartitionManager partitionManager : partitionCoordinator.getMyPartitionManagers()) {
             partitionManager.checkpoint();
+        }
+    }
+
+    private String getZooKeeperEndpointAddress(final Map config) {
+        @SuppressWarnings("unchecked")
+        final List<String> zkServers = (List<String>) config.get(Config.STORM_ZOOKEEPER_SERVERS);
+        final Integer zkPort = ((Number) config.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
+        return String.join(",",
+                zkServers.stream().map(x -> x + ":" + zkPort).collect(Collectors.toList()));
+    }
+
+    private static final class PartitionManagerFactory implements IPartitionManagerFactory {
+        private static final long serialVersionUID = -3134660797825594845L;
+
+        @Override
+        public IPartitionManager create(EventHubConfig ehConfig,
+                                        String partitionId,
+                                        IStateStore stateStore,
+                                        IEventHubReceiver receiver) {
+            return new PartitionManager(ehConfig, partitionId, stateStore, receiver);
+        }
+    }
+
+    private static final class EventHubReceiverFactory implements IEventHubReceiverFactory {
+        private static final long serialVersionUID = 7215384402396274196L;
+
+        @Override
+        public IEventHubReceiver create(EventHubConfig spoutConfig, String partitionId) {
+            return new EventHubReceiverImpl(spoutConfig, partitionId);
         }
     }
 }
