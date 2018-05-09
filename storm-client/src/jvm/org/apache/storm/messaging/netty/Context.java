@@ -12,7 +12,8 @@
 
 package org.apache.storm.messaging.netty;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -26,7 +27,7 @@ import org.jboss.netty.util.HashedWheelTimer;
 
 public class Context implements IContext {
     private Map<String, Object> topoConf;
-    private Map<String, IConnection> connections;
+    private List<Server> serverConnections;
     private NioClientSocketChannelFactory clientChannelFactory;
     private HashedWheelTimer clientScheduleService;
 
@@ -35,7 +36,7 @@ public class Context implements IContext {
      */
     public void prepare(Map<String, Object> topoConf) {
         this.topoConf = topoConf;
-        connections = new HashMap<>();
+        serverConnections = new ArrayList<>();
 
         //each context will have a single client channel factory
         int maxWorkers = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
@@ -56,29 +57,17 @@ public class Context implements IContext {
      * establish a server with a binding port
      */
     public synchronized IConnection bind(String storm_id, int port) {
-        IConnection server = new Server(topoConf, port);
-        connections.put(key(storm_id, server.getPort()), server);
+        Server server = new Server(topoConf, port);
+        serverConnections.add(server);
         return server;
     }
 
     /**
      * establish a connection to a remote server
      */
-    public synchronized IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus) {
-        IConnection connection = connections.get(key(host, port));
-        if (connection != null) {
-            return connection;
-        }
-        IConnection client = new Client(topoConf, remoteBpStatus, clientChannelFactory,
-                                        clientScheduleService, host, port, this);
-        connections.put(key(host, client.getPort()), client);
-        return client;
-    }
-
-    synchronized void removeClient(String host, int port) {
-        if (connections != null) {
-            connections.remove(key(host, port));
-        }
+    public IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus) {
+        return new Client(topoConf, remoteBpStatus, clientChannelFactory,
+                                        clientScheduleService, host, port);
     }
 
     /**
@@ -87,18 +76,13 @@ public class Context implements IContext {
     public synchronized void term() {
         clientScheduleService.stop();
 
-        for (IConnection conn : connections.values()) {
+        for (Server conn : serverConnections) {
             conn.close();
         }
-
-        connections = null;
+        serverConnections = null;
 
         //we need to release resources associated with client channel factory
         clientChannelFactory.releaseExternalResources();
 
-    }
-
-    private String key(String host, int port) {
-        return String.format("%s:%d", host, port);
     }
 }

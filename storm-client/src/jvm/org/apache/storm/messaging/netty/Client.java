@@ -78,10 +78,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private final StormBoundedExponentialBackoffRetry retryPolicy;
     private final ClientBootstrap bootstrap;
     private final InetSocketAddress dstAddress;
-    //The actual name of the host we are trying to connect to so that
-    // when we remove ourselves from the connection cache there is no concern that
-    // the resolved host name is different.
-    private final String dstHost;
+
     /**
      * The channel used for all write operations from this client to the remote destination.
      */
@@ -114,7 +111,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
      * Whether the SASL channel is ready.
      */
     private final AtomicBoolean saslChannelReady = new AtomicBoolean(false);
-    private final Context context;
     private final HashedWheelTimer scheduler;
     private final MessageBuffer batcher;
     // wait strategy when the netty channel is not writable
@@ -128,11 +124,10 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private volatile boolean closing = false;
 
     Client(Map<String, Object> topoConf, AtomicBoolean[] remoteBpStatus, ChannelFactory factory, HashedWheelTimer scheduler, String host,
-           int port, Context context) {
+           int port) {
         this.topoConf = topoConf;
         closing = false;
         this.scheduler = scheduler;
-        this.context = context;
         int bufferSize = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         int lowWatermark = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_LOW_WATERMARK));
         int highWatermark = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_HIGH_WATERMARK));
@@ -149,7 +144,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
         // Initiate connection to remote destination
         bootstrap = createClientBootstrap(factory, bufferSize, lowWatermark, highWatermark, topoConf, remoteBpStatus);
-        dstHost = host;
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
@@ -451,7 +445,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     public void close() {
         if (!closing) {
             LOG.info("closing Netty Client {}", dstAddressPrefixedName);
-            context.removeClient(dstHost, dstAddress.getPort());
             // Set closing to true to prevent any further reconnection attempts.
             closing = true;
             waitForPendingMessagesToBeSent();
