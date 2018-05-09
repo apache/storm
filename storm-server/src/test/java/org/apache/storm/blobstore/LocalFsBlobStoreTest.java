@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 public class LocalFsBlobStoreTest {
@@ -67,7 +66,7 @@ public class LocalFsBlobStoreTest {
     try {
       zk = new InProcessZookeeper();
     } catch (Exception e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
@@ -77,7 +76,7 @@ public class LocalFsBlobStoreTest {
     try {
       zk.close();
     } catch (Exception e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
@@ -100,7 +99,8 @@ public class LocalFsBlobStoreTest {
     conf.put(Config.STORM_ZOOKEEPER_PORT, zk.getPort());
     conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
     conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN,"org.apache.storm.security.auth.DefaultPrincipalToLocal");
-    spy.prepare(conf, null, mock(NimbusInfo.class), null);
+    NimbusInfo nimbusInfo = new NimbusInfo("localhost", 0, false);
+    spy.prepare(conf, null, nimbusInfo, null);
     return spy;
   }
 
