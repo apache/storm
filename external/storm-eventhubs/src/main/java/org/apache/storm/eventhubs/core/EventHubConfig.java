@@ -163,8 +163,9 @@ public class EventHubConfig implements Serializable {
      *
      * @param maxPendingMsgsPerPartition
      */
-    public void setMaxPendingMsgsPerPartition(int maxPendingMsgsPerPartition) {
+    public void setMaxPendingMsgsPerPartition(final int maxPendingMsgsPerPartition) {
         this.maxPendingMsgsPerPartition = maxPendingMsgsPerPartition;
+        this.setPrefetchCount(maxPendingMsgsPerPartition);
     }
 
     /**
@@ -303,11 +304,17 @@ public class EventHubConfig implements Serializable {
 
     /**
      * Sets the configurable prefetch value on the EventHubClient implementation.
+     * However, since, SPOUT pipeline's performance relies on
+     * nextTuple() performance, which in turn, relies on events to be present
+     * at the SPOUT before the call is made,
+     * minimum value is set to {@link FieldConstants#DEFAULT_PREFETCH_COUNT}.
      *
      * @param prefetchCount value for prefetch count.
      * @see PartitionReceiver#setPrefetchCount(int)
      */
-    public void setPrefetchCount(int prefetchCount) {
-        this.prefetchCount = prefetchCount;
+    public void setPrefetchCount(final int prefetchCount) {
+        if (prefetchCount > FieldConstants.DEFAULT_PREFETCH_COUNT) {
+            this.prefetchCount = prefetchCount;
+        }
     }
 }
