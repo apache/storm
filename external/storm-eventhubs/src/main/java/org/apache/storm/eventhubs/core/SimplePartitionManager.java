@@ -86,7 +86,7 @@ public class SimplePartitionManager implements IPartitionManager {
         }
 
         logger.info("saving Offset: " + completedEvent.getOffset() + ", to path: "
-                + this.statePath + ", events SequenceNo: " + completedEvent.getSequenceNumber());
+                + this.statePath + ", at SequenceNo: " + completedEvent.getSequenceNumber());
         stateStore.saveData(this.statePath, completedEvent.getOffset());
         this.committedOffset = completedEvent.getOffset();
     }
