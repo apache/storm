@@ -54,11 +54,12 @@ public class PartitionManager extends SimplePartitionManager {
 
     @Override
     public EventHubMessage receive() {
-        logger.debug("Retrieving messages for partition: " + partitionId);
+        logger.debug("Retrieving messages for partition: " + this.partitionPath);
 
         if (pendingAcks.size() >= config.getMaxPendingMsgsPerPartition()) {
-            logger.debug(String.format("Pending queue full(" + config.getMaxPendingMsgsPerPartition()
-                    + ") - no new events will be received from EventHub Partition: %s.", this.partitionId));
+            logger.debug(String.format(
+                    "Pending queue full(%s) - no new events will be received from EventHub Partition: %s.",
+                    config.getMaxPendingMsgsPerPartition(), this.partitionPath));
             return null;
         }
 
@@ -75,7 +76,7 @@ public class PartitionManager extends SimplePartitionManager {
         if (ehm == null) {
             logger.debug(
                     String.format("No messages available from EventHubPartition: %s, or waiting for reprocessing.",
-                    this.partitionId));
+                    this.partitionPath));
             return null;
         }
 
@@ -97,12 +98,14 @@ public class PartitionManager extends SimplePartitionManager {
 
     @Override
     public void fail(String offset) {
-        logger.warn(String.format("fail on offset: %s, for partition: %s", offset, this.partitionId));
-        failed.add(pendingAcks.remove(offset));
+        final EventHubMessage failedEvent = pendingAcks.remove(offset);
+        logger.warn(String.format("fail on offset: %s, sequenceNo: %s, for partition: %s",
+                offset, failedEvent.getSequenceNumber(), this.partitionPath));
+        failed.add(failedEvent);
     }
 
     @Override
-    protected String getCompletedOffset() {
+    protected EventHubMessage getCompletedEvent() {
         return this.checkpointTracker.getCheckpoint();
     }
 
@@ -139,10 +142,10 @@ public class PartitionManager extends SimplePartitionManager {
             }
         }
 
-        public String getCheckpoint() {
+        public EventHubMessage getCheckpoint() {
             return this.nextCheckpoint == null
                     ? null
-                    : this.nextCheckpoint.getOffset();
+                    : this.nextCheckpoint;
         }
     }
 

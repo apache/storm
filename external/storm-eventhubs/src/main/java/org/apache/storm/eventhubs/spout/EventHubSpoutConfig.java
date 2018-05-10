@@ -18,6 +18,7 @@
 package org.apache.storm.eventhubs.spout;
 
 import org.apache.storm.eventhubs.core.EventHubConfig;
+import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
 
 /**
  * EventHub configuration. This class remains in
@@ -46,6 +47,9 @@ public class EventHubSpoutConfig extends EventHubConfig {
             final String entityPath,
             final int partitionCount) {
         super(namespace, entityPath, username, password, partitionCount);
+
+        final ConnectionStringBuilder connectionStringBuilder = new ConnectionStringBuilder(this.getConnectionString());
+        this.setTargetAddress(connectionStringBuilder.getEndpoint().getHost());
     }
 
     public EventHubSpoutConfig(String username, String password, String namespace, String entityPath,

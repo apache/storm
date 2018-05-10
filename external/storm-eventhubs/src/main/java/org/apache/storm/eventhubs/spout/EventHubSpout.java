@@ -64,6 +64,9 @@ public class EventHubSpout extends BaseRichSpout {
     private final IPartitionManagerFactory pmFactory;
     private final IEventHubReceiverFactory recvFactory;
 
+    // namespacefqdn/eventhubname
+    private final String eventHubPath;
+
     private transient IStateStore stateStore;
     private transient IPartitionCoordinator partitionCoordinator;
     private transient SpoutOutputCollector collector;
@@ -105,6 +108,7 @@ public class EventHubSpout extends BaseRichSpout {
         this.stateStore = store;
         this.pmFactory = pmFactory == null ? new PartitionManagerFactory() : pmFactory;
         this.recvFactory = recvFactory == null ? new EventHubReceiverFactory() : recvFactory;
+        this.eventHubPath = spoutConfig.getTargetAddress() + "/" + spoutConfig.getEntityPath();
     }
 
     /**
@@ -149,7 +153,7 @@ public class EventHubSpout extends BaseRichSpout {
             final Map config,
             final TopologyContext context,
             final SpoutOutputCollector collector) {
-        LOGGER.debug("EventHubSpout start: open()");
+        LOGGER.debug(String.format("EventHubSpout(%s) start: open()", this.eventHubPath));
         final String topologyName = (String) config.get(Config.TOPOLOGY_NAME);
         this.eventHubConfig.setTopologyName(topologyName);
 
@@ -161,7 +165,7 @@ public class EventHubSpout extends BaseRichSpout {
         }
 
         LOGGER.info(
-                String.format("TopologyName: %s, TotalTasks: %d, TaskIndex: %d", topologyName, totalTasks, taskIndex));
+                String.format("EventHubSpout: %s, TopologyName: %s, TotalTasks: %d, TaskIndex: %d", topologyName, totalTasks, taskIndex));
 
         try {
             preparePartitions(config, totalTasks, taskIndex, collector);
@@ -181,7 +185,7 @@ public class EventHubSpout extends BaseRichSpout {
                 return concatMetricsDataMaps;
             }
         }, Integer.parseInt(config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS).toString()));
-        LOGGER.debug("EventHubSpout end: open()");
+        LOGGER.debug(String.format("EventHubSpout(%s) end: open()", this.eventHubPath));
     }
 
     @Override
@@ -194,7 +198,8 @@ public class EventHubSpout extends BaseRichSpout {
             final IPartitionManager partitionManager = partitionManagers.get(currentPartitionIndex);
             if (partitionManager == null) {
                 throw new RuntimeException(
-                        "PartitionManager doesn't exist for partitionid: " + currentPartitionIndex);
+                        "PartitionManager doesn't exist for partitionid: "
+                                + this.eventHubPath + "/" + currentPartitionIndex);
             }
 
             ehm = partitionManager.receive();

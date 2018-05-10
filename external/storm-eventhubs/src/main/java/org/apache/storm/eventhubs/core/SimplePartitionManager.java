@@ -34,15 +34,15 @@ public class SimplePartitionManager implements IPartitionManager {
     private static final Logger logger = LoggerFactory.getLogger(SimplePartitionManager.class);
     protected static final String statePathPrefix = "/eventhubspout";
 
-    private String lastOffset = FieldConstants.DefaultStartingOffset;
+    private EventHubMessage lastEvent = null;
+    private String committedOffset = FieldConstants.DefaultStartingOffset;
 
     protected final IEventHubReceiver receiver;
-    protected String committedOffset = FieldConstants.DefaultStartingOffset;
-
     protected final EventHubConfig config;
     protected final String partitionId;
     protected final IStateStore stateStore;
     protected final String statePath;
+    protected final String partitionPath;
 
     public SimplePartitionManager(EventHubConfig ehConfig, String partitionId, IStateStore stateStore,
                                   IEventHubReceiver receiver) {
@@ -50,6 +50,7 @@ public class SimplePartitionManager implements IPartitionManager {
         this.config = ehConfig;
         this.partitionId = partitionId;
         this.statePath = this.getPartitionStatePath();
+        this.partitionPath = this.getPartitionPath();
         this.stateStore = stateStore;
     }
 
@@ -57,7 +58,7 @@ public class SimplePartitionManager implements IPartitionManager {
     public void open() throws Exception {
         // read from state store, if not found, use startingOffset
         final String offset = stateStore.readData(statePath);
-        logger.debug("read offset from state store: " + offset);
+        logger.debug("read offset: " + offset + ", from state store: " + this.statePath);
 
         final IEventFilter filter;
         if (offset == null && config.getEnqueueTimeFilter() != 0) {
@@ -77,28 +78,30 @@ public class SimplePartitionManager implements IPartitionManager {
 
     @Override
     public void checkpoint() {
-        final String completedOffset = getCompletedOffset();
-        if (completedOffset == null || this.committedOffset.equals(completedOffset)) {
-            logger.debug("No check-pointing needed. Completed Offset: " + (completedOffset == null ? "null" : completedOffset));
+        final EventHubMessage completedEvent = getCompletedEvent();
+        if (completedEvent == null || this.committedOffset.equals(completedEvent.getOffset())) {
+            logger.debug("No check-pointing needed. Completed Offset: " +
+                    (completedEvent == null ? "null" : completedEvent.getOffset()));
             return;
         }
 
-        logger.info("saving Offset: " + completedOffset + ", to path: " + statePath);
-        stateStore.saveData(statePath, completedOffset);
-        this.committedOffset = completedOffset;
+        logger.info("saving Offset: " + completedEvent.getOffset() + ", to path: "
+                + this.statePath + ", events SequenceNo: " + completedEvent.getSequenceNumber());
+        stateStore.saveData(this.statePath, completedEvent.getOffset());
+        this.committedOffset = completedEvent.getOffset();
     }
 
-    protected String getCompletedOffset() {
-        return lastOffset;
+    protected EventHubMessage getCompletedEvent() {
+        return this.lastEvent;
     }
 
     @Override
     public EventHubMessage receive() {
-        final Iterable<EventData> receivedEvent = receiver.receive(1);
-        final EventData lastEvent = Iterables.getLast(receivedEvent);
-        if (lastEvent != null) {
-            this.lastOffset = lastEvent.getSystemProperties().getOffset();
-            return new EventHubMessage(lastEvent, partitionId);
+        final Iterable<EventData> receivedEvents = receiver.receive(1);
+        final EventData receivedEvent = Iterables.getLast(receivedEvents);
+        if (receivedEvent != null) {
+            this.lastEvent = new EventHubMessage(receivedEvent, partitionId);
+            return this.lastEvent;
         }
 
         return null;
@@ -110,15 +113,20 @@ public class SimplePartitionManager implements IPartitionManager {
 
     @Override
     public void fail(String offset) {
-        logger.warn("ignored fail on offset: " + offset + ", partitionId: " + partitionId);
+        logger.warn("ignored fail on offset: " + offset + ", partition: " + this.partitionPath);
     }
 
     private String getPartitionStatePath() {
         // "/{prefix}/{topologyName}/{namespace}/{entityPath}/partitions/{partitionId}/state";
-        String partitionStatePath = String.join("/", new String[]{statePathPrefix, config.getTopologyName(),
+        final String partitionStatePath = String.join("/", new String[]{statePathPrefix, config.getTopologyName(),
                 config.getNamespace(), config.getEntityPath(), "partitions", partitionId});
         logger.debug("partition state path: " + partitionStatePath);
         return partitionStatePath;
+    }
+
+    private String getPartitionPath() {
+        return String.join("/",
+                config.getNamespace(), config.getEntityPath(), config.getConsumerGroupName(), this.partitionId);
     }
 
     @Override
