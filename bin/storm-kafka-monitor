@@ -49,4 +49,4 @@ if [ -z "$JAVA_HOME" ]; then
 else
   JAVA="$JAVA_HOME/bin/java"
 fi
-exec $JAVA $STORM_JAAS_CONF_PARAM -cp $STORM_BASE_DIR/lib-tools/storm-kafka-monitor/storm-kafka-monitor-*.jar org.apache.storm.kafka.monitor.KafkaOffsetLagUtil "$@"
+exec $JAVA $STORM_JAAS_CONF_PARAM $STORM_JAR_JVM_OPTS -cp $STORM_BASE_DIR/lib-tools/storm-kafka-monitor/storm-kafka-monitor-*.jar org.apache.storm.kafka.monitor.KafkaOffsetLagUtil "$@"
