@@ -108,7 +108,8 @@ public class EventHubSpout extends BaseRichSpout {
         this.stateStore = store;
         this.pmFactory = pmFactory == null ? new PartitionManagerFactory() : pmFactory;
         this.recvFactory = recvFactory == null ? new EventHubReceiverFactory() : recvFactory;
-        this.eventHubPath = spoutConfig.getTargetAddress() + "/" + spoutConfig.getEntityPath();
+        this.eventHubPath = String.join("/",
+                spoutConfig.getTargetAddress(), spoutConfig.getEntityPath());
     }
 
     /**
@@ -200,8 +201,8 @@ public class EventHubSpout extends BaseRichSpout {
             final IPartitionManager partitionManager = partitionManagers.get(currentPartitionIndex);
             if (partitionManager == null) {
                 throw new RuntimeException(
-                        "PartitionManager doesn't exist for partitionid: "
-                                + this.eventHubPath + "/" + currentPartitionIndex);
+                        "PartitionManager doesn't exist for partition: "
+                        + String.join("/",this.eventHubPath, String.valueOf(currentPartitionIndex)));
             }
 
             ehm = partitionManager.receive();
