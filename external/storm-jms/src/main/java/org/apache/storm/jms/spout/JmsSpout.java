@@ -21,6 +21,8 @@ package org.apache.storm.jms.spout;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collections;
+
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -28,6 +30,8 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
+
+import org.apache.storm.Config;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.jms.JmsTupleProducer;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -70,6 +74,10 @@ public class JmsSpout extends BaseRichSpout {
      * @see Session
      */
     private int jmsAcknowledgeMode = Session.AUTO_ACKNOWLEDGE;
+    /**
+     * Indicates whether or not this spout should run as a singleton.
+     */
+    private boolean distributed = true;
 
     /** Sets up the way we want to handle the emit, ack and fails. */
     private MessageHandler messageHandler = new MessageHandler();
@@ -319,12 +327,45 @@ public class JmsSpout extends BaseRichSpout {
     }
 
     /**
+     * Returns if the spout is distributed.
+     *
+     * @return {@link #distributed}.
+     */
+    public boolean isDistributed() {
+        return distributed;
+    }
+
+    /**
+     * Sets the "distributed" mode of this spout.
+     *
+     * <p>If <code>true</code> multiple instances of this spout <i>may</i> be
+     * created across the cluster (depending on the "parallelism_hint" in the topology configuration).
+     *
+     * <p>Setting this value to <code>false</code> essentially means this spout
+     * will run as a singleton within the cluster ("parallelism_hint" will be ignored).
+     *
+     * <p>In general, this should be set to <code>false</code> if the underlying
+     * JMS destination is a topic, and <code>true</code> if it is a JMS queue.
+     *
+     * @param isDistributed {@code true} if should be distributed, {@code false} otherwise.
+     */
+    public void setDistributed(boolean isDistributed) {
+        distributed = isDistributed;
+    }
+
+    /**
      * Returns the currently active session.
      *
      * @return The currently active session
      */
     protected Session getSession() {
         return session;
+    }
+
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        return distributed ? null :
+            Collections.singletonMap(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 1);
     }
 
     /**

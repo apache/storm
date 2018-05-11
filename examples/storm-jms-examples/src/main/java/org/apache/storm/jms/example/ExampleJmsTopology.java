@@ -99,6 +99,7 @@ public class ExampleJmsTopology {
         topicSpout.setJmsProvider(jmsTopicProvider);
         topicSpout.setJmsTupleProducer(producer);
         topicSpout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+        topicSpout.setDistributed(false);
 
         builder.setSpout(JMS_TOPIC_SPOUT, topicSpout);
 
