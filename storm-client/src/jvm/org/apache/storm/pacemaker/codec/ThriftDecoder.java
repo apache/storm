@@ -13,17 +13,17 @@
 package org.apache.storm.pacemaker.codec;
 
 import java.io.IOException;
+import java.util.List;
 import org.apache.storm.generated.HBMessage;
 import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.messaging.netty.ControlMessage;
 import org.apache.storm.messaging.netty.SaslMessageToken;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
-import org.apache.storm.shade.org.jboss.netty.channel.Channel;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
-import org.apache.storm.shade.org.jboss.netty.handler.codec.frame.FrameDecoder;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.io.netty.handler.codec.ByteToMessageDecoder;
 import org.apache.storm.utils.Utils;
 
-public class ThriftDecoder extends FrameDecoder {
+public class ThriftDecoder extends ByteToMessageDecoder {
 
     private static final int INTEGER_SIZE = 4;
 
@@ -40,11 +40,10 @@ public class ThriftDecoder extends FrameDecoder {
     }
 
     @Override
-    protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buf) throws Exception {
-
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf buf, List<Object> out) throws Exception {
         long available = buf.readableBytes();
         if (available < INTEGER_SIZE) {
-            return null;
+            return;
         }
 
         buf.markReaderIndex();
@@ -61,7 +60,7 @@ public class ThriftDecoder extends FrameDecoder {
         if (available < thriftLen) {
             // We haven't received the entire object yet, return and wait for more bytes.
             buf.resetReaderIndex();
-            return null;
+            return;
         }
 
         byte serialized[] = new byte[thriftLen];
@@ -70,12 +69,12 @@ public class ThriftDecoder extends FrameDecoder {
 
         if (m.get_type() == HBServerMessageType.CONTROL_MESSAGE) {
             ControlMessage cm = ControlMessage.read(m.get_data().get_message_blob());
-            return cm;
+            out.add(cm);
         } else if (m.get_type() == HBServerMessageType.SASL_MESSAGE_TOKEN) {
             SaslMessageToken sm = SaslMessageToken.read(m.get_data().get_message_blob());
-            return sm;
+            out.add(sm);
         } else {
-            return m;
+            out.add(m);
         }
     }
 }

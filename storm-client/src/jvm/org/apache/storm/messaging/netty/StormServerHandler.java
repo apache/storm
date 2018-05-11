@@ -17,22 +17,18 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.storm.shade.org.jboss.netty.channel.Channel;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelStateEvent;
-import org.apache.storm.shade.org.jboss.netty.channel.ExceptionEvent;
-import org.apache.storm.shade.org.jboss.netty.channel.MessageEvent;
-import org.apache.storm.shade.org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.apache.storm.shade.io.netty.channel.Channel;
+import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StormServerHandler extends SimpleChannelUpstreamHandler {
+public class StormServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
-    private static final Set<Class> allowedExceptions = new HashSet<>(Arrays.asList(new Class[]{ IOException.class }));
-    IServer server;
-    private AtomicInteger failure_count;
-    private Channel channel;
+    private static final Set<Class> ALLOWED_EXCEPTIONS = new HashSet<>(Arrays.asList(new Class[]{ IOException.class }));
+    private final IServer server;
+    private final AtomicInteger failure_count;
 
     public StormServerHandler(IServer server) {
         this.server = server;
@@ -40,40 +36,35 @@ public class StormServerHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        server.channelConnected(e.getChannel());
-        if (channel != null) {
-            LOG.debug("Replacing channel with new channel: {} -> ",
-                      channel, e.getChannel());
-        }
-        channel = e.getChannel();
-        server.channelConnected(channel);
+    public void channelActive(ChannelHandlerContext ctx) {
+        server.channelActive(ctx.channel());
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-        Object msgs = e.getMessage();
-        if (msgs == null) {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (msg == null) {
             return;
         }
 
+        Channel channel = ctx.channel();
         try {
-            server.received(msgs, e.getRemoteAddress().toString(), channel);
-        } catch (InterruptedException e1) {
+            server.received(msg, channel.remoteAddress().toString(), channel);
+        } catch (InterruptedException e) {
             LOG.info("failed to enqueue a request message", e);
             failure_count.incrementAndGet();
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         try {
-            LOG.error("server errors in handling the request", e.getCause());
+            LOG.error("server errors in handling the request", cause);
         } catch (Throwable err) {
             // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException will handle it
         }
         try {
-            Utils.handleUncaughtException(e.getCause(), allowedExceptions);
+            Utils.handleUncaughtException(cause, ALLOWED_EXCEPTIONS);
+            ctx.close();
         } catch (Error error) {
             LOG.info("Received error in netty thread.. terminating server...");
             Runtime.getRuntime().exit(1);

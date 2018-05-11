@@ -875,6 +875,14 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String PACEMAKER_PORT = "pacemaker.port";
     /**
+     * The maximum number of threads that should be used by the Pacemaker client.
+     * When Pacemaker gets loaded it will spawn new threads, up to
+     * this many total, to handle the load.
+     */
+    @isNumber
+    @isPositiveNumber
+    public static final String PACEMAKER_CLIENT_MAX_THREADS = "pacemaker.client.max.threads";
+    /**
      * This should be one of "DIGEST", "KERBEROS", or "NONE" Determines the mode of authentication the pacemaker server and client use. The
      * client must either match the server, or be NONE. In the case of NONE, no authentication is performed for the client, and if the
      * server is running with DIGEST or KERBEROS, the client can only write to the server (no reads). This is intended to provide a

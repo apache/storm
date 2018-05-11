@@ -12,12 +12,10 @@
 
 package org.apache.storm.messaging.netty;
 
-import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.io.netty.channel.Channel;
 
 public interface IServer {
-    void channelConnected(Channel c);
+    void channelActive(Channel c);
 
     void received(Object message, String remote, Channel channel) throws InterruptedException;
-
-    void closeChannel(Channel c);
 }

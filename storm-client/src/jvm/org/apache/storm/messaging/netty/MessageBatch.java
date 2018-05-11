@@ -14,13 +14,12 @@ package org.apache.storm.messaging.netty;
 
 import java.util.ArrayList;
 import org.apache.storm.messaging.TaskMessage;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffers;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
 
-class MessageBatch {
-    private int buffer_size;
-    private ArrayList<TaskMessage> msgs;
+class MessageBatch implements INettySerializable {
+
+    private final int buffer_size;
+    private final ArrayList<TaskMessage> msgs;
     private int encoded_length;
 
     MessageBatch(int buffer_size) {
@@ -37,7 +36,6 @@ class MessageBatch {
         msgs.add(msg);
         encoded_length += msgEncodeLength(msg);
     }
-
 
     private int msgEncodeLength(TaskMessage taskMsg) {
         if (taskMsg == null) {
@@ -72,30 +70,30 @@ class MessageBatch {
         return msgs.size();
     }
 
+    @Override
+    public int encodeLength() {
+        return encoded_length;
+    }
+    
     /**
      * create a buffer containing the encoding of this batch
      */
-    ChannelBuffer buffer() throws Exception {
-        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.directBuffer(encoded_length));
-
+    @Override
+    public void write(ByteBuf dest) {
         for (TaskMessage msg : msgs) {
-            writeTaskMessage(bout, msg);
+            writeTaskMessage(dest, msg);
         }
 
         //add a END_OF_BATCH indicator
-        ControlMessage.EOB_MESSAGE.write(bout);
-
-        bout.close();
-
-        return bout.buffer();
+        ControlMessage.EOB_MESSAGE.write(dest);
     }
 
     /**
-     * write a TaskMessage into a stream
+     * write a TaskMessage into a buffer
      *
      * Each TaskMessage is encoded as: task ... short(2) len ... int(4) payload ... byte[]     *
      */
-    private void writeTaskMessage(ChannelBufferOutputStream bout, TaskMessage message) throws Exception {
+    private void writeTaskMessage(ByteBuf buf, TaskMessage message) {
         int payload_len = 0;
         if (message.message() != null) {
             payload_len = message.message().length;
@@ -106,10 +104,10 @@ class MessageBatch {
             throw new RuntimeException("Task ID should not exceed " + Short.MAX_VALUE);
         }
 
-        bout.writeShort((short) task_id);
-        bout.writeInt(payload_len);
+        buf.writeShort((short) task_id);
+        buf.writeInt(payload_len);
         if (payload_len > 0) {
-            bout.write(message.message());
+            buf.writeBytes(message.message());
         }
     }
 

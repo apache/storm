@@ -50,10 +50,10 @@
         </dependency>
 
         <!--Hadoop Mini Cluster cannot use log4j2 bridge,
-            Surefire has a way to exclude the conflicting log4j API jar
-            from the classpath, classpathDependencyExcludes, but it didn't work in practice.
-            This is here as a work around to place it at the beginning of the classpath
-            even though maven does not officially support ordering of the classpath.-->
+        Surefire has a way to exclude the conflicting log4j API jar
+        from the classpath, classpathDependencyExcludes, but it didn't work in practice.
+        This is here as a work around to place it at the beginning of the classpath
+        even though maven does not officially support ordering of the classpath.-->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -136,7 +136,7 @@
             <artifactId>data.codec</artifactId>
             <scope>test</scope>
         </dependency>
-
+        
         <!--java-->
         <dependency>
             <groupId>commons-cli</groupId>
@@ -280,17 +280,17 @@
             <resource>
                 <directory>${basedir}/src/resources</directory>
                 <excludes>
-                  <exclude>storm-core-version-info.properties</exclude>
+                    <exclude>storm-core-version-info.properties</exclude>
                 </excludes>
                 <filtering>false</filtering>
-           </resource>
-           <resource>
-              <directory>${basedir}/src/resources</directory>
-              <includes>
-                <include>storm-core-version-info.properties</include>
-             </includes>
-             <filtering>true</filtering>
-         </resource>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/resources</directory>
+                <includes>
+                    <include>storm-core-version-info.properties</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
         </resources>
         <testResources>
             <testResource>
@@ -371,29 +371,29 @@
                 </configuration>
             </plugin>
             <plugin>
-               <groupId>org.apache.storm</groupId>
-               <artifactId>storm-maven-plugins</artifactId>
-               <version>${project.version}</version>
-               <executions>
-                 <execution>
-                   <id>version-info</id>
-                   <phase>generate-resources</phase>
-                   <goals>
-                     <goal>version-info</goal>
-                   </goals>
-                   <configuration>
-                   <source>
-                      <directory>${basedir}/src/</directory>
-                      <includes>
-                        <include>jvm/**/*.java</include>
-                        <include>clj/**/*.clj</include>
-                      </includes>
-                  </source>
-                 </configuration>
-               </execution>
-             </executions>
-          </plugin>
-          <plugin>
+                <groupId>org.apache.storm</groupId>
+                <artifactId>storm-maven-plugins</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>version-info</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>version-info</goal>
+                        </goals>
+                        <configuration>
+                            <source>
+                                <directory>${basedir}/src/</directory>
+                                <includes>
+                                    <include>jvm/**/*.java</include>
+                                    <include>clj/**/*.clj</include>
+                                </includes>
+                            </source>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>2.8</version>
                 <executions>
@@ -411,33 +411,33 @@
                         </configuration>
                     </execution>
                     <!-- multi-lang resources -->
-                               <execution>
-                                 <id>unpack</id>
-                                 <phase>process-test-resources</phase>
-                                 <goals>
-                                   <goal>unpack</goal>
-                                 </goals>
-                                 <configuration>
-                                   <artifactItems>
-                                     <artifactItem>
-                                       <groupId>org.apache.storm</groupId>
-                                       <artifactId>multilang-ruby</artifactId>
-                                       <version>${project.version}</version>
-                                     </artifactItem>
-                                     <artifactItem>
-                                        <groupId>org.apache.storm</groupId>
-                                        <artifactId>multilang-python</artifactId>
-                                        <version>${project.version}</version>
-                                      </artifactItem>
-                                      <artifactItem>
-                                         <groupId>org.apache.storm</groupId>
-                                         <artifactId>multilang-javascript</artifactId>
-                                         <version>${project.version}</version>
-                                       </artifactItem>
-                                   </artifactItems>
-                                   <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
-                                 </configuration>
-                               </execution>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-ruby</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-python</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-javascript</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
 
                 </executions>
             </plugin>
@@ -473,7 +473,9 @@
     <profiles>
         <profile>
             <id>coverage</id>
-            <activation><activeByDefault>true</activeByDefault></activation>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -572,7 +574,9 @@
                         <executions>
                             <execution>
                                 <phase>generate-sources</phase>
-                                <goals><goal>exec</goal></goals>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
                                 <configuration>
                                     <executable>sh</executable>
                                     <arguments>

@@ -455,12 +455,8 @@ public class Worker implements Shutdownable, DaemonCommon {
             }
             LOG.info("Shut down executors");
 
-            // this is fine because the only time this is shared is when it's a local context,
-            // in which case it's a noop
-            workerState.mqContext.term();
             LOG.info("Shutting down transfer thread");
             workerState.haltWorkerTransfer();
-
 
             if (transferThread != null) {
                 transferThread.interrupt();
@@ -479,6 +475,11 @@ public class Worker implements Shutdownable, DaemonCommon {
             workerState.resetLogLevelsTimer.close();
             workerState.flushTupleTimer.close();
             workerState.backPressureCheckTimer.close();
+            
+            // this is fine because the only time this is shared is when it's a local context,
+            // in which case it's a noop
+            workerState.mqContext.term();
+            
             workerState.closeResources();
 
             StormMetricRegistry.stop();

@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 public class TransferDrainer {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransferDrainer.class);
-    private Map<Integer, ArrayList<TaskMessage>> bundles = new HashMap();
+    private final Map<Integer, ArrayList<TaskMessage>> bundles = new HashMap<>();
 
     // Cache the msgs grouped by destination node
     public void add(TaskMessage taskMsg) {

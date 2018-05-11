@@ -16,14 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.serialization.KryoValuesDeserializer;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
-import org.apache.storm.shade.org.jboss.netty.channel.Channel;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
-import org.apache.storm.shade.org.jboss.netty.handler.codec.frame.FrameDecoder;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.io.netty.handler.codec.ByteToMessageDecoder;
 
-public class MessageDecoder extends FrameDecoder {
+public class MessageDecoder extends ByteToMessageDecoder {
 
-    private KryoValuesDeserializer deser;
+    private final KryoValuesDeserializer deser;
 
     public MessageDecoder(KryoValuesDeserializer deser) {
         this.deser = deser;
@@ -37,12 +36,13 @@ public class MessageDecoder extends FrameDecoder {
      *  len ... int(4)
      *  payload ... byte[]     *
      */
-    protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buf) throws Exception {
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
         // Make sure that we have received at least a short 
         long available = buf.readableBytes();
         if (available < 2) {
             //need more data
-            return null;
+            return;
         }
 
         List<Object> ret = new ArrayList<>();
@@ -67,7 +67,8 @@ public class MessageDecoder extends FrameDecoder {
                 if (ctrl_msg == ControlMessage.EOB_MESSAGE) {
                     continue;
                 } else {
-                    return ctrl_msg;
+                    out.add(ctrl_msg);
+                    return;
                 }
             }
 
@@ -77,28 +78,30 @@ public class MessageDecoder extends FrameDecoder {
                 if (buf.readableBytes() < 4) {
                     //need more data
                     buf.resetReaderIndex();
-                    return null;
+                    return;
                 }
 
                 // Read the length field.
                 int length = buf.readInt();
                 if (length <= 0) {
-                    return new SaslMessageToken(null);
+                    out.add(new SaslMessageToken(null));
+                    return;
                 }
 
                 // Make sure if there's enough bytes in the buffer.
                 if (buf.readableBytes() < length) {
                     // The whole bytes were not received yet - return null.
                     buf.resetReaderIndex();
-                    return null;
+                    return;
                 }
 
                 // There's enough bytes in the buffer. Read it.  
-                ChannelBuffer payload = buf.readBytes(length);
-
+                byte[] bytes = new byte[length];
+                buf.readBytes(bytes);
                 // Successfully decoded a frame.
                 // Return a SaslTokenMessageRequest object
-                return new SaslMessageToken(payload.array());
+                out.add(new SaslMessageToken(bytes));
+                return;
             }
 
             // case 3: BackPressureStatus
@@ -107,18 +110,18 @@ public class MessageDecoder extends FrameDecoder {
                 if (available < 4) {
                     //Need  more data
                     buf.resetReaderIndex();
-                    return null;
+                    return;
                 }
                 int dataLen = buf.readInt();
                 if (available < 4 + dataLen) {
                     // need more data
                     buf.resetReaderIndex();
-                    return null;
+                    return;
                 }
                 byte[] bytes = new byte[dataLen];
                 buf.readBytes(bytes);
-                return BackPressureStatus.read(bytes, deser);
-
+                out.add(BackPressureStatus.read(bytes, deser));
+                return;
             }
 
             // case 4: task Message
@@ -149,18 +152,16 @@ public class MessageDecoder extends FrameDecoder {
             available -= length;
 
             // There's enough bytes in the buffer. Read it.
-            ChannelBuffer payload = buf.readBytes(length);
-
+            byte[] bytes = new byte[length];
+            buf.readBytes(bytes);
 
             // Successfully decoded a frame.
             // Return a TaskMessage object
-            ret.add(new TaskMessage(code, payload.array()));
+            ret.add(new TaskMessage(code, bytes));
         }
 
-        if (ret.size() == 0) {
-            return null;
-        } else {
-            return ret;
+        if (!ret.isEmpty()) {
+            out.add(ret);
         }
     }
 }

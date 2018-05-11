@@ -81,7 +81,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone/>
+            <timezone />
         </developer>
         <developer>
             <id>afeng</id>
@@ -108,7 +108,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone/>
+            <timezone />
         </developer>
         <developer>
             <id>jjackson</id>
@@ -275,7 +275,7 @@
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
         <auto-service.version>1.0-rc3</auto-service.version>
-        <netty.version>4.0.33.Final</netty.version>
+        <netty.version>4.1.25.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
         <log4j.version>2.8.2</log4j.version>
@@ -872,14 +872,14 @@
                 <version>${ring-json.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlet</artifactId>
-                <version>${jetty.version}</version>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-servlet</artifactId>
+	      <version>${jetty.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlets</artifactId>
-                <version>${jetty.version}</version>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-servlets</artifactId>
+	      <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -937,7 +937,7 @@
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
-                <dependency>
+            <dependency>
                     <groupId>com.google.auto.service</groupId>
                     <artifactId>auto-service</artifactId>
                     <version>${auto-service.version}</version>
@@ -1052,7 +1052,7 @@
                 <version>${thrift.version}</version>
                 <scope>compile</scope>
             </dependency>
-            <!-- used by examples/storm-starter -->
+			<!-- used by examples/storm-starter -->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -1060,10 +1060,10 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.apache.calcite</groupId>
-                <artifactId>calcite-core</artifactId>
-                <version>${calcite.version}</version>
-            </dependency> 
+              <groupId>org.apache.calcite</groupId>
+              <artifactId>calcite-core</artifactId>
+              <version>${calcite.version}</version>
+            </dependency>
 
             <!-- kafka artifact dependency needed for storm-kafka -->
             <dependency>

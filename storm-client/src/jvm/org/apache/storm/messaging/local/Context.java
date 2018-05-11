@@ -39,8 +39,6 @@ public class Context implements IContext {
     private static final Logger LOG = LoggerFactory.getLogger(Context.class);
     private static ConcurrentHashMap<String, LocalServer> _registry = new ConcurrentHashMap<>();
 
-    ;
-
     private static LocalServer getLocalServer(String nodeId, int port) {
         String key = nodeId + "-" + port;
         LocalServer ret = _registry.get(key);
@@ -93,11 +91,6 @@ public class Context implements IContext {
         @Override
         public void registerNewConnectionResponse(Supplier<Object> cb) {
             return;
-        }
-
-        @Override
-        public void send(int taskId, byte[] payload) {
-            throw new IllegalArgumentException("SHOULD NOT HAPPEN");
         }
 
         @Override
@@ -186,18 +179,6 @@ public class Context implements IContext {
                 ArrayList<TaskMessage> ret = new ArrayList<>();
                 _pendingDueToUnregisteredServer.drainTo(ret);
                 serverCb.recv(ret);
-            }
-        }
-
-        @Override
-        public void send(int taskId, byte[] payload) {
-            TaskMessage message = new TaskMessage(taskId, payload);
-            IConnectionCallback serverCb = _server._cb;
-            if (serverCb != null) {
-                flushPending();
-                serverCb.recv(Arrays.asList(message));
-            } else {
-                _pendingDueToUnregisteredServer.add(message);
             }
         }
 
