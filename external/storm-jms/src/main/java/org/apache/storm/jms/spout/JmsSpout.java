@@ -113,7 +113,7 @@ public class JmsSpout extends BaseRichSpout {
      * <li>javax.jms.Session.DUPS_OK_ACKNOWLEDGE</li>
      * </ul>
      *
-     * Any other vendor specific modes are not supported.
+     * <p>Any other vendor specific modes are not supported.
      *
      * @param mode JMS Session Acknowledgement mode
      */
@@ -130,16 +130,31 @@ public class JmsSpout extends BaseRichSpout {
                 messageHandler = new TransactedSessionMessageHandler();
                 break;
             default:
-                // individual message ack-ing needs vendor specific mode
-                if (individualAcks) {
-                    LOG.warn("Unsupported Acknowledge mode: "
-                        + mode + " (See javax.jms.Session for valid values)");
-                } else {
-                    throw new IllegalArgumentException("Unsupported"
-                        + "Acknowledge mode: " + mode);
-                }
+                LOG.warn("Unsupported Acknowledge mode: "
+                    + mode + " (See javax.jms.Session for valid values)");
         }
         jmsAcknowledgeMode = mode;
+    }
+
+    /**
+     * Validates the unsupported vendor specific ack mode.
+     */
+    private void validateJmsAckMode() {
+        if (jmsAcknowledgeMode != Session.AUTO_ACKNOWLEDGE
+            && jmsAcknowledgeMode != Session.DUPS_OK_ACKNOWLEDGE
+            && jmsAcknowledgeMode != Session.CLIENT_ACKNOWLEDGE
+            && jmsAcknowledgeMode != Session.SESSION_TRANSACTED) {
+            LOG.warn("Unsupported Acknowledge mode: " + jmsAcknowledgeMode
+                + " (See javax.jms.Session for valid values)");
+
+            if (individualAcks) {
+                LOG.warn("Allowing vendor specific mode due "
+                    + "to setIndividualAcks");
+            } else {
+                throw new IllegalArgumentException("Unsupported"
+                    + "Acknowledge mode: " + jmsAcknowledgeMode);
+            }
+        }
     }
 
     /**
@@ -211,6 +226,7 @@ public class JmsSpout extends BaseRichSpout {
             throw new IllegalStateException(
                 "JMS Tuple Producer has not been set.");
         }
+        validateJmsAckMode();
         collector = spoutOutputCollector;
         try {
             ConnectionFactory cf = jmsProvider.connectionFactory();
@@ -256,7 +272,7 @@ public class JmsSpout extends BaseRichSpout {
                 messageHandler.emit(msg);
             }
         } catch (JMSException ex) {
-          LOG.warn("Got error trying to process tuple", ex);
+            LOG.warn("Got error trying to process tuple", ex);
         }
     }
 
@@ -285,7 +301,7 @@ public class JmsSpout extends BaseRichSpout {
      */
     @Override
     public void fail(final Object msgId) {
-        LOG.warn("Message failed: " + msgId);
+        LOG.warn("Received fail for message {}", msgId);
         messageHandler.fail(msgId);
     }
 
@@ -303,7 +319,9 @@ public class JmsSpout extends BaseRichSpout {
     }
 
     /**
-     * @return The currently active session.
+     * Returns the currently active session.
+     *
+     * @return The currently active session
      */
     protected Session getSession() {
         return session;
@@ -391,7 +409,6 @@ public class JmsSpout extends BaseRichSpout {
                 if (msg != null) {
                     try {
                         doAck(msg);
-                        LOG.debug("JMS Message acked: {}", msgId);
                     } catch (JMSException e) {
                         LOG.warn("Error acknowledging JMS message: {}",
                             msgId, e);
@@ -405,7 +422,6 @@ public class JmsSpout extends BaseRichSpout {
 
         @Override
         void fail(final Object msgId) {
-            LOG.debug("Received fail for message {}", msgId);
             try {
                 // all the JMS un-acked messages are going to be re-delivered
                 // so clear the pendingAcks
@@ -426,6 +442,7 @@ public class JmsSpout extends BaseRichSpout {
          */
         protected void doAck(final Message msg) throws JMSException {
             msg.acknowledge();
+            LOG.debug("JMS message acked");
         }
 
         /**
@@ -459,6 +476,7 @@ public class JmsSpout extends BaseRichSpout {
             // and storm delivered ack for all
             if (getPendingAcks().isEmpty()) {
                 msg.acknowledge();
+                LOG.debug("JMS message acked");
             } else {
                 LOG.debug("Not acknowledging the JMS message "
                     + "since there are pending messages in the session");
@@ -476,6 +494,7 @@ public class JmsSpout extends BaseRichSpout {
             // and storm delivered ack for all
             if (getPendingAcks().isEmpty()) {
                 session.commit();
+                LOG.debug("JMS session committed");
             } else {
                 LOG.debug("Not committing the session "
                     + "since there are pending messages in the session");

@@ -62,7 +62,6 @@ public class ExampleJmsTopology {
         queueSpout.setJmsProvider(jmsQueueProvider);
         queueSpout.setJmsTupleProducer(producer);
         queueSpout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-        queueSpout.setDistributed(true); // allow multiple instances
 
         TopologyBuilder builder = new TopologyBuilder();
 
@@ -100,7 +99,6 @@ public class ExampleJmsTopology {
         topicSpout.setJmsProvider(jmsTopicProvider);
         topicSpout.setJmsTupleProducer(producer);
         topicSpout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-        topicSpout.setDistributed(false);
 
         builder.setSpout(JMS_TOPIC_SPOUT, topicSpout);
 
