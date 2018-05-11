@@ -106,6 +106,7 @@ STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
 DEP_JARS_OPTS = []
 DEP_ARTIFACTS_OPTS = []
 DEP_ARTIFACTS_REPOSITORIES_OPTS = []
+DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY = None
 DEP_PROXY_URL = None
 DEP_PROXY_USERNAME = None
 DEP_PROXY_PASSWORD = None
@@ -173,11 +174,14 @@ def confvalue(name, extrapaths, daemon=True):
             return " ".join(tokens[1:])
     return ""
 
-def resolve_dependencies(artifacts, artifact_repositories, proxy_url, proxy_username, proxy_password):
+def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir, proxy_url, proxy_username, proxy_password):
     if len(artifacts) == 0:
         return {}
 
     print("Resolving dependencies on demand: artifacts (%s) with repositories (%s)" % (artifacts, artifact_repositories))
+
+    if maven_local_repos_dir is not None:
+        print("Local repository directory: %s" % maven_local_repos_dir)
 
     if proxy_url is not None:
         print("Proxy information: url (%s) username (%s)" % (proxy_url, proxy_username))
@@ -196,6 +200,9 @@ def resolve_dependencies(artifacts, artifact_repositories, proxy_url, proxy_user
 
     command.extend(["--artifacts", ",".join(artifacts)])
     command.extend(["--artifactRepositories", ",".join(artifact_repositories)])
+
+    if maven_local_repos_dir is not None:
+        command.extend(["--mavenLocalRepositoryDirectory", maven_local_repos_dir])
 
     if proxy_url is not None:
         command.extend(["--proxyUrl", proxy_url])
@@ -304,6 +311,8 @@ def jar(jarfile, klass, *args):
     When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with comma-separated string.
     Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters.
     For example, --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/" will add JBoss and HDP repositories for dependency resolver.
+    You can provide local maven repository directory via --mavenLocalRepositoryDirectory if you would like to use specific directory. It might help when you don't have '.m2/repository' directory in home directory, because CWD is sometimes non-deterministic (fragile).
+
     You can also provide proxy information to let dependency resolver utilizing proxy if needed. There're three parameters for proxy:
     --proxyUrl: URL representation of proxy ('http://host:port')
     --proxyUsername: username of proxy if it requires basic auth
@@ -311,10 +320,10 @@ def jar(jarfile, klass, *args):
     Complete example of options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka/storm-kafka-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
     When you pass jars and/or artifacts options, StormSubmitter will upload them when the topology is submitted, and they will be included to classpath of both the process which runs the class, and also workers for that topology.
     """
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
 
     local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
 
     transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])
     if (transform_class != None and transform_class != "nil"):
@@ -353,14 +362,14 @@ def sql(sql_file, topology_name):
     """Syntax: [storm sql sql-file topology-name], or [storm sql sql-file --explain] when activating explain mode
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     If user activates explain mode, SQL Runner analyzes each query statement and shows query plan instead of submitting topology.
-    --jars and --artifacts, and --artifactRepositories, --proxyUrl, --proxyUsername, --proxyPassword options available for jar are also applied to sql command.
+    --jars and --artifacts, and --artifactRepositories, --mavenLocalRepositoryDirectory, --proxyUrl, --proxyUsername, --proxyPassword options available for jar are also applied to sql command.
     Please refer "help jar" to see how to use --jars and --artifacts, and --artifactRepositories, --proxyUrl, --proxyUsername, --proxyPassword options.
     You normally want to pass these options since you need to set data source to your sql which is an external storage in many cases.
     """
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
 
     local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
 
     # include storm-sql-runtime jar(s) to local jar list
     # --jars doesn't support wildcard so it should call get_jars_full
@@ -826,6 +835,7 @@ def parse_config_opts(args):
     jars_list = []
     artifacts_list = []
     artifact_repositories_list = []
+    maven_local_repository_dir = None
     proxy_url = None
     proxy_username = None
     proxy_password = None
@@ -843,6 +853,8 @@ def parse_config_opts(args):
             artifacts_list.extend(curr.pop().split(','))
         elif token == "--artifactRepositories":
             artifact_repositories_list.extend(curr.pop().split(','))
+        elif token == "--mavenLocalRepositoryDirectory":
+            maven_local_repository_dir = curr.pop()
         elif token == "--proxyUrl":
             proxy_url = curr.pop()
         elif token == "--proxyUsername":
@@ -852,21 +864,23 @@ def parse_config_opts(args):
         else:
             args_list.append(token)
 
-    return config_list, jars_list, artifacts_list, artifact_repositories_list, \
+    return config_list, jars_list, artifacts_list, artifact_repositories_list, maven_local_repository_dir, \
            proxy_url, proxy_username, proxy_password, args_list
 
 def main():
     if len(sys.argv) <= 1:
         print_usage()
         sys.exit(-1)
-    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, \
+    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, \
+        DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, \
         DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
-    config_list, jars_list, artifacts_list, artifact_repositories_list, proxy_url, proxy_username, \
-    proxy_password, args = parse_config_opts(sys.argv[1:])
+    config_list, jars_list, artifacts_list, artifact_repositories_list, maven_local_directory, proxy_url, \
+        proxy_username, proxy_password, args = parse_config_opts(sys.argv[1:])
     parse_config(config_list)
     DEP_JARS_OPTS = jars_list
     DEP_ARTIFACTS_OPTS = artifacts_list
     DEP_ARTIFACTS_REPOSITORIES_OPTS = artifact_repositories_list
+    DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY = maven_local_directory
     DEP_PROXY_URL = proxy_url
     DEP_PROXY_USERNAME = proxy_username
     DEP_PROXY_PASSWORD = proxy_password
