@@ -12,59 +12,56 @@
 
 package org.apache.storm.pacemaker.codec;
 
-import java.io.IOException;
+import java.util.List;
 import org.apache.storm.generated.HBMessage;
 import org.apache.storm.generated.HBMessageData;
 import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.messaging.netty.ControlMessage;
 import org.apache.storm.messaging.netty.INettySerializable;
 import org.apache.storm.messaging.netty.SaslMessageToken;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffers;
-import org.apache.storm.shade.org.jboss.netty.channel.Channel;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
-import org.apache.storm.shade.org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.buffer.ByteBufAllocator;
+import org.apache.storm.shade.io.netty.buffer.Unpooled;
+import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.io.netty.handler.codec.MessageToMessageEncoder;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ThriftEncoder extends OneToOneEncoder {
+public class ThriftEncoder extends MessageToMessageEncoder<Object> {
 
     private static final Logger LOG = LoggerFactory
         .getLogger(ThriftEncoder.class);
 
-    private HBMessage encodeNettySerializable(INettySerializable netty_message,
-                                              HBServerMessageType mType) {
+    private HBMessage encodeNettySerializable(ByteBufAllocator alloc,
+        INettySerializable netty_message, HBServerMessageType mType) {
 
         HBMessageData message_data = new HBMessageData();
         HBMessage m = new HBMessage();
+        byte[] messageBuffer = new byte[netty_message.encodeLength()];
+        ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(messageBuffer);
         try {
-            ChannelBuffer cbuffer = netty_message.buffer();
-            if (cbuffer.hasArray()) {
-                message_data.set_message_blob(cbuffer.array());
-            } else {
-                byte buff[] = new byte[netty_message.encodeLength()];
-                cbuffer.readBytes(buff, 0, netty_message.encodeLength());
-                message_data.set_message_blob(buff);
-            }
+            netty_message.write(wrappedBuffer);
+            
+            message_data.set_message_blob(messageBuffer);
             m.set_type(mType);
             m.set_data(message_data);
             return m;
-        } catch (IOException e) {
-            LOG.error("Failed to encode NettySerializable: ", e);
-            throw new RuntimeException(e);
+        } finally {
+            wrappedBuffer.release();
         }
     }
 
     @Override
-    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) {
+    protected void encode(ChannelHandlerContext channelHandlerContext, Object msg, List<Object> out) throws Exception {
         if (msg == null) {
-            return null;
+            return;
         }
 
         LOG.debug("Trying to encode: " + msg.getClass().toString() + " : " + msg.toString());
 
         HBMessage m;
+        ByteBufAllocator alloc = channelHandlerContext.alloc();
         if (msg instanceof INettySerializable) {
             INettySerializable nettyMsg = (INettySerializable) msg;
 
@@ -77,19 +74,19 @@ public class ThriftEncoder extends OneToOneEncoder {
                 LOG.error("Didn't recognise INettySerializable: " + nettyMsg.toString());
                 throw new RuntimeException("Unrecognized INettySerializable.");
             }
-            m = encodeNettySerializable(nettyMsg, type);
+            m = encodeNettySerializable(alloc, nettyMsg, type);
         } else {
             m = (HBMessage) msg;
         }
 
         try {
             byte serialized[] = Utils.thriftSerialize(m);
-            ChannelBuffer ret = ChannelBuffers.directBuffer(serialized.length + 4);
+            ByteBuf ret = alloc.ioBuffer(serialized.length + 4);
 
             ret.writeInt(serialized.length);
             ret.writeBytes(serialized);
 
-            return ret;
+            out.add(ret);
         } catch (RuntimeException e) {
             LOG.error("Failed to serialize.", e);
             throw e;

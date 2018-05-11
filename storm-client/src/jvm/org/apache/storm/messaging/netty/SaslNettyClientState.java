@@ -12,15 +12,10 @@
 
 package org.apache.storm.messaging.netty;
 
-import org.apache.storm.shade.org.jboss.netty.channel.Channel;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelLocal;
+import org.apache.storm.shade.io.netty.util.AttributeKey;
 
 final class SaslNettyClientState {
 
-    public static final ChannelLocal<SaslNettyClient> getSaslNettyClient = new ChannelLocal<SaslNettyClient>() {
-        protected SaslNettyClient initialValue(Channel channel) {
-            return null;
-        }
-    };
+    public static final AttributeKey<SaslNettyClient> SASL_NETTY_CLIENT = AttributeKey.valueOf("sasl.netty.client");
 
 }

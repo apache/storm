@@ -14,21 +14,14 @@ package org.apache.storm.messaging.netty;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.storm.shade.org.jboss.netty.util.ThreadNameDeterminer;
-import org.apache.storm.shade.org.jboss.netty.util.ThreadRenamingRunnable;
 
 public class NettyRenameThreadFactory implements ThreadFactory {
 
-    static final NettyUncaughtExceptionHandler uncaughtExceptionHandler = new NettyUncaughtExceptionHandler();
+    private static final NettyUncaughtExceptionHandler UNCAUGHT_EXCEPTION_HANDLER = new NettyUncaughtExceptionHandler();
 
-    static {
-        //Rename Netty threads
-        ThreadRenamingRunnable.setThreadNameDeterminer(ThreadNameDeterminer.CURRENT);
-    }
-
-    final ThreadGroup group;
-    final AtomicInteger index = new AtomicInteger(1);
-    final String name;
+    private final ThreadGroup group;
+    private final AtomicInteger index = new AtomicInteger(1);
+    private final String name;
 
     public NettyRenameThreadFactory(String name) {
         SecurityManager s = System.getSecurityManager();
@@ -37,6 +30,7 @@ public class NettyRenameThreadFactory implements ThreadFactory {
         this.name = name;
     }
 
+    @Override
     public Thread newThread(Runnable r) {
         Thread t = new Thread(group, r, name + "-" + index.getAndIncrement(), 0);
         if (t.isDaemon()) {
@@ -45,7 +39,7 @@ public class NettyRenameThreadFactory implements ThreadFactory {
         if (t.getPriority() != Thread.NORM_PRIORITY) {
             t.setPriority(Thread.NORM_PRIORITY);
         }
-        t.setUncaughtExceptionHandler(uncaughtExceptionHandler);
+        t.setUncaughtExceptionHandler(UNCAUGHT_EXCEPTION_HANDLER);
         return t;
     }
 }

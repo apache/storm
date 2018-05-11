@@ -48,14 +48,6 @@ public interface IConnection extends AutoCloseable {
     void sendBackPressureStatus(BackPressureStatus bpStatus);
 
     /**
-     * send a message with taskId and payload
-     *
-     * @param taskId  task ID
-     * @param payload
-     */
-    void send(int taskId, byte[] payload);
-
-    /**
      * send batch messages
      *
      * @param msgs

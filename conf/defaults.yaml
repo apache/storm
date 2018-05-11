@@ -226,8 +226,6 @@ storm.messaging.netty.buffer.low.watermark: 8388608 # 8 MB
 storm.messaging.netty.max_retries: 300
 storm.messaging.netty.max_wait_ms: 1000
 storm.messaging.netty.min_wait_ms: 100
-io.netty.noPreferDirect: false
-io.netty.allocator.type: "pooled"
 
 # If the Netty messaging layer is busy(netty internal buffer not writable), the Netty client will try to batch message as more as possible up to the size of storm.messaging.netty.transfer.batch.size bytes, otherwise it will try to flush message as soon as possible to reduce latency.
 storm.messaging.netty.transfer.batch.size: 262144

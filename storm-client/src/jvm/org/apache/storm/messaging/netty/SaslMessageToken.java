@@ -12,10 +12,8 @@
 
 package org.apache.storm.messaging.netty;
 
-import java.io.IOException;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffers;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +50,8 @@ public class SaslMessageToken implements INettySerializable {
     }
 
     public static SaslMessageToken read(byte[] serial) {
-        ChannelBuffer sm_buffer = ChannelBuffers.copiedBuffer(serial);
+        ByteBuf sm_buffer = Unpooled.wrappedBuffer(serial);
+        try {
         short identifier = sm_buffer.readShort();
         int payload_len = sm_buffer.readInt();
         if (identifier != IDENTIFIER) {
@@ -61,6 +60,9 @@ public class SaslMessageToken implements INettySerializable {
         byte token[] = new byte[payload_len];
         sm_buffer.readBytes(token, 0, payload_len);
         return new SaslMessageToken(token);
+        } finally {
+            sm_buffer.release();
+        }
     }
 
     /**
@@ -81,31 +83,29 @@ public class SaslMessageToken implements INettySerializable {
         this.token = token;
     }
 
+    @Override
     public int encodeLength() {
         return 2 + 4 + token.length;
     }
 
     /**
-     * encode the current SaslToken Message into a channel buffer SaslTokenMessageRequest is encoded as: identifier .... short(2) payload
+     * encode the current SaslToken Message into a ByteBuf.
+     * 
+     * <p>SaslTokenMessageRequest is encoded as: identifier .... short(2) payload
      * length .... int payload .... byte[]
-     *
-     * @throws IOException
      */
-    public ChannelBuffer buffer() throws IOException {
-        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(
-            ChannelBuffers.directBuffer(encodeLength()));
+    @Override
+    public void write(ByteBuf dest) {
         int payload_len = 0;
         if (token != null) {
             payload_len = token.length;
         }
 
-        bout.writeShort(IDENTIFIER);
-        bout.writeInt(payload_len);
+        dest.writeShort(IDENTIFIER);
+        dest.writeInt(payload_len);
 
         if (payload_len > 0) {
-            bout.write(token);
+            dest.writeBytes(token);
         }
-        bout.close();
-        return bout.buffer();
     }
 }

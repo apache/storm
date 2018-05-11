@@ -172,7 +172,7 @@
                 <!--Note - the version would be inherited-->
                 <configuration>
                     <excludes>**/generated/**</excludes>
-                    <maxAllowedViolations>3298</maxAllowedViolations>
+                    <maxAllowedViolations>3285</maxAllowedViolations>
                 </configuration>
             </plugin>
             <plugin>

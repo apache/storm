@@ -12,10 +12,8 @@
 
 package org.apache.storm.messaging.netty;
 
-import java.io.IOException;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffers;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.buffer.Unpooled;
 
 public enum ControlMessage implements INettySerializable {
     CLOSE_MESSAGE((short) -100),
@@ -25,7 +23,7 @@ public enum ControlMessage implements INettySerializable {
     SASL_TOKEN_MESSAGE_REQUEST((short) -202),
     SASL_COMPLETE_REQUEST((short) -203);
 
-    private short code;
+    private final short code;
 
     //private constructor
     private ControlMessage(short code) {
@@ -46,27 +44,21 @@ public enum ControlMessage implements INettySerializable {
     }
 
     public static ControlMessage read(byte[] serial) {
-        ChannelBuffer cm_buffer = ChannelBuffers.copiedBuffer(serial);
+        ByteBuf cm_buffer = Unpooled.wrappedBuffer(serial);
+        try{
         return mkMessage(cm_buffer.getShort(0));
+        } finally {
+            cm_buffer.release();
+        }
     }
 
+    @Override
     public int encodeLength() {
         return 2; //short
     }
 
-    /**
-     * encode the current Control Message into a channel buffer
-     *
-     * @throws IOException
-     */
-    public ChannelBuffer buffer() throws IOException {
-        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.directBuffer(encodeLength()));
-        write(bout);
-        bout.close();
-        return bout.buffer();
-    }
-
-    public void write(ChannelBufferOutputStream bout) throws IOException {
-        bout.writeShort(code);
+    @Override
+    public void write(ByteBuf buf) {
+        buf.writeShort(code);
     }
 }

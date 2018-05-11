@@ -275,7 +275,7 @@
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
         <auto-service.version>1.0-rc3</auto-service.version>
-        <netty.version>4.0.33.Final</netty.version>
+        <netty.version>4.1.25.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
         <log4j.version>2.8.2</log4j.version>
@@ -643,7 +643,7 @@
                 <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
             </properties>
         </profile> 
-	<profile>
+        <profile>
             <id>integration-tests-only</id>
             <properties>
                 <!--Java-->
@@ -937,12 +937,12 @@
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
-                <dependency>
-                    <groupId>com.google.auto.service</groupId>
-                    <artifactId>auto-service</artifactId>
-                    <version>${auto-service.version}</version>
-                    <optional>true</optional>
-                </dependency>
+            <dependency>
+                <groupId>com.google.auto.service</groupId>
+                <artifactId>auto-service</artifactId>
+                <version>${auto-service.version}</version>
+                <optional>true</optional>
+            </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
@@ -1063,7 +1063,7 @@
                 <groupId>org.apache.calcite</groupId>
                 <artifactId>calcite-core</artifactId>
                 <version>${calcite.version}</version>
-            </dependency> 
+            </dependency>
 
             <!-- kafka artifact dependency needed for storm-kafka -->
             <dependency>
