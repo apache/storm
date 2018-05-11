@@ -18,6 +18,16 @@
 
 package org.apache.storm.jms.spout;
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.jms.JmsTupleProducer;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -27,16 +37,6 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -72,10 +72,7 @@ public class JmsSpout extends BaseRichSpout {
     private int jmsAcknowledgeMode = Session.AUTO_ACKNOWLEDGE;
 
     /** Sets up the way we want to handle the emit, ack and fails. */
-    private transient MessageHandler messageHandler = new MessageHandler();
-
-    /** Indicates whether or not this spout should run as a singleton. */
-    private boolean distributed = true;
+    private MessageHandler messageHandler = new MessageHandler();
 
     /** Used to generate tuples from incoming messages. */
     private JmsTupleProducer tupleProducer;
@@ -99,6 +96,12 @@ public class JmsSpout extends BaseRichSpout {
      * The message consumer.
      */
     private MessageConsumer consumer;
+
+
+    /**
+     * If JMS provider supports ack-ing individual messages.
+     */
+    private boolean individualAcks;
 
     /**
      * Sets the JMS Session acknowledgement mode for the JMS session.
@@ -127,8 +130,14 @@ public class JmsSpout extends BaseRichSpout {
                 messageHandler = new TransactedSessionMessageHandler();
                 break;
             default:
-                LOG.warn("Unsupported Acknowledge mode: "
-                    + mode + " (See javax.jms.Session for valid values)");
+                // individual message ack-ing needs vendor specific mode
+                if (individualAcks) {
+                    LOG.warn("Unsupported Acknowledge mode: "
+                        + mode + " (See javax.jms.Session for valid values)");
+                } else {
+                    throw new IllegalArgumentException("Unsupported"
+                        + "Acknowledge mode: " + mode);
+                }
         }
         jmsAcknowledgeMode = mode;
     }
@@ -175,10 +184,11 @@ public class JmsSpout extends BaseRichSpout {
     }
 
     /**
-     * Set if JMS vendor supports ack-ing individual messages.
-     * The appropriate mode must be set via {{@link #setJmsAcknowledgeMode(int)}}
+     * Set if JMS vendor supports ack-ing individual messages. The appropriate
+     * mode must be set via {{@link #setJmsAcknowledgeMode(int)}}.
      */
     public void setIndividualAcks() {
+        individualAcks = true;
         messageHandler = new MessageAckHandler();
     }
 
@@ -293,43 +303,6 @@ public class JmsSpout extends BaseRichSpout {
     }
 
     /**
-     * Sets the periodicity of the timer task that
-     * checks for failures and recovers the JMS session.
-     *
-     * @param period desired wait period
-     */
-    public void setRecoveryPeriodMs(final long period) {
-    }
-
-    /**
-     * @return {@link #distributed}.
-     */
-    public boolean isDistributed() {
-        return this.distributed;
-    }
-
-    /**
-     * Sets the "distributed" mode of this spout.
-     *
-     * <p>If <code>true</code> multiple instances of this spout <i>may</i> be
-     * created across the cluster
-     * (depending on the "parallelism_hint" in the topology configuration).
-     *
-     * <p>Setting this value to <code>false</code> essentially means this spout
-     * will run as a singleton within the cluster
-     * ("parallelism_hint" will be ignored).
-     *
-     * <p>In general, this should be set to <code>false</code> if the underlying
-     * JMS destination is a topic, and <code>true</code> if it is a JMS queue.
-     *
-     * @param isDistributed {@code true} if should be distributed, {@code false}
-     *                      otherwise.
-     */
-    public void setDistributed(final boolean isDistributed) {
-        this.distributed = isDistributed;
-    }
-
-    /**
      * @return The currently active session.
      */
     protected Session getSession() {
@@ -339,7 +312,7 @@ public class JmsSpout extends BaseRichSpout {
     /**
      * Handles messages in JMS AUTO or DUPS_OK ack mode.
      */
-    private class MessageHandler {
+    private class MessageHandler implements Serializable {
 
         /**
          * Emit a message.
@@ -393,7 +366,7 @@ public class JmsSpout extends BaseRichSpout {
         /**
          * Maps between message ids of not-yet acked messages and the messages.
          */
-        protected HashMap<JmsMessageID, Message> pendingAcks = new HashMap<>();
+        private Map<JmsMessageID, Message> pendingAcks = new HashMap<>();
 
         @Override
         void emit(final Message msg) {
@@ -465,6 +438,14 @@ public class JmsSpout extends BaseRichSpout {
             getSession().recover();
         }
 
+        /**
+         * Returns the pending acks.
+         *
+         * @return the pending acks
+         */
+        protected Map<JmsMessageID, Message> getPendingAcks() {
+            return pendingAcks;
+        }
     }
 
     /**
@@ -476,7 +457,7 @@ public class JmsSpout extends BaseRichSpout {
         protected void doAck(final Message msg) throws JMSException {
             // if there are no more pending consumed messages
             // and storm delivered ack for all
-            if (pendingAcks.isEmpty()) {
+            if (getPendingAcks().isEmpty()) {
                 msg.acknowledge();
             } else {
                 LOG.debug("Not acknowledging the JMS message "
@@ -493,7 +474,7 @@ public class JmsSpout extends BaseRichSpout {
         protected void doAck(final Message msg) throws JMSException {
             // if there are no more pending consumed messages
             // and storm delivered ack for all
-            if (pendingAcks.isEmpty()) {
+            if (getPendingAcks().isEmpty()) {
                 session.commit();
             } else {
                 LOG.debug("Not committing the session "
