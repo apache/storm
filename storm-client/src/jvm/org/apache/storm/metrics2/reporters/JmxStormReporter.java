@@ -28,7 +28,7 @@ public class JmxStormReporter implements StormReporter {
     JmxReporter reporter = null;
 
     public static String getMetricsJmxDomain(Map reporterConf) {
-        return ObjectReader.getString(reporterConf, JMX_DOMAIN);
+        return ObjectReader.getString(reporterConf.get(JMX_DOMAIN), null);
     }
 
     @Override
