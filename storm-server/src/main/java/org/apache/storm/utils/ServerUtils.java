@@ -75,6 +75,7 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
@@ -96,7 +97,8 @@ public class ServerUtils {
     private static ServerUtils _instance = new ServerUtils();
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * Provide an instance of this class for delegates to use.
+     * To mock out delegated methods, provide an instance of a subclass that
      * overrides the implementation of the delegated method.
      *
      * @param u a ServerUtils instance
@@ -127,12 +129,12 @@ public class ServerUtils {
         return null;
     }
 
-    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, NimbusInfo nimbusInfo) {
-        return getNimbusBlobStore(conf, null, nimbusInfo);
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
+        return getNimbusBlobStore(conf, null, nimbusInfo, leaderElector);
     }
 
-    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo) {
-        String type = (String) conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
+        String type = (String)conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
         if (type == null) {
             type = LocalFsBlobStore.class.getName();
         }
@@ -143,7 +145,7 @@ public class ServerUtils {
 
         if (store != null) {
             // store can be null during testing when mocking utils.
-            store.prepare(nconf, baseDir, nimbusInfo);
+            store.prepare(nconf, baseDir, nimbusInfo, leaderElector);
         }
         return store;
     }
@@ -204,7 +206,7 @@ public class ServerUtils {
     public static ClientBlobStore getClientBlobStoreForSupervisor(Map<String, Object> conf) {
         ClientBlobStore store;
         if (ConfigUtils.isLocalMode(conf)) {
-            store = new LocalModeClientBlobStore(getNimbusBlobStore(conf, null));
+            store = new LocalModeClientBlobStore(getNimbusBlobStore(conf, null, null));
         } else {
             store = (ClientBlobStore) ReflectionUtils.newInstance(
                 (String) conf.get(DaemonConfig.SUPERVISOR_BLOBSTORE));

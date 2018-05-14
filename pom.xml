@@ -231,11 +231,6 @@
 
     </developers>
 
-
-    <prerequisites>
-        <maven>3.0.0</maven>
-    </prerequisites>
-
     <scm>
         <connection>scm:git:https://git-wip-us.apache.org/repos/asf/storm.git</connection>
         <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/storm.git</developerConnection>
@@ -328,7 +323,7 @@
 
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
-        <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
+        <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest, org.apache.storm.testing.PerformanceTest</java.unit.test.exclude>
         <java.unit.test.include>**/Test*.java, **/*Test.java, **/*TestCase.java</java.unit.test.include>    <!--maven surefire plugin default test list-->
         <java.integration.test.include>no.tests</java.integration.test.include>
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
@@ -626,10 +621,19 @@
             <id>all-tests</id>
             <properties>
                 <java.integration.test.include>**/*.java</java.integration.test.include>
+                <!-- add perf tests back in -->
+                <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
                 <clojure.test.set>*.*</clojure.test.set>
             </properties>
         </profile>
         <profile>
+            <id>performance-tests</id>
+            <properties>
+                <!-- add perf tests back in -->
+                <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
+            </properties>
+        </profile> 
+	<profile>
             <id>integration-tests-only</id>
             <properties>
                 <!--Java-->
@@ -1274,6 +1278,25 @@
                     </docletArtifact>
                     <useStandardDocletOptions>true</useStandardDocletOptions>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-maven-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.0</version>
+                                </requireMavenVersion>
+                            </rules>    
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

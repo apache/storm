@@ -29,6 +29,7 @@ import org.apache.storm.scheduler.resource.normalization.NormalizedResourceReque
 
 /**
  * An interface that provides access to the current scheduling state.
+ * The scheduling state is not guaranteed to be thread safe.
  */
 public interface ISchedulingState {
 

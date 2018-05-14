@@ -199,7 +199,7 @@ public interface IStormClusterState {
 
     void setAssignment(String stormId, Assignment info, Map<String, Object> topoConf);
 
-    void setupBlobstore(String key, NimbusInfo nimbusInfo, Integer versionInfo);
+    void setupBlob(String key, NimbusInfo nimbusInfo, Integer versionInfo);
 
     List<String> activeKeys();
 

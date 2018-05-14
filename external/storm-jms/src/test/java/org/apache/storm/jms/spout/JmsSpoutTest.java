@@ -53,7 +53,6 @@ public class JmsSpoutTest {
             spout.setJmsProvider(new MockJmsProvider());
             spout.setJmsTupleProducer(new MockTupleProducer());
             spout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-            spout.setRecoveryPeriodMs(10); // Rapid recovery for testing.
             spout.open(new HashMap<>(), null, collector);
             ConnectionFactory connectionFactory = mockProvider.connectionFactory();
             Destination destination = mockProvider.destination();

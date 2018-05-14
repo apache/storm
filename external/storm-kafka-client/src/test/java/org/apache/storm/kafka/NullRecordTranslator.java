@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource.normalization;
+package org.apache.storm.kafka;
 
-/**
- * Intended for {@link NormalizedResources} wrappers that handle memory.
- */
-public interface NormalizedResourcesWithMemory {
+import java.util.Collections;
+import java.util.List;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.storm.kafka.spout.RecordTranslator;
+import org.apache.storm.tuple.Fields;
 
-    NormalizedResources getNormalizedResources();
+public class NullRecordTranslator<K, V> implements RecordTranslator<K, V> {
 
-    double getTotalMemoryMb();
+    @Override
+    public List<Object> apply(ConsumerRecord<K, V> record) {
+        return null;
 
-    /**
-     * Set all resources to 0.
-     */
-    void clear();
+    }
 
+    @Override
+    public Fields getFieldsFor(String stream) {
+        return new Fields("topic", "key", "value");
+    }
 }

@@ -26,21 +26,17 @@ public class InProcessZookeeper implements AutoCloseable {
 
     private final TmpPath zkTmp;
     private final NIOServerCnxnFactory zookeeper;
-    private final long zkPort;
 
     public InProcessZookeeper() throws Exception {
         zkTmp = new TmpPath();
-        @SuppressWarnings("unchecked")
-        List<Object> portAndHandle = Zookeeper.mkInprocessZookeeper(zkTmp.getPath(), null);
-        zkPort = (Long) portAndHandle.get(0);
-        zookeeper = (NIOServerCnxnFactory) portAndHandle.get(1);
+        zookeeper = Zookeeper.mkInprocessZookeeper(zkTmp.getPath(), null);
     }
 
     /**
      * @return the port ZK is listening on (localhost)
      */
     public long getPort() {
-        return zkPort;
+        return zookeeper.getLocalPort();
     }
 
     @Override

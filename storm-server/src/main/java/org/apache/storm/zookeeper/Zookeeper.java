@@ -72,7 +72,7 @@ public class Zookeeper {
         _instance = INSTANCE;
     }
 
-    public static List mkInprocessZookeeper(String localdir, Integer port) throws Exception {
+    public static NIOServerCnxnFactory mkInprocessZookeeper(String localdir, Integer port) throws Exception {
         File localfile = new File(localdir);
         ZooKeeperServer zk = new ZooKeeperServer(localfile, localfile, 2000);
         NIOServerCnxnFactory factory = null;
@@ -96,7 +96,7 @@ public class Zookeeper {
         }
         LOG.info("Starting inprocess zookeeper at port {} and dir {}", report, localdir);
         factory.startup(zk);
-        return Arrays.asList((Object) new Long(report), (Object) factory);
+        return factory;
     }
 
     public static void shutdownInprocessZookeeper(NIOServerCnxnFactory handle) {

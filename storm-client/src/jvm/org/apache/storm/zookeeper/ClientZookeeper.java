@@ -77,14 +77,14 @@ public class ClientZookeeper {
     // Deletes the state inside the zookeeper for a key, for which the
     // contents of the key starts with nimbus host port information
     public static void deleteNodeBlobstore(CuratorFramework zk, String parentPath, String hostPortInfo) {
-        String normalizedPatentPath = normalizePath(parentPath);
+        String normalizedParentPath = normalizePath(parentPath);
         List<String> childPathList = null;
-        if (existsNode(zk, normalizedPatentPath, false)) {
-            childPathList = getChildren(zk, normalizedPatentPath, false);
+        if (existsNode(zk, normalizedParentPath, false)) {
+            childPathList = getChildren(zk, normalizedParentPath, false);
             for (String child : childPathList) {
                 if (child.startsWith(hostPortInfo)) {
                     LOG.debug("deleteNode child {}", child);
-                    deleteNode(zk, normalizedPatentPath + "/" + child);
+                    deleteNode(zk, normalizedParentPath + "/" + child);
                 }
             }
         }
