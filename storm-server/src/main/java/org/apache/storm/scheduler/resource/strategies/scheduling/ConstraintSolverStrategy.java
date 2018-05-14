@@ -45,15 +45,16 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     public static final int MAX_STATE_SEARCH = 100_000;
     public static final int DEFAULT_STATE_SEARCH = 10_000;
     private static final Logger LOG = LoggerFactory.getLogger(ConstraintSolverStrategy.class);
-    private Map<String, RAS_Node> nodes;
-    private Map<ExecutorDetails, String> execToComp;
-    private Map<String, Set<ExecutorDetails>> compToExecs;
-    private List<String> favoredNodes;
-    private List<String> unFavoredNodes;
 
     //constraints and spreads
     private Map<String, Map<String, Integer>> constraintMatrix;
     private HashSet<String> spreadComps = new HashSet<>();
+
+    private Map<String, RAS_Node> nodes;
+    private Map<ExecutorDetails, String> execToComp;
+    private Map<String, Set<ExecutorDetails>> compToExecs;
+    private List<String> favoredNodeIds;
+    private List<String> unFavoredNodeIds;
 
     static Map<String, Map<String, Integer>> getConstraintMap(TopologyDetails topo, Set<String> comps) {
         Map<String, Map<String, Integer>> matrix = new HashMap<>();
@@ -252,8 +253,8 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         final long maxTimeMs =
             ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS), -1).intValue() * 1000L;
 
-        favoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES);
-        unFavoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES);
+        favoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES));
+        unFavoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES));
 
         //get mapping of execs to components
         execToComp = td.getExecutorToComponent();
@@ -328,11 +329,11 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         }
 
         ExecutorDetails exec = state.currentExec();
-        List<ObjectResources> sortedNodes = sortAllNodes(state.td, exec, favoredNodes, unFavoredNodes);
+        Iterable<String> sortedNodes = sortAllNodes(state.td, exec, favoredNodeIds, unFavoredNodeIds);
 
-        for (ObjectResources nodeResources : sortedNodes) {
-            RAS_Node node = nodes.get(nodeResources.id);
-            for (WorkerSlot workerSlot : node.getSlotsAvailbleTo(state.td)) {
+        for (String nodeId: sortedNodes) {
+            RAS_Node node = nodes.get(nodeId);
+            for (WorkerSlot workerSlot : node.getSlotsAvailableToScheduleOn()) {
                 if (isExecAssignmentToWorkerValid(workerSlot, state)) {
                     state.tryToSchedule(execToComp, node, workerSlot);
 

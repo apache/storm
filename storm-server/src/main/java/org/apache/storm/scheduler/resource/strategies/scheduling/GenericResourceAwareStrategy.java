@@ -30,6 +30,7 @@ import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.SchedulingStatus;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +44,10 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
         final ExistingScheduleFunc existingScheduleFunc) {
         AllResources affinityBasedAllResources = new AllResources(allResources);
+        NormalizedResourceRequest requestedResources = topologyDetails.getTotalResources(exec);
+        for (ObjectResources objectResources : affinityBasedAllResources.objectResources) {
+            objectResources.availableResources.updateForRareResourceAffinity(requestedResources);
+        }
 
         TreeSet<ObjectResources> sortedObjectResources =
             new TreeSet<>((o1, o2) -> {
@@ -81,7 +86,7 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         }
         Collection<ExecutorDetails> unassignedExecutors =
             new HashSet<>(this.cluster.getUnassignedExecutors(td));
-        LOG.info("ExecutorsNeedScheduling: {}", unassignedExecutors);
+        LOG.debug("Num ExecutorsNeedScheduling: {}", unassignedExecutors.size());
         Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
         List<Component> spouts = this.getSpouts(td);
 
@@ -92,10 +97,10 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         }
 
         //order executors to be scheduled
-        List<ExecutorDetails> orderedExecutors = this.orderExecutors(td, unassignedExecutors);
+        List<ExecutorDetails> orderedExecutors = orderExecutors(td, unassignedExecutors);
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
-        List<String> favoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES);
-        List<String> unFavoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES);
+        List<String> favoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES));
+        List<String> unFavoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES));
 
         for (ExecutorDetails exec : orderedExecutors) {
             LOG.debug(
@@ -103,17 +108,24 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
                 exec,
                 td.getExecutorToComponent().get(exec),
                 td.getTaskResourceReqList(exec));
-            final List<ObjectResources> sortedNodes = this.sortAllNodes(td, exec, favoredNodes, unFavoredNodes);
+            final Iterable<String> sortedNodes = sortAllNodes(td, exec, favoredNodeIds, unFavoredNodeIds);
 
-            scheduleExecutor(exec, td, scheduledTasks, sortedNodes);
+            if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+                return mkNotEnoughResources(td);
+            }
         }
 
         executorsNotScheduled.removeAll(scheduledTasks);
-        LOG.error("/* Scheduling left over task (most likely sys tasks) */");
-        // schedule left over system tasks
-        for (ExecutorDetails exec : executorsNotScheduled) {
-            final List<ObjectResources> sortedNodes = this.sortAllNodes(td, exec, favoredNodes, unFavoredNodes);
-            scheduleExecutor(exec, td, scheduledTasks, sortedNodes);
+        if (!executorsNotScheduled.isEmpty()) {
+            LOG.warn("Scheduling {} left over task (most likely sys tasks)", executorsNotScheduled);
+            // schedule left over system tasks
+            for (ExecutorDetails exec : executorsNotScheduled) {
+                final Iterable<String> sortedNodes = sortAllNodes(td, exec, favoredNodeIds, unFavoredNodeIds);
+                if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+                    return mkNotEnoughResources(td);
+                }
+            }
+            executorsNotScheduled.removeAll(scheduledTasks);
         }
 
         SchedulingResult result;

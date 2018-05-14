@@ -65,6 +65,14 @@ public class ResourceMapArrayBridge {
     }
 
     /**
+     * Create an array that has all values 0.
+     * @return the empty array.
+     */
+    public double[] empty() {
+        return new double[counter.get()];
+    }
+
+    /**
      * Translates an array of resource values to a normalized resource map.
      *
      * @param resources The resource array to translate

@@ -319,7 +319,7 @@ public class TestDefaultResourceAwareStrategy {
         List<String> nodeHostnames = rackToNodes.get("rack-1");
         for (int i = 0; i< topo2.getExecutors().size()/2; i++) {
             String nodeHostname = nodeHostnames.get(i % nodeHostnames.size());
-            RAS_Node node = rs.idToNode(rs.nodeHostnameToId(nodeHostname));
+            RAS_Node node = rs.hostnameToNodes(nodeHostname).get(0);
             WorkerSlot targetSlot = node.getFreeSlots().iterator().next();
             ExecutorDetails targetExec = executorIterator.next();
             // to keep track of free slots
@@ -444,7 +444,7 @@ public class TestDefaultResourceAwareStrategy {
         List<String> nodeHostnames = rackToNodes.get("rack-1");
         for (int i = 0; i< topo2.getExecutors().size()/2; i++) {
             String nodeHostname = nodeHostnames.get(i % nodeHostnames.size());
-            RAS_Node node = rs.idToNode(rs.nodeHostnameToId(nodeHostname));
+            RAS_Node node = rs.hostnameToNodes(nodeHostname).get(0);
             WorkerSlot targetSlot = node.getFreeSlots().iterator().next();
             ExecutorDetails targetExec = executorIterator.next();
             // to keep track of free slots

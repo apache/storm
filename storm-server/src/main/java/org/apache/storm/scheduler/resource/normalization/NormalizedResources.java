@@ -45,6 +45,14 @@ public class NormalizedResources {
     private double[] otherResources;
 
     /**
+     * Create an empty NormalizedResources.
+     */
+    NormalizedResources() {
+        cpu = 0.0;
+        otherResources = RESOURCE_MAP_ARRAY_BRIDGE.empty();
+    }
+
+    /**
      * Copy constructor.
      */
     public NormalizedResources(NormalizedResources other) {
@@ -224,12 +232,6 @@ public class NormalizedResources {
      *                                  resources that are not present in the total.
      */
     public double calculateAveragePercentageUsedBy(NormalizedResources used, double totalMemoryMb, double usedMemoryMb) {
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Calculating avg percentage used by. Used Mem: {} Total Mem: {}"
-                      + " Used Normalized Resources: {} Total Normalized Resources: {}", totalMemoryMb, usedMemoryMb,
-                      toNormalizedMap(), used.toNormalizedMap());
-        }
-
         int skippedResourceTypes = 0;
         double total = 0.0;
         if (usedMemoryMb > totalMemoryMb) {
@@ -343,5 +345,29 @@ public class NormalizedResources {
             min = Math.min(min, used.otherResources[i] / otherResources[i]);
         }
         return min * 100.0;
+    }
+
+    /**
+     * If a node or rack has a kind of resource not in a request, make that resource negative so when sorting that node or rack will
+     * be less likely to be selected.
+     * @param request the requested resources.
+     */
+    public void updateForRareResourceAffinity(NormalizedResources request) {
+        int length = Math.min(this.otherResources.length, request.otherResources.length);
+        for (int i = 0; i < length; i++) {
+            if (request.getResourceAt(i) == 0.0) {
+                this.otherResources[i] = -1 * this.otherResources[i];
+            }
+        }
+    }
+
+    /**
+     * Set all resources to 0.
+     */
+    public void clear() {
+        this.cpu = 0.0;
+        for (int i = 0; i < otherResources.length; i++) {
+            otherResources[i] = 0.0;
+        }
     }
 }
