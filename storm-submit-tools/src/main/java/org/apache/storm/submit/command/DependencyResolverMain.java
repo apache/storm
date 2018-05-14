@@ -18,10 +18,12 @@
 
 package org.apache.storm.submit.command;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -55,9 +57,11 @@ import org.json.simple.JSONValue;
 public class DependencyResolverMain {
     private static final String OPTION_ARTIFACTS_LONG = "artifacts";
     private static final String OPTION_ARTIFACT_REPOSITORIES_LONG = "artifactRepositories";
+    private static final String OPTION_MAVEN_LOCAL_REPOSITORY_DIRECTORY_LONG = "mavenLocalRepositoryDirectory";
     private static final String OPTION_PROXY_URL_LONG = "proxyUrl";
     private static final String OPTION_PROXY_USERNAME_LONG = "proxyUsername";
     private static final String OPTION_PROXY_PASSWORD_LONG = "proxyPassword";
+    public static final String DEFAULT_FAILBACK_MAVEN_LOCAL_REPOSITORY_DIRECTORY = "local-repo";
 
     /**
      * Main entry of dependency resolver.
@@ -94,7 +98,9 @@ public class DependencyResolverMain {
         }
 
         try {
-            String localMavenRepoPath = getOrDefaultLocalMavenRepositoryPath("local-repo");
+            String localMavenRepoPath = getOrDefaultLocalMavenRepositoryPath(
+                    commandLine.getOptionValue(OPTION_MAVEN_LOCAL_REPOSITORY_DIRECTORY_LONG),
+                    DEFAULT_FAILBACK_MAVEN_LOCAL_REPOSITORY_DIRECTORY);
 
             // create root directory if not exist
             Files.createDirectories(new File(localMavenRepoPath).toPath());
@@ -187,7 +193,14 @@ public class DependencyResolverMain {
         return artifactToPath;
     }
 
-    private static String getOrDefaultLocalMavenRepositoryPath(String defaultPath) {
+    private static String getOrDefaultLocalMavenRepositoryPath(String customLocalMavenPath, String defaultPath) {
+        if (customLocalMavenPath != null) {
+            Path customPath = new File(customLocalMavenPath).toPath();
+            Preconditions.checkArgument(!Files.exists(customPath) || Files.isDirectory(customPath),
+                    "Custom local maven repository path exist and is not a directory!");
+            return customLocalMavenPath;
+        }
+
         String localMavenRepoPathStr = getLocalMavenRepositoryPath();
         if (StringUtils.isNotEmpty(localMavenRepoPathStr)) {
             Path localMavenRepoPath = new File(localMavenRepoPathStr).toPath();
@@ -212,6 +225,7 @@ public class DependencyResolverMain {
         Options options = new Options();
         options.addOption(null, OPTION_ARTIFACTS_LONG, true, "REQUIRED string representation of artifacts");
         options.addOption(null, OPTION_ARTIFACT_REPOSITORIES_LONG, true, "OPTIONAL string representation of artifact repositories");
+        options.addOption(null, OPTION_MAVEN_LOCAL_REPOSITORY_DIRECTORY_LONG, true, "OPTIONAL string representation of local maven repository directory path");
         options.addOption(null, OPTION_PROXY_URL_LONG, true, "OPTIONAL URL representation of proxy server");
         options.addOption(null, OPTION_PROXY_USERNAME_LONG, true, "OPTIONAL Username of proxy server (basic auth)");
         options.addOption(null, OPTION_PROXY_PASSWORD_LONG, true, "OPTIONAL Password of proxy server (basic auth)");
