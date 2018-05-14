@@ -99,10 +99,12 @@ public class ReturnResults extends BaseRichBolt {
         if (local) {
             client = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(host);
         } else {
-            List server = new ArrayList() { {
-                add(host);
-                add(port);
-            }};
+            List server = new ArrayList() {
+                {
+                    add(host);
+                    add(port);
+                }
+            };
             if (!_clients.containsKey(server)) {
                 try {
                     _clients.put(server, new DRPCInvocationsClient(_conf, host, port));
