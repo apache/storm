@@ -23,13 +23,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.Config;
 import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.callback.ZKStateChangedCallback;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.zookeeper.ClientZookeeper;
 import org.apache.zookeeper.CreateMode;
@@ -218,12 +217,8 @@ public class ZKStateStorage implements IStateStorage {
 
     @Override
     public void add_listener(final ConnectionStateListener listener) {
-        ClientZookeeper.addListener(zkReader, new ConnectionStateListener() {
-            @Override
-            public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
-                listener.stateChanged(curatorFramework, connectionState);
-            }
-        });
+        ClientZookeeper.addListener(zkReader,
+            (curatorFramework, connectionState) -> listener.stateChanged(curatorFramework, connectionState));
     }
 
     @Override

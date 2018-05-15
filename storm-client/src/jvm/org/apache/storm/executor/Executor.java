@@ -12,8 +12,6 @@
 
 package org.apache.storm.executor;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
@@ -57,6 +55,8 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.stats.CommonStats;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.task.WorkerTopologyContext;

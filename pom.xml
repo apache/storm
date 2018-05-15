@@ -24,7 +24,6 @@
         <version>18</version>
     </parent>
 
-
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
     <version>2.0.0-SNAPSHOT</version>
@@ -478,7 +477,11 @@
                                 <exclude>VERSION</exclude>
                                 <exclude>TODO</exclude>
                                 <!-- thrift-generated code -->
-                                <exclude>**/src/py/**</exclude>
+				<exclude>**/src/py/**</exclude>
+
+				<!-- Used as part of travis-ci build -->
+                                <exclude>install.txt</exclude>
+                                <exclude>shaded-deps/install-shade.txt</exclude>
 
                                 <!-- the following are in the LICENSE file -->
                                 <exclude>**/src/ui/public/js/jquery.dataTables.1.10.4.min.js</exclude>
@@ -631,7 +634,7 @@
                 <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
             </properties>
         </profile> 
-	<profile>
+        <profile>
             <id>integration-tests-only</id>
             <properties>
                 <!--Java-->
@@ -920,12 +923,12 @@
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
-                <dependency>
-                    <groupId>com.google.auto.service</groupId>
-                    <artifactId>auto-service</artifactId>
-                    <version>${auto-service.version}</version>
-                    <optional>true</optional>
-                </dependency>
+            <dependency>
+                <groupId>com.google.auto.service</groupId>
+                <artifactId>auto-service</artifactId>
+                <version>${auto-service.version}</version>
+                <optional>true</optional>
+            </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>

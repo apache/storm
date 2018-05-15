@@ -18,7 +18,6 @@
 
 package org.apache.storm.utils;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +29,7 @@ import org.apache.storm.metric.internal.RateTracker;
 import org.apache.storm.metrics2.JcMetrics;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
+import org.apache.storm.shade.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpscArrayQueue;
 import org.jctools.queues.MpscUnboundedArrayQueue;
@@ -40,12 +40,12 @@ public class JCQueue implements IStatefulObject {
     public static final Object INTERRUPT = new Object();
     private static final Logger LOG = LoggerFactory.getLogger(JCQueue.class);
     private static final String PREFIX = "jc-";
-    private static final ScheduledThreadPoolExecutor METRICS_REPORTER_EXECUTOR = new ScheduledThreadPoolExecutor(1,
-                                                                                                                 new ThreadFactoryBuilder()
-                                                                                                                     .setDaemon(true)
-                                                                                                                     .setNameFormat(PREFIX +
-                                                                                                                                    "metrics-reporter")
-                                                                                                                     .build());
+    private static final ScheduledThreadPoolExecutor METRICS_REPORTER_EXECUTOR =
+        new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setDaemon(true)
+                .setNameFormat(PREFIX + "metrics-reporter")
+                .build());
     private final ExitCondition continueRunning = () -> true;
     private final JcMetrics jcMetrics;
     private final MpscArrayQueue<Object> recvQueue;

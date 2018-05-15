@@ -12,7 +12,6 @@
 
 package org.apache.storm.grouping;
 
-import com.google.common.collect.Maps;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -21,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
-
 
 /**
  * A variation on FieldGrouping. This grouping operates on a partitioning of the incoming tuples (like a FieldGrouping), but it can send

@@ -12,13 +12,13 @@
 
 package org.apache.storm.trident.windowing;
 
-import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.storm.coordination.BatchOutputCollector;
+import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.trident.operation.Aggregator;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.tuple.TridentTuple;

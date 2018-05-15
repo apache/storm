@@ -30,8 +30,8 @@
             KeyedCountingBatchBolt KeyedCountingCommitterBolt KeyedSummingBatchBolt
             IdentityBolt CountingCommitBolt OpaqueMemoryTransactionalSpout])
   (:import [org.apache.storm.utils ZookeeperAuthInfo Utils])
-  (:import [org.apache.curator.framework CuratorFramework])
-  (:import [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModeStatPathAndBytesable])
+  (:import [org.apache.storm.shade.org.apache.curator.framework CuratorFramework])
+  (:import [org.apache.storm.shade.org.apache.curator.framework.api CreateBuilder ProtectACLCreateModeStatPathAndBytesable])
   (:import [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids])
   (:import [org.mockito Matchers Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])

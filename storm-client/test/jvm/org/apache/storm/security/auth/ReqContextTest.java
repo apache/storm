@@ -12,13 +12,13 @@
 
 package org.apache.storm.security.auth;
 
-import com.google.common.collect.ImmutableSet;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
 import javax.security.auth.Subject;
+import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

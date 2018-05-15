@@ -12,10 +12,10 @@
 
 package org.apache.storm.streams;
 
-import com.google.common.collect.Multimap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.streams.operations.StateUpdater;
 import org.apache.storm.streams.processors.Processor;

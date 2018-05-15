@@ -12,10 +12,6 @@
 
 package org.apache.storm.streams;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.shade.com.google.common.collect.ArrayListMultimap;
+import org.apache.storm.shade.com.google.common.collect.HashBasedTable;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
+import org.apache.storm.shade.com.google.common.collect.Table;
 import org.apache.storm.streams.processors.ChainedProcessorContext;
 import org.apache.storm.streams.processors.EmittingProcessorContext;
 import org.apache.storm.streams.processors.ForwardingProcessorContext;

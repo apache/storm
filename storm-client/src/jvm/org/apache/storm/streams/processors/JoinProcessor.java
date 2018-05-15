@@ -12,13 +12,13 @@
 
 package org.apache.storm.streams.processors;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.shade.com.google.common.collect.ArrayListMultimap;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.operations.ValueJoiner;
 import org.apache.storm.streams.tuple.Tuple3;

@@ -71,6 +71,10 @@
             <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-server</artifactId>
             <version>${project.version}</version>

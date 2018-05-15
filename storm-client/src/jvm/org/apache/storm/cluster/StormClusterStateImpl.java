@@ -24,9 +24,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang.StringUtils;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.assignments.ILocalAssignmentsBackend;
 import org.apache.storm.callback.ZKStateChangedCallback;
 import org.apache.storm.generated.Assignment;
@@ -45,6 +42,7 @@ import org.apache.storm.generated.StormBase;
 import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionState;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.zookeeper.KeeperException;
@@ -286,16 +284,13 @@ public class StormClusterStateImpl implements IStormClusterState {
     public void addNimbusHost(final String nimbusId, final NimbusSummary nimbusSummary) {
         // explicit delete for ephmeral node to ensure this session creates the entry.
         stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
-        stateStorage.add_listener(new ConnectionStateListener() {
-            @Override
-            public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
-                LOG.info("Connection state listener invoked, zookeeper connection state has changed to {}", connectionState);
-                if (connectionState.equals(ConnectionState.RECONNECTED)) {
-                    LOG.info("Connection state has changed to reconnected so setting nimbuses entry one more time");
-                    // explicit delete for ephmeral node to ensure this session creates the entry.
-                    stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
-                    stateStorage.set_ephemeral_node(ClusterUtils.nimbusPath(nimbusId), Utils.serialize(nimbusSummary), defaultAcls);
-                }
+        stateStorage.add_listener((curatorFramework, connectionState) -> {
+            LOG.info("Connection state listener invoked, zookeeper connection state has changed to {}", connectionState);
+            if (connectionState.equals(ConnectionState.RECONNECTED)) {
+                LOG.info("Connection state has changed to reconnected so setting nimbuses entry one more time");
+                // explicit delete for ephemeral node to ensure this session creates the entry.
+                stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
+                stateStorage.set_ephemeral_node(ClusterUtils.nimbusPath(nimbusId), Utils.serialize(nimbusSummary), defaultAcls);
             }
         });
 

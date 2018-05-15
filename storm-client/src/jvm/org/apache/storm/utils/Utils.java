@@ -18,11 +18,6 @@
 
 package org.apache.storm.utils;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.MapDifference.ValueDifference;
-import com.google.common.collect.Maps;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -90,6 +85,10 @@ import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.serialization.DefaultSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.shade.com.google.common.collect.MapDifference;
+import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
@@ -1076,7 +1075,7 @@ public class Utils {
                      + "serialization. Name: {} - Value: {}",
                      entryOnRight.getKey(), entryOnRight.getKey(), entryOnRight.getValue());
         }
-        for (Map.Entry<String, ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
+        for (Map.Entry<String, MapDifference.ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
             Object leftValue = entryDiffers.getValue().leftValue();
             Object rightValue = entryDiffers.getValue().rightValue();
             LOG.warn("Config value differs after json serialization. Name: {} - Original Value: {} - DeSer. Value: {}",

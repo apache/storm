@@ -14,7 +14,7 @@ package org.apache.storm.trident.topology.state;
 
 import java.util.List;
 import java.util.Map;
-import org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.ACL;
 

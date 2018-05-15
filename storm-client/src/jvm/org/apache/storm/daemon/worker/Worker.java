@@ -12,8 +12,6 @@
 
 package org.apache.storm.daemon.worker;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -21,10 +19,8 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,6 +53,7 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
+import org.apache.storm.shade.com.google.common.base.Preconditions;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;

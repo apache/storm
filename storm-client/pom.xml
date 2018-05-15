@@ -67,10 +67,10 @@
             <artifactId>log4j-over-slf4j</artifactId>
         </dependency>
 
-        <!-- guava -->
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
+            <groupId>org.apache.storm</groupId>
+	    <artifactId>shaded-deps</artifactId>
+	    <version>${project.version}</version>
         </dependency>
 
         <!-- thrift -->
@@ -152,12 +152,6 @@
             <artifactId>zookeeper</artifactId>
         </dependency>
 
-        <!-- curator -->
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-framework</artifactId>
-        </dependency>
-
         <!-- jgrapht -->
         <dependency>
             <groupId>org.jgrapht</groupId>
@@ -176,12 +170,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-        </dependency>
-
-        <!-- curator-client is derived from curator-framework -->
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-client</artifactId>
         </dependency>
 
         <dependency>

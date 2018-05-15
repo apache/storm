@@ -12,7 +12,6 @@
 
 package org.apache.storm.utils;
 
-import com.google.common.collect.Lists;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +23,7 @@ import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
+import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

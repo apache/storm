@@ -13,8 +13,8 @@
 package org.apache.storm.cluster;
 
 import java.util.List;
-import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.callback.ZKStateChangedCallback;
+import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.zookeeper.data.ACL;
 
 /**

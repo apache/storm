@@ -12,11 +12,11 @@
 
 package org.apache.storm.metric.filter;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -12,10 +12,10 @@
 
 package org.apache.storm.trident.windowing;
 
-import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import org.apache.storm.shade.com.google.common.base.Preconditions;
 
 /**
  * Store for storing window related entities like windowed tuples, triggers etc. {@link WindowKryoSerializer} can be used for kryo

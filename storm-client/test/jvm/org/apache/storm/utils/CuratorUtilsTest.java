@@ -22,13 +22,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.curator.ensemble.exhibitor.ExhibitorEnsembleProvider;
-import org.apache.curator.ensemble.fixed.FixedEnsembleProvider;
-import org.apache.curator.framework.AuthInfo;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
+import org.apache.storm.shade.org.apache.curator.ensemble.exhibitor.ExhibitorEnsembleProvider;
+import org.apache.storm.shade.org.apache.curator.ensemble.fixed.FixedEnsembleProvider;
+import org.apache.storm.shade.org.apache.curator.framework.AuthInfo;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.junit.Assert;
 import org.junit.Test;
 

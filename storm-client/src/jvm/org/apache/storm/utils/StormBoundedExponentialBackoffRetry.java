@@ -13,7 +13,7 @@
 package org.apache.storm.utils;
 
 import java.util.Random;
-import org.apache.curator.retry.BoundedExponentialBackoffRetry;
+import org.apache.storm.shade.org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

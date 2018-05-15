@@ -12,10 +12,6 @@
 
 package org.apache.storm.streams;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +25,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.shade.com.google.common.collect.ArrayListMultimap;
+import org.apache.storm.shade.com.google.common.collect.HashBasedTable;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
+import org.apache.storm.shade.com.google.common.collect.Table;
 import org.apache.storm.streams.operations.IdentityFunction;
 import org.apache.storm.streams.operations.mappers.PairValueMapper;
 import org.apache.storm.streams.operations.mappers.TupleValueMapper;

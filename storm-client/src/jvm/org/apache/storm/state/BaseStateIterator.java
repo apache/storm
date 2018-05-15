@@ -12,13 +12,13 @@
 
 package org.apache.storm.state;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.PeekingIterator;
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import org.apache.storm.shade.com.google.common.collect.Iterators;
+import org.apache.storm.shade.com.google.common.collect.PeekingIterator;
 
 /**
  * Base implementation of iterator over {@link KeyValueState}. Encoded/Decoded types of key and value are all generic.

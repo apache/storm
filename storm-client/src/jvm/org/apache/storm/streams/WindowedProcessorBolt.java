@@ -12,10 +12,10 @@
 
 package org.apache.storm.streams;
 
-import com.google.common.collect.Multimap;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
 import org.apache.storm.streams.windowing.SlidingWindows;
 import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.streams.windowing.Window;

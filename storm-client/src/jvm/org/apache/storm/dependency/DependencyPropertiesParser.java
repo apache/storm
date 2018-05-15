@@ -12,14 +12,13 @@
 
 package org.apache.storm.dependency;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 
@@ -31,12 +30,7 @@ public class DependencyPropertiesParser {
         }
 
         List<String> dependencies = Arrays.asList(prop.split(","));
-        return Lists.transform(dependencies, new Function<String, File>() {
-            @Override
-            public File apply(String filePath) {
-                return new File(filePath);
-            }
-        });
+        return Lists.transform(dependencies, File::new);
     }
 
     public Map<String, File> parseArtifactsProperties(String prop) {

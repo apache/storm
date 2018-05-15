@@ -12,9 +12,6 @@
 
 package org.apache.storm.streams;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,6 +19,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.StreamInfo;
+import org.apache.storm.shade.com.google.common.collect.ArrayListMultimap;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
+import org.apache.storm.shade.com.google.common.collect.Multimaps;
 import org.apache.storm.topology.IComponent;
 import org.apache.storm.topology.OutputFieldsGetter;
 import org.apache.storm.tuple.Fields;

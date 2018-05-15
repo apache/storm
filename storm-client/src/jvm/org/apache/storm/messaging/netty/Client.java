@@ -53,7 +53,7 @@ import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkState;
+import static org.apache.storm.shade.com.google.common.base.Preconditions.checkState;
 
 /**
  * A Netty client for sending task messages to a remote destination (Netty server).

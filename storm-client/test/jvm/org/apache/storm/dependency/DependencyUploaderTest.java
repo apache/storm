@@ -18,8 +18,6 @@
 
 package org.apache.storm.dependency;
 
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -37,6 +35,8 @@ import org.apache.storm.generated.AccessControlType;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.shade.com.google.common.io.Files;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

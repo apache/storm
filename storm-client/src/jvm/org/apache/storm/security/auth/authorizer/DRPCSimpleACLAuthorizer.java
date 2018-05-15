@@ -12,7 +12,6 @@
 
 package org.apache.storm.security.auth.authorizer;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.lang.reflect.Field;
 import java.security.Principal;
 import java.util.Collection;
@@ -24,6 +23,7 @@ import org.apache.storm.Config;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

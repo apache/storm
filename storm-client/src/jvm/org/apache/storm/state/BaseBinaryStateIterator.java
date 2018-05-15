@@ -12,11 +12,11 @@
 
 package org.apache.storm.state;
 
-import com.google.common.collect.Iterators;
-import com.google.common.primitives.UnsignedBytes;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
+import org.apache.storm.shade.com.google.common.collect.Iterators;
+import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
 
 /**
  * Base implementation of iterator over {@link KeyValueState} which encoded types of key and value are both binary type.

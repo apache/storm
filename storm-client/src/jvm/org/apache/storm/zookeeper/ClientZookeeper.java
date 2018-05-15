@@ -21,14 +21,14 @@ package org.apache.storm.zookeeper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.api.CuratorEvent;
-import org.apache.curator.framework.api.CuratorEventType;
-import org.apache.curator.framework.api.CuratorListener;
-import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.VersionedData;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.curator.framework.api.CuratorEvent;
+import org.apache.storm.shade.org.apache.curator.framework.api.CuratorEventType;
+import org.apache.storm.shade.org.apache.curator.framework.api.CuratorListener;
+import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
@@ -307,13 +307,10 @@ public class ClientZookeeper {
             fk = CuratorUtils.newCurator(conf, servers, port, root, null, type.getDefaultZkAcls(conf));
         }
 
-        fk.getCuratorListenable().addListener(new CuratorListener() {
-            @Override
-            public void eventReceived(CuratorFramework _fk, CuratorEvent e) throws Exception {
-                if (e.getType().equals(CuratorEventType.WATCHED)) {
-                    WatchedEvent event = e.getWatchedEvent();
-                    watcher.execute(event.getState(), event.getType(), event.getPath());
-                }
+        fk.getCuratorListenable().addListener((unused, e) -> {
+            if (e.getType().equals(CuratorEventType.WATCHED)) {
+                WatchedEvent event = e.getWatchedEvent();
+                watcher.execute(event.getState(), event.getType(), event.getPath());
             }
         });
         LOG.info("Staring ZK Curator");
