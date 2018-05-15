@@ -69,6 +69,12 @@
             <artifactId>rocksdbjni</artifactId>
         </dependency>
 
+        <!-- servlet -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+	</dependency>
+
         <!-- test -->
         <dependency>
             <groupId>org.apache.curator</groupId>

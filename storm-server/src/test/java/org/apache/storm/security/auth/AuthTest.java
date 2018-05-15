@@ -183,9 +183,9 @@ public class AuthTest {
     public static Subject createSubjectWith(WorkerToken wt) {
         //This is a bit ugly, but it shows how this would happen in a worker so we will use the same APIs
         Map<String, String> creds = new HashMap<>();
-        AuthUtils.setWorkerToken(creds, wt);
+        ClientAuthUtils.setWorkerToken(creds, wt);
         Subject subject = new Subject();
-        AuthUtils.updateSubject(subject, Collections.emptyList(), creds);
+        ClientAuthUtils.updateSubject(subject, Collections.emptyList(), creds);
         return subject;
     }
 
@@ -585,7 +585,7 @@ public class AuthTest {
     public void getTransportPluginThrowsRunimeTest() {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
         conf.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, "null.invalid");
-        AuthUtils.getTransportPlugin(ThriftConnectionType.NIMBUS, conf, null);
+        ClientAuthUtils.getTransportPlugin(ThriftConnectionType.NIMBUS, conf, null);
     }
 
     @Test

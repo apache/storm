@@ -27,6 +27,7 @@ import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.security.auth.IAuthorizer;
+import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.Validated;
 
@@ -983,6 +984,19 @@ public class DaemonConfig implements Validated {
      */
     @isImplementationOfClass(implementsClass = IStrategy.class)
     public static final String VALIDATE_TOPOLOGY_SCHEDULER_STRATEGY = Config.TOPOLOGY_SCHEDULER_STRATEGY;
+
+    /**
+     * Class name of the HTTP credentials plugin for the UI.
+     */
+    @isImplementationOfClass(implementsClass = IHttpCredentialsPlugin.class)
+    public static final String UI_HTTP_CREDS_PLUGIN = "ui.http.creds.plugin";
+
+    /**
+     * Class name of the HTTP credentials plugin for DRPC.
+     */
+    @isImplementationOfClass(implementsClass = IHttpCredentialsPlugin.class)
+    public static final String DRPC_HTTP_CREDS_PLUGIN = "drpc.http.creds.plugin";
+
     /**
      * root directory for cgoups.
      */

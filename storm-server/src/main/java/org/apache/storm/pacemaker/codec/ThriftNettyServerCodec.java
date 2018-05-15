@@ -21,7 +21,7 @@ import org.apache.storm.messaging.netty.IServer;
 import org.apache.storm.messaging.netty.KerberosSaslServerHandler;
 import org.apache.storm.messaging.netty.SaslStormServerHandler;
 import org.apache.storm.messaging.netty.StormServerHandler;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -70,7 +70,7 @@ public class ThriftNettyServerCodec {
                         authorizedUsers.add((String) topoConf.get(DaemonConfig.NIMBUS_DAEMON_USER));
                         pipeline.addLast(KERBEROS_HANDLER, new KerberosSaslServerHandler((ISaslServer) server,
                                                                                          topoConf,
-                                                                                         AuthUtils.LOGIN_CONTEXT_PACEMAKER_SERVER,
+                                                                                         ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_SERVER,
                                                                                          authorizedUsers));
                     } catch (IOException e) {
                         throw new RuntimeException(e);

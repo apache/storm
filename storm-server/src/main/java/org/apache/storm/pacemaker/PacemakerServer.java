@@ -24,7 +24,7 @@ import org.apache.storm.generated.HBMessage;
 import org.apache.storm.messaging.netty.ISaslServer;
 import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
 import org.apache.storm.pacemaker.codec.ThriftNettyServerCodec;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -59,9 +59,9 @@ class PacemakerServer implements ISaslServer {
         switch (auth) {
 
             case "DIGEST":
-                Configuration login_conf = AuthUtils.GetConfiguration(config);
+                Configuration login_conf = ClientAuthUtils.GetConfiguration(config);
                 authMethod = ThriftNettyServerCodec.AuthMethod.DIGEST;
-                this.secret = AuthUtils.makeDigestPayload(login_conf, AuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
+                this.secret = ClientAuthUtils.makeDigestPayload(login_conf, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
                 if (this.secret == null) {
                     LOG.error("Can't start pacemaker server without digest secret.");
                     throw new RuntimeException("Can't start pacemaker server without digest secret.");

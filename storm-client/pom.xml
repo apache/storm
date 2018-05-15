@@ -69,8 +69,8 @@
 
         <dependency>
             <groupId>org.apache.storm</groupId>
-	    <artifactId>shaded-deps</artifactId>
-	    <version>${project.version}</version>
+            <artifactId>shaded-deps</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- thrift -->
@@ -159,13 +159,7 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- servlet -->
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-        </dependency>
-
-        <!-- belows are transitive dependencies which are version managed in storm pom -->
+        <!-- below are transitive dependencies which are version managed in storm pom -->
         <!-- httpclient is derived from thrift -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>

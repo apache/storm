@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.Config;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.IPrincipalToLocal;
@@ -53,8 +53,8 @@ public class ImpersonationAuthorizer implements IAuthorizer {
             }
         }
 
-        _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
-        _groupMappingProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+        _ptol = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
+        _groupMappingProvider = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(conf);
     }
 
     @Override

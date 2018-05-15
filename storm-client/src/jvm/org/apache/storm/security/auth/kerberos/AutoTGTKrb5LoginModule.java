@@ -19,7 +19,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +73,7 @@ public class AutoTGTKrb5LoginModule implements LoginModule {
         // Let us add the kerbClientPrinc and kerbTicket
         // We need to clone the ticket because java.security.auth.kerberos assumes TGT is unique for each subject
         // So, sharing TGT with multiple subjects can cause expired TGT to never refresh.
-        KerberosTicket kerbTicketCopy = AuthUtils.cloneKerberosTicket(kerbTicket);
+        KerberosTicket kerbTicketCopy = ClientAuthUtils.cloneKerberosTicket(kerbTicket);
         subject.getPrivateCredentials().add(kerbTicketCopy);
         subject.getPrincipals().add(getKerbTicketClient());
         LOG.debug("Commit Succeeded.");

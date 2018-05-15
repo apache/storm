@@ -27,7 +27,7 @@ import javax.security.auth.login.LoginContext;
 import javax.xml.bind.DatatypeConverter;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetricsRegistrant;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.security.auth.ICredentialsRenewer;
 import org.apache.storm.task.TopologyContext;
@@ -58,7 +58,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
     public static void saveTGT(KerberosTicket tgt, Map<String, String> credentials) {
         try {
 
-            byte[] bytes = AuthUtils.serializeKerberosTicket(tgt);
+            byte[] bytes = ClientAuthUtils.serializeKerberosTicket(tgt);
             credentials.put("TGT", DatatypeConverter.printBase64Binary(bytes));
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -68,7 +68,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
     public static KerberosTicket getTGT(Map<String, String> credentials) {
         KerberosTicket ret = null;
         if (credentials != null && credentials.containsKey("TGT") && credentials.get("TGT") != null) {
-            ret = AuthUtils.deserializeKerberosTicket(DatatypeConverter.parseBase64Binary(credentials.get("TGT")));
+            ret = ClientAuthUtils.deserializeKerberosTicket(DatatypeConverter.parseBase64Binary(credentials.get("TGT")));
         }
         return ret;
     }
@@ -116,12 +116,12 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         this.credentials = credentials;
         //Log the user in and get the TGT
         try {
-            Configuration login_conf = AuthUtils.GetConfiguration(conf);
+            Configuration login_conf = ClientAuthUtils.GetConfiguration(conf);
             ClientCallbackHandler client_callback_handler = new ClientCallbackHandler(login_conf);
 
             //login our user
             Configuration.setConfiguration(login_conf);
-            LoginContext lc = new LoginContext(AuthUtils.LOGIN_CONTEXT_CLIENT, client_callback_handler);
+            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, client_callback_handler);
             try {
                 lc.login();
                 final Subject subject = lc.getSubject();
@@ -129,7 +129,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
                 if (tgt == null) { //error
                     throw new RuntimeException("Fail to verify user principal with section \""
-                                               + AuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + login_conf);
+                                               + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + login_conf);
                 }
 
                 if (!tgt.isForwardable()) {

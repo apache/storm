@@ -18,7 +18,7 @@ import org.apache.storm.messaging.netty.KerberosSaslClientHandler;
 import org.apache.storm.messaging.netty.SaslStormClientHandler;
 import org.apache.storm.pacemaker.PacemakerClient;
 import org.apache.storm.pacemaker.PacemakerClientHandler;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -61,7 +61,7 @@ public class ThriftNettyClientCodec {
                         pipeline.addLast(KERBEROS_HANDLER,
                                          new KerberosSaslClientHandler(client,
                                                                        topoConf,
-                                                                       AuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT,
+                                                                       ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT,
                                                                        host));
                     } catch (IOException e) {
                         throw new RuntimeException(e);

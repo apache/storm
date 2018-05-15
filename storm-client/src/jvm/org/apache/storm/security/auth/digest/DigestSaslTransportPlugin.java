@@ -17,7 +17,7 @@ import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.AppConfigurationEntry;
 import org.apache.storm.generated.WorkerToken;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.security.auth.sasl.SimpleSaslClientCallbackHandler;
 import org.apache.storm.security.auth.sasl.SimpleSaslServerCallbackHandler;
@@ -43,7 +43,7 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
 
         //create a transport factory that will invoke our auth callback for digest
         TSaslServerTransport.Factory factory = new TSaslServerTransport.Factory();
-        factory.addServerDefinition(DIGEST, AuthUtils.SERVICE, "localhost", null, serverCallbackHandler);
+        factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, "localhost", null, serverCallbackHandler);
 
         LOG.info("SASL DIGEST-MD5 transport factory will be used");
         return factory;
@@ -56,9 +56,9 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
         if (token != null) {
             clientCallbackHandler = new WorkerTokenClientCallbackHandler(token);
         } else if (loginConf != null) {
-            AppConfigurationEntry[] configurationEntries = loginConf.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_CLIENT);
+            AppConfigurationEntry[] configurationEntries = loginConf.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
             if (configurationEntries == null) {
-                String errorMessage = "Could not find a '" + AuthUtils.LOGIN_CONTEXT_CLIENT
+                String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_CLIENT
                                       + "' entry in this configuration: Client cannot start.";
                 throw new IOException(errorMessage);
             }
@@ -77,7 +77,7 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
 
         TSaslClientTransport wrapperTransport = new TSaslClientTransport(DIGEST,
                                                                          null,
-                                                                         AuthUtils.SERVICE,
+                                                                         ClientAuthUtils.SERVICE,
                                                                          serverHost,
                                                                          null,
                                                                          clientCallbackHandler,

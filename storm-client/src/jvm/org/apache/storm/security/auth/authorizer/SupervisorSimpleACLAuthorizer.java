@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.Config;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.IPrincipalToLocal;
@@ -75,8 +75,8 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
             LOG.error("Could not find {} things might now work correctly...", Config.NIMBUS_DAEMON_USERS);
         }
 
-        ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
-        groupMappingServiceProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+        ptol = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
+        groupMappingServiceProvider = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(conf);
     }
 
     /**

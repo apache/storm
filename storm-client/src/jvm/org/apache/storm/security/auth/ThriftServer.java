@@ -38,13 +38,13 @@ public class ThriftServer {
 
         try {
             //retrieve authentication configuration 
-            loginConf = AuthUtils.GetConfiguration(this.conf);
+            loginConf = ClientAuthUtils.GetConfiguration(this.conf);
         } catch (Exception x) {
             LOG.error(x.getMessage(), x);
         }
         try {
             //locate our thrift transport plugin
-            ITransportPlugin transportPlugin = AuthUtils.getTransportPlugin(this.type, this.conf, loginConf);
+            ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(this.type, this.conf, loginConf);
             //server
             server = transportPlugin.getServer(this.processor);
             port = transportPlugin.getPort();

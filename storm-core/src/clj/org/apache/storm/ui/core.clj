@@ -42,9 +42,8 @@
             ComponentType BoltAggregateStats SpoutAggregateStats
             ExecutorAggregateStats SpecificAggregateStats ComponentPageInfo
             LogConfig LogLevel LogLevelAction SupervisorPageInfo WorkerSummary OwnerResourceSummary])
-  (:import [org.apache.storm.security.auth AuthUtils ReqContext])
+  (:import [org.apache.storm.security.auth ServerAuthUtils ReqContext])
   (:import [org.apache.storm.generated AuthorizationException ProfileRequest ProfileAction NodeInfo])
-  (:import [org.apache.storm.security.auth AuthUtils])
   (:import [org.apache.storm.utils VersionInfo ConfigUtils Utils WebAppUtils])
   (:import [org.apache.storm Config Constants])
   (:import [java.io File])
@@ -63,7 +62,7 @@
 (def ^:dynamic *STORM-CONF* (clojurify-structure (ConfigUtils/readStormConfig)))
 (def ^:dynamic *UI-ACL-HANDLER* (StormCommon/mkAuthorizationHandler (*STORM-CONF* NIMBUS-AUTHORIZER) *STORM-CONF*))
 (def ^:dynamic *UI-IMPERSONATION-HANDLER* (StormCommon/mkAuthorizationHandler (*STORM-CONF* NIMBUS-IMPERSONATION-AUTHORIZER) *STORM-CONF*))
-(def http-creds-handler (AuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
+(def http-creds-handler (ServerAuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
 (def STORM-VERSION (VersionInfo/getVersion))
 
 (def ui:num-cluster-configuration-http-requests (StormMetricsRegistry/registerMeter "ui:num-cluster-configuration-http-requests")) 
@@ -1224,7 +1223,7 @@
   [sys?]
   (if (or (nil? sys?) (= "false" sys?)) false true))
 
-(def http-creds-handler (AuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
+(def http-creds-handler (ServerAuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
 
 (defn populate-context!
   "Populate the Storm RequestContext from an servlet-request. This should be called in each handler"

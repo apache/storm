@@ -31,7 +31,7 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.KerberosPrincipalToLocal;
 import org.apache.zookeeper.server.auth.KerberosName;
 import org.slf4j.Logger;
@@ -52,7 +52,7 @@ class KerberosSaslNettyServer {
         LOG.debug("Getting Configuration.");
         Configuration login_conf;
         try {
-            login_conf = AuthUtils.GetConfiguration(topoConf);
+            login_conf = ClientAuthUtils.GetConfiguration(topoConf);
         } catch (Throwable t) {
             LOG.error("Failed to get login_conf: ", t);
             throw t;

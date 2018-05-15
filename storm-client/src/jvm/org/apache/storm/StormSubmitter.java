@@ -39,7 +39,7 @@ import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.hooks.SubmitterHookException;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.utils.BufferFileInputStream;
 import org.apache.storm.utils.NimbusClient;
@@ -91,7 +91,7 @@ public class StormSubmitter {
 
     private static Map<String, String> populateCredentials(Map<String, Object> conf, Map<String, String> creds) {
         Map<String, String> ret = new HashMap<>();
-        for (IAutoCredentials autoCred : AuthUtils.GetAutoCredentials(conf)) {
+        for (IAutoCredentials autoCred : ClientAuthUtils.GetAutoCredentials(conf)) {
             LOG.info("Running " + autoCred);
             autoCred.populateCredentials(ret);
         }

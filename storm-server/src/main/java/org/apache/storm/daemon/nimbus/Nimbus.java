@@ -170,7 +170,7 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.security.INimbusCredentialPlugin;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ICredentialsRenewer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
@@ -513,17 +513,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.nodeIdToResources = new AtomicReference<>(new HashMap<>());
         this.idToResources = new AtomicReference<>(new HashMap<>());
         this.idToWorkerResources = new AtomicReference<>(new HashMap<>());
-        this.credRenewers = AuthUtils.GetCredentialRenewers(conf);
+        this.credRenewers = ClientAuthUtils.GetCredentialRenewers(conf);
         this.topologyHistoryLock = new Object();
         this.topologyHistoryState = ServerConfigUtils.nimbusTopoHistoryState(conf);
-        this.nimbusAutocredPlugins = AuthUtils.getNimbusAutoCredPlugins(conf);
+        this.nimbusAutocredPlugins = ClientAuthUtils.getNimbusAutoCredPlugins(conf);
         this.nimbusTopologyActionNotifier = createTopologyActionNotifier(conf);
         this.clusterConsumerExceutors = makeClusterMetricsConsumerExecutors(conf);
         if (groupMapper == null) {
-            groupMapper = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+            groupMapper = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(conf);
         }
         this.groupMapper = groupMapper;
-        this.principalToLocal = AuthUtils.GetPrincipalToLocalPlugin(conf);
+        this.principalToLocal = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
         this.supervisorClasspaths = Collections.unmodifiableNavigableMap(
             Utils.getConfiguredClasspathVersions(conf, EMPTY_STRING_LIST));// We don't use the classpath part of this, so just an empty list
     }
@@ -1139,7 +1139,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             nimbus.shutdown();
             server.stop();
         }, 10);
-        if (AuthUtils.areWorkerTokensEnabledServer(server, conf)) {
+        if (ClientAuthUtils.areWorkerTokensEnabledServer(server, conf)) {
             nimbus.initWorkerTokenManager();
         }
         LOG.info("Starting nimbus server for storm version '{}'", STORM_VERSION);
@@ -2849,10 +2849,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             final long renewIfExpirationBefore = workerTokenManager.getMaxExpirationTimeForRenewal();
             for (WorkerTokenServiceType type : WorkerTokenServiceType.values()) {
                 boolean shouldAdd = true;
-                WorkerToken oldToken = AuthUtils.readWorkerToken(creds, type);
+                WorkerToken oldToken = ClientAuthUtils.readWorkerToken(creds, type);
                 if (oldToken != null) {
                     try {
-                        WorkerTokenInfo info = AuthUtils.getWorkerTokenInfo(oldToken);
+                        WorkerTokenInfo info = ClientAuthUtils.getWorkerTokenInfo(oldToken);
                         if (info.is_set_expirationTimeMillis() || info.get_expirationTimeMillis() > renewIfExpirationBefore) {
                             //Found an existing token and it is not going to expire any time soon, so don't bother adding in a new
                             // token.
@@ -2864,7 +2864,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     }
                 }
                 if (shouldAdd) {
-                    AuthUtils.setWorkerToken(creds, workerTokenManager.createOrUpdateTokenFor(type, user, topologyId));
+                    ClientAuthUtils.setWorkerToken(creds, workerTokenManager.createOrUpdateTokenFor(type, user, topologyId));
                 }
             }
             //Remove any expired keys after possibly inserting new ones.

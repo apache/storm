@@ -27,7 +27,7 @@ import org.apache.storm.generated.PrivateWorkerKey;
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.generated.WorkerTokenInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.utils.Time;
 import org.junit.Test;
 
@@ -71,7 +71,7 @@ public class WorkerTokenTest {
             assertTrue(pwk.is_set_expirationTimeMillis());
             assertEquals(ONE_DAY_MILLIS, pwk.get_expirationTimeMillis());
 
-            WorkerTokenInfo info = AuthUtils.getWorkerTokenInfo(wt);
+            WorkerTokenInfo info = ClientAuthUtils.getWorkerTokenInfo(wt);
             assertTrue(info.is_set_topologyId());
             assertTrue(info.is_set_userName());
             assertTrue(info.is_set_expirationTimeMillis());
@@ -122,7 +122,7 @@ public class WorkerTokenTest {
             assertTrue(pwk.is_set_expirationTimeMillis());
             assertEquals(ONE_DAY_MILLIS, pwk.get_expirationTimeMillis());
 
-            WorkerTokenInfo info = AuthUtils.getWorkerTokenInfo(wt);
+            WorkerTokenInfo info = ClientAuthUtils.getWorkerTokenInfo(wt);
             assertTrue(info.is_set_topologyId());
             assertTrue(info.is_set_userName());
             assertTrue(info.is_set_expirationTimeMillis());
