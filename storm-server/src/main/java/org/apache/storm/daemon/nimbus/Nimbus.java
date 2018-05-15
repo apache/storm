@@ -487,14 +487,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             blobStore = ServerUtils.getNimbusBlobStore(conf, this.nimbusHostPortInfo, null);
         }
         this.blobStore = blobStore;
+
+        if (topoCache == null) {
+            topoCache = new TopoCache(blobStore, conf);
+        }
         if (leaderElector == null) {
             leaderElector = Zookeeper.zkLeaderElector(conf, zkClient, blobStore, topoCache, stormClusterState, getNimbusAcls(conf));
         }
         this.leaderElector = leaderElector;
         this.blobStore.setLeaderElector(this.leaderElector);
-        if (topoCache == null) {
-            topoCache = new TopoCache(blobStore, conf);
-        }
+
         this.topoCache = topoCache;
         this.assignmentsDistributer = AssignmentDistributionService.getInstance(conf);
         this.idToSchedStatus = new AtomicReference<>(new HashMap<>());
@@ -2136,7 +2138,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 LOG.info("Fragmentation after scheduling is: {} MB, {} PCore CPUs", fragmentedMemory(), fragmentedCpu());
                 nodeIdToResources.get().forEach((id, node) ->
                                                     LOG.info(
-                                                        "Node Id: {} Total Mem: {}, Used Mem: {}, Avialble Mem: {}, Total CPU: {}, Used " +
+                                                        "Node Id: {} Total Mem: {}, Used Mem: {}, Available Mem: {}, Total CPU: {}, Used " +
                                                         "CPU: {}, Available CPU: {}, fragmented: {}",
                                                         id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(),
                                                         node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu(), isFragmented(node)));
