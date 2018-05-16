@@ -65,7 +65,7 @@ public class LogviewerApplication extends Application {
                 workerLogs, resourceAuthorizer);
         LogviewerLogSearchHandler logSearchHandler = new LogviewerLogSearchHandler(stormConf, logRoot, daemonLogRoot,
                 resourceAuthorizer);
-        IHttpCredentialsPlugin httpCredsHandler = ServerAuthUtils.GetUiHttpCredentialsPlugin(stormConf);
+        IHttpCredentialsPlugin httpCredsHandler = ServerAuthUtils.getUiHttpCredentialsPlugin(stormConf);
 
         singletons.add(new LogviewerResource(logviewer, profileHandler, logDownloadHandler, logSearchHandler, httpCredsHandler));
         singletons.add(new AuthorizationExceptionMapper());

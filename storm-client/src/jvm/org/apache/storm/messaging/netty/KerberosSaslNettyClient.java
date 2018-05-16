@@ -58,7 +58,7 @@ public class KerberosSaslNettyClient {
 
         Configuration login_conf;
         try {
-            login_conf = ClientAuthUtils.GetConfiguration(topoConf);
+            login_conf = ClientAuthUtils.getConfiguration(topoConf);
         } catch (Throwable t) {
             LOG.error("Failed to get login_conf: ", t);
             throw t;

@@ -55,8 +55,8 @@ public class ServerAuthUtilsTest {
             DaemonConfig.DRPC_HTTP_CREDS_PLUGIN, AuthUtilsTestMock.class.getName());
 
         assertTrue(
-            ServerAuthUtils.GetUiHttpCredentialsPlugin(conf).getClass() == AuthUtilsTestMock.class);
+            ServerAuthUtils.getUiHttpCredentialsPlugin(conf).getClass() == AuthUtilsTestMock.class);
         assertTrue(
-            ServerAuthUtils.GetDrpcHttpCredentialsPlugin(conf).getClass() == AuthUtilsTestMock.class);
+            ServerAuthUtils.getDrpcHttpCredentialsPlugin(conf).getClass() == AuthUtilsTestMock.class);
     }
 }

@@ -24,7 +24,7 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.ReflectionUtils;
 
 public class ServerAuthUtils {
-    public static IHttpCredentialsPlugin GetHttpCredentialsPlugin(Map<String, Object> conf,
+    public static IHttpCredentialsPlugin getHttpCredentialsPlugin(Map<String, Object> conf,
                                                                   String klassName) {
         try {
             IHttpCredentialsPlugin plugin = null;
@@ -44,9 +44,9 @@ public class ServerAuthUtils {
      * @param conf storm configuration
      * @return the plugin
      */
-    public static IHttpCredentialsPlugin GetUiHttpCredentialsPlugin(Map<String, Object> conf) {
+    public static IHttpCredentialsPlugin getUiHttpCredentialsPlugin(Map<String, Object> conf) {
         String klassName = (String) conf.get(DaemonConfig.UI_HTTP_CREDS_PLUGIN);
-        return GetHttpCredentialsPlugin(conf, klassName);
+        return getHttpCredentialsPlugin(conf, klassName);
     }
 
     /**
@@ -55,8 +55,8 @@ public class ServerAuthUtils {
      * @param conf storm configuration
      * @return the plugin
      */
-    public static IHttpCredentialsPlugin GetDrpcHttpCredentialsPlugin(Map<String, Object> conf) {
+    public static IHttpCredentialsPlugin getDrpcHttpCredentialsPlugin(Map<String, Object> conf) {
         String klassName = (String) conf.get(DaemonConfig.DRPC_HTTP_CREDS_PLUGIN);
-        return klassName == null ? null : GetHttpCredentialsPlugin(conf, klassName);
+        return klassName == null ? null : getHttpCredentialsPlugin(conf, klassName);
     }
 }

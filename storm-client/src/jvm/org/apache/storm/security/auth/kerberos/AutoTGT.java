@@ -116,7 +116,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         this.credentials = credentials;
         //Log the user in and get the TGT
         try {
-            Configuration login_conf = ClientAuthUtils.GetConfiguration(conf);
+            Configuration login_conf = ClientAuthUtils.getConfiguration(conf);
             ClientCallbackHandler client_callback_handler = new ClientCallbackHandler(login_conf);
 
             //login our user

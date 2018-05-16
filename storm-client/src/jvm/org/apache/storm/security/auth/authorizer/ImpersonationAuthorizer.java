@@ -53,8 +53,8 @@ public class ImpersonationAuthorizer implements IAuthorizer {
             }
         }
 
-        _ptol = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
-        _groupMappingProvider = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+        _ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
+        _groupMappingProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
     }
 
     @Override

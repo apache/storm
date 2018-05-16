@@ -75,8 +75,8 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
             LOG.error("Could not find {} things might now work correctly...", Config.NIMBUS_DAEMON_USERS);
         }
 
-        ptol = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
-        groupMappingServiceProvider = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+        ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
+        groupMappingServiceProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
     }
 
     /**

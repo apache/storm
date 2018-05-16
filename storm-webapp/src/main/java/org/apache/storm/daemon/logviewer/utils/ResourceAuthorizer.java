@@ -54,8 +54,8 @@ public class ResourceAuthorizer {
      */
     public ResourceAuthorizer(Map<String, Object> stormConf) {
         this.stormConf = stormConf;
-        this.groupMappingServiceProvider = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(stormConf);
-        this.principalToLocal = ClientAuthUtils.GetPrincipalToLocalPlugin(stormConf);
+        this.groupMappingServiceProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(stormConf);
+        this.principalToLocal = ClientAuthUtils.getPrincipalToLocalPlugin(stormConf);
     }
 
     /**

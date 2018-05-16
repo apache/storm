@@ -84,7 +84,7 @@ public class ThriftClient implements AutoCloseable {
             }
 
             //locate login configuration 
-            Configuration login_conf = ClientAuthUtils.GetConfiguration(_conf);
+            Configuration login_conf = ClientAuthUtils.getConfiguration(_conf);
 
             //construct a transport plugin
             ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(_type, _conf, login_conf);

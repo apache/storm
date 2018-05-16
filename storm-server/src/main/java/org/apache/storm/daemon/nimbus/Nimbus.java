@@ -513,17 +513,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.nodeIdToResources = new AtomicReference<>(new HashMap<>());
         this.idToResources = new AtomicReference<>(new HashMap<>());
         this.idToWorkerResources = new AtomicReference<>(new HashMap<>());
-        this.credRenewers = ClientAuthUtils.GetCredentialRenewers(conf);
+        this.credRenewers = ClientAuthUtils.getCredentialRenewers(conf);
         this.topologyHistoryLock = new Object();
         this.topologyHistoryState = ServerConfigUtils.nimbusTopoHistoryState(conf);
         this.nimbusAutocredPlugins = ClientAuthUtils.getNimbusAutoCredPlugins(conf);
         this.nimbusTopologyActionNotifier = createTopologyActionNotifier(conf);
         this.clusterConsumerExceutors = makeClusterMetricsConsumerExecutors(conf);
         if (groupMapper == null) {
-            groupMapper = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+            groupMapper = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
         }
         this.groupMapper = groupMapper;
-        this.principalToLocal = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
+        this.principalToLocal = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
         this.supervisorClasspaths = Collections.unmodifiableNavigableMap(
             Utils.getConfiguredClasspathVersions(conf, EMPTY_STRING_LIST));// We don't use the classpath part of this, so just an empty list
     }

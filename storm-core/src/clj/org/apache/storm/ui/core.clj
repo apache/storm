@@ -62,7 +62,7 @@
 (def ^:dynamic *STORM-CONF* (clojurify-structure (ConfigUtils/readStormConfig)))
 (def ^:dynamic *UI-ACL-HANDLER* (StormCommon/mkAuthorizationHandler (*STORM-CONF* NIMBUS-AUTHORIZER) *STORM-CONF*))
 (def ^:dynamic *UI-IMPERSONATION-HANDLER* (StormCommon/mkAuthorizationHandler (*STORM-CONF* NIMBUS-IMPERSONATION-AUTHORIZER) *STORM-CONF*))
-(def http-creds-handler (ServerAuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
+(def http-creds-handler (ServerAuthUtils/getUiHttpCredentialsPlugin *STORM-CONF*))
 (def STORM-VERSION (VersionInfo/getVersion))
 
 (def ui:num-cluster-configuration-http-requests (StormMetricsRegistry/registerMeter "ui:num-cluster-configuration-http-requests")) 
@@ -1223,7 +1223,7 @@
   [sys?]
   (if (or (nil? sys?) (= "false" sys?)) false true))
 
-(def http-creds-handler (ServerAuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
+(def http-creds-handler (ServerAuthUtils/getUiHttpCredentialsPlugin *STORM-CONF*))
 
 (defn populate-context!
   "Populate the Storm RequestContext from an servlet-request. This should be called in each handler"

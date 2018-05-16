@@ -91,7 +91,7 @@ public class StormSubmitter {
 
     private static Map<String, String> populateCredentials(Map<String, Object> conf, Map<String, String> creds) {
         Map<String, String> ret = new HashMap<>();
-        for (IAutoCredentials autoCred : ClientAuthUtils.GetAutoCredentials(conf)) {
+        for (IAutoCredentials autoCred : ClientAuthUtils.getAutoCredentials(conf)) {
             LOG.info("Running " + autoCred);
             autoCred.populateCredentials(ret);
         }

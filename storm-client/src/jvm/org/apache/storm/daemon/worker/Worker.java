@@ -157,7 +157,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         if (initialCredentials != null) {
             initCreds.putAll(initialCredentials.get_creds());
         }
-        autoCreds = ClientAuthUtils.GetAutoCredentials(topologyConf);
+        autoCreds = ClientAuthUtils.getAutoCredentials(topologyConf);
         subject = ClientAuthUtils.populateSubject(null, autoCreds, initCreds);
 
         Subject.doAs(subject, (PrivilegedExceptionAction<Object>)

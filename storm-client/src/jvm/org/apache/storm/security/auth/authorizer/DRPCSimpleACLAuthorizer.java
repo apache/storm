@@ -83,7 +83,7 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
         _permitWhenMissingFunctionEntry =
             (isStrict != null && !isStrict);
         _aclFileName = (String) conf.get(Config.DRPC_AUTHORIZER_ACL_FILENAME);
-        _ptol = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
+        _ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
     }
 
     private String getUserFromContext(ReqContext context) {

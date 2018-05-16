@@ -54,9 +54,9 @@ public class BlobStoreAclHandler {
     private boolean doAclValidation;
 
     public BlobStoreAclHandler(Map<String, Object> conf) {
-        _ptol = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
+        _ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
         if (conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN) != null) {
-            groupMappingServiceProvider = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+            groupMappingServiceProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
         } else {
             groupMappingServiceProvider = null;
         }

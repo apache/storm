@@ -115,8 +115,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             nimbusGroups.addAll((Collection<String>) conf.get(Config.NIMBUS_GROUPS));
         }
 
-        ptol = ClientAuthUtils.GetPrincipalToLocalPlugin(conf);
-        groupMappingServiceProvider = ClientAuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+        ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
+        groupMappingServiceProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
     }
 
     /**

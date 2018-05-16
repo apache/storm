@@ -38,7 +38,7 @@ public class ThriftServer {
 
         try {
             //retrieve authentication configuration 
-            loginConf = ClientAuthUtils.GetConfiguration(this.conf);
+            loginConf = ClientAuthUtils.getConfiguration(this.conf);
         } catch (Exception x) {
             LOG.error(x.getMessage(), x);
         }

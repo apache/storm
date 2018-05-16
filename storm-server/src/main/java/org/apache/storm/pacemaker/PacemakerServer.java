@@ -59,7 +59,7 @@ class PacemakerServer implements ISaslServer {
         switch (auth) {
 
             case "DIGEST":
-                Configuration login_conf = ClientAuthUtils.GetConfiguration(config);
+                Configuration login_conf = ClientAuthUtils.getConfiguration(config);
                 authMethod = ThriftNettyServerCodec.AuthMethod.DIGEST;
                 this.secret = ClientAuthUtils.makeDigestPayload(login_conf, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
                 if (this.secret == null) {
