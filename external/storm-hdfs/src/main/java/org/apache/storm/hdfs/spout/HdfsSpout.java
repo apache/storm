@@ -231,8 +231,6 @@ public class HdfsSpout extends BaseRichSpout {
                         fileReadCompletely = false;
                         newReader = true;
                     }
-                } else {
-                    newReader = false;
                 }
                 if (fileReadCompletely) { // wait for more ACKs before proceeding
                     return;
