@@ -19,7 +19,7 @@ import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.api.ExistsBuilder;
 import org.apache.storm.shade.org.apache.curator.framework.api.GetChildrenBuilder;
 import org.apache.storm.shade.org.apache.curator.framework.api.Pathable;
-import org.apache.zookeeper.data.Stat;
+import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;

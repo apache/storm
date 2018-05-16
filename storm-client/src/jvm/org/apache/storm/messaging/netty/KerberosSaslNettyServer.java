@@ -33,7 +33,7 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.KerberosPrincipalToLocal;
-import org.apache.zookeeper.server.auth.KerberosName;
+import org.apache.storm.shade.org.apache.zookeeper.server.auth.KerberosName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

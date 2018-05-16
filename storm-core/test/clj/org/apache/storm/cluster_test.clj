@@ -17,7 +17,7 @@
   (:import [java.util Arrays]
            [org.apache.storm.nimbus NimbusInfo])
   (:import [org.apache.storm.generated SupervisorInfo StormBase Assignment NimbusSummary TopologyStatus NodeInfo Credentials])
-  (:import [org.apache.zookeeper ZooDefs ZooDefs$Ids Watcher$Event$EventType])
+  (:import [org.apache.storm.shade.org.apache.zookeeper ZooDefs ZooDefs$Ids Watcher$Event$EventType])
   (:import [org.mockito Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:import [org.apache.storm.shade.org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder])

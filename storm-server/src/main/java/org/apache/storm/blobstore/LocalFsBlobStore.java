@@ -42,12 +42,12 @@ import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyAlreadyExistsException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
-import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -424,7 +424,7 @@ public class LocalFsBlobStore extends BlobStore {
         }
         try {
             replicationCount = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + key).size();
-        } catch (NoNodeException e) {
+        } catch (KeeperException.NoNodeException e) {
             //Race with delete
             //If it is not here the replication is 0 
         }

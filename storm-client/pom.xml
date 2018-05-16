@@ -146,12 +146,6 @@
             <artifactId>kryo</artifactId>
         </dependency>
 
-        <!-- zookeeper -->
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-        </dependency>
-
         <!-- jgrapht -->
         <dependency>
             <groupId>org.jgrapht</groupId>

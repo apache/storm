@@ -17,10 +17,10 @@ import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.security.auth.DefaultPrincipalToLocal;
+import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
+import org.apache.storm.shade.org.apache.zookeeper.data.Id;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Id;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

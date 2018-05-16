@@ -12,9 +12,9 @@
 
 package org.apache.storm.callback;
 
+import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 import org.apache.storm.zookeeper.ZkEventTypes;
 import org.apache.storm.zookeeper.ZkKeeperStates;
-import org.apache.zookeeper.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

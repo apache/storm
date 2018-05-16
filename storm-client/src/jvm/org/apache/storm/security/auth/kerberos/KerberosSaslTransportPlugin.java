@@ -35,12 +35,12 @@ import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.security.auth.sasl.SimpleSaslServerCallbackHandler;
 import org.apache.storm.security.auth.workertoken.WorkerTokenAuthorizer;
 import org.apache.storm.security.auth.workertoken.WorkerTokenClientCallbackHandler;
+import org.apache.storm.shade.org.apache.zookeeper.server.auth.KerberosName;
 import org.apache.thrift.transport.TSaslClientTransport;
 import org.apache.thrift.transport.TSaslServerTransport;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.transport.TTransportFactory;
-import org.apache.zookeeper.server.auth.KerberosName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -31,9 +31,9 @@ import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.pacemaker.PacemakerConnectionException;
 import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedHBExecutionException;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -12,15 +12,16 @@
 
 package org.apache.storm.testing;
 
-import java.util.List;
+import org.apache.storm.shade.org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.storm.zookeeper.Zookeeper;
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
 
 /**
  * A local Zookeeper instance available for testing.
+ * ```java
  * try (InProcessZookeeper zk = new InProcessZookeeper) {
  *   // Run Tests...
  * }
+ * ```
  */
 public class InProcessZookeeper implements AutoCloseable {
 

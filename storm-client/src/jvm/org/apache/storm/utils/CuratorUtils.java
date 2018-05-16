@@ -29,7 +29,7 @@ import org.apache.storm.shade.org.apache.curator.ensemble.exhibitor.Exhibitors;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.shade.org.apache.curator.framework.api.ACLProvider;
-import org.apache.zookeeper.data.ACL;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

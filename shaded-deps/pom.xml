@@ -38,7 +38,7 @@
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>
-	    <artifactId>guava</artifactId>
+            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
@@ -49,11 +49,15 @@
             <artifactId>curator-client</artifactId>
         </dependency>
         <!-- recipes are not used by the client, but storm server uses the same
-	     shaded curator instance so we need to include it here so we have a
+             shaded curator instance so we need to include it here so we have a
              single ZK connection per daemon. -->
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-recipes</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
         </dependency>
     </dependencies>
 
@@ -77,8 +81,9 @@
                     <minimizeJar>false</minimizeJar>
                     <artifactSet>
                         <includes>
-				<include>com.google.guava:guava</include>
-				<include>org.apache.curator:*</include>
+                                <include>com.google.guava:guava</include>
+                                <include>org.apache.curator:*</include>
+                                <include>org.apache.zookeeper:zookeeper</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -93,6 +98,10 @@
                         <relocation>
                             <pattern>org.apache.curator</pattern>
                             <shadedPattern>org.apache.storm.shade.org.apache.curator</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.zookeeper</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.zookeeper</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>

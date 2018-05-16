@@ -31,8 +31,8 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.Shell;
-import org.apache.zookeeper.client.ZooKeeperSaslClient;
+import org.apache.storm.shade.org.apache.zookeeper.Shell;
+import org.apache.storm.shade.org.apache.zookeeper.client.ZooKeeperSaslClient;
 
 public class Login {
     // Login will sleep until 80% of time from last refresh to

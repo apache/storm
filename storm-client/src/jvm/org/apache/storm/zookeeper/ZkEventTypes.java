@@ -13,7 +13,7 @@
 package org.apache.storm.zookeeper;
 
 import java.util.HashMap;
-import org.apache.zookeeper.Watcher;
+import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 
 public class ZkEventTypes {
 
