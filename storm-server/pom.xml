@@ -64,11 +64,17 @@
             <artifactId>rocksdbjni</artifactId>
         </dependency>
 
+        <!-- jline is included to make teh zk shell work through the cli for debugging -->
+        <dependency>
+            <groupId>jline</groupId>
+            <artifactId>jline</artifactId>
+        </dependency>
+
         <!-- servlet -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-	</dependency>
+        </dependency>
 
         <!-- test -->
         <dependency>

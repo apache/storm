@@ -286,6 +286,7 @@
         <mockito.version>2.10.0</mockito.version>
         <conjure.version>2.1.3</conjure.version>
         <zookeeper.version>3.4.6</zookeeper.version>
+        <jline.version>0.9.94</jline.version>
         <clojure-data-codec.version>0.1.0</clojure-data-codec.version>
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
         <hive.version>0.14.0</hive.version>
@@ -477,9 +478,9 @@
                                 <exclude>VERSION</exclude>
                                 <exclude>TODO</exclude>
                                 <!-- thrift-generated code -->
-				<exclude>**/src/py/**</exclude>
+                                <exclude>**/src/py/**</exclude>
 
-				<!-- Used as part of travis-ci build -->
+                                <!-- Used as part of travis-ci build -->
                                 <exclude>install.txt</exclude>
                                 <exclude>shaded-deps/install-shade.txt</exclude>
 
@@ -721,6 +722,11 @@
                 <groupId>clj-time</groupId>
                 <artifactId>clj-time</artifactId>
                 <version>${clj-time.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>${jline.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
