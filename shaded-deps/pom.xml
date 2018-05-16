@@ -72,7 +72,7 @@
                 </executions>
                 <configuration>
                     <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
-                    <promoteTransitiveDependencies>false</promoteTransitiveDependencies>
+                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
                     <minimizeJar>false</minimizeJar>
                     <artifactSet>
