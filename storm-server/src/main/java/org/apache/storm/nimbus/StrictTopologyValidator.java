@@ -17,6 +17,7 @@ import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.utils.WrappedInvalidTopologyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,17 +31,17 @@ public class StrictTopologyValidator implements ITopologyValidator {
     @Override
     public void validate(String topologyName, Map topologyConf, StormTopology topology) throws InvalidTopologyException {
         if (topologyName.contains(".")) {
-            throw new InvalidTopologyException(String.format("Topology name '%s' contains illegal character '.'", topologyName));
+            throw new WrappedInvalidTopologyException(String.format("Topology name '%s' contains illegal character '.'", topologyName));
         }
         Map<String, SpoutSpec> spouts = topology.get_spouts();
         for (String spoutName : spouts.keySet()) {
             if (spoutName.contains(".")) {
-                throw new InvalidTopologyException(String.format("Spout name '%s' contains illegal character '.'", spoutName));
+                throw new WrappedInvalidTopologyException(String.format("Spout name '%s' contains illegal character '.'", spoutName));
             }
             SpoutSpec spoutSpec = spouts.get(spoutName);
             for (String streamName : spoutSpec.get_common().get_streams().keySet()) {
                 if (streamName.contains(".")) {
-                    throw new InvalidTopologyException(String.format("Stream name '%s' contains illegal character '.'", streamName));
+                    throw new WrappedInvalidTopologyException(String.format("Stream name '%s' contains illegal character '.'", streamName));
                 }
             }
         }
@@ -48,12 +49,12 @@ public class StrictTopologyValidator implements ITopologyValidator {
         Map<String, Bolt> bolts = topology.get_bolts();
         for (String boltName : bolts.keySet()) {
             if (boltName.contains(".")) {
-                throw new InvalidTopologyException(String.format("Bolt name '%s' contains illegal character '.'", boltName));
+                throw new WrappedInvalidTopologyException(String.format("Bolt name '%s' contains illegal character '.'", boltName));
             }
             Bolt bolt = bolts.get(boltName);
             for (String streamName : bolt.get_common().get_streams().keySet()) {
                 if (streamName.contains(".")) {
-                    throw new InvalidTopologyException(String.format("Stream name '%s' contains illegal character '.'", streamName));
+                    throw new WrappedInvalidTopologyException(String.format("Stream name '%s' contains illegal character '.'", streamName));
                 }
             }
         }

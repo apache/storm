@@ -31,6 +31,7 @@ import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.security.auth.NimbusPrincipal;
+import org.apache.storm.utils.WrappedAuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,7 +173,7 @@ public class BlobStoreAclHandler {
         if (duplicateUsers.size() > 0) {
             String errorMessage = "user " + Arrays.toString(duplicateUsers.toArray())
                                   + " can't appear more than once in the ACLs for key [" + key + "].";
-            throw new AuthorizationException(errorMessage);
+            throw new WrappedAuthorizationException(errorMessage);
         }
     }
 
@@ -249,7 +250,7 @@ public class BlobStoreAclHandler {
     }
 
     /**
-     * The user should be able to see the metadata if and only if they have any of READ, WRITE, or ADMIN
+     * The user should be able to see the metadata if and only if they have any of READ, WRITE, or ADMIN.
      */
     public void validateUserCanReadMeta(List<AccessControl> acl, Subject who, String key) throws AuthorizationException {
         hasAnyPermissions(acl, (READ | WRITE | ADMIN), who, key);
@@ -281,7 +282,7 @@ public class BlobStoreAclHandler {
                 return;
             }
         }
-        throw new AuthorizationException(
+        throw new WrappedAuthorizationException(
             user + " does not have access to " + key);
     }
 
@@ -312,7 +313,7 @@ public class BlobStoreAclHandler {
         if (mask == 0) {
             return;
         }
-        throw new AuthorizationException(
+        throw new WrappedAuthorizationException(
             user + " does not have " + namedPerms(mask) + " access to " + key);
     }
 
@@ -354,8 +355,8 @@ public class BlobStoreAclHandler {
         List<AccessControl> resultAcl = new ArrayList<AccessControl>();
         for (AccessControl control : accessControls) {
             if (control.get_type().equals(AccessControlType.OTHER) && (control.get_access() == 0)) {
-                LOG.debug("Removing invalid blobstore world ACL " +
-                          BlobStoreAclHandler.accessControlToString(control));
+                LOG.debug("Removing invalid blobstore world ACL "
+                          + BlobStoreAclHandler.accessControlToString(control));
                 continue;
             }
             resultAcl.add(control);

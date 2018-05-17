@@ -196,6 +196,10 @@ import org.apache.storm.utils.TupleUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.Utils.UptimeComputer;
 import org.apache.storm.utils.VersionInfo;
+import org.apache.storm.utils.WrappedAlreadyAliveException;
+import org.apache.storm.utils.WrappedAuthorizationException;
+import org.apache.storm.utils.WrappedInvalidTopologyException;
+import org.apache.storm.utils.WrappedNotAliveException;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.zookeeper.AclEnforcement;
 import org.apache.storm.zookeeper.ClientZookeeper;
@@ -651,6 +655,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         return ret;
     }
+
     public static int getVersionForKey(String key, NimbusInfo nimbusInfo,
         CuratorFramework zkClient) throws KeyNotFoundException {
         KeySequenceNumber kseq = new KeySequenceNumber(key, nimbusInfo);
@@ -824,7 +829,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (topoId == null) {
                 throw new NullPointerException();
             }
-            throw new NotAliveException(topoId);
+            throw new WrappedNotAliveException(topoId);
         }
     }
 
@@ -949,7 +954,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static void validateTopologyName(String name) throws InvalidTopologyException {
         Matcher m = TOPOLOGY_NAME_REGEX.matcher(name);
         if (!m.matches()) {
-            throw new InvalidTopologyException("Topology name must match " + TOPOLOGY_NAME_REGEX);
+            throw new WrappedInvalidTopologyException("Topology name must match " + TOPOLOGY_NAME_REGEX);
         }
     }
 
@@ -958,7 +963,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             return readStormTopologyAsNimbus(topoId, tc);
         } catch (KeyNotFoundException e) {
-            throw new NotAliveException(topoId);
+            throw new WrappedNotAliveException(topoId);
         }
     }
 
@@ -969,7 +974,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             int workerCount = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKERS), 1);
             Integer allowedWorkers = ObjectReader.getInt(nimbusConf.get(DaemonConfig.NIMBUS_SLOTS_PER_TOPOLOGY), null);
             if (allowedWorkers != null && workerCount > allowedWorkers) {
-                throw new InvalidTopologyException("Failed to submit topology. Topology requests more than "
+                throw new WrappedInvalidTopologyException("Failed to submit topology. Topology requests more than "
                         + allowedWorkers + " workers.");
             }
         }
@@ -979,7 +984,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         Integer allowedExecutors = ObjectReader.getInt(nimbusConf.get(DaemonConfig.NIMBUS_EXECUTORS_PER_TOPOLOGY), null);
         if (allowedExecutors != null && executorsCount > allowedExecutors) {
-            throw new InvalidTopologyException("Failed to submit topology. Topology requests more than "
+            throw new WrappedInvalidTopologyException("Failed to submit topology. Topology requests more than "
                     + allowedExecutors + " executors.");
         }
     }
@@ -1183,7 +1188,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         Map<String, Assignment> ret = new HashMap<>();
         assignmentMap.entrySet().stream().filter(assignmentEntry -> assignmentEntry.getValue().get_node_host().keySet()
                                                                                    .contains(nodeId))
-                     .forEach(assignmentEntry -> { ret.put(assignmentEntry.getKey(), assignmentEntry.getValue()); });
+                     .forEach(assignmentEntry -> {
+                         ret.put(assignmentEntry.getKey(), assignmentEntry.getValue());
+                     });
 
         return ret;
     }
@@ -1349,7 +1356,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private String toTopoId(String topoName) throws NotAliveException {
         return stormClusterState.getTopoId(topoName)
-                                .orElseThrow(() -> new NotAliveException(topoName + " is not alive"));
+                                .orElseThrow(() -> new WrappedNotAliveException(topoName + " is not alive"));
     }
 
     private void transitionName(String topoName, TopologyActions event, Object eventArg, boolean errorOnNoTransition) throws Exception {
@@ -1459,9 +1466,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         long totalWaitTime = 0;
         //When is this ever null?
         if (blobStore != null) {
-            while (jarCount < minReplicationCount &&
-                   codeCount < minReplicationCount &&
-                   confCount < minReplicationCount) {
+            while (jarCount < minReplicationCount
+                   && codeCount < minReplicationCount
+                   && confCount < minReplicationCount) {
                 if (maxWaitTime > 0 && totalWaitTime > maxWaitTime) {
                     LOG.info("desired replication count of {} not achieved but we have hit the max wait time {}"
                              + " so moving on with replication count for conf key = {} for code key = {} for jar key = ",
@@ -2138,8 +2145,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 LOG.info("Fragmentation after scheduling is: {} MB, {} PCore CPUs", fragmentedMemory(), fragmentedCpu());
                 nodeIdToResources.get().forEach((id, node) ->
                                                     LOG.info(
-                                                        "Node Id: {} Total Mem: {}, Used Mem: {}, Available Mem: {}, Total CPU: {}, Used " +
-                                                        "CPU: {}, Available CPU: {}, fragmented: {}",
+                                                        "Node Id: {} Total Mem: {}, Used Mem: {}, Available Mem: {}, Total CPU: {}, Used "
+                                                        + "CPU: {}, Available CPU: {}, fragmented: {}",
                                                         id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(),
                                                         node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu(), isFragmented(node)));
                 idToResources.set(new HashMap<>());
@@ -2237,9 +2244,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private void assertTopoActive(String topoName, boolean expectActive) throws NotAliveException, AlreadyAliveException {
         if (isTopologyActive(stormClusterState, topoName) != expectActive) {
             if (expectActive) {
-                throw new NotAliveException(topoName + " is not alive");
+                throw new WrappedNotAliveException(topoName + " is not alive");
             }
-            throw new AlreadyAliveException(topoName + " is already alive");
+            throw new WrappedAlreadyAliveException(topoName + " is already alive");
         }
     }
 
@@ -2247,7 +2254,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         AuthorizationException, IOException {
         IStormClusterState state = stormClusterState;
         String topoId = state.getTopoId(topoName)
-                             .orElseThrow(() -> new NotAliveException(topoName + " is not alive"));
+                             .orElseThrow(() -> new WrappedNotAliveException(topoName + " is not alive"));
         return tryReadTopoConf(topoId, topoCache);
     }
 
@@ -2282,10 +2289,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 if (!impersonationAuthorizer.permit(context, operation, checkConf)) {
                     ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(),
                                                  context.principal(), operation, topoName, "access-denied");
-                    throw new AuthorizationException("principal " + context.realPrincipal() +
-                                                     " is not authorized to impersonate principal " + context.principal() +
-                                                     " from host " + context.remoteAddress() +
-                                                     " Please see SECURITY.MD to learn how to configure impersonation acls.");
+                    throw new WrappedAuthorizationException("principal " + context.realPrincipal()
+                                                     + " is not authorized to impersonate principal " + context.principal()
+                                                     + " from host " + context.remoteAddress()
+                                                     + " Please see SECURITY.MD to learn how to configure impersonation acls.");
                 }
             }
         }
@@ -2294,8 +2301,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (!aclHandler.permit(context, operation, checkConf)) {
                 ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(), context.principal(), operation,
                                              topoName, "access-denied");
-                throw new AuthorizationException(operation + (topoName != null ? " on topology " + topoName : "") +
-                                                 " is not authorized");
+                throw new WrappedAuthorizationException(operation + (topoName != null ? " on topology " + topoName : "")
+                                                 + " is not authorized");
             } else {
                 ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(), context.principal(),
                                              operation, topoName, "access-granted");
@@ -2425,7 +2432,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     /**
-     * Check to see if any of the users groups intersect with the list of groups passed in
+     * Check to see if any of the users groups intersect with the list of groups passed in.
      *
      * @param user          the user to check
      * @param groupsToCheck the groups to see if user is a part of
@@ -2535,8 +2542,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         NimbusInfo leader = leaderElector.getLeader();
         for (NimbusSummary nimbusSummary : nimbuses) {
             nimbusSummary.set_uptime_secs(Time.deltaSecs(nimbusSummary.get_uptime_secs()));
-            nimbusSummary.set_isLeader(leader.getHost().equals(nimbusSummary.get_host()) &&
-                                       leader.getPort() == nimbusSummary.get_port());
+            nimbusSummary.set_isLeader(leader.getHost().equals(nimbusSummary.get_host())
+                                       && leader.getPort() == nimbusSummary.get_port());
         }
 
         List<TopologySummary> topologySummaries = new ArrayList<>();
@@ -2807,15 +2814,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             try {
                 ConfigValidation.validateFields(topoConf);
             } catch (IllegalArgumentException ex) {
-                throw new InvalidTopologyException(ex.getMessage());
+                throw new WrappedInvalidTopologyException(ex.getMessage());
             }
             validator.validate(topoName, topoConf, topology);
             if ((boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> blobMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
                 if (blobMap != null && !blobMap.isEmpty()) {
-                    throw new InvalidTopologyException("symlinks are disabled so blobs are not supported but " +
-                                                       Config.TOPOLOGY_BLOBSTORE_MAP + " = " + blobMap);
+                    throw new WrappedInvalidTopologyException("symlinks are disabled so blobs are not supported but "
+                                                       + Config.TOPOLOGY_BLOBSTORE_MAP + " = " + blobMap);
                 }
             }
             validateTopologyWorkerMaxHeapSizeConfigs(topoConf, topology,
@@ -2862,9 +2869,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             SimpleVersion topoVersion = new SimpleVersion(topoVersionString);
             List<String> cp = Utils.getCompatibleVersion(supervisorClasspaths, topoVersion, "classpath", null);
             if (cp == null) {
-                throw new InvalidTopologyException("Topology submitted with storm version " + topoVersionString
-                                                   + " but could not find a configured compatible version to use " +
-                                                   supervisorClasspaths.keySet());
+                throw new WrappedInvalidTopologyException("Topology submitted with storm version " + topoVersionString
+                                                   + " but could not find a configured compatible version to use "
+                                                   + supervisorClasspaths.keySet());
             }
             Map<String, Object> otherConf = Utils.getConfigFromClasspath(cp, conf);
             Map<String, Object> totalConfToSave = Utils.merge(otherConf, topoConf);
@@ -2901,14 +2908,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 upsertWorkerTokensInCreds(creds, topologyPrincipal, topoId);
             }
 
-            if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false) &&
-                (submitterUser == null || submitterUser.isEmpty())) {
-                throw new AuthorizationException("Could not determine the user to run this topology as.");
+            if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)
+                && (submitterUser == null || submitterUser.isEmpty())) {
+                throw new WrappedAuthorizationException("Could not determine the user to run this topology as.");
             }
             StormCommon.systemTopology(totalConf, topology); //this validates the structure of the topology
             validateTopologySize(topoConf, conf, topology);
-            if (Utils.isZkAuthenticationConfiguredStormServer(conf) &&
-                !Utils.isZkAuthenticationConfiguredTopology(topoConf)) {
+            if (Utils.isZkAuthenticationConfiguredStormServer(conf)
+                && !Utils.isZkAuthenticationConfiguredTopology(topoConf)) {
                 throw new IllegalArgumentException("The cluster is configured for zookeeper authentication, but no payload was provided.");
             }
             LOG.info("Received topology submission for {} (storm-{} JDK-{}) with conf {}", topoName,
@@ -3040,7 +3047,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Map<String, Integer> execOverrides = options.is_set_num_executors() ? options.get_num_executors() : Collections.emptyMap();
             for (Integer value : execOverrides.values()) {
                 if (value == null || value <= 0) {
-                    throw new InvalidTopologyException("Number of executors must be greater than 0");
+                    throw new WrappedInvalidTopologyException("Number of executors must be greater than 0");
                 }
             }
             if (options.is_set_topology_conf_overrides()) {
@@ -3166,7 +3173,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             // while disabling we retain the sampling pct.
             checkAuthorization(topoName, topoConf, "debug");
             if (topoId == null) {
-                throw new NotAliveException(topoName);
+                throw new WrappedNotAliveException(topoName);
             }
             boolean hasCompId = componentId != null && !componentId.isEmpty();
 
@@ -3181,8 +3188,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             String key = hasCompId ? componentId : topoId;
             updates.put_to_component_debug(key, options);
 
-            LOG.info("Nimbus setting debug to {} for storm-name '{}' storm-id '{}' sanpling pct '{}'" +
-                     (hasCompId ? " component-id '" + componentId + "'" : ""),
+            LOG.info("Nimbus setting debug to {} for storm-name '{}' storm-id '{}' sanpling pct '{}'"
+                     + (hasCompId ? " component-id '" + componentId + "'" : ""),
                      enable, topoName, topoId, spct);
             synchronized (submitLock) {
                 state.updateStorm(topoId, updates);
@@ -3271,7 +3278,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             IStormClusterState state = stormClusterState;
             String topoId = toTopoId(topoName);
             if (topoId == null) {
-                throw new NotAliveException(topoName + " is not alive");
+                throw new WrappedNotAliveException(topoName + " is not alive");
             }
             Map<String, Object> topoConf = tryReadTopoConf(topoId, topoCache);
             topoConf = Utils.merge(conf, topoConf);
@@ -3722,7 +3729,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             getTopologyInfoWithOptsCalls.mark();
             CommonTopoInfo common = getCommonTopoInfo(topoId, "getTopologyInfo");
             if (common.base == null) {
-                throw new NotAliveException(topoId);
+                throw new WrappedNotAliveException(topoId);
             }
             IStormClusterState state = stormClusterState;
             NumErrorsChoice numErrChoice = Utils.OR(options.get_num_err_choice(), NumErrorsChoice.ALL);
@@ -3826,7 +3833,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Map<String, Object> topoConf = Utils.merge(conf, common.topoConf);
             StormBase base = common.base;
             if (base == null) {
-                throw new NotAliveException(topoId);
+                throw new WrappedNotAliveException(topoId);
             }
             Map<WorkerSlot, WorkerResources> workerToResources = getWorkerResourcesForTopology(topoId);
             List<WorkerSummary> workerSummaries = null;
@@ -4008,7 +4015,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             getComponentPageInfoCalls.mark();
             CommonTopoInfo info = getCommonTopoInfo(topoId, "getComponentPageInfo");
             if (info.base == null) {
-                throw new NotAliveException(topoId);
+                throw new WrappedNotAliveException(topoId);
             }
             StormTopology topology = info.topology;
             Map<String, Object> topoConf = info.topoConf;
@@ -4159,10 +4166,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoConf = Utils.merge(conf, topoConf);
                 List<String> groups = ServerConfigUtils.getTopoLogsGroups(topoConf);
                 List<String> topoLogUsers = ServerConfigUtils.getTopoLogsUsers(topoConf);
-                if (user == null || isAdmin ||
-                    isUserPartOf(user, groups) ||
-                    isUserPartOf(user, adminGroups) ||
-                    topoLogUsers.contains(user)) {
+                if (user == null || isAdmin
+                    || isUserPartOf(user, groups)
+                    || isUserPartOf(user, adminGroups)
+                    || topoLogUsers.contains(user)) {
                     ret.add(topoId);
                 }
             }
@@ -4281,7 +4288,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 for (StormBase base : ownerToBasesEntry.getValue()) {
                     try {
                         String topoId = state.getTopoId(base.get_name())
-                                             .orElseThrow(() -> new NotAliveException(base.get_name() + " is not alive"));
+                                             .orElseThrow(() -> new WrappedNotAliveException(base.get_name() + " is not alive"));
                         TopologyResources resources = getResourcesForTopology(topoId, base);
                         totalResourcesAggregate = totalResourcesAggregate.add(resources);
                         Assignment ownerAssignment = topoIdToAssignments.get(topoId);

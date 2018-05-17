@@ -347,8 +347,7 @@ public class Utils {
                     final Callable<Long> fn = isFactory ? (Callable<Long>) afn.call() : afn;
                     while (true) {
                         final Long s = fn.call();
-                        if (s == null) // then stop running it
-                        {
+                        if (s == null) { // then stop running it
                             break;
                         }
                         if (s > 0) {
@@ -413,7 +412,7 @@ public class Utils {
     }
 
     /**
-     * Checks if a throwable is an instance of a particular class
+     * Checks if a throwable is an instance of a particular class.
      *
      * @param klass     The class you're expecting
      * @param throwable The throwable you expect to be an instance of klass
@@ -1145,7 +1144,7 @@ public class Utils {
                     client.getBlobMeta(key);
                 } catch (KeyNotFoundException keyNotFound) {
                     // wrap KeyNotFoundException in an InvalidTopologyException
-                    throw new InvalidTopologyException("Key not found: " + keyNotFound.get_msg());
+                    throw new WrappedInvalidTopologyException("Key not found: " + keyNotFound.get_msg());
                 }
             }
         }
@@ -1169,7 +1168,7 @@ public class Utils {
                     blobStore.getBlobMeta(key, subject);
                 } catch (KeyNotFoundException keyNotFound) {
                     // wrap KeyNotFoundException in an InvalidTopologyException
-                    throw new InvalidTopologyException("Key not found: " + keyNotFound.get_msg());
+                    throw new WrappedInvalidTopologyException("Key not found: " + keyNotFound.get_msg());
                 }
             }
         }
@@ -1255,7 +1254,7 @@ public class Utils {
     }
 
     /**
-     * a or b the first one that is not null
+     * a or b the first one that is not null.
      *
      * @param a something
      * @param b something else
@@ -1408,16 +1407,16 @@ public class Utils {
     }
 
     /**
-     * Add version information to the given topology
+     * Add version information to the given topology.
      *
      * @param topology the topology being submitted (MIGHT BE MODIFIED)
      * @return topology
      */
     public static StormTopology addVersions(StormTopology topology) {
         String stormVersion = VersionInfo.getVersion();
-        if (stormVersion != null &&
-            !"Unknown".equalsIgnoreCase(stormVersion) &&
-            !topology.is_set_storm_version()) {
+        if (stormVersion != null
+            && !"Unknown".equalsIgnoreCase(stormVersion)
+            && !topology.is_set_storm_version()) {
             topology.set_storm_version(stormVersion);
         }
 

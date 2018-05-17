@@ -52,6 +52,7 @@ import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.ShellUtils;
+import org.apache.storm.utils.WrappedAuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -242,7 +243,7 @@ public class LocalizedResource extends LocallyCachedBlob {
         String key = getKey();
         ReadableBlobMeta meta = store.getBlobMeta(key);
         if (!ServerUtils.canUserReadBlob(meta, user, conf)) {
-            throw new AuthorizationException(user + " does not have READ access to " + key);
+            throw new WrappedAuthorizationException(user + " does not have READ access to " + key);
         }
         long version;
         Path downloadFile;

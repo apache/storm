@@ -32,6 +32,7 @@ import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.pacemaker.PacemakerConnectionException;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.WrappedHBExecutionException;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +126,7 @@ public class PaceMakerStateStorage implements IStateStorage {
                 HBMessage message = new HBMessage(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
                 HBMessage response = pacemakerClientPool.send(message);
                 if (response.get_type() != HBServerMessageType.SEND_PULSE_RESPONSE) {
-                    throw new HBExecutionException("Invalid Response Type");
+                    throw new WrappedHBExecutionException("Invalid Response Type");
                 }
                 LOG.debug("Successful set_worker_hb");
                 break;
@@ -171,7 +172,7 @@ public class PaceMakerStateStorage implements IStateStorage {
                     }
                 }
                 if (!got_response) {
-                    throw new HBExecutionException("Failed to get a response.");
+                    throw new WrappedHBExecutionException("Failed to get a response.");
                 }
                 return ret;
             } catch (HBExecutionException | PacemakerConnectionException e) {
@@ -242,7 +243,7 @@ public class PaceMakerStateStorage implements IStateStorage {
                 if (allSucceeded) {
                     break;
                 } else {
-                    throw new HBExecutionException("Failed to delete from all pacemakers.");
+                    throw new WrappedHBExecutionException("Failed to delete from all pacemakers.");
                 }
             } catch (HBExecutionException | PacemakerConnectionException e) {
                 if (retry <= 0) {

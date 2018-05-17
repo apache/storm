@@ -41,15 +41,17 @@ import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.authorizer.DRPCAuthorizerBase;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.WrappedAuthorizationException;
+import org.apache.storm.utils.WrappedDRPCExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DRPC implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPC.class);
     private static final DRPCRequest NOTHING_REQUEST = new DRPCRequest("", "");
-    private static final DRPCExecutionException TIMED_OUT = new DRPCExecutionException("Timed Out");
-    private static final DRPCExecutionException SHUT_DOWN = new DRPCExecutionException("Server Shutting Down");
-    private static final DRPCExecutionException DEFAULT_FAILED = new DRPCExecutionException("Request failed");
+    private static final DRPCExecutionException TIMED_OUT = new WrappedDRPCExecutionException("Timed Out");
+    private static final DRPCExecutionException SHUT_DOWN = new WrappedDRPCExecutionException("Server Shutting Down");
+    private static final DRPCExecutionException DEFAULT_FAILED = new WrappedDRPCExecutionException("Request failed");
     private static final Meter meterServerTimedOut = StormMetricsRegistry.registerMeter("drpc:num-server-timedout-requests");
     private static final Meter meterExecuteCalls = StormMetricsRegistry.registerMeter("drpc:num-execute-calls");
     private static final Meter meterResultCalls = StormMetricsRegistry.registerMeter("drpc:num-result-calls");
@@ -76,6 +78,7 @@ public class DRPC implements AutoCloseable {
         this(mkAuthorizationHandler((String) conf.get(DaemonConfig.DRPC_AUTHORIZER), conf),
              ObjectReader.getInt(conf.get(DaemonConfig.DRPC_REQUEST_TIMEOUT_SECS), 600) * 1000);
     }
+
     public DRPC(IAuthorizer auth, long timeoutMs) {
         _auth = auth;
         _timer.scheduleAtFixedRate(new TimerTask() {
@@ -120,7 +123,7 @@ public class DRPC implements AutoCloseable {
             if (!auth.permit(reqContext, operation, map)) {
                 Principal principal = reqContext.principal();
                 String user = (principal != null) ? principal.getName() : "unknown";
-                throw new AuthorizationException("DRPC request '" + operation + "' for '" + user + "' user is not authorized");
+                throw new WrappedAuthorizationException("DRPC request '" + operation + "' for '" + user + "' user is not authorized");
             }
         }
     }
