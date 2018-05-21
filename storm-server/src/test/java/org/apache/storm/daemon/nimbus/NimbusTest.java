@@ -18,14 +18,23 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.utils.Time;
+import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.fail;
 
@@ -53,6 +62,27 @@ public class NimbusTest {
             fail("Expected exception not thrown");
         } catch (IllegalArgumentException e) {
             //Expected...
+        }
+    }
+
+    @Test
+    public void uploadedBlobPersistsMinimumTime() {
+        BlobStore store = Mockito.mock(BlobStore.class);
+        Set<String> idleTopologies = new HashSet<>();
+        idleTopologies.add("topology1");
+        Mockito.when(store.storedTopoIds()).thenReturn(idleTopologies);
+        Map<String, Object> conf = new HashMap<>();
+
+        try (Time.SimulatedTime t = new Time.SimulatedTime(null)) {
+            Set<String> toDelete = Nimbus.getIdleTopologyIds(store, conf);
+            Assert.assertTrue(toDelete.isEmpty());
+
+            Time.advanceTime(10 * 60 * 1000L);
+
+            toDelete = Nimbus.getIdleTopologyIds(store, conf);
+            Assert.assertTrue(toDelete.contains("topology1"));
+            Assert.assertEquals(1, toDelete.size());
+
         }
     }
 }

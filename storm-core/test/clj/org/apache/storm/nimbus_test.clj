@@ -1856,7 +1856,7 @@
          (let [mock-state (mock-cluster-state (list "topo1") (list "topo1" "topo2" "topo3"))
                store (Mockito/mock BlobStore)]
               (.thenReturn (Mockito/when (.storedTopoIds store)) #{})
-              (is (= (Nimbus/topoIdsToClean mock-state store) #{"topo2" "topo3"}))))
+              (is (= (Nimbus/topoIdsToClean mock-state store (new java.util.HashMap)) #{"topo2" "topo3"}))))
 
 (deftest cleanup-storm-ids-performs-union-of-storm-ids-with-active-znodes
   (let [active-topos (list "hb1" "e2" "bp3")
@@ -1866,7 +1866,7 @@
         mock-state (mock-cluster-state active-topos hb-topos error-topos bp-topos)
         store (Mockito/mock BlobStore)]
     (.thenReturn (Mockito/when (.storedTopoIds store)) #{})
-    (is (= (Nimbus/topoIdsToClean mock-state store)
+    (is (= (Nimbus/topoIdsToClean mock-state store (new java.util.HashMap))
            #{"hb2" "hb3" "e1" "e3" "bp1" "bp2"}))))
 
 (deftest cleanup-storm-ids-returns-empty-set-when-all-topos-are-active
@@ -1877,7 +1877,7 @@
         mock-state (mock-cluster-state active-topos hb-topos error-topos bp-topos)
         store (Mockito/mock BlobStore)]
     (.thenReturn (Mockito/when (.storedTopoIds store)) #{})
-    (is (= (Nimbus/topoIdsToClean mock-state store)
+    (is (= (Nimbus/topoIdsToClean mock-state store (new java.util.HashMap))
            #{}))))
 
 (deftest do-cleanup-removes-inactive-znodes
@@ -1885,7 +1885,7 @@
         hb-cache (into {}(map vector inactive-topos '(nil nil)))
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
-        conf {NIMBUS-MONITOR-FREQ-SECS 10}]
+        conf {NIMBUS-MONITOR-FREQ-SECS 10 NIMBUS-TOPOLOGY-BLOBSTORE-DELETION-DELAY-MSEC 0}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
                     (zkLeaderElectorImpl [conf zk blob-store tc cluster-state acls] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
@@ -1919,6 +1919,7 @@
 
           ;; remove topos from heartbeat cache
           (is (= (count (.get (.getHeartbeatsCache nimbus))) 0)))))))
+
 
 (deftest do-cleanup-does-not-teardown-active-topos
   (let [inactive-topos ()
@@ -1988,3 +1989,4 @@
 
       (is (= (list "topo1" "authorized") supervisor-topologies))
       (is (= #{"authorized"} user-topologies)))))
+
