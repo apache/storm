@@ -105,6 +105,8 @@ public class MessageDecoder extends FrameDecoder {
             if (code == BackPressureStatus.IDENTIFIER) {
                 available = buf.readableBytes();
                 if (available < 4) {
+                    //Need  more data
+                    buf.resetReaderIndex();
                     return null;
                 }
                 int dataLen = buf.readInt();
