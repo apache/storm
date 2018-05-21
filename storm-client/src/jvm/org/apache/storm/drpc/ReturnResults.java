@@ -75,10 +75,14 @@ public class ReturnResults extends BaseRichBolt {
             while (retryCnt < maxRetries) {
                 retryCnt++;
                 try {
-                    LOG.debug("Trying to publish Request Id: {}, Result: {}, to DRPC {}", id, result, host);
-                    client.result(id, result);
-                    _collector.ack(input);
-                    break;
+                    if (client != null) {
+                        LOG.debug("Trying to publish Request Id: {}, Result: {}, to DRPC {}", id, result, host);
+                        client.result(id, result);
+                        _collector.ack(input);
+                        break;
+                    } else {
+                        client = getDRPCClient(host, port);
+                    }
                 } catch (AuthorizationException aze) {
                     LOG.error("Not authorized to return results to DRPC server", aze);
                     _collector.fail(input);
@@ -107,7 +111,8 @@ public class ReturnResults extends BaseRichBolt {
             };
             if (!_clients.containsKey(server)) {
                 try {
-                    _clients.put(server, new DRPCInvocationsClient(_conf, host, port));
+                    DRPCInvocationsClient oldClient = _clients.put(server, new DRPCInvocationsClient(_conf, host, port));
+                    oldClient.close();
                 } catch (TTransportException ex) {
                     throw new RuntimeException(ex);
                 }
