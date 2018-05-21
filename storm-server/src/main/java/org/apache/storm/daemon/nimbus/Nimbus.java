@@ -531,13 +531,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @SuppressWarnings("deprecation")
     private static <T extends AutoCloseable> TimeCacheMap<String, T> fileCacheMap(Map<String, Object> conf) {
         return new TimeCacheMap<>(ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_FILE_COPY_EXPIRATION_SECS), 600),
-                                  (id, stream) -> {
-                                      try {
-                                          stream.close();
-                                      } catch (Exception e) {
-                                          throw new RuntimeException(e);
-                                      }
-                                  });
+            (id, stream) -> {
+                try {
+                    stream.close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     private static <K, V> Map<K, V> mapDiff(Map<? extends K, ? extends V> first, Map<? extends K, ? extends V> second) {
@@ -1060,7 +1060,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                     Map<String, Object> topoConf) {
         NormalizedResourceRequest resources = compResourcesMap.get(compId);
         if (resources == null) {
-            compResourcesMap.put(compId, new NormalizedResourceRequest(topoConf));
+            compResourcesMap.put(compId, new NormalizedResourceRequest(topoConf, compId));
         }
     }
 
@@ -4036,13 +4036,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (compPageInfo.get_component_type() == ComponentType.SPOUT) {
                 NormalizedResourceRequest spoutResources = ResourceUtils.getSpoutResources(topology, topoConf, componentId);
                 if (spoutResources == null) {
-                    spoutResources = new NormalizedResourceRequest(topoConf);
+                    spoutResources = new NormalizedResourceRequest(topoConf, componentId);
                 }
                 compPageInfo.set_resources_map(spoutResources.toNormalizedMap());
             } else { //bolt
                 NormalizedResourceRequest boltResources = ResourceUtils.getBoltResources(topology, topoConf, componentId);
                 if (boltResources == null) {
-                    boltResources = new NormalizedResourceRequest(topoConf);
+                    boltResources = new NormalizedResourceRequest(topoConf, componentId);
                 }
                 compPageInfo.set_resources_map(boltResources.toNormalizedMap());
             }

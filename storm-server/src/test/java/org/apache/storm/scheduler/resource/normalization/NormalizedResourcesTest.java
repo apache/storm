@@ -90,21 +90,22 @@ public class NormalizedResourcesTest {
     }
     
     @Test
-    public void testRemoveThrowsIfResourcesBecomeNegative() {
+    public void testRemoveZeroesWhenResourcesBecomeNegative() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(gpuResourceName, 1)));
         NormalizedResources removedResources = new NormalizedResources(normalize(Collections.singletonMap(gpuResourceName, 2)));
-        
-        expectedException.expect(IllegalArgumentException.class);
+
         resources.remove(removedResources);
+        Map<String, Double> normalizedMap = resources.toNormalizedMap();
+        assertThat(normalizedMap.get(gpuResourceName), is(0.0));
     }
     
     @Test
-    public void testRemoveThrowsIfCpuBecomesNegative() {
+    public void testRemoveZeroesWhenCpuBecomesNegative() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 1)));
         NormalizedResources removedResources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 2)));
-        
-        expectedException.expect(IllegalArgumentException.class);
+
         resources.remove(removedResources);
+        assertThat(resources.getTotalCpu(), is(0.0));
     }
     
     @Test
