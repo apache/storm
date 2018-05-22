@@ -18,11 +18,13 @@
 
 package org.apache.storm.scheduler.resource.normalization;
 
+import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.Map;
 import org.apache.storm.Constants;
 import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,8 @@ import org.slf4j.LoggerFactory;
 public class NormalizedResources {
 
     private static final Logger LOG = LoggerFactory.getLogger(NormalizedResources.class);
+    public static final Meter numNegativeResourceEvents = StormMetricsRegistry.registerMeter("nimbus:num-negative-resource-events");
+
 
     public static ResourceNameNormalizer RESOURCE_NAME_NORMALIZER;
     private static ResourceMapArrayBridge RESOURCE_MAP_ARRAY_BRIDGE;
@@ -123,38 +127,30 @@ public class NormalizedResources {
     }
 
     /**
-     * Throw an IllegalArgumentException because a resource became negative during remove.
-     *
-     * @param resourceName    The name of the resource that became negative
-     * @param currentValue    The current value of the resource
-     * @param subtractedValue The value that was subtracted to make the resource negative
-     */
-    public void throwBecauseResourceBecameNegative(String resourceName, double currentValue, double subtractedValue) {
-        throw new IllegalArgumentException(String.format("Resource amounts should never be negative."
-                                                         +
-                                                         " Resource '%s' with current value '%f' became negative because '%f' was removed.",
-                                                         resourceName, currentValue, subtractedValue));
-    }
-
-    /**
      * Remove the other resources from this. This is the same as subtracting the resources in other from this.
      *
      * @param other the resources we want removed.
-     * @throws IllegalArgumentException if subtracting other from this would result in any resource amount becoming negative.
+     * @return true if the resources would have gone negative, but were clamped to 0.
      */
-    public void remove(NormalizedResources other) {
+    public boolean remove(NormalizedResources other) {
+        boolean ret = false;
         this.cpu -= other.cpu;
         if (cpu < 0.0) {
-            throwBecauseResourceBecameNegative(Constants.COMMON_CPU_RESOURCE_NAME, cpu, other.cpu);
+            ret = true;
+            numNegativeResourceEvents.mark();
+            cpu = 0.0;
         }
         int otherLength = other.otherResources.length;
         zeroPadOtherResourcesIfNecessary(otherLength);
         for (int i = 0; i < otherLength; i++) {
             otherResources[i] -= other.otherResources[i];
             if (otherResources[i] < 0.0) {
-                throwBecauseResourceBecameNegative(getResourceNameForResourceIndex(i), otherResources[i], other.otherResources[i]);
+                ret = true;
+                numNegativeResourceEvents.mark();
+                otherResources[i]  = 0.0;
             }
         }
+        return ret;
     }
 
     @Override

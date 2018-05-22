@@ -34,7 +34,7 @@ public class ResourceUtils {
                                                              String componentId) {
         if (topology.get_bolts() != null) {
             Bolt bolt = topology.get_bolts().get(componentId);
-            return new NormalizedResourceRequest(bolt.get_common(), topologyConf);
+            return new NormalizedResourceRequest(bolt.get_common(), topologyConf, componentId);
         }
         return null;
     }
@@ -44,7 +44,8 @@ public class ResourceUtils {
         Map<String, NormalizedResourceRequest> boltResources = new HashMap<>();
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
-                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(bolt.getValue().get_common(), topologyConf);
+                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(bolt.getValue().get_common(),
+                        topologyConf, bolt.getKey());
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Turned {} into {}", bolt.getValue().get_common().get_json_conf(), topologyResources);
                 }
@@ -58,7 +59,7 @@ public class ResourceUtils {
                                                               String componentId) {
         if (topology.get_spouts() != null) {
             SpoutSpec spout = topology.get_spouts().get(componentId);
-            return new NormalizedResourceRequest(spout.get_common(), topologyConf);
+            return new NormalizedResourceRequest(spout.get_common(), topologyConf, componentId);
         }
         return null;
     }
@@ -68,7 +69,8 @@ public class ResourceUtils {
         Map<String, NormalizedResourceRequest> spoutResources = new HashMap<>();
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
-                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(spout.getValue().get_common(), topologyConf);
+                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(spout.getValue().get_common(),
+                        topologyConf, spout.getKey());
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Turned {} into {}", spout.getValue().get_common().get_json_conf(), topologyResources);
                 }

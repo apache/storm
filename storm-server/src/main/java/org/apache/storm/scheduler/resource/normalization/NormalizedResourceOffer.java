@@ -82,15 +82,18 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
 
     /**
      * Remove the resources in other from this.
-     * @param other what to remove.
+     * @param other the resources to be removed.
+     * @return true if one or more resources in other were larger than available resources in this, else false.
      */
-    public void remove(NormalizedResourcesWithMemory other) {
-        normalizedResources.remove(other.getNormalizedResources());
+    public boolean remove(NormalizedResourcesWithMemory other) {
+        boolean negativeResources = normalizedResources.remove(other.getNormalizedResources());
         totalMemoryMb -= other.getTotalMemoryMb();
         if (totalMemoryMb < 0.0) {
-            normalizedResources.throwBecauseResourceBecameNegative(
-                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, totalMemoryMb, other.getTotalMemoryMb());
+            negativeResources = true;
+            NormalizedResources.numNegativeResourceEvents.mark();
+            totalMemoryMb = 0.0;
         }
+        return negativeResources;
     }
 
     /**

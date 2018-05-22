@@ -52,6 +52,7 @@ public class RAS_Node {
     private String hostname;
     private boolean isAlive;
     private SupervisorDetails sup;
+    private boolean loggedUnderageUsage = false;
 
     /**
      * Create a new node.
@@ -444,7 +445,12 @@ public class RAS_Node {
     public NormalizedResourceOffer getTotalAvailableResources() {
         if (sup != null) {
             NormalizedResourceOffer availableResources = new NormalizedResourceOffer(sup.getTotalResources());
-            availableResources.remove(cluster.getAllScheduledResourcesForNode(sup.getId()));
+            if (availableResources.remove(cluster.getAllScheduledResourcesForNode(sup.getId()))) {
+                if (!loggedUnderageUsage) {
+                    LOG.error("Resources on {} became negative and was clamped to 0 {}.", hostname, availableResources);
+                    loggedUnderageUsage = true;
+                }
+            }
             return availableResources;
         } else {
             return new NormalizedResourceOffer();
