@@ -32,6 +32,7 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.security.auth.NimbusPrincipal;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.zookeeper.KeeperException;
@@ -83,7 +84,7 @@ public class BlobStoreUtils {
         } catch (KeeperException.NoNodeException e) {
             // there's a race condition with a delete: blobstore
             // this should be thrown to the caller to indicate that the key is invalid now
-            throw new KeyNotFoundException(key);
+            throw new WrappedKeyNotFoundException(key);
         }
 
         Set<NimbusInfo> nimbusInfoSet = new HashSet<NimbusInfo>();

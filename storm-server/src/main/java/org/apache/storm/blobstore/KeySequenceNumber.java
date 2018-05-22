@@ -18,6 +18,7 @@ import java.util.TreeSet;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -192,7 +193,7 @@ public class KeySequenceNumber {
         } catch (KeeperException.NoNodeException e) {
             // there's a race condition with a delete: either blobstore or blobstoremaxsequence
             // this should be thrown to the caller to indicate that the key is invalid now
-            throw new KeyNotFoundException(key);
+            throw new WrappedKeyNotFoundException(key);
         } catch (Exception e) {
             // in other case, just set this to 0 to trigger re-sync later
             LOG.error("Exception {}", e);

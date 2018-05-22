@@ -48,6 +48,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.WrappedInvalidTopologyException;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +100,7 @@ public class StormCommon {
         Set<String> keys = componentMap.keySet();
         for (String id : keys) {
             if (Utils.isSystemId(id)) {
-                throw new InvalidTopologyException(id + " is not a valid component id.");
+                throw new WrappedInvalidTopologyException(id + " is not a valid component id.");
             }
         }
         for (Object componentObj : componentMap.values()) {
@@ -107,7 +108,7 @@ public class StormCommon {
             Set<String> streamIds = common.get_streams().keySet();
             for (String id : streamIds) {
                 if (Utils.isSystemId(id)) {
-                    throw new InvalidTopologyException(id + " is not a valid stream id.");
+                    throw new WrappedInvalidTopologyException(id + " is not a valid stream id.");
                 }
             }
         }
@@ -122,7 +123,7 @@ public class StormCommon {
 
         List<String> offending = Utils.getRepeat(componentIds);
         if (!offending.isEmpty()) {
-            throw new InvalidTopologyException("Duplicate component ids: " + offending);
+            throw new WrappedInvalidTopologyException("Duplicate component ids: " + offending);
         }
     }
 
@@ -166,7 +167,7 @@ public class StormCommon {
                 for (Object obj : spoutComponents.values()) {
                     ComponentCommon common = getComponentCommon(obj);
                     if (!isEmptyInputs(common)) {
-                        throw new InvalidTopologyException("May not declare inputs for a spout");
+                        throw new WrappedInvalidTopologyException("May not declare inputs for a spout");
                     }
                 }
             }
@@ -179,7 +180,8 @@ public class StormCommon {
             int parallelismHintNum = Thrift.getParallelismHint(common);
             Integer taskNum = ObjectReader.getInt(conf.get(Config.TOPOLOGY_TASKS), 0);
             if (taskNum > 0 && parallelismHintNum <= 0) {
-                throw new InvalidTopologyException("Number of executors must be greater than 0 when number of tasks is greater than 0");
+                throw new WrappedInvalidTopologyException(
+                        "Number of executors must be greater than 0 when number of tasks is greater than 0");
             }
         }
     }
@@ -202,15 +204,15 @@ public class StormCommon {
                 String sourceStreamId = input.getKey().get_streamId();
                 String sourceComponentId = input.getKey().get_componentId();
                 if (!componentMap.keySet().contains(sourceComponentId)) {
-                    throw new InvalidTopologyException("Component: [" + componentId +
-                                                       "] subscribes from non-existent component [" + sourceComponentId + "]");
+                    throw new WrappedInvalidTopologyException("Component: [" + componentId
+                                                       + "] subscribes from non-existent component [" + sourceComponentId + "]");
                 }
 
                 ComponentCommon sourceComponent = getComponentCommon(componentMap.get(sourceComponentId));
                 if (!sourceComponent.get_streams().containsKey(sourceStreamId)) {
-                    throw new InvalidTopologyException("Component: [" + componentId +
-                                                       "] subscribes from non-existent stream: " +
-                                                       "[" + sourceStreamId + "] of component [" + sourceComponentId + "]");
+                    throw new WrappedInvalidTopologyException("Component: [" + componentId
+                                                       + "] subscribes from non-existent stream: "
+                                                       + "[" + sourceStreamId + "] of component [" + sourceComponentId + "]");
                 }
 
                 Grouping grouping = input.getValue();
@@ -220,9 +222,9 @@ public class StormCommon {
                     Set<String> sourceOutputFields = getStreamOutputFields(streams);
                     fields.removeAll(sourceOutputFields);
                     if (fields.size() != 0) {
-                        throw new InvalidTopologyException("Component: [" + componentId +
-                                                           "] subscribes from stream: [" + sourceStreamId + "] of component " +
-                                                           "[" + sourceComponentId + "] + with non-existent fields: " + fields);
+                        throw new WrappedInvalidTopologyException("Component: [" + componentId
+                                                           + "] subscribes from stream: [" + sourceStreamId + "] of component "
+                                                           + "[" + sourceComponentId + "] + with non-existent fields: " + fields);
                     }
                 }
             }

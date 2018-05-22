@@ -56,6 +56,7 @@ import org.apache.storm.utils.NimbusLeaderNotFoundException;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -515,7 +516,7 @@ public class AsyncLocalizer implements AutoCloseable {
     List<LocalizedResource> getBlobs(List<LocalResource> localResources, PortAndAssignment pna, BlobChangingCallback cb)
         throws AuthorizationException, KeyNotFoundException, IOException {
         if ((boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
-            throw new KeyNotFoundException("symlinks are disabled so blobs cannot be downloaded.");
+            throw new WrappedKeyNotFoundException("symlinks are disabled so blobs cannot be downloaded.");
         }
         String user = pna.getOwner();
         ArrayList<LocalizedResource> results = new ArrayList<>();

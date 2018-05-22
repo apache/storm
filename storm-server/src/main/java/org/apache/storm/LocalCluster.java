@@ -104,6 +104,8 @@ import org.apache.storm.utils.StormCommonInstaller;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.WrappedAuthorizationException;
+import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
@@ -141,6 +143,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     private final StormCommonInstaller commonInstaller;
     private final SimulatedTime time;
     private final NimbusClient.LocalOverride nimbusOverride;
+
     /**
      * Create a default LocalCluster.
      *
@@ -662,9 +665,9 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         Random rand = ThreadLocalRandom.current();
         //wait until all workers, supervisors, and nimbus is waiting
         final long endTime = System.currentTimeMillis() + timeoutMs;
-        while (!(nimbus.isWaiting() &&
-                 areAllSupervisorsWaiting() &&
-                 areAllWorkersWaiting())) {
+        while (!(nimbus.isWaiting()
+                 && areAllSupervisorsWaiting()
+                 && areAllWorkersWaiting())) {
             if (System.currentTimeMillis() >= endTime) {
                 LOG.info("Cluster was not idle in {} ms", timeoutMs);
                 LOG.info(Utils.threadDump());
@@ -765,7 +768,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public String beginUpdateBlob(String key) throws AuthorizationException, KeyNotFoundException, TException {
-        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedKeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override
@@ -785,19 +788,19 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public ReadableBlobMeta getBlobMeta(String key) throws AuthorizationException, KeyNotFoundException, TException {
-        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedKeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override
     public void setBlobMeta(String key, SettableBlobMeta meta)
         throws AuthorizationException, KeyNotFoundException, TException {
-        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedKeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override
     public BeginDownloadResult beginBlobDownload(String key)
         throws AuthorizationException, KeyNotFoundException, TException {
-        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedKeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override
@@ -807,7 +810,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public void deleteBlob(String key) throws AuthorizationException, KeyNotFoundException, TException {
-        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedKeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override
@@ -820,13 +823,13 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public int getBlobReplication(String key) throws AuthorizationException, KeyNotFoundException, TException {
-        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedKeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override
     public int updateBlobReplication(String key, int replication)
         throws AuthorizationException, KeyNotFoundException, TException {
-        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedKeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override
@@ -853,12 +856,12 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public String beginFileDownload(String file) throws AuthorizationException, TException {
-        throw new AuthorizationException("FILE DOWNLOAD NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedAuthorizationException("FILE DOWNLOAD NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override
     public ByteBuffer downloadChunk(String id) throws AuthorizationException, TException {
-        throw new AuthorizationException("FILE DOWNLOAD NOT SUPPORTED IN LOCAL MODE");
+        throw new WrappedAuthorizationException("FILE DOWNLOAD NOT SUPPORTED IN LOCAL MODE");
     }
 
     @Override

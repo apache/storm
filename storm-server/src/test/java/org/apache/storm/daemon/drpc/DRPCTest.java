@@ -106,7 +106,7 @@ public class DRPCTest {
                 fail("exec did not throw an exception");
             } catch (ExecutionException e) {
                 Throwable t = e.getCause();
-                assertEquals(t.getClass(), DRPCExecutionException.class);
+                assertTrue(t instanceof DRPCExecutionException);
                 //Don't know a better way to validate that it failed.
                 assertEquals(DRPCExceptionType.FAILED_REQUEST, ((DRPCExecutionException) t).get_type());
             }

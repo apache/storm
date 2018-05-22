@@ -22,6 +22,7 @@ import java.util.concurrent.Semaphore;
 import org.apache.storm.generated.DRPCExceptionType;
 import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
+import org.apache.storm.utils.WrappedDRPCExecutionException;
 
 public class BlockingOutstandingRequest extends OutstandingRequest {
     public static final RequestFactory<BlockingOutstandingRequest> FACTORY =
@@ -47,7 +48,7 @@ public class BlockingOutstandingRequest extends OutstandingRequest {
         }
 
         if (_e == null) {
-            _e = new DRPCExecutionException("Internal Error: No Result and No Exception");
+            _e = new WrappedDRPCExecutionException("Internal Error: No Result and No Exception");
             _e.set_type(DRPCExceptionType.INTERNAL_ERROR);
         }
         throw _e;

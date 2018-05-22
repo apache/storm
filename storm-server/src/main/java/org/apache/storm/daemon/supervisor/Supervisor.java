@@ -71,6 +71,8 @@ import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.VersionInfo;
+import org.apache.storm.utils.WrappedAuthorizationException;
+import org.apache.storm.utils.WrappedNotAliveException;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
 import org.slf4j.Logger;
@@ -347,15 +349,15 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         if (context.isImpersonating()) {
             LOG.warn("principal: {} is trying to impersonate principal: {}", context.realPrincipal(),
                      context.principal());
-            throw new AuthorizationException("Supervisor does not support impersonation");
+            throw new WrappedAuthorizationException("Supervisor does not support impersonation");
         }
 
         if (aclHandler != null) {
             if (!aclHandler.permit(context, operation, checkConf)) {
                 ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(), context.principal(),
                                              operation, topoName, "access-denied");
-                throw new AuthorizationException(operation + (topoName != null ? " on topology " + topoName : "") +
-                                                 " is not authorized");
+                throw new WrappedAuthorizationException(operation + (topoName != null ? " on topology " + topoName : "")
+                                                 + " is not authorized");
             } else {
                 ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(), context.principal(),
                                              operation, topoName, "access-granted");
@@ -398,7 +400,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                     checkAuthorization(id, topoConf, "getLocalAssignmentForStorm");
                     Assignment assignment = getStormClusterState().assignmentInfo(id, null);
                     if (null == assignment) {
-                        throw new NotAliveException("No local assignment assigned for storm: "
+                        throw new WrappedNotAliveException("No local assignment assigned for storm: "
                                                     + id
                                                     + " for node: "
                                                     + getHostName());
@@ -416,7 +418,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                         topoConf = ConfigUtils.readSupervisorStormConf(conf, id);
                     } catch (IOException e) {
                         LOG.warn("Topology config is not localized yet...");
-                        throw new NotAliveException(id + " does not appear to be alive, you should probably exit");
+                        throw new WrappedNotAliveException(id + " does not appear to be alive, you should probably exit");
                     }
                     checkAuthorization(id, topoConf, "sendSupervisorWorkerHeartbeat");
                 }
