@@ -49,29 +49,51 @@ limitations under the License.
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-hdfs-blobstore</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <!--log4j-over-slf4j must be excluded for hadoop-minicluster
-                    see: http://stackoverflow.com/q/20469026/3542091 -->
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>log4j-over-slf4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <artifactId>hadoop-hdfs</artifactId>
             <groupId>org.apache.hadoop</groupId>
             <version>${hdfs.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <artifactId>hadoop-client</artifactId>
             <groupId>org.apache.hadoop</groupId>
-            <version>${hadoop.version}</version>
+	    <version>${hadoop.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <artifactId>hadoop-common</artifactId>
             <groupId>org.apache.hadoop</groupId>
-            <version>${hadoop.version}</version>
+	    <version>${hadoop.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>

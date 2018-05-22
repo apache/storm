@@ -210,6 +210,7 @@ import org.apache.zookeeper.data.ACL;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @VisibleForTesting
@@ -259,7 +260,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final Meter processWorkerMetricsCalls = StormMetricsRegistry.registerMeter("nimbus:process-worker-metric-calls");
     private static final String STORM_VERSION = VersionInfo.getVersion();
 
-    public static List<ACL> getNimbusAcls(Map<String, Object> conf) {
+    private static List<ACL> getNimbusAcls(Map<String, Object> conf) {
         List<ACL> acls = null;
         if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
             acls = ZK_ACLS;
@@ -1109,6 +1110,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     public static void main(String[] args) throws Exception {
+        SysOutOverSLF4J.sendSystemOutAndErrToSLF4J();
         Utils.setupDefaultUncaughtExceptionHandler();
         launch(new StandaloneINimbus());
     }
