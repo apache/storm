@@ -13,6 +13,7 @@
 package org.apache.storm.hbase.bolt;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang.Validate;
@@ -51,7 +52,8 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
 
         Map<String, Object> conf = (Map<String, Object>) topoConf.get(this.configKey);
         if (conf == null) {
-            throw new IllegalArgumentException("HBase configuration not found using key '" + this.configKey + "'");
+            LOG.warn("HBase configuration not found using key '" + this.configKey + "'");
+            conf = Collections.emptyMap();
         }
 
         if (conf.get("hbase.rootdir") == null) {
@@ -63,7 +65,7 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
 
         //heck for backward compatibility, we need to pass TOPOLOGY_AUTO_CREDENTIALS to hbase conf
         //the conf instance is instance of persistentMap so making a copy.
-        Map<String, Object> hbaseConfMap = new HashMap<String, Object>(conf);
+        Map<String, Object> hbaseConfMap = new HashMap<>(conf);
         hbaseConfMap.put(Config.TOPOLOGY_AUTO_CREDENTIALS, topoConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS));
         this.hBaseClient = new HBaseClient(hbaseConfMap, hbConfig, tableName);
     }
