@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.trident;
 
+import java.util.Properties;
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.rocketmq.RocketMqConfig;
@@ -36,8 +36,6 @@ import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.testing.FixedBatchSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
-import java.util.Properties;
 
 public class WordCountTrident {
 
@@ -76,19 +74,16 @@ public class WordCountTrident {
     public static void main(String[] args) throws Exception {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
-        if (args.length == 2) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(args[0], args[1]));) {
-                Thread.sleep(60 * 1000);
-            }
-            System.exit(0);
-        }
-        else if(args.length == 3) {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[2], conf, buildTopology(args[0], args[1]));
-        } else{
+        conf.setNumWorkers(3);
+
+        String topologyName = "wordCounter";
+        if (args.length < 2) {
             System.out.println("Usage: WordCountTrident <nameserver addr> <topic> [topology name]");
+        } else {
+            if (args.length > 3) {
+                topologyName = args[2];
+            }
+            StormSubmitter.submitTopology(topologyName, conf, buildTopology(args[0], args[1]));
         }
     }
-
 }
