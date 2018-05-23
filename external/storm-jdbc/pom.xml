@@ -36,7 +36,7 @@
     </developers>
 
     <properties>
-        <hikari.version>2.4.3</hikari.version>
+        <hikari.version>2.4.7</hikari.version>
     </properties>
 
     <dependencies>
