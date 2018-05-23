@@ -84,7 +84,7 @@ public class WordCountTrident {
         if (args.length == 2) {
             topoName = args[1];
         } else if (args.length > 2) {
-            System.out.println("Usage: TridentFileTopology <hdfs url> [topology name]");
+            System.out.println("Usage: WordCountTrident <hbase.rootdir> [topology name]");
             return;
         }
         conf.setNumWorkers(3);

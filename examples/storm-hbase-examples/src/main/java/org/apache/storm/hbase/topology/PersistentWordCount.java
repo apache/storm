@@ -33,7 +33,7 @@ public class PersistentWordCount {
     public static void main(String[] args) throws Exception {
         Config config = new Config();
 
-        Map<String, Object> hbConf = new HashMap<String, Object>();
+        Map<String, Object> hbConf = new HashMap<>();
         if (args.length > 0) {
             hbConf.put("hbase.rootdir", args[0]);
         }
