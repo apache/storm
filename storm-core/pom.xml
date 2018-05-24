@@ -140,11 +140,6 @@
             <artifactId>data.codec</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-          <groupId>org.clojure</groupId>
-          <artifactId>java.jmx</artifactId>
-          <version>${java_jmx.version}</version>
-        </dependency>
 
         <!--java-->
         <dependency>
@@ -224,10 +219,6 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jgrapht</groupId>
