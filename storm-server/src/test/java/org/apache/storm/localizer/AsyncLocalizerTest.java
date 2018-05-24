@@ -597,6 +597,7 @@ public class AsyncLocalizerTest {
             ReadableBlobMeta rbm = new ReadableBlobMeta();
             rbm.set_settable(new SettableBlobMeta(WORLD_EVERYTHING));
             when(mockblobstore.getBlobMeta(anyString())).thenReturn(rbm);
+            when(mockblobstore.isRemoteBlobExists(anyString())).thenReturn(true);
             when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(0));
             when(mockblobstore.getBlob(key2)).thenReturn(new TestInputStreamWithMeta(0));
             when(mockblobstore.getBlob(key3)).thenReturn(new TestInputStreamWithMeta(0));

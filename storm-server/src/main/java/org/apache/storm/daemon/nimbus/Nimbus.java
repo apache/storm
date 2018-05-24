@@ -4472,6 +4472,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 
+    @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException, TException {
+        try {
+            blobStore.getBlobMeta(blobKey, getSubject());
+        } catch (KeyNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
+
     private static final class Assoc<K, V> implements UnaryOperator<Map<K, V>> {
         private final K key;
         private final V value;

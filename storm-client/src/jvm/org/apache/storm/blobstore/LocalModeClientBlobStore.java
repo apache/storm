@@ -58,6 +58,16 @@ public class LocalModeClientBlobStore extends ClientBlobStore {
     }
 
     @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
+        try {
+            wrapped.getBlob(blobKey, null);
+        } catch (KeyNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     protected void setBlobMetaToExtend(String key, SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException {
         wrapped.setBlobMeta(key, meta, null);
     }
