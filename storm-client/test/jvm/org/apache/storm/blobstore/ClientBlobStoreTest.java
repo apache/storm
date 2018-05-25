@@ -138,6 +138,11 @@ public class ClientBlobStoreTest {
         }
 
         @Override
+        public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
+            return allBlobs.containsKey(blobKey);
+        }
+
+        @Override
         protected void setBlobMetaToExtend(String key, SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException {
         }
 

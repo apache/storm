@@ -797,6 +797,10 @@ service Nimbus {
    */
   void sendSupervisorWorkerHeartbeat(1: SupervisorWorkerHeartbeat heatbeat) throws (1: AuthorizationException aze, 2: NotAliveException e);
   void processWorkerMetrics(1: WorkerMetrics metrics);
+  /**
+   * Decide if the blob is removed from cluster.
+   */
+  bool isRemoteBlobExists(1: string blobKey) throws (1: AuthorizationException aze);
 }
 
 struct DRPCRequest {

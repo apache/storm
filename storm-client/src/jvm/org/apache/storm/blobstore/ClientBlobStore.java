@@ -91,6 +91,12 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
     public abstract ReadableBlobMeta getBlobMeta(String key) throws AuthorizationException, KeyNotFoundException;
 
     /**
+     * Decide if the blob is deleted from cluster.
+     * @param blobKey blob key
+     */
+    public abstract boolean isRemoteBlobExists(String blobKey) throws AuthorizationException;
+
+    /**
      * Client facing API to set the metadata for a blob.
      *
      * @param key  blob key name.

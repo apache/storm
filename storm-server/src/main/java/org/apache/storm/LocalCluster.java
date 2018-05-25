@@ -483,6 +483,11 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
     public synchronized void close() throws Exception {
         if (nimbusOverride != null) {
             nimbusOverride.close();

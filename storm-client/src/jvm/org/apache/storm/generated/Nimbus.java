@@ -166,6 +166,13 @@ public class Nimbus {
 
     public void processWorkerMetrics(WorkerMetrics metrics) throws org.apache.thrift.TException;
 
+    /**
+     * Decide if the blob is removed from cluster.
+     * 
+     * @param blobKey
+     */
+    public boolean isRemoteBlobExists(java.lang.String blobKey) throws AuthorizationException, org.apache.thrift.TException;
+
   }
 
   public interface AsyncIface {
@@ -269,6 +276,8 @@ public class Nimbus {
     public void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heatbeat, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws org.apache.thrift.TException;
 
     public void processWorkerMetrics(WorkerMetrics metrics, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws org.apache.thrift.TException;
+
+    public void isRemoteBlobExists(java.lang.String blobKey, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.thrift.TException;
 
   }
 
@@ -1619,6 +1628,32 @@ public class Nimbus {
       processWorkerMetrics_result result = new processWorkerMetrics_result();
       receiveBase(result, "processWorkerMetrics");
       return;
+    }
+
+    public boolean isRemoteBlobExists(java.lang.String blobKey) throws AuthorizationException, org.apache.thrift.TException
+    {
+      send_isRemoteBlobExists(blobKey);
+      return recv_isRemoteBlobExists();
+    }
+
+    public void send_isRemoteBlobExists(java.lang.String blobKey) throws org.apache.thrift.TException
+    {
+      isRemoteBlobExists_args args = new isRemoteBlobExists_args();
+      args.set_blobKey(blobKey);
+      sendBase("isRemoteBlobExists", args);
+    }
+
+    public boolean recv_isRemoteBlobExists() throws AuthorizationException, org.apache.thrift.TException
+    {
+      isRemoteBlobExists_result result = new isRemoteBlobExists_result();
+      receiveBase(result, "isRemoteBlobExists");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.aze != null) {
+        throw result.aze;
+      }
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "isRemoteBlobExists failed: unknown result");
     }
 
   }
@@ -3317,6 +3352,38 @@ public class Nimbus {
       }
     }
 
+    public void isRemoteBlobExists(java.lang.String blobKey, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      isRemoteBlobExists_call method_call = new isRemoteBlobExists_call(blobKey, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class isRemoteBlobExists_call extends org.apache.thrift.async.TAsyncMethodCall<java.lang.Boolean> {
+      private java.lang.String blobKey;
+      public isRemoteBlobExists_call(java.lang.String blobKey, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.blobKey = blobKey;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("isRemoteBlobExists", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        isRemoteBlobExists_args args = new isRemoteBlobExists_args();
+        args.set_blobKey(blobKey);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public java.lang.Boolean getResult() throws AuthorizationException, org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new java.lang.IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_isRemoteBlobExists();
+      }
+    }
+
   }
 
   public static class Processor<I extends Iface> extends org.apache.thrift.TBaseProcessor<I> implements org.apache.thrift.TProcessor {
@@ -3380,6 +3447,7 @@ public class Nimbus {
       processMap.put("sendSupervisorWorkerHeartbeats", new sendSupervisorWorkerHeartbeats());
       processMap.put("sendSupervisorWorkerHeartbeat", new sendSupervisorWorkerHeartbeat());
       processMap.put("processWorkerMetrics", new processWorkerMetrics());
+      processMap.put("isRemoteBlobExists", new isRemoteBlobExists());
       return processMap;
     }
 
@@ -4868,6 +4936,36 @@ public class Nimbus {
       }
     }
 
+    public static class isRemoteBlobExists<I extends Iface> extends org.apache.thrift.ProcessFunction<I, isRemoteBlobExists_args> {
+      public isRemoteBlobExists() {
+        super("isRemoteBlobExists");
+      }
+
+      public isRemoteBlobExists_args getEmptyArgsInstance() {
+        return new isRemoteBlobExists_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      @Override
+      protected boolean handleRuntimeExceptions() {
+        return false;
+      }
+
+      public isRemoteBlobExists_result getResult(I iface, isRemoteBlobExists_args args) throws org.apache.thrift.TException {
+        isRemoteBlobExists_result result = new isRemoteBlobExists_result();
+        try {
+          result.success = iface.isRemoteBlobExists(args.blobKey);
+          result.set_success_isSet(true);
+        } catch (AuthorizationException aze) {
+          result.aze = aze;
+        }
+        return result;
+      }
+    }
+
   }
 
   public static class AsyncProcessor<I extends AsyncIface> extends org.apache.thrift.TBaseAsyncProcessor<I> {
@@ -4931,6 +5029,7 @@ public class Nimbus {
       processMap.put("sendSupervisorWorkerHeartbeats", new sendSupervisorWorkerHeartbeats());
       processMap.put("sendSupervisorWorkerHeartbeat", new sendSupervisorWorkerHeartbeat());
       processMap.put("processWorkerMetrics", new processWorkerMetrics());
+      processMap.put("isRemoteBlobExists", new isRemoteBlobExists());
       return processMap;
     }
 
@@ -8254,6 +8353,72 @@ public class Nimbus {
 
       public void start(I iface, processWorkerMetrics_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws org.apache.thrift.TException {
         iface.processWorkerMetrics(args.metrics,resultHandler);
+      }
+    }
+
+    public static class isRemoteBlobExists<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, isRemoteBlobExists_args, java.lang.Boolean> {
+      public isRemoteBlobExists() {
+        super("isRemoteBlobExists");
+      }
+
+      public isRemoteBlobExists_args getEmptyArgsInstance() {
+        return new isRemoteBlobExists_args();
+      }
+
+      public org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> getResultHandler(final org.apache.thrift.server.AbstractNonblockingServer.AsyncFrameBuffer fb, final int seqid) {
+        final org.apache.thrift.AsyncProcessFunction fcall = this;
+        return new org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean>() { 
+          public void onComplete(java.lang.Boolean o) {
+            isRemoteBlobExists_result result = new isRemoteBlobExists_result();
+            result.success = o;
+            result.set_success_isSet(true);
+            try {
+              fcall.sendResponse(fb, result, org.apache.thrift.protocol.TMessageType.REPLY,seqid);
+            } catch (org.apache.thrift.transport.TTransportException e) {
+              _LOGGER.error("TTransportException writing to internal frame buffer", e);
+              fb.close();
+            } catch (java.lang.Exception e) {
+              _LOGGER.error("Exception writing to internal frame buffer", e);
+              onError(e);
+            }
+          }
+          public void onError(java.lang.Exception e) {
+            byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
+            org.apache.thrift.TSerializable msg;
+            isRemoteBlobExists_result result = new isRemoteBlobExists_result();
+            if (e instanceof AuthorizationException) {
+              result.aze = (AuthorizationException) e;
+              result.set_aze_isSet(true);
+              msg = result;
+            } else if (e instanceof org.apache.thrift.transport.TTransportException) {
+              _LOGGER.error("TTransportException inside handler", e);
+              fb.close();
+              return;
+            } else if (e instanceof org.apache.thrift.TApplicationException) {
+              _LOGGER.error("TApplicationException inside handler", e);
+              msgType = org.apache.thrift.protocol.TMessageType.EXCEPTION;
+              msg = (org.apache.thrift.TApplicationException)e;
+            } else {
+              _LOGGER.error("Exception inside handler", e);
+              msgType = org.apache.thrift.protocol.TMessageType.EXCEPTION;
+              msg = new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.INTERNAL_ERROR, e.getMessage());
+            }
+            try {
+              fcall.sendResponse(fb,msg,msgType,seqid);
+            } catch (java.lang.Exception ex) {
+              _LOGGER.error("Exception writing to internal frame buffer", ex);
+              fb.close();
+            }
+          }
+        };
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public void start(I iface, isRemoteBlobExists_args args, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.thrift.TException {
+        iface.isRemoteBlobExists(args.blobKey,resultHandler);
       }
     }
 
@@ -52447,6 +52612,827 @@ public class Nimbus {
       @Override
       public void read(org.apache.thrift.protocol.TProtocol prot, processWorkerMetrics_result struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
+      }
+    }
+
+    private static <S extends org.apache.thrift.scheme.IScheme> S scheme(org.apache.thrift.protocol.TProtocol proto) {
+      return (org.apache.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  public static class isRemoteBlobExists_args implements org.apache.thrift.TBase<isRemoteBlobExists_args, isRemoteBlobExists_args._Fields>, java.io.Serializable, Cloneable, Comparable<isRemoteBlobExists_args>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("isRemoteBlobExists_args");
+
+    private static final org.apache.thrift.protocol.TField BLOB_KEY_FIELD_DESC = new org.apache.thrift.protocol.TField("blobKey", org.apache.thrift.protocol.TType.STRING, (short)1);
+
+    private static final org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new isRemoteBlobExists_argsStandardSchemeFactory();
+    private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new isRemoteBlobExists_argsTupleSchemeFactory();
+
+    private java.lang.String blobKey; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      BLOB_KEY((short)1, "blobKey");
+
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // BLOB_KEY
+            return BLOB_KEY;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(java.lang.String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+
+      _Fields(short thriftId, java.lang.String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public java.lang.String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.BLOB_KEY, new org.apache.thrift.meta_data.FieldMetaData("blobKey", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(isRemoteBlobExists_args.class, metaDataMap);
+    }
+
+    public isRemoteBlobExists_args() {
+    }
+
+    public isRemoteBlobExists_args(
+      java.lang.String blobKey)
+    {
+      this();
+      this.blobKey = blobKey;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public isRemoteBlobExists_args(isRemoteBlobExists_args other) {
+      if (other.is_set_blobKey()) {
+        this.blobKey = other.blobKey;
+      }
+    }
+
+    public isRemoteBlobExists_args deepCopy() {
+      return new isRemoteBlobExists_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.blobKey = null;
+    }
+
+    public java.lang.String get_blobKey() {
+      return this.blobKey;
+    }
+
+    public void set_blobKey(java.lang.String blobKey) {
+      this.blobKey = blobKey;
+    }
+
+    public void unset_blobKey() {
+      this.blobKey = null;
+    }
+
+    /** Returns true if field blobKey is set (has been assigned a value) and false otherwise */
+    public boolean is_set_blobKey() {
+      return this.blobKey != null;
+    }
+
+    public void set_blobKey_isSet(boolean value) {
+      if (!value) {
+        this.blobKey = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, java.lang.Object value) {
+      switch (field) {
+      case BLOB_KEY:
+        if (value == null) {
+          unset_blobKey();
+        } else {
+          set_blobKey((java.lang.String)value);
+        }
+        break;
+
+      }
+    }
+
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) {
+      case BLOB_KEY:
+        return get_blobKey();
+
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new java.lang.IllegalArgumentException();
+      }
+
+      switch (field) {
+      case BLOB_KEY:
+        return is_set_blobKey();
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof isRemoteBlobExists_args)
+        return this.equals((isRemoteBlobExists_args)that);
+      return false;
+    }
+
+    public boolean equals(isRemoteBlobExists_args that) {
+      if (that == null)
+        return false;
+      if (this == that)
+        return true;
+
+      boolean this_present_blobKey = true && this.is_set_blobKey();
+      boolean that_present_blobKey = true && that.is_set_blobKey();
+      if (this_present_blobKey || that_present_blobKey) {
+        if (!(this_present_blobKey && that_present_blobKey))
+          return false;
+        if (!this.blobKey.equals(that.blobKey))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = 1;
+
+      hashCode = hashCode * 8191 + ((is_set_blobKey()) ? 131071 : 524287);
+      if (is_set_blobKey())
+        hashCode = hashCode * 8191 + blobKey.hashCode();
+
+      return hashCode;
+    }
+
+    @Override
+    public int compareTo(isRemoteBlobExists_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = java.lang.Boolean.valueOf(is_set_blobKey()).compareTo(other.is_set_blobKey());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_blobKey()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.blobKey, other.blobKey);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      scheme(iprot).read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      scheme(oprot).write(oprot, this);
+    }
+
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("isRemoteBlobExists_args(");
+      boolean first = true;
+
+      sb.append("blobKey:");
+      if (this.blobKey == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.blobKey);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class isRemoteBlobExists_argsStandardSchemeFactory implements org.apache.thrift.scheme.SchemeFactory {
+      public isRemoteBlobExists_argsStandardScheme getScheme() {
+        return new isRemoteBlobExists_argsStandardScheme();
+      }
+    }
+
+    private static class isRemoteBlobExists_argsStandardScheme extends org.apache.thrift.scheme.StandardScheme<isRemoteBlobExists_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, isRemoteBlobExists_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // BLOB_KEY
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+                struct.blobKey = iprot.readString();
+                struct.set_blobKey_isSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, isRemoteBlobExists_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.blobKey != null) {
+          oprot.writeFieldBegin(BLOB_KEY_FIELD_DESC);
+          oprot.writeString(struct.blobKey);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class isRemoteBlobExists_argsTupleSchemeFactory implements org.apache.thrift.scheme.SchemeFactory {
+      public isRemoteBlobExists_argsTupleScheme getScheme() {
+        return new isRemoteBlobExists_argsTupleScheme();
+      }
+    }
+
+    private static class isRemoteBlobExists_argsTupleScheme extends org.apache.thrift.scheme.TupleScheme<isRemoteBlobExists_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, isRemoteBlobExists_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TTupleProtocol oprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet optionals = new java.util.BitSet();
+        if (struct.is_set_blobKey()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.is_set_blobKey()) {
+          oprot.writeString(struct.blobKey);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, isRemoteBlobExists_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.blobKey = iprot.readString();
+          struct.set_blobKey_isSet(true);
+        }
+      }
+    }
+
+    private static <S extends org.apache.thrift.scheme.IScheme> S scheme(org.apache.thrift.protocol.TProtocol proto) {
+      return (org.apache.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  public static class isRemoteBlobExists_result implements org.apache.thrift.TBase<isRemoteBlobExists_result, isRemoteBlobExists_result._Fields>, java.io.Serializable, Cloneable, Comparable<isRemoteBlobExists_result>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("isRemoteBlobExists_result");
+
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.BOOL, (short)0);
+    private static final org.apache.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.thrift.protocol.TField("aze", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new isRemoteBlobExists_resultStandardSchemeFactory();
+    private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new isRemoteBlobExists_resultTupleSchemeFactory();
+
+    private boolean success; // required
+    private AuthorizationException aze; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      AZE((short)1, "aze");
+
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // AZE
+            return AZE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(java.lang.String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+
+      _Fields(short thriftId, java.lang.String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public java.lang.String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    private static final int __SUCCESS_ISSET_ID = 0;
+    private byte __isset_bitfield = 0;
+    public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
+      tmpMap.put(_Fields.AZE, new org.apache.thrift.meta_data.FieldMetaData("aze", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(isRemoteBlobExists_result.class, metaDataMap);
+    }
+
+    public isRemoteBlobExists_result() {
+    }
+
+    public isRemoteBlobExists_result(
+      boolean success,
+      AuthorizationException aze)
+    {
+      this();
+      this.success = success;
+      set_success_isSet(true);
+      this.aze = aze;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public isRemoteBlobExists_result(isRemoteBlobExists_result other) {
+      __isset_bitfield = other.__isset_bitfield;
+      this.success = other.success;
+      if (other.is_set_aze()) {
+        this.aze = new AuthorizationException(other.aze);
+      }
+    }
+
+    public isRemoteBlobExists_result deepCopy() {
+      return new isRemoteBlobExists_result(this);
+    }
+
+    @Override
+    public void clear() {
+      set_success_isSet(false);
+      this.success = false;
+      this.aze = null;
+    }
+
+    public boolean is_success() {
+      return this.success;
+    }
+
+    public void set_success(boolean success) {
+      this.success = success;
+      set_success_isSet(true);
+    }
+
+    public void unset_success() {
+      __isset_bitfield = org.apache.thrift.EncodingUtils.clearBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return org.apache.thrift.EncodingUtils.testBit(__isset_bitfield, __SUCCESS_ISSET_ID);
+    }
+
+    public void set_success_isSet(boolean value) {
+      __isset_bitfield = org.apache.thrift.EncodingUtils.setBit(__isset_bitfield, __SUCCESS_ISSET_ID, value);
+    }
+
+    public AuthorizationException get_aze() {
+      return this.aze;
+    }
+
+    public void set_aze(AuthorizationException aze) {
+      this.aze = aze;
+    }
+
+    public void unset_aze() {
+      this.aze = null;
+    }
+
+    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
+    public boolean is_set_aze() {
+      return this.aze != null;
+    }
+
+    public void set_aze_isSet(boolean value) {
+      if (!value) {
+        this.aze = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, java.lang.Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((java.lang.Boolean)value);
+        }
+        break;
+
+      case AZE:
+        if (value == null) {
+          unset_aze();
+        } else {
+          set_aze((AuthorizationException)value);
+        }
+        break;
+
+      }
+    }
+
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return is_success();
+
+      case AZE:
+        return get_aze();
+
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new java.lang.IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case AZE:
+        return is_set_aze();
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof isRemoteBlobExists_result)
+        return this.equals((isRemoteBlobExists_result)that);
+      return false;
+    }
+
+    public boolean equals(isRemoteBlobExists_result that) {
+      if (that == null)
+        return false;
+      if (this == that)
+        return true;
+
+      boolean this_present_success = true;
+      boolean that_present_success = true;
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (this.success != that.success)
+          return false;
+      }
+
+      boolean this_present_aze = true && this.is_set_aze();
+      boolean that_present_aze = true && that.is_set_aze();
+      if (this_present_aze || that_present_aze) {
+        if (!(this_present_aze && that_present_aze))
+          return false;
+        if (!this.aze.equals(that.aze))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = 1;
+
+      hashCode = hashCode * 8191 + ((success) ? 131071 : 524287);
+
+      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
+      if (is_set_aze())
+        hashCode = hashCode * 8191 + aze.hashCode();
+
+      return hashCode;
+    }
+
+    @Override
+    public int compareTo(isRemoteBlobExists_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = java.lang.Boolean.valueOf(is_set_success()).compareTo(other.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, other.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_aze()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.aze, other.aze);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      scheme(iprot).read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      scheme(oprot).write(oprot, this);
+      }
+
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("isRemoteBlobExists_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      sb.append(this.success);
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("aze:");
+      if (this.aze == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.aze);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
+      try {
+        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+        __isset_bitfield = 0;
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class isRemoteBlobExists_resultStandardSchemeFactory implements org.apache.thrift.scheme.SchemeFactory {
+      public isRemoteBlobExists_resultStandardScheme getScheme() {
+        return new isRemoteBlobExists_resultStandardScheme();
+      }
+    }
+
+    private static class isRemoteBlobExists_resultStandardScheme extends org.apache.thrift.scheme.StandardScheme<isRemoteBlobExists_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, isRemoteBlobExists_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.BOOL) {
+                struct.success = iprot.readBool();
+                struct.set_success_isSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            case 1: // AZE
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.aze = new AuthorizationException();
+                struct.aze.read(iprot);
+                struct.set_aze_isSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, isRemoteBlobExists_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.is_set_success()) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          oprot.writeBool(struct.success);
+          oprot.writeFieldEnd();
+        }
+        if (struct.aze != null) {
+          oprot.writeFieldBegin(AZE_FIELD_DESC);
+          struct.aze.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class isRemoteBlobExists_resultTupleSchemeFactory implements org.apache.thrift.scheme.SchemeFactory {
+      public isRemoteBlobExists_resultTupleScheme getScheme() {
+        return new isRemoteBlobExists_resultTupleScheme();
+      }
+    }
+
+    private static class isRemoteBlobExists_resultTupleScheme extends org.apache.thrift.scheme.TupleScheme<isRemoteBlobExists_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, isRemoteBlobExists_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TTupleProtocol oprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet optionals = new java.util.BitSet();
+        if (struct.is_set_success()) {
+          optionals.set(0);
+        }
+        if (struct.is_set_aze()) {
+          optionals.set(1);
+        }
+        oprot.writeBitSet(optionals, 2);
+        if (struct.is_set_success()) {
+          oprot.writeBool(struct.success);
+        }
+        if (struct.is_set_aze()) {
+          struct.aze.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, isRemoteBlobExists_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet incoming = iprot.readBitSet(2);
+        if (incoming.get(0)) {
+          struct.success = iprot.readBool();
+          struct.set_success_isSet(true);
+        }
+        if (incoming.get(1)) {
+          struct.aze = new AuthorizationException();
+          struct.aze.read(iprot);
+          struct.set_aze_isSet(true);
+        }
       }
     }
 

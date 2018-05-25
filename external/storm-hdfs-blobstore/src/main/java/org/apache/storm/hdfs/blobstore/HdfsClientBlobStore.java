@@ -73,6 +73,16 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     }
 
     @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
+        try {
+            _blobStore.getBlob(blobKey, null);
+        } catch (KeyNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public void setBlobMetaToExtend(String key, SettableBlobMeta meta)
             throws AuthorizationException, KeyNotFoundException {
         _blobStore.setBlobMeta(key, meta, null);
