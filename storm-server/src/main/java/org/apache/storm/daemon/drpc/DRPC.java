@@ -19,7 +19,6 @@
 package org.apache.storm.daemon.drpc;
 
 import com.codahale.metrics.Meter;
-import com.google.common.annotations.VisibleForTesting;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +39,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.authorizer.DRPCAuthorizerBase;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.WrappedAuthorizationException;
 import org.apache.storm.utils.WrappedDRPCExecutionException;

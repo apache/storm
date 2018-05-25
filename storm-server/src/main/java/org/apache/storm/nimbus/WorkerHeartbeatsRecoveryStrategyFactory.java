@@ -12,9 +12,9 @@
 
 package org.apache.storm.nimbus;
 
-import com.google.common.base.Preconditions;
 import java.util.Map;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.shade.com.google.common.base.Preconditions;
 import org.apache.storm.utils.ReflectionUtils;
 
 /**

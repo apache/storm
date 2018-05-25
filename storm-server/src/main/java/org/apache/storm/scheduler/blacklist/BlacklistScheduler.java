@@ -12,8 +12,6 @@
 
 package org.apache.storm.scheduler.blacklist;
 
-import com.google.common.collect.EvictingQueue;
-import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +29,8 @@ import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.reporters.LogReporter;
 import org.apache.storm.scheduler.blacklist.strategies.DefaultBlacklistStrategy;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
+import org.apache.storm.shade.com.google.common.collect.EvictingQueue;
+import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
 import org.slf4j.Logger;

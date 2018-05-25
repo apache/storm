@@ -12,8 +12,6 @@
 
 package org.apache.storm.nimbus;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +30,8 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.shade.com.google.common.base.Joiner;
+import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
