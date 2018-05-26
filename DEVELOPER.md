@@ -306,9 +306,14 @@ You can also run tests selectively with `-Dtest=<test_name>`.  This works for bo
 
 Unfortunately you might experience failures in clojure tests which are wrapped in the `maven-clojure-plugin` and thus doesn't provide too much useful output at first sight - you might end up with a maven test failure with an error message as unhelpful as `Clojure failed.`. In this case it's recommended to look into `target/test-reports` of the failed project to see what actual tests have failed or scroll through the maven output looking for obvious issues like missing binaries.
 
-By default integration tests are not run in the test phase. To run Java and Clojure integration tests you must enable the profile
+By default integration tests are not run in the test phase. To run Java and Clojure integration tests you must enable the profile `integration-tests-only`, or `all-tests`.
  
+## Listing dependency licenses
 
+You can generate a list of dependencies and their licenses by running `mvn generate-resources -Dlicense.skipAggregateAddThirdParty=false` in the project root.
+The list will be put in target/generated-sources/license/THIRD-PARTY.txt.
+
+The license aggregation plugin will use the license listed in a dependency's POM. If the license is missing, or incomplete (e.g. due to multiple licenses), you can override the license by describing the dependency in the THIRD-PARTY.properties file in the project root.
 
 <a name="packaging"></a>
 
