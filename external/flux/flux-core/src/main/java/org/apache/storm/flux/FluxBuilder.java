@@ -550,7 +550,7 @@ public class FluxBuilder {
         for (Method method : methods) {
             Class[] paramClasses = method.getParameterTypes();
             if (paramClasses.length == args.size() && method.getName().equals(methodName)) {
-                LOG.debug("found constructor with same number of args..");
+                LOG.debug("found method with same number of args.");
                 boolean invokable = false;
                 if (args.size() == 0) {
                     // it's a method with zero args
@@ -691,6 +691,10 @@ public class FluxBuilder {
                 LOG.debug("Yes, assignment is possible.");
             } else if (isPrimitiveNumber(paramType) || Number.class.isAssignableFrom(paramType)
                     && Number.class.isAssignableFrom(objectType)) {
+                LOG.debug("Param is a number, checking whether argument can be coerced");
+                if (!Number.class.isAssignableFrom(objectType)) {
+                    return false;
+                }
                 LOG.debug("Yes, assignment is possible.");
             } else if (paramType.isEnum() && objectType.equals(String.class)) {
                 LOG.debug("Yes, will convert a String to enum");
