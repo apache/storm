@@ -148,4 +148,8 @@ public class TestBolt extends BaseBasicBolt {
     public static TestBolt newInstance(TestEnum te){
         return new TestBolt(te);
     }
+    
+    public static TestBolt newLongInstance(long l) {
+        return new TestBolt(l);
+    }
 }
