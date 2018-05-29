@@ -93,6 +93,10 @@
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -123,6 +127,7 @@
                             <include>commons-collections:commons-collections</include>
                             <include>org.jctools:jctools-core</include>
                             <include>com.googlecode.json-simple:json-simple</include>
+                            <include>org.yaml:snakeyaml</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -166,6 +171,10 @@
                         <relocation>
                             <pattern>org.json.simple</pattern>
                             <shadedPattern>org.apache.storm.shade.org.json.simple</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.yaml.snakeyaml</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.yaml.snakeyaml</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
