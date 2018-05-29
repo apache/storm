@@ -21,6 +21,8 @@ import org.apache.storm.drpc.DRPCInvocationsClient;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DistributedRPCInvocations;
 import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.org.json.simple.parser.ParseException;
 import org.apache.storm.trident.drpc.ReturnResultsReducer.ReturnResultsState;
 import org.apache.storm.trident.operation.MultiReducer;
 import org.apache.storm.trident.operation.TridentCollector;
@@ -30,8 +32,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServiceRegistry;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 
 public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {

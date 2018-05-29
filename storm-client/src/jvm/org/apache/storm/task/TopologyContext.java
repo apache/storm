@@ -35,10 +35,10 @@ import org.apache.storm.metric.api.IReducer;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.shade.org.apache.commons.lang.NotImplementedException;
+import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.state.ISubscribedState;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONValue;
 
 /**
  * A `TopologyContext` is given to bolts and spouts in their `prepare()` and `open()` methods, respectively. This object provides

@@ -89,6 +89,10 @@
             <groupId>org.jctools</groupId>
             <artifactId>jctools-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -118,6 +122,7 @@
                             <include>commons-lang:commons-lang</include>
                             <include>commons-collections:commons-collections</include>
                             <include>org.jctools:jctools-core</include>
+                            <include>com.googlecode.json-simple:json-simple</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -157,6 +162,10 @@
                         <relocation>
                             <pattern>org.jctools</pattern>
                             <shadedPattern>org.apache.storm.shade.org.jctools</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.json.simple</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.json.simple</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>

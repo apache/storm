@@ -19,6 +19,8 @@ import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DistributedRPCInvocations;
+import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.org.json.simple.parser.ParseException;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -28,8 +30,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServiceRegistry;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

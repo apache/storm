@@ -34,6 +34,7 @@ import org.apache.storm.ILocalDRPC;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.generated.DistributedRPCInvocations;
+import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -45,7 +46,6 @@ import org.apache.storm.utils.ExtendedThreadPoolExecutor;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServiceRegistry;
 import org.apache.thrift.TException;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

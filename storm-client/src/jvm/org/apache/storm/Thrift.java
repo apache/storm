@@ -40,6 +40,7 @@ import org.apache.storm.generated.StateSpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.StormTopology._Fields;
 import org.apache.storm.generated.StreamInfo;
+import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.IBasicBolt;
@@ -48,7 +49,6 @@ import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
