@@ -30,9 +30,9 @@ import org.apache.storm.metrics2.JcMetrics;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.shade.com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.jctools.queues.MessagePassingQueue;
-import org.jctools.queues.MpscArrayQueue;
-import org.jctools.queues.MpscUnboundedArrayQueue;
+import org.apache.storm.shade.org.jctools.queues.MessagePassingQueue;
+import org.apache.storm.shade.org.jctools.queues.MpscArrayQueue;
+import org.apache.storm.shade.org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -277,7 +277,7 @@ public class JCQueue implements IStatefulObject {
         boolean tryFlush();
     }
 
-    public interface Consumer extends org.jctools.queues.MessagePassingQueue.Consumer<Object> {
+    public interface Consumer extends MessagePassingQueue.Consumer<Object> {
         void accept(Object event);
 
         void flush() throws InterruptedException;

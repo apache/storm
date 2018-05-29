@@ -85,6 +85,10 @@
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -113,6 +117,7 @@
                             <include>commons-io:commons-io</include>
                             <include>commons-lang:commons-lang</include>
                             <include>commons-collections:commons-collections</include>
+                            <include>org.jctools:jctools-core</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -133,6 +138,11 @@
                             <shadedPattern>org.apache.storm.shade.org.apache.zookeeper</shadedPattern>
                         </relocation>
                         <relocation>
+                            <!--This is a part of zookeeper-->
+                            <pattern>org.apache.jute</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.jute</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>org.apache.commons.io</pattern>
                             <shadedPattern>org.apache.storm.shade.org.apache.commons.io</shadedPattern>
                         </relocation>
@@ -143,6 +153,10 @@
                         <relocation>
                             <pattern>org.apache.commons.collections</pattern>
                             <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.jctools</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.jctools</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>

@@ -94,12 +94,6 @@
             </exclusions>
         </dependency>
 
-        <!-- jctools -->
-        <dependency>
-            <groupId>org.jctools</groupId>
-            <artifactId>jctools-core</artifactId>
-        </dependency>
-        
         <!-- JAXB -->
         <dependency>
             <groupId>javax.xml.bind</groupId>
