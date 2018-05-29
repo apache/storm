@@ -94,12 +94,6 @@
             </exclusions>
         </dependency>
 
-        <!-- JAXB -->
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-        </dependency>
-
         <!-- json -->
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
