@@ -14,7 +14,7 @@ package org.apache.storm.trident.tuple;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.storm.tuple.Fields;
 
 public class ValuePointer {

@@ -14,8 +14,8 @@ package org.apache.storm.executor;
 
 import java.io.Serializable;
 import java.util.List;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
 
 public class TupleInfo implements Serializable {
 

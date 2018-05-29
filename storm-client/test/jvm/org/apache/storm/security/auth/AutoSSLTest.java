@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.security.auth.Subject;
-import org.apache.commons.io.FileUtils;
+import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

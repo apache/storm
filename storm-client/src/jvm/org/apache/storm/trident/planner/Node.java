@@ -15,11 +15,10 @@ package org.apache.storm.trident.planner;
 import java.io.Serializable;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.storm.trident.operation.DefaultResourceDeclarer;
 import org.apache.storm.tuple.Fields;
-
 
 public class Node extends DefaultResourceDeclarer<Node> implements Serializable {
     private static final AtomicInteger INDEX = new AtomicInteger(0);

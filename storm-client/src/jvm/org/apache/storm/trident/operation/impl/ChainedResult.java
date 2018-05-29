@@ -12,7 +12,7 @@
 
 package org.apache.storm.trident.operation.impl;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.storm.trident.operation.TridentCollector;
 
 

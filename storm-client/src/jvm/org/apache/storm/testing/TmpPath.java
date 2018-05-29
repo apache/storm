@@ -13,7 +13,7 @@
 package org.apache.storm.testing;
 
 import java.io.File;
-import org.apache.commons.io.FileUtils;
+import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

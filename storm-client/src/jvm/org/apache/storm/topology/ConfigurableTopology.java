@@ -28,9 +28,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.utils.Utils;
 import org.yaml.snakeyaml.Yaml;
 

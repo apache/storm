@@ -24,14 +24,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.NodeInfo;
+import org.apache.storm.shade.org.apache.commons.collections.map.HashedMap;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-
 
 public class LocalAssignmentsBackendTest {
 

@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
+import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 
 public class VersionedStore {
     private static final String FINISHED_VERSION_SUFFIX = ".version";

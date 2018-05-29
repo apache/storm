@@ -71,6 +71,20 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -93,9 +107,12 @@
                     <minimizeJar>false</minimizeJar>
                     <artifactSet>
                         <includes>
-                                <include>com.google.guava:guava</include>
-                                <include>org.apache.curator:*</include>
-                                <include>org.apache.zookeeper:zookeeper</include>
+                            <include>com.google.guava:guava</include>
+                            <include>org.apache.curator:*</include>
+                            <include>org.apache.zookeeper:zookeeper</include>
+                            <include>commons-io:commons-io</include>
+                            <include>commons-lang:commons-lang</include>
+                            <include>commons-collections:commons-collections</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -114,6 +131,18 @@
                         <relocation>
                             <pattern>org.apache.zookeeper</pattern>
                             <shadedPattern>org.apache.storm.shade.org.apache.zookeeper</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.io</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.io</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.lang</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.lang</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.collections</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>

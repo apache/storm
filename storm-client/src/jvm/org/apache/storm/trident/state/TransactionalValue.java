@@ -12,8 +12,7 @@
 
 package org.apache.storm.trident.state;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
 
 public class TransactionalValue<T> {
     T val;

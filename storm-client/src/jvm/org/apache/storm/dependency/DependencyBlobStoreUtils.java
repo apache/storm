@@ -19,8 +19,8 @@
 package org.apache.storm.dependency;
 
 import java.util.UUID;
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.com.google.common.io.Files;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 
 public class DependencyBlobStoreUtils {
 
