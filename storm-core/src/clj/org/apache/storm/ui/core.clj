@@ -29,7 +29,7 @@
   (:import [org.apache.storm.utils Time]
            [org.apache.storm.generated NimbusSummary]
            [org.apache.storm.stats StatsUtil]
-           [org.apache.storm.ui UIHelpers IConfigurator FilterConfiguration]
+           [org.apache.storm.ui UiHelpers IConfigurator FilterConfiguration]
            [org.apache.storm.metric StormMetricsRegistry])
   (:import [org.apache.storm.utils TopologySpoutLag])
   (:use [clojure.string :only [blank? lower-case trim split]])
@@ -144,13 +144,13 @@
 
 (defn logviewer-link [host fname secure?]
   (if (secure-logviewer? secure?)
-    (UIHelpers/urlFormat "https://%s:%s/api/v1/log?file=%s"
-      (to-array
+    (UiHelpers/urlFormat "https://%s:%s/api/v1/log?file=%s"
+                         (to-array
         [host
         (*STORM-CONF* LOGVIEWER-HTTPS-PORT)
         fname]))
-    (UIHelpers/urlFormat "http://%s:%s/api/v1/log?file=%s"
-      (to-array
+    (UiHelpers/urlFormat "http://%s:%s/api/v1/log?file=%s"
+                         (to-array
         [host
         (*STORM-CONF* LOGVIEWER-PORT)
         fname]))))
@@ -167,13 +167,13 @@
 
 (defn nimbus-log-link [host secure?]
   (if (secure-logviewer? secure?)
-    (UIHelpers/urlFormat "https://%s:%s/api/v1/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-HTTPS-PORT)]))
-    (UIHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)]))))
+    (UiHelpers/urlFormat "https://%s:%s/api/v1/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-HTTPS-PORT)]))
+    (UiHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)]))))
 
 (defn supervisor-log-link [host secure?]
   (if (secure-logviewer? secure?)
-    (UIHelpers/urlFormat "https://%s:%s/api/v1/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-HTTPS-PORT)]))
-    (UIHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)]))))
+    (UiHelpers/urlFormat "https://%s:%s/api/v1/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-HTTPS-PORT)]))
+    (UiHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)]))))
 
 (defn logviewer-scheme [secure?]
   (if (secure-logviewer? secure?) "https" "http"))
@@ -212,12 +212,12 @@
 
 (defn worker-dump-link [host port topology-id secure?]
   (if (secure-logviewer? secure?)
-    (UIHelpers/urlFormat "https://%s:%s/api/v1/dumps/%s/%s"
+    (UiHelpers/urlFormat "https://%s:%s/api/v1/dumps/%s/%s"
                          (to-array [(URLEncoder/encode host)
                                     (*STORM-CONF* LOGVIEWER-HTTPS-PORT)
                                     (URLEncoder/encode topology-id)
                                     (str (URLEncoder/encode host) ":" (URLEncoder/encode port))]))
-    (UIHelpers/urlFormat "http://%s:%s/api/v1/dumps/%s/%s"
+    (UiHelpers/urlFormat "http://%s:%s/api/v1/dumps/%s/%s"
                          (to-array [(URLEncoder/encode host)
                                     (*STORM-CONF* LOGVIEWER-PORT)
                                     (URLEncoder/encode topology-id)
@@ -235,7 +235,7 @@
   [window]
   (if (= window ":all-time")
     "All time"
-    (UIHelpers/prettyUptimeSec window)))
+    (UiHelpers/prettyUptimeSec window)))
 
 (defn sanitize-stream-name
   [name]
@@ -293,7 +293,7 @@
                          (if bolt-summs
                            (mapfn bolt-summs)
                            (mapfn spout-summs)))
-                :link (UIHelpers/urlFormat "/component.html?id=%s&topology_id=%s" (to-array [id storm-id]))
+                :link (UiHelpers/urlFormat "/component.html?id=%s&topology_id=%s" (to-array [id storm-id]))
                 :inputs (for [[global-stream-id group] inputs]
                           {:component (.get_componentId global-stream-id)
                            :stream (.get_streamId global-stream-id)
@@ -489,7 +489,7 @@
           "nimbusLogLink" (nimbus-log-link (.get_host n) secure?)
           "status" (if (.is_isLeader n) "Leader" "Not a Leader")
           "version" (.get_version n)
-          "nimbusUpTime" (UIHelpers/prettyUptimeSec uptime)
+          "nimbusUpTime" (UiHelpers/prettyUptimeSec uptime)
           "nimbusUpTimeSeconds" uptime}))})))
 
 (defn worker-summary-to-json
@@ -508,7 +508,7 @@
      "assignedMemOffHeap" (.get_assigned_memoffheap worker-summary)
      "assignedCpu" (.get_assigned_cpu worker-summary)
      "componentNumTasks" (.get_component_to_num_tasks worker-summary)
-     "uptime" (UIHelpers/prettyUptimeSec uptime-secs)
+     "uptime" (UiHelpers/prettyUptimeSec uptime-secs)
      "uptimeSeconds" uptime-secs
      "workerLogLink" (worker-log-link host port topology-id secure?)}))
 
@@ -525,7 +525,7 @@
         availCpu (max (- totalCpu usedCpu) 0)]
   {"id" (.get_supervisor_id summary)
    "host" (.get_host summary)
-   "uptime" (UIHelpers/prettyUptimeSec (.get_uptime_secs summary))
+   "uptime" (UiHelpers/prettyUptimeSec (.get_uptime_secs summary))
    "uptimeSeconds" (.get_uptime_secs summary)
    "slotsTotal" slotsTotal
    "slotsUsed" slotsUsed
@@ -572,7 +572,7 @@
                 "owner" (.get_owner t)
                 "name" (.get_name t)
                 "status" (.get_status t)
-                "uptime" (UIHelpers/prettyUptimeSec (.get_uptime_secs t))
+                "uptime" (UiHelpers/prettyUptimeSec (.get_uptime_secs t))
                 "uptimeSeconds" (.get_uptime_secs t)
                 "tasksTotal" (.get_num_tasks t)
                 "workersTotal" (.get_num_workers t)
@@ -715,7 +715,7 @@
      "owner" (.get_owner topo-info)
      "name" (.get_name topo-info)
      "status" (.get_status topo-info)
-     "uptime" (UIHelpers/prettyUptimeSec uptime)
+     "uptime" (UiHelpers/prettyUptimeSec uptime)
      "uptimeSeconds" uptime
      "tasksTotal" (.get_num_tasks topo-info)
      "workersTotal" (.get_num_workers topo-info)
@@ -984,11 +984,11 @@
         ^CommonAggregateStats cas (.get_common_stats stats)
         host (.get_host summ)
         port (.get_port summ)
-        exec-id (UIHelpers/prettyExecutorInfo info)
+        exec-id (UiHelpers/prettyExecutorInfo info)
         uptime (.get_uptime_secs summ)]
     {"id" exec-id
      "encodedId" (URLEncoder/encode exec-id)
-     "uptime" (UIHelpers/prettyUptimeSec uptime)
+     "uptime" (UiHelpers/prettyUptimeSec uptime)
      "uptimeSeconds" uptime
      "host" host
      "port" port
@@ -1012,11 +1012,11 @@
         ^CommonAggregateStats cas (.get_common_stats stats)
         host (.get_host summ)
         port (.get_port summ)
-        exec-id (UIHelpers/prettyExecutorInfo info)
+        exec-id (UiHelpers/prettyExecutorInfo info)
         uptime (.get_uptime_secs summ)]
     {"id" exec-id
      "encodedId" (URLEncoder/encode exec-id)
-     "uptime" (UIHelpers/prettyUptimeSec uptime)
+     "uptime" (UiHelpers/prettyUptimeSec uptime)
      "uptimeSeconds" uptime
      "host" host
      "port" port
@@ -1586,7 +1586,7 @@
       (handler request)
       (catch Exception ex
         (let [status-code (if (instance? AuthorizationException ex) 403 500)]
-          (json-response (UIHelpers/exceptionToJson ex status-code) ((:query-params request) "callback") :status status-code))))))
+          (json-response (UiHelpers/exceptionToJson ex status-code) ((:query-params request) "callback") :status status-code))))))
 
 (def app
   (handler/site (-> main-routes
@@ -1613,25 +1613,25 @@
           https-want-client-auth (conf UI-HTTPS-WANT-CLIENT-AUTH)
           https-need-client-auth (conf UI-HTTPS-NEED-CLIENT-AUTH)]
       (StormMetricsRegistry/startMetricsReporters conf)
-      (UIHelpers/stormRunJetty  (int (conf UI-PORT))
-                                (conf UI-HOST)
-                                https-port
-                                header-buffer-size
-                                (reify IConfigurator
+      (UiHelpers/stormRunJetty (int (conf UI-PORT))
+                               (conf UI-HOST)
+                               https-port
+                               header-buffer-size
+                               (reify IConfigurator
                                   (execute [this server]
-                                    (UIHelpers/configSsl server
-                                      https-port
-                                      https-ks-path
-                                      https-ks-password
-                                      https-ks-type
-                                      https-key-password
-                                      https-ts-path
-                                      https-ts-password
-                                      https-ts-type
-                                      https-need-client-auth
-                                      https-want-client-auth
-                                      header-buffer-size)
-                                    (UIHelpers/configFilter server (ring.util.servlet/servlet app) filters-confs)))))
+                                    (UiHelpers/configSsl server
+                                                         https-port
+                                                         https-ks-path
+                                                         https-ks-password
+                                                         https-ks-type
+                                                         https-key-password
+                                                         https-ts-path
+                                                         https-ts-password
+                                                         https-ts-type
+                                                         https-need-client-auth
+                                                         https-want-client-auth
+                                                         header-buffer-size)
+                                    (UiHelpers/configFilter server (ring.util.servlet/servlet app) filters-confs)))))
    (catch Exception ex
      (log-error ex))))
 

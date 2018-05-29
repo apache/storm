@@ -1,12 +1,18 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
- * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF)
+ * under one or more contributor license agreements.
+ * See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions
  * and limitations under the License.
  */
 
@@ -17,16 +23,30 @@ import com.google.common.collect.ImmutableMap;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.storm.Config;
+import org.apache.storm.Constants;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ExecutorInfo;
+import org.apache.storm.generated.SupervisorSummary;
+import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IHttpCredentialsPlugin;
+import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.VersionInfo;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -42,7 +62,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.json.simple.JSONValue;
 
-public class UIHelpers {
+public class UiHelpers {
 
     private static final Object[][] PRETTY_SEC_DIVIDERS = {
         new Object[]{ "s", 60 },
@@ -169,8 +189,8 @@ public class UIHelpers {
         filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
         filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "GET, POST, PUT");
         filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM,
-                                      "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin, Content-Type, Content-Length, " +
-                                      "Accept, Origin");
+                                      "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin, Content-Type, Content-Length, "
+                                              + "Accept, Origin");
         filterHolder.setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*");
         return filterHolder;
     }
@@ -277,8 +297,9 @@ public class UIHelpers {
         headersResult.put("Cache-Control", "no-cache, no-store");
         headersResult.put("Access-Control-Allow-Origin", "*");
         headersResult.put("Access-Control-Allow-Headers",
-                          "Content-Type, Access-Control-Allow-Headers, Access-Controler-Allow-Origin, X-Requested-By, X-Csrf-Token, " +
-                          "Authorization, X-Requested-With");
+                          "Content-Type, Access-Control-Allow-Headers, Access-Controler-Allow-Origin, "
+                                  + "X-Requested-By, X-Csrf-Token, "
+                                  + "Authorization, X-Requested-With");
         if (callback != null) {
             headersResult.put("Content-Type", "application/javascript;charset=utf-8");
         } else {
@@ -295,9 +316,106 @@ public class UIHelpers {
         return callback != null ? wrapJsonInCallback(callback, serializedData) : serializedData;
     }
 
+    /**
+     * Converts exception into json map.
+     * @param ex Exception to be converted.
+     * @param statusCode Status code to be returned.
+     * @return Map to be converted into json.
+     */
     public static Map exceptionToJson(Exception ex, int statusCode) {
         StringWriter sw = new StringWriter();
         ex.printStackTrace(new PrintWriter(sw));
-        return ImmutableMap.of("error", statusCode + " " + HttpStatus.getMessage(statusCode), "errorMessage", sw.toString());
+        return ImmutableMap.of(
+                "error", statusCode
+                        + " "
+                        + HttpStatus.getMessage(statusCode),
+                "errorMessage", sw.toString());
+    }
+
+    /**
+     * Converts thrift call result into map fit for UI/api.
+     * @param clusterSummary Obtained from Nimbus.
+     * @param user User Making request
+     * @param conf Storm Conf
+     * @return Cluster Summary for display on UI/monitoring purposes via API
+     */
+    public static Map<String, Object> getClusterSummary(ClusterSummary clusterSummary, String user,
+                                                        Map<String, Object> conf) {
+        Map<String, Object> result = new HashMap();
+        List<SupervisorSummary> supervisorSummaries = clusterSummary.get_supervisors();
+        List<TopologySummary> topologySummaries = clusterSummary.get_topologies();
+
+        Integer usedSlots =
+                supervisorSummaries.stream().mapToInt(
+                SupervisorSummary::get_num_used_workers).sum();
+        Integer totalSlots =
+                supervisorSummaries.stream().mapToInt(
+                        SupervisorSummary::get_num_workers).sum();
+
+        Integer totalTasks =
+                topologySummaries.stream().mapToInt(
+                        TopologySummary::get_num_tasks).sum();
+        Integer totalExecutors =
+                topologySummaries.stream().mapToInt(
+                        TopologySummary::get_num_executors).sum();
+
+        Double supervisorTotalMemory =
+                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                        Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
+                        x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
+                        )
+                ).sum();
+
+        Double supervisorTotalCpu =
+                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                        Constants.COMMON_CPU_RESOURCE_NAME,
+                        x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
+                        )
+                ).sum();
+
+        Double supervisorUsedMemory =
+                supervisorSummaries.stream().mapToDouble(SupervisorSummary::get_used_mem).sum();
+        Double supervisorUsedCpu =
+                supervisorSummaries.stream().mapToDouble(SupervisorSummary::get_used_cpu).sum();
+        Double supervisorFragementedCpu =
+                supervisorSummaries.stream().mapToDouble(
+                        SupervisorSummary::get_fragmented_cpu).sum();
+        Double supervisorFragmentedMem =
+                supervisorSummaries.stream().mapToDouble(
+                        SupervisorSummary::get_fragmented_mem).sum();
+
+
+        result.put("user", user);
+        result.put("stormVersion", VersionInfo.getVersion());
+        result.put("supervisors", supervisorSummaries.size());
+        result.put("topologies", clusterSummary.get_topologies_size());
+        result.put("slotsUsed", usedSlots);
+        result.put("slotsTotal", totalSlots);
+        result.put("slotsFree", totalSlots - usedSlots);
+        result.put("tasksTotal", totalTasks);
+        result.put("totalExecutors", totalExecutors);
+
+        result.put("totalMem", supervisorTotalMemory);
+        result.put("totalCpu", supervisorTotalCpu);
+        result.put("availMem", supervisorTotalMemory - supervisorUsedMemory);
+        result.put("availCpu", supervisorTotalCpu - supervisorUsedCpu);
+        result.put("fragmentedMem", supervisorFragmentedMem);
+        result.put("fragmentedCpu", supervisorFragementedCpu);
+        result.put("schedulerDisplayResource",
+                conf.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
+        result.put("memAssignedPercentUtil", supervisorTotalMemory > 0
+                ? ((supervisorTotalMemory - supervisorUsedMemory)  * 100.0)
+                / supervisorTotalMemory : 0.0);
+        result.put("cpuAssignedPercentUtil", supervisorTotalCpu > 0
+                ? ((supervisorTotalCpu - supervisorUsedCpu) * 100.0)
+                / supervisorTotalCpu : 0.0);
+        result.put("bugtracker-url", conf.get(DaemonConfig.UI_PROJECT_BUGTRACKER_URL));
+        result.put("central-log-url", conf.get(DaemonConfig.UI_CENTRAL_LOGGING_URL));
+        return result;
+    }
+
+    public static void populateContext(HttpServletRequest servletRequest, Config conf) {
+        IHttpCredentialsPlugin iHttpCredentialsPlugin = AuthUtils.GetUiHttpCredentialsPlugin(conf);
+        iHttpCredentialsPlugin.populateContext(ReqContext.context(), servletRequest);
     }
 }

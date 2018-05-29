@@ -37,7 +37,6 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
-import j2html.TagCreator;
 import j2html.tags.DomContent;
 
 import java.io.ByteArrayOutputStream;
@@ -68,10 +67,9 @@ import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.UrlBuilder;
 import org.apache.storm.ui.InvalidRequestException;
-import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.ui.UiHelpers;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
-import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Unchecked;
 
 public class LogviewerLogPageHandler {
@@ -350,11 +348,11 @@ public class LogviewerLogPageHandler {
     }
 
     private DomContent downloadLink(String fileName) {
-        return p(linkTo(UIHelpers.urlFormat("/api/v1/download?file=%s", fileName), "Download Full File"));
+        return p(linkTo(UiHelpers.urlFormat("/api/v1/download?file=%s", fileName), "Download Full File"));
     }
 
     private DomContent daemonDownloadLink(String fileName) {
-        return p(linkTo(UIHelpers.urlFormat("/api/v1/daemondownload?file=%s", fileName), "Download Full File"));
+        return p(linkTo(UiHelpers.urlFormat("/api/v1/daemondownload?file=%s", fileName), "Download Full File"));
     }
 
     private DomContent linkTo(String url, String content) {

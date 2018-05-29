@@ -31,7 +31,7 @@ public class BasicDrpcClient {
     }
 
     /**
-     * Main entry point for the basic DRPC client
+     * Main entry point for the basic DRPC client.
      * @param args command line arguments to be parsed
      * @throws Exception on errors
      */

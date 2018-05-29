@@ -12,6 +12,7 @@
 
 package org.apache.storm.command;
 
+import static java.lang.String.format;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.generated.Nimbus;
@@ -22,7 +23,6 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.lang.String.format;
 
 public class Rebalance {
 
@@ -42,7 +42,6 @@ public class Rebalance {
         Integer numWorkers = (Integer) cl.get("n");
         Map<String, Integer> numExecutors = (Map<String, Integer>) cl.get("e");
         Map<String, Map<String, Double>> resourceOverrides = (Map<String, Map<String, Double>>) cl.get("r");
-        Map<String, Object> confOverrides = (Map<String, Object>) cl.get("t");
 
         if (null != wait) {
             rebalanceOptions.set_wait_secs(wait);
@@ -57,6 +56,8 @@ public class Rebalance {
         if (null != resourceOverrides) {
             rebalanceOptions.set_topology_resources_overrides(resourceOverrides);
         }
+
+        Map<String, Object> confOverrides = (Map<String, Object>) cl.get("t");
 
         if (null != confOverrides) {
             rebalanceOptions.set_topology_conf_overrides(JSONValue.toJSONString(confOverrides));

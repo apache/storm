@@ -41,7 +41,7 @@ import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.ui.InvalidRequestException;
-import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.ui.UiHelpers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -232,7 +232,7 @@ public class LogviewerResource {
         } catch (InvalidRequestException e) {
             LOG.error(e.getMessage(), e);
             int statusCode = 400;
-            return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(e, statusCode)).setCallback(callback)
+            return new JsonResponseBuilder().setData(UiHelpers.exceptionToJson(e, statusCode)).setCallback(callback)
                     .setStatus(statusCode).build();
         }
     }
