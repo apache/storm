@@ -16,23 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.storm.ui;
+package org.apache.storm.daemon.ui.exceptionmappers;
 
-public class InvalidRequestException extends Exception {
+import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
 
-    public InvalidRequestException() {
-        super();
-    }
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+import org.apache.storm.generated.NotAliveException;
 
-    public InvalidRequestException(String msg) {
-        super(msg);
-    }
 
-    public InvalidRequestException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
+@Provider
+public class NotAliveExceptionMapper implements ExceptionMapper<NotAliveException> {
 
-    public InvalidRequestException(Throwable cause) {
-        super(cause);
+    @Inject
+    public javax.inject.Provider<HttpServletRequest> request;
+
+    public Response toResponse(NotAliveException ex) {
+        return getResponse(ex, request);
     }
 }

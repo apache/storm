@@ -10,7 +10,7 @@
  * and limitations under the License.
  */
 
-package org.apache.storm.ui;
+package org.apache.storm.daemon.ui;
 
 import java.util.Map;
 
@@ -19,13 +19,23 @@ public class FilterConfiguration {
     private String filterName;
     private Map<String, String> filterParams;
 
-
+    /**
+     * FilterConfiguration.
+     * @param filterClass filterClass
+     * @param filterParams filterParams
+     */
     public FilterConfiguration(String filterClass, Map<String, String> filterParams) {
         this.filterParams = filterParams;
         this.filterClass = filterClass;
         this.filterName = null;
     }
 
+    /**
+     * FilterConfiguration.
+     * @param filterClass filterClass
+     * @param filterName filterName
+     * @param filterParams filterParams
+     */
     public FilterConfiguration(String filterClass, String filterName, Map<String, String> filterParams) {
         this.filterClass = filterClass;
         this.filterName = filterName;

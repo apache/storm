@@ -40,7 +40,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.storm.daemon.common.JsonResponseBuilder;
-import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.daemon.ui.UIHelpers;
 
 public class LogviewerResponseBuilder {
 
@@ -61,7 +61,7 @@ public class LogviewerResponseBuilder {
      * Build a Response object representing success response with JSON entity.
      *
      * @param entity entity object to represent it as JSON
-     * @param callback callback for JSONP
+     * @param callback callbackParameterName for JSONP
      * @param origin origin
      * @see {@link JsonResponseBuilder}
      */
@@ -112,7 +112,7 @@ public class LogviewerResponseBuilder {
      * Build a Response object representing unauthorized user, with JSON response.
      *
      * @param user username
-     * @param callback callback for JSONP
+     * @param callback callbackParameterName for JSONP
      */
     public static Response buildUnauthorizedUserJsonResponse(String user, String callback) {
         return new JsonResponseBuilder().setData(UIHelpers.unauthorizedUserJson(user))
@@ -123,7 +123,7 @@ public class LogviewerResponseBuilder {
      * Build a Response object representing exception, with JSON response.
      *
      * @param ex Exception object
-     * @param callback callback for JSONP
+     * @param callback callbackParameterName for JSONP
      */
     public static Response buildExceptionJsonResponse(Exception ex, String callback) {
         int statusCode = 500;

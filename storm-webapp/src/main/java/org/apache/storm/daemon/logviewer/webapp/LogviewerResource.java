@@ -38,10 +38,11 @@ import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
+import org.apache.storm.daemon.ui.InvalidRequestException;
+import org.apache.storm.daemon.ui.UIHelpers;
+import org.apache.storm.daemon.ui.resources.StormApiResource;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
-import org.apache.storm.ui.InvalidRequestException;
-import org.apache.storm.ui.UIHelpers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,7 +138,7 @@ public class LogviewerResource {
         String user = httpCredsHandler.getUserName(request);
         String topologyId = request.getParameter("topoId");
         String portStr = request.getParameter("port");
-        String callback = request.getParameter("callback");
+        String callback = request.getParameter("callbackParameterName");
         String origin = request.getHeader("Origin");
 
         return logviewer.listLogFiles(user, portStr != null ? Integer.parseInt(portStr) : null, topologyId, callback, origin);
@@ -154,7 +155,7 @@ public class LogviewerResource {
         String user = httpCredsHandler.getUserName(request);
         String topologyId = request.getParameter("topoId");
         String portStr = request.getParameter("port");
-        String callback = request.getParameter("callback");
+        String callback = request.getParameter(StormApiResource.callbackParameterName);
         String origin = request.getHeader("Origin");
 
         return logviewer.listLogFiles(user, portStr != null ? Integer.parseInt(portStr) : null, topologyId, callback, origin);
@@ -223,7 +224,7 @@ public class LogviewerResource {
         String searchString = request.getParameter("search-string");
         String numMatchesStr = request.getParameter("num-matches");
         String startByteOffset = request.getParameter("start-byte-offset");
-        String callback = request.getParameter("callback");
+        String callback = request.getParameter(StormApiResource.callbackParameterName);
         String origin = request.getHeader("Origin");
 
         try {
@@ -251,7 +252,7 @@ public class LogviewerResource {
         String startFileOffset = request.getParameter("start-file-offset");
         String startByteOffset = request.getParameter("start-byte-offset");
         String searchArchived = request.getParameter("search-archived");
-        String callback = request.getParameter("callback");
+        String callback = request.getParameter(StormApiResource.callbackParameterName);
         String origin = request.getHeader("Origin");
 
         return logSearchHandler.deepSearchLogsForTopology(topologyId, user, searchString, numMatchesStr, portStr,

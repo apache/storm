@@ -37,7 +37,6 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
-import j2html.TagCreator;
 import j2html.tags.DomContent;
 
 import java.io.ByteArrayOutputStream;
@@ -65,13 +64,12 @@ import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.daemon.ui.InvalidRequestException;
+import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.UrlBuilder;
-import org.apache.storm.ui.InvalidRequestException;
-import org.apache.storm.ui.UIHelpers;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
-import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Unchecked;
 
 public class LogviewerLogPageHandler {
@@ -103,7 +101,7 @@ public class LogviewerLogPageHandler {
      * @param user username
      * @param port worker's port, null for all workers
      * @param topologyId topology ID, null for all topologies
-     * @param callback callback for JSONP
+     * @param callback callbackParameterName for JSONP
      * @param origin origin
      * @return list of worker logs for given criteria
      */

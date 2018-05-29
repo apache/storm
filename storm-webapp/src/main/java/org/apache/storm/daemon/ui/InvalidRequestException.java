@@ -16,30 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.common;
+package org.apache.storm.daemon.ui;
 
-import java.util.HashMap;
-import java.util.Map;
+public class InvalidRequestException extends Exception {
 
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
+    public InvalidRequestException() {
+        super();
+    }
 
-import org.apache.storm.generated.AuthorizationException;
-import org.json.simple.JSONValue;
+    public InvalidRequestException(String msg) {
+        super(msg);
+    }
 
-import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
+    public InvalidRequestException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 
-@Provider
-public class AuthorizationExceptionMapper implements ExceptionMapper<AuthorizationException> {
-
-    @Inject
-    public javax.inject.Provider<HttpServletRequest> request;
-
-    @Override
-    public Response toResponse(AuthorizationException ex) {
-        return getResponse(ex, request);
+    public InvalidRequestException(Throwable cause) {
+        super(cause);
     }
 }

@@ -27,6 +27,10 @@
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>lib-webapp</outputDirectory>
             <unpack>false</unpack>
+            <excludes>
+                <exclude>org.glassfish.jersey.ext:jersey-metainf-services</exclude>
+                <exclude>org.glassfish.jersey.ext:jersey-bean-validation</exclude>
+            </excludes>
         </dependencySet>
     </dependencySets>
 </assembly>

@@ -65,10 +65,8 @@ public class SetLogLevel {
 
     /**
      * Parses [logger name]=[level string]:[optional timeout],[logger name2]...
-     *
      * e.g. ROOT=DEBUG:30
      *     root logger, debug for 30 seconds
-     *
      *     org.apache.foo=WARN
      *     org.apache.foo set to WARN indefinitely
      */
