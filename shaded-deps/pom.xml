@@ -101,6 +101,10 @@
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-core</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -124,15 +128,16 @@
                     <artifactSet>
                         <includes>
                             <include>com.google.guava:guava</include>
-                            <include>org.apache.curator:*</include>
-                            <include>org.apache.zookeeper:zookeeper</include>
+                            <include>com.googlecode.json-simple:json-simple</include>
+                            <include>commons-collections:commons-collections</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-lang:commons-lang</include>
-                            <include>commons-collections:commons-collections</include>
-                            <include>org.jctools:jctools-core</include>
-                            <include>com.googlecode.json-simple:json-simple</include>
-                            <include>org.yaml:snakeyaml</include>
                             <include>io.netty:netty</include>
+                            <include>org.apache.curator:*</include>
+                            <include>org.apache.zookeeper:zookeeper</include>
+                            <include>org.jctools:jctools-core</include>
+                            <include>org.jgrapht:jgrapht-core</include>
+                            <include>org.yaml:snakeyaml</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -184,6 +189,10 @@
                         <relocation>
                             <pattern>org.jboss.netty</pattern>
                             <shadedPattern>org.apache.storm.shade.org.jboss.netty</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.jgrapht</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.jgrapht</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>

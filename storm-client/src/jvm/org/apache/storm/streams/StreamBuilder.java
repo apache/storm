@@ -29,6 +29,8 @@ import org.apache.storm.shade.com.google.common.collect.ArrayListMultimap;
 import org.apache.storm.shade.com.google.common.collect.HashBasedTable;
 import org.apache.storm.shade.com.google.common.collect.Multimap;
 import org.apache.storm.shade.com.google.common.collect.Table;
+import org.apache.storm.shade.org.jgrapht.graph.DefaultDirectedGraph;
+import org.apache.storm.shade.org.jgrapht.traverse.TopologicalOrderIterator;
 import org.apache.storm.streams.operations.IdentityFunction;
 import org.apache.storm.streams.operations.mappers.PairValueMapper;
 import org.apache.storm.streams.operations.mappers.TupleValueMapper;
@@ -45,8 +47,6 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Tuple;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

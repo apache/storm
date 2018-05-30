@@ -38,6 +38,11 @@ import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.CustomStreamGrouping;
+import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.UndirectedGraph;
+import org.apache.storm.shade.org.jgrapht.alg.ConnectivityInspector;
+import org.apache.storm.shade.org.jgrapht.graph.DefaultDirectedGraph;
+import org.apache.storm.shade.org.jgrapht.graph.Pseudograph;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.SpoutDeclarer;
@@ -82,11 +87,6 @@ import org.apache.storm.trident.util.IndexedEdge;
 import org.apache.storm.trident.util.TridentUtils;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-import org.jgrapht.DirectedGraph;
-import org.jgrapht.UndirectedGraph;
-import org.jgrapht.alg.ConnectivityInspector;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.Pseudograph;
 
 // graph with 3 kinds of nodes:
 // operation, partition, or spout

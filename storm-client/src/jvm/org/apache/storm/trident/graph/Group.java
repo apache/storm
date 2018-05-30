@@ -20,10 +20,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.storm.generated.SharedMemory;
+import org.apache.storm.shade.org.jgrapht.DirectedGraph;
 import org.apache.storm.trident.planner.Node;
 import org.apache.storm.trident.util.IndexedEdge;
 import org.apache.storm.trident.util.TridentUtils;
-import org.jgrapht.DirectedGraph;
 
 public class Group {
     public final Set<Node> nodes = new HashSet<>();

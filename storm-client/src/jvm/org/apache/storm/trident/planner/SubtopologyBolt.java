@@ -20,6 +20,10 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.storm.coordination.BatchOutputCollector;
 import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.graph.DefaultDirectedGraph;
+import org.apache.storm.shade.org.jgrapht.graph.DirectedSubgraph;
+import org.apache.storm.shade.org.jgrapht.traverse.TopologicalOrderIterator;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.trident.planner.processor.TridentContext;
@@ -34,11 +38,6 @@ import org.apache.storm.trident.util.IndexedEdge;
 import org.apache.storm.trident.util.TridentUtils;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.jgrapht.DirectedGraph;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DirectedSubgraph;
-import org.jgrapht.traverse.TopologicalOrderIterator;
-
 
 /**
  * A Bolt that does processing for a subsection of the complete graph.

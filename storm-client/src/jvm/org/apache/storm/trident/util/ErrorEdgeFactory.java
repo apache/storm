@@ -13,7 +13,7 @@
 package org.apache.storm.trident.util;
 
 import java.io.Serializable;
-import org.jgrapht.EdgeFactory;
+import org.apache.storm.shade.org.jgrapht.EdgeFactory;
 
 public class ErrorEdgeFactory implements EdgeFactory, Serializable {
     @Override

@@ -100,13 +100,6 @@
             <artifactId>kryo</artifactId>
         </dependency>
 
-        <!-- jgrapht -->
-        <dependency>
-            <groupId>org.jgrapht</groupId>
-            <artifactId>jgrapht-core</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
         <!-- below are transitive dependencies which are version managed in storm pom -->
         <!-- httpclient is derived from thrift -->
         <dependency>
