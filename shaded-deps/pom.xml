@@ -97,6 +97,10 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -128,6 +132,7 @@
                             <include>org.jctools:jctools-core</include>
                             <include>com.googlecode.json-simple:json-simple</include>
                             <include>org.yaml:snakeyaml</include>
+                            <include>io.netty:netty</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -176,6 +181,10 @@
                             <pattern>org.yaml.snakeyaml</pattern>
                             <shadedPattern>org.apache.storm.shade.org.yaml.snakeyaml</shadedPattern>
                         </relocation>
+                        <relocation>
+                            <pattern>org.jboss.netty</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.jboss.netty</shadedPattern>
+                        </relocation>
                     </relocations>
                     <filters>
                         <filter>
@@ -191,6 +200,8 @@
                                 <exclude>META-INF/*.ec</exclude>
                                 <exclude>META-INF/MSFTSIG.SF</exclude>
                                 <exclude>META-INF/MSFTSIG.RSA</exclude>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
                             </excludes>
                         </filter>
                     </filters>

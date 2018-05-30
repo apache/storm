@@ -25,12 +25,12 @@ import org.apache.storm.messaging.netty.ISaslServer;
 import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
 import org.apache.storm.pacemaker.codec.ThriftNettyServerCodec;
 import org.apache.storm.security.auth.ClientAuthUtils;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.apache.storm.shade.org.jboss.netty.bootstrap.ServerBootstrap;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
+import org.apache.storm.shade.org.jboss.netty.channel.group.ChannelGroup;
+import org.apache.storm.shade.org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.apache.storm.shade.org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

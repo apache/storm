@@ -12,11 +12,11 @@
 
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.org.jboss.netty.channel.Channels;
+import org.apache.storm.shade.org.jboss.netty.channel.MessageEvent;
+import org.apache.storm.shade.org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -12,8 +12,8 @@
 
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelLocal;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelLocal;
 
 final class SaslNettyClientState {
 

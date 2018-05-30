@@ -14,8 +14,8 @@ package org.apache.storm.messaging.netty;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.jboss.netty.util.ThreadNameDeterminer;
-import org.jboss.netty.util.ThreadRenamingRunnable;
+import org.apache.storm.shade.org.jboss.netty.util.ThreadNameDeterminer;
+import org.apache.storm.shade.org.jboss.netty.util.ThreadRenamingRunnable;
 
 public class NettyRenameThreadFactory implements ThreadFactory {
 

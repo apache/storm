@@ -13,9 +13,9 @@
 package org.apache.storm.messaging.netty;
 
 import org.apache.storm.serialization.KryoValuesSerializer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
 public class MessageEncoder extends OneToOneEncoder {
 

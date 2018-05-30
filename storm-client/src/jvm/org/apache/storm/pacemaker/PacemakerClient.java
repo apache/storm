@@ -28,11 +28,11 @@ import org.apache.storm.messaging.netty.ISaslClient;
 import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
 import org.apache.storm.pacemaker.codec.ThriftNettyClientCodec;
 import org.apache.storm.security.auth.ClientAuthUtils;
+import org.apache.storm.shade.org.jboss.netty.bootstrap.ClientBootstrap;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
+import org.apache.storm.shade.org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.apache.storm.utils.StormBoundedExponentialBackoffRetry;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

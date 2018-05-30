@@ -19,9 +19,9 @@ import org.apache.storm.messaging.netty.SaslStormClientHandler;
 import org.apache.storm.pacemaker.PacemakerClient;
 import org.apache.storm.pacemaker.PacemakerClientHandler;
 import org.apache.storm.security.auth.ClientAuthUtils;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipeline;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
+import org.apache.storm.shade.org.jboss.netty.channel.Channels;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

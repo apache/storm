@@ -13,9 +13,9 @@
 package org.apache.storm.messaging.netty;
 
 import org.apache.storm.Config;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipeline;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
+import org.apache.storm.shade.org.jboss.netty.channel.Channels;
 
 class StormServerPipelineFactory implements ChannelPipelineFactory {
     private Server server;

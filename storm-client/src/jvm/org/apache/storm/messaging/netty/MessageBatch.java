@@ -14,9 +14,9 @@ package org.apache.storm.messaging.netty;
 
 import java.util.ArrayList;
 import org.apache.storm.messaging.TaskMessage;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBufferOutputStream;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffers;
 
 class MessageBatch {
     private int buffer_size;

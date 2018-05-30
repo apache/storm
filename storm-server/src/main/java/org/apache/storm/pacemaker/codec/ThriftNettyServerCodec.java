@@ -22,9 +22,9 @@ import org.apache.storm.messaging.netty.KerberosSaslServerHandler;
 import org.apache.storm.messaging.netty.SaslStormServerHandler;
 import org.apache.storm.messaging.netty.StormServerHandler;
 import org.apache.storm.security.auth.ClientAuthUtils;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipeline;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
+import org.apache.storm.shade.org.jboss.netty.channel.Channels;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
