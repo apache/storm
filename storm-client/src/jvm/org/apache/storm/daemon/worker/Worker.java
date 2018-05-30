@@ -54,6 +54,7 @@ import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.shade.com.google.common.base.Preconditions;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.shade.org.apache.commons.lang.ObjectUtils;
+import org.apache.storm.shade.uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
@@ -64,7 +65,6 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class Worker implements Shutdownable, DaemonCommon {
 

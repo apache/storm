@@ -42,11 +42,6 @@
     This is here as a work around to place it at the beginning of the classpath
     even though maven does not officially support ordering of the classpath.-->
         <dependency>
-            <groupId>uk.org.lidalia</groupId>
-            <artifactId>sysout-over-slf4j</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>

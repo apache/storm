@@ -135,6 +135,10 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
+        <dependency>
+            <groupId>uk.org.lidalia</groupId>
+            <artifactId>sysout-over-slf4j</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -171,6 +175,7 @@
                             <include>org.jctools:jctools-core</include>
                             <include>org.jgrapht:jgrapht-core</include>
                             <include>org.yaml:snakeyaml</include>
+                            <include>uk.org.lidalia:sysout-over-slf4j</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -235,6 +240,10 @@
                         <relocation>
                             <pattern>org.apache.commons.codec</pattern>
                             <shadedPattern>org.apache.storm.shade.org.apache.commons.codec</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>uk.org.lidalia.sysoutslf4j</pattern>
+                            <shadedPattern>org.apache.storm.shade.uk.org.lidalia.sysoutslf4j</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
