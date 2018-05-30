@@ -20,9 +20,10 @@ import com.esotericsoftware.kryo.serializers.BlowfishSerializer;
 import java.util.Map;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.storm.Config;
 import org.apache.storm.serialization.types.ListDelegateSerializer;
+import org.apache.storm.shade.org.apache.commons.codec.DecoderException;
+import org.apache.storm.shade.org.apache.commons.codec.binary.Hex;
 import org.apache.storm.utils.ListDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,7 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
                 }
             }
             serializer = new BlowfishSerializer(new ListDelegateSerializer(), bytes);
-        } catch (org.apache.commons.codec.DecoderException ex) {
+        } catch (DecoderException ex) {
             throw new RuntimeException("Blowfish encryption key invalid", ex);
         }
     }
