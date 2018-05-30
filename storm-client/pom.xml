@@ -80,12 +80,6 @@
         </dependency>
 
         <!-- below are transitive dependencies which are version managed in storm pom -->
-        <!-- httpclient is derived from thrift -->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
