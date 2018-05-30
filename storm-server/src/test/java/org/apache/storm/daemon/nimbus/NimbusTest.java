@@ -72,14 +72,15 @@ public class NimbusTest {
         idleTopologies.add("topology1");
         Mockito.when(store.storedTopoIds()).thenReturn(idleTopologies);
         Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS, 300000);
 
         try (Time.SimulatedTime t = new Time.SimulatedTime(null)) {
-            Set<String> toDelete = Nimbus.getIdleTopologyIds(store, conf);
+            Set<String> toDelete = Nimbus.getExpiredTopologyIds(store, conf);
             Assert.assertTrue(toDelete.isEmpty());
 
             Time.advanceTime(10 * 60 * 1000L);
 
-            toDelete = Nimbus.getIdleTopologyIds(store, conf);
+            toDelete = Nimbus.getExpiredTopologyIds(store, conf);
             Assert.assertTrue(toDelete.contains("topology1"));
             Assert.assertEquals(1, toDelete.size());
 

@@ -283,7 +283,7 @@ public class DaemonConfig implements Validated {
      * This controls the number of milliseconds nimbus will wait before deleting a topology blobstore once detected it is able to delete.
      */
     @isInteger
-    public static final String NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MSEC = "nimbus.topology.blobstore.deletion.delay.msec";
+    public static final String NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS = "nimbus.topology.blobstore.deletion.delay.ms";
 
     /**
      * Storm UI binds to this host/interface.

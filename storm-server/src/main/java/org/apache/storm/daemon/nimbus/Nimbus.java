@@ -372,7 +372,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final List<String> EMPTY_STRING_LIST = Collections.unmodifiableList(Collections.emptyList());
     private static final Set<String> EMPTY_STRING_SET = Collections.unmodifiableSet(Collections.emptySet());
     private static final Pattern TOPOLOGY_NAME_REGEX = Pattern.compile("^[^/.:\\\\]+$");
-    private static final RotatingMap<String, Long> topologyCleanupDetected = new RotatingMap<String, Long>(2);
+    private static final RotatingMap<String, Long> topologyCleanupDetected = new RotatingMap<>(2);
     private static long topologyCleanupRotationTime = 0L;
 
     // END TOPOLOGY STATE TRANSITIONS
@@ -848,20 +848,22 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     /**
-     * Finds blobstore entries with no matching topology.  Waits NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MSEC
-     * before reporting the topologies found.  The delay is to prevent a race condition between when a blobstore
-     * is created and when the topology is submitted.  It is possible the Nimbus cleanup timer task will find
-     * entries to delete between these two events.
+     * Finds blobstore entries with no matching topology. Blobstore entries first detected less than
+     * NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS ago are ignored. The delay is to prevent a race condition
+     * between when a blobstore is created and when the topology is submitted. It is possible the Nimbus cleanup
+     * timer task will find entries to delete between these two events.
      *
-     * @param store  blobstore to search
-     * @param conf  the nimbus conf
-     * @return a set of
+     * Tracked blobstore entries are rotated out of the stored map periodically.
+     *
+     * @param store blobstore to search
+     * @param conf the nimbus conf
+     * @return the set of blobstores with no matching topology
      */
-    static Set<String> getIdleTopologyIds(BlobStore store, Map<String, Object> conf) {
+    static Set<String> getExpiredTopologyIds(BlobStore store, Map<String, Object> conf) {
         Set<String> toposToClean = store.storedTopoIds();
         Set<String> idleTopologies = new HashSet<>();
         long topologyDeletionDelay = ObjectReader.getInt(
-                conf.get(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MSEC), 5 * 60 * 1000);
+                conf.get(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS), 5 * 60 * 1000);
         for (String topologyId : toposToClean) {
             if (Time.currentTimeMillis() - getTopologyCleanupDetectedTime(topologyId) >= topologyDeletionDelay) {
                 idleTopologies.add(topologyId);
@@ -878,7 +880,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         Set<String> ret = new HashSet<>();
         ret.addAll(Utils.OR(state.heartbeatStorms(), EMPTY_STRING_LIST));
         ret.addAll(Utils.OR(state.errorTopologies(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.OR(getIdleTopologyIds(store, conf), EMPTY_STRING_SET));
+        ret.addAll(Utils.OR(getExpiredTopologyIds(store, conf), EMPTY_STRING_SET));
         ret.addAll(Utils.OR(state.backpressureTopologies(), EMPTY_STRING_LIST));
         ret.addAll(Utils.OR(state.idsOfTopologiesWithPrivateWorkerKeys(), EMPTY_STRING_SET));
         ret.removeAll(Utils.OR(state.activeStorms(), EMPTY_STRING_LIST));
