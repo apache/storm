@@ -31,11 +31,11 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.security.auth.NimbusPrincipal;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.apache.storm.utils.ZookeeperAuthInfo;
-import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

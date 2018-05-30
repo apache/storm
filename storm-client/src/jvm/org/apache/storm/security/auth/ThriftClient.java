@@ -16,10 +16,10 @@ import java.util.Map;
 import javax.security.auth.login.Configuration;
 import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
+import org.apache.storm.thrift.protocol.TBinaryProtocol;
+import org.apache.storm.thrift.protocol.TProtocol;
+import org.apache.storm.thrift.transport.TSocket;
+import org.apache.storm.thrift.transport.TTransport;
 
 public class ThriftClient implements AutoCloseable {
     protected TProtocol _protocol;

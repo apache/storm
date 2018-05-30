@@ -18,16 +18,18 @@
 package org.apache.storm.st.tests.window;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.List;
 import org.apache.storm.st.helper.AbstractTest;
-import org.apache.storm.st.wrapper.LogData;
-import org.apache.storm.st.wrapper.TopoWrap;
-import org.apache.thrift.TException;
 import org.apache.storm.st.topology.TestableTopology;
 import org.apache.storm.st.topology.window.SlidingTimeCorrectness;
 import org.apache.storm.st.topology.window.SlidingWindowCorrectness;
 import org.apache.storm.st.topology.window.data.TimeData;
 import org.apache.storm.st.topology.window.data.TimeDataWindow;
 import org.apache.storm.st.utils.TimeUtil;
+import org.apache.storm.st.wrapper.LogData;
+import org.apache.storm.st.wrapper.TopoWrap;
+import org.apache.storm.thrift.TException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -36,9 +38,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import java.net.MalformedURLException;
-import java.util.List;
 
 public final class SlidingWindowTest extends AbstractTest {
     private static Logger log = LoggerFactory.getLogger(SlidingWindowTest.class);

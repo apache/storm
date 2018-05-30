@@ -36,11 +36,11 @@ import org.apache.storm.security.auth.workertoken.WorkerTokenAuthorizer;
 import org.apache.storm.security.auth.workertoken.WorkerTokenClientCallbackHandler;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.apache.zookeeper.server.auth.KerberosName;
-import org.apache.thrift.transport.TSaslClientTransport;
-import org.apache.thrift.transport.TSaslServerTransport;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-import org.apache.thrift.transport.TTransportFactory;
+import org.apache.storm.thrift.transport.TSaslClientTransport;
+import org.apache.storm.thrift.transport.TSaslServerTransport;
+import org.apache.storm.thrift.transport.TTransport;
+import org.apache.storm.thrift.transport.TTransportException;
+import org.apache.storm.thrift.transport.TTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

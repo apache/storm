@@ -29,9 +29,9 @@ import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.LocalStateData;
 import org.apache.storm.generated.ThriftSerializedObject;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TSerializer;
+import org.apache.storm.thrift.TBase;
+import org.apache.storm.thrift.TDeserializer;
+import org.apache.storm.thrift.TSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

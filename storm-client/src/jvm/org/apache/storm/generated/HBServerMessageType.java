@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum HBServerMessageType implements org.apache.thrift.TEnum {
+public enum HBServerMessageType implements org.apache.storm.thrift.TEnum {
   CREATE_PATH(0),
   CREATE_PATH_RESPONSE(1),
   EXISTS(2),

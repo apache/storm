@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum WorkerTokenServiceType implements org.apache.thrift.TEnum {
+public enum WorkerTokenServiceType implements org.apache.storm.thrift.TEnum {
   NIMBUS(0),
   DRPC(1),
   SUPERVISOR(2);

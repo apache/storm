@@ -95,6 +95,7 @@ import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.testing.NonRichBoltTracker;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.testing.TrackedTopology;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.DRPCClient;
 import org.apache.storm.utils.NimbusClient;
@@ -106,7 +107,6 @@ import org.apache.storm.utils.Time.SimulatedTime;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedAuthorizationException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
-import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
@@ -946,7 +946,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     }
 
-    public void processWorkerMetrics(WorkerMetrics metrics) throws org.apache.thrift.TException {
+    public void processWorkerMetrics(WorkerMetrics metrics) throws TException {
         getNimbus().processWorkerMetrics(metrics);
     }
 

@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum DRPCExceptionType implements org.apache.thrift.TEnum {
+public enum DRPCExceptionType implements org.apache.storm.thrift.TEnum {
   INTERNAL_ERROR(0),
   SERVER_SHUTDOWN(1),
   SERVER_TIMEOUT(2),

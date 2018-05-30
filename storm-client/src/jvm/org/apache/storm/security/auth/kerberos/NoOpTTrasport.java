@@ -12,9 +12,9 @@
 
 package org.apache.storm.security.auth.kerberos;
 
-import org.apache.thrift.transport.TSaslServerTransport;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.storm.thrift.transport.TSaslServerTransport;
+import org.apache.storm.thrift.transport.TTransport;
+import org.apache.storm.thrift.transport.TTransportException;
 
 public class NoOpTTrasport extends TSaslServerTransport {
 

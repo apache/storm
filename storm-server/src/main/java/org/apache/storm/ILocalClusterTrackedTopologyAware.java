@@ -21,7 +21,7 @@ package org.apache.storm;
 import java.util.Map;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.testing.TrackedTopology;
-import org.apache.thrift.TException;
+import org.apache.storm.thrift.TException;
 
 /**
  * This is here mostly for backwards compatibility. Please see {@link org.apache.storm.LocalCluster} for more details on testing a Storm

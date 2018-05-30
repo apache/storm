@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum TopologyStatus implements org.apache.thrift.TEnum {
+public enum TopologyStatus implements org.apache.storm.thrift.TEnum {
   ACTIVE(1),
   INACTIVE(2),
   REBALANCING(3),

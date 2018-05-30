@@ -19,11 +19,11 @@ import javax.security.auth.callback.CallbackHandler;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.security.auth.sasl.SimpleSaslServerCallbackHandler;
-import org.apache.thrift.transport.TSaslClientTransport;
-import org.apache.thrift.transport.TSaslServerTransport;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-import org.apache.thrift.transport.TTransportFactory;
+import org.apache.storm.thrift.transport.TSaslClientTransport;
+import org.apache.storm.thrift.transport.TSaslServerTransport;
+import org.apache.storm.thrift.transport.TTransport;
+import org.apache.storm.thrift.transport.TTransportException;
+import org.apache.storm.thrift.transport.TTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

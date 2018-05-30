@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum AccessControlType implements org.apache.thrift.TEnum {
+public enum AccessControlType implements org.apache.storm.thrift.TEnum {
   OTHER(1),
   USER(2);
 

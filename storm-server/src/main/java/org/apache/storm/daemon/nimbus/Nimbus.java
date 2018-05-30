@@ -184,6 +184,7 @@ import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.stats.StatsUtil;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.BufferInputStream;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
@@ -207,7 +208,6 @@ import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.zookeeper.AclEnforcement;
 import org.apache.storm.zookeeper.ClientZookeeper;
 import org.apache.storm.zookeeper.Zookeeper;
-import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -4524,7 +4524,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public void processWorkerMetrics(WorkerMetrics metrics) throws org.apache.thrift.TException {
+    public void processWorkerMetrics(WorkerMetrics metrics) throws TException {
         processWorkerMetricsCalls.mark();
 
         checkAuthorization(null, null, "processWorkerMetrics");

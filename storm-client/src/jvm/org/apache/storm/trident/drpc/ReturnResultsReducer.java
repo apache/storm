@@ -23,6 +23,8 @@ import org.apache.storm.generated.DistributedRPCInvocations;
 import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.trident.drpc.ReturnResultsReducer.ReturnResultsState;
 import org.apache.storm.trident.operation.MultiReducer;
 import org.apache.storm.trident.operation.TridentCollector;
@@ -30,9 +32,6 @@ import org.apache.storm.trident.operation.TridentMultiReducerContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServiceRegistry;
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
-
 
 public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
     boolean local;

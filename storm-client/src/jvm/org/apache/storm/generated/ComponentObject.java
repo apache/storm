@@ -24,14 +24,14 @@
 package org.apache.storm.generated;
 
 @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
-public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, ComponentObject._Fields> {
-  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("ComponentObject");
-  private static final org.apache.thrift.protocol.TField SERIALIZED_JAVA_FIELD_DESC = new org.apache.thrift.protocol.TField("serialized_java", org.apache.thrift.protocol.TType.STRING, (short)1);
-  private static final org.apache.thrift.protocol.TField SHELL_FIELD_DESC = new org.apache.thrift.protocol.TField("shell", org.apache.thrift.protocol.TType.STRUCT, (short)2);
-  private static final org.apache.thrift.protocol.TField JAVA_OBJECT_FIELD_DESC = new org.apache.thrift.protocol.TField("java_object", org.apache.thrift.protocol.TType.STRUCT, (short)3);
+public class ComponentObject extends org.apache.storm.thrift.TUnion<ComponentObject, ComponentObject._Fields> {
+  private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("ComponentObject");
+  private static final org.apache.storm.thrift.protocol.TField SERIALIZED_JAVA_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("serialized_java", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
+  private static final org.apache.storm.thrift.protocol.TField SHELL_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("shell", org.apache.storm.thrift.protocol.TType.STRUCT, (short)2);
+  private static final org.apache.storm.thrift.protocol.TField JAVA_OBJECT_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("java_object", org.apache.storm.thrift.protocol.TType.STRUCT, (short)3);
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-  public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+  public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
     SERIALIZED_JAVA((short)1, "serialized_java"),
     SHELL((short)2, "shell"),
     JAVA_OBJECT((short)3, "java_object");
@@ -94,17 +94,17 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
     }
   }
 
-  public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+  public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
-    java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.SERIALIZED_JAVA, new org.apache.thrift.meta_data.FieldMetaData("serialized_java", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , true)));
-    tmpMap.put(_Fields.SHELL, new org.apache.thrift.meta_data.FieldMetaData("shell", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ShellComponent.class)));
-    tmpMap.put(_Fields.JAVA_OBJECT, new org.apache.thrift.meta_data.FieldMetaData("java_object", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, JavaObject.class)));
+    java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+    tmpMap.put(_Fields.SERIALIZED_JAVA, new org.apache.storm.thrift.meta_data.FieldMetaData("serialized_java", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING        , true)));
+    tmpMap.put(_Fields.SHELL, new org.apache.storm.thrift.meta_data.FieldMetaData("shell", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, ShellComponent.class)));
+    tmpMap.put(_Fields.JAVA_OBJECT, new org.apache.storm.thrift.meta_data.FieldMetaData("java_object", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, JavaObject.class)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
-    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ComponentObject.class, metaDataMap);
+    org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ComponentObject.class, metaDataMap);
   }
 
   public ComponentObject() {
@@ -171,7 +171,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
   }
 
   @Override
-  protected java.lang.Object standardSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TField field) throws org.apache.thrift.TException {
+  protected java.lang.Object standardSchemeReadValue(org.apache.storm.thrift.protocol.TProtocol iprot, org.apache.storm.thrift.protocol.TField field) throws org.apache.storm.thrift.TException {
     _Fields setField = _Fields.findByThriftId(field.id);
     if (setField != null) {
       switch (setField) {
@@ -181,7 +181,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
             serialized_java = iprot.readBinary();
             return serialized_java;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case SHELL:
@@ -191,7 +191,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
             shell.read(iprot);
             return shell;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case JAVA_OBJECT:
@@ -201,20 +201,20 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
             java_object.read(iprot);
             return java_object;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         default:
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
     } else {
-      org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+      org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       return null;
     }
   }
 
   @Override
-  protected void standardSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void standardSchemeWriteValue(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
     switch (setField_) {
       case SERIALIZED_JAVA:
         java.nio.ByteBuffer serialized_java = (java.nio.ByteBuffer)value_;
@@ -234,7 +234,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
   }
 
   @Override
-  protected java.lang.Object tupleSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.thrift.TException {
+  protected java.lang.Object tupleSchemeReadValue(org.apache.storm.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.storm.thrift.TException {
     _Fields setField = _Fields.findByThriftId(fieldID);
     if (setField != null) {
       switch (setField) {
@@ -256,12 +256,12 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
     } else {
-      throw new org.apache.thrift.protocol.TProtocolException("Couldn't find a field with field id " + fieldID);
+      throw new org.apache.storm.thrift.protocol.TProtocolException("Couldn't find a field with field id " + fieldID);
     }
   }
 
   @Override
-  protected void tupleSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void tupleSchemeWriteValue(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
     switch (setField_) {
       case SERIALIZED_JAVA:
         java.nio.ByteBuffer serialized_java = (java.nio.ByteBuffer)value_;
@@ -281,7 +281,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
   }
 
   @Override
-  protected org.apache.thrift.protocol.TField getFieldDesc(_Fields setField) {
+  protected org.apache.storm.thrift.protocol.TField getFieldDesc(_Fields setField) {
     switch (setField) {
       case SERIALIZED_JAVA:
         return SERIALIZED_JAVA_FIELD_DESC;
@@ -295,7 +295,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
   }
 
   @Override
-  protected org.apache.thrift.protocol.TStruct getStructDesc() {
+  protected org.apache.storm.thrift.protocol.TStruct getStructDesc() {
     return STRUCT_DESC;
   }
 
@@ -310,14 +310,14 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
 
 
   public byte[] get_serialized_java() {
-    set_serialized_java(org.apache.thrift.TBaseHelper.rightSize(buffer_for_serialized_java()));
+    set_serialized_java(org.apache.storm.thrift.TBaseHelper.rightSize(buffer_for_serialized_java()));
     java.nio.ByteBuffer b = buffer_for_serialized_java();
     return b == null ? null : b.array();
   }
 
   public java.nio.ByteBuffer buffer_for_serialized_java() {
     if (getSetField() == _Fields.SERIALIZED_JAVA) {
-      return org.apache.thrift.TBaseHelper.copyBinary((java.nio.ByteBuffer)getFieldValue());
+      return org.apache.storm.thrift.TBaseHelper.copyBinary((java.nio.ByteBuffer)getFieldValue());
     } else {
       throw new java.lang.RuntimeException("Cannot get field 'serialized_java' because union is currently set to " + getFieldDesc(getSetField()).name);
     }
@@ -390,9 +390,9 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
 
   @Override
   public int compareTo(ComponentObject other) {
-    int lastComparison = org.apache.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());
+    int lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());
     if (lastComparison == 0) {
-      return org.apache.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());
+      return org.apache.storm.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());
     }
     return lastComparison;
   }
@@ -402,12 +402,12 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
   public int hashCode() {
     java.util.List<java.lang.Object> list = new java.util.ArrayList<java.lang.Object>();
     list.add(this.getClass().getName());
-    org.apache.thrift.TFieldIdEnum setField = getSetField();
+    org.apache.storm.thrift.TFieldIdEnum setField = getSetField();
     if (setField != null) {
       list.add(setField.getThriftFieldId());
       java.lang.Object value = getFieldValue();
-      if (value instanceof org.apache.thrift.TEnum) {
-        list.add(((org.apache.thrift.TEnum)getFieldValue()).getValue());
+      if (value instanceof org.apache.storm.thrift.TEnum) {
+        list.add(((org.apache.storm.thrift.TEnum)getFieldValue()).getValue());
       } else {
         list.add(value);
       }
@@ -416,8 +416,8 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
   }
   private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
     try {
-      write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
-    } catch (org.apache.thrift.TException te) {
+      write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+    } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
     }
   }
@@ -425,8 +425,8 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
 
   private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
     try {
-      read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
-    } catch (org.apache.thrift.TException te) {
+      read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+    } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
     }
   }

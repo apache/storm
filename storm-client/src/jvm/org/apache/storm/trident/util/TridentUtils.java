@@ -20,11 +20,11 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.thrift.TBase;
 import org.apache.storm.topology.IComponent;
 import org.apache.storm.topology.OutputFieldsGetter;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-import org.apache.thrift.TBase;
 
 public class TridentUtils {
     public static Fields fieldsUnion(Fields... fields) {

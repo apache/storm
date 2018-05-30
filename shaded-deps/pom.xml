@@ -105,6 +105,25 @@
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>javax.servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>
@@ -134,13 +153,20 @@
                             <include>commons-lang:commons-lang</include>
                             <include>io.netty:netty</include>
                             <include>org.apache.curator:*</include>
+                            <include>org.apache.thrift:*</include>
                             <include>org.apache.zookeeper:zookeeper</include>
                             <include>org.jctools:jctools-core</include>
                             <include>org.jgrapht:jgrapht-core</include>
                             <include>org.yaml:snakeyaml</include>
+
                         </includes>
                     </artifactSet>
                     <relocations>
+                        <relocation>
+                            <pattern>org.apache.thrift</pattern>
+                            <!-- This pattern is inconsistent for backwards compatibility purposes. -->
+                            <shadedPattern>org.apache.storm.thrift</shadedPattern>
+                        </relocation>
                         <relocation>
                             <pattern>com.google.common</pattern>
                             <shadedPattern>org.apache.storm.shade.com.google.common</shadedPattern>

@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum ComponentType implements org.apache.thrift.TEnum {
+public enum ComponentType implements org.apache.storm.thrift.TEnum {
   BOLT(1),
   SPOUT(2);
 

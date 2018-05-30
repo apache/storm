@@ -25,9 +25,9 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ListBlobsResult;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

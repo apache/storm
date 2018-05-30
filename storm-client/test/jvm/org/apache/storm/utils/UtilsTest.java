@@ -26,7 +26,7 @@ import org.apache.storm.Config;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.junit.Assert;
 import org.junit.Test;
 

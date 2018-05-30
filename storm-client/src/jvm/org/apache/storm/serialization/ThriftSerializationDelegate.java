@@ -13,10 +13,10 @@
 package org.apache.storm.serialization;
 
 import java.util.Map;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
+import org.apache.storm.thrift.TBase;
+import org.apache.storm.thrift.TDeserializer;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.thrift.TSerializer;
 
 public class ThriftSerializationDelegate implements SerializationDelegate {
 
