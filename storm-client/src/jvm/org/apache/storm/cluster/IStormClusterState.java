@@ -61,7 +61,7 @@ public interface IStormClusterState {
     Map<String, Assignment> assignmentsInfo();
 
     /**
-     * Sync the remote state store assignments to local backend, used when master gains leadership, see {@link LeaderListenerCallback}
+     * Sync the remote state store assignments to local backend, used when master gains leadership, see {@link LeaderListenerCallback}.
      *
      * @param remote assigned assignments for a specific {@link IStormClusterState} instance, usually a supervisor/node.
      */
@@ -75,7 +75,7 @@ public interface IStormClusterState {
     boolean isAssignmentsBackendSynchronized();
 
     /**
-     * Mark the assignments as synced successfully, see {@link #isAssignmentsBackendSynchronized()}
+     * Mark the assignments as synced successfully, see {@link #isAssignmentsBackendSynchronized()}.
      */
     void setAssignmentsBackendSynchronized();
 
@@ -92,7 +92,7 @@ public interface IStormClusterState {
     List<String> activeStorms();
 
     /**
-     * Get a storm base for a topology
+     * Get a storm base for a topology.
      *
      * @param stormId  the id of the topology
      * @param callback something to call if the data changes (best effort)
@@ -297,13 +297,16 @@ public interface IStormClusterState {
     default Map<String, SupervisorInfo> allSupervisorInfo(Runnable callback) {
         Map<String, SupervisorInfo> ret = new HashMap<>();
         for (String id : supervisors(callback)) {
-            ret.put(id, supervisorInfo(id));
+            SupervisorInfo supervisorInfo = supervisorInfo(id);
+            if (supervisorInfo != null) {
+                ret.put(id, supervisorInfo);
+            }
         }
         return ret;
     }
 
     /**
-     * Get a topology ID from the name of a topology
+     * Get a topology ID from the name of a topology.
      *
      * @param topologyName the name of the topology to look for
      * @return the id of the topology or null if it is not alive.
@@ -316,7 +319,7 @@ public interface IStormClusterState {
         Map<String, StormBase> stormBases = new HashMap<>();
         for (String topologyId : activeStorms()) {
             StormBase base = stormBase(topologyId, null);
-            if (base != null) { //rece condition with delete
+            if (base != null) { //race condition with delete
                 stormBases.put(topologyId, base);
             }
         }
