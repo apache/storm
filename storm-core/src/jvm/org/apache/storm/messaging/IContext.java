@@ -50,6 +50,8 @@ public interface IContext {
     
     /**
      * This method establish a client side connection to a remote server
+     * implementation should return a new connection every call
+     *
      * @param storm_id topology ID
      * @param host remote host
      * @param port remote port
