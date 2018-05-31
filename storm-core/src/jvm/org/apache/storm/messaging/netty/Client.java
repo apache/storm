@@ -81,10 +81,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private final ClientBootstrap bootstrap;
     private final InetSocketAddress dstAddress;
     protected final String dstAddressPrefixedName;
-    //The actual name of the host we are trying to connect to so that
-    // when we remove ourselves from the connection cache there is no concern that
-    // the resolved host name is different.
-    private final String dstHost;
+
     private volatile Map<Integer, Double> serverLoad = null;
 
     /**
@@ -133,8 +130,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
      */
     private volatile boolean closing = false;
 
-    private final Context context;
-
     private final HashedWheelTimer scheduler;
 
     private final MessageBuffer batcher;
@@ -142,11 +137,10 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private final Object writeLock = new Object();
 
     @SuppressWarnings("rawtypes")
-    Client(Map stormConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
+    Client(Map stormConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port) {
         this.stormConf = stormConf;
         closing = false;
         this.scheduler = scheduler;
-        this.context = context;
         int bufferSize = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         // if SASL authentication is disabled, saslChannelReady is initialized as true; otherwise false
         saslChannelReady.set(!Utils.getBoolean(stormConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION), false));
@@ -160,7 +154,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
         // Initiate connection to remote destination
         bootstrap = createClientBootstrap(factory, bufferSize, stormConf);
-        dstHost = host;
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
@@ -425,7 +418,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     public void close() {
         if (!closing) {
             LOG.info("closing Netty Client {}", dstAddressPrefixedName);
-            context.removeClient(dstHost, dstAddress.getPort());
             // Set closing to true to prevent any further reconnection attempts.
             closing = true;
             waitForPendingMessagesToBeSent();
