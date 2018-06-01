@@ -187,6 +187,7 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.SimpleVersion;
@@ -375,6 +376,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final List<String> EMPTY_STRING_LIST = Collections.unmodifiableList(Collections.emptyList());
     private static final Set<String> EMPTY_STRING_SET = Collections.unmodifiableSet(Collections.emptySet());
     private static final Pattern TOPOLOGY_NAME_REGEX = Pattern.compile("^[^/.:\\\\]+$");
+    private static final RotatingMap<String, Long> topologyCleanupDetected = new RotatingMap<>(2);
+    private static long topologyCleanupRotationTime = 0L;
 
     // END TOPOLOGY STATE TRANSITIONS
 
@@ -833,12 +836,56 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 
+    private static void rotateTopologyCleanupMap(long deletionDelay) {
+        if (Time.currentTimeMillis() - topologyCleanupRotationTime > deletionDelay) {
+            topologyCleanupDetected.rotate();
+            topologyCleanupRotationTime = Time.currentTimeMillis();
+        }
+    }
+
+    private static long getTopologyCleanupDetectedTime(String topologyId) {
+        Long firstDetectedForDeletion = topologyCleanupDetected.get(topologyId);
+        if (firstDetectedForDeletion == null) {
+            firstDetectedForDeletion = Time.currentTimeMillis();
+            topologyCleanupDetected.put(topologyId, firstDetectedForDeletion);
+        }
+        return firstDetectedForDeletion;
+    }
+
+    /**
+     * Finds blobstore entries with no matching topology. Blobstore entries first detected less than
+     * NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS ago are ignored. The delay is to prevent a race condition
+     * between when a blobstore is created and when the topology is submitted. It is possible the Nimbus cleanup
+     * timer task will find entries to delete between these two events.
+     *
+     * Tracked blobstore entries are rotated out of the stored map periodically.
+     *
+     * @param store blobstore to search
+     * @param conf the nimbus conf
+     * @return the set of blobstores with no matching topology
+     */
+    static Set<String> getExpiredTopologyIds(BlobStore store, Map<String, Object> conf) {
+        Set<String> toposToClean = store.storedTopoIds();
+        Set<String> idleTopologies = new HashSet<>();
+        long topologyDeletionDelay = ObjectReader.getInt(
+                conf.get(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS), 5 * 60 * 1000);
+        for (String topologyId : toposToClean) {
+            if (Time.currentTimeMillis() - getTopologyCleanupDetectedTime(topologyId) >= topologyDeletionDelay) {
+                idleTopologies.add(topologyId);
+            }
+        }
+
+        rotateTopologyCleanupMap(topologyDeletionDelay);
+
+        return idleTopologies;
+    }
+
     @VisibleForTesting
-    public static Set<String> topoIdsToClean(IStormClusterState state, BlobStore store) {
+    public static Set<String> topoIdsToClean(IStormClusterState state, BlobStore store, Map<String, Object> conf) {
         Set<String> ret = new HashSet<>();
         ret.addAll(Utils.OR(state.heartbeatStorms(), EMPTY_STRING_LIST));
         ret.addAll(Utils.OR(state.errorTopologies(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.OR(store.storedTopoIds(), EMPTY_STRING_SET));
+        ret.addAll(Utils.OR(getExpiredTopologyIds(store, conf), EMPTY_STRING_SET));
         ret.addAll(Utils.OR(state.backpressureTopologies(), EMPTY_STRING_LIST));
         ret.addAll(Utils.OR(state.idsOfTopologiesWithPrivateWorkerKeys(), EMPTY_STRING_SET));
         ret.removeAll(Utils.OR(state.activeStorms(), EMPTY_STRING_LIST));
@@ -2384,7 +2431,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         IStormClusterState state = stormClusterState;
         Set<String> toClean;
         synchronized (submitLock) {
-            toClean = topoIdsToClean(state, blobStore);
+            toClean = topoIdsToClean(state, blobStore, this.conf);
         }
         if (toClean != null) {
             for (String topoId : toClean) {
@@ -3313,7 +3360,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             String sessionId = Utils.uuid();
             blobUploaders.put(sessionId, blobStore.createBlob(key, meta, getSubject()));
-            LOG.info("Created blob for {}", key);
+            LOG.info("Created blob {} for session {}", key, sessionId);
             return sessionId;
         } catch (Exception e) {
             LOG.warn("begin create blob exception.", e);
@@ -3444,7 +3491,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                                  (int) conf
                                                                      .getOrDefault(Config.STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES,
                                                                                    65536)));
-            LOG.info("Created download session for {}", key);
+            LOG.info("Created download session {} for {}", sessionId, key);
             return ret;
         } catch (Exception e) {
             LOG.warn("begin blob download exception.", e);
