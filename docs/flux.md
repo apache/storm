@@ -342,6 +342,41 @@ components:
     className: "org.apache.storm.kafka.StringScheme"
 ```
 
+### Static factory methods
+It is also possible to use static factory methods from Flux. Given the following Java code:
+
+```java
+public class TestBolt extends BaseBasicBolt {
+  public static TestBolt newInstance(Duration triggerTime) {
+    return new TestBolt(triggerTime);
+  }
+}
+```
+
+```java
+public class Duration {
+  public static Duration ofSeconds(long seconds) {
+    return new Duration(seconds);
+  }
+}
+```
+
+it is possible to use the factory methods as follows:
+
+```yaml
+components:
+  - id: "time"
+    className: "java.time.Duration"
+    factory: "ofSeconds"
+
+bolts:
+  - id: "testBolt"
+    className: "org.apache.storm.flux.test.TestBolt"
+    factory: "newInstance"
+    factoryArgs:
+      - ref: "time"
+``` 
+
 ### Contructor Arguments, References, Properties and Configuration Methods
 
 ####Constructor Arguments
