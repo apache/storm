@@ -78,20 +78,33 @@ public class StormApiResource {
     }
 
     /**
-     * /api/v1/cluster/configuration -> nimbus configuration.
+     * /api/v1/cluster/summary -> cluster summary.
      */
     @GET
     @Path("/cluster/summary")
     @Produces("application/json")
     public String getClusterSummary() {
         try {
-            LOG.info("HELL");
             String user = servletRequest.getRemoteUser();
-            // System.out.println("HELL");
-            System.out.println(user);
-            LOG.info("HELL");
-            LOG.info(user);
-            LOG.info(nimbusClient.getClient().getClusterInfo().toString());
+            return JSONValue.toJSONString(
+                    UiHelpers.getClusterSummary(
+                            nimbusClient.getClient().getClusterInfo(), user, config)
+            );
+        } catch (TException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * /api/v1/nimbus/summary -> nimbus summary.
+     */
+    @GET
+    @Path("/nimbus/summary")
+    @Produces("application/json")
+    public String getNimbusSummary() {
+        try {
+            String user = servletRequest.getRemoteUser();
             return JSONValue.toJSONString(
                     UiHelpers.getClusterSummary(
                             nimbusClient.getClient().getClusterInfo(), user, config)
