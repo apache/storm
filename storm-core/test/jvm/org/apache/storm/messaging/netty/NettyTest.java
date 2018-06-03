@@ -213,7 +213,7 @@ public class NettyTest {
 
     private void doTestLargeMessage(Map<String, Object> stormConf) throws Exception {
         LOG.info("3 Should send and receive a large message");
-        String reqMessage = StringUtils.repeat("c", 2048000);
+        String reqMessage = StringUtils.repeat("c", 2_048_000);
         IContext context = TransportFactory.makeContext(stormConf);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
@@ -237,7 +237,7 @@ public class NettyTest {
 
     private Map<String, Object> largeMessageConf() {
         Map<String, Object> conf = basicConf();
-        conf.put(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE, 1024000);
+        conf.put(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE, 102_400);
         return conf;
     }
     
@@ -302,7 +302,7 @@ public class NettyTest {
     }
 
     private void doTestBatch(Map<String, Object> stormConf) throws Exception {
-        int numMessages = 100000;
+        int numMessages = 100_000;
         LOG.info("Should send and receive many messages (testing with " + numMessages + " messages)");
         ArrayList<TaskMessage> responses = new ArrayList<>();
         AtomicInteger received = new AtomicInteger();
@@ -335,14 +335,20 @@ public class NettyTest {
         }
     }
 
+    private Map<String, Object> batchConf() {
+        Map<String, Object> conf = basicConf();
+        conf.put(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE, 1_024_000);
+        return conf;
+    }
+    
     @Test
     public void testBatch() throws Exception {
-        doTestBatch(basicConf());
+        doTestBatch(batchConf());
     }
 
     @Test
     public void testBatchWithSasl() throws Exception {
-        doTestBatch(withSaslConf(basicConf()));
+        doTestBatch(withSaslConf(batchConf()));
     }
 
     private void doTestServerAlwaysReconnects(Map<String, Object> stormConf) throws Exception {
