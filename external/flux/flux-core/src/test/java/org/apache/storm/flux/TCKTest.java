@@ -33,8 +33,14 @@ import static org.junit.Assert.*;
 
 import java.util.Collections;
 import java.util.Properties;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 
 public class TCKTest {
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+    
     @Test
     public void testTCK() throws Exception {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/tck.yaml", false, true, null, false);
@@ -55,14 +61,16 @@ public class TCKTest {
         topology.validate();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadShellComponents() throws Exception {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/bad_shell_test.yaml", false, true, null, false);
         Config conf = FluxBuilder.buildConfig(topologyDef);
         ExecutionContext context = new ExecutionContext(topologyDef, conf);
-        StormTopology topology = FluxBuilder.buildTopology(context);
-        assertNotNull(topology);
-        topology.validate();
+        
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Unable to find configuration method");
+        
+        FluxBuilder.buildTopology(context);
     }
 
     @Test
@@ -117,14 +125,16 @@ public class TCKTest {
         topology.validate();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadHbase() throws Exception {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/bad_hbase.yaml", false, true, null, false);
         Config conf = FluxBuilder.buildConfig(topologyDef);
         ExecutionContext context = new ExecutionContext(topologyDef, conf);
-        StormTopology topology = FluxBuilder.buildTopology(context);
-        assertNotNull(topology);
-        topology.validate();
+        
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Couldn't find a suitable constructor");
+        
+        FluxBuilder.buildTopology(context);
     }
 
     @Test
@@ -267,5 +277,18 @@ public class TCKTest {
                Collections.singletonList("A string list"),
                is(context.getTopologyDef().getConfig().get("list.property.target")));
 
+    }
+    
+    @Test
+    public void testTopologyWithInvalidStaticFactoryArgument() throws Exception {
+        //STORM-3087.
+        TopologyDef topologyDef = FluxParser.parseResource("/configs/bad_static_factory_test.yaml", false, true, null, false);
+        Config conf = FluxBuilder.buildConfig(topologyDef);
+        ExecutionContext context = new ExecutionContext(topologyDef, conf);
+        
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Couldn't find a suitable static method");
+        
+        FluxBuilder.buildTopology(context);
     }
 }
