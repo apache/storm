@@ -239,8 +239,8 @@ To pull in a merge request you should generally follow the command line instruct
 # Build the code and run the tests
 
 ## Prerequisites
-To work around a conflict between the shade plugin and maven https://issues.apache.org/jira/browse/MSHADE-206 the build is spit into 2 parts.
-First a set of dependencies are shaded and installed by running.
+To work around a conflict between the shade plugin and maven https://issues.apache.org/jira/browse/MSHADE-206, a set of 
+dependencies needs to be shaded and installed by running:
 
 ```sh
 cd shaded-deps
