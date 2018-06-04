@@ -178,10 +178,10 @@ public class ServerConfigUtils {
     }
 
     public LocalState supervisorStateImpl(Map<String, Object> conf) throws IOException {
-        return new LocalState((ConfigUtils.supervisorLocalDir(conf) + FILE_SEPARATOR + "localstate"));
+        return new LocalState((ConfigUtils.supervisorLocalDir(conf) + FILE_SEPARATOR + "localstate"),  true);
     }
 
     public LocalState nimbusTopoHistoryStateImpl(Map<String, Object> conf) throws IOException {
-        return new LocalState((masterLocalDir(conf) + FILE_SEPARATOR + "history"));
+        return new LocalState((masterLocalDir(conf) + FILE_SEPARATOR + "history"), true);
     }
 }
