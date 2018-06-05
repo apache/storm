@@ -635,6 +635,7 @@
                                       (.withSupervisors 2)
                                       (.withPortsPerSupervisor 5)
                                       (.withDaemonConf {SUPERVISOR-ENABLE false
+                  NIMBUS-TOPOLOGY-BLOBSTORE-DELETION-DELAY-MS 0
                   NIMBUS-TASK-TIMEOUT-SECS 30
                   NIMBUS-MONITOR-FREQ-SECS 10
                   TOPOLOGY-ACKER-EXECUTORS 0
@@ -1856,7 +1857,7 @@
          (let [mock-state (mock-cluster-state (list "topo1") (list "topo1" "topo2" "topo3"))
                store (Mockito/mock BlobStore)]
               (.thenReturn (Mockito/when (.storedTopoIds store)) #{})
-              (is (= (Nimbus/topoIdsToClean mock-state store (new java.util.HashMap)) #{"topo2" "topo3"}))))
+              (is (= (Nimbus/topoIdsToClean mock-state store {NIMBUS-TOPOLOGY-BLOBSTORE-DELETION-DELAY-MS 0}) #{"topo2" "topo3"}))))
 
 (deftest cleanup-storm-ids-performs-union-of-storm-ids-with-active-znodes
   (let [active-topos (list "hb1" "e2" "bp3")
@@ -1866,7 +1867,7 @@
         mock-state (mock-cluster-state active-topos hb-topos error-topos bp-topos)
         store (Mockito/mock BlobStore)]
     (.thenReturn (Mockito/when (.storedTopoIds store)) #{})
-    (is (= (Nimbus/topoIdsToClean mock-state store (new java.util.HashMap))
+    (is (= (Nimbus/topoIdsToClean mock-state store {NIMBUS-TOPOLOGY-BLOBSTORE-DELETION-DELAY-MS 0})
            #{"hb2" "hb3" "e1" "e3" "bp1" "bp2"}))))
 
 (deftest cleanup-storm-ids-returns-empty-set-when-all-topos-are-active

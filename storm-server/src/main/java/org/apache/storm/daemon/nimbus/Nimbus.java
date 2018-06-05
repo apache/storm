@@ -856,19 +856,18 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     /**
-     * Finds blobstore entries with no matching topology. Blobstore entries first detected less than
-     * NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS ago are ignored. The delay is to prevent a race condition
-     * between when a blobstore is created and when the topology is submitted. It is possible the Nimbus cleanup
-     * timer task will find entries to delete between these two events.
+     * From a set of topologies that have been found to cleanup, return a set that has been detected for a minimum
+     * amount of time. Topology entries first detected less than NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS ago are
+     * ignored. The delay is to prevent a race conditions such as when a blobstore is created and when the topology
+     * is submitted. It is possible the Nimbus cleanup timer task will find entries to delete between these two events.
      *
-     * Tracked blobstore entries are rotated out of the stored map periodically.
+     * Tracked topology entries are rotated out of the stored map periodically.
      *
-     * @param store blobstore to search
+     * @param toposToClean topologies considered for cleanup
      * @param conf the nimbus conf
-     * @return the set of blobstores with no matching topology
+     * @return the set of topologies that have been detected for cleanup past the expiration time
      */
-    static Set<String> getExpiredTopologyIds(BlobStore store, Map<String, Object> conf) {
-        Set<String> toposToClean = store.storedTopoIds();
+    static Set<String> getExpiredTopologyIds(Set<String> toposToClean, Map<String, Object> conf) {
         Set<String> idleTopologies = new HashSet<>();
         long topologyDeletionDelay = ObjectReader.getInt(
                 conf.get(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS), 5 * 60 * 1000);
@@ -888,9 +887,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         Set<String> ret = new HashSet<>();
         ret.addAll(Utils.OR(state.heartbeatStorms(), EMPTY_STRING_LIST));
         ret.addAll(Utils.OR(state.errorTopologies(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.OR(getExpiredTopologyIds(store, conf), EMPTY_STRING_SET));
+        ret.addAll(Utils.OR(store.storedTopoIds(), EMPTY_STRING_SET));
         ret.addAll(Utils.OR(state.backpressureTopologies(), EMPTY_STRING_LIST));
         ret.addAll(Utils.OR(state.idsOfTopologiesWithPrivateWorkerKeys(), EMPTY_STRING_SET));
+        ret = getExpiredTopologyIds(ret, conf);
         ret.removeAll(Utils.OR(state.activeStorms(), EMPTY_STRING_LIST));
         return ret;
     }
