@@ -209,7 +209,7 @@ public class ClientAuthUtilsTest {
     }
 
     @Test
-    public void uiHttpCredentialsPluginTest() {
+    public void pluginCreationTest() {
         Map<String, Object> conf = new HashMap<>();
         conf.put(
             Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, AuthUtilsTestMock.class.getName());

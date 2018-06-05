@@ -14,7 +14,6 @@ package org.apache.storm.container.cgroup;
 
 import java.io.IOException;
 import java.nio.channels.ClosedByInterruptException;
-import org.apache.storm.shade.com.google.common.base.Charsets;
 import org.apache.storm.shade.org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +54,8 @@ public class SystemOperation {
         Process process = new ProcessBuilder(new String[]{ "/bin/bash", "-c", cmd }).start();
         try {
             process.waitFor();
-            String output = IOUtils.toString(process.getInputStream(), Charsets.UTF_8);
-            String errorOutput = IOUtils.toString(process.getErrorStream(), Charsets.UTF_8);
+            String output = IOUtils.toString(process.getInputStream());
+            String errorOutput = IOUtils.toString(process.getErrorStream());
             LOG.debug("Shell Output: {}", output);
             if (errorOutput.length() != 0) {
                 LOG.error("Shell Error Output: {}", errorOutput);

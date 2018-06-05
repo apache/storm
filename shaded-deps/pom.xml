@@ -48,9 +48,9 @@
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-client</artifactId>
         </dependency>
-        <!-- recipes are not used by the client, but storm server uses the same
-             shaded curator instance so we need to include it here so we have a
-             single ZK connection per daemon. -->
+        <!-- curator-recipes is not used by storm-client, but because storm-server
+             uses the same zookeeper initialization code as storm-client all
+             curator usage, including that by curator-recipes, must also be shaded. -->
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-recipes</artifactId>
@@ -74,12 +74,10 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-collections</groupId>
