@@ -29,7 +29,7 @@ public class StandaloneSupervisor implements ISupervisor {
     @Override
     public void prepare(Map<String, Object> topoConf, String schedulerLocalDir) {
         try {
-            LocalState localState = new LocalState(schedulerLocalDir);
+            LocalState localState = new LocalState(schedulerLocalDir, true);
             String supervisorId = localState.getSupervisorId();
             if (supervisorId == null) {
                 supervisorId = generateSupervisorId();

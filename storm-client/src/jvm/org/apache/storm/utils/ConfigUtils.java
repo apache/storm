@@ -279,7 +279,7 @@ public class ConfigUtils {
     }
 
     public static LocalState workerState(Map<String, Object> conf, String id) throws IOException {
-        return new LocalState(workerHeartbeatsRoot(conf, id));
+        return new LocalState(workerHeartbeatsRoot(conf, id), false);
     }
 
     public static String masterStormCodeKey(String topologyId) {

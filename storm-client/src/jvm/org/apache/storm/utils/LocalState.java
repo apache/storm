@@ -47,9 +47,9 @@ public class LocalState {
     public static final String LS_TOPO_HISTORY = "topo-hist";
     private VersionedStore _vs;
 
-    public LocalState(String backingDir) throws IOException {
+    public LocalState(String backingDir, boolean createBackingDir) throws IOException {
         LOG.debug("New Local State for {}", backingDir);
-        _vs = new VersionedStore(backingDir);
+        _vs = new VersionedStore(backingDir, createBackingDir);
     }
 
     public synchronized Map<String, TBase> snapshot() {
@@ -256,9 +256,9 @@ public class LocalState {
             File file = new File(newPath);
             FileUtils.writeByteArrayToFile(file, toWrite);
             if (toWrite.length != file.length()) {
-                throw new IOException("Tried to serialize " + toWrite.length +
-                                      " bytes to " + file.getCanonicalPath() + ", but " +
-                                      file.length() + " bytes were written.");
+                throw new IOException("Tried to serialize " + toWrite.length
+                                      + " bytes to " + file.getCanonicalPath() + ", but "
+                                      + file.length() + " bytes were written.");
             }
             _vs.succeedVersion(newPath);
             if (cleanup) {

@@ -34,8 +34,8 @@ public class LocalStateTest {
             GlobalStreamId globalStreamId_c = new GlobalStreamId("c", "c");
             GlobalStreamId globalStreamId_d = new GlobalStreamId("d", "d");
 
-            LocalState ls1 = new LocalState(dir1_tmp.getPath());
-            LocalState ls2 = new LocalState(dir2_tmp.getPath());
+            LocalState ls1 = new LocalState(dir1_tmp.getPath(), true);
+            LocalState ls2 = new LocalState(dir2_tmp.getPath(), true);
             Assert.assertTrue(ls1.snapshot().isEmpty());
 
             ls1.put("a", globalStreamId_a);
@@ -44,7 +44,7 @@ public class LocalStateTest {
             expected.put("a", globalStreamId_a);
             expected.put("b", globalStreamId_b);
             Assert.assertEquals(expected, ls1.snapshot());
-            Assert.assertEquals(expected, new LocalState(dir1_tmp.getPath()).snapshot());
+            Assert.assertEquals(expected, new LocalState(dir1_tmp.getPath(), true).snapshot());
 
             Assert.assertTrue(ls2.snapshot().isEmpty());
             ls2.put("b", globalStreamId_a);
@@ -59,7 +59,7 @@ public class LocalStateTest {
     public void testEmptyState() throws IOException {
         TmpPath tmp_dir = new TmpPath();
         String dir = tmp_dir.getPath();
-        LocalState ls = new LocalState(dir);
+        LocalState ls = new LocalState(dir, true);
         GlobalStreamId gs_a = new GlobalStreamId("a", "a");
         FileOutputStream data = FileUtils.openOutputStream(new File(dir, "12345"));
         FileOutputStream version = FileUtils.openOutputStream(new File(dir, "12345.version"));
