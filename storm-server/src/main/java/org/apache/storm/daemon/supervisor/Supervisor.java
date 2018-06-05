@@ -310,11 +310,13 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 throw new IllegalArgumentException("Cannot start server in local mode!");
             }
             launch();
-            //must invoke after launch cause some services must be initialized
-            launchSupervisorThriftServer(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(this::close);
+
             registerWorkerNumGauge("supervisor:num-slots-used-gauge", conf);
             StormMetricsRegistry.startMetricsReporters(conf);
+
+            // blocking call under the hood, must invoke after launch cause some services must be initialized
+            launchSupervisorThriftServer(conf);
         } catch (Exception e) {
             LOG.error("Failed to start supervisor\n", e);
             System.exit(1);
