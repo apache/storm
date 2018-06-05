@@ -68,6 +68,13 @@
             <version>${project.version}</version>
         </dependency>
 
+	<!-- JAXB on JDK8 and below this is a part of java,
+	     but JDK9+ it is not there by default. -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+        </dependency>
+
         <!-- kryo -->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
