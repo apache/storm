@@ -1,10 +1,13 @@
-# Storm Druid Bolt and TridentState
+# (DEPRECATED) Storm Druid Bolt and TridentState
 
 This module provides core Storm and Trident bolt implementations for writing data to [Druid](http://druid.io/) data store.
 This implementation uses Druid's [Tranquility library](https://github.com/druid-io/tranquility) to send messages to druid.
 
 Some of the implementation details are borrowed from existing [Tranquility Storm Bolt](https://github.com/druid-io/tranquility/blob/master/docs/storm.md).
 This new Bolt added to support latest storm release and maintain the bolt in the storm repo.
+
+## Deprecated
+The preferred way to ingest streaming events to Apache Druid is through Apache Kafka, as such storm-druid is deprecated and will be removed in 2.x releases.
 
 ### Core Bolt
 Below example describes the usage of core bolt which is `org.apache.storm.druid.bolt.DruidBeamBolt`

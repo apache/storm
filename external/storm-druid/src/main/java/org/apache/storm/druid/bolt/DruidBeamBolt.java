@@ -47,8 +47,10 @@ import java.util.Map;
  * By default this Bolt expects to receive tuples in which "event" field gives your event type.
  * This logic can be changed by implementing ITupleDruidEventMapper interface.
  * <p/>
- *
+ * @deprecated the preferred way to ingest streaming events to druid is through Kafka, as such storm-druid
+ * is deprecated and will be removed in 2.x releases of storm.
  */
+@Deprecated
 public class DruidBeamBolt<E> extends BaseTickTupleAwareRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(DruidBeamBolt.class);
 
