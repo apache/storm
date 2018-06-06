@@ -21,6 +21,7 @@ import org.apache.storm.messaging.netty.INettySerializable;
 import org.apache.storm.messaging.netty.SaslMessageToken;
 import org.apache.storm.shade.io.netty.buffer.ByteBuf;
 import org.apache.storm.shade.io.netty.buffer.ByteBufAllocator;
+import org.apache.storm.shade.io.netty.buffer.Unpooled;
 import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
 import org.apache.storm.shade.io.netty.handler.codec.MessageToMessageEncoder;
 import org.apache.storm.utils.Utils;
@@ -37,15 +38,17 @@ public class ThriftEncoder extends MessageToMessageEncoder<Object> {
 
         HBMessageData message_data = new HBMessageData();
         HBMessage m = new HBMessage();
-        ByteBuf messageBuffer = alloc.heapBuffer(netty_message.encodeLength());
+        byte[] messageBuffer = new byte[netty_message.encodeLength()];
+        ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(messageBuffer);
         try {
-            netty_message.write(messageBuffer);
-            message_data.set_message_blob(messageBuffer.array());
+            netty_message.write(wrappedBuffer);
+            
+            message_data.set_message_blob(messageBuffer);
             m.set_type(mType);
             m.set_data(message_data);
             return m;
         } finally {
-            messageBuffer.release();
+            wrappedBuffer.release();
         }
     }
 
