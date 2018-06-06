@@ -26,6 +26,12 @@ import org.apache.storm.trident.state.StateFactory;
 
 import java.util.Map;
 
+/**
+ * Factory to create DruidBeamStates.
+ * @deprecated the preferred way to ingest streaming events to druid is through Kafka, as such storm-druid
+ * is deprecated and will be removed in 2.x releases of storm.
+ */
+@Deprecated
 public class DruidBeamStateFactory<E> implements StateFactory {
     DruidBeamFactory beamFactory = null;
     ITupleDruidEventMapper druidEventMapper = null;

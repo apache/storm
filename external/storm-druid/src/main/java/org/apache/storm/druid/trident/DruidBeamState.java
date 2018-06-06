@@ -36,7 +36,10 @@ import java.util.List;
 
 /**
  * Trident {@link State} implementation for Druid.
+ * @deprecated the preferred way to ingest streaming events to druid is through Kafka, as such storm-druid
+ * is deprecated and will be removed in 2.x releases of storm.
  */
+@Deprecated
 public class DruidBeamState<E> implements State {
     private static final Logger LOG = LoggerFactory.getLogger(DruidBeamState.class);
 
