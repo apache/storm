@@ -136,7 +136,7 @@
             <artifactId>data.codec</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <!--java-->
         <dependency>
             <groupId>commons-cli</groupId>

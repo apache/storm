@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
@@ -42,7 +43,7 @@ public class TransferDrainer {
 
     public void send(Map<Integer, NodeInfo> taskToNode, Map<NodeInfo, IConnection> connections) {
         HashMap<NodeInfo, Stream<TaskMessage>> bundleMapByDestination = groupBundleByDestination(taskToNode);
-        
+
         for (Map.Entry<NodeInfo, Stream<TaskMessage>> entry : bundleMapByDestination.entrySet()) {
             NodeInfo node = entry.getKey();
             IConnection conn = connections.get(node);
@@ -59,7 +60,7 @@ public class TransferDrainer {
 
     private HashMap<NodeInfo, Stream<TaskMessage>> groupBundleByDestination(Map<Integer, NodeInfo> taskToNode) {
         HashMap<NodeInfo, Stream<TaskMessage>> result = new HashMap<>();
-        
+
         for (Entry<Integer, ArrayList<TaskMessage>> entry : bundles.entrySet()) {
             if (entry.getValue().isEmpty()) {
                 continue;

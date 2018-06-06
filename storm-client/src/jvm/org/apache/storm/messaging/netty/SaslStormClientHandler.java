@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
@@ -74,41 +75,41 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
             LOG.error("Unexpected message from server: {}", message);
         }
     }
-
+    
     private SaslNettyClient getChannelSaslNettyClient(Channel channel) throws Exception {
         // Generate SASL response to server using Channel-local SASL client.
         SaslNettyClient saslNettyClient = channel.attr(SaslNettyClientState.SASL_NETTY_CLIENT).get();
         if (saslNettyClient == null) {
             throw new Exception("saslNettyClient was unexpectedly "
-                                + "null for channel: " + channel);
+                + "null for channel: " + channel);
         }
         return saslNettyClient;
     }
-
+    
     private void handleControlMessage(ChannelHandlerContext ctx, ControlMessage controlMessage) throws Exception {
         SaslNettyClient saslNettyClient = getChannelSaslNettyClient(ctx.channel());
         if (controlMessage == ControlMessage.SASL_COMPLETE_REQUEST) {
-                LOG.debug("Server has sent us the SaslComplete "
-                          + "message. Allowing normal work to proceed.");
+            LOG.debug("Server has sent us the SaslComplete "
+                + "message. Allowing normal work to proceed.");
 
-                if (!saslNettyClient.isComplete()) {
-                    LOG.error("Server returned a Sasl-complete message, "
-                              + "but as far as we can tell, we are not authenticated yet.");
-                    throw new Exception("Server returned a "
-                                        + "Sasl-complete message, but as far as "
-                                        + "we can tell, we are not authenticated yet.");
-                }
+            if (!saslNettyClient.isComplete()) {
+                LOG.error("Server returned a Sasl-complete message, "
+                    + "but as far as we can tell, we are not authenticated yet.");
+                throw new Exception("Server returned a "
+                    + "Sasl-complete message, but as far as "
+                    + "we can tell, we are not authenticated yet.");
+            }
             ctx.pipeline().remove(this);
             this.client.channelReady(ctx.channel());
 
             // We call fireMessageRead since the client is allowed to
-                // perform this request. The client's request will now proceed
-                // to the next pipeline component namely StormClientHandler.
+            // perform this request. The client's request will now proceed
+            // to the next pipeline component namely StormClientHandler.
             ctx.fireChannelRead(controlMessage);
         } else {
             LOG.warn("Unexpected control message: {}", controlMessage);
-            }
         }
+    }
     
     private void handleSaslMessageToken(ChannelHandlerContext ctx, SaslMessageToken saslMessageToken) throws Exception {
         Channel channel = ctx.channel();

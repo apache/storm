@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
@@ -21,6 +22,7 @@ import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
 import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
 
 class StormServerPipelineFactory extends ChannelInitializer<Channel> {
+
     private final KryoValuesSerializer ser;
     private final KryoValuesDeserializer deser;
     private final Map<String, Object> topoConf;
@@ -53,7 +55,7 @@ class StormServerPipelineFactory extends ChannelInitializer<Channel> {
                 server));
             // Authorize
             pipeline.addLast("authorizeServerHandler",
-                             new SaslStormServerAuthorizeHandler());
+                new SaslStormServerAuthorizeHandler());
         }
         // business logic.
         pipeline.addLast("handler", new StormServerHandler(server));

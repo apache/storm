@@ -81,7 +81,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone />
+            <timezone/>
         </developer>
         <developer>
             <id>afeng</id>
@@ -108,7 +108,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone />
+            <timezone/>
         </developer>
         <developer>
             <id>jjackson</id>
@@ -643,7 +643,7 @@
                 <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
             </properties>
         </profile> 
-	<profile>
+        <profile>
             <id>integration-tests-only</id>
             <properties>
                 <!--Java-->
