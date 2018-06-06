@@ -107,7 +107,6 @@ But small change will not affect the user experience. We will notify the user wh
 * [Mongodb Integration](storm-mongodb.html)
 * [OpenTSDB Integration](storm-opentsdb.html)
 * [Kinesis Integration](storm-kinesis.html)
-* [Druid Integration](storm-druid.html)
 * [PMML Integration](storm-pmml.html)
 * [Kestrel Integration](Kestrel-and-Storm.html)
 
