@@ -36,17 +36,24 @@
     <description>Shaded version of dependencies used only for internal storm code.</description>
 
     <dependencies>
+        <!-- All dependencies should be marked as optional to work around
+             https://issues.apache.org/jira/browse/MSHADE-206 which makes it so
+             the dependency reduced pom is not reflected in a multi-module build
+             correctly. -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-client</artifactId>
+            <optional>true</optional>
         </dependency>
         <!-- curator-recipes is not used by storm-client, but because storm-server
              uses the same zookeeper initialization code as storm-client all
@@ -54,10 +61,12 @@
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-recipes</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
+            <optional>true</optional>
             <exclusions>
                 <exclusion>
                     <!-- This is only used for interactive zookeeper shell, and not needed for the client-->
@@ -74,38 +83,47 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.jctools</groupId>
             <artifactId>jctools-core</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-core</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>
+            <optional>true</optional>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -132,10 +150,12 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>uk.org.lidalia</groupId>
             <artifactId>sysout-over-slf4j</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 

@@ -222,7 +222,7 @@
             <id>Ethanlm</id>
             <name>Ethan Li</name>
             <email>ethanli@apache.org</email>
-            <roles>	
+            <roles>
                 <role>Committer</role>
             </roles>
             <timezone>-6</timezone>
@@ -430,7 +430,15 @@
                 <provided.scope>compile</provided.scope>
             </properties>
         </profile>
-
+        <profile>
+            <id>include-shaded-deps</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>shaded-deps</module>
+            </modules>
+        </profile>
         <profile>
             <id>rat</id>
             <build>

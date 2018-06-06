@@ -239,13 +239,6 @@ To pull in a merge request you should generally follow the command line instruct
 # Build the code and run the tests
 
 ## Prerequisites
-To work around a conflict between the shade plugin and maven https://issues.apache.org/jira/browse/MSHADE-206, a set of 
-dependencies needs to be shaded and installed by running:
-
-```sh
-cd shaded-deps
-mvn clean install
-```
 
 In order to build `storm` you need `python`, `ruby` and `nodejs`. In order to avoid an overfull page we don't provide platform/OS specific installation instructions for those here. Please refer to you platform's/OS' documentation for support.
 
