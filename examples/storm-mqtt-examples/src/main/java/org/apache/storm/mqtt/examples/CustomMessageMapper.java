@@ -72,8 +72,8 @@ public final class CustomMessageMapper implements MqttMessageMapper {
     }
 
     /**
-     * Utility constructor.
+     * Constructor.
      */
-    private CustomMessageMapper() {
+    public CustomMessageMapper() {
     }
 }
