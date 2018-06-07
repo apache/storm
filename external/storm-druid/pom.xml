@@ -64,29 +64,12 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.11.8</version>
-            <scope>provided</scope>
+            <version>2.11.12</version>
         </dependency>
         <dependency>
             <groupId>com.twitter</groupId>
             <artifactId>util-core_2.11</artifactId>
             <version>6.30.0</version>
-        </dependency>
-        <!-- tranquility library depends on jackson 2.4.6 version -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.4.6</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.4.6</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-smile</artifactId>
-            <version>2.4.6</version>
         </dependency>
 
         <!--test dependencies -->
