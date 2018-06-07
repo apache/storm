@@ -381,7 +381,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
      * @return the updated dynamicState
      */
     private static DynamicState filterChangingBlobsFor(DynamicState dynamicState, final LocalAssignment assignment) {
-        if (!dynamicState.changingBlobs.isEmpty()) {
+        if (dynamicState.changingBlobs.isEmpty()) {
             return dynamicState;
         }
 
