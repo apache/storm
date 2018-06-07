@@ -12,7 +12,7 @@
 
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
 
 public interface ISaslClient {
     void channelConnected(Channel channel);

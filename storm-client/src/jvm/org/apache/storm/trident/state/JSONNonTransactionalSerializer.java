@@ -13,9 +13,8 @@
 package org.apache.storm.trident.state;
 
 import java.io.UnsupportedEncodingException;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
-
+import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.org.json.simple.parser.ParseException;
 
 public class JSONNonTransactionalSerializer implements Serializer {
 

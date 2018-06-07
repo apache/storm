@@ -12,7 +12,6 @@
 
 package org.apache.storm.security.auth.authorizer;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -20,6 +19,7 @@ import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.KerberosPrincipalToLocal;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.SingleUserPrincipal;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

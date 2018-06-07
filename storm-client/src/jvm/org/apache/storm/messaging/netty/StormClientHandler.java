@@ -18,11 +18,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.serialization.KryoValuesDeserializer;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelStateEvent;
+import org.apache.storm.shade.org.jboss.netty.channel.ExceptionEvent;
+import org.apache.storm.shade.org.jboss.netty.channel.MessageEvent;
+import org.apache.storm.shade.org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

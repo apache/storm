@@ -12,13 +12,13 @@
 
 package org.apache.storm.security.auth;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.Config;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.ShellCommandRunner;

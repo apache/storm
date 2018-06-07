@@ -27,20 +27,20 @@ import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.messaging.netty.Login;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.security.auth.sasl.SimpleSaslServerCallbackHandler;
 import org.apache.storm.security.auth.workertoken.WorkerTokenAuthorizer;
 import org.apache.storm.security.auth.workertoken.WorkerTokenClientCallbackHandler;
-import org.apache.thrift.transport.TSaslClientTransport;
-import org.apache.thrift.transport.TSaslServerTransport;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-import org.apache.thrift.transport.TTransportFactory;
-import org.apache.zookeeper.server.auth.KerberosName;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.apache.zookeeper.server.auth.KerberosName;
+import org.apache.storm.thrift.transport.TSaslClientTransport;
+import org.apache.storm.thrift.transport.TSaslServerTransport;
+import org.apache.storm.thrift.transport.TTransport;
+import org.apache.storm.thrift.transport.TTransportException;
+import org.apache.storm.thrift.transport.TTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +62,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             //specify a configuration object to be used
             Configuration.setConfiguration(loginConf);
             //now login
-            Login login = new Login(AuthUtils.LOGIN_CONTEXT_SERVER, server_callback_handler);
+            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_SERVER, server_callback_handler);
             subject = login.getSubject();
             login.startThreadIfNeeded();
         } catch (LoginException ex) {
@@ -73,10 +73,10 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         //check the credential of our principal
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) {
             throw new RuntimeException("Fail to verify user principal with section \""
-                                       + AuthUtils.LOGIN_CONTEXT_SERVER + "\" in login configuration file " + loginConf);
+                                       + ClientAuthUtils.LOGIN_CONTEXT_SERVER + "\" in login configuration file " + loginConf);
         }
 
-        String principal = AuthUtils.get(loginConf, AuthUtils.LOGIN_CONTEXT_SERVER, "principal");
+        String principal = ClientAuthUtils.get(loginConf, ClientAuthUtils.LOGIN_CONTEXT_SERVER, "principal");
         LOG.debug("principal:" + principal);
         KerberosName serviceKerberosName = new KerberosName(principal);
         String serviceName = serviceKerberosName.getServiceName();
@@ -90,7 +90,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         factory.addServerDefinition(KERBEROS, serviceName, hostName, props, server_callback_handler);
 
         //Also add in support for worker tokens
-        factory.addServerDefinition(DIGEST, AuthUtils.SERVICE, "localhost", null,
+        factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, "localhost", null,
                                     new SimpleSaslServerCallbackHandler(impersonationAllowed, new WorkerTokenAuthorizer(conf, type)));
 
         //create a wrap transport factory so that we could apply user credential during connections
@@ -107,7 +107,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             //specify a configuration object to be used
             Configuration.setConfiguration(loginConf);
             //now login
-            Login login = new Login(AuthUtils.LOGIN_CONTEXT_CLIENT, client_callback_handler);
+            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, client_callback_handler);
             login.startThreadIfNeeded();
             return login;
         } catch (LoginException ex) {
@@ -123,7 +123,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             CallbackHandler clientCallbackHandler = new WorkerTokenClientCallbackHandler(token);
             TSaslClientTransport wrapperTransport = new TSaslClientTransport(DIGEST,
                                                                              null,
-                                                                             AuthUtils.SERVICE,
+                                                                             ClientAuthUtils.SERVICE,
                                                                              serverHost,
                                                                              null,
                                                                              clientCallbackHandler,
@@ -138,7 +138,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
     private TTransport kerberosConnect(TTransport transport, String serverHost, String asUser) throws IOException {
         //login our user
-        SortedMap<String, ?> authConf = AuthUtils.pullConfig(loginConf, AuthUtils.LOGIN_CONTEXT_CLIENT);
+        SortedMap<String, ?> authConf = ClientAuthUtils.pullConfig(loginConf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
         if (authConf == null) {
             throw new RuntimeException("Error in parsing the kerberos login Configuration, returned null");
         }
@@ -176,13 +176,13 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         final Subject subject = login.getSubject();
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) { //error
             throw new RuntimeException("Fail to verify user principal with section \""
-                                       + AuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + loginConf);
+                                       + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + loginConf);
         }
 
         final String principal = StringUtils.isBlank(asUser) ? getPrincipal(subject) : asUser;
-        String serviceName = AuthUtils.get(loginConf, AuthUtils.LOGIN_CONTEXT_CLIENT, "serviceName");
+        String serviceName = ClientAuthUtils.get(loginConf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT, "serviceName");
         if (serviceName == null) {
-            serviceName = AuthUtils.SERVICE;
+            serviceName = ClientAuthUtils.SERVICE;
         }
         Map<String, String> props = new TreeMap<>();
         props.put(Sasl.QOP, "auth");

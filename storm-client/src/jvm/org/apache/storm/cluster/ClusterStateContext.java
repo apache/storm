@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.generated.WorkerTokenServiceType;
-import org.apache.zookeeper.data.ACL;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 
 /**
  * This class is intended to provide runtime-context to StateStorageFactory implementors, giving information such as what daemon is creating

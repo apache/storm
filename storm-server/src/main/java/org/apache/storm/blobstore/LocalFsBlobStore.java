@@ -14,7 +14,6 @@
 
 package org.apache.storm.blobstore;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,7 +27,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.security.auth.Subject;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -40,21 +38,20 @@ import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
-
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyAlreadyExistsException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
-import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
-import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
-import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
+import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
 import static org.apache.storm.daemon.nimbus.Nimbus.NIMBUS_SUBJECT;
 import static org.apache.storm.daemon.nimbus.Nimbus.getVersionForKey;
 
@@ -427,7 +424,7 @@ public class LocalFsBlobStore extends BlobStore {
         }
         try {
             replicationCount = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + key).size();
-        } catch (NoNodeException e) {
+        } catch (KeeperException.NoNodeException e) {
             //Race with delete
             //If it is not here the replication is 0 
         }

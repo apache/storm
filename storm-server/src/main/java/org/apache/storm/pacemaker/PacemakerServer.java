@@ -24,13 +24,13 @@ import org.apache.storm.generated.HBMessage;
 import org.apache.storm.messaging.netty.ISaslServer;
 import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
 import org.apache.storm.pacemaker.codec.ThriftNettyServerCodec;
-import org.apache.storm.security.auth.AuthUtils;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.apache.storm.security.auth.ClientAuthUtils;
+import org.apache.storm.shade.org.jboss.netty.bootstrap.ServerBootstrap;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
+import org.apache.storm.shade.org.jboss.netty.channel.group.ChannelGroup;
+import org.apache.storm.shade.org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.apache.storm.shade.org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,9 +59,9 @@ class PacemakerServer implements ISaslServer {
         switch (auth) {
 
             case "DIGEST":
-                Configuration login_conf = AuthUtils.GetConfiguration(config);
+                Configuration login_conf = ClientAuthUtils.getConfiguration(config);
                 authMethod = ThriftNettyServerCodec.AuthMethod.DIGEST;
-                this.secret = AuthUtils.makeDigestPayload(login_conf, AuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
+                this.secret = ClientAuthUtils.makeDigestPayload(login_conf, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
                 if (this.secret == null) {
                     LOG.error("Can't start pacemaker server without digest secret.");
                     throw new RuntimeException("Can't start pacemaker server without digest secret.");

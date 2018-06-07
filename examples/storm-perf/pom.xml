@@ -127,6 +127,10 @@
             <artifactId>kafka-clients</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+        </dependency>
     </dependencies>
 
 

@@ -12,7 +12,6 @@
 
 package org.apache.storm.security.auth;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.net.InetAddress;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -20,6 +19,7 @@ import java.security.Principal;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 
 /**
  * context request context includes info about:

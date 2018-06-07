@@ -30,7 +30,7 @@ import org.apache.storm.generated.PrivateWorkerKey;
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.generated.WorkerTokenInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
@@ -54,7 +54,7 @@ public class WorkerTokenManager {
     private final long tokenLifetimeMillis;
     /**
      * Constructor.  This assumes that state can store the tokens securely, and that they should be enabled at all. Please use
-     * AuthUtils.areWorkerTokensEnabledServer to validate this first.
+     * ClientAuthUtils.areWorkerTokensEnabledServer to validate this first.
      *
      * @param daemonConf the config for nimbus.
      * @param state      the state used to store private keys.
@@ -108,7 +108,7 @@ public class WorkerTokenManager {
         SecretKey topoSecret = getCurrentSecret();
         long expirationTimeMillis = Time.currentTimeMillis() + tokenLifetimeMillis;
         WorkerTokenInfo info = new WorkerTokenInfo(user, topologyId, nextVersion, expirationTimeMillis);
-        byte[] serializedInfo = AuthUtils.serializeWorkerTokenInfo(info);
+        byte[] serializedInfo = ClientAuthUtils.serializeWorkerTokenInfo(info);
         byte[] signature = WorkerTokenSigner.createPassword(serializedInfo, topoSecret);
         WorkerToken ret = new WorkerToken(serviceType, ByteBuffer.wrap(serializedInfo), ByteBuffer.wrap(signature));
         PrivateWorkerKey key = new PrivateWorkerKey(ByteBuffer.wrap(topoSecret.getEncoded()), user, expirationTimeMillis);

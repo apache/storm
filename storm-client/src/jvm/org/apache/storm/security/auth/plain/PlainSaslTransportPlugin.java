@@ -16,14 +16,14 @@ import java.io.IOException;
 import java.security.Security;
 import java.util.Optional;
 import javax.security.auth.callback.CallbackHandler;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.security.auth.sasl.SimpleSaslServerCallbackHandler;
-import org.apache.thrift.transport.TSaslClientTransport;
-import org.apache.thrift.transport.TSaslServerTransport;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-import org.apache.thrift.transport.TTransportFactory;
+import org.apache.storm.thrift.transport.TSaslClientTransport;
+import org.apache.storm.thrift.transport.TSaslServerTransport;
+import org.apache.storm.thrift.transport.TTransport;
+import org.apache.storm.thrift.transport.TTransportException;
+import org.apache.storm.thrift.transport.TTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +46,7 @@ public class PlainSaslTransportPlugin extends SaslTransportPlugin {
         }
         //create a transport factory that will invoke our auth callback for digest
         TSaslServerTransport.Factory factory = new TSaslServerTransport.Factory();
-        factory.addServerDefinition(PLAIN, AuthUtils.SERVICE, "localhost", null, serverCallbackHandler);
+        factory.addServerDefinition(PLAIN, ClientAuthUtils.SERVICE, "localhost", null, serverCallbackHandler);
 
         LOG.error("SASL PLAIN transport factory will be used.  This is totally insecure.  Please do not use this.");
         return factory;
@@ -57,7 +57,7 @@ public class PlainSaslTransportPlugin extends SaslTransportPlugin {
         PlainClientCallbackHandler clientCallbackHandler = new PlainClientCallbackHandler();
         TSaslClientTransport wrapperTransport = new TSaslClientTransport(PLAIN,
                                                                          null,
-                                                                         AuthUtils.SERVICE,
+                                                                         ClientAuthUtils.SERVICE,
                                                                          serverHost,
                                                                          null,
                                                                          clientCallbackHandler,

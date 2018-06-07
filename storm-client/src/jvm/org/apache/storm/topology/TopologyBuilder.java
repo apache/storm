@@ -40,6 +40,7 @@ import org.apache.storm.lambda.LambdaSpout;
 import org.apache.storm.lambda.SerializableBiConsumer;
 import org.apache.storm.lambda.SerializableConsumer;
 import org.apache.storm.lambda.SerializableSupplier;
+import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.state.State;
 import org.apache.storm.task.OutputCollector;
@@ -48,7 +49,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.windowing.TupleWindow;
-import org.json.simple.JSONValue;
 
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;

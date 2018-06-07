@@ -21,7 +21,7 @@ import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInfo;
-import org.apache.thrift.TException;
+import org.apache.storm.thrift.TException;
 
 /**
  * This is here mostly for backwards compatibility.

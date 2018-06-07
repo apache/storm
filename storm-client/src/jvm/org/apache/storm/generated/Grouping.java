@@ -24,19 +24,19 @@
 package org.apache.storm.generated;
 
 @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
-public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Fields> {
-  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("Grouping");
-  private static final org.apache.thrift.protocol.TField FIELDS_FIELD_DESC = new org.apache.thrift.protocol.TField("fields", org.apache.thrift.protocol.TType.LIST, (short)1);
-  private static final org.apache.thrift.protocol.TField SHUFFLE_FIELD_DESC = new org.apache.thrift.protocol.TField("shuffle", org.apache.thrift.protocol.TType.STRUCT, (short)2);
-  private static final org.apache.thrift.protocol.TField ALL_FIELD_DESC = new org.apache.thrift.protocol.TField("all", org.apache.thrift.protocol.TType.STRUCT, (short)3);
-  private static final org.apache.thrift.protocol.TField NONE_FIELD_DESC = new org.apache.thrift.protocol.TField("none", org.apache.thrift.protocol.TType.STRUCT, (short)4);
-  private static final org.apache.thrift.protocol.TField DIRECT_FIELD_DESC = new org.apache.thrift.protocol.TField("direct", org.apache.thrift.protocol.TType.STRUCT, (short)5);
-  private static final org.apache.thrift.protocol.TField CUSTOM_OBJECT_FIELD_DESC = new org.apache.thrift.protocol.TField("custom_object", org.apache.thrift.protocol.TType.STRUCT, (short)6);
-  private static final org.apache.thrift.protocol.TField CUSTOM_SERIALIZED_FIELD_DESC = new org.apache.thrift.protocol.TField("custom_serialized", org.apache.thrift.protocol.TType.STRING, (short)7);
-  private static final org.apache.thrift.protocol.TField LOCAL_OR_SHUFFLE_FIELD_DESC = new org.apache.thrift.protocol.TField("local_or_shuffle", org.apache.thrift.protocol.TType.STRUCT, (short)8);
+public class Grouping extends org.apache.storm.thrift.TUnion<Grouping, Grouping._Fields> {
+  private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("Grouping");
+  private static final org.apache.storm.thrift.protocol.TField FIELDS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("fields", org.apache.storm.thrift.protocol.TType.LIST, (short)1);
+  private static final org.apache.storm.thrift.protocol.TField SHUFFLE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("shuffle", org.apache.storm.thrift.protocol.TType.STRUCT, (short)2);
+  private static final org.apache.storm.thrift.protocol.TField ALL_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("all", org.apache.storm.thrift.protocol.TType.STRUCT, (short)3);
+  private static final org.apache.storm.thrift.protocol.TField NONE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("none", org.apache.storm.thrift.protocol.TType.STRUCT, (short)4);
+  private static final org.apache.storm.thrift.protocol.TField DIRECT_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("direct", org.apache.storm.thrift.protocol.TType.STRUCT, (short)5);
+  private static final org.apache.storm.thrift.protocol.TField CUSTOM_OBJECT_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("custom_object", org.apache.storm.thrift.protocol.TType.STRUCT, (short)6);
+  private static final org.apache.storm.thrift.protocol.TField CUSTOM_SERIALIZED_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("custom_serialized", org.apache.storm.thrift.protocol.TType.STRING, (short)7);
+  private static final org.apache.storm.thrift.protocol.TField LOCAL_OR_SHUFFLE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("local_or_shuffle", org.apache.storm.thrift.protocol.TType.STRUCT, (short)8);
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-  public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+  public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
     FIELDS((short)1, "fields"),
     SHUFFLE((short)2, "shuffle"),
     ALL((short)3, "all"),
@@ -114,28 +114,28 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
     }
   }
 
-  public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+  public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
-    java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.FIELDS, new org.apache.thrift.meta_data.FieldMetaData("fields", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING))));
-    tmpMap.put(_Fields.SHUFFLE, new org.apache.thrift.meta_data.FieldMetaData("shuffle", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, NullStruct.class)));
-    tmpMap.put(_Fields.ALL, new org.apache.thrift.meta_data.FieldMetaData("all", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, NullStruct.class)));
-    tmpMap.put(_Fields.NONE, new org.apache.thrift.meta_data.FieldMetaData("none", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, NullStruct.class)));
-    tmpMap.put(_Fields.DIRECT, new org.apache.thrift.meta_data.FieldMetaData("direct", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, NullStruct.class)));
-    tmpMap.put(_Fields.CUSTOM_OBJECT, new org.apache.thrift.meta_data.FieldMetaData("custom_object", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, JavaObject.class)));
-    tmpMap.put(_Fields.CUSTOM_SERIALIZED, new org.apache.thrift.meta_data.FieldMetaData("custom_serialized", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , true)));
-    tmpMap.put(_Fields.LOCAL_OR_SHUFFLE, new org.apache.thrift.meta_data.FieldMetaData("local_or_shuffle", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, NullStruct.class)));
+    java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+    tmpMap.put(_Fields.FIELDS, new org.apache.storm.thrift.meta_data.FieldMetaData("fields", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.ListMetaData(org.apache.storm.thrift.protocol.TType.LIST, 
+            new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING))));
+    tmpMap.put(_Fields.SHUFFLE, new org.apache.storm.thrift.meta_data.FieldMetaData("shuffle", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, NullStruct.class)));
+    tmpMap.put(_Fields.ALL, new org.apache.storm.thrift.meta_data.FieldMetaData("all", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, NullStruct.class)));
+    tmpMap.put(_Fields.NONE, new org.apache.storm.thrift.meta_data.FieldMetaData("none", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, NullStruct.class)));
+    tmpMap.put(_Fields.DIRECT, new org.apache.storm.thrift.meta_data.FieldMetaData("direct", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, NullStruct.class)));
+    tmpMap.put(_Fields.CUSTOM_OBJECT, new org.apache.storm.thrift.meta_data.FieldMetaData("custom_object", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, JavaObject.class)));
+    tmpMap.put(_Fields.CUSTOM_SERIALIZED, new org.apache.storm.thrift.meta_data.FieldMetaData("custom_serialized", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING        , true)));
+    tmpMap.put(_Fields.LOCAL_OR_SHUFFLE, new org.apache.storm.thrift.meta_data.FieldMetaData("local_or_shuffle", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, NullStruct.class)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
-    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Grouping.class, metaDataMap);
+    org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Grouping.class, metaDataMap);
   }
 
   public Grouping() {
@@ -257,7 +257,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   @Override
-  protected java.lang.Object standardSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TField field) throws org.apache.thrift.TException {
+  protected java.lang.Object standardSchemeReadValue(org.apache.storm.thrift.protocol.TProtocol iprot, org.apache.storm.thrift.protocol.TField field) throws org.apache.storm.thrift.TException {
     _Fields setField = _Fields.findByThriftId(field.id);
     if (setField != null) {
       switch (setField) {
@@ -265,7 +265,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
           if (field.type == FIELDS_FIELD_DESC.type) {
             java.util.List<java.lang.String> fields;
             {
-              org.apache.thrift.protocol.TList _list8 = iprot.readListBegin();
+              org.apache.storm.thrift.protocol.TList _list8 = iprot.readListBegin();
               fields = new java.util.ArrayList<java.lang.String>(_list8.size);
               java.lang.String _elem9;
               for (int _i10 = 0; _i10 < _list8.size; ++_i10)
@@ -277,7 +277,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
             }
             return fields;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case SHUFFLE:
@@ -287,7 +287,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
             shuffle.read(iprot);
             return shuffle;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case ALL:
@@ -297,7 +297,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
             all.read(iprot);
             return all;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case NONE:
@@ -307,7 +307,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
             none.read(iprot);
             return none;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case DIRECT:
@@ -317,7 +317,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
             direct.read(iprot);
             return direct;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case CUSTOM_OBJECT:
@@ -327,7 +327,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
             custom_object.read(iprot);
             return custom_object;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case CUSTOM_SERIALIZED:
@@ -336,7 +336,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
             custom_serialized = iprot.readBinary();
             return custom_serialized;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case LOCAL_OR_SHUFFLE:
@@ -346,25 +346,25 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
             local_or_shuffle.read(iprot);
             return local_or_shuffle;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         default:
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
     } else {
-      org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+      org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       return null;
     }
   }
 
   @Override
-  protected void standardSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void standardSchemeWriteValue(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
     switch (setField_) {
       case FIELDS:
         java.util.List<java.lang.String> fields = (java.util.List<java.lang.String>)value_;
         {
-          oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, fields.size()));
+          oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, fields.size()));
           for (java.lang.String _iter11 : fields)
           {
             oprot.writeString(_iter11);
@@ -406,14 +406,14 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   @Override
-  protected java.lang.Object tupleSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.thrift.TException {
+  protected java.lang.Object tupleSchemeReadValue(org.apache.storm.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.storm.thrift.TException {
     _Fields setField = _Fields.findByThriftId(fieldID);
     if (setField != null) {
       switch (setField) {
         case FIELDS:
           java.util.List<java.lang.String> fields;
           {
-            org.apache.thrift.protocol.TList _list12 = iprot.readListBegin();
+            org.apache.storm.thrift.protocol.TList _list12 = iprot.readListBegin();
             fields = new java.util.ArrayList<java.lang.String>(_list12.size);
             java.lang.String _elem13;
             for (int _i14 = 0; _i14 < _list12.size; ++_i14)
@@ -462,17 +462,17 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
     } else {
-      throw new org.apache.thrift.protocol.TProtocolException("Couldn't find a field with field id " + fieldID);
+      throw new org.apache.storm.thrift.protocol.TProtocolException("Couldn't find a field with field id " + fieldID);
     }
   }
 
   @Override
-  protected void tupleSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void tupleSchemeWriteValue(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
     switch (setField_) {
       case FIELDS:
         java.util.List<java.lang.String> fields = (java.util.List<java.lang.String>)value_;
         {
-          oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, fields.size()));
+          oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, fields.size()));
           for (java.lang.String _iter15 : fields)
           {
             oprot.writeString(_iter15);
@@ -514,7 +514,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   @Override
-  protected org.apache.thrift.protocol.TField getFieldDesc(_Fields setField) {
+  protected org.apache.storm.thrift.protocol.TField getFieldDesc(_Fields setField) {
     switch (setField) {
       case FIELDS:
         return FIELDS_FIELD_DESC;
@@ -538,7 +538,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   @Override
-  protected org.apache.thrift.protocol.TStruct getStructDesc() {
+  protected org.apache.storm.thrift.protocol.TStruct getStructDesc() {
     return STRUCT_DESC;
   }
 
@@ -637,14 +637,14 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   public byte[] get_custom_serialized() {
-    set_custom_serialized(org.apache.thrift.TBaseHelper.rightSize(buffer_for_custom_serialized()));
+    set_custom_serialized(org.apache.storm.thrift.TBaseHelper.rightSize(buffer_for_custom_serialized()));
     java.nio.ByteBuffer b = buffer_for_custom_serialized();
     return b == null ? null : b.array();
   }
 
   public java.nio.ByteBuffer buffer_for_custom_serialized() {
     if (getSetField() == _Fields.CUSTOM_SERIALIZED) {
-      return org.apache.thrift.TBaseHelper.copyBinary((java.nio.ByteBuffer)getFieldValue());
+      return org.apache.storm.thrift.TBaseHelper.copyBinary((java.nio.ByteBuffer)getFieldValue());
     } else {
       throw new java.lang.RuntimeException("Cannot get field 'custom_serialized' because union is currently set to " + getFieldDesc(getSetField()).name);
     }
@@ -728,9 +728,9 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
 
   @Override
   public int compareTo(Grouping other) {
-    int lastComparison = org.apache.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());
+    int lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());
     if (lastComparison == 0) {
-      return org.apache.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());
+      return org.apache.storm.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());
     }
     return lastComparison;
   }
@@ -740,12 +740,12 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   public int hashCode() {
     java.util.List<java.lang.Object> list = new java.util.ArrayList<java.lang.Object>();
     list.add(this.getClass().getName());
-    org.apache.thrift.TFieldIdEnum setField = getSetField();
+    org.apache.storm.thrift.TFieldIdEnum setField = getSetField();
     if (setField != null) {
       list.add(setField.getThriftFieldId());
       java.lang.Object value = getFieldValue();
-      if (value instanceof org.apache.thrift.TEnum) {
-        list.add(((org.apache.thrift.TEnum)getFieldValue()).getValue());
+      if (value instanceof org.apache.storm.thrift.TEnum) {
+        list.add(((org.apache.storm.thrift.TEnum)getFieldValue()).getValue());
       } else {
         list.add(value);
       }
@@ -754,8 +754,8 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
   private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
     try {
-      write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
-    } catch (org.apache.thrift.TException te) {
+      write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+    } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
     }
   }
@@ -763,8 +763,8 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
 
   private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
     try {
-      read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
-    } catch (org.apache.thrift.TException te) {
+      read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+    } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
     }
   }

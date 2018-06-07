@@ -13,9 +13,9 @@
 package org.apache.storm.security.auth;
 
 import java.io.IOException;
+import org.apache.storm.thrift.transport.TTransport;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.StormBoundedExponentialBackoffRetry;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

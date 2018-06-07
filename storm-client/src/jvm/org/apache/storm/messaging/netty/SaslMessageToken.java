@@ -13,9 +13,9 @@
 package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBufferOutputStream;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

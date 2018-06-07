@@ -29,6 +29,5 @@ public class ZookeeperServerCnxnFactoryTest {
         int nextPort = zkcfNegative.port() + 1;
         ZookeeperServerCnxnFactory zkcfNext = new ZookeeperServerCnxnFactory(nextPort, arbitraryTestClients);
         Assert.assertEquals(zkcfNext.factory().getMaxClientCnxnsPerHost(), arbitraryTestClients);
-
     }
 }

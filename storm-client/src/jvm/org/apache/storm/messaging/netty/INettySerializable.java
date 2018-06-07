@@ -13,7 +13,7 @@
 package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
-import org.jboss.netty.buffer.ChannelBuffer;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
 
 public interface INettySerializable {
     ChannelBuffer buffer() throws IOException;

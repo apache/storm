@@ -12,11 +12,12 @@
 
 package org.apache.storm.streams;
 
-import com.google.common.collect.Multimap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
+import org.apache.storm.shade.org.jgrapht.DirectedGraph;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.streams.processors.StatefulProcessor;
 import org.apache.storm.streams.processors.UpdateStateByKeyProcessor;
@@ -25,7 +26,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseStatefulBolt;
 import org.apache.storm.tuple.Tuple;
-import org.jgrapht.DirectedGraph;
 
 /**
  * Stream bolt that executes stateful operations like update state and state query.

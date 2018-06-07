@@ -19,7 +19,8 @@
 package org.apache.storm.dependency;
 
 import java.util.UUID;
-import org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.com.google.common.io.Files;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 
 public class DependencyBlobStoreUtils {
 
@@ -30,8 +31,8 @@ public class DependencyBlobStoreUtils {
     }
 
     public static String applyUUIDToFileName(String fileName) {
-        String fileNameWithExt = com.google.common.io.Files.getNameWithoutExtension(fileName);
-        String ext = com.google.common.io.Files.getFileExtension(fileName);
+        String fileNameWithExt = Files.getNameWithoutExtension(fileName);
+        String ext = Files.getFileExtension(fileName);
         if (StringUtils.isEmpty(ext)) {
             fileName = fileName + "-" + UUID.randomUUID();
         } else {

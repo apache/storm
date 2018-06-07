@@ -29,13 +29,13 @@ import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.shade.org.json.simple.JSONAware;
+import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.org.json.simple.parser.ParseException;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
-import org.json.simple.JSONAware;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 public class GeneralTopologyContext implements JSONAware {
     protected Map<String, Object> _topoConf;

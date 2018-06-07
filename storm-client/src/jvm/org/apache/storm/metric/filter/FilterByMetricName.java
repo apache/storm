@@ -12,16 +12,15 @@
 
 package org.apache.storm.metric.filter;
 
-import com.google.common.base.Function;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.shade.com.google.common.cache.Cache;
+import org.apache.storm.shade.com.google.common.cache.CacheBuilder;
+import org.apache.storm.shade.com.google.common.collect.Iterators;
+import org.apache.storm.shade.com.google.common.collect.Lists;
 
 public class FilterByMetricName implements MetricsFilter {
     private final Cache<String, Boolean> filterCache;
@@ -74,12 +73,7 @@ public class FilterByMetricName implements MetricsFilter {
     }
 
     private ArrayList<Pattern> convertPatternStringsToPatternInstances(List<String> patterns) {
-        return Lists.newArrayList(Iterators.transform(patterns.iterator(), new Function<String, Pattern>() {
-            @Override
-            public Pattern apply(String s) {
-                return Pattern.compile(s);
-            }
-        }));
+        return Lists.newArrayList(Iterators.transform(patterns.iterator(), s -> Pattern.compile(s)));
     }
 
     private boolean isFilteredIn(String metricName) {

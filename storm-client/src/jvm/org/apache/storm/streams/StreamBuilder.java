@@ -12,10 +12,6 @@
 
 package org.apache.storm.streams;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +25,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.shade.com.google.common.collect.ArrayListMultimap;
+import org.apache.storm.shade.com.google.common.collect.HashBasedTable;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
+import org.apache.storm.shade.com.google.common.collect.Table;
+import org.apache.storm.shade.org.jgrapht.graph.DefaultDirectedGraph;
+import org.apache.storm.shade.org.jgrapht.traverse.TopologicalOrderIterator;
 import org.apache.storm.streams.operations.IdentityFunction;
 import org.apache.storm.streams.operations.mappers.PairValueMapper;
 import org.apache.storm.streams.operations.mappers.TupleValueMapper;
@@ -45,8 +47,6 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Tuple;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

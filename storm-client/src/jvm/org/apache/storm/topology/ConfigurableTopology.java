@@ -28,11 +28,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
+import org.apache.storm.shade.org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.apache.storm.utils.Utils;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * Extensions of this class takes a reference to one or more configuration files. The main() method should call ConfigurableTopology.start()
@@ -72,7 +73,7 @@ public abstract class ConfigurableTopology {
 
     public static Config loadConf(String resource, Config conf)
         throws FileNotFoundException {
-        Yaml yaml = new Yaml();
+        Yaml yaml = new Yaml(new SafeConstructor());
         Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(
             new FileInputStream(resource), Charset.defaultCharset()));
         if (ret == null) {

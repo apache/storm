@@ -18,8 +18,6 @@
 
 package org.apache.storm;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +33,8 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.shade.com.google.common.collect.ImmutableList;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.ImpersonationAclUserEntryValidator;

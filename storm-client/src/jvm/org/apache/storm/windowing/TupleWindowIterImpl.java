@@ -12,11 +12,11 @@
 
 package org.apache.storm.windowing;
 
-import com.google.common.collect.Iterators;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
+import org.apache.storm.shade.com.google.common.collect.Iterators;
 import org.apache.storm.tuple.Tuple;
 
 /**

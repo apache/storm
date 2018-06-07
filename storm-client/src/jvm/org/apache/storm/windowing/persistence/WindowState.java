@@ -12,7 +12,6 @@
 
 package org.apache.storm.windowing.persistence;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +29,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.windowing.Event;
 import org.slf4j.Logger;

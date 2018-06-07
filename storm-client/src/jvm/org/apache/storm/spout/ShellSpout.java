@@ -12,7 +12,6 @@
 
 package org.apache.storm.spout;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +28,7 @@ import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.rpc.IShellMetric;
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.multilang.SpoutMsg;
+import org.apache.storm.shade.com.google.common.util.concurrent.MoreExecutors;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ShellLogHandler;

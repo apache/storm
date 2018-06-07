@@ -28,7 +28,7 @@ import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,7 @@ public class KerberosSaslNettyClient {
 
         Configuration login_conf;
         try {
-            login_conf = AuthUtils.GetConfiguration(topoConf);
+            login_conf = ClientAuthUtils.getConfiguration(topoConf);
         } catch (Throwable t) {
             LOG.error("Failed to get login_conf: ", t);
             throw t;
@@ -93,7 +93,7 @@ public class KerberosSaslNettyClient {
 
         String serviceName = null;
         try {
-            serviceName = AuthUtils.get(login_conf, jaas_section, "serviceName");
+            serviceName = ClientAuthUtils.get(login_conf, jaas_section, "serviceName");
         } catch (IOException e) {
             LOG.error("Failed to get service name.", e);
             throw new RuntimeException(e);

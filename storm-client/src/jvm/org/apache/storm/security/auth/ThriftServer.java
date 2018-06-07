@@ -15,9 +15,9 @@ package org.apache.storm.security.auth;
 import java.io.IOException;
 import java.util.Map;
 import javax.security.auth.login.Configuration;
-import org.apache.thrift.TProcessor;
-import org.apache.thrift.server.TServer;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.storm.thrift.TProcessor;
+import org.apache.storm.thrift.server.TServer;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,13 +38,13 @@ public class ThriftServer {
 
         try {
             //retrieve authentication configuration 
-            loginConf = AuthUtils.GetConfiguration(this.conf);
+            loginConf = ClientAuthUtils.getConfiguration(this.conf);
         } catch (Exception x) {
             LOG.error(x.getMessage(), x);
         }
         try {
             //locate our thrift transport plugin
-            ITransportPlugin transportPlugin = AuthUtils.getTransportPlugin(this.type, this.conf, loginConf);
+            ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(this.type, this.conf, loginConf);
             //server
             server = transportPlugin.getServer(this.processor);
             port = transportPlugin.getPort();

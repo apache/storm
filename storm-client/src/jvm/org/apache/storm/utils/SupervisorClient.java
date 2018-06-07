@@ -17,7 +17,7 @@ import org.apache.storm.Config;
 import org.apache.storm.generated.Supervisor;
 import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

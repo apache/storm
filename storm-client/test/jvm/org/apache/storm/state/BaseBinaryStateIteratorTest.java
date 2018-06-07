@@ -12,12 +12,12 @@
 
 package org.apache.storm.state;
 
-import com.google.common.primitives.UnsignedBytes;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
 import org.junit.Before;
 import org.junit.Test;
 

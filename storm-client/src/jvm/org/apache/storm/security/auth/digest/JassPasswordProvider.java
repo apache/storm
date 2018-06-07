@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.PasswordProvider;
 
 /**
@@ -44,9 +44,9 @@ public class JassPasswordProvider implements PasswordProvider {
             return;
         }
 
-        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_SERVER);
+        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
-            String errorMessage = "Could not find a '" + AuthUtils.LOGIN_CONTEXT_SERVER
+            String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_SERVER
                                   + "' entry in this configuration: Server cannot start.";
             throw new IOException(errorMessage);
         }

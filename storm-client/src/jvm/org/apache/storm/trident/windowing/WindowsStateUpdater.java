@@ -12,10 +12,10 @@
 
 package org.apache.storm.trident.windowing;
 
-import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.IllegalClassException;
+import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.shade.org.apache.commons.lang.IllegalClassException;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;

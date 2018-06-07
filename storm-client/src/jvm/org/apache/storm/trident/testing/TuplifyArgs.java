@@ -13,11 +13,11 @@
 package org.apache.storm.trident.testing;
 
 import java.util.List;
+import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.org.json.simple.parser.ParseException;
 import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.tuple.TridentTuple;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 public class TuplifyArgs extends BaseFunction {
 

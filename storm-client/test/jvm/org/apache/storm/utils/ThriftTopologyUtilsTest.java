@@ -18,8 +18,6 @@
 
 package org.apache.storm.utils;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import junit.framework.TestCase;
@@ -29,6 +27,8 @@ import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StateSpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hooks.BaseWorkerHook;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
+import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.junit.Assert;
 import org.junit.Test;
 

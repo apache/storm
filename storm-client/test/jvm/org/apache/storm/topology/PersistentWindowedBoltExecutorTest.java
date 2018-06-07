@@ -12,7 +12,6 @@
 
 package org.apache.storm.topology;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,6 +23,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.apache.storm.Config;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.task.OutputCollector;

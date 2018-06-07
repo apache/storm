@@ -24,9 +24,9 @@ import org.apache.storm.daemon.drpc.DRPCThrift;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.ServiceRegistry;
 import org.apache.storm.utils.Utils;
-import org.apache.thrift.TException;
 
 /**
  * A Local way to test DRPC

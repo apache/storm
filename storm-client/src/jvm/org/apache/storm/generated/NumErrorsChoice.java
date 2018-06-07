@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum NumErrorsChoice implements org.apache.thrift.TEnum {
+public enum NumErrorsChoice implements org.apache.storm.thrift.TEnum {
   ALL(0),
   NONE(1),
   ONE(2);

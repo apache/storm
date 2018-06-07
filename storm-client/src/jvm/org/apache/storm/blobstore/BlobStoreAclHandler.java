@@ -21,16 +21,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.security.auth.Subject;
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.generated.AccessControl;
 import org.apache.storm.generated.AccessControlType;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.security.auth.NimbusPrincipal;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.utils.WrappedAuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,9 +54,9 @@ public class BlobStoreAclHandler {
     private boolean doAclValidation;
 
     public BlobStoreAclHandler(Map<String, Object> conf) {
-        _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
+        _ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
         if (conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN) != null) {
-            groupMappingServiceProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+            groupMappingServiceProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
         } else {
             groupMappingServiceProvider = null;
         }

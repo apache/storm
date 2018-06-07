@@ -12,8 +12,6 @@
 
 package org.apache.storm.daemon;
 
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +27,8 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadAwareShuffleGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.grouping.ShuffleGrouping;
+import org.apache.storm.shade.com.google.common.collect.Ordering;
+import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.TupleUtils;

@@ -21,7 +21,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import javax.security.sasl.AuthorizeCallback;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,9 +43,9 @@ public class ClientCallbackHandler implements CallbackHandler {
         if (configuration == null) {
             return;
         }
-        AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_CLIENT);
+        AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
         if (configurationEntries == null) {
-            String errorMessage = "Could not find a '" + AuthUtils.LOGIN_CONTEXT_CLIENT
+            String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_CLIENT
                                   + "' entry in this configuration: Client cannot start.";
             LOG.error(errorMessage);
             throw new IOException(errorMessage);

@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.dependency.DependencyPropertiesParser;
 import org.apache.storm.dependency.DependencyUploader;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -39,14 +38,15 @@ import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.hooks.SubmitterHookException;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.utils.BufferFileInputStream;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
-import org.apache.thrift.TException;
-import org.json.simple.JSONValue;
+import org.apache.storm.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +91,7 @@ public class StormSubmitter {
 
     private static Map<String, String> populateCredentials(Map<String, Object> conf, Map<String, String> creds) {
         Map<String, String> ret = new HashMap<>();
-        for (IAutoCredentials autoCred : AuthUtils.GetAutoCredentials(conf)) {
+        for (IAutoCredentials autoCred : ClientAuthUtils.getAutoCredentials(conf)) {
             LOG.info("Running " + autoCred);
             autoCred.populateCredentials(ret);
         }

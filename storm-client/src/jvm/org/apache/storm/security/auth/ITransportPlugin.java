@@ -15,10 +15,10 @@ package org.apache.storm.security.auth;
 import java.io.IOException;
 import java.util.Map;
 import javax.security.auth.login.Configuration;
-import org.apache.thrift.TProcessor;
-import org.apache.thrift.server.TServer;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.storm.thrift.TProcessor;
+import org.apache.storm.thrift.server.TServer;
+import org.apache.storm.thrift.transport.TTransport;
+import org.apache.storm.thrift.transport.TTransportException;
 
 /**
  * Interface for Thrift Transport plugin
@@ -52,7 +52,7 @@ public interface ITransportPlugin {
     public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException;
 
     /**
-     * @return The port this transport is using. This is not known until {@link #getServer(org.apache.thrift.TProcessor)} has been called.
+     * @return The port this transport is using. This is not known until {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called.
      */
     public int getPort();
 

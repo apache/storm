@@ -14,8 +14,8 @@ package org.apache.storm.streams;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.storm.shade.org.jgrapht.DirectedGraph;
 import org.apache.storm.tuple.Fields;
-import org.jgrapht.DirectedGraph;
 
 import static org.apache.storm.streams.WindowNode.PUNCTUATION;
 

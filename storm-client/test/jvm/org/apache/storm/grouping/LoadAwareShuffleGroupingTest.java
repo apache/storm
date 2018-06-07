@@ -12,9 +12,6 @@
 
 package org.apache.storm.grouping;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.MoreExecutors;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +32,9 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.NullStruct;
+import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.shade.com.google.common.collect.Sets;
+import org.apache.storm.shade.com.google.common.util.concurrent.MoreExecutors;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.junit.Ignore;
 import org.junit.Test;

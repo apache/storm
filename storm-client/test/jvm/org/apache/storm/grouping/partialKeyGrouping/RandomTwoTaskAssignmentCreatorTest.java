@@ -12,8 +12,8 @@
 
 package org.apache.storm.grouping.partialKeyGrouping;
 
-import com.google.common.collect.Lists;
 import org.apache.storm.grouping.PartialKeyGrouping;
+import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.utils.Utils;
 import org.junit.Test;
 

@@ -16,10 +16,10 @@ import java.util.Map;
 import javax.security.auth.login.Configuration;
 import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
+import org.apache.storm.thrift.protocol.TBinaryProtocol;
+import org.apache.storm.thrift.protocol.TProtocol;
+import org.apache.storm.thrift.transport.TSocket;
+import org.apache.storm.thrift.transport.TTransport;
 
 public class ThriftClient implements AutoCloseable {
     protected TProtocol _protocol;
@@ -84,10 +84,10 @@ public class ThriftClient implements AutoCloseable {
             }
 
             //locate login configuration 
-            Configuration login_conf = AuthUtils.GetConfiguration(_conf);
+            Configuration login_conf = ClientAuthUtils.getConfiguration(_conf);
 
             //construct a transport plugin
-            ITransportPlugin transportPlugin = AuthUtils.getTransportPlugin(_type, _conf, login_conf);
+            ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(_type, _conf, login_conf);
 
             //TODO get this from type instead of hardcoding to Nimbus.
             //establish client-server transport via plugin

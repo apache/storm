@@ -24,13 +24,13 @@
 package org.apache.storm.generated;
 
 @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
-public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActionOptions, TopologyActionOptions._Fields> {
-  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("TopologyActionOptions");
-  private static final org.apache.thrift.protocol.TField KILL_OPTIONS_FIELD_DESC = new org.apache.thrift.protocol.TField("kill_options", org.apache.thrift.protocol.TType.STRUCT, (short)1);
-  private static final org.apache.thrift.protocol.TField REBALANCE_OPTIONS_FIELD_DESC = new org.apache.thrift.protocol.TField("rebalance_options", org.apache.thrift.protocol.TType.STRUCT, (short)2);
+public class TopologyActionOptions extends org.apache.storm.thrift.TUnion<TopologyActionOptions, TopologyActionOptions._Fields> {
+  private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("TopologyActionOptions");
+  private static final org.apache.storm.thrift.protocol.TField KILL_OPTIONS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("kill_options", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
+  private static final org.apache.storm.thrift.protocol.TField REBALANCE_OPTIONS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("rebalance_options", org.apache.storm.thrift.protocol.TType.STRUCT, (short)2);
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-  public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+  public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
     KILL_OPTIONS((short)1, "kill_options"),
     REBALANCE_OPTIONS((short)2, "rebalance_options");
 
@@ -90,15 +90,15 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
     }
   }
 
-  public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+  public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
-    java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.KILL_OPTIONS, new org.apache.thrift.meta_data.FieldMetaData("kill_options", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, KillOptions.class)));
-    tmpMap.put(_Fields.REBALANCE_OPTIONS, new org.apache.thrift.meta_data.FieldMetaData("rebalance_options", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, RebalanceOptions.class)));
+    java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+    tmpMap.put(_Fields.KILL_OPTIONS, new org.apache.storm.thrift.meta_data.FieldMetaData("kill_options", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, KillOptions.class)));
+    tmpMap.put(_Fields.REBALANCE_OPTIONS, new org.apache.storm.thrift.meta_data.FieldMetaData("rebalance_options", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, RebalanceOptions.class)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
-    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TopologyActionOptions.class, metaDataMap);
+    org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TopologyActionOptions.class, metaDataMap);
   }
 
   public TopologyActionOptions() {
@@ -148,7 +148,7 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
   }
 
   @Override
-  protected java.lang.Object standardSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TField field) throws org.apache.thrift.TException {
+  protected java.lang.Object standardSchemeReadValue(org.apache.storm.thrift.protocol.TProtocol iprot, org.apache.storm.thrift.protocol.TField field) throws org.apache.storm.thrift.TException {
     _Fields setField = _Fields.findByThriftId(field.id);
     if (setField != null) {
       switch (setField) {
@@ -159,7 +159,7 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
             kill_options.read(iprot);
             return kill_options;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case REBALANCE_OPTIONS:
@@ -169,20 +169,20 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
             rebalance_options.read(iprot);
             return rebalance_options;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         default:
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
     } else {
-      org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+      org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       return null;
     }
   }
 
   @Override
-  protected void standardSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void standardSchemeWriteValue(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
     switch (setField_) {
       case KILL_OPTIONS:
         KillOptions kill_options = (KillOptions)value_;
@@ -198,7 +198,7 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
   }
 
   @Override
-  protected java.lang.Object tupleSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.thrift.TException {
+  protected java.lang.Object tupleSchemeReadValue(org.apache.storm.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.storm.thrift.TException {
     _Fields setField = _Fields.findByThriftId(fieldID);
     if (setField != null) {
       switch (setField) {
@@ -216,12 +216,12 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
     } else {
-      throw new org.apache.thrift.protocol.TProtocolException("Couldn't find a field with field id " + fieldID);
+      throw new org.apache.storm.thrift.protocol.TProtocolException("Couldn't find a field with field id " + fieldID);
     }
   }
 
   @Override
-  protected void tupleSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void tupleSchemeWriteValue(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
     switch (setField_) {
       case KILL_OPTIONS:
         KillOptions kill_options = (KillOptions)value_;
@@ -237,7 +237,7 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
   }
 
   @Override
-  protected org.apache.thrift.protocol.TField getFieldDesc(_Fields setField) {
+  protected org.apache.storm.thrift.protocol.TField getFieldDesc(_Fields setField) {
     switch (setField) {
       case KILL_OPTIONS:
         return KILL_OPTIONS_FIELD_DESC;
@@ -249,7 +249,7 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
   }
 
   @Override
-  protected org.apache.thrift.protocol.TStruct getStructDesc() {
+  protected org.apache.storm.thrift.protocol.TStruct getStructDesc() {
     return STRUCT_DESC;
   }
 
@@ -315,9 +315,9 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
 
   @Override
   public int compareTo(TopologyActionOptions other) {
-    int lastComparison = org.apache.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());
+    int lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());
     if (lastComparison == 0) {
-      return org.apache.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());
+      return org.apache.storm.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());
     }
     return lastComparison;
   }
@@ -327,12 +327,12 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
   public int hashCode() {
     java.util.List<java.lang.Object> list = new java.util.ArrayList<java.lang.Object>();
     list.add(this.getClass().getName());
-    org.apache.thrift.TFieldIdEnum setField = getSetField();
+    org.apache.storm.thrift.TFieldIdEnum setField = getSetField();
     if (setField != null) {
       list.add(setField.getThriftFieldId());
       java.lang.Object value = getFieldValue();
-      if (value instanceof org.apache.thrift.TEnum) {
-        list.add(((org.apache.thrift.TEnum)getFieldValue()).getValue());
+      if (value instanceof org.apache.storm.thrift.TEnum) {
+        list.add(((org.apache.storm.thrift.TEnum)getFieldValue()).getValue());
       } else {
         list.add(value);
       }
@@ -341,8 +341,8 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
   }
   private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
     try {
-      write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
-    } catch (org.apache.thrift.TException te) {
+      write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+    } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
     }
   }
@@ -350,8 +350,8 @@ public class TopologyActionOptions extends org.apache.thrift.TUnion<TopologyActi
 
   private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
     try {
-      read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
-    } catch (org.apache.thrift.TException te) {
+      read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+    } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
     }
   }

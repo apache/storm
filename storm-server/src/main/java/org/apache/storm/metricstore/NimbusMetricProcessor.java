@@ -13,8 +13,8 @@ package org.apache.storm.metricstore;
 
 import java.util.Map;
 import org.apache.storm.generated.WorkerMetrics;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.NimbusClient;
-import org.apache.thrift.TException;
 
 /**
  * Implementation of WorkerMetricsProcessor that sends metric data to Nimbus for processing.

@@ -12,8 +12,6 @@
 
 package org.apache.storm.daemon.worker;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -21,17 +19,13 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -55,8 +49,12 @@ import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.metrics2.StormMetricRegistry;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
+import org.apache.storm.shade.com.google.common.base.Preconditions;
+import org.apache.storm.shade.org.apache.commons.io.FileUtils;
+import org.apache.storm.shade.org.apache.commons.lang.ObjectUtils;
+import org.apache.storm.shade.uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
@@ -67,7 +65,6 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class Worker implements Shutdownable, DaemonCommon {
 
@@ -160,8 +157,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         if (initialCredentials != null) {
             initCreds.putAll(initialCredentials.get_creds());
         }
-        autoCreds = AuthUtils.GetAutoCredentials(topologyConf);
-        subject = AuthUtils.populateSubject(null, autoCreds, initCreds);
+        autoCreds = ClientAuthUtils.getAutoCredentials(topologyConf);
+        subject = ClientAuthUtils.populateSubject(null, autoCreds, initCreds);
 
         Subject.doAs(subject, (PrivilegedExceptionAction<Object>)
             () -> loadWorker(topologyConf, stateStorage, stormClusterState, initCreds, initialCredentials)
@@ -398,7 +395,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         Credentials newCreds = workerState.stormClusterState.credentials(topologyId, null);
         if (!ObjectUtils.equals(newCreds, credentialsAtom.get())) {
             // This does not have to be atomic, worst case we update when one is not needed
-            AuthUtils.updateSubject(subject, autoCreds, (null == newCreds) ? null : newCreds.get_creds());
+            ClientAuthUtils.updateSubject(subject, autoCreds, (null == newCreds) ? null : newCreds.get_creds());
             for (IRunningExecutor executor : executorsAtom.get()) {
                 executor.credentialsChanged(newCreds);
             }

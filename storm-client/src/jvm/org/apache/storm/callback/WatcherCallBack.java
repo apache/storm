@@ -12,8 +12,8 @@
 
 package org.apache.storm.callback;
 
-import org.apache.zookeeper.Watcher;
+import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 
 public interface WatcherCallBack {
-    public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path);
+    void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path);
 }

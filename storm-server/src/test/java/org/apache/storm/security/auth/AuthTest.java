@@ -41,26 +41,17 @@ import org.apache.storm.security.auth.authorizer.SimpleWhitelistAuthorizer;
 import org.apache.storm.security.auth.digest.DigestSaslTransportPlugin;
 import org.apache.storm.security.auth.workertoken.WorkerTokenManager;
 import org.apache.storm.testing.InProcessZookeeper;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class AuthTest {
     //3 seconds in milliseconds
@@ -183,9 +174,9 @@ public class AuthTest {
     public static Subject createSubjectWith(WorkerToken wt) {
         //This is a bit ugly, but it shows how this would happen in a worker so we will use the same APIs
         Map<String, String> creds = new HashMap<>();
-        AuthUtils.setWorkerToken(creds, wt);
+        ClientAuthUtils.setWorkerToken(creds, wt);
         Subject subject = new Subject();
-        AuthUtils.updateSubject(subject, Collections.emptyList(), creds);
+        ClientAuthUtils.updateSubject(subject, Collections.emptyList(), creds);
         return subject;
     }
 
@@ -585,7 +576,7 @@ public class AuthTest {
     public void getTransportPluginThrowsRunimeTest() {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
         conf.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, "null.invalid");
-        AuthUtils.getTransportPlugin(ThriftConnectionType.NIMBUS, conf, null);
+        ClientAuthUtils.getTransportPlugin(ThriftConnectionType.NIMBUS, conf, null);
     }
 
     @Test

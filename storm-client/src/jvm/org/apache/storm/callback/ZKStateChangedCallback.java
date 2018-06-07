@@ -12,7 +12,7 @@
 
 package org.apache.storm.callback;
 
-import org.apache.zookeeper.Watcher;
+import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 
 public interface ZKStateChangedCallback {
     public void changed(Watcher.Event.EventType type, String path);

@@ -17,11 +17,11 @@ import org.apache.storm.generated.HBMessage;
 import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.messaging.netty.ControlMessage;
 import org.apache.storm.messaging.netty.SaslMessageToken;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.org.jboss.netty.handler.codec.frame.FrameDecoder;
 import org.apache.storm.utils.Utils;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
 public class ThriftDecoder extends FrameDecoder {
 

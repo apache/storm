@@ -12,10 +12,6 @@
 
 package org.apache.storm.security.auth.workertoken;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -28,9 +24,13 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.PrivateWorkerKey;
 import org.apache.storm.generated.WorkerTokenInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.sasl.PasswordProvider;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.cache.CacheBuilder;
+import org.apache.storm.shade.com.google.common.cache.CacheLoader;
+import org.apache.storm.shade.com.google.common.cache.LoadingCache;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -77,7 +77,7 @@ public class WorkerTokenAuthorizer implements PasswordProvider {
     private static IStormClusterState buildStateIfNeeded(Map<String, Object> conf, ThriftConnectionType connectionType) {
         IStormClusterState state = null;
 
-        if (AuthUtils.areWorkerTokensEnabledServer(connectionType, conf)) {
+        if (ClientAuthUtils.areWorkerTokensEnabledServer(connectionType, conf)) {
             try {
                 state = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.UNKNOWN, conf));
             } catch (Exception e) {

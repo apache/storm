@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum LogLevelAction implements org.apache.thrift.TEnum {
+public enum LogLevelAction implements org.apache.storm.thrift.TEnum {
   UNCHANGED(1),
   UPDATE(2),
   REMOVE(3);

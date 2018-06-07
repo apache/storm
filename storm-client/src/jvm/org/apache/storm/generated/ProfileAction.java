@@ -24,7 +24,7 @@
 package org.apache.storm.generated;
 
 
-public enum ProfileAction implements org.apache.thrift.TEnum {
+public enum ProfileAction implements org.apache.storm.thrift.TEnum {
   JPROFILE_STOP(0),
   JPROFILE_START(1),
   JPROFILE_DUMP(2),

@@ -1362,16 +1362,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isStringList
     public static final String NIMBUS_AUTO_CRED_PLUGINS = "nimbus.autocredential.plugins.classes";
-    /**
-     * Class name of the HTTP credentials plugin for the UI.
-     */
-    @isString
-    public static final String UI_HTTP_CREDS_PLUGIN = "ui.http.creds.plugin";
-    /**
-     * Class name of the HTTP credentials plugin for DRPC.
-     */
-    @isString
-    public static final String DRPC_HTTP_CREDS_PLUGIN = "drpc.http.creds.plugin";
+
     /**
      * A list of users that run the supervisors and should be authorized to interact with nimbus as a supervisor would.  To use this set
      * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer.

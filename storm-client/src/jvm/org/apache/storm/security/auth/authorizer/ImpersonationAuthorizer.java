@@ -12,7 +12,6 @@
 
 package org.apache.storm.security.auth.authorizer;
 
-import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -21,11 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.Config;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,8 +53,8 @@ public class ImpersonationAuthorizer implements IAuthorizer {
             }
         }
 
-        _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
-        _groupMappingProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+        _ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
+        _groupMappingProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
     }
 
     @Override

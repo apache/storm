@@ -21,9 +21,6 @@ package org.apache.storm.daemon.nimbus;
 import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -56,7 +53,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -171,7 +167,7 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.security.INimbusCredentialPlugin;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ICredentialsRenewer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
@@ -181,7 +177,14 @@ import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
 import org.apache.storm.security.auth.workertoken.WorkerTokenManager;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.base.Strings;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.stats.StatsUtil;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.BufferInputStream;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
@@ -205,17 +208,13 @@ import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.zookeeper.AclEnforcement;
 import org.apache.storm.zookeeper.ClientZookeeper;
 import org.apache.storm.zookeeper.Zookeeper;
-import org.apache.thrift.TException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @VisibleForTesting
-    public static final List<ACL> ZK_ACLS = Arrays.asList(ZooDefs.Ids.CREATOR_ALL_ACL.get(0),
-                                                          new ACL(ZooDefs.Perms.READ | ZooDefs.Perms.CREATE, ZooDefs.Ids.ANYONE_ID_UNSAFE));
+    public static final List<ACL> ZK_ACLS = Arrays.asList(ZooDefs.Ids.CREATOR_ALL_ACL.get(0));
     public static final SimpleVersion MIN_VERSION_SUPPORT_RPC_HEARTBEAT = new SimpleVersion("2.0.0");
     private static final Logger LOG = LoggerFactory.getLogger(Nimbus.class);
     //    Metrics
@@ -513,17 +512,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.nodeIdToResources = new AtomicReference<>(new HashMap<>());
         this.idToResources = new AtomicReference<>(new HashMap<>());
         this.idToWorkerResources = new AtomicReference<>(new HashMap<>());
-        this.credRenewers = AuthUtils.GetCredentialRenewers(conf);
+        this.credRenewers = ClientAuthUtils.getCredentialRenewers(conf);
         this.topologyHistoryLock = new Object();
         this.topologyHistoryState = ServerConfigUtils.nimbusTopoHistoryState(conf);
-        this.nimbusAutocredPlugins = AuthUtils.getNimbusAutoCredPlugins(conf);
+        this.nimbusAutocredPlugins = ClientAuthUtils.getNimbusAutoCredPlugins(conf);
         this.nimbusTopologyActionNotifier = createTopologyActionNotifier(conf);
         this.clusterConsumerExceutors = makeClusterMetricsConsumerExecutors(conf);
         if (groupMapper == null) {
-            groupMapper = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+            groupMapper = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
         }
         this.groupMapper = groupMapper;
-        this.principalToLocal = AuthUtils.GetPrincipalToLocalPlugin(conf);
+        this.principalToLocal = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
         this.supervisorClasspaths = Collections.unmodifiableNavigableMap(
             Utils.getConfiguredClasspathVersions(conf, EMPTY_STRING_LIST));// We don't use the classpath part of this, so just an empty list
     }
@@ -1139,7 +1138,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             nimbus.shutdown();
             server.stop();
         }, 10);
-        if (AuthUtils.areWorkerTokensEnabledServer(server, conf)) {
+        if (ClientAuthUtils.areWorkerTokensEnabledServer(server, conf)) {
             nimbus.initWorkerTokenManager();
         }
         LOG.info("Starting nimbus server for storm version '{}'", STORM_VERSION);
@@ -2849,10 +2848,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             final long renewIfExpirationBefore = workerTokenManager.getMaxExpirationTimeForRenewal();
             for (WorkerTokenServiceType type : WorkerTokenServiceType.values()) {
                 boolean shouldAdd = true;
-                WorkerToken oldToken = AuthUtils.readWorkerToken(creds, type);
+                WorkerToken oldToken = ClientAuthUtils.readWorkerToken(creds, type);
                 if (oldToken != null) {
                     try {
-                        WorkerTokenInfo info = AuthUtils.getWorkerTokenInfo(oldToken);
+                        WorkerTokenInfo info = ClientAuthUtils.getWorkerTokenInfo(oldToken);
                         if (info.is_set_expirationTimeMillis() || info.get_expirationTimeMillis() > renewIfExpirationBefore) {
                             //Found an existing token and it is not going to expire any time soon, so don't bother adding in a new
                             // token.
@@ -2864,7 +2863,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     }
                 }
                 if (shouldAdd) {
-                    AuthUtils.setWorkerToken(creds, workerTokenManager.createOrUpdateTokenFor(type, user, topologyId));
+                    ClientAuthUtils.setWorkerToken(creds, workerTokenManager.createOrUpdateTokenFor(type, user, topologyId));
                 }
             }
             //Remove any expired keys after possibly inserting new ones.
@@ -4525,7 +4524,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public void processWorkerMetrics(WorkerMetrics metrics) throws org.apache.thrift.TException {
+    public void processWorkerMetrics(WorkerMetrics metrics) throws TException {
         processWorkerMetricsCalls.mark();
 
         checkAuthorization(null, null, "processWorkerMetrics");

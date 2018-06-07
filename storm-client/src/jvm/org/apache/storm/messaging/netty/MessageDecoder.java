@@ -16,10 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.serialization.KryoValuesDeserializer;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.frame.FrameDecoder;
+import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
+import org.apache.storm.shade.org.jboss.netty.channel.Channel;
+import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.org.jboss.netty.handler.codec.frame.FrameDecoder;
 
 public class MessageDecoder extends FrameDecoder {
 

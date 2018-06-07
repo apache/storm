@@ -15,7 +15,7 @@ package org.apache.storm.utils;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.storm.shade.org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

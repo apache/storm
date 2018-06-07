@@ -24,17 +24,17 @@
 package org.apache.storm.generated;
 
 @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
-public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMessageData._Fields> {
-  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("HBMessageData");
-  private static final org.apache.thrift.protocol.TField PATH_FIELD_DESC = new org.apache.thrift.protocol.TField("path", org.apache.thrift.protocol.TType.STRING, (short)1);
-  private static final org.apache.thrift.protocol.TField PULSE_FIELD_DESC = new org.apache.thrift.protocol.TField("pulse", org.apache.thrift.protocol.TType.STRUCT, (short)2);
-  private static final org.apache.thrift.protocol.TField BOOLVAL_FIELD_DESC = new org.apache.thrift.protocol.TField("boolval", org.apache.thrift.protocol.TType.BOOL, (short)3);
-  private static final org.apache.thrift.protocol.TField RECORDS_FIELD_DESC = new org.apache.thrift.protocol.TField("records", org.apache.thrift.protocol.TType.STRUCT, (short)4);
-  private static final org.apache.thrift.protocol.TField NODES_FIELD_DESC = new org.apache.thrift.protocol.TField("nodes", org.apache.thrift.protocol.TType.STRUCT, (short)5);
-  private static final org.apache.thrift.protocol.TField MESSAGE_BLOB_FIELD_DESC = new org.apache.thrift.protocol.TField("message_blob", org.apache.thrift.protocol.TType.STRING, (short)7);
+public class HBMessageData extends org.apache.storm.thrift.TUnion<HBMessageData, HBMessageData._Fields> {
+  private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("HBMessageData");
+  private static final org.apache.storm.thrift.protocol.TField PATH_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("path", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
+  private static final org.apache.storm.thrift.protocol.TField PULSE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("pulse", org.apache.storm.thrift.protocol.TType.STRUCT, (short)2);
+  private static final org.apache.storm.thrift.protocol.TField BOOLVAL_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("boolval", org.apache.storm.thrift.protocol.TType.BOOL, (short)3);
+  private static final org.apache.storm.thrift.protocol.TField RECORDS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("records", org.apache.storm.thrift.protocol.TType.STRUCT, (short)4);
+  private static final org.apache.storm.thrift.protocol.TField NODES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("nodes", org.apache.storm.thrift.protocol.TType.STRUCT, (short)5);
+  private static final org.apache.storm.thrift.protocol.TField MESSAGE_BLOB_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("message_blob", org.apache.storm.thrift.protocol.TType.STRING, (short)7);
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-  public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+  public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
     PATH((short)1, "path"),
     PULSE((short)2, "pulse"),
     BOOLVAL((short)3, "boolval"),
@@ -106,23 +106,23 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
     }
   }
 
-  public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+  public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
-    java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.PATH, new org.apache.thrift.meta_data.FieldMetaData("path", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-    tmpMap.put(_Fields.PULSE, new org.apache.thrift.meta_data.FieldMetaData("pulse", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, HBPulse.class)));
-    tmpMap.put(_Fields.BOOLVAL, new org.apache.thrift.meta_data.FieldMetaData("boolval", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
-    tmpMap.put(_Fields.RECORDS, new org.apache.thrift.meta_data.FieldMetaData("records", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, HBRecords.class)));
-    tmpMap.put(_Fields.NODES, new org.apache.thrift.meta_data.FieldMetaData("nodes", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, HBNodes.class)));
-    tmpMap.put(_Fields.MESSAGE_BLOB, new org.apache.thrift.meta_data.FieldMetaData("message_blob", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , true)));
+    java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+    tmpMap.put(_Fields.PATH, new org.apache.storm.thrift.meta_data.FieldMetaData("path", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.PULSE, new org.apache.storm.thrift.meta_data.FieldMetaData("pulse", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, HBPulse.class)));
+    tmpMap.put(_Fields.BOOLVAL, new org.apache.storm.thrift.meta_data.FieldMetaData("boolval", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.BOOL)));
+    tmpMap.put(_Fields.RECORDS, new org.apache.storm.thrift.meta_data.FieldMetaData("records", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, HBRecords.class)));
+    tmpMap.put(_Fields.NODES, new org.apache.storm.thrift.meta_data.FieldMetaData("nodes", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, HBNodes.class)));
+    tmpMap.put(_Fields.MESSAGE_BLOB, new org.apache.storm.thrift.meta_data.FieldMetaData("message_blob", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING        , true)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
-    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(HBMessageData.class, metaDataMap);
+    org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(HBMessageData.class, metaDataMap);
   }
 
   public HBMessageData() {
@@ -222,7 +222,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
   }
 
   @Override
-  protected java.lang.Object standardSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TField field) throws org.apache.thrift.TException {
+  protected java.lang.Object standardSchemeReadValue(org.apache.storm.thrift.protocol.TProtocol iprot, org.apache.storm.thrift.protocol.TField field) throws org.apache.storm.thrift.TException {
     _Fields setField = _Fields.findByThriftId(field.id);
     if (setField != null) {
       switch (setField) {
@@ -232,7 +232,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
             path = iprot.readString();
             return path;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case PULSE:
@@ -242,7 +242,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
             pulse.read(iprot);
             return pulse;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case BOOLVAL:
@@ -251,7 +251,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
             boolval = iprot.readBool();
             return boolval;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case RECORDS:
@@ -261,7 +261,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
             records.read(iprot);
             return records;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case NODES:
@@ -271,7 +271,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
             nodes.read(iprot);
             return nodes;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         case MESSAGE_BLOB:
@@ -280,20 +280,20 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
             message_blob = iprot.readBinary();
             return message_blob;
           } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
         default:
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
     } else {
-      org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+      org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       return null;
     }
   }
 
   @Override
-  protected void standardSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void standardSchemeWriteValue(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
     switch (setField_) {
       case PATH:
         java.lang.String path = (java.lang.String)value_;
@@ -325,7 +325,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
   }
 
   @Override
-  protected java.lang.Object tupleSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.thrift.TException {
+  protected java.lang.Object tupleSchemeReadValue(org.apache.storm.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.storm.thrift.TException {
     _Fields setField = _Fields.findByThriftId(fieldID);
     if (setField != null) {
       switch (setField) {
@@ -360,12 +360,12 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
     } else {
-      throw new org.apache.thrift.protocol.TProtocolException("Couldn't find a field with field id " + fieldID);
+      throw new org.apache.storm.thrift.protocol.TProtocolException("Couldn't find a field with field id " + fieldID);
     }
   }
 
   @Override
-  protected void tupleSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void tupleSchemeWriteValue(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
     switch (setField_) {
       case PATH:
         java.lang.String path = (java.lang.String)value_;
@@ -397,7 +397,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
   }
 
   @Override
-  protected org.apache.thrift.protocol.TField getFieldDesc(_Fields setField) {
+  protected org.apache.storm.thrift.protocol.TField getFieldDesc(_Fields setField) {
     switch (setField) {
       case PATH:
         return PATH_FIELD_DESC;
@@ -417,7 +417,7 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
   }
 
   @Override
-  protected org.apache.thrift.protocol.TStruct getStructDesc() {
+  protected org.apache.storm.thrift.protocol.TStruct getStructDesc() {
     return STRUCT_DESC;
   }
 
@@ -501,14 +501,14 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
   }
 
   public byte[] get_message_blob() {
-    set_message_blob(org.apache.thrift.TBaseHelper.rightSize(buffer_for_message_blob()));
+    set_message_blob(org.apache.storm.thrift.TBaseHelper.rightSize(buffer_for_message_blob()));
     java.nio.ByteBuffer b = buffer_for_message_blob();
     return b == null ? null : b.array();
   }
 
   public java.nio.ByteBuffer buffer_for_message_blob() {
     if (getSetField() == _Fields.MESSAGE_BLOB) {
-      return org.apache.thrift.TBaseHelper.copyBinary((java.nio.ByteBuffer)getFieldValue());
+      return org.apache.storm.thrift.TBaseHelper.copyBinary((java.nio.ByteBuffer)getFieldValue());
     } else {
       throw new java.lang.RuntimeException("Cannot get field 'message_blob' because union is currently set to " + getFieldDesc(getSetField()).name);
     }
@@ -568,9 +568,9 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
 
   @Override
   public int compareTo(HBMessageData other) {
-    int lastComparison = org.apache.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());
+    int lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(getSetField(), other.getSetField());
     if (lastComparison == 0) {
-      return org.apache.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());
+      return org.apache.storm.thrift.TBaseHelper.compareTo(getFieldValue(), other.getFieldValue());
     }
     return lastComparison;
   }
@@ -580,12 +580,12 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
   public int hashCode() {
     java.util.List<java.lang.Object> list = new java.util.ArrayList<java.lang.Object>();
     list.add(this.getClass().getName());
-    org.apache.thrift.TFieldIdEnum setField = getSetField();
+    org.apache.storm.thrift.TFieldIdEnum setField = getSetField();
     if (setField != null) {
       list.add(setField.getThriftFieldId());
       java.lang.Object value = getFieldValue();
-      if (value instanceof org.apache.thrift.TEnum) {
-        list.add(((org.apache.thrift.TEnum)getFieldValue()).getValue());
+      if (value instanceof org.apache.storm.thrift.TEnum) {
+        list.add(((org.apache.storm.thrift.TEnum)getFieldValue()).getValue());
       } else {
         list.add(value);
       }
@@ -594,8 +594,8 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
   }
   private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
     try {
-      write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
-    } catch (org.apache.thrift.TException te) {
+      write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+    } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
     }
   }
@@ -603,8 +603,8 @@ public class HBMessageData extends org.apache.thrift.TUnion<HBMessageData, HBMes
 
   private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
     try {
-      read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
-    } catch (org.apache.thrift.TException te) {
+      read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+    } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
     }
   }

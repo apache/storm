@@ -16,8 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.utils.Utils;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

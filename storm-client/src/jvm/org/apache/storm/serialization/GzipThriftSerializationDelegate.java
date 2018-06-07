@@ -19,11 +19,11 @@
 package org.apache.storm.serialization;
 
 import java.util.Map;
+import org.apache.storm.thrift.TBase;
+import org.apache.storm.thrift.TDeserializer;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.thrift.TSerializer;
 import org.apache.storm.utils.Utils;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
 
 /**
  * Note, this assumes it's deserializing a gzip byte stream, and will err if it encounters any other serialization.

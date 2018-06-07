@@ -12,9 +12,6 @@
 
 package org.apache.storm.metric;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +20,9 @@ import java.util.concurrent.LinkedBlockingDeque;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.metric.util.DataPointExpander;
+import org.apache.storm.shade.com.google.common.base.Predicate;
+import org.apache.storm.shade.com.google.common.collect.Iterables;
+import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;

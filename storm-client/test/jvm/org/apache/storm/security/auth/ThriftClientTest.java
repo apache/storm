@@ -14,9 +14,9 @@ package org.apache.storm.security.auth;
 
 import java.util.Map;
 import org.apache.storm.Config;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.ThrowableNestedCauseMatcher;
 import org.apache.storm.utils.Utils;
-import org.apache.thrift.transport.TTransportException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

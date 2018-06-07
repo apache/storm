@@ -16,9 +16,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.sasl.Sasl;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.Charsets;
 import org.apache.storm.Config;
+import org.apache.storm.shade.com.google.common.base.Charsets;
+import org.apache.storm.shade.org.apache.commons.codec.binary.Base64;
 
 class SaslUtils {
     public static final String KERBEROS = "GSSAPI";

@@ -1,13 +1,19 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
- * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.storm.security.auth;
@@ -31,27 +37,26 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.generated.WorkerTokenInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.security.INimbusCredentialPlugin;
+import org.apache.storm.shade.org.apache.commons.codec.binary.Hex;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AuthUtils {
+public class ClientAuthUtils {
     public static final String LOGIN_CONTEXT_SERVER = "StormServer";
     public static final String LOGIN_CONTEXT_CLIENT = "StormClient";
     public static final String LOGIN_CONTEXT_PACEMAKER_DIGEST = "PacemakerDigest";
     public static final String LOGIN_CONTEXT_PACEMAKER_SERVER = "PacemakerServer";
     public static final String LOGIN_CONTEXT_PACEMAKER_CLIENT = "PacemakerClient";
     public static final String SERVICE = "storm_thrift_server";
-    private static final Logger LOG = LoggerFactory.getLogger(AuthUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ClientAuthUtils.class);
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
 
@@ -61,7 +66,7 @@ public class AuthUtils {
      * @param topoConf Storm configuration
      * @return JAAS configuration object
      */
-    public static Configuration GetConfiguration(Map<String, Object> topoConf) {
+    public static Configuration getConfiguration(Map<String, Object> topoConf) {
         Configuration login_conf = null;
 
         //find login file configuration from Storm configuration
@@ -113,7 +118,7 @@ public class AuthUtils {
      */
     public static SortedMap<String, ?> pullConfig(Configuration configuration,
                                                   String section) throws IOException {
-        AppConfigurationEntry[] configurationEntries = AuthUtils.getEntries(configuration, section);
+        AppConfigurationEntry[] configurationEntries = ClientAuthUtils.getEntries(configuration, section);
 
         if (configurationEntries == null) {
             return null;
@@ -140,7 +145,7 @@ public class AuthUtils {
      * @return Return a the String value of the configuration value
      */
     public static String get(Configuration configuration, String section, String key) throws IOException {
-        AppConfigurationEntry[] configurationEntries = AuthUtils.getEntries(configuration, section);
+        AppConfigurationEntry[] configurationEntries = ClientAuthUtils.getEntries(configuration, section);
 
         if (configurationEntries == null) {
             return null;
@@ -161,7 +166,7 @@ public class AuthUtils {
      * @param topoConf storm configuration
      * @return the plugin
      */
-    public static IPrincipalToLocal GetPrincipalToLocalPlugin(Map<String, Object> topoConf) {
+    public static IPrincipalToLocal getPrincipalToLocalPlugin(Map<String, Object> topoConf) {
         IPrincipalToLocal ptol = null;
         try {
             String ptol_klassName = (String) topoConf.get(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
@@ -187,7 +192,7 @@ public class AuthUtils {
      * @param conf daemon configuration
      * @return the plugin
      */
-    public static IGroupMappingServiceProvider GetGroupMappingServiceProviderPlugin(Map<String, Object> conf) {
+    public static IGroupMappingServiceProvider getGroupMappingServiceProviderPlugin(Map<String, Object> conf) {
         IGroupMappingServiceProvider gmsp = null;
         try {
             String gmsp_klassName = (String) conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
@@ -211,7 +216,7 @@ public class AuthUtils {
      * @param conf the storm configuration to use.
      * @return the configured credential renewers.
      */
-    public static Collection<ICredentialsRenewer> GetCredentialRenewers(Map<String, Object> conf) {
+    public static Collection<ICredentialsRenewer> getCredentialRenewers(Map<String, Object> conf) {
         try {
             Set<ICredentialsRenewer> ret = new HashSet<>();
             Collection<String> clazzes = (Collection<String>) conf.get(Config.NIMBUS_CREDENTIAL_RENEWERS);
@@ -257,7 +262,7 @@ public class AuthUtils {
      * @param topoConf the storm configuration to use.
      * @return the configured auto credentials.
      */
-    public static Collection<IAutoCredentials> GetAutoCredentials(Map<String, Object> topoConf) {
+    public static Collection<IAutoCredentials> getAutoCredentials(Map<String, Object> topoConf) {
         try {
             Set<IAutoCredentials> autos = new HashSet<>();
             Collection<String> clazzes = (Collection<String>) topoConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
@@ -463,47 +468,11 @@ public class AuthUtils {
         }
     }
 
-    public static IHttpCredentialsPlugin GetHttpCredentialsPlugin(Map<String, Object> conf,
-                                                                  String klassName) {
-        try {
-            IHttpCredentialsPlugin plugin = null;
-            if (StringUtils.isNotBlank(klassName)) {
-                plugin = ReflectionUtils.newInstance(klassName);
-                plugin.prepare(conf);
-            }
-            return plugin;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Construct an HttpServletRequest credential plugin specified by the UI storm configuration
-     *
-     * @param conf storm configuration
-     * @return the plugin
-     */
-    public static IHttpCredentialsPlugin GetUiHttpCredentialsPlugin(Map<String, Object> conf) {
-        String klassName = (String) conf.get(Config.UI_HTTP_CREDS_PLUGIN);
-        return AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
-    }
-
-    /**
-     * Construct an HttpServletRequest credential plugin specified by the DRPC storm configuration
-     *
-     * @param conf storm configuration
-     * @return the plugin
-     */
-    public static IHttpCredentialsPlugin GetDrpcHttpCredentialsPlugin(Map<String, Object> conf) {
-        String klassName = (String) conf.get(Config.DRPC_HTTP_CREDS_PLUGIN);
-        return klassName == null ? null : AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
-    }
-
     public static String makeDigestPayload(Configuration login_config, String config_section) {
         String username = null;
         String password = null;
         try {
-            Map<String, ?> results = AuthUtils.pullConfig(login_config, config_section);
+            Map<String, ?> results = ClientAuthUtils.pullConfig(login_config, config_section);
             username = (String) results.get(USERNAME);
             password = (String) results.get(PASSWORD);
         } catch (Exception e) {

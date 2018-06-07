@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.generated.AuthorizationException;
@@ -30,13 +29,13 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.security.auth.NimbusPrincipal;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.apache.storm.utils.ZookeeperAuthInfo;
-import org.apache.thrift.transport.TTransportException;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -266,7 +265,7 @@ public class BlobStoreUtils {
                 LOG.debug("Updating state inside zookeeper for an update");
                 createStateInZookeeper(conf, key, nimbusDetails);
             }
-        } catch (NoNodeException | KeyNotFoundException e) {
+        } catch (KeeperException.NoNodeException | KeyNotFoundException e) {
             //race condition with a delete
             return;
         } catch (Exception exp) {

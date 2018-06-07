@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.Config;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
+import org.apache.storm.shade.org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.apache.storm.shade.org.jboss.netty.util.HashedWheelTimer;
 import org.apache.storm.utils.ObjectReader;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 
 public class Context implements IContext {
     private Map<String, Object> topoConf;

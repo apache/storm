@@ -21,21 +21,22 @@ package org.apache.storm.zookeeper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.api.CuratorEvent;
-import org.apache.curator.framework.api.CuratorEventType;
-import org.apache.curator.framework.api.CuratorListener;
-import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.VersionedData;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.curator.framework.api.CuratorEvent;
+import org.apache.storm.shade.org.apache.curator.framework.api.CuratorEventType;
+import org.apache.storm.shade.org.apache.curator.framework.api.CuratorListener;
+import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
+import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
+import org.apache.storm.shade.org.apache.zookeeper.WatchedEvent;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
+import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +91,7 @@ public class ClientZookeeper {
         }
     }
 
-    public static String createNode(CuratorFramework zk, String path, byte[] data, org.apache.zookeeper.CreateMode mode, List<ACL> acls) {
+    public static String createNode(CuratorFramework zk, String path, byte[] data, CreateMode mode, List<ACL> acls) {
         String ret = null;
         try {
             String npath = normalizePath(path);
@@ -102,7 +103,7 @@ public class ClientZookeeper {
     }
 
     public static String createNode(CuratorFramework zk, String path, byte[] data, List<ACL> acls) {
-        return createNode(zk, path, data, org.apache.zookeeper.CreateMode.PERSISTENT, acls);
+        return createNode(zk, path, data, CreateMode.PERSISTENT, acls);
     }
 
     public static List<String> tokenizePath(String path) {
@@ -290,7 +291,7 @@ public class ClientZookeeper {
         byte[] byteArray = new byte[1];
         byteArray[0] = (byte) 7;
         try {
-            ClientZookeeper.createNode(zk, npath, byteArray, org.apache.zookeeper.CreateMode.PERSISTENT, acls);
+            ClientZookeeper.createNode(zk, npath, byteArray, CreateMode.PERSISTENT, acls);
         } catch (Exception e) {
             if (Utils.exceptionCauseIsInstanceOf(KeeperException.NodeExistsException.class, e)) {
                 // this can happen when multiple clients doing mkdir at same time
@@ -307,13 +308,10 @@ public class ClientZookeeper {
             fk = CuratorUtils.newCurator(conf, servers, port, root, null, type.getDefaultZkAcls(conf));
         }
 
-        fk.getCuratorListenable().addListener(new CuratorListener() {
-            @Override
-            public void eventReceived(CuratorFramework _fk, CuratorEvent e) throws Exception {
-                if (e.getType().equals(CuratorEventType.WATCHED)) {
-                    WatchedEvent event = e.getWatchedEvent();
-                    watcher.execute(event.getState(), event.getType(), event.getPath());
-                }
+        fk.getCuratorListenable().addListener((unused, e) -> {
+            if (e.getType().equals(CuratorEventType.WATCHED)) {
+                WatchedEvent event = e.getWatchedEvent();
+                watcher.execute(event.getState(), event.getType(), event.getPath());
             }
         });
         LOG.info("Staring ZK Curator");

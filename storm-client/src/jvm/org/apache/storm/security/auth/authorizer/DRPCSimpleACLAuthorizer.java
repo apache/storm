@@ -12,7 +12,6 @@
 
 package org.apache.storm.security.auth.authorizer;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.lang.reflect.Field;
 import java.security.Principal;
 import java.util.Collection;
@@ -21,9 +20,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.Config;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,7 +83,7 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
         _permitWhenMissingFunctionEntry =
             (isStrict != null && !isStrict);
         _aclFileName = (String) conf.get(Config.DRPC_AUTHORIZER_ACL_FILENAME);
-        _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
+        _ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
     }
 
     private String getUserFromContext(ReqContext context) {
