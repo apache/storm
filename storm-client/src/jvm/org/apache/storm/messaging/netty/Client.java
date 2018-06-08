@@ -477,7 +477,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     @Override
     public Map<Integer, Load> getLoad(Collection<Integer> tasks) {
         Map<Integer, Double> loadCache = serverLoad;
-        Map<Integer, Load> ret = new HashMap<Integer, Load>();
+        Map<Integer, Load> ret = new HashMap<>();
         if (loadCache != null) {
             double clientLoad = Math.min(pendingMessages.get(), 1024) / 1024.0;
             for (Integer task : tasks) {
