@@ -70,7 +70,6 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
     private final AtomicReference<LocalAssignment> newAssignment = new AtomicReference<>();
     private final AtomicReference<Set<TopoProfileAction>> profiling = new AtomicReference<>(new HashSet<>());
 
-    ;
     private final BlockingQueue<BlobChanging> changingBlobs = new LinkedBlockingQueue<>();
     private final StaticState staticState;
     private final IStormClusterState clusterState;
@@ -89,54 +88,56 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 WorkerMetricsProcessor metricsProcessor) throws Exception {
         super("SLOT_" + port);
         this.metricsExec = metricsExec;
-
         this.cachedCurrentAssignments = cachedCurrentAssignments;
         this.clusterState = clusterState;
-        Map<Integer, LocalAssignment> assignments = localState.getLocalAssignmentsMap();
+        this.staticState = new StaticState(localizer,
+                ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS)) * 1000,
+                ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_WORKER_START_TIMEOUT_SECS)) * 1000,
+                ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS)) * 1000,
+                ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_MONITOR_FREQUENCY_SECS)) * 1000,
+                containerLauncher,
+                host,
+                port,
+                iSupervisor,
+                localState,
+                this,
+                metricsExec, metricsProcessor);
+
         LocalAssignment currentAssignment = null;
+        Container container = null;
+        LocalAssignment newAssignment = null;
+
+        Map<Integer, LocalAssignment> assignments = localState.getLocalAssignmentsMap();
         if (assignments != null) {
             currentAssignment = assignments.get(port);
-        }
-        Container container = null;
-        if (currentAssignment != null) {
-            try {
-                // For now we do not make a transaction when removing a topology assignment from local, an overdue
-                // assignment may be left on local disk.
-                // So we should check if the local disk assignment is valid when initializing:
-                // if topology files does not exist, the worker[possibly alive] will be reassigned if it is timed-out;
-                // if topology files exist but the topology id is invalid, just let Supervisor make a sync;
-                // if topology files exist and topology files is valid, recover the container.
-                if (ClientSupervisorUtils.doRequiredTopoFilesExist(conf, currentAssignment.get_topology_id())) {
-                    container = containerLauncher.recoverContainer(port, currentAssignment, localState);
-                } else {
-                    // Make the assignment null to let slot clean up the disk assignment.
-                    currentAssignment = null;
+            if (currentAssignment != null) {
+                try {
+                    // For now we do not make a transaction when removing a topology assignment from local, an overdue
+                    // assignment may be left on local disk.
+                    // So we should check if the local disk assignment is valid when initializing:
+                    // if topology files does not exist, the worker[possibly alive] will be reassigned if it is timed-out;
+                    // if topology files exist but the topology id is invalid, just let Supervisor make a sync;
+                    // if topology files exist and topology files is valid, recover the container.
+                    if (ClientSupervisorUtils.doRequiredTopoFilesExist(conf, currentAssignment.get_topology_id())) {
+                        container = containerLauncher.recoverContainer(port, currentAssignment, localState);
+                    } else {
+                        // Make the assignment null to let slot clean up the disk assignment.
+                        currentAssignment = null;
+                    }
+                } catch (ContainerRecoveryException e) {
+                    //We could not recover container will be null.
                 }
-            } catch (ContainerRecoveryException e) {
-                //We could not recover container will be null.
+
+                newAssignment = currentAssignment;
+                if (/* currentAssignment != null && */container == null) {
+                    currentAssignment = null;
+                    //Assigned something but it is not running
+                }
             }
         }
 
-        LocalAssignment newAssignment = currentAssignment;
-        if (currentAssignment != null && container == null) {
-            currentAssignment = null;
-            //Assigned something but it is not running
-        }
-
-        dynamicState = new DynamicState(currentAssignment, container, newAssignment);
-        staticState = new StaticState(localizer,
-                                      ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS)) * 1000,
-                                      ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_WORKER_START_TIMEOUT_SECS)) * 1000,
-                                      ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS)) * 1000,
-                                      ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_MONITOR_FREQUENCY_SECS)) * 1000,
-                                      containerLauncher,
-                                      host,
-                                      port,
-                                      iSupervisor,
-                                      localState,
-                                      this,
-                                      metricsExec, metricsProcessor);
-        this.newAssignment.set(dynamicState.newAssignment);
+        this.newAssignment.set(newAssignment);
+        this.dynamicState = new DynamicState(currentAssignment, container, newAssignment);
         if (MachineState.RUNNING == dynamicState.state) {
             //We are running so we should recover the blobs.
             staticState.localizer.recoverRunningTopology(currentAssignment, port, this);
@@ -171,6 +172,13 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         return false;
     }
 
+    /**
+     * Decide the equivalence of two local assignments, ignoring the order of executors
+     * This is different from #equal method.
+     * @param a Local assignment A
+     * @param b Local assignment B
+     * @return True if A and B are equivalent, ignoring the order of the executors
+     */
     @VisibleForTesting
     static boolean equivalent(LocalAssignment a, LocalAssignment b) {
         if (a == null && b == null) {
@@ -345,7 +353,8 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
     }
 
     /**
-     * Informs the async localizer for all of blobs that the worker is dead.
+     * Informs the async localizer for all of blobs that the worker acknowledged the change of blobs.
+     * Worker has stop as of now.
      *
      * PRECONDITION: container is null
      * PRECONDITION: changingBlobs should only be for the given assignment.
@@ -363,6 +372,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         }
         //Otherwise they will just be replaced
 
+        // Acknowledge all changing blobs
         for (BlobChanging rc : dynamicState.changingBlobs) {
             futures.add(rc.latch.countDown());
         }
@@ -410,9 +420,11 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         assert (dynamicState.pendingDownload != null);
         assert (dynamicState.container == null);
 
-        //Ignore changes to scheduling while downloading the topology blobs
+        // Ignore changes to scheduling while downloading the topology blobs
         // We don't support canceling the download through the future yet,
-        // so to keep everything in sync, just wait
+        // because pending blobs may be shared by multiple workers and cancel it
+        // may lead to race condition
+        // To keep everything in sync, just wait for all workers
         try {
             //Release things that don't need to wait for us to finish downloading.
             dynamicState = filterChangingBlobsFor(dynamicState, dynamicState.pendingLocalization);
@@ -421,11 +433,14 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 dynamicState = informChangedBlobs(dynamicState, dynamicState.pendingLocalization);
             }
 
+            // Wait until time out
             dynamicState.pendingDownload.get(1000, TimeUnit.MILLISECONDS);
             //Downloading of all blobs finished.
             if (!equivalent(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
                 //Scheduling changed
                 staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
+                // Switch to the new assignment even if localization hasn't completed, or go to empty state
+                // if no new assignment.
                 return prepareForNewAssignmentNoWorkersRunning(dynamicState.withPendingChangingBlobs(Collections.emptySet(), null),
                                                                staticState);
             }
@@ -945,7 +960,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         this.join();
     }
 
-    static enum MachineState {
+    enum MachineState {
         EMPTY,
         RUNNING,
         WAITING_FOR_WORKER_START,
@@ -996,15 +1011,42 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
     static class DynamicState {
         public final MachineState state;
+
+        /**
+         * Latest assignment assigned to this worker, updated asynchronously.
+         */
         public final LocalAssignment newAssignment;
+
+        /**
+         * Assignment the worker is running on, when the state machine enters this state.
+         */
         public final LocalAssignment currentAssignment;
-        public final Container container;
+
+        /**
+         * Assignment assigned to the worker and waiting for blob download.
+         * This is the same as newAssignment if no newer assignment is arrived before
+         * localization completes.
+         */
         public final LocalAssignment pendingLocalization;
+
+        public final Container container;
+
+        /**
+         * Signals that blobs have been downloaded for the first time
+         */
         public final Future<Void> pendingDownload;
         public final Set<TopoProfileAction> profileActions;
         public final Set<TopoProfileAction> pendingStopProfileActions;
+
+        /**
+         * Blobs that are changed and need to be synced
+         */
         public final Set<BlobChanging> changingBlobs;
         public final LocalAssignment pendingChangingBlobsAssignment;
+
+        /**
+         * Signals that acknowledged changing blobs have been updated
+         */
         public final Set<Future<Void>> pendingChangingBlobs;
 
         /**
@@ -1044,7 +1086,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                             final Set<BlobChanging> changingBlobs,
                             final Set<Future<Void>> pendingChangingBlobs, final LocalAssignment pendingChaningBlobsAssignment) {
             assert pendingChangingBlobs != null;
-            assert !(pendingChangingBlobs.isEmpty() ^ (pendingChaningBlobsAssignment == null));
+            assert pendingChangingBlobs.isEmpty() == (pendingChaningBlobsAssignment == null);
             this.state = state;
             this.newAssignment = newAssignment;
             this.currentAssignment = currentAssignment;
@@ -1099,6 +1141,12 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             return withPendingLocalization(this.pendingLocalization, pendingDownload);
         }
 
+        /**
+         * Transition to the given state. Notice that it's possible to transition to
+         * the same state.
+         * @param state The state to transition into
+         * @return New dynamicState
+         */
         public DynamicState withState(final MachineState state) {
             long newStartTime = Time.currentTimeMillis();
             return new DynamicState(state, this.newAssignment,
