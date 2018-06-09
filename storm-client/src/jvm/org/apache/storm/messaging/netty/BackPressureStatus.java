@@ -23,8 +23,8 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.serialization.KryoValuesSerializer;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffer;
-import org.apache.storm.shade.org.jboss.netty.buffer.ChannelBuffers;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.buffer.ByteBufAllocator;
 
 // Instances of this type are sent from NettyWorker to upstream WorkerTransfer to indicate BackPressure situation
 public class BackPressureStatus {
@@ -42,6 +42,9 @@ public class BackPressureStatus {
         this.id = bpCount.incrementAndGet();
     }
 
+    /**
+     * Constructor.
+     */
     public BackPressureStatus(String workerId, Collection<Integer> bpTasks, Collection<Integer> nonBpTasks) {
         this.workerId = workerId;
         this.id = bpCount.incrementAndGet();
@@ -61,9 +64,9 @@ public class BackPressureStatus {
     /**
      * Encoded as -600 ... short(2) len ... int(4) payload ... byte[]     *
      */
-    public ChannelBuffer buffer(KryoValuesSerializer ser) throws IOException {
+    public ByteBuf buffer(ByteBufAllocator alloc, KryoValuesSerializer ser) throws IOException {
         byte[] serializedBytes = ser.serializeObject(this);
-        ChannelBuffer buff = ChannelBuffers.buffer(SIZE_OF_ID + SIZE_OF_INT + serializedBytes.length);
+        ByteBuf buff = alloc.ioBuffer(SIZE_OF_ID + SIZE_OF_INT + serializedBytes.length);
         buff.writeShort(IDENTIFIER);
         buff.writeInt(serializedBytes.length);
         buff.writeBytes(serializedBytes);

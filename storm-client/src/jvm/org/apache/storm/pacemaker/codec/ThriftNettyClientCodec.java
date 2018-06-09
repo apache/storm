@@ -19,25 +19,24 @@ import org.apache.storm.messaging.netty.SaslStormClientHandler;
 import org.apache.storm.pacemaker.PacemakerClient;
 import org.apache.storm.pacemaker.PacemakerClientHandler;
 import org.apache.storm.security.auth.ClientAuthUtils;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipeline;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
-import org.apache.storm.shade.org.jboss.netty.channel.Channels;
+import org.apache.storm.shade.io.netty.channel.Channel;
+import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
+import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ThriftNettyClientCodec {
+public class ThriftNettyClientCodec extends ChannelInitializer<Channel> {
 
     public static final String SASL_HANDLER = "sasl-handler";
     public static final String KERBEROS_HANDLER = "kerberos-handler";
     private static final Logger LOG = LoggerFactory
         .getLogger(ThriftNettyClientCodec.class);
 
-    ;
     private final int thriftMessageMaxSize;
-    private PacemakerClient client;
-    private AuthMethod authMethod;
-    private Map<String, Object> topoConf;
-    private String host;
+    private final PacemakerClient client;
+    private final AuthMethod authMethod;
+    private final Map<String, Object> topoConf;
+    private final String host;
 
     public ThriftNettyClientCodec(PacemakerClient pacemaker_client, Map<String, Object> topoConf,
                                   AuthMethod authMethod, String host, int thriftMessageMaxSizeBytes) {
@@ -48,10 +47,9 @@ public class ThriftNettyClientCodec {
         thriftMessageMaxSize = thriftMessageMaxSizeBytes;
     }
 
-    public ChannelPipelineFactory pipelineFactory() {
-        return new ChannelPipelineFactory() {
-            public ChannelPipeline getPipeline() {
-                ChannelPipeline pipeline = Channels.pipeline();
+    @Override
+    protected void initChannel(Channel ch) throws Exception {
+        ChannelPipeline pipeline = ch.pipeline();
                 pipeline.addLast("encoder", new ThriftEncoder());
                 pipeline.addLast("decoder", new ThriftDecoder(thriftMessageMaxSize));
 
@@ -74,13 +72,10 @@ public class ThriftNettyClientCodec {
                         throw new RuntimeException(e);
                     }
                 } else {
-                    client.channelReady();
+            client.channelReady(ch);
                 }
 
                 pipeline.addLast("PacemakerClientHandler", new PacemakerClientHandler(client));
-                return pipeline;
-            }
-        };
     }
 
     public enum AuthMethod {

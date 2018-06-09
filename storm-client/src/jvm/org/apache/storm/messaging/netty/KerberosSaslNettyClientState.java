@@ -12,15 +12,10 @@
 
 package org.apache.storm.messaging.netty;
 
-import org.apache.storm.shade.org.jboss.netty.channel.Channel;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelLocal;
+import org.apache.storm.shade.io.netty.util.AttributeKey;
 
 final class KerberosSaslNettyClientState {
 
-    public static final ChannelLocal<KerberosSaslNettyClient> getKerberosSaslNettyClient = new ChannelLocal<KerberosSaslNettyClient>() {
-        protected KerberosSaslNettyClient initialValue(Channel channel) {
-            return null;
-        }
-    };
+    public static final AttributeKey<KerberosSaslNettyClient> KERBEROS_SASL_NETTY_CLIENT = AttributeKey.valueOf("kerberos.sasl.netty.client");
 
 }

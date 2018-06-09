@@ -341,6 +341,7 @@ pacemaker.servers: []
 pacemaker.port: 6699
 pacemaker.base.threads: 10
 pacemaker.max.threads: 50
+pacemaker.client.max.threads: 2
 pacemaker.thread.timeout: 10
 pacemaker.childopts: "-Xmx1024m"
 pacemaker.auth.method: "NONE"

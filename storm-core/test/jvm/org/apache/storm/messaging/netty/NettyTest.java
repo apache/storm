@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThat;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +102,10 @@ public class NettyTest {
             sleep());
     }
 
+    private void send(IConnection client, int taskId, byte[] messageBytes) {
+        client.send(Collections.singleton(new TaskMessage(taskId, messageBytes)).iterator());
+    }
+
     private void doTestBasic(Map<String, Object> stormConf) throws Exception {
         LOG.info("1. Should send and receive a basic message");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -113,7 +118,7 @@ public class NettyTest {
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
-                client.send(taskId, messageBytes);
+                send(client, taskId, messageBytes);
 
                 waitForNotNull(response);
                 TaskMessage responseMessage = response.get();
@@ -163,7 +168,7 @@ public class NettyTest {
     public void testBasicWithSasl() throws Exception {
         doTestBasic(withSaslConf(basicConf()));
     }
-
+    
     private void doTestLoad(Map<String, Object> stormConf) throws Exception {
         LOG.info("2 test load");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -176,7 +181,19 @@ public class NettyTest {
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
-                client.send(taskId, messageBytes);
+                send(client, taskId, messageBytes);
+                /*
+                 * This test sends a broadcast to all connected clients from the server, so we need to wait until the server has registered
+                 * the client as connected before sending load metrics.
+                 *
+                 * It's not enough to wait until the client reports that the channel is open, because the server event loop may not have
+                 * finished running channelActive for the new channel. If we send metrics too early, the server will broadcast to no one.
+                 *
+                 * By waiting for the response here, we ensure that the client will be registered at the server before we send load metrics.
+                 */
+
+                waitForNotNull(response);
+
                 Map<Integer, Double> taskToLoad = new HashMap<>();
                 taskToLoad.put(1, 0.0);
                 taskToLoad.put(2, 1.0);
@@ -191,10 +208,6 @@ public class NettyTest {
                 Map<Integer, Load> load = client.getLoad(tasks);
                 assertThat(load.get(1).getBoltLoad(), is(0.0));
                 assertThat(load.get(2).getBoltLoad(), is(1.0));
-                waitForNotNull(response);
-                TaskMessage responseMessage = response.get();
-                assertThat(responseMessage.task(), is(taskId));
-                assertThat(responseMessage.message(), is(messageBytes));
             }
         } finally {
             context.term();
@@ -223,7 +236,7 @@ public class NettyTest {
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
-                client.send(taskId, messageBytes);
+                send(client, taskId, messageBytes);
 
                 waitForNotNull(response);
                 TaskMessage responseMessage = response.get();
@@ -240,7 +253,7 @@ public class NettyTest {
         conf.put(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE, 102_400);
         return conf;
     }
-    
+
     @Test
     public void testLargeMessage() throws Exception {
         doTestLargeMessage(largeMessageConf());
@@ -274,7 +287,7 @@ public class NettyTest {
                     serverStart.get(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
                     byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
-                    client.send(taskId, messageBytes);
+                    send(client, taskId, messageBytes);
 
                     waitForNotNull(response);
                     TaskMessage responseMessage = response.get();
@@ -317,7 +330,7 @@ public class NettyTest {
                 waitUntilReady(client, server);
 
                 IntStream.range(1, numMessages)
-                    .forEach(i -> client.send(taskId, String.valueOf(i).getBytes(StandardCharsets.UTF_8)));
+                    .forEach(i -> send(client, taskId, String.valueOf(i).getBytes(StandardCharsets.UTF_8)));
 
                 Testing.whileTimeout(Testing.TEST_TIMEOUT_MS,
                     () -> responses.size() < numMessages - 1,
@@ -340,7 +353,7 @@ public class NettyTest {
         conf.put(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE, 1_024_000);
         return conf;
     }
-    
+
     @Test
     public void testBatch() throws Exception {
         doTestBatch(batchConf());
@@ -360,11 +373,11 @@ public class NettyTest {
             int port = Utils.getAvailablePort(6700);
             try (IConnection client = context.connect(null, "localhost", port, remoteBpStatus)) {
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
-                client.send(taskId, messageBytes);
+                send(client, taskId, messageBytes);
                 try (IConnection server = context.bind(null, port)) {
                     server.registerRecv(mkConnectionCallback(response::set));
                     waitUntilReady(client, server);
-                    client.send(taskId, messageBytes);
+                    send(client, taskId, messageBytes);
                     waitForNotNull(response);
                     TaskMessage responseMessage = response.get();
                     assertThat(responseMessage.task(), is(taskId));

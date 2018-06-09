@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
@@ -12,28 +13,41 @@
 
 package org.apache.storm.messaging.netty;
 
+import java.util.Map;
 import org.apache.storm.Config;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipeline;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
-import org.apache.storm.shade.org.jboss.netty.channel.Channels;
+import org.apache.storm.serialization.KryoValuesDeserializer;
+import org.apache.storm.serialization.KryoValuesSerializer;
+import org.apache.storm.shade.io.netty.channel.Channel;
+import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
+import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
 
-class StormServerPipelineFactory implements ChannelPipelineFactory {
-    private Server server;
+class StormServerPipelineFactory extends ChannelInitializer<Channel> {
 
-    StormServerPipelineFactory(Server server) {
+    private final KryoValuesSerializer ser;
+    private final KryoValuesDeserializer deser;
+    private final Map<String, Object> topoConf;
+    private final Server server;
+
+    StormServerPipelineFactory(KryoValuesSerializer ser, KryoValuesDeserializer deser,
+        Map<String, Object> topoConf, Server server) {
+        this.ser = ser;
+        this.deser = deser;
+        this.topoConf = topoConf;
         this.server = server;
     }
 
-    public ChannelPipeline getPipeline() throws Exception {
+    @Override
+    protected void initChannel(Channel ch) throws Exception {
         // Create a default pipeline implementation.
-        ChannelPipeline pipeline = Channels.pipeline();
+        ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder(server.deser));
-        // Encoder
-        pipeline.addLast("encoder", new MessageEncoder(server._ser));
+        pipeline.addLast("decoder", new MessageDecoder(deser));
+        // Encoders
+        pipeline.addLast("netty-serializable-encoder", NettySerializableMessageEncoder.INSTANCE);
+        pipeline.addLast("backpressure-encoder", new BackPressureStatusEncoder(ser));
 
-        boolean isNettyAuth = (Boolean) this.server.topoConf
+        boolean isNettyAuth = (Boolean) topoConf
             .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
         if (isNettyAuth) {
             // Authenticate: Removed after authentication completes
@@ -41,11 +55,9 @@ class StormServerPipelineFactory implements ChannelPipelineFactory {
                 server));
             // Authorize
             pipeline.addLast("authorizeServerHandler",
-                             new SaslStormServerAuthorizeHandler());
+                new SaslStormServerAuthorizeHandler());
         }
         // business logic.
         pipeline.addLast("handler", new StormServerHandler(server));
-
-        return pipeline;
     }
 }

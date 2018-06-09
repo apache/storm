@@ -15,14 +15,14 @@ package org.apache.storm.messaging.netty;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.Config;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipeline;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelPipelineFactory;
-import org.apache.storm.shade.org.jboss.netty.channel.Channels;
+import org.apache.storm.shade.io.netty.channel.Channel;
+import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
+import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
 
-class StormClientPipelineFactory implements ChannelPipelineFactory {
-    private Client client;
-    private AtomicBoolean[] remoteBpStatus;
-    private Map<String, Object> conf;
+class StormClientPipelineFactory extends ChannelInitializer<Channel> {
+    private final Client client;
+    private final AtomicBoolean[] remoteBpStatus;
+    private final Map<String, Object> conf;
 
     StormClientPipelineFactory(Client client, AtomicBoolean[] remoteBpStatus, Map<String, Object> conf) {
         this.client = client;
@@ -30,14 +30,15 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
         this.conf = conf;
     }
 
-    public ChannelPipeline getPipeline() throws Exception {
+    @Override
+    protected void initChannel(Channel ch) throws Exception {
         // Create a default pipeline implementation.
-        ChannelPipeline pipeline = Channels.pipeline();
+        ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
         pipeline.addLast("decoder", new MessageDecoder(client.deser));
         // Encoder
-        pipeline.addLast("encoder", new MessageEncoder(client.ser));
+        pipeline.addLast("encoder", NettySerializableMessageEncoder.INSTANCE);
 
         boolean isNettyAuth = (Boolean) conf
             .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
@@ -48,6 +49,5 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
         }
         // business logic.
         pipeline.addLast("handler", new StormClientHandler(client, remoteBpStatus, conf));
-        return pipeline;
     }
 }

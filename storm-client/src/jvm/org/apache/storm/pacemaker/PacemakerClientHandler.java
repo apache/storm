@@ -15,57 +15,49 @@ package org.apache.storm.pacemaker;
 import java.net.ConnectException;
 import org.apache.storm.generated.HBMessage;
 import org.apache.storm.messaging.netty.ControlMessage;
-import org.apache.storm.shade.org.jboss.netty.channel.Channel;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelHandlerContext;
-import org.apache.storm.shade.org.jboss.netty.channel.ChannelStateEvent;
-import org.apache.storm.shade.org.jboss.netty.channel.ExceptionEvent;
-import org.apache.storm.shade.org.jboss.netty.channel.MessageEvent;
-import org.apache.storm.shade.org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.apache.storm.shade.io.netty.channel.Channel;
+import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PacemakerClientHandler extends SimpleChannelUpstreamHandler {
+public class PacemakerClientHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(PacemakerClientHandler.class);
 
-    private PacemakerClient client;
+    private final PacemakerClient client;
 
     public PacemakerClientHandler(PacemakerClient client) {
         this.client = client;
     }
 
     @Override
-    public void channelConnected(ChannelHandlerContext ctx,
-                                 ChannelStateEvent event) {
+    public void channelActive(ChannelHandlerContext ctx) {
         // register the newly established channel
-        Channel channel = ctx.getChannel();
-        client.channelConnected(channel);
-
+        Channel channel = ctx.channel();
         LOG.info("Connection established from {} to {}",
-                 channel.getLocalAddress(), channel.getRemoteAddress());
+                 channel.localAddress(), channel.remoteAddress());
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) {
-        LOG.debug("Got Message: {}", event.getMessage().toString());
-        Object evm = event.getMessage();
+    public void channelRead(ChannelHandlerContext ctx, Object message) {
+        LOG.debug("Got Message: {}", message.toString());
 
-        if (evm instanceof ControlMessage) {
-            LOG.debug("Got control message: {}", evm.toString());
+        if (message instanceof ControlMessage) {
+            LOG.debug("Got control message: {}", message.toString());
             return;
-        } else if (evm instanceof HBMessage) {
-            client.gotMessage((HBMessage) evm);
+        } else if (message instanceof HBMessage) {
+            client.gotMessage((HBMessage) message);
         } else {
-            LOG.warn("Got unexpected message: {} from server.", evm);
+            LOG.warn("Got unexpected message: {} from server.", message);
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
-        Throwable t = event.getCause();
-        if (t instanceof ConnectException) {
-            LOG.warn("Connection to pacemaker failed. Trying to reconnect {}", t.getMessage());
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (cause instanceof ConnectException) {
+            LOG.warn("Connection to pacemaker failed. Trying to reconnect {}", cause.getMessage());
         } else {
-            LOG.error("Exception occurred in Pacemaker.", t);
+            LOG.error("Exception occurred in Pacemaker.", cause);
         }
         client.reconnect();
     }

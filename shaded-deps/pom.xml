@@ -112,7 +112,7 @@
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
+            <artifactId>netty-all</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -185,7 +185,9 @@
                             <include>commons-collections:commons-collections</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-lang:commons-lang</include>
+                            <!-- Pulled in by Zookeeper -->
                             <include>io.netty:netty</include>
+                            <include>io.netty:netty-all</include>
                             <include>org.apache.curator:*</include>
                             <include>org.apache.httpcomponents:httpclient</include>
                             <include>org.apache.thrift:*</include>
@@ -250,6 +252,10 @@
                         <relocation>
                             <pattern>org.jboss.netty</pattern>
                             <shadedPattern>org.apache.storm.shade.org.jboss.netty</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.netty</pattern>
+                            <shadedPattern>org.apache.storm.shade.io.netty</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.jgrapht</pattern>

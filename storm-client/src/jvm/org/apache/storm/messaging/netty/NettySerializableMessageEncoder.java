@@ -13,13 +13,25 @@
 package org.apache.storm.messaging.netty;
 
 import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.channel.ChannelHandler;
+import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
+import org.apache.storm.shade.io.netty.handler.codec.MessageToByteEncoder;
 
-public interface INettySerializable {
-    /**
-     * Serialize this object to ByteBuf.
-     * @param dest The ByteBuf to serialize to
-     */
-    void write(ByteBuf dest);
+@ChannelHandler.Sharable
+public class NettySerializableMessageEncoder extends MessageToByteEncoder<INettySerializable> {
 
-    int encodeLength();
+    public static final NettySerializableMessageEncoder INSTANCE = new NettySerializableMessageEncoder();
+    
+    private NettySerializableMessageEncoder() {}
+    
+    @Override
+    protected void encode(ChannelHandlerContext ctx, INettySerializable msg, ByteBuf out) throws Exception {
+        msg.write(out);
+    }
+
+    @Override
+    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, INettySerializable msg, boolean preferDirect) throws Exception {
+        return ctx.alloc().ioBuffer(msg.encodeLength());
+    }
+
 }
