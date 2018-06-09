@@ -28,6 +28,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Updates Druid Beam State.
+ * @deprecated the preferred way to ingest streaming events to druid is through Kafka, as such storm-druid
+ * is deprecated and will be removed in 2.x releases of storm.
+ */
+@Deprecated
 public class DruidBeamStateUpdater<E> extends BaseStateUpdater<DruidBeamState<E>> {
     private static final Logger LOG = LoggerFactory.getLogger(DruidBeamStateUpdater.class);
 
