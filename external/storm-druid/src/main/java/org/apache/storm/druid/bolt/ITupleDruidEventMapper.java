@@ -24,8 +24,10 @@ import java.io.Serializable;
 
 /**
  * This class gives a mapping of a {@link ITuple} to Druid Event
- *
+ * @deprecated the preferred way to ingest streaming events to druid is through Kafka, as such storm-druid
+ * is deprecated and will be removed in 2.x releases of storm.
  */
+@Deprecated
 public interface ITupleDruidEventMapper<E> extends Serializable {
 
     /**

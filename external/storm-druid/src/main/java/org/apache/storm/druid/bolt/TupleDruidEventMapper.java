@@ -23,8 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Converts {@link ITuple} to Event
+ * Converts {@link ITuple} to Event.
+ * @deprecated the preferred way to ingest streaming events to druid is through Kafka, as such storm-druid
+ * is deprecated and will be removed in 2.x releases of storm.
  */
+@Deprecated
 public final class TupleDruidEventMapper<E> implements ITupleDruidEventMapper<E> {
 
     public static final String DEFAULT_FIELD_NAME = "event";

@@ -22,6 +22,12 @@ import com.metamx.tranquility.tranquilizer.Tranquilizer;
 
 import java.io.Serializable;
 
+/**
+ * Configuration for druid bolt.
+ * @deprecated the preferred way to ingest streaming events to druid is through Kafka, as such storm-druid
+ * is deprecated and will be removed in 2.x releases of storm.
+ */
+@Deprecated
 public class DruidConfig implements Serializable {
 
     public static final String DEFAULT_DISCARD_STREAM_ID = "druid-discard-stream";

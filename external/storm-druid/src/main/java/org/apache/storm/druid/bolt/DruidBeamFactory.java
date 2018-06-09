@@ -24,6 +24,12 @@ import org.apache.storm.task.IMetricsContext;
 import java.io.Serializable;
 import java.util.Map;
 
+/**
+ * Factory to create Druid Beams.
+ * @deprecated the preferred way to ingest streaming events to druid is through Kafka, as such storm-druid
+ * is deprecated and will be removed in 2.x releases of storm.
+ */
+@Deprecated
 public interface DruidBeamFactory<E>  extends  Serializable {
     public Beam<E> makeBeam(Map<?,?> conf, IMetricsContext metrics);
 }
