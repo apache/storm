@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LocalAssignment;
@@ -70,7 +71,7 @@ public abstract class Container implements Killable {
 
     static {
         StormMetricsRegistry.registerGauge(
-            "supervisor:current-used-memory-mb",
+            StormMetricsRegistry.name(DaemonType.SUPERVISOR, "current-used-memory-mb"),
             () -> {
                 Long val =
                     _usedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
@@ -81,7 +82,7 @@ public abstract class Container implements Killable {
                 return ret;
             });
         StormMetricsRegistry.registerGauge(
-            "supervisor:current-reserved-memory-mb",
+            StormMetricsRegistry.name(DaemonType.SUPERVISOR, "current-reserved-memory-mb"),
             () -> {
                 Long val =
                     _reservedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();

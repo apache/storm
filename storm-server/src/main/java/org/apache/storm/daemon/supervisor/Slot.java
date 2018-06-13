@@ -12,6 +12,8 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import static org.apache.storm.cluster.DaemonType.SUPERVISOR;
+
 import com.codahale.metrics.Meter;
 import java.io.IOException;
 import java.util.Collections;
@@ -55,17 +57,17 @@ import org.slf4j.LoggerFactory;
 public class Slot extends Thread implements AutoCloseable, BlobChangingCallback {
     private static final Logger LOG = LoggerFactory.getLogger(Slot.class);
     private static final Meter numWorkersLaunched =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-launched");
+        StormMetricsRegistry.registerMeter(StormMetricsRegistry.name(SUPERVISOR, "num-workers-launched"));
     private static final Meter numWorkersKilledProcessExit =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-process-exit");
+        StormMetricsRegistry.registerMeter(StormMetricsRegistry.name(SUPERVISOR, "num-workers-killed-process-exit"));
     private static final Meter numWorkersKilledMemoryViolation =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-memory-violation");
+        StormMetricsRegistry.registerMeter(StormMetricsRegistry.name(SUPERVISOR, "num-workers-killed-memory-violation"));
     private static final Meter numWorkersKilledHBTimeout =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-hb-timeout");
+        StormMetricsRegistry.registerMeter(StormMetricsRegistry.name(SUPERVISOR, "num-workers-killed-hb-timeout"));
     private static final Meter numWorkersKilledHBNull =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-hb-null");
+        StormMetricsRegistry.registerMeter(StormMetricsRegistry.name(SUPERVISOR, "num-workers-killed-hb-null"));
     private static final Meter numForceKill =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-force-kill");
+        StormMetricsRegistry.registerMeter(StormMetricsRegistry.name(SUPERVISOR, "num-workers-force-kill"));
     private static final long ONE_SEC_IN_NANO = TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS);
     private final AtomicReference<LocalAssignment> newAssignment = new AtomicReference<>();
     private final AtomicReference<Set<TopoProfileAction>> profiling = new AtomicReference<>(new HashSet<>());

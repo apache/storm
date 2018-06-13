@@ -18,6 +18,8 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import static org.apache.storm.cluster.DaemonType.SUPERVISOR;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
@@ -142,7 +144,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(conf,
-                                                                      new ClusterStateContext(DaemonType.SUPERVISOR, conf));
+                                                                      new ClusterStateContext(SUPERVISOR, conf));
         } catch (Exception e) {
             LOG.error("supervisor can't create stormClusterState");
             throw Utils.wrapInRuntime(e);
@@ -305,6 +307,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     public void launchDaemon() {
         LOG.info("Starting supervisor for storm version '{}'.", VersionInfo.getVersion());
         try {
+            StormMetricsRegistry.setSource(SUPERVISOR);
+
             Map<String, Object> conf = getConf();
             if (ConfigUtils.isLocalMode(conf)) {
                 throw new IllegalArgumentException("Cannot start server in local mode!");
@@ -312,7 +316,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             launch();
             Utils.addShutdownHookWithForceKillIn1Sec(this::close);
 
-            registerWorkerNumGauge("supervisor:num-slots-used-gauge", conf);
+            registerWorkerNumGauge(StormMetricsRegistry.name(SUPERVISOR, "num-slots-used-gauge"), conf);
             StormMetricsRegistry.startMetricsReporters(conf);
 
             // blocking call under the hood, must invoke after launch cause some services must be initialized

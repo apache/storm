@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.servlet.DispatcherType;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.daemon.drpc.webapp.DRPCApplication;
 import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
 import org.apache.storm.generated.DistributedRPC;
@@ -51,7 +52,8 @@ import org.slf4j.LoggerFactory;
 
 public class DRPCServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCServer.class);
-    private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("drpc:num-shutdown-calls");
+    private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(DaemonType.DRPC, "num-shutdown-calls"));
    
     //TODO in the future this might be better in a common webapp location
 

@@ -18,6 +18,8 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import static org.apache.storm.cluster.DaemonType.NIMBUS;
+
 import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -218,45 +220,75 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public static final SimpleVersion MIN_VERSION_SUPPORT_RPC_HEARTBEAT = new SimpleVersion("2.0.0");
     private static final Logger LOG = LoggerFactory.getLogger(Nimbus.class);
     //    Metrics
-    private static final Meter submitTopologyWithOptsCalls = StormMetricsRegistry.registerMeter("nimbus:num-submitTopologyWithOpts-calls");
-    private static final Meter submitTopologyCalls = StormMetricsRegistry.registerMeter("nimbus:num-submitTopology-calls");
-    private static final Meter killTopologyWithOptsCalls = StormMetricsRegistry.registerMeter("nimbus:num-killTopologyWithOpts-calls");
-    private static final Meter killTopologyCalls = StormMetricsRegistry.registerMeter("nimbus:num-killTopology-calls");
-    private static final Meter rebalanceCalls = StormMetricsRegistry.registerMeter("nimbus:num-rebalance-calls");
-    private static final Meter activateCalls = StormMetricsRegistry.registerMeter("nimbus:num-activate-calls");
-    private static final Meter deactivateCalls = StormMetricsRegistry.registerMeter("nimbus:num-deactivate-calls");
-    private static final Meter debugCalls = StormMetricsRegistry.registerMeter("nimbus:num-debug-calls");
-    private static final Meter setWorkerProfilerCalls = StormMetricsRegistry.registerMeter("nimbus:num-setWorkerProfiler-calls");
+    private static final Meter submitTopologyWithOptsCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-submitTopologyWithOpts-calls"));
+    private static final Meter submitTopologyCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-submitTopology-calls"));
+    private static final Meter killTopologyWithOptsCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-killTopologyWithOpts-calls"));
+    private static final Meter killTopologyCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-killTopology-calls"));
+    private static final Meter rebalanceCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-rebalance-calls"));
+    private static final Meter activateCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-activate-calls"));
+    private static final Meter deactivateCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-deactivate-calls"));
+    private static final Meter debugCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-debug-calls"));
+    private static final Meter setWorkerProfilerCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-setWorkerProfiler-calls"));
     private static final Meter getComponentPendingProfileActionsCalls = StormMetricsRegistry.registerMeter(
-        "nimbus:num-getComponentPendingProfileActions-calls");
-    private static final Meter setLogConfigCalls = StormMetricsRegistry.registerMeter("nimbus:num-setLogConfig-calls");
-    private static final Meter uploadNewCredentialsCalls = StormMetricsRegistry.registerMeter("nimbus:num-uploadNewCredentials-calls");
-    private static final Meter beginFileUploadCalls = StormMetricsRegistry.registerMeter("nimbus:num-beginFileUpload-calls");
-    private static final Meter uploadChunkCalls = StormMetricsRegistry.registerMeter("nimbus:num-uploadChunk-calls");
-    private static final Meter finishFileUploadCalls = StormMetricsRegistry.registerMeter("nimbus:num-finishFileUpload-calls");
-    private static final Meter beginFileDownloadCalls = StormMetricsRegistry.registerMeter("nimbus:num-beginFileDownload-calls");
-    private static final Meter downloadChunkCalls = StormMetricsRegistry.registerMeter("nimbus:num-downloadChunk-calls");
-    private static final Meter getNimbusConfCalls = StormMetricsRegistry.registerMeter("nimbus:num-getNimbusConf-calls");
-    private static final Meter getLogConfigCalls = StormMetricsRegistry.registerMeter("nimbus:num-getLogConfig-calls");
-    private static final Meter getTopologyConfCalls = StormMetricsRegistry.registerMeter("nimbus:num-getTopologyConf-calls");
-    private static final Meter getTopologyCalls = StormMetricsRegistry.registerMeter("nimbus:num-getTopology-calls");
-    private static final Meter getUserTopologyCalls = StormMetricsRegistry.registerMeter("nimbus:num-getUserTopology-calls");
-    private static final Meter getClusterInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getClusterInfo-calls");
-    private static final Meter getLeaderCalls = StormMetricsRegistry.registerMeter("nimbus:num-getLeader-calls");
-    private static final Meter isTopologyNameAllowedCalls = StormMetricsRegistry.registerMeter("nimbus:num-isTopologyNameAllowed-calls");
+        StormMetricsRegistry.name(NIMBUS, "num-getComponentPendingProfileActions-calls"));
+    private static final Meter setLogConfigCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-setLogConfig-calls"));
+    private static final Meter uploadNewCredentialsCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-uploadNewCredentials-calls"));
+    private static final Meter beginFileUploadCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-beginFileUpload-calls"));
+    private static final Meter uploadChunkCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-uploadChunk-calls"));
+    private static final Meter finishFileUploadCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-finishFileUpload-calls"));
+    private static final Meter beginFileDownloadCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-beginFileDownload-calls"));
+    private static final Meter downloadChunkCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-downloadChunk-calls"));
+    private static final Meter getNimbusConfCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getNimbusConf-calls"));
+    private static final Meter getLogConfigCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getLogConfig-calls"));
+    private static final Meter getTopologyConfCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getTopologyConf-calls"));
+    private static final Meter getTopologyCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getTopology-calls"));
+    private static final Meter getUserTopologyCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getUserTopology-calls"));
+    private static final Meter getClusterInfoCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getClusterInfo-calls"));
+    private static final Meter getLeaderCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getLeader-calls"));
+    private static final Meter isTopologyNameAllowedCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-isTopologyNameAllowed-calls"));
     private static final Meter getTopologyInfoWithOptsCalls = StormMetricsRegistry.registerMeter(
-        "nimbus:num-getTopologyInfoWithOpts-calls");
-    private static final Meter getTopologyInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getTopologyInfo-calls");
-    private static final Meter getTopologyPageInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getTopologyPageInfo-calls");
-    private static final Meter getSupervisorPageInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getSupervisorPageInfo-calls");
-    private static final Meter getComponentPageInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getComponentPageInfo-calls");
-    private static final Histogram scheduleTopologyTimeMs = StormMetricsRegistry.registerHistogram("nimbus:time-scheduleTopology-ms",
-                                                                                                   new ExponentiallyDecayingReservoir());
+        StormMetricsRegistry.name(NIMBUS, "num-getTopologyInfoWithOpts-calls"));
+    private static final Meter getTopologyInfoCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getTopologyInfo-calls"));
+    private static final Meter getTopologyPageInfoCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getTopologyPageInfo-calls"));
+    private static final Meter getSupervisorPageInfoCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getSupervisorPageInfo-calls"));
+    private static final Meter getComponentPageInfoCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-getComponentPageInfo-calls"));
+    private static final Histogram scheduleTopologyTimeMs = StormMetricsRegistry.registerHistogram(
+            StormMetricsRegistry.name(NIMBUS, "time-scheduleTopology-ms"), new ExponentiallyDecayingReservoir());
     private static final Meter getOwnerResourceSummariesCalls = StormMetricsRegistry.registerMeter(
-        "nimbus:num-getOwnerResourceSummaries-calls");
+            StormMetricsRegistry.name(NIMBUS, "num-getOwnerResourceSummaries-calls"));
     // END Metrics
-    private static final Meter shutdownCalls = StormMetricsRegistry.registerMeter("nimbus:num-shutdown-calls");
-    private static final Meter processWorkerMetricsCalls = StormMetricsRegistry.registerMeter("nimbus:process-worker-metric-calls");
+    private static final Meter shutdownCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-shutdown-calls"));
+    private static final Meter processWorkerMetricsCalls = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "process-worker-metric-calls"));
     private static final String STORM_VERSION = VersionInfo.getVersion();
 
     public static List<ACL> getNimbusAcls(Map<String, Object> conf) {
@@ -1133,6 +1165,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         validatePortAvailable(conf);
         final Nimbus nimbus = new Nimbus(conf, inimbus);
         nimbus.launchServer();
+        StormMetricsRegistry.setSource(NIMBUS);
         final ThriftServer server = new ThriftServer(conf, new Processor<>(nimbus), ThriftConnectionType.NIMBUS);
         Utils.addShutdownHookWithDelayedForceKill(() -> {
             nimbus.shutdown();
@@ -1168,13 +1201,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         String root = (String) conf.get(Config.STORM_ZOOKEEPER_ROOT);
         CuratorFramework ret = null;
         if (servers != null && port != null) {
-            ret = ClientZookeeper.mkClient(conf, servers, port, root, new DefaultWatcherCallBack(), conf, DaemonType.NIMBUS);
+            ret = ClientZookeeper.mkClient(conf, servers, port, root, new DefaultWatcherCallBack(), conf, NIMBUS);
         }
         return ret;
     }
 
     private static IStormClusterState makeStormClusterState(Map<String, Object> conf) throws Exception {
-        return ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
+        return ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(NIMBUS, conf));
     }
 
     private static List<Integer> asIntExec(List<Long> exec) {
@@ -2794,21 +2827,30 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                         }
                                     });
 
-            StormMetricsRegistry.registerGauge("nimbus:num-supervisors", () -> state.supervisors(null).size());
-            StormMetricsRegistry.registerGauge("nimbus:fragmented-memory", () -> fragmentedMemory());
-            StormMetricsRegistry.registerGauge("nimbus:fragmented-cpu", () -> fragmentedCpu());
-            StormMetricsRegistry.registerGauge("nimbus:available-memory", () -> nodeIdToResources.get().values().parallelStream()
-                                                                                                 .mapToDouble(
-                                                                                                     SupervisorResources::getAvailableMem)
-                                                                                                 .sum());
-            StormMetricsRegistry.registerGauge("nimbus:available-cpu", () -> nodeIdToResources.get().values().parallelStream().mapToDouble(
-                SupervisorResources::getAvailableCpu).sum());
-            StormMetricsRegistry.registerGauge("nimbus:total-memory", () -> nodeIdToResources.get().values().parallelStream()
-                                                                                             .mapToDouble(SupervisorResources::getTotalMem)
-                                                                                             .sum());
-            StormMetricsRegistry.registerGauge("nimbus:total-cpu", () -> nodeIdToResources.get().values().parallelStream()
-                                                                                          .mapToDouble(SupervisorResources::getTotalCpu)
-                                                                                          .sum());
+            StormMetricsRegistry.registerGauge(
+                    StormMetricsRegistry.name(NIMBUS, "num-supervisors"), () -> state.supervisors(null).size());
+            StormMetricsRegistry.registerGauge(
+                    StormMetricsRegistry.name(NIMBUS, "fragmented-memory"), () -> fragmentedMemory());
+            StormMetricsRegistry.registerGauge(
+                    StormMetricsRegistry.name(NIMBUS, "fragmented-cpu"), () -> fragmentedCpu());
+            StormMetricsRegistry.registerGauge(
+                    StormMetricsRegistry.name(NIMBUS, "available-memory"), () ->
+                            nodeIdToResources.get().values().parallelStream()
+                            .mapToDouble(SupervisorResources::getAvailableMem)
+                            .sum());
+            StormMetricsRegistry.registerGauge(
+                    StormMetricsRegistry.name(NIMBUS, "available-cpu"), () -> nodeIdToResources.get().values().parallelStream().mapToDouble(
+                            SupervisorResources::getAvailableCpu).sum());
+            StormMetricsRegistry.registerGauge(
+                    StormMetricsRegistry.name(NIMBUS, "total-memory"), () ->
+                            nodeIdToResources.get().values().parallelStream()
+                            .mapToDouble(SupervisorResources::getTotalMem)
+                            .sum());
+            StormMetricsRegistry.registerGauge(
+                    StormMetricsRegistry.name(NIMBUS, "total-cpu"), () ->
+                            nodeIdToResources.get().values().parallelStream()
+                            .mapToDouble(SupervisorResources::getTotalCpu)
+                            .sum());
             StormMetricsRegistry.startMetricsReporters(conf);
 
             if (clusterConsumerExceutors != null) {

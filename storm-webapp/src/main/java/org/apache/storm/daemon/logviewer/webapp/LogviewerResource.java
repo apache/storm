@@ -18,6 +18,8 @@
 
 package org.apache.storm.daemon.logviewer.webapp;
 
+import static org.apache.storm.daemon.logviewer.LogviewerServer.LOGVIEWER;
+
 import com.codahale.metrics.Meter;
 
 import java.io.IOException;
@@ -52,14 +54,16 @@ import org.slf4j.LoggerFactory;
 public class LogviewerResource {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerResource.class);
 
-    private static final Meter meterLogPageHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-log-page-http-requests");
+    private static final Meter meterLogPageHttpRequests = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(LOGVIEWER, "num-log-page-http-requests"));
     private static final Meter meterDaemonLogPageHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-daemonlog-page-http-requests");
+            StormMetricsRegistry.name(LOGVIEWER, "num-daemonlog-page-http-requests"));
     private static final Meter meterDownloadLogFileHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-download-log-file-http-requests");
+            StormMetricsRegistry.name(LOGVIEWER, "num-download-log-file-http-requests"));
     private static final Meter meterDownloadLogDaemonFileHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-download-log-daemon-file-http-requests");
-    private static final Meter meterListLogsHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-list-logs-http-requests");
+            StormMetricsRegistry.name(LOGVIEWER, "num-download-log-daemon-file-http-requests"));
+    private static final Meter meterListLogsHttpRequests = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(LOGVIEWER, "num-list-logs-http-requests"));
 
     private final LogviewerLogPageHandler logviewer;
     private final LogviewerProfileHandler profileHandler;

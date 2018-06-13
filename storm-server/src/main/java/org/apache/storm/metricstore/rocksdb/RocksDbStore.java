@@ -59,6 +59,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
     public void prepare(Map<String, Object> config) throws MetricException {
         validateConfig(config);
 
+        // TODO: update registry
         this.failureMeter = StormMetricsRegistry.registerMeter("RocksDB:metric-failures");
 
         RocksDB.loadLibrary();

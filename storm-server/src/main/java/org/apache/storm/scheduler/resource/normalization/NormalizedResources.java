@@ -18,6 +18,8 @@
 
 package org.apache.storm.scheduler.resource.normalization;
 
+import static org.apache.storm.cluster.DaemonType.NIMBUS;
+
 import com.codahale.metrics.Meter;
 import java.util.Arrays;
 import java.util.Map;
@@ -35,7 +37,8 @@ import org.slf4j.LoggerFactory;
 public class NormalizedResources {
 
     private static final Logger LOG = LoggerFactory.getLogger(NormalizedResources.class);
-    public static final Meter numNegativeResourceEvents = StormMetricsRegistry.registerMeter("nimbus:num-negative-resource-events");
+    public static final Meter numNegativeResourceEvents = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(NIMBUS, "num-negative-resource-events"));
 
 
     public static ResourceNameNormalizer RESOURCE_NAME_NORMALIZER;

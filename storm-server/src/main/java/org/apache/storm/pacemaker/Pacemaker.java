@@ -12,6 +12,8 @@
 
 package org.apache.storm.pacemaker;
 
+import static org.apache.storm.cluster.DaemonType.PACEMAKER;
+
 import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -38,12 +40,17 @@ import org.slf4j.LoggerFactory;
 public class Pacemaker implements IServerMessageHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(Pacemaker.class);
-    private final static Meter meterSendPulseCount = StormMetricsRegistry.registerMeter("pacemaker:send-pulse-count");
-    private final static Meter meterTotalReceivedSize = StormMetricsRegistry.registerMeter("pacemaker:total-receive-size");
-    private final static Meter meterGetPulseCount = StormMetricsRegistry.registerMeter("pacemaker:get-pulse=count");
-    private final static Meter meterTotalSentSize = StormMetricsRegistry.registerMeter("pacemaker:total-sent-size");
-    private final static Histogram histogramHeartbeatSize =
-        StormMetricsRegistry.registerHistogram("pacemaker:heartbeat-size", new ExponentiallyDecayingReservoir());
+    private static final Meter meterSendPulseCount = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(PACEMAKER, "send-pulse-count"));
+    private static final Meter meterTotalReceivedSize = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(PACEMAKER, "total-receive-size"));
+    private static final Meter meterGetPulseCount = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(PACEMAKER, "get-pulse=count"));
+    private static final Meter meterTotalSentSize = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(PACEMAKER, "total-sent-size"));
+    private static final Histogram histogramHeartbeatSize =
+        StormMetricsRegistry.registerHistogram(
+                StormMetricsRegistry.name(PACEMAKER, "heartbeat-size"), new ExponentiallyDecayingReservoir());
     private Map<String, byte[]> heartbeats;
     private Map<String, Object> conf;
 
@@ -51,13 +58,13 @@ public class Pacemaker implements IServerMessageHandler {
     public Pacemaker(Map<String, Object> conf) {
         heartbeats = new ConcurrentHashMap();
         this.conf = conf;
-        StormMetricsRegistry.registerGauge("pacemaker:size-total-keys",
-                                           new Callable() {
-                                               @Override
-                                               public Integer call() throws Exception {
-                                                   return heartbeats.size();
-                                               }
-                                           });
+        StormMetricsRegistry.registerGauge(StormMetricsRegistry.name(PACEMAKER, "size-total-keys"),
+                new Callable() {
+                    @Override
+                    public Integer call() throws Exception {
+                        return heartbeats.size();
+                    }
+                });
         StormMetricsRegistry.startMetricsReporters(conf);
     }
 

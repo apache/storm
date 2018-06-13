@@ -27,13 +27,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.thrift.TException;
 
 @Path("/drpc/")
 public class DRPCResource {
-    private static final Meter meterHttpRequests = StormMetricsRegistry.registerMeter("drpc:num-execute-http-requests");
+    private static final Meter meterHttpRequests = StormMetricsRegistry.registerMeter(
+            StormMetricsRegistry.name(DaemonType.DRPC, "num-execute-http-requests"));
     private final DRPC drpc;
 
     public DRPCResource(DRPC drpc) {

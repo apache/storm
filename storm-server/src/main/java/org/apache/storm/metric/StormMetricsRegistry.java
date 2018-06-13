@@ -18,8 +18,13 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reservoir;
+
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.concurrent.Callable;
+
+import org.apache.commons.lang.NullArgumentException;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.daemon.metrics.MetricsUtils;
 import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
 import org.slf4j.Logger;
@@ -27,8 +32,60 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unchecked")
 public class StormMetricsRegistry {
+    // TODO: Adding a secondary reporting_registry for filtering?
     public static final MetricRegistry DEFAULT_REGISTRY = new MetricRegistry();
     private static final Logger LOG = LoggerFactory.getLogger(StormMetricsRegistry.class);
+    private static String source = null;
+
+    public static boolean setSource(DaemonType source) {
+        return setSource(source.toString());
+    }
+
+    /**
+     * Specify source of metrics to filter out accidental registry.
+     * This should be called as early as possible
+     * @param source Components all the metrics should belong to
+     * @return whether the source has been set successfully
+     */
+    public static boolean setSource(String source) throws NullArgumentException {
+        if (StormMetricsRegistry.source == null) {
+            if (source != null) {
+                StormMetricsRegistry.source = source;
+                //#getNames returns a snapshot of the registry,
+                // hence safe to perform remove
+                for (String name : DEFAULT_REGISTRY.getNames()) {
+                    if (!name.startsWith(source)) {
+                        DEFAULT_REGISTRY.remove(name);
+                    }
+                }
+                return true;
+            } else {
+                throw new NullArgumentException("Registry source");
+            }
+        } else {
+            //Ignore all subsequent changes if the source has been initialized
+            return false;
+        }
+    }
+
+    public static String name(DaemonType source, String metrics) {
+        return name(source.toString(), metrics);
+    }
+
+    /**
+     * Helper function for naming metrics.
+     * @param source Daemon/component the metrics belong to
+     * @param metrics name of the metrics
+     * @return the name of the metrics following its parenting component
+     * @throws NullArgumentException source shouldn't be null
+     */
+    public static String name(String source, String metrics) throws NullArgumentException {
+        if (source != null) {
+            return source + ":" + metrics;
+        } else {
+            throw new NullArgumentException("Registry source");
+        }
+    }
 
     public static Meter registerMeter(String name) {
         Meter meter = new Meter();
@@ -73,6 +130,12 @@ public class StormMetricsRegistry {
     }
 
     private static <T extends Metric> T register(String name, T metric) {
+        if (source != null && !name.startsWith(source)) {
+            LOG.warn("Metric {} accidentally registered and filtered", name);
+            //Mute metrics by not registering it. This is a band-aid fix
+            // TODO: Find a better solution
+            return metric;
+        }
         T ret;
         try {
             ret = DEFAULT_REGISTRY.register(name, metric);

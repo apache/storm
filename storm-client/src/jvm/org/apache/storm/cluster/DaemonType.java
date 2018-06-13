@@ -73,6 +73,7 @@ public enum DaemonType {
         }
     },
     PACEMAKER,
+    DRPC,
     UNKNOWN;
 
     @VisibleForTesting
@@ -105,5 +106,10 @@ public enum DaemonType {
      */
     public List<ACL> getZkSecretAcls(WorkerTokenServiceType type, Map<String, Object> conf) {
         throw new IllegalArgumentException(name() + " does not support storing secrets.");
+    }
+
+    @Override
+    public String toString() {
+        return name().toLowerCase();
     }
 }
