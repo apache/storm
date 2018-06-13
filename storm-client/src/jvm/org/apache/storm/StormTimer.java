@@ -35,7 +35,6 @@ public class StormTimer implements AutoCloseable {
      *
      * @param name   name of the timer
      * @param onKill function to call when timer is killed unexpectedly
-     * @return StormTimerTask object that was initialized
      */
     public StormTimer(String name, Thread.UncaughtExceptionHandler onKill) {
         if (onKill == null) {
@@ -67,7 +66,7 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * Same as schedule with millisecond resolution
+     * Same as schedule with millisecond resolution.
      *
      * @param delayMs     the number of milliseconds to delay before running the function
      * @param func        the function to run
@@ -249,8 +248,9 @@ public class StormTimer implements AutoCloseable {
                 } catch (Throwable e) {
                     if (!(Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e))
                         && !(Utils.exceptionCauseIsInstanceOf(ClosedByInterruptException.class, e))) {
-                        this.onKill.uncaughtException(this, e);
+                        // need to set active false before calling onKill() - current implementation does not return.
                         this.setActive(false);
+                        this.onKill.uncaughtException(this, e);
                     }
                 }
             }
