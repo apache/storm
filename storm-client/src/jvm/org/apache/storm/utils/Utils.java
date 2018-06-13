@@ -89,6 +89,7 @@ import org.apache.storm.shade.com.google.common.collect.MapDifference;
 import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.shade.org.apache.commons.io.input.ClassLoaderObjectInputStream;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.data.Id;
@@ -117,6 +118,7 @@ public class Utils {
     // tests by subclassing.
     private static Utils _instance = new Utils();
     private static String memoizedLocalHostnameString = null;
+    public static final Pattern TOPOLOGY_KEY_PATTERN = Pattern.compile("^[\\w \\t\\._-]+$", Pattern.UNICODE_CHARACTER_CLASS);
 
     static {
         localConf = readStormConfig();
@@ -1635,6 +1637,20 @@ public class Utils {
             return memoizedLocalHostname();
         }
         return (String) hostnameString;
+    }
+
+    /**
+     * Validates topology name / blob key.
+     *
+     * @param key topology name / Key for the blob.
+     */
+    public static boolean isValidKey(String key) {
+        if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !TOPOLOGY_KEY_PATTERN.matcher(key).matches()) {
+            LOG.error("'{}' does not appear to be valid. It must match {}. And it can't be \".\", \"..\", null or empty string.", key,
+                    TOPOLOGY_KEY_PATTERN);
+            return false;
+        }
+        return true;
     }
 
     /**
