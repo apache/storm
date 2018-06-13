@@ -24,6 +24,12 @@ The following properties may be passed to storm configuration.
 | **cassandra.retryPolicy**                    | -               | DefaultRetryPolicy  |
 | **cassandra.reconnectionPolicy.baseDelayMs** | -               | 100 (ms)            |
 | **cassandra.reconnectionPolicy.maxDelayMs**  | -               | 60000 (ms)          |
+| **cassandra.ssl.security.protocol**          | eg: null, SSL, SASL_SSL |                     |
+| **cassandra.ssl.keystore.path**              | path to keystore |                     |
+| **cassandra.ssl.keystore.password**          | keystore password |                     |
+| **cassandra.ssl.truststore.path**            | path to truststore |                     |
+| **cassandra.ssl.truststore.password**        | truststore password |                     |
+
 
 ### CassandraWriterBolt
 
@@ -203,7 +209,7 @@ builder.setBolt("BOLT_WRITER", bolt, 4)
 ```
 
 ### Trident API support
-storm-cassandra support Trident `state` API for `inserting` data into Cassandra. 
+storm-cassandra support Trident `state` API for `inserting` data into Cassandra.
 ```java
         CassandraState.Options options = new CassandraState.Options(new CassandraContext());
         CQLStatementTupleMapper insertTemperatureValues = boundQuery(

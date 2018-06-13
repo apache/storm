@@ -19,17 +19,33 @@
 package org.apache.storm.cassandra.client;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Cluster.Builder;
+import com.datastax.driver.core.JdkSSLOptions;
 import com.datastax.driver.core.PlainTextAuthProvider;
 import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.policies.DowngradingConsistencyRetryPolicy;
+import com.datastax.driver.core.SSLOptions;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.Map;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.cassandra.context.BaseBeanFactory;
 
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Default interface to build cassandra Cluster from the a Storm Topology configuration.
@@ -67,7 +83,54 @@ public class ClusterFactory extends BaseBeanFactory<Cluster> {
                 .setConsistencyLevel(cassandraConf.getConsistencyLevel());
         cluster.withQueryOptions(options);
 
+        SslProps sslProps = cassandraConf.getSslProps();
+        configureIfSsl(cluster, sslProps);
 
         return cluster.build();
+    }
+
+    /**
+     * If sslProps passed, then set SSL configuration in clusterBuilder.
+     *
+     * @param clusterBuilder cluster builder
+     * @param sslProps SSL properties
+     * @return
+     */
+    private static Builder configureIfSsl(Builder clusterBuilder, SslProps sslProps) {
+        if (sslProps == null || !sslProps.isSsl()) {
+            return clusterBuilder;
+        }
+
+        SSLContext sslContext = getSslContext(sslProps.getTruststorePath(), sslProps.getTruststorePassword(), sslProps.getKeystorePath(),
+                sslProps.getKeystorePassword());
+
+        SSLOptions sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).build();
+        return clusterBuilder.withSSL(sslOptions);
+    }
+
+    private static SSLContext getSslContext(String truststorePath, String truststorePassword, String keystorePath,
+            String keystorePassword) {
+        SSLContext ctx;
+        try {
+            ctx = SSLContext.getInstance("SSL");
+
+            FileInputStream tsf = new FileInputStream(truststorePath);
+            KeyStore ts = KeyStore.getInstance("JKS");
+            ts.load(tsf, truststorePassword.toCharArray());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(ts);
+
+            FileInputStream ksf = new FileInputStream(keystorePath);
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(ksf, keystorePassword.toCharArray());
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ks, keystorePassword.toCharArray());
+
+            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+        } catch (UnrecoverableKeyException | KeyManagementException | NoSuchAlgorithmException | KeyStoreException | CertificateException
+                | IOException e) {
+            throw new RuntimeException(e);
+        }
+        return ctx;
     }
 }
