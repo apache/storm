@@ -11,9 +11,9 @@ This page explains the multilang protocol as of Storm 0.7.1. Versions prior to 0
 
 Storm Multi-Language has implementation in the following languages:
 
-- [JavaScript](../storm-multilang/javascript)
-- [Python](../storm-multilang/python)
-- [Ruby](../storm-multilang/ruby)
+- [JavaScript](https://github.com/apache/storm/tree/master/storm-multilang/javascript)
+- [Python](https://github.com/apache/storm/tree/master/storm-multilang/python)
+- [Ruby](https://github.com/apache/storm/tree/master/storm-multilang/ruby)
 
 Third party libraries are available for the following languages:
 
