@@ -22,7 +22,6 @@ import org.apache.storm.utils.Utils;
 public class KillWorkers {
     public static void main(String[] args) throws Exception {
         Map<String, Object> conf = Utils.readStormConfig();
-        conf.put(Config.STORM_LOCAL_DIR, new File((String) conf.get(Config.STORM_LOCAL_DIR)).getCanonicalPath());
         try (Supervisor supervisor = new Supervisor(conf, null, new StandaloneSupervisor())) {
             supervisor.shutdownAllWorkers(null, null);
         }
