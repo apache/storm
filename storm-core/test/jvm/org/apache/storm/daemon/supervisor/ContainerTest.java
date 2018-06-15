@@ -20,8 +20,10 @@ package org.apache.storm.daemon.supervisor;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +38,7 @@ import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -261,5 +264,56 @@ public class ContainerTest {
         verify(ops).deleteIfExists(eq(new File(workerRoot, "heartbeats")), eq(user), any(String.class));
         verify(ops).deleteIfExists(eq(workerRoot), eq(user), any(String.class));
         verify(ops).deleteIfExists(workerUserFile);
+    }
+
+    @Test
+    public void testAreAllProcessesDeadPosix() throws Exception {
+        final String topoId = "test_topology";
+        final Map<String, Object> superConf = new HashMap<>();
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+        MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
+                "SUPERVISOR", 8080, la, "worker", new HashMap<String, Object>(), ops);
+
+        MockContainer spy = spy(mc);
+        doReturn(false).when(spy).isOnWindows();
+        when(spy.getAllPids()).thenReturn(Collections.singleton(0L));
+        InputStream psout = new ByteArrayInputStream("USER\nmockuser".getBytes());
+        when(spy.getPosixProcessInputStream(0)).thenReturn(psout);
+
+        Assert.assertFalse(spy.areAllProcessesDead());
+
+        psout = new ByteArrayInputStream("USER\n".getBytes());
+        when(spy.getPosixProcessInputStream(0)).thenReturn(psout);
+
+        Assert.assertTrue(spy.areAllProcessesDead());
+    }
+
+    @Test
+    public void testAreAllProcessesDeadWindows() throws Exception {
+        final String topoId = "test_topology";
+        final Map<String, Object> superConf = new HashMap<>();
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+        MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
+                "SUPERVISOR", 8080, la, "worker", new HashMap<String, Object>(), ops);
+        MockContainer spy = spy(mc);
+        doReturn(true).when(spy).isOnWindows();
+        when(spy.getAllPids()).thenReturn(Collections.singleton(0L));
+        InputStream psout = new ByteArrayInputStream("User Name:    exampleDomain\\exampleUser".getBytes());
+        doReturn(psout).when(spy).getWindowsProcessInputStream(0L);
+
+        Assert.assertFalse(spy.areAllProcessesDead());
+
+        psout = new ByteArrayInputStream("".getBytes());
+        doReturn(psout).when(spy).getWindowsProcessInputStream(0L);
+
+        Assert.assertTrue(spy.areAllProcessesDead());
     }
 }

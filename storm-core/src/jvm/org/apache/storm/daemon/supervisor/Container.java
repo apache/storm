@@ -20,6 +20,7 @@ package org.apache.storm.daemon.supervisor;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Writer;
 import java.lang.ProcessBuilder.Redirect;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.Config;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LocalAssignment;
@@ -215,18 +217,20 @@ public abstract class Container implements Killable {
      * @throws IOException on any error
      */
     protected boolean isProcessAlive(long pid, String user) throws IOException {
-        if (Utils.IS_ON_WINDOWS) {
+        if (isOnWindows()) {
             return isWindowsProcessAlive(pid, user);
         }
         return isPosixProcessAlive(pid, user);
     }
-    
+
+    @VisibleForTesting
+    boolean isOnWindows() {
+        return Utils.IS_ON_WINDOWS;
+    }
+
     private boolean isWindowsProcessAlive(long pid, String user) throws IOException {
         boolean ret = false;
-        ProcessBuilder pb = new ProcessBuilder("tasklist", "/fo", "list", "/fi", "pid eq " + pid, "/v");
-        pb.redirectError(Redirect.INHERIT);
-        Process p = pb.start();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(getWindowsProcessInputStream(pid)))) {
             String read;
             while ((read = in.readLine()) != null) {
                 if (read.contains("User Name:")) { //Check for : in case someone called their user "User Name"
@@ -236,10 +240,11 @@ public abstract class Container implements Killable {
                     if(userNameLineSplitOnWhitespace.size() == 2){
                         List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
                         String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
-                        if(user.equals(processUser)){
-                            ret = true;
-                        } else {
+                        if (!user.equals(processUser)){
                             LOG.info("Found {} running as {}, but expected it to be {}", pid, processUser, user);
+                        }
+                        if(!processUser.isEmpty()){
+                            ret = true;
                         }
                     } else {
                         LOG.error("Received unexpected output from tasklist command. Expected one colon in user name line. Line was {}", read);
@@ -250,28 +255,43 @@ public abstract class Container implements Killable {
         }
         return ret;
     }
-    
-    private boolean isPosixProcessAlive(long pid, String user) throws IOException {
-        boolean ret = false;
-        ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", String.valueOf(pid));
+
+    @VisibleForTesting
+    InputStream getWindowsProcessInputStream(long pid) throws IOException {
+        ProcessBuilder pb = new ProcessBuilder("tasklist", "/fo", "list", "/fi", "pid eq " + pid, "/v");
         pb.redirectError(Redirect.INHERIT);
         Process p = pb.start();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+        return p.getInputStream();
+    }
+
+
+    private boolean isPosixProcessAlive(long pid, String user) throws IOException {
+        boolean ret = false;
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(getPosixProcessInputStream(pid)))) {
             String first = in.readLine();
             assert("USER".equals(first));
             String processUser;
             while ((processUser = in.readLine()) != null) {
-                if (user.equals(processUser)) {
+                if (!user.equals(processUser)) {
+                    LOG.info("Found {} running as {}, but expected it to be {}", pid, processUser, user);
+                }
+                if (!processUser.isEmpty()) {
                     ret = true;
                     break;
-                } else {
-                    LOG.info("Found {} running as {}, but expected it to be {}", pid, processUser, user);
                 }
             }
         }
         return ret;
     }
-    
+
+    @VisibleForTesting
+    InputStream getPosixProcessInputStream(long pid) throws IOException {
+        ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", String.valueOf(pid));
+        pb.redirectError(Redirect.INHERIT);
+        Process p = pb.start();
+        return p.getInputStream();
+    }
+
     @Override
     public boolean areAllProcessesDead() throws IOException {
         Set<Long> pids = getAllPids();
