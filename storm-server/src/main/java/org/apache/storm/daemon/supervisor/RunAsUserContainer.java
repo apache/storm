@@ -102,4 +102,16 @@ public class RunAsUserContainer extends BasicContainer {
         }
         ClientSupervisorUtils.processLauncher(_conf, user, commandPrefix, args, null, logPrefix, processExitCallback, targetDir);
     }
+
+    /**
+     * If 'supervisor.run.worker.as.user' is set, worker will be launched as the user that launched the topology.
+     */
+    @Override
+    protected String getRunWorkerAsUser() {
+        try {
+            return getWorkerUser();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 }
