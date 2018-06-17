@@ -170,6 +170,7 @@ public class Utils {
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
     public static final String CLASS_PATH_SEPARATOR = System.getProperty("path.separator");
+    private static final Pattern TOPOLOGY_KEY_PATTERN = Pattern.compile("^[\\w \\t\\.:_-]+$", Pattern.UNICODE_CHARACTER_CLASS);
 
     public static final int SIGKILL = 9;
     public static final int SIGTERM = 15;
@@ -2319,5 +2320,19 @@ public class Utils {
             topology.set_jdk_version(jdkVersion);
         }
         return topology;
+    }
+
+    /**
+     * Validates topology name / blob key.
+     *
+     * @param key topology name / Key for the blob.
+     */
+    public static boolean isValidKey(String key) {
+        if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !TOPOLOGY_KEY_PATTERN.matcher(key).matches()) {
+            LOG.error("'{}' does not appear to be valid. It must match {}. And it can't be \".\", \"..\", null or empty string.", key,
+                    TOPOLOGY_KEY_PATTERN);
+            return false;
+        }
+        return true;
     }
 }

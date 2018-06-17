@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.commons.lang.StringUtils;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +61,6 @@ import org.apache.storm.generated.SettableBlobMeta;
  */
 public abstract class BlobStore implements Shutdownable {
     private static final Logger LOG = LoggerFactory.getLogger(BlobStore.class);
-    private static final Pattern KEY_PATTERN = Pattern.compile("^[\\w \\t\\.:_-]+$", Pattern.UNICODE_CHARACTER_CLASS);
     protected static final String BASE_BLOBS_DIR_NAME = "blobs";
 
     /**
@@ -194,8 +193,7 @@ public abstract class BlobStore implements Shutdownable {
      * @param key Key for the blob.
      */
     public static final void validateKey(String key) throws AuthorizationException {
-        if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !KEY_PATTERN.matcher(key).matches()) {
-            LOG.error("'{}' does not appear to be valid {}", key, KEY_PATTERN);
+        if (!Utils.isValidKey(key)) {
             throw new AuthorizationException(key+" does not appear to be a valid blob key");
         }
     }

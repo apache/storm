@@ -236,7 +236,9 @@ public class StormSubmitter {
                     if (topologyNameExists(name, client)) {
                         throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
                     }
-
+                    if (!Utils.isValidKey(name)) {
+                        throw new IllegalArgumentException(name + " does not appear to be a valid topology name.");
+                    }
                     // Dependency uploading only makes sense for distributed mode
                     List<String> jarsBlobKeys = Collections.emptyList();
                     List<String> artifactsBlobKeys;
