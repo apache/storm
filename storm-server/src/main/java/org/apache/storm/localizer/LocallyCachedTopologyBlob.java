@@ -123,7 +123,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     }
 
     @Override
-    public long downloadToTempLocation(ClientBlobStore store)
+    public long fetchUnzipToTemp(ClientBlobStore store)
         throws IOException, KeyNotFoundException, AuthorizationException {
         if (isLocalMode && type == TopologyBlobType.TOPO_JAR) {
             LOG.debug("DOWNLOADING LOCAL JAR to TEMP LOCATION... {}", topologyId);
@@ -148,17 +148,21 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         }
 
 
-        long newVersion = downloadToTempLocation(store, type.getKey(topologyId), version, fsOps,
-                                                 (version) -> topologyBasicBlobsRootDir.resolve(type.getTempFileName(version)));
+        DownloadMeta downloadMeta = fetch(store, type.getKey(topologyId),
+            v -> {
+                Path path = topologyBasicBlobsRootDir.resolve(type.getTempFileName(v));
+                fsOps.forceMkdir(path.getParent());
+                return path;
+            }, fsOps::getOutputStream);
 
-        Path tmpLocation = topologyBasicBlobsRootDir.resolve(type.getTempFileName(newVersion));
+        Path tmpLocation = downloadMeta.getDownloadPath();
 
         if (type.needsExtraction()) {
-            Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getTempExtractionDir(newVersion));
+            Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getTempExtractionDir(downloadMeta.getVersion()));
             extractDirFromJar(tmpLocation.toAbsolutePath().toString(), ServerConfigUtils.RESOURCES_SUBDIR,
                               extractionDest);
         }
-        return newVersion;
+        return downloadMeta.getVersion();
     }
 
     protected void extractDirFromJar(String jarpath, String dir, Path dest) throws IOException {

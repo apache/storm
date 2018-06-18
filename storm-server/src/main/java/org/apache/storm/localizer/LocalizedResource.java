@@ -18,6 +18,8 @@
 
 package org.apache.storm.localizer;
 
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -43,22 +45,18 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
-import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.daemon.supervisor.IAdvancedFSOps;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.ShellUtils;
 import org.apache.storm.utils.WrappedAuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
-
-import org.apache.storm.utils.ConfigUtils;
 
 /**
  * Represents a resource that is localized on the supervisor. A localized resource has a .current symlink to the current version file which
@@ -85,7 +83,7 @@ public class LocalizedResource extends LocallyCachedBlob {
     private final Path baseDir;
     private final Path versionFilePath;
     private final Path symlinkPath;
-    private final boolean uncompressed;
+    private final boolean shouldUncompress;
     private final IAdvancedFSOps fsOps;
     private final String user;
     private final Map<String, Object> conf;
@@ -93,18 +91,18 @@ public class LocalizedResource extends LocallyCachedBlob {
     // size of the resource
     private long size = -1;
 
-    LocalizedResource(String key, Path localBaseDir, boolean uncompressed, IAdvancedFSOps fsOps, Map<String, Object> conf,
+    LocalizedResource(String key, Path localBaseDir, boolean shouldUncompress, IAdvancedFSOps fsOps, Map<String, Object> conf,
                       String user) {
-        super(key + (uncompressed ? " archive" : " file"), key);
+        super(key + (shouldUncompress ? " archive" : " file"), key);
         Path base = getLocalUserFileCacheDir(localBaseDir, user);
-        this.baseDir = uncompressed ? getCacheDirForArchives(base) : getCacheDirForFiles(base);
+        this.baseDir = shouldUncompress ? getCacheDirForArchives(base) : getCacheDirForFiles(base);
         this.conf = conf;
         this.symLinksDisabled = (boolean)conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
         this.user = user;
         this.fsOps = fsOps;
         versionFilePath = constructVersionFileName(baseDir, key);
         symlinkPath = constructBlobCurrentSymlinkName(baseDir, key);
-        this.uncompressed = uncompressed;
+        this.shouldUncompress = shouldUncompress;
         //Set the size in case we are recovering an already downloaded object
         setSize();
     }
@@ -241,48 +239,39 @@ public class LocalizedResource extends LocallyCachedBlob {
     }
 
     @Override
-    public long downloadToTempLocation(ClientBlobStore store) throws IOException, KeyNotFoundException, AuthorizationException {
+    public long fetchUnzipToTemp(ClientBlobStore store) throws IOException, KeyNotFoundException, AuthorizationException {
         String key = getKey();
         ReadableBlobMeta meta = store.getBlobMeta(key);
         if (!ServerUtils.canUserReadBlob(meta, user, conf)) {
             throw new WrappedAuthorizationException(user + " does not have READ access to " + key);
         }
-        long version;
-        Path downloadFile;
-        Path finalLocation;
-        try (InputStreamWithMeta in = store.getBlob(key)) {
-            version = in.getVersion();
-            finalLocation = constructBlobWithVersionFileName(baseDir, getKey(), version);
-            if (uncompressed) {
+
+        DownloadMeta downloadMeta = fetch(store, key, v -> {
+                Path path = shouldUncompress ? tmpOutputLocation() : constructBlobWithVersionFileName(baseDir, getKey(), v);
                 // we need to download to temp file and then unpack into the one requested
-                downloadFile = tmpOutputLocation();
-            } else {
-                downloadFile = finalLocation;
-            }
-            byte[] buffer = new byte[1024];
-            int len;
-            LOG.debug("Downloading {} to {}", key, downloadFile);
-            Path parent = downloadFile.getParent();
-            if (!Files.exists(parent)) {
-                //There is a race here that we can still lose
-                try {
-                    Files.createDirectory(parent);
-                } catch (FileAlreadyExistsException e) {
-                    //Ignored
+                Path parent = path.getParent();
+                if (!Files.exists(parent)) {
+                    //There is a race here that we can still lose
+                    try {
+                        Files.createDirectory(parent);
+                    } catch (FileAlreadyExistsException e) {
+                        //Ignored
+                    }
                 }
-            }
-            try (FileOutputStream out = new FileOutputStream(downloadFile.toFile())) {
-                while ((len = in.read(buffer)) >= 0) {
-                    out.write(buffer, 0, len);
-                }
-            }
-        }
-        if (uncompressed) {
+                return path;
+            },
+            FileOutputStream::new
+        );
+
+        Path finalLocation = downloadMeta.getDownloadPath();
+        if (shouldUncompress) {
+            Path downloadFile = finalLocation;
+            finalLocation = constructBlobWithVersionFileName(baseDir, getKey(), downloadMeta.getVersion());
             ServerUtils.unpack(downloadFile.toFile(), finalLocation.toFile(), symLinksDisabled);
             LOG.debug("Uncompressed {} to: {}", downloadFile, finalLocation);
         }
         setBlobPermissions(conf, user, finalLocation);
-        return version;
+        return downloadMeta.getVersion();
     }
 
     @Override
@@ -416,7 +405,7 @@ public class LocalizedResource extends LocallyCachedBlob {
         Path fileWithVersion = getFilePathWithVersion();
         Path currentSymLink = getCurrentSymlinkPath();
 
-        if (uncompressed) {
+        if (shouldUncompress) {
             if (Files.exists(fileWithVersion)) {
                 // this doesn't follow symlinks, which is what we want
                 FileUtils.deleteDirectory(fileWithVersion.toFile());
@@ -444,14 +433,14 @@ public class LocalizedResource extends LocallyCachedBlob {
     public boolean equals(Object other) {
         if (other instanceof LocalizedResource) {
             LocalizedResource l = (LocalizedResource) other;
-            return getKey().equals(l.getKey()) && uncompressed == l.uncompressed && baseDir.equals(l.baseDir);
+            return getKey().equals(l.getKey()) && shouldUncompress == l.shouldUncompress && baseDir.equals(l.baseDir);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode() + Boolean.hashCode(uncompressed) + baseDir.hashCode();
+        return getKey().hashCode() + Boolean.hashCode(shouldUncompress) + baseDir.hashCode();
     }
 
     @Override

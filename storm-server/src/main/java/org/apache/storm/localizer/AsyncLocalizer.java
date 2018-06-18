@@ -252,7 +252,7 @@ public class AsyncLocalizer implements AutoCloseable {
                                 long remoteVersion = blob.getRemoteVersion(blobStore);
                                 if (localVersion != remoteVersion || !blob.isFullyDownloaded()) {
                                     try {
-                                        long newVersion = blob.downloadToTempLocation(blobStore);
+                                        long newVersion = blob.fetchUnzipToTemp(blobStore);
                                         blob.informAllOfChangeAndWaitForConsensus();
                                         blob.commitNewVersion(newVersion);
                                         blob.informAllChangeComplete();

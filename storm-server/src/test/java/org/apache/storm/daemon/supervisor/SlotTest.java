@@ -244,7 +244,7 @@ public class SlotTest {
             LSWorkerHeartbeat oldhb = mkWorkerHB(topoId, port, execList, Time.currentTimeSecs() - 10);
             LSWorkerHeartbeat goodhb = mkWorkerHB(topoId, port, execList, Time.currentTimeSecs());
             when(container.readHeartbeat()).thenReturn(oldhb, oldhb, goodhb, goodhb);
-            when(container.areAllProcessesDead()).thenReturn(false, true);
+            when(container.areAllProcessesDead()).thenReturn(false, false, true);
 
             ISupervisor iSuper = mock(ISupervisor.class);
             LocalState state = mock(LocalState.class);
@@ -289,7 +289,7 @@ public class SlotTest {
             Container cContainer = mock(Container.class);
             LSWorkerHeartbeat chb = mkWorkerHB(cTopoId, port, cExecList, Time.currentTimeSecs());
             when(cContainer.readHeartbeat()).thenReturn(chb);
-            when(cContainer.areAllProcessesDead()).thenReturn(false, true);
+            when(cContainer.areAllProcessesDead()).thenReturn(false, false, true);
 
             String nTopoId = "NEW";
             List<ExecutorInfo> nExecList = mkExecutorInfoList(1, 2, 3, 4, 5);
@@ -382,7 +382,7 @@ public class SlotTest {
             Container cContainer = mock(Container.class);
             LSWorkerHeartbeat chb = mkWorkerHB(cTopoId, port, cExecList, Time.currentTimeSecs());
             when(cContainer.readHeartbeat()).thenReturn(chb);
-            when(cContainer.areAllProcessesDead()).thenReturn(false, true);
+            when(cContainer.areAllProcessesDead()).thenReturn(false, false, true);
 
             AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             BlobChangingCallback cb = mock(BlobChangingCallback.class);
@@ -523,7 +523,7 @@ public class SlotTest {
             Container cContainer = mock(Container.class);
             LSWorkerHeartbeat chb = mkWorkerHB(cTopoId, port, cExecList, Time.currentTimeSecs());
             when(cContainer.readHeartbeat()).thenReturn(chb);
-            when(cContainer.areAllProcessesDead()).thenReturn(false, true);
+            when(cContainer.areAllProcessesDead()).thenReturn(false, false, true);
             AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             Container nContainer = mock(Container.class);
             LocalState state = mock(LocalState.class);
