@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.assignments.ILocalAssignmentsBackend;
+import org.apache.storm.assignments.LocalAssignmentsBackendFactory;
 import org.apache.storm.callback.ZKStateChangedCallback;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.ClusterWorkerHeartbeat;
@@ -73,14 +74,16 @@ public class StormClusterStateImpl implements IStormClusterState {
     private ConcurrentHashMap<String, Runnable> credentialsCallback;
     private ConcurrentHashMap<String, Runnable> logConfigCallback;
 
-    public StormClusterStateImpl(IStateStorage StateStorage, ILocalAssignmentsBackend assignmentsassignmentsBackend,
+    public StormClusterStateImpl(IStateStorage StateStorage, ILocalAssignmentsBackend assignmentsBackend,
                                  ClusterStateContext context, boolean solo) throws Exception {
 
         this.stateStorage = StateStorage;
         this.solo = solo;
         this.defaultAcls = context.getDefaultZkAcls();
         this.context = context;
-        this.assignmentsBackend = assignmentsassignmentsBackend;
+        this.assignmentsBackend = assignmentsBackend == null
+            ? LocalAssignmentsBackendFactory.getDefault()
+            : assignmentsBackend;
         assignmentInfoCallback = new ConcurrentHashMap<>();
         assignmentInfoWithVersionCallback = new ConcurrentHashMap<>();
         assignmentVersionCallback = new ConcurrentHashMap<>();
@@ -307,7 +310,30 @@ public class StormClusterStateImpl implements IStormClusterState {
         if (callback != null) {
             stormBaseCallback.put(stormId, callback);
         }
-        return ClusterUtils.maybeDeserialize(stateStorage.get_data(ClusterUtils.stormPath(stormId), callback != null), StormBase.class);
+        StormBase base = this.assignmentsBackend.getStormBase(stormId);
+        if (null == base) {
+            byte[] serBase = stateStorage.get_data(ClusterUtils.stormPath(stormId), callback != null);
+            base = ClusterUtils.maybeDeserialize(serBase, StormBase.class);
+        }
+        return base;
+    }
+
+    @Override
+    public void syncRemoteStormBases(Map<String, byte[]> remote) {
+        if (null != remote) {
+            Map<String, StormBase> tmp = new HashMap<>();
+            for (Map.Entry<String, byte[]> entry : remote.entrySet()) {
+                tmp.put(entry.getKey(), ClusterUtils.maybeDeserialize(entry.getValue(), StormBase.class));
+            }
+            this.assignmentsBackend.syncRemoteStormBases(tmp);
+        } else {
+            Map<String, StormBase> tmp = new HashMap<>();
+            List<String> activeStorms = activeStorms();
+            for (String stormId : activeStorms) {
+                tmp.put(stormId, stormBase(stormId, null));
+            }
+            this.assignmentsBackend.syncRemoteStormBases(tmp);
+        }
     }
 
     @Override
@@ -588,13 +614,14 @@ public class StormClusterStateImpl implements IStormClusterState {
         stateStorage.mkdirs(ClusterUtils.STORMS_SUBTREE, defaultAcls);
         stateStorage.set_data(path, Utils.serialize(stormBase), ClusterUtils.mkTopoReadOnlyAcls(topoConf));
         this.assignmentsBackend.keepStormId(stormBase.get_name(), stormId);
+        this.assignmentsBackend.keepOrUpdateStormBase(stormId, stormBase);
     }
 
     /**
-     * To update this function due to APersistentMap/APersistentSet is clojure's structure
+     * To update this function due to APersistentMap/APersistentSet is clojure's structure.
      *
-     * @param stormId
-     * @param newElems
+     * @param stormId storm id.
+     * @param newElems updated StormBase.
      */
     @Override
     public void updateStorm(String stormId, StormBase newElems) {
@@ -676,11 +703,13 @@ public class StormClusterStateImpl implements IStormClusterState {
             newElems.set_status(stormBase.get_status());
         }
         stateStorage.set_data(ClusterUtils.stormPath(stormId), Utils.serialize(newElems), defaultAcls);
+        this.assignmentsBackend.keepOrUpdateStormBase(stormId, newElems);
     }
 
     @Override
     public void removeStormBase(String stormId) {
         stateStorage.delete_node(ClusterUtils.stormPath(stormId));
+        this.assignmentsBackend.removeStormBase(stormId);
     }
 
     @Override

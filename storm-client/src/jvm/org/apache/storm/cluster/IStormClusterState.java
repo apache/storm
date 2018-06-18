@@ -56,12 +56,13 @@ public interface IStormClusterState {
     /**
      * Get all the topologies assignments mapping stormId -> Assignment from local backend.
      *
-     * @return stormId -> Assignment mapping
+     * @return stormId -> Assignment mapping.
      */
     Map<String, Assignment> assignmentsInfo();
 
     /**
-     * Sync the remote state store assignments to local backend, used when master gains leadership, see {@link LeaderListenerCallback}.
+     * Sync the remote state store assignments to local backend, used when master gains leadership,
+     * see LeaderListenerCallback for details.
      *
      * @param remote assigned assignments for a specific {@link IStormClusterState} instance, usually a supervisor/node.
      */
@@ -99,6 +100,13 @@ public interface IStormClusterState {
      * @return the StormBase or null if it is not alive.
      */
     StormBase stormBase(String stormId, Runnable callback);
+
+    /**
+     * Sync remote storm bases to local cache, used when master instance gains leadership,
+     * if remote is null, we will fetch from remote state store directly, i.e. ZK.
+     * @param remote remote id->base mapping to sync with.
+     */
+    void syncRemoteStormBases(Map<String, byte[]> remote);
 
     /**
      * Get storm id from passed name, null if the name doesn't exist on cluster.
@@ -149,6 +157,7 @@ public interface IStormClusterState {
 
     /**
      * Get leader info from state store, which was written when a master gains leadership.
+     *
      * <p>Caution: it can not be used for fencing and is only for informational purposes because we use ZK as our
      * backend now, which could have a overdue info of nodes.
      *
@@ -315,9 +324,29 @@ public interface IStormClusterState {
         return Optional.ofNullable(stormId(topologyName));
     }
 
+    /**
+     * Get all the {@link StormBase} from this state.
+     * @return id to stormBase mapping.
+     */
     default Map<String, StormBase> topologyBases() {
         Map<String, StormBase> stormBases = new HashMap<>();
         for (String topologyId : activeStorms()) {
+            StormBase base = stormBase(topologyId, null);
+            if (base != null) { //race condition with delete
+                stormBases.put(topologyId, base);
+            }
+        }
+        return stormBases;
+    }
+
+    /**
+     * Get {@link StormBase} from this state with specified id set.
+     * @param ids storm ids.
+     * @return id to stormBase mapping, this will filter out null bases.
+     */
+    default Map<String, StormBase> topologyBases(Set<String> ids) {
+        Map<String, StormBase> stormBases = new HashMap<>();
+        for (String topologyId : ids) {
             StormBase base = stormBase(topologyId, null);
             if (base != null) { //race condition with delete
                 stormBases.put(topologyId, base);

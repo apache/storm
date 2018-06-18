@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 //   3. matches one of the # of workers
 // blacklist the good hosts and remove those workers from the list of need to be assigned workers
 // otherwise unassign all other workers for isolated topologies if assigned
-public class IsolationScheduler implements IScheduler {
+public class IsolationScheduler implements IScheduler, NeedsFullTopologiesScheduler {
     private final static Logger LOG = LoggerFactory.getLogger(IsolationScheduler.class);
 
     private Map<String, Number> isoMachines;

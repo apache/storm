@@ -30,6 +30,7 @@ import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 
 
 public class TestUtilsForBlacklistScheduler {
@@ -224,6 +226,17 @@ public class TestUtilsForBlacklistScheduler {
     }
 
     public static class INimbusTest implements INimbus {
+        private volatile boolean isResourceCacheInitialized = false;
+
+        private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache =
+            new HashMap<>();
+        private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache = new HashMap<>();
+        private final Map<String, NormalizedResourceRequest> totalResourcesPerNodeCache = new HashMap<>();
+
+        private static final Function<String, Set<WorkerSlot>> MAKE_SET = (x) -> new HashSet<>();
+        private static final Function<String, Map<WorkerSlot, NormalizedResourceRequest>> MAKE_MAP =
+            (x) -> new HashMap<>();
+
         @Override
         public void prepare(Map<String, Object> stormConf, String schedulerLocalDir) {
 
@@ -250,6 +263,38 @@ public class TestUtilsForBlacklistScheduler {
         @Override
         public IScheduler getForcedScheduler() {
             return null;
+        }
+
+        @Override
+        public boolean isResourceCacheInitialized() {
+            return isResourceCacheInitialized;
+        }
+
+        @Override
+        public void setResourceCacheInitialized() {
+            isResourceCacheInitialized = true;
+        }
+
+        @Override
+        public Map<String, Map<WorkerSlot, NormalizedResourceRequest>> getNodeToScheduledResourcesCache() {
+            return nodeToScheduledResourcesCache;
+        }
+
+        @Override
+        public Map<String, Set<WorkerSlot>> getNodeToUsedSlotsCache() {
+            return nodeToUsedSlotsCache;
+        }
+
+        @Override
+        public Map<String, NormalizedResourceRequest> getTotalResourcesPerNodeCache() {
+            return totalResourcesPerNodeCache;
+        }
+
+        @Override
+        public void freeSlotCache(WorkerSlot slot) {
+            nodeToScheduledResourcesCache
+                .computeIfAbsent(slot.getNodeId(), MAKE_MAP).put(slot, new NormalizedResourceRequest());
+            nodeToUsedSlotsCache.computeIfAbsent(slot.getNodeId(), MAKE_SET).remove(slot);
         }
     }
 

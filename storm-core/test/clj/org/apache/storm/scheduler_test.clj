@@ -127,11 +127,14 @@
         assignment1 (SchedulerAssignmentImpl. "topology1" executor->slot1 nil nil)
         assignment2 (SchedulerAssignmentImpl. "topology2" executor->slot2 nil nil)
         assignment3 (SchedulerAssignmentImpl. "topology3" executor->slot3 nil nil)
+        assignments {"topology1" assignment1 "topology2" assignment2 "topology3" assignment3}
         cluster (Cluster. (Nimbus$StandaloneINimbus.)
                           {"supervisor1" supervisor1 "supervisor2" supervisor2}
-                          {"topology1" assignment1 "topology2" assignment2 "topology3" assignment3}
+                          {}
                           topologies
-                  {})]
+                  {})
+        ;; Cause we do incremental scheduling, force to set assignments here to build the slots cache.
+        _ (.setAssignments cluster assignments true)]
     ;; test Cluster constructor
     (is (= #{"supervisor1" "supervisor2"}
            (->> cluster

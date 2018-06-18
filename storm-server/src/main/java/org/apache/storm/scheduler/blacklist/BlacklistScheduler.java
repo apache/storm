@@ -21,6 +21,7 @@ import java.util.concurrent.Callable;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.DelegationScheduler;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
@@ -37,7 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class BlacklistScheduler implements IScheduler {
+public class BlacklistScheduler implements IScheduler, DelegationScheduler {
     public static final int DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME = 1800;
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT = 3;
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME = 300;
@@ -244,5 +245,10 @@ public class BlacklistScheduler implements IScheduler {
 
             throw e;
         }
+    }
+
+    @Override
+    public IScheduler getUnderlyingScheduler() {
+        return this.underlyingScheduler;
     }
 }

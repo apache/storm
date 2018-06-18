@@ -59,6 +59,8 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     private final Map<String, String> superIdToHostname = new HashMap<>();
     private final Map<String, List<RAS_Node>> hostnameToNodes = new HashMap<>();
     private final Map<String, List<RAS_Node>> rackIdToNodes = new HashMap<>();
+    // Intermediate scheduled mapping, used for failed scheduling to roll back.
+    private final Map<ExecutorDetails, RAS_Node> intermediateSched = new HashMap<>();
     protected RAS_Nodes nodes;
 
     @VisibleForTesting
@@ -122,12 +124,37 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                 targetNode.getTotalCpuResources(),
                 targetSlot,
                 nodeToRack(targetNode));
+            this.intermediateSched.put(exec, targetNode);
             return true;
         } else {
             String comp = td.getExecutorToComponent().get(exec);
             NormalizedResourceRequest requestedResources = td.getTotalResources(exec);
             LOG.error("Not Enough Resources to schedule Task {} - {} {}", exec, comp, requestedResources);
             return false;
+        }
+    }
+
+    /**
+     * Free the intermediate state of an unsuccessful schedule.
+     * @param executorDetails the executor to free.
+     * @param td the executor topology.
+     */
+    private void freeExecutor(ExecutorDetails executorDetails, TopologyDetails td) {
+        RAS_Node targetNode = intermediateSched.get(executorDetails);
+        if (targetNode != null) {
+            targetNode.freeSingleExecutor(executorDetails, td);
+            intermediateSched.remove(executorDetails);
+        }
+    }
+
+    /**
+     * Free the intermediate state of an unsuccessful schedule.
+     * @param executorDetailsList the executors to free.
+     * @param td topology of the executors.
+     */
+    protected void freeExecutors(Collection<ExecutorDetails> executorDetailsList, TopologyDetails td) {
+        for (ExecutorDetails executorDetails : executorDetailsList) {
+            freeExecutor(executorDetails, td);
         }
     }
 

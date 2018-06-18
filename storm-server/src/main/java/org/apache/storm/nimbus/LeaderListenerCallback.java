@@ -85,8 +85,10 @@ public class LeaderListenerCallback {
         //set up nimbus-info to zk
         setUpNimbusInfo(acls);
         //sync zk assignments/id-info to local
-        LOG.info("Sync remote assignments and id-info to local");
+        LOG.info("Sync remote assignments, storm-bases and id-info to local");
         clusterState.syncRemoteAssignments(null);
+        // Should be invoked before #syncRemoteIds cause it will use the StormBases.
+        clusterState.syncRemoteStormBases(null);
         clusterState.syncRemoteIds(null);
         clusterState.setAssignmentsBackendSynchronized();
 

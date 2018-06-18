@@ -41,7 +41,6 @@ public class TestFIFOSchedulingPriorityStrategy {
     @Test
     public void testFIFOEvictionStrategy() {
         try (Time.SimulatedTime sim = new Time.SimulatedTime()) {
-            INimbus iNimbus = new INimbusTest();
             Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 100.0, 1000.0);
             Map<String, Map<String, Number>> resourceUserPool = userResourcePool(
                 userRes("jerry", 200.0, 2000.0));
@@ -53,7 +52,7 @@ public class TestFIFOSchedulingPriorityStrategy {
                 genTopology("topo-2-bobby", config, 1, 0, 1, 0,Time.currentTimeSecs() - 200,10, "bobby"),
                 genTopology("topo-3-bobby", config, 1, 0, 1, 0,Time.currentTimeSecs() - 300,20, "bobby"),
                 genTopology("topo-4-derek", config, 1, 0, 1, 0,Time.currentTimeSecs() - 201,29, "derek"));
-            Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config);
+            Cluster cluster = new Cluster(new INimbusTest(), supMap, new HashMap<>(), topologies, config);
 
             ResourceAwareScheduler rs = new ResourceAwareScheduler();
             rs.prepare(config);
@@ -67,7 +66,7 @@ public class TestFIFOSchedulingPriorityStrategy {
             topologies = addTopologies(topologies,
                 genTopology("topo-5-derek", config, 1, 0, 1, 0,Time.currentTimeSecs() - 15,29, "derek"));
 
-            cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config);
+            cluster = new Cluster(new INimbusTest(), supMap, new HashMap<>(), topologies, config);
             rs.schedule(topologies, cluster);
 
             assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-4-derek", "topo-5-derek");
@@ -79,7 +78,7 @@ public class TestFIFOSchedulingPriorityStrategy {
             topologies = addTopologies(topologies,
                 genTopology("topo-6-bobby", config, 1, 0, 1, 0,Time.currentTimeSecs() - 10,29, "bobby"));
 
-            cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config);
+            cluster = new Cluster(new INimbusTest(), supMap, new HashMap<>(), topologies, config);
             rs.schedule(topologies, cluster);
 
             assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-5-derek", "topo-6-bobby");

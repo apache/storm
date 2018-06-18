@@ -12,7 +12,10 @@
 
 package org.apache.storm.scheduler;
 
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
+
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,4 +41,35 @@ public interface INimbus {
     String getHostName(Map<String, SupervisorDetails> existingSupervisors, String nodeId);
 
     IScheduler getForcedScheduler();
+
+    /**
+     *  Whether the resource cache is initialize for the master instance, see {@link #getNodeToScheduledResourcesCache},
+     *  {@link #getNodeToUsedSlotsCache} and {@link #getTotalResourcesPerNodeCache}.
+     */
+    boolean isResourceCacheInitialized();
+
+    /**
+     * Set the {@link #isResourceCacheInitialized} flag to be true.
+     */
+    void setResourceCacheInitialized();
+
+    /**
+     * Cache of node/supervisor to worker resource mapping for current cluster, mostly used for standalone cluster.
+     */
+    Map<String, Map<WorkerSlot, NormalizedResourceRequest>> getNodeToScheduledResourcesCache();
+
+    /**
+     * Cache of node/supervisor id to used slots mapping for current cluster, mostly used for standalone cluster.
+     */
+    Map<String, Set<WorkerSlot>> getNodeToUsedSlotsCache();
+
+    /**
+     * Cache of node/supervisor to total resource mapping for current cluster, mostly used for standalone cluster.
+     */
+    Map<String, NormalizedResourceRequest> getTotalResourcesPerNodeCache();
+
+    /**
+     * Free the cached scheduling resource for a {@link WorkerSlot}.
+     */
+    void freeSlotCache(WorkerSlot slot);
 }

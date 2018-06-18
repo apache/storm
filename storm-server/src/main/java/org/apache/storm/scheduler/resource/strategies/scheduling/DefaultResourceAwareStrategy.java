@@ -71,6 +71,8 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
                 td.getExecutorToComponent().get(exec),
                 td.getTaskResourceReqList(exec));
             if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+                // Rollback slot occupy for unsuccessful scheduling.
+                freeExecutors(scheduledTasks, td);
                 return mkNotEnoughResources(td);
             }
         }
@@ -80,6 +82,8 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         // schedule left over system tasks
         for (ExecutorDetails exec : executorsNotScheduled) {
             if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+                // Rollback slot occupy for unsuccessful scheduling.
+                freeExecutors(scheduledTasks, td);
                 return mkNotEnoughResources(td);
             }
         }

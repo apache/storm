@@ -12,8 +12,10 @@
 
 package org.apache.storm.scheduler.resource;
 
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResources;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -59,6 +61,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -374,6 +377,20 @@ public class TestUtilsForResourceAwareScheduler {
     }
 
     public static class INimbusTest implements INimbus {
+        // Flag to indicate whether the nodeToScheduledResourcesCache, nodeToUsedSlotsCache,
+        // totalResourcesPerNodeCache are initialized for scheduling, the initialization work is broadly done by
+        // leader master instance.
+        private volatile boolean isResourceCacheInitialized = false;
+
+        private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache =
+            new HashMap<>();
+        private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache = new HashMap<>();
+        private final Map<String, NormalizedResourceRequest> totalResourcesPerNodeCache = new HashMap<>();
+
+        private static final Function<String, Set<WorkerSlot>> MAKE_SET = (x) -> new HashSet<>();
+        private static final Function<String, Map<WorkerSlot, NormalizedResourceRequest>> MAKE_MAP =
+            (x) -> new HashMap<>();
+
         @Override
         public void prepare(Map<String, Object> topoConf, String schedulerLocalDir) {
 
@@ -402,6 +419,38 @@ public class TestUtilsForResourceAwareScheduler {
         public IScheduler getForcedScheduler() {
             return null;
         }
+
+        @Override
+        public boolean isResourceCacheInitialized() {
+            return isResourceCacheInitialized;
+        }
+
+        @Override
+        public void setResourceCacheInitialized() {
+            isResourceCacheInitialized = true;
+        }
+
+        @Override
+        public Map<String, Map<WorkerSlot, NormalizedResourceRequest>> getNodeToScheduledResourcesCache() {
+            return nodeToScheduledResourcesCache;
+        }
+
+        @Override
+        public Map<String, Set<WorkerSlot>> getNodeToUsedSlotsCache() {
+            return nodeToUsedSlotsCache;
+        }
+
+        @Override
+        public Map<String, NormalizedResourceRequest> getTotalResourcesPerNodeCache() {
+            return totalResourcesPerNodeCache;
+        }
+
+        @Override
+        public void freeSlotCache(WorkerSlot slot) {
+            nodeToScheduledResourcesCache
+                .computeIfAbsent(slot.getNodeId(), MAKE_MAP).put(slot, new NormalizedResourceRequest());
+            nodeToUsedSlotsCache.computeIfAbsent(slot.getNodeId(), MAKE_SET).remove(slot);
+        }
     }
 
     private static boolean isContain(String source, String subItem) {
@@ -420,7 +469,9 @@ public class TestUtilsForResourceAwareScheduler {
             String status = cluster.getStatus(topoId);
             assert (status != null) : topoName;
             assert (!isStatusSuccess(status)) : topoName;
-            assert (cluster.getAssignmentById(topoId) == null) : topoName;
+            assert (cluster.getAssignmentById(topoId) == null)
+                || cluster.getAssignmentById(topoId).getExecutorToSlot().size() == 0
+                : topoName;
             assert (cluster.needsSchedulingRas(td)) : topoName;
         }
     }

@@ -15,13 +15,24 @@ package org.apache.storm.assignments;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.generated.Assignment;
+import org.apache.storm.generated.StormBase;
 
 /**
- * Interface for storing local assignments.
+ * An backend storing local resources about assignments distribution, we use this backend to fetch the resource
+ * quickly when scheduling topologies.
+ *
+ * <p>Supported cache:
+ * <ul>
+ *     <li>id to {@link Assignment} mapping.</li>
+ *     <li>id to name mapping.</li>
+ *     <li>id to {@link StormBase} mapping.</li>
+ * </ul>
+ *
+ * <p>The main usage for this backend is to reduce access to the StateStore, i.e. ZooKeeper.
  */
 public interface ILocalAssignmentsBackend extends AutoCloseable {
     /**
-     * Decide if the assignments is synchronized from remote state-store.
+     * Decide if the backend is synchronized from remote state-store.
      */
     boolean isSynchronized();
 
@@ -53,6 +64,10 @@ public interface ILocalAssignmentsBackend extends AutoCloseable {
      */
     Assignment getAssignment(String stormId);
 
+    /**
+     * Remove local assignment cache for a storm.
+     * @param stormId storm id to delete for.
+     */
     void removeAssignment(String stormId);
 
     /**
@@ -70,11 +85,37 @@ public interface ILocalAssignmentsBackend extends AutoCloseable {
     Map<String, Assignment> assignmentsInfo();
 
     /**
-     * Sync remote assignments to local, if remote is null, we will sync it from zk.
+     * Sync remote assignments to local, only used for leader master instance.
      *
-     * @param remote specific remote assignments, if it is null, it will sync from zookeeper[only used for nimbus]
+     * @param remote specific remote assignments, if remote is null,
+     *               it will sync from remote state store, i.e. ZK.
      */
     void syncRemoteAssignments(Map<String, byte[]> remote);
+
+    /**
+     * Get an {@link StormBase} instance for a storm.
+     * @param stormId id of storm.
+     * @return cached storm base instance.
+     */
+    StormBase getStormBase(String stormId);
+
+    /**
+     * Keep or update an storm base instance.
+     */
+    void keepOrUpdateStormBase(String id, StormBase base);
+
+    /**
+     * Sync remote storm bases to local cache.
+     * @param remote specific remote storm bases, if remote is null, it will sync from zookeeper,
+     *               this method is only used for leader master instance now.
+     */
+    void syncRemoteStormBases(Map<String, StormBase> remote);
+
+    /**
+     * Remove cached storm base from this backend.
+     * @param stormId storm id.
+     */
+    void removeStormBase(String stormId);
 
     /**
      * Keep a mapping storm-name -> storm-id to local state.

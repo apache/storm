@@ -310,8 +310,20 @@
       (getForcedScheduler [this]
         (.getForcedScheduler standalone))
       (getHostName [this supervisors node-id]
-        node-id
-      ))))
+        node-id)
+      (isResourceCacheInitialized [this]
+        (.isResourceCacheInitialized standalone))
+      (setResourceCacheInitialized [this]
+        (.setResourceCacheInitialized standalone))
+      (getNodeToScheduledResourcesCache [this]
+        (.getNodeToScheduledResourcesCache standalone))
+      (getNodeToUsedSlotsCache [this]
+        (.getNodeToUsedSlotsCache standalone))
+      (getTotalResourcesPerNodeCache [this]
+        (.getTotalResourcesPerNodeCache standalone))
+      (freeSlotCache [this worker-slot]
+        (.freeSlotCache standalone worker-slot))
+           )))
 
 
 (deftest test-auto-credentials

@@ -19,11 +19,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.generated.Assignment;
+import org.apache.storm.generated.StormBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * An assignment backend which will keep all assignments and id-info in memory. Only used if no backend is specified internal.
+ *
  * <p>About thread safe: idToAssignment,idToName,nameToId are all memory cache in nimbus local, for
  * <ul>
  * <li>idToAssignment: nimbus will modify it and supervisors will sync it at fixed interval,
@@ -36,6 +38,7 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryAssignmentBackend.class);
 
     private Map<String, Assignment> idToAssignment;
+    private Map<String, StormBase> idToStormBase;
     private Map<String, String> idToName;
     private Map<String, String> nameToId;
     private volatile boolean isSynchronized = false;
@@ -54,6 +57,7 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     public void prepare(Map conf) {
         // do nothing for conf now
         this.idToAssignment = new ConcurrentHashMap<>();
+        this.idToStormBase = new ConcurrentHashMap<>();
         this.idToName = new ConcurrentHashMap<>();
         this.nameToId = new ConcurrentHashMap<>();
     }
@@ -98,6 +102,30 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
             tmp.put(entry.getKey(), ClusterUtils.maybeDeserialize(entry.getValue(), Assignment.class));
         }
         this.idToAssignment = tmp;
+    }
+
+    @Override
+    public StormBase getStormBase(String stormId) {
+        return this.idToStormBase.get(stormId);
+    }
+
+    @Override
+    public void keepOrUpdateStormBase(String id, StormBase base) {
+        this.idToStormBase.put(id, base);
+    }
+
+    @Override
+    public void syncRemoteStormBases(Map<String, StormBase> remote) {
+        Map<String, StormBase> tmp = new ConcurrentHashMap<>();
+        for (Map.Entry<String, StormBase> entry : remote.entrySet()) {
+            tmp.put(entry.getKey(), entry.getValue());
+        }
+        this.idToStormBase = tmp;
+    }
+
+    @Override
+    public void removeStormBase(String stormId) {
+        this.idToStormBase.remove(stormId);
     }
 
     @Override

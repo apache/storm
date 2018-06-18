@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
+import org.apache.storm.daemon.nimbus.Nimbus;
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.WorkerResources;
@@ -76,13 +77,19 @@ public class Cluster implements ISchedulingState {
      */
     private final Map<String, List<String>> hostToId = new HashMap<>();
     private final Map<String, Object> conf;
+    /**
+     * Topologies that need scheduling.
+     */
     private final Topologies topologies;
-    private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache;
-    private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache;
-    private final Map<String, NormalizedResourceRequest> totalResourcesPerNodeCache = new HashMap<>();
     private SchedulerAssignmentImpl assignment;
     private Set<String> blackListedHosts = new HashSet<>();
     private INimbus inimbus;
+
+    /**
+     * Flag to indicate if this cluster instance is copied from another, in which situation we do not
+     * need to validate if the slots are occupied.
+     */
+    private volatile boolean isUpdatingFromOther = false;
 
     public Cluster(
         INimbus nimbus,
@@ -138,8 +145,6 @@ public class Cluster implements ISchedulingState {
         Map<String, List<String>> networkTopography) {
         this.inimbus = nimbus;
         this.supervisors.putAll(supervisors);
-        this.nodeToScheduledResourcesCache = new HashMap<>(this.supervisors.size());
-        this.nodeToUsedSlotsCache = new HashMap<>(this.supervisors.size());
 
         for (Map.Entry<String, SupervisorDetails> entry : supervisors.entrySet()) {
             String nodeId = entry.getKey();
@@ -191,7 +196,9 @@ public class Cluster implements ISchedulingState {
         if (blackListedHosts != null) {
             this.blackListedHosts.addAll(blackListedHosts);
         }
-        setAssignments(assignments, true);
+        for (Entry<String, ? extends SchedulerAssignment> entry : assignments.entrySet()) {
+            this.assignments.put(entry.getKey(), (SchedulerAssignmentImpl) entry.getValue());
+        }
     }
 
     /**
@@ -357,7 +364,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Set<Integer> getUsedPorts(SupervisorDetails supervisor) {
-        return nodeToUsedSlotsCache.computeIfAbsent(supervisor.getId(), MAKE_SET)
+        return inimbus.getNodeToUsedSlotsCache().computeIfAbsent(supervisor.getId(), MAKE_SET)
             .stream()
             .map(WorkerSlot::getPort)
             .collect(Collectors.toSet());
@@ -576,13 +583,16 @@ public class Cluster implements ISchedulingState {
      *
      * @throws RuntimeException if the specified slot is already occupied.
      */
-    public void assign(WorkerSlot slot, String topologyId, Collection<ExecutorDetails> executors) {
+    public void assign(
+        WorkerSlot slot,
+        String topologyId,
+        Collection<ExecutorDetails> executors) {
         assertValidTopologyForModification(topologyId);
-        if (isSlotOccupied(slot)) {
+        if (!isUpdatingFromOther
+            && isSlotOccupied(slot)) {
             throw new RuntimeException(
-                "slot: [" + slot.getNodeId() + ", " + slot.getPort() + "] is already occupied.");
+                "slot: [" + slot.getNodeId() + ", " + slot.getPort() + "] is already occupied by storm " + topologyId);
         }
-
         TopologyDetails td = topologies.getById(topologyId);
         if (td == null) {
             throw new IllegalArgumentException(
@@ -612,13 +622,12 @@ public class Cluster implements ISchedulingState {
                 }
             }
         }
-
         assignment.assign(slot, executors, resources);
         String nodeId = slot.getNodeId();
         double sharedOffHeapMemory = calculateSharedOffHeapMemory(nodeId, assignment);
         assignment.setTotalSharedOffHeapMemory(nodeId, sharedOffHeapMemory);
         updateCachesForWorkerSlot(slot, resources, sharedOffHeapMemory);
-        totalResourcesPerNodeCache.remove(slot.getNodeId());
+        inimbus.getTotalResourcesPerNodeCache().remove(slot.getNodeId());
     }
 
     /**
@@ -687,12 +696,11 @@ public class Cluster implements ISchedulingState {
                 String nodeId = slot.getNodeId();
                 assignment.setTotalSharedOffHeapMemory(
                     nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
-                nodeToScheduledResourcesCache.computeIfAbsent(nodeId, MAKE_MAP).put(slot, new NormalizedResourceRequest());
-                nodeToUsedSlotsCache.computeIfAbsent(nodeId, MAKE_SET).remove(slot);
+                inimbus.freeSlotCache(slot);
             }
         }
         //Invalidate the cache as something on the node changed
-        totalResourcesPerNodeCache.remove(slot.getNodeId());
+        inimbus.getTotalResourcesPerNodeCache().remove(slot.getNodeId());
     }
 
     /**
@@ -710,7 +718,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public boolean isSlotOccupied(WorkerSlot slot) {
-        return nodeToUsedSlotsCache.computeIfAbsent(slot.getNodeId(), MAKE_SET).contains(slot);
+        return inimbus.getNodeToUsedSlotsCache().computeIfAbsent(slot.getNodeId(), MAKE_SET).contains(slot);
     }
 
     @Override
@@ -738,7 +746,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Collection<WorkerSlot> getUsedSlots() {
-        return nodeToUsedSlotsCache.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
+        return inimbus.getNodeToUsedSlotsCache().values().stream().flatMap(Set::stream).collect(Collectors.toSet());
     }
 
     @Override
@@ -764,7 +772,8 @@ public class Cluster implements ISchedulingState {
      * Set assignments for cluster.
      */
     public void setAssignments(
-        Map<String, ? extends SchedulerAssignment> newAssignments, boolean ignoreSingleExceptions) {
+        Map<String, ? extends SchedulerAssignment> newAssignments,
+        boolean ignoreSingleExceptions) {
         if (newAssignments == assignments) {
             //NOOP
             return;
@@ -775,10 +784,10 @@ public class Cluster implements ISchedulingState {
         for (SchedulerAssignment assignment : assignments.values()) {
             assertValidTopologyForModification(assignment.getTopologyId());
         }
+        for (SchedulerAssignment assignment : assignments.values()) {
+            assignment.getExecutorToSlot().values().forEach(inimbus::freeSlotCache);
+        }
         assignments.clear();
-        totalResourcesPerNodeCache.clear();
-        nodeToScheduledResourcesCache.values().forEach(Map::clear);
-        nodeToUsedSlotsCache.values().forEach(Set::clear);
         for (SchedulerAssignment assignment : newAssignments.values()) {
             assign(assignment, ignoreSingleExceptions);
         }
@@ -938,15 +947,17 @@ public class Cluster implements ISchedulingState {
         NormalizedResourceRequest normalizedResourceRequest = new NormalizedResourceRequest();
         normalizedResourceRequest.add(workerResources);
         normalizedResourceRequest.addOffHeap(sharedoffHeapMemory);
-        nodeToScheduledResourcesCache.computeIfAbsent(nodeId, MAKE_MAP).put(workerSlot, normalizedResourceRequest);
-        nodeToUsedSlotsCache.computeIfAbsent(nodeId, MAKE_SET).add(workerSlot);
+        inimbus.getNodeToScheduledResourcesCache().computeIfAbsent(nodeId, MAKE_MAP)
+            .put(workerSlot, normalizedResourceRequest);
+        inimbus.getNodeToUsedSlotsCache().computeIfAbsent(nodeId, MAKE_SET).add(workerSlot);
     }
 
     @Override
     public NormalizedResourceRequest getAllScheduledResourcesForNode(String nodeId) {
-        return totalResourcesPerNodeCache.computeIfAbsent(nodeId, (nid) -> {
+        return inimbus.getTotalResourcesPerNodeCache().computeIfAbsent(nodeId, (nid) -> {
             NormalizedResourceRequest totalScheduledResources = new NormalizedResourceRequest();
-            for (NormalizedResourceRequest req : nodeToScheduledResourcesCache.computeIfAbsent(nodeId, MAKE_MAP).values()) {
+            for (NormalizedResourceRequest req : inimbus.getNodeToScheduledResourcesCache()
+                .computeIfAbsent(nodeId, MAKE_MAP).values()) {
                 totalScheduledResources.add(req);
             }
             return totalScheduledResources;
@@ -988,10 +999,12 @@ public class Cluster implements ISchedulingState {
      * @param other the cluster to get the assignments and status from
      */
     public void updateFrom(Cluster other) {
+        isUpdatingFromOther = true;
         for (SchedulerAssignment assignment : other.getAssignments().values()) {
             assertValidTopologyForModification(assignment.getTopologyId());
         }
         setAssignments(other.getAssignments(), false);
         setStatusMap(other.getStatusMap());
+        isUpdatingFromOther = false;
     }
 }

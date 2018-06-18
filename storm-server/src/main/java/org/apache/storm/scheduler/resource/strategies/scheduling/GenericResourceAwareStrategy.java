@@ -111,6 +111,8 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
             final Iterable<String> sortedNodes = sortAllNodes(td, exec, favoredNodeIds, unFavoredNodeIds);
 
             if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+                // Rollback slot occupy for unsuccessful scheduling.
+                freeExecutors(scheduledTasks, td);
                 return mkNotEnoughResources(td);
             }
         }
@@ -122,6 +124,8 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
             for (ExecutorDetails exec : executorsNotScheduled) {
                 final Iterable<String> sortedNodes = sortAllNodes(td, exec, favoredNodeIds, unFavoredNodeIds);
                 if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+                    // Rollback slot occupy for unsuccessful scheduling.
+                    freeExecutors(scheduledTasks, td);
                     return mkNotEnoughResources(td);
                 }
             }
