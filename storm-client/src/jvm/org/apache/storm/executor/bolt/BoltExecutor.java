@@ -156,7 +156,7 @@ public class BoltExecutor extends Executor {
         return new Callable<Long>() {
             int bpIdleCount = 0;
             int consumeIdleCounter = 0;
-            private ExitCondition tillNoPendingEmits = () -> pendingEmits.isEmpty();
+            private final ExitCondition tillNoPendingEmits = () -> pendingEmits.isEmpty();
 
             @Override
             public Long call() throws Exception {

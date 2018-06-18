@@ -30,19 +30,32 @@ function list_storm_processes() {
     (ps -ef | grep -i -e zookeeper | grep -v grep) && (ps -ef | grep -i -e storm.home  | grep -v grep)
 }
 
+if [[ "$TRAVIS_JDK_VERSION" == "oraclejdk10" ]]
+then
+  #Work around https://github.com/travis-ci/travis-ci/issues/9784
+  chmod o+rx /home/travis
+fi
 list_storm_processes || true
 # increasing swap space so we can run lots of workers
 sudo dd if=/dev/zero of=/swapfile.img bs=4096 count=1M
 sudo mkswap /swapfile.img
 sudo swapon /swapfile.img
 
-if [[ "${USER}" == "ubuntu" ]]; then # install oracle jdk8
+if [[ "${USER}" == "vagrant" ]]; then # install oracle jdk8 or jdk10
     sudo apt-get update
     sudo apt-get -y install python-software-properties
-    sudo apt-add-repository -y ppa:webupd8team/java
-    sudo apt-get update
-    echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
-    sudo apt-get install -y oracle-java8-installer
+    if [[ "${JDK_VERSION}" -ne "10" ]]
+    then
+      sudo apt-add-repository -y ppa:webupd8team/java
+      sudo apt-get update
+      echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
+      sudo apt-get install -y oracle-java8-installer
+    else 
+      sudo add-apt-repository ppa:linuxuprising/java
+      sudo apt-get update
+      echo "oracle-java10-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
+      sudo apt-get install -y oracle-java10-installer
+    fi
     sudo apt-get -y install maven
     sudo apt-get install unzip
     java -version
@@ -68,6 +81,10 @@ list_storm_processes || true
 sudo bash "${SCRIPT_DIR}/config/common.sh"
 sudo bash "${SCRIPT_DIR}/config/install-zookeeper.sh" "$zookeeper_version"
 sudo bash "${SCRIPT_DIR}/config/install-storm.sh" "$storm_binary_zip"
+if [[ "$TRAVIS_JDK_VERSION" == "oraclejdk10" ]] || [[ "${JDK_VERSION}" == "10" ]]
+then
+  cat "${SCRIPT_DIR}/config/storm-java9.yaml" | sudo tee -a /usr/share/storm/conf/storm.yaml
+fi
 export JAVA_HOME="${JAVA_HOME}"
 env
 function start_storm_process() {
@@ -80,7 +97,7 @@ start_storm_process supervisor
 start_storm_process logviewer
 #start_storm_process drpc
 pushd "${SCRIPT_DIR}"
-mvn clean package  -DskipTests -Dstorm.version=${STORM_VERSION}
+mvn clean package  -DskipTests
 for i in {1..20} ; do
     list_storm_processes && break
     sleep 6

@@ -31,7 +31,14 @@ else
   # Travis only has 3GB of memory, lets use 1GB for build, and 1.5GB for forked JVMs
   export MAVEN_OPTS="-Xmx1024m"
   
-  mvn --batch-mode test -fae -Pnative,all-tests '-P!include-shaded-deps' -Prat -pl "$2"
+  TEST_MODULES=$2
+  
+  if [ "$TRAVIS_JDK_VERSION" == "oraclejdk10" ] && [ "$TEST_MODULES" == "'!storm-client,!storm-server,!storm-core'" ]
+  then 
+    TEST_MODULES = '!storm-client,!storm-server,!storm-core,!external/storm-cassandra,!external/storm-hive'
+  fi
+  
+  mvn --batch-mode test -fae -Pnative,all-tests '-P!include-shaded-deps' -Prat -pl "$TEST_MODULES"
   BUILD_RET_VAL=$?
   
   for dir in `find . -type d -and -wholename \*/target/\*-reports`;
