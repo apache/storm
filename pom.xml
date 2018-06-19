@@ -292,7 +292,7 @@
         <hive.version>0.14.0</hive.version>
         <hadoop.version>2.6.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
-        <hbase.version>1.1.12</hbase.version>
+        <hbase.version>1.4.4</hbase.version>
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>

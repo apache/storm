@@ -14,6 +14,7 @@ package org.apache.storm.hbase.trident.state;
 
 import com.google.common.collect.Lists;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,7 @@ public class HBaseState implements State {
         if (conf == null) {
             LOG.info("HBase configuration not found using key '" + options.configKey + "'");
             LOG.info("Using HBase config from first hbase-site.xml found on classpath.");
+            conf = Collections.emptyMap();
         } else {
             if (conf.get("hbase.rootdir") == null) {
                 LOG.warn("No 'hbase.rootdir' value found in configuration! Using HBase defaults.");
@@ -71,7 +73,7 @@ public class HBaseState implements State {
 
         //heck for backward compatibility, we need to pass TOPOLOGY_AUTO_CREDENTIALS to hbase conf
         //the conf instance is instance of persistentMap so making a copy.
-        Map<String, Object> hbaseConfMap = new HashMap<String, Object>(conf);
+        Map<String, Object> hbaseConfMap = new HashMap<>(conf);
         hbaseConfMap.put(Config.TOPOLOGY_AUTO_CREDENTIALS, map.get(Config.TOPOLOGY_AUTO_CREDENTIALS));
 
         this.hBaseClient = new HBaseClient(hbaseConfMap, hbConfig, options.tableName);
