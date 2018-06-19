@@ -31,6 +31,7 @@ import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.shade.org.apache.zookeeper.ZkCli;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
@@ -40,10 +41,10 @@ import org.slf4j.LoggerFactory;
 public class AdminCommands {
     private static final Logger LOG = LoggerFactory.getLogger(AdminCommands.class);
 
-    private interface AdminCommand extends AutoCloseable {
+    public interface AdminCommand {
+        
         /**
-         * Run the command, this will be called at most once.  Close will only be called
-         * if run was called, so we assume all initialization will be lazy.
+         * Run the command, this will be called at most once.
          */
         void run(String [] args, Map<String, Object> conf, String command) throws Exception;
 
@@ -54,11 +55,6 @@ public class AdminCommands {
          *     argument - description
          */
         void printCliHelp(String command, PrintStream out);
-
-        @Override
-        default void close() {
-            //NOOP
-        }
     }
 
     private static class RemoveCorruptTopologies implements AdminCommand {
@@ -91,7 +87,7 @@ public class AdminCommands {
             if (args.length <= 0) {
                 help(null, System.out);
             } else {
-                for (String cn: args) {
+                for (String cn : args) {
                     AdminCommand c = COMMANDS.get(cn);
                     if (c == null) {
                         throw new IllegalArgumentException(cn + " is not a supported command");
@@ -112,6 +108,7 @@ public class AdminCommands {
 
     static {
         COMMANDS.put("remove_corrupt_topologies", new RemoveCorruptTopologies());
+        COMMANDS.put("zk_cli", new ZkCli());
         COMMANDS.put("help", new Help());
     }
 
