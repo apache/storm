@@ -1,10 +1,10 @@
 # Storm HBase Integration Example 
 
-This is a very simple set of topologies that show how to use the storm-hbase package for accessign HBase from storm.
+This is a very simple set of topologies that show how to use the storm-hbase package for accessing HBase from storm.
 
 ## HBase Setup
 
-First you need an instance of HBase that is setup and running.  If you have one already you can skip to setting up the table, if not download a copy from http://archive.apache.org/dist/hbase/1.4.4/ and untar the result into a directory you want to run it in. Then follow the instructiuons from https://hbase.apache.org/0.94/book/quickstart.html to setup a standalone HBase instance.  Be aware that when you run `start-hbase.sh` an instance of zookeeper will also be started.  If you are testing using a single node storm cluster you can skip running zookeeper yourself as the hbase zookeeper instance will work.
+First you need an instance of HBase that is setup and running.  If you have one already you can start setting up the table using hbase shell, if not download a copy from http://archive.apache.org/dist/hbase/1.4.4/ and untar the result into a directory you want to run it in. Then follow the instructions from https://hbase.apache.org/0.94/book/quickstart.html to setup a standalone HBase instance.  Be aware that when you run `start-hbase.sh` an instance of zookeeper will also be started.  If you are testing using a single node storm cluster you can skip running zookeeper yourself as the hbase zookeeper instance will work.
 
 Before we can run the topology we need to setup a table in HBase to store the results. 
 
@@ -30,7 +30,7 @@ PersistentWordCount is a very simple topology that performs a word count and sto
 storm jar storm-hbase-examples-${STORM_VERSION}.jar org.apache.storm.hbase.topology.PersistentWordCount ${HBASE_HOME}
 ```
 
-In this `${STORM_VERSION}` should be the version of storm you are running, and `${HBASE_HOME}` is where your installed version fo HBase is.  `${HBASE_HOME}` is mostly to get the config started.  Please refer to the documentation for storm-hbase for more information on how to configure your topology.
+In this `${STORM_VERSION}` should be the version of storm you are running, and `${HBASE_HOME}` is where your installed version of HBase is.  `${HBASE_HOME}` is mostly to get the config started.  Please refer to the documentation for storm-hbase for more information on how to configure your topology.
 
 ### Verify The Results
 
