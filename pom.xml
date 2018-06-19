@@ -1243,6 +1243,9 @@
                     <artifactId>clojure-maven-plugin</artifactId>
                     <version>1.7.1</version>
                     <extensions>true</extensions>
+                    <configuration>
+                        <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

@@ -32,6 +32,7 @@ import org.apache.storm.validation.ConfigValidation;
 
 public class ConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
+    public static final String STORM_HOME = "storm.home";
     public final static String RESOURCES_SUBDIR = "resources";
 
     // A singleton instance allows us to mock delegated static methods in our
@@ -113,8 +114,8 @@ public class ConfigUtils {
             dir = System.getProperty("storm.log.dir");
         } else if ((conf = readStormConfig()).get("storm.log.dir") != null) {
             dir = String.valueOf(conf.get("storm.log.dir"));
-        } else if (System.getProperty("storm.home") != null) {
-            dir = System.getProperty("storm.home") + FILE_SEPARATOR + "logs";
+        } else if (System.getProperty(STORM_HOME) != null) {
+            dir = System.getProperty(STORM_HOME) + FILE_SEPARATOR + "logs";
         } else {
             dir = "logs";
         }
@@ -197,7 +198,7 @@ public class ConfigUtils {
     }
 
     public static String absoluteStormLocalDir(Map<String, Object> conf) {
-        String stormHome = System.getProperty("storm.home");
+        String stormHome = System.getProperty(STORM_HOME);
         String localDir = (String) conf.get(Config.STORM_LOCAL_DIR);
         if (localDir == null) {
             return (stormHome + FILE_SEPARATOR + "storm-local");
@@ -218,7 +219,7 @@ public class ConfigUtils {
             if (new File(blobStoreDir).isAbsolute()) {
                 return blobStoreDir;
             } else {
-                String stormHome = System.getProperty("storm.home");
+                String stormHome = System.getProperty(STORM_HOME);
                 return (stormHome + FILE_SEPARATOR + blobStoreDir);
             }
         }

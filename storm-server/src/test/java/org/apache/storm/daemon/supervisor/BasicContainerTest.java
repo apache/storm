@@ -41,6 +41,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.storm.utils.ConfigUtils;
+
 public class BasicContainerTest {
     private static void setSystemProp(String key, String value) {
         if (value == null) {
@@ -383,7 +385,7 @@ public class BasicContainerTest {
                        ), cmd.cmd);
                        assertEquals(new File(workerRoot), cmd.pwd);
                    },
-                   "storm.home", stormHome,
+                   ConfigUtils.STORM_HOME, stormHome,
                    "storm.log.dir", stormLogDir);
     }
 
@@ -485,7 +487,7 @@ public class BasicContainerTest {
                        ), cmd.cmd);
                        assertEquals(new File(workerRoot), cmd.pwd);
                    },
-                   "storm.home", stormHome,
+                   ConfigUtils.STORM_HOME, stormHome,
                    "storm.log.dir", stormLogDir);
     }
 
@@ -587,7 +589,7 @@ public class BasicContainerTest {
                        ), cmd.cmd);
                        assertEquals(new File(workerRoot), cmd.pwd);
                    },
-                   "storm.home", stormHome,
+                   ConfigUtils.STORM_HOME, stormHome,
                    "storm.log.dir", stormLogDir);
     }
 
