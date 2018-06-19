@@ -1302,6 +1302,12 @@
                                 <requireMavenVersion>
                                     <version>3.0</version>
                                 </requireMavenVersion>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <!-- STORM-3114 -->
+                                        <exclude>jdk.tools:jdk.tools:*</exclude>
+                                    </excludes>
+                                </bannedDependencies>
                             </rules>    
                         </configuration>
                     </execution>
