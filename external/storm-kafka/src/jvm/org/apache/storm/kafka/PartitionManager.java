@@ -104,9 +104,9 @@ public class PartitionManager {
             _emittedToOffset = previousManager._emittedToOffset;
             _waitingToEmit = previousManager._waitingToEmit;
             _pending = previousManager._pending;
-            LOG.info("Recreating PartitionManager based on previous manager, _waitingToEmit size: {}, _pending size: {}",
-                    _waitingToEmit.size(),
-                    _pending.size());
+            LOG.info("Recreating PartitionManager based on previous manager, host: {}, topic: {}, partition: {}, "
+                    + "_committedTo: {}, _emittedToOffset: {}, _waitingToEmit size: {}, _pending size: {} ",
+                id.host, id.topic, id.partition, _committedTo, _emittedToOffset, _waitingToEmit.size(), _pending.size());
         } else {
             try {
                 _failedMsgRetryManager = (FailedMsgRetryManager) Class.forName(spoutConfig.failedMsgRetryManagerClass).newInstance();
