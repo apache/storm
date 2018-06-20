@@ -25,71 +25,50 @@ import org.slf4j.LoggerFactory;
 
 public class CLI {
     /**
-     * Parse function to return an Integer
+     * Parse function to return an Integer.
      */
-    public static final Parse AS_INT = new Parse() {
-        @Override
-        public Object parse(String value) {
-            return Integer.valueOf(value);
-        }
-    };
+    public static final Parse AS_INT = value -> Integer.valueOf(value);
+
     /**
      * Noop parse function, returns the String.
      */
-    public static final Parse AS_STRING = new Parse() {
-        @Override
-        public Object parse(String value) {
-            return value;
-        }
-    };
+    public static final Parse AS_STRING = value -> value;
+
     /**
-     * Last occurance on the command line is the resulting value.
+     * Last occurrence on the command line is the resulting value.
      */
-    public static final Assoc LAST_WINS = new Assoc() {
-        @Override
-        public Object assoc(Object current, Object value) {
-            return value;
-        }
-    };
+    public static final Assoc LAST_WINS = (current, value) -> value;
+
     /**
-     * First occurance on the command line is the resulting value.
+     * First occurrence on the command line is the resulting value.
      */
-    public static final Assoc FIRST_WINS = new Assoc() {
-        @Override
-        public Object assoc(Object current, Object value) {
-            return current == null ? value : current;
-        }
-    };
+    public static final Assoc FIRST_WINS = (current, value) -> current == null ? value : current;
+
     /**
      * All values are returned as a List.
      */
-    public static final Assoc INTO_LIST = new Assoc() {
-        @Override
-        public Object assoc(Object current, Object value) {
-            if (current == null) {
-                current = new ArrayList<Object>();
-            }
-            ((List<Object>) current).add(value);
-            return current;
+    public static final Assoc INTO_LIST = (current, value) -> {
+        if (current == null) {
+            current = new ArrayList<>();
         }
+        ((List<Object>) current).add(value);
+        return current;
     };
+
     /**
-     * All values are returned as a map
+     * All values are returned as a map.
      */
-    public static final Assoc INTO_MAP = new Assoc() {
-        @Override
-        public Object assoc(Object current, Object value) {
-            if (null == current) {
-                current = new HashMap<Object, Object>();
-            }
-            ((Map<Object, Object>) current).putAll((Map<Object, Object>) value);
-            return current;
+    public static final Assoc INTO_MAP = (current, value) -> {
+        if (null == current) {
+            current = new HashMap<>();
         }
+        ((Map<Object, Object>) current).putAll((Map<Object, Object>) value);
+        return current;
     };
     private static final Logger LOG = LoggerFactory.getLogger(CLI.class);
 
     /**
-     * Add an option to be parsed
+     * Add an option to be parsed.
      * @param shortName the short single character name of the option (no `-` character proceeds it).
      * @param longName the multi character name of the option (no `--` characters proceed it).
      * @param defaultValue the value that will be returned of the command if none is given. null if none is given.
@@ -100,7 +79,7 @@ public class CLI {
     }
 
     /**
-     * Add an option to be parsed
+     * Add an option to be parsed.
      * @param shortName the short single character name of the option (no `-` character proceeds it).
      * @param longName the multi character name of the option (no `--` characters proceed it).
      * @param defaultValue the value that will be returned of the command if none is given. null if none is given.
@@ -112,7 +91,7 @@ public class CLI {
     }
 
     /**
-     * Add an option to be parsed
+     * Add an option to be parsed.
      * @param shortName the short single character name of the option (no `-` character proceeds it).
      * @param longName the multi character name of the option (no `--` characters proceed it).
      * @param defaultValue the value that will be returned of the command if none is given. null if none is given.
@@ -122,6 +101,16 @@ public class CLI {
      */
     public static CLIBuilder opt(String shortName, String longName, Object defaultValue, Parse parse, Assoc assoc) {
         return new CLIBuilder().opt(shortName, longName, defaultValue, parse, assoc);
+    }
+
+    /**
+     * Add a boolean option that enables something.
+     * @param shortName the short single character name of the option (no `-` character proceeds it).
+     * @param longName the multi character name of the option (no `--` characters proceed it).
+     * @return a builder to be used to continue creating the command line.
+     */
+    public CLIBuilder boolOpt(String shortName, String longName) {
+        return new CLIBuilder().boolOpt(shortName, longName);
     }
 
     /**
@@ -170,17 +159,17 @@ public class CLI {
          * @param value the String to parse
          * @return the parsed value
          */
-        public Object parse(String value);
+        Object parse(String value);
     }
 
     public interface Assoc {
         /**
-         * Associate a value into somthing else
+         * Associate a value into something else.
          * @param current what to put value into, will be null if no values have been added yet.
          * @param value what to add
          * @return the result of combining the two
          */
-        public Object assoc(Object current, Object value);
+        Object assoc(Object current, Object value);
     }
 
     private static class Opt {
@@ -189,13 +178,15 @@ public class CLI {
         final Object defaultValue;
         final Parse parse;
         final Assoc assoc;
+        final boolean noValue;
 
-        public Opt(String shortName, String longName, Object defaultValue, Parse parse, Assoc assoc) {
+        public Opt(String shortName, String longName, Object defaultValue, Parse parse, Assoc assoc, boolean noValue) {
             this.shortName = shortName;
             this.longName = longName;
             this.defaultValue = defaultValue;
             this.parse = parse == null ? AS_STRING : parse;
             this.assoc = assoc == null ? LAST_WINS : assoc;
+            this.noValue = noValue;
         }
 
         public Object process(Object current, String value) {
@@ -224,7 +215,7 @@ public class CLI {
         private final ArrayList<Arg> args = new ArrayList<>();
 
         /**
-         * Add an option to be parsed
+         * Add an option to be parsed.
          * @param shortName the short single character name of the option (no `-` character proceeds it).
          * @param longName the multi character name of the option (no `--` characters proceed it).
          * @param defaultValue the value that will be returned of the command if none is given. null if none is given.
@@ -235,7 +226,7 @@ public class CLI {
         }
 
         /**
-         * Add an option to be parsed
+         * Add an option to be parsed.
          * @param shortName the short single character name of the option (no `-` character proceeds it).
          * @param longName the multi character name of the option (no `--` characters proceed it).
          * @param defaultValue the value that will be returned of the command if none is given. null if none is given.
@@ -247,7 +238,7 @@ public class CLI {
         }
 
         /**
-         * Add an option to be parsed
+         * Add an option to be parsed.
          * @param shortName the short single character name of the option (no `-` character proceeds it).
          * @param longName the multi character name of the option (no `--` characters proceed it).
          * @param defaultValue the value that will be returned of the command if none is given. null if none is given.
@@ -256,7 +247,18 @@ public class CLI {
          * @return a builder to be used to continue creating the command line.
          */
         public CLIBuilder opt(String shortName, String longName, Object defaultValue, Parse parse, Assoc assoc) {
-            opts.add(new Opt(shortName, longName, defaultValue, parse, assoc));
+            opts.add(new Opt(shortName, longName, defaultValue, parse, assoc, false));
+            return this;
+        }
+
+        /**
+         * Add a boolean option that enables something.
+         * @param shortName the short single character name of the option (no `-` character proceeds it).
+         * @param longName the multi character name of the option (no `--` characters proceed it).
+         * @return a builder to be used to continue creating the command line.
+         */
+        public CLIBuilder boolOpt(String shortName, String longName) {
+            opts.add(new Opt(shortName, longName, false, null, null, true));
             return this;
         }
 
@@ -304,37 +306,45 @@ public class CLI {
         /**
          * Parse the command line arguments.
          * @param rawArgs the string arguments to be parsed.
-         * @throws Exception on any error.
          * @return The parsed command line.
-         * opts will be stored under the short argument name.
-         * args will be stored under the argument name, unless no arguments are configured, and then they will be stored under "ARGS".
-         * The last argument comnfigured is greedy and is used to process all remaining command line arguments.
+         *     opts will be stored under the short argument name.
+         *     args will be stored under the argument name, unless no arguments are configured, and then they will be stored under "ARGS".
+         *     The last argument configured is greedy and is used to process all remaining command line arguments.
+         * @throws Exception on any error.
          */
         public Map<String, Object> parse(String... rawArgs) throws Exception {
             Options options = new Options();
             for (Opt opt : opts) {
-                options.addOption(Option.builder(opt.shortName).longOpt(opt.longName).hasArg().build());
+                if (opt.noValue) {
+                    options.addOption(Option.builder(opt.shortName).longOpt(opt.longName).hasArg(false).build());
+                } else {
+                    options.addOption(Option.builder(opt.shortName).longOpt(opt.longName).hasArg().build());
+                }
             }
             DefaultParser parser = new DefaultParser();
             CommandLine cl = parser.parse(options, rawArgs);
             HashMap<String, Object> ret = new HashMap<>();
             for (Opt opt : opts) {
-                Object current = null;
-                String[] strings = cl.getOptionValues(opt.shortName);
-                if (strings != null) {
-                    for (String val : strings) {
-                        current = opt.process(current, val);
+                if (opt.noValue) {
+                    ret.put(opt.shortName, cl.hasOption(opt.shortName));
+                } else {
+                    Object current = null;
+                    String[] strings = cl.getOptionValues(opt.shortName);
+                    if (strings != null) {
+                        for (String val : strings) {
+                            current = opt.process(current, val);
+                        }
                     }
+                    if (current == null) {
+                        current = opt.defaultValue;
+                    }
+                    ret.put(opt.shortName, current);
                 }
-                if (current == null) {
-                    current = opt.defaultValue;
-                }
-                ret.put(opt.shortName, current);
             }
             List<String> stringArgs = cl.getArgList();
             if (args.size() > stringArgs.size()) {
-                throw new RuntimeException("Wrong number of arguments at least " + args.size() +
-                                           " expected, but only " + stringArgs.size() + " found");
+                throw new RuntimeException("Wrong number of arguments at least " + args.size()
+                    + " expected, but only " + stringArgs.size() + " found");
             }
 
             int argIndex = 0;
