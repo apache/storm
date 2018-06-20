@@ -128,16 +128,15 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
             LOG.debug("Emitting Batch. [transaction = {}], [coordinatorMeta = {}], [collector = {}]", tx, coordinatorMeta, collector);
 
             if (_savedCoordinatorMeta == null || !_savedCoordinatorMeta.equals(coordinatorMeta)) {
-                List<ISpoutPartition> partitions = _emitter.getOrderedPartitions(coordinatorMeta);
                 _partitionStates.clear();
-                List<ISpoutPartition> myPartitions = new ArrayList<>();
-                for (int i = _index; i < partitions.size(); i += _numTasks) {
-                    ISpoutPartition p = partitions.get(i);
-                    String id = p.getId();
-                    myPartitions.add(p);
-                    _partitionStates.put(id, new EmitterPartitionState(new RotatingTransactionalState(_state, id), p));
+                List<ISpoutPartition> taskPartitions = _emitter.getPartitionsForTask(_index, _numTasks,
+                        _emitter.getOrderedPartitions(coordinatorMeta));
+                for (ISpoutPartition partition : taskPartitions) {
+                    _partitionStates.put(partition.getId(),
+                            new EmitterPartitionState(new RotatingTransactionalState(_state, partition.getId()), partition));
                 }
-                _emitter.refreshPartitions(myPartitions);
+
+                _emitter.refreshPartitions(taskPartitions);
                 _savedCoordinatorMeta = coordinatorMeta;
             }
             for (EmitterPartitionState s : _partitionStates.values()) {
