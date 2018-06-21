@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
 public class LogviewerServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerServer.class);
     private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("logviewer:num-shutdown-calls");
-    private static final String stormHome = System.getProperty("storm.home");
+    private static final String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
     public static final String STATIC_RESOURCE_DIRECTORY_PATH = stormHome + "/public";
 
     private static Server mkHttpServer(Map<String, Object> conf) {

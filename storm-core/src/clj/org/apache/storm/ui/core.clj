@@ -372,7 +372,7 @@
 (defn run-tplg-submit-cmd [tplg-jar-file tplg-config user]
   (let [tplg-main-class (if (not-nil? tplg-config) (trim (tplg-config "topologyMainClass")))
         tplg-main-class-args (if (not-nil? tplg-config) (tplg-config "topologyMainClassArgs"))
-        storm-home (System/getProperty "storm.home")
+        storm-home (System/getProperty (ConfigUtils/STORM-HOME))
         storm-conf-dir (str storm-home File/separator "conf")
         storm-log-dir (if (not-nil? (*STORM-CONF* "storm.log.dir")) (*STORM-CONF* "storm.log.dir")
                                                                     (str storm-home File/separator "logs"))

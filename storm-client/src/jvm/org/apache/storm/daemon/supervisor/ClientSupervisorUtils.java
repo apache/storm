@@ -79,7 +79,7 @@ public class ClientSupervisorUtils {
             throw new IllegalArgumentException("User cannot be blank when calling processLauncher.");
         }
         String wlinitial = (String) (conf.get(Config.SUPERVISOR_WORKER_LAUNCHER));
-        String stormHome = ConfigUtils.concatIfNotNull(System.getProperty("storm.home"));
+        String stormHome = ConfigUtils.concatIfNotNull(System.getProperty(ConfigUtils.STORM_HOME));
         String wl;
         if (StringUtils.isNotBlank(wlinitial)) {
             wl = wlinitial;

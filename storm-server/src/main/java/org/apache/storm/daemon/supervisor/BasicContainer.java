@@ -69,7 +69,7 @@ public class BasicContainer extends Container {
         Joiner.on(File.pathSeparator).skipNulls();
     protected final LocalState _localState;
     protected final String _profileCmd;
-    protected final String _stormHome = System.getProperty("storm.home");
+    protected final String _stormHome = System.getProperty(ConfigUtils.STORM_HOME);
     protected final double hardMemoryLimitMultiplier;
     protected final long hardMemoryLimitOver;
     protected final long lowMemoryThresholdMB;

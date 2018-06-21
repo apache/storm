@@ -58,6 +58,8 @@ import org.slf4j.LoggerFactory;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
+import org.apache.storm.utils.ConfigUtils;
+
 /**
  * Represents a resource that is localized on the supervisor. A localized resource has a .current symlink to the current version file which
  * is named filename.{current version}. There is also a filename.version which contains the latest version.
@@ -316,7 +318,7 @@ public class LocalizedResource extends LocallyCachedBlob {
         }
         String wlCommand = ObjectReader.getString(conf.get(Config.SUPERVISOR_WORKER_LAUNCHER), "");
         if (wlCommand.isEmpty()) {
-            String stormHome = System.getProperty("storm.home");
+            String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
             wlCommand = stormHome + "/bin/worker-launcher";
         }
         List<String> command = new ArrayList<>(Arrays.asList(wlCommand, user, "blob", path.toString()));
