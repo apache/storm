@@ -1235,6 +1235,8 @@ class Client(Iface):
             raise result.aze
         if result.knf is not None:
             raise result.knf
+        if result.ise is not None:
+            raise result.ise
         return
 
     def listBlobs(self, session):
@@ -2879,6 +2881,9 @@ class Processor(Iface, TProcessor):
         except KeyNotFoundException as knf:
             msg_type = TMessageType.REPLY
             result.knf = knf
+        except IllegalStateException as ise:
+            msg_type = TMessageType.REPLY
+            result.ise = ise
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -6928,12 +6933,14 @@ class deleteBlob_result(object):
     Attributes:
      - aze
      - knf
+     - ise
     """
 
 
-    def __init__(self, aze=None, knf=None,):
+    def __init__(self, aze=None, knf=None, ise=None,):
         self.aze = aze
         self.knf = knf
+        self.ise = ise
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -6956,6 +6963,12 @@ class deleteBlob_result(object):
                     self.knf.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.STRUCT:
+                    self.ise = IllegalStateException()
+                    self.ise.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -6973,6 +6986,10 @@ class deleteBlob_result(object):
         if self.knf is not None:
             oprot.writeFieldBegin('knf', TType.STRUCT, 2)
             self.knf.write(oprot)
+            oprot.writeFieldEnd()
+        if self.ise is not None:
+            oprot.writeFieldBegin('ise', TType.STRUCT, 3)
+            self.ise.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -6995,6 +7012,7 @@ deleteBlob_result.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 1
     (2, TType.STRUCT, 'knf', [KeyNotFoundException, None], None, ),  # 2
+    (3, TType.STRUCT, 'ise', [IllegalStateException, None], None, ),  # 3
 )
 
 

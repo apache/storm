@@ -153,6 +153,10 @@ exception KeyNotFoundException {
   1: required string msg;
 }
 
+exception IllegalStateException {
+  1: required string msg;
+}
+
 exception KeyAlreadyExistsException {
   1: required string msg;
 }
@@ -744,7 +748,7 @@ service Nimbus {
   void setBlobMeta(1: string key, 2: SettableBlobMeta meta) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
   BeginDownloadResult beginBlobDownload(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
   binary downloadBlobChunk(1: string session) throws (1: AuthorizationException aze);
-  void deleteBlob(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  void deleteBlob(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf, 3: IllegalStateException ise);
   ListBlobsResult listBlobs(1: string session); //empty string "" means start at the beginning
   i32 getBlobReplication(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
   i32 updateBlobReplication(1: string key, 2: i32 replication) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);

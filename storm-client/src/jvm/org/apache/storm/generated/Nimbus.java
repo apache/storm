@@ -85,7 +85,7 @@ public class Nimbus {
 
     public java.nio.ByteBuffer downloadBlobChunk(java.lang.String session) throws AuthorizationException, org.apache.storm.thrift.TException;
 
-    public void deleteBlob(java.lang.String key) throws AuthorizationException, KeyNotFoundException, org.apache.storm.thrift.TException;
+    public void deleteBlob(java.lang.String key) throws AuthorizationException, KeyNotFoundException, IllegalStateException, org.apache.storm.thrift.TException;
 
     public ListBlobsResult listBlobs(java.lang.String session) throws org.apache.storm.thrift.TException;
 
@@ -890,7 +890,7 @@ public class Nimbus {
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "downloadBlobChunk failed: unknown result");
     }
 
-    public void deleteBlob(java.lang.String key) throws AuthorizationException, KeyNotFoundException, org.apache.storm.thrift.TException
+    public void deleteBlob(java.lang.String key) throws AuthorizationException, KeyNotFoundException, IllegalStateException, org.apache.storm.thrift.TException
     {
       send_deleteBlob(key);
       recv_deleteBlob();
@@ -903,7 +903,7 @@ public class Nimbus {
       sendBase("deleteBlob", args);
     }
 
-    public void recv_deleteBlob() throws AuthorizationException, KeyNotFoundException, org.apache.storm.thrift.TException
+    public void recv_deleteBlob() throws AuthorizationException, KeyNotFoundException, IllegalStateException, org.apache.storm.thrift.TException
     {
       deleteBlob_result result = new deleteBlob_result();
       receiveBase(result, "deleteBlob");
@@ -912,6 +912,9 @@ public class Nimbus {
       }
       if (result.knf != null) {
         throw result.knf;
+      }
+      if (result.ise != null) {
+        throw result.ise;
       }
       return;
     }
@@ -2460,7 +2463,7 @@ public class Nimbus {
         prot.writeMessageEnd();
       }
 
-      public Void getResult() throws AuthorizationException, KeyNotFoundException, org.apache.storm.thrift.TException {
+      public Void getResult() throws AuthorizationException, KeyNotFoundException, IllegalStateException, org.apache.storm.thrift.TException {
         if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new java.lang.IllegalStateException("Method call not finished!");
         }
@@ -4135,6 +4138,8 @@ public class Nimbus {
           result.aze = aze;
         } catch (KeyNotFoundException knf) {
           result.knf = knf;
+        } catch (IllegalStateException ise) {
+          result.ise = ise;
         }
         return result;
       }
@@ -6539,6 +6544,10 @@ public class Nimbus {
             } else if (e instanceof KeyNotFoundException) {
               result.knf = (KeyNotFoundException) e;
               result.set_knf_isSet(true);
+              msg = result;
+            } else if (e instanceof IllegalStateException) {
+              result.ise = (IllegalStateException) e;
+              result.set_ise_isSet(true);
               msg = result;
             } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
               _LOGGER.error("TTransportException inside handler", e);
@@ -29008,17 +29017,20 @@ public class Nimbus {
 
     private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
     private static final org.apache.storm.thrift.protocol.TField KNF_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("knf", org.apache.storm.thrift.protocol.TType.STRUCT, (short)2);
+    private static final org.apache.storm.thrift.protocol.TField ISE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("ise", org.apache.storm.thrift.protocol.TType.STRUCT, (short)3);
 
     private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new deleteBlob_resultStandardSchemeFactory();
     private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new deleteBlob_resultTupleSchemeFactory();
 
     private AuthorizationException aze; // required
     private KeyNotFoundException knf; // required
+    private IllegalStateException ise; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
       AZE((short)1, "aze"),
-      KNF((short)2, "knf");
+      KNF((short)2, "knf"),
+      ISE((short)3, "ise");
 
       private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -29037,6 +29049,8 @@ public class Nimbus {
             return AZE;
           case 2: // KNF
             return KNF;
+          case 3: // ISE
+            return ISE;
           default:
             return null;
         }
@@ -29084,6 +29098,8 @@ public class Nimbus {
           new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
       tmpMap.put(_Fields.KNF, new org.apache.storm.thrift.meta_data.FieldMetaData("knf", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, KeyNotFoundException.class)));
+      tmpMap.put(_Fields.ISE, new org.apache.storm.thrift.meta_data.FieldMetaData("ise", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, IllegalStateException.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(deleteBlob_result.class, metaDataMap);
     }
@@ -29093,11 +29109,13 @@ public class Nimbus {
 
     public deleteBlob_result(
       AuthorizationException aze,
-      KeyNotFoundException knf)
+      KeyNotFoundException knf,
+      IllegalStateException ise)
     {
       this();
       this.aze = aze;
       this.knf = knf;
+      this.ise = ise;
     }
 
     /**
@@ -29110,6 +29128,9 @@ public class Nimbus {
       if (other.is_set_knf()) {
         this.knf = new KeyNotFoundException(other.knf);
       }
+      if (other.is_set_ise()) {
+        this.ise = new IllegalStateException(other.ise);
+      }
     }
 
     public deleteBlob_result deepCopy() {
@@ -29120,6 +29141,7 @@ public class Nimbus {
     public void clear() {
       this.aze = null;
       this.knf = null;
+      this.ise = null;
     }
 
     public AuthorizationException get_aze() {
@@ -29168,6 +29190,29 @@ public class Nimbus {
       }
     }
 
+    public IllegalStateException get_ise() {
+      return this.ise;
+    }
+
+    public void set_ise(IllegalStateException ise) {
+      this.ise = ise;
+    }
+
+    public void unset_ise() {
+      this.ise = null;
+    }
+
+    /** Returns true if field ise is set (has been assigned a value) and false otherwise */
+    public boolean is_set_ise() {
+      return this.ise != null;
+    }
+
+    public void set_ise_isSet(boolean value) {
+      if (!value) {
+        this.ise = null;
+      }
+    }
+
     public void setFieldValue(_Fields field, java.lang.Object value) {
       switch (field) {
       case AZE:
@@ -29186,6 +29231,14 @@ public class Nimbus {
         }
         break;
 
+      case ISE:
+        if (value == null) {
+          unset_ise();
+        } else {
+          set_ise((IllegalStateException)value);
+        }
+        break;
+
       }
     }
 
@@ -29196,6 +29249,9 @@ public class Nimbus {
 
       case KNF:
         return get_knf();
+
+      case ISE:
+        return get_ise();
 
       }
       throw new java.lang.IllegalStateException();
@@ -29212,6 +29268,8 @@ public class Nimbus {
         return is_set_aze();
       case KNF:
         return is_set_knf();
+      case ISE:
+        return is_set_ise();
       }
       throw new java.lang.IllegalStateException();
     }
@@ -29249,6 +29307,15 @@ public class Nimbus {
           return false;
       }
 
+      boolean this_present_ise = true && this.is_set_ise();
+      boolean that_present_ise = true && that.is_set_ise();
+      if (this_present_ise || that_present_ise) {
+        if (!(this_present_ise && that_present_ise))
+          return false;
+        if (!this.ise.equals(that.ise))
+          return false;
+      }
+
       return true;
     }
 
@@ -29263,6 +29330,10 @@ public class Nimbus {
       hashCode = hashCode * 8191 + ((is_set_knf()) ? 131071 : 524287);
       if (is_set_knf())
         hashCode = hashCode * 8191 + knf.hashCode();
+
+      hashCode = hashCode * 8191 + ((is_set_ise()) ? 131071 : 524287);
+      if (is_set_ise())
+        hashCode = hashCode * 8191 + ise.hashCode();
 
       return hashCode;
     }
@@ -29291,6 +29362,16 @@ public class Nimbus {
       }
       if (is_set_knf()) {
         lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.knf, other.knf);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = java.lang.Boolean.valueOf(is_set_ise()).compareTo(other.is_set_ise());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_ise()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.ise, other.ise);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -29328,6 +29409,14 @@ public class Nimbus {
         sb.append("null");
       } else {
         sb.append(this.knf);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("ise:");
+      if (this.ise == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.ise);
       }
       first = false;
       sb.append(")");
@@ -29391,6 +29480,15 @@ public class Nimbus {
                 org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
+            case 3: // ISE
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
+                struct.ise = new IllegalStateException();
+                struct.ise.read(iprot);
+                struct.set_ise_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
             default:
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -29412,6 +29510,11 @@ public class Nimbus {
         if (struct.knf != null) {
           oprot.writeFieldBegin(KNF_FIELD_DESC);
           struct.knf.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        if (struct.ise != null) {
+          oprot.writeFieldBegin(ISE_FIELD_DESC);
+          struct.ise.write(oprot);
           oprot.writeFieldEnd();
         }
         oprot.writeFieldStop();
@@ -29438,19 +29541,25 @@ public class Nimbus {
         if (struct.is_set_knf()) {
           optionals.set(1);
         }
-        oprot.writeBitSet(optionals, 2);
+        if (struct.is_set_ise()) {
+          optionals.set(2);
+        }
+        oprot.writeBitSet(optionals, 3);
         if (struct.is_set_aze()) {
           struct.aze.write(oprot);
         }
         if (struct.is_set_knf()) {
           struct.knf.write(oprot);
         }
+        if (struct.is_set_ise()) {
+          struct.ise.write(oprot);
+        }
       }
 
       @Override
       public void read(org.apache.storm.thrift.protocol.TProtocol prot, deleteBlob_result struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(2);
+        java.util.BitSet incoming = iprot.readBitSet(3);
         if (incoming.get(0)) {
           struct.aze = new AuthorizationException();
           struct.aze.read(iprot);
@@ -29460,6 +29569,11 @@ public class Nimbus {
           struct.knf = new KeyNotFoundException();
           struct.knf.read(iprot);
           struct.set_knf_isSet(true);
+        }
+        if (incoming.get(2)) {
+          struct.ise = new IllegalStateException();
+          struct.ise.read(iprot);
+          struct.set_ise_isSet(true);
         }
       }
     }

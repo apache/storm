@@ -87,6 +87,7 @@ import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.ExecutorSummary;
 import org.apache.storm.generated.GetInfoOptions;
+import org.apache.storm.generated.IllegalStateException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
@@ -202,6 +203,7 @@ import org.apache.storm.utils.Utils.UptimeComputer;
 import org.apache.storm.utils.VersionInfo;
 import org.apache.storm.utils.WrappedAlreadyAliveException;
 import org.apache.storm.utils.WrappedAuthorizationException;
+import org.apache.storm.utils.WrappedIllegalStateException;
 import org.apache.storm.utils.WrappedInvalidTopologyException;
 import org.apache.storm.utils.WrappedNotAliveException;
 import org.apache.storm.validation.ConfigValidation;
@@ -820,8 +822,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
+    /**
+     * NOTE: this can return false when a topology has just been activated.  The topology may still be
+     * in the STORMS_SUBTREE.
+     */
     private static boolean isTopologyActive(IStormClusterState state, String topoName) {
         return state.getTopoId(topoName).isPresent();
+    }
+
+    private static boolean isTopologyActiveOrActivating(IStormClusterState state, String topoName) {
+        return isTopologyActive(state, topoName) || state.activeStorms().contains(topoName);
     }
 
     private static Map<String, Object> tryReadTopoConf(String topoId, TopoCache tc)
@@ -2672,7 +2682,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 summary.set_assigned_memoffheap(resources.getAssignedMemOffHeap());
                 summary.set_assigned_cpu(resources.getAssignedCpu());
             }
-            summary.set_replication_count(getBlobReplicationCount(ConfigUtils.masterStormCodeKey(topoId)));
+            try {
+                summary.set_replication_count(getBlobReplicationCount(ConfigUtils.masterStormCodeKey(topoId)));
+            } catch (KeyNotFoundException e) {
+                // This could fail if a blob gets deleted by mistake.  Don't crash nimbus.
+                LOG.error("Unable to find blob entry", e);
+            }
             topologySummaries.add(summary);
         }
 
@@ -3555,8 +3570,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public void deleteBlob(String key) throws AuthorizationException, KeyNotFoundException, TException {
+    public void deleteBlob(String key) throws AuthorizationException, KeyNotFoundException, IllegalStateException, TException {
         try {
+            String topoName = ConfigUtils.getIdFromBlobKey(key);
+            if (topoName != null) {
+                if (isTopologyActiveOrActivating(stormClusterState, topoName)) {
+                    String message = "Attempting to delete blob " + key + " from under active topology " + topoName;
+                    LOG.warn(message);
+                    throw new WrappedIllegalStateException(message);
+                }
+            }
             blobStore.deleteBlob(key, getSubject());
             LOG.info("Deleted blob for key {}", key);
         } catch (Exception e) {
