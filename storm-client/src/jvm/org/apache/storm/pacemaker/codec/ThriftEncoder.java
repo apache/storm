@@ -41,6 +41,7 @@ public class ThriftEncoder extends MessageToMessageEncoder<Object> {
         byte[] messageBuffer = new byte[netty_message.encodeLength()];
         ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(messageBuffer);
         try {
+            wrappedBuffer.resetWriterIndex();
             netty_message.write(wrappedBuffer);
             
             message_data.set_message_blob(messageBuffer);
