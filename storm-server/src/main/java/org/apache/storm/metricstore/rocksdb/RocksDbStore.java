@@ -25,6 +25,7 @@ import org.apache.storm.metricstore.FilterOptions;
 import org.apache.storm.metricstore.Metric;
 import org.apache.storm.metricstore.MetricException;
 import org.apache.storm.metricstore.MetricStore;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.IndexType;
@@ -152,9 +153,9 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
             if (new File(storePath).isAbsolute()) {
                 return storePath;
             } else {
-                String stormHome = System.getProperty("storm.home");
+                String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
                 if (stormHome == null) {
-                    throw new MetricException("storm.home not set");
+                    throw new MetricException(ConfigUtils.STORM_HOME + " not set");
                 }
                 return (stormHome + File.separator + storePath);
             }

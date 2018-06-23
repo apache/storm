@@ -12,6 +12,7 @@
 
 package org.apache.storm.trident.spout;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.task.TopologyContext;
@@ -47,6 +48,12 @@ public interface IPartitionedTridentSpout<Partitions, Partition extends ISpoutPa
 
     interface Emitter<Partitions, Partition extends ISpoutPartition, X> {
 
+        /**
+         * Sorts given partition info to produce an ordered list of partitions
+         *
+         * @param allPartitionInfo  The partition info for all partitions being processed by all spout tasks
+         * @return sorted list of partitions being processed by all the tasks. The ordering must be consistent for all tasks.
+         */
         List<Partition> getOrderedPartitions(Partitions allPartitionInfo);
 
         /**
@@ -66,6 +73,25 @@ public interface IPartitionedTridentSpout<Partitions, Partition extends ISpoutPa
          * emitted.
          */
         void emitPartitionBatch(TransactionAttempt tx, TridentCollector collector, Partition partition, X partitionMeta);
+
+        /**
+         * Get the partitions assigned to the given task.
+         *
+         * @param taskId                 The id of the task
+         * @param numTasks               The number of tasks for the spout
+         * @param allPartitionInfoSorted The partition info of all partitions being processed by all spout tasks, sorted according to
+         *                               {@link #getOrderedPartitions(java.lang.Object)}
+         * @return The list of partitions that are to be processed by the task with {@code taskId}
+         */
+        default List<Partition> getPartitionsForTask(int taskId, int numTasks, List<Partition> allPartitionInfoSorted) {
+            List<Partition> taskPartitions = new ArrayList<>(allPartitionInfoSorted == null ? 0 : allPartitionInfoSorted.size());
+            if (allPartitionInfoSorted != null) {
+                for (int i = taskId; i < allPartitionInfoSorted.size(); i += numTasks) {
+                    taskPartitions.add(allPartitionInfoSorted.get(i));
+                }
+            }
+            return taskPartitions;
+        }
 
         void close();
     }

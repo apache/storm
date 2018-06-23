@@ -135,6 +135,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     private final List<Supervisor> supervisors;
     private final IStateStorage state;
     private final IStormClusterState clusterState;
+    private final String stormHomeBackup;
     private final List<TmpPath> tmpDirs;
     private final InProcessZookeeper zookeeper;
     private final IContext sharedContext;
@@ -193,6 +194,10 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             this.supervisors = new ArrayList<>();
             TmpPath nimbusTmp = new TmpPath();
             this.tmpDirs.add(nimbusTmp);
+            stormHomeBackup = System.getProperty(ConfigUtils.STORM_HOME);
+            TmpPath stormHome = new TmpPath();
+            this.tmpDirs.add(stormHome);
+            System.setProperty(ConfigUtils.STORM_HOME, stormHome.getPath());   
             Map<String, Object> conf = ConfigUtils.readStormConfig();
             conf.put(Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS, true);
             conf.put(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS, false);
@@ -536,6 +541,12 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
         if (time != null) {
             time.close();
+        }
+        
+        if (stormHomeBackup != null) {
+            System.setProperty(ConfigUtils.STORM_HOME, stormHomeBackup);
+        } else {
+            System.clearProperty(ConfigUtils.STORM_HOME);
         }
     }
 

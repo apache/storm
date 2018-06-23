@@ -148,7 +148,7 @@ public class ServerConfigUtils {
     }
 
     public static String absoluteHealthCheckDir(Map<String, Object> conf) {
-        String stormHome = System.getProperty("storm.home");
+        String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
         String healthCheckDir = (String) conf.get(DaemonConfig.STORM_HEALTH_CHECK_DIR);
         if (healthCheckDir == null) {
             return (stormHome + FILE_SEPARATOR + "healthchecks");

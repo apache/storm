@@ -31,8 +31,8 @@ import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +51,6 @@ import org.slf4j.LoggerFactory;
 public abstract class BlobStore implements Shutdownable {
     protected static final String BASE_BLOBS_DIR_NAME = "blobs";
     private static final Logger LOG = LoggerFactory.getLogger(BlobStore.class);
-    private static final Pattern KEY_PATTERN = Pattern.compile("^[\\w \\t\\._-]+$", Pattern.UNICODE_CHARACTER_CLASS);
     private static final KeyFilter<String> TO_TOPO_ID = (key) -> ConfigUtils.getIdFromBlobKey(key);
 
     /**
@@ -60,9 +59,7 @@ public abstract class BlobStore implements Shutdownable {
      * @param key Key for the blob.
      */
     public static final void validateKey(String key) throws IllegalArgumentException {
-        if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !KEY_PATTERN.matcher(key).matches()) {
-            LOG.error("'{}' does not appear to be valid. It must match {}. And it can't be \".\", \"..\", null or empty string.", key,
-                      KEY_PATTERN);
+        if (!Utils.isValidKey(key)) {
             throw new IllegalArgumentException(key + " does not appear to be a valid blob key");
         }
     }
