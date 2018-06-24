@@ -17,6 +17,7 @@
  */
 package org.apache.storm.daemon.supervisor.timer;
 
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.Supervisor;
@@ -97,7 +98,16 @@ public class UpdateBlobs implements Runnable {
      * @throws IOException
      */
     private void updateBlobsForTopology(Map<String, Object> conf, String stormId, Localizer localizer, String user) throws IOException {
-        Map<String, Object> topoConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
+        Map<String, Object> topoConf;
+        try {
+            topoConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
+        } catch (FileNotFoundException e) {
+            LOG.warn("Fail to find topology configuration file while updating blobs for topology. " +
+                    "This could be normal when topology conf file is just being evicted. " +
+                    "Will retry again later. ", e);
+            return;
+        }
+
         Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         List<LocalResource> localresources = SupervisorUtils.blobstoreMapToLocalresources(blobstoreMap);
         try {
