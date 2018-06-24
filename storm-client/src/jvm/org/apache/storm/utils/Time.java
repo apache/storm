@@ -12,10 +12,13 @@
 
 package org.apache.storm.utils;
 
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,26 +33,7 @@ public class Time {
     private static final AtomicLong AUTO_ADVANCE_NANOS_ON_SLEEP = new AtomicLong(0);
     private static final Map<Thread, AtomicLong> THREAD_SLEEP_TIMES_NANOS = new ConcurrentHashMap<>();
     private static final Object SLEEP_TIMES_LOCK = new Object();
-    private static final AtomicLong SIMULATED_CURR_TIME_NANOS = new AtomicLong(0);
-
-    @Deprecated
-    public static void startSimulating() {
-        synchronized (Time.SLEEP_TIMES_LOCK) {
-            Time.SIMULATING.set(true);
-            Time.SIMULATED_CURR_TIME_NANOS.set(0);
-            Time.THREAD_SLEEP_TIMES_NANOS.clear();
-            Time.AUTO_ADVANCE_NANOS_ON_SLEEP.set(0);
-            LOG.warn("Simulated Time Starting...");
-        }
-    }
-
-    @Deprecated
-    public static void stopSimulating() {
-        synchronized (Time.SLEEP_TIMES_LOCK) {
-            Time.SIMULATING.set(false);
-            LOG.warn("Simulated Time Ending...");
-        }
-    }
+    private static final AtomicLong SIMULATED_CURR_TIME_NANOS = new AtomicLong(0); 
 
     public static boolean isSimulating() {
         return SIMULATING.get();
@@ -82,45 +66,49 @@ public class Time {
     private static void simulatedSleepUntilNanos(long targetTimeNanos) throws InterruptedException {
         try {
             synchronized (SLEEP_TIMES_LOCK) {
-                if (THREAD_SLEEP_TIMES_NANOS == null) {
+                if (!SIMULATING.get()) {
                     LOG.debug("{} is still sleeping after simulated time disabled.", Thread.currentThread(),
-                              new RuntimeException("STACK TRACE"));
+                        new RuntimeException("STACK TRACE"));
                     throw new InterruptedException();
                 }
                 THREAD_SLEEP_TIMES_NANOS.put(Thread.currentThread(), new AtomicLong(targetTimeNanos));
             }
             while (SIMULATED_CURR_TIME_NANOS.get() < targetTimeNanos) {
                 synchronized (SLEEP_TIMES_LOCK) {
-                    if (THREAD_SLEEP_TIMES_NANOS == null) {
+                    if (!SIMULATING.get()) {
                         LOG.debug("{} is still sleeping after simulated time disabled.", Thread.currentThread(),
                                   new RuntimeException("STACK TRACE"));
                         throw new InterruptedException();
                     }
-                }
-                long autoAdvance = AUTO_ADVANCE_NANOS_ON_SLEEP.get();
-                if (autoAdvance > 0) {
-                    advanceTimeNanos(autoAdvance);
+                    long autoAdvance = AUTO_ADVANCE_NANOS_ON_SLEEP.get();
+                    if (autoAdvance > 0) {
+                        advanceTimeNanos(autoAdvance);
+                    }
                 }
                 Thread.sleep(10);
             }
         } finally {
-            synchronized (SLEEP_TIMES_LOCK) {
-                if (SIMULATING.get() && THREAD_SLEEP_TIMES_NANOS != null) {
-                    THREAD_SLEEP_TIMES_NANOS.remove(Thread.currentThread());
-                }
+            THREAD_SLEEP_TIMES_NANOS.remove(Thread.currentThread());
+        }
+    }
+    
+    public static void sleep(long ms) throws InterruptedException {
+        if (ms > 0) {
+            if (SIMULATING.get()) {
+                simulatedSleepUntilNanos(millisToNanos(currentTimeMillis() + ms));
+            } else {
+                Thread.sleep(ms);
             }
         }
     }
 
-    public static void sleep(long ms) throws InterruptedException {
-        if (ms > 0) {
-            sleepUntil(currentTimeMillis() + ms);
-        }
-    }
-
-    public static void sleepNanos(long nanos) throws InterruptedException {
+    public static void parkNanos(long nanos) throws InterruptedException {
         if (nanos > 0) {
-            sleepUntilNanos(nanoTime() + nanos);
+            if (SIMULATING.get()) {
+                simulatedSleepUntilNanos(nanoTime() + nanos);
+            } else {
+                LockSupport.parkNanos(nanos);
+            }
         }
     }
 
@@ -185,8 +173,17 @@ public class Time {
         if (nanos < 0) {
             throw new IllegalArgumentException("advanceTime only accepts positive time as an argument");
         }
-        long newTime = SIMULATED_CURR_TIME_NANOS.addAndGet(nanos);
-        LOG.debug("Advanced simulated time to {}", newTime);
+        synchronized (SLEEP_TIMES_LOCK) {
+            long newTime = SIMULATED_CURR_TIME_NANOS.addAndGet(nanos);
+            Iterator<AtomicLong> sleepTimesIter = THREAD_SLEEP_TIMES_NANOS.values().iterator();
+            while (sleepTimesIter.hasNext()) {
+                AtomicLong curr = sleepTimesIter.next();
+                if (SIMULATED_CURR_TIME_NANOS.get() >= curr.get()) {
+                    sleepTimesIter.remove();
+                }
+            }
+            LOG.debug("Advanced simulated time to {}", newTime);
+        }
     }
 
     public static void advanceTimeSecs(long secs) {
@@ -197,10 +194,7 @@ public class Time {
         if (!SIMULATING.get()) {
             throw new IllegalStateException("Must be in simulation mode");
         }
-        AtomicLong time;
-        synchronized (SLEEP_TIMES_LOCK) {
-            time = THREAD_SLEEP_TIMES_NANOS.get(t);
-        }
+        AtomicLong time = THREAD_SLEEP_TIMES_NANOS.get(t);
         return !t.isAlive() || time != null && nanoTime() < time.longValue();
     }
 
