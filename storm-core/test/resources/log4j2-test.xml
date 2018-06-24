@@ -26,6 +26,7 @@
         <!-- suppress ERROR org.apache.storm.blobstore.BlobStoreUtils - Could not update the blob with key: key when testing -->
         <Logger name="org.apache.storm.blobstore" level="FATAL" />
         <Logger name="org.apache.zookeeper" level="WARN"/>
+        <Logger name="org.apache.curator" level="WARN"/>
         <Root level="${env:LOG_LEVEL:-INFO}">
             <AppenderRef ref="Console"/>
         </Root>
