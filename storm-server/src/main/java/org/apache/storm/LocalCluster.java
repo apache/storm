@@ -196,8 +196,11 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             this.tmpDirs.add(nimbusTmp);
             stormHomeBackup = System.getProperty(ConfigUtils.STORM_HOME);
             TmpPath stormHome = new TmpPath();
+            if (!stormHome.getFile().mkdirs()) {
+                throw new IllegalStateException("Failed to create storm.home directory " + stormHome.getPath());
+            }
             this.tmpDirs.add(stormHome);
-            System.setProperty(ConfigUtils.STORM_HOME, stormHome.getPath());   
+            System.setProperty(ConfigUtils.STORM_HOME, stormHome.getPath());
             Map<String, Object> conf = ConfigUtils.readStormConfig();
             conf.put(Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS, true);
             conf.put(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS, false);
