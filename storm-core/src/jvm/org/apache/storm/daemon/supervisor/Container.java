@@ -275,10 +275,11 @@ public abstract class Container implements Killable {
     @Override
     public boolean areAllProcessesDead() throws IOException {
         Set<Long> pids = getAllPids();
-        String user = getWorkerUser();
+        String user = getRunWorkerAsUser();
         
         boolean allDead = true;
         for (Long pid: pids) {
+            LOG.debug("Checking if pid {} owner {} is alive", pid, user);
             if (!isProcessAlive(pid, user)) {
                 LOG.debug("{}: PID {} is dead", _workerId, pid);
             } else {
@@ -475,7 +476,18 @@ public abstract class Container implements Killable {
             throw new IllegalStateException("Could not recover the user for " + _workerId);
         }
     }
-    
+
+    /**
+     * Returns the user that the worker process is running as.
+     *
+     * The default behavior is to launch the worker as the user supervisor is running as (e.g. 'storm')
+     *
+     * @return the user that the worker process is running as.
+     */
+    protected String getRunWorkerAsUser() {
+        return System.getProperty("user.name");
+    }
+
     protected void saveWorkerUser(String user) throws IOException {
         _type.assertFull();
         LOG.info("SET worker-user {} {}", _workerId, user);
