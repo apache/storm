@@ -531,9 +531,9 @@ public class AsyncLocalizer implements AutoCloseable {
                 // go off to blobstore and get it
                 // assume dir passed in exists and has correct permission
                 LOG.debug("fetching blob: {}", key);
+                lrsrc.addReference(pna, localResource.needsCallback() ? cb : null);
                 futures.add(downloadOrUpdate(lrsrc));
                 results.add(lrsrc);
-                lrsrc.addReference(pna, localResource.needsCallback() ? cb : null);
             }
 
             for (CompletableFuture<?> futureRsrc : futures) {
