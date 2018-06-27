@@ -56,12 +56,13 @@ public class PacemakerClient implements ISaslClient {
     private LinkedBlockingQueue<Integer> availableMessageSlots;
     private ThriftNettyClientCodec.AuthMethod authMethod;
     private static final int maxRetries = 10;
+    private String host;
 
     private StormBoundedExponentialBackoffRetry backoff = new StormBoundedExponentialBackoffRetry(100, 5000, 20);
     private int retryTimes = 0;
 
     public PacemakerClient(Map<String, Object> config, String host) {
-
+        this.host = host;
         int port = (int) config.get(Config.PACEMAKER_PORT);
         client_name = (String) config.get(Config.TOPOLOGY_NAME);
         if (client_name == null) {
@@ -102,7 +103,7 @@ public class PacemakerClient implements ISaslClient {
         channelRef = new AtomicReference<>(null);
         setupMessaging();
 
-        ThreadFactory workerFactory = new NettyRenameThreadFactory("client-worker");
+        ThreadFactory workerFactory = new NettyRenameThreadFactory(this.host + "-pm");
         // 0 means DEFAULT_EVENT_LOOP_THREADS
         // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
@@ -153,13 +154,13 @@ public class PacemakerClient implements ISaslClient {
     }
 
     public HBMessage send(HBMessage m) throws PacemakerConnectionException, InterruptedException {
-        LOG.debug("Sending message: {}", m.toString());
+        LOG.debug("Sending pacemaker message to {}: {}", host, m);
 
         int next = availableMessageSlots.take();
         synchronized (m) {
             m.set_message_id(next);
             messages[next] = m;
-            LOG.debug("Put message in slot: {}", Integer.toString(next));
+            LOG.debug("Put message in slot: {} for {}", Integer.toString(next), host);
             int retry = maxRetries;
             while (true) {
                 try {
@@ -186,7 +187,7 @@ public class PacemakerClient implements ISaslClient {
                     throw new PacemakerConnectionException("couldn't get response after " + maxRetries + " attempts.");
                 }
                 retry--;
-                LOG.error("Not getting response or getting null response. Making {} more attempts.", retry);
+                LOG.error("Not getting response or getting null response. Making {} more attempts for {}.", retry, host);
             }
         }
     }
@@ -239,6 +240,7 @@ public class PacemakerClient implements ISaslClient {
     }
 
     public synchronized void doReconnect() {
+        LOG.info("reconnecting to {}", host);
         close_channel();
         if (!shutdown.get()) {
             bootstrap.connect(remote_addr);

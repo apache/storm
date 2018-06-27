@@ -96,53 +96,69 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
         KerberosSaslNettyClient saslNettyClient = getChannelSaslClient(channel);
         if (controlMessage == ControlMessage.SASL_COMPLETE_REQUEST) {
-                LOG.debug("Server has sent us the SaslComplete message. Allowing normal work to proceed.");
+            LOG.debug("Server has sent us the SaslComplete message. Allowing normal work to proceed.");
 
-                if (!saslNettyClient.isComplete()) {
+            if (!saslNettyClient.isComplete()) {
                 String errorMessage =
                     "Server returned a Sasl-complete message, but as far as we can tell, we are not authenticated yet.";
                 LOG.error(errorMessage);
                 throw new Exception(errorMessage);
-                }
+            }
             ctx.pipeline().remove(this);
             this.client.channelReady(channel);
 
             // We call fireChannelRead since the client is allowed to
-                // perform this request. The client's request will now proceed
-                // to the next pipeline component namely StormClientHandler.
+            // perform this request. The client's request will now proceed
+            // to the next pipeline component namely StormClientHandler.
             ctx.fireChannelRead(controlMessage);
-            } else {
+        } else {
             LOG.warn("Unexpected control message: {}", controlMessage);
-            }
+        }
     }
 
     private void handleSaslMessageToken(ChannelHandlerContext ctx, SaslMessageToken saslMessageToken) throws Exception {
         Channel channel = ctx.channel();
         KerberosSaslNettyClient saslNettyClient = getChannelSaslClient(channel);
-            LOG.debug("Responding to server's token of length: {}",
-            saslMessageToken.getSaslToken().length);
+        LOG.debug("Responding to server's token of length: {}", saslMessageToken.getSaslToken().length);
 
-            // Generate SASL response (but we only actually send the response if
-            // it's non-null.
-            byte[] responseToServer = saslNettyClient
-            .saslResponse(saslMessageToken);
-            if (responseToServer == null) {
-                // If we generate a null response, then authentication has completed
-                // (if not, warn), and return without sending a response back to the
-                // server.
-                LOG.debug("Response to server is null: authentication should now be complete.");
-                if (!saslNettyClient.isComplete()) {
-                    LOG.warn("Generated a null response, but authentication is not complete.");
-                    throw new Exception("Our reponse to the server is null, but as far as we can tell, we are not authenticated yet.");
-                }
-            this.client.channelReady(channel);
-            } else {
-                LOG.debug("Response to server token has length: {}",
-                          responseToServer.length);
-            // Construct a message containing the SASL response and send it to the
+        // Generate SASL response (but we only actually send the response if
+        // it's non-null.
+        byte[] responseToServer = saslNettyClient.saslResponse(saslMessageToken);
+        if (responseToServer == null) {
+            // If we generate a null response, then authentication has completed
+            // (if not, warn), and return without sending a response back to the
             // server.
+            LOG.debug("Response to server is null: authentication should now be complete.");
+            if (!saslNettyClient.isComplete()) {
+                LOG.warn("Generated a null response, but authentication is not complete.");
+                throw new Exception("Our reponse to the server is null, but as far as we can tell, we are not authenticated yet.");
+            }
+            this.client.channelReady(channel);
+        } else {
+            LOG.debug("Response to server token has length: {}",
+                      responseToServer.length);
+            // Construct a message containing the SASL response and send it to the server.
             SaslMessageToken saslResponse = new SaslMessageToken(responseToServer);
             channel.writeAndFlush(saslResponse, channel.voidPromise());
         }
+    }
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelRegistered(ctx);
+        LOG.debug("channelRegistered {}", ctx);
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelUnregistered(ctx);
+        LOG.debug("channelUnregistered {}", ctx);
+
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        LOG.warn("{} exceptionCaught", ctx, cause);
+        super.exceptionCaught(ctx, cause);
     }
 }

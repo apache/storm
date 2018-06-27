@@ -64,7 +64,8 @@ public class PacemakerClientPool {
                 HBMessage response = getClientForServer(s).send(m);
                 responses.add(response);
             } catch (PacemakerConnectionException e) {
-                LOG.warn("Failed to connect to the pacemaker server {}", s);
+                LOG.warn("Failed to connect to the pacemaker server {}, attempting to reconnect", s);
+                getClientForServer(s).reconnect();
             }
         }
         if (responses.size() == 0) {
