@@ -18,10 +18,10 @@
 
 package org.apache.storm.ui;
 
-import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
-import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
+import org.apache.storm.security.auth.ServerAuthUtils;
 import org.apache.storm.ui.filters.AuthorizedUserFilter;
 import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
@@ -43,7 +43,7 @@ public class Main {
 
     public static void addRequestContextFilter(ServletContextHandler context,
                                                String configName, Map<String, Object> conf) {
-        IHttpCredentialsPlugin auth = AuthUtils.GetHttpCredentialsPlugin(conf, (String) conf.get(configName));
+        IHttpCredentialsPlugin auth = ServerAuthUtils.getHttpCredentialsPlugin(conf, (String) conf.get(configName));
         ReqContextFilter filter = new ReqContextFilter(auth);
         context.addFilter(new FilterHolder(filter), "/*", EnumSet.allOf(DispatcherType.class));
     }
@@ -67,26 +67,9 @@ public class Main {
         Server jettyServer = new Server(4443);
         jettyServer.setHandler(context);
 
-        addRequestContextFilter(context, Config.DRPC_HTTP_CREDS_PLUGIN, conf);
+        addRequestContextFilter(context, DaemonConfig.DRPC_HTTP_CREDS_PLUGIN, conf);
 
         context.addServlet(jerseyServlet, "/*");
-
-        /*
-        ServletHolder jerseyServlet = context.addServlet(
-                org.glassfish.jersey.servlet.ServletContainer.class, "/*");
-        jerseyServlet.setInitOrder(0);
-
-        StormUiApplication rc = new StormUiApplication();
-        List<String> classNames = new ArrayList();
-        for(Class c : rc.getClasses()) {
-            classNames.add(c.getCanonicalName());
-        }
-        // Tells the Jersey Servlet which REST service/class to load.
-        jerseyServlet.setInitParameter(
-                "jersey.config.server.provider.classnames",
-                String.join(",", classNames)
-        );
-        */
 
         try {
             jettyServer.start();
