@@ -55,5 +55,7 @@ public class Constants {
     public static final String COMMON_ONHEAP_MEMORY_RESOURCE_NAME = "onheap.memory.mb";
     public static final String COMMON_OFFHEAP_MEMORY_RESOURCE_NAME = "offheap.memory.mb";
     public static final String COMMON_TOTAL_MEMORY_RESOURCE_NAME = "memory.mb";
+
+    public static final String STORM_API_URL_PREFIX = "/api/v1/";
 }
     

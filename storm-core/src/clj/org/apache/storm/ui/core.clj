@@ -86,7 +86,7 @@
 (def ui:num-topology-lag-http-requests (StormMetricsRegistry/registerMeter "ui:num-topology-lag-http-requests"))
 (def ui:num-get-owner-resource-summaries-http-requests (StormMetricsRegistry/registerMeter "ui:num-get-owner-resource-summaries-http-request"))
 
-(defn assert-authorized-user
+(defn  assert-authorized-user
   ([op]
     (assert-authorized-user op nil))
   ([op topology-conf]
@@ -807,7 +807,7 @@
                           {"stream_id" (str key)}))]
     (reduce-kv #(conj %1 (merge (fn-key-to-str %2) {"value" (agg-val-fn %3)})) '() stats-map)))
 
-(defn- merge-stats-specific-field-by-stream
+(defn-  merge-stats-specific-field-by-stream
   [window field-fn agg-val-fn stats]
   (reduce-conj-specific-stats-by-field agg-val-fn
     (conj-specific-stats-by-field window field-fn stats)))

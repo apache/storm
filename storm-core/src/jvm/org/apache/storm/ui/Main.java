@@ -18,26 +18,60 @@
 
 package org.apache.storm.ui;
 
-import org.apache.storm.ui.resources.StormApiResource;
+import org.apache.storm.Config;
+import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IHttpCredentialsPlugin;
+import org.apache.storm.ui.filters.AuthorizedUserFilter;
+import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.servlet.DispatcherType;
+import java.util.EnumSet;
+import java.util.Map;
 
 /**
  * Main class.
  *
  */
 public class Main {
+
+    public static void addRequestContextFilter(ServletContextHandler context,
+                                               String configName, Map<String, Object> conf) {
+        IHttpCredentialsPlugin auth = AuthUtils.GetHttpCredentialsPlugin(conf, (String) conf.get(configName));
+        ReqContextFilter filter = new ReqContextFilter(auth);
+        context.addFilter(new FilterHolder(filter), "/*", EnumSet.allOf(DispatcherType.class));
+    }
+
     public static void main(String[] args) throws Exception {
+
+        Map<String, Object> conf = Utils.readStormConfig();
+
+        ResourceConfig config = new ResourceConfig().packages("org.apache.storm.ui.resources")
+                .register(AuthorizedUserFilter.class);
+
+
+        ServletHolder jerseyServlet = new ServletHolder(new ServletContainer(config));
+        jerseyServlet.setInitOrder(0);
+
+
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
+
 
         Server jettyServer = new Server(4443);
         jettyServer.setHandler(context);
 
+        addRequestContextFilter(context, Config.DRPC_HTTP_CREDS_PLUGIN, conf);
+
+        context.addServlet(jerseyServlet, "/*");
+
+        /*
         ServletHolder jerseyServlet = context.addServlet(
                 org.glassfish.jersey.servlet.ServletContainer.class, "/*");
         jerseyServlet.setInitOrder(0);
@@ -52,6 +86,7 @@ public class Main {
                 "jersey.config.server.provider.classnames",
                 String.join(",", classNames)
         );
+        */
 
         try {
             jettyServer.start();
