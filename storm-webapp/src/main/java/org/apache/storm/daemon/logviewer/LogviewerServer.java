@@ -36,7 +36,7 @@ import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.daemon.logviewer.webapp.LogviewerApplication;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.ui.FilterConfiguration;
-import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.ui.UiHelpers;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
@@ -82,9 +82,9 @@ public class LogviewerServer implements AutoCloseable {
             final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_NEED_CLIENT_AUTH));
 
             LogviewerApplication.setup(conf);
-            ret = UIHelpers.jettyCreateServer(logviewerHttpPort, null, httpsPort);
+            ret = UiHelpers.jettyCreateServer(logviewerHttpPort, null, httpsPort);
 
-            UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
+            UiHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
                     httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
 
             ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
@@ -106,7 +106,7 @@ public class LogviewerServer implements AutoCloseable {
             jerseyServlet.setInitOrder(2);
             jerseyServlet.setInitParameter("javax.ws.rs.Application", LogviewerApplication.class.getName());
 
-            UIHelpers.configFilters(context, filterConfigurations);
+            UiHelpers.configFilters(context, filterConfigurations);
         }
         return ret;
     }

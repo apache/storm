@@ -23,7 +23,7 @@
   (:use [org.apache.storm.util :only [clojurify-structure defnk not-nil?]])
   (:use [clj-time coerce format])
   (:import [org.apache.storm.generated ExecutorInfo ExecutorSummary]
-           [org.apache.storm.ui UIHelpers]
+           [org.apache.storm.ui UiHelpers]
            [org.apache.storm.metric StormMetricsRegistry])
   (:import [org.apache.storm.logging.filters AccessLoggingFilter])
   (:import [java.util EnumSet]
@@ -56,7 +56,7 @@
 
 ;; TODO this function and its callings will be replace when ui.core and logviewer move to Java
 (defnk json-response
-  [data callback :need-serialize true :status 200 :headers {}]
-  {:status status
-   :headers (UIHelpers/getJsonResponseHeaders callback headers)
-   :body (UIHelpers/getJsonResponseBody data callback need-serialize)})
+       [data callback :need-serialize true :status 200 :headers {}]
+       {:status status
+   :headers (UiHelpers/getJsonResponseHeaders callback headers)
+   :body (UiHelpers/getJsonResponseBody data callback need-serialize)})

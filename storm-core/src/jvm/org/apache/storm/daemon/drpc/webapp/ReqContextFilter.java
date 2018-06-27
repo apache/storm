@@ -28,10 +28,14 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.container.PreMatching;
+import javax.ws.rs.ext.Provider;
 
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.security.auth.ReqContext;
 
+@Provider
+@PreMatching
 public class ReqContextFilter implements Filter {
     private final IHttpCredentialsPlugin httpCredsHandler;
 

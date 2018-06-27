@@ -22,10 +22,10 @@ import java.util.Collections;
 import java.util.Map;
 import javax.ws.rs.core.Response;
 
-import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.ui.UiHelpers;
 
 /**
- * Response builder for JSON. It utilizes {@link UIHelpers} to construct JSON body and headers.
+ * Response builder for JSON. It utilizes {@link UiHelpers} to construct JSON body and headers.
  */
 public class JsonResponseBuilder {
     private Object data;
@@ -65,8 +65,8 @@ public class JsonResponseBuilder {
      * @return A Response.
      */
     public Response build() {
-        String body = UIHelpers.getJsonResponseBody(data, callback, needSerialize);
-        Map<String, Object> respHeaders = UIHelpers.getJsonResponseHeaders(callback, headers);
+        String body = UiHelpers.getJsonResponseBody(data, callback, needSerialize);
+        Map<String, Object> respHeaders = UiHelpers.getJsonResponseHeaders(callback, headers);
         Response.ResponseBuilder respBuilder = Response.status(status).entity(body);
         respHeaders.forEach(respBuilder::header);
         return respBuilder.build();

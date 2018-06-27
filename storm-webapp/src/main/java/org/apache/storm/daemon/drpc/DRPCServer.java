@@ -37,7 +37,7 @@ import org.apache.storm.security.auth.ServerAuthUtils;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
 import org.apache.storm.ui.FilterConfiguration;
-import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.ui.UiHelpers;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
@@ -104,9 +104,9 @@ public class DRPCServer implements AutoCloseable {
 
             //TODO a better way to do this would be great.
             DRPCApplication.setup(drpc);
-            ret = UIHelpers.jettyCreateServer(drpcHttpPort, null, httpsPort);
+            ret = UiHelpers.jettyCreateServer(drpcHttpPort, null, httpsPort);
             
-            UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
+            UiHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
                     httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
             
             ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
@@ -117,7 +117,7 @@ public class DRPCServer implements AutoCloseable {
             jerseyServlet.setInitOrder(1);
             jerseyServlet.setInitParameter("javax.ws.rs.Application", DRPCApplication.class.getName());
             
-            UIHelpers.configFilters(context, filterConfigurations);
+            UiHelpers.configFilters(context, filterConfigurations);
             addRequestContextFilter(context, DaemonConfig.DRPC_HTTP_CREDS_PLUGIN, conf);
         }
         return ret;
