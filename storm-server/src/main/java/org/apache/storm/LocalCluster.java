@@ -703,6 +703,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public void advanceClusterTime(int secs, int incSecs) throws InterruptedException {
+        waitForIdle();
         for (int amountLeft = secs; amountLeft > 0; amountLeft -= incSecs) {
             int diff = Math.min(incSecs, amountLeft);
             Time.advanceTimeSecs(diff);

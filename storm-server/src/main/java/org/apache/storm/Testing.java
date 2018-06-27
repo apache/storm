@@ -82,7 +82,7 @@ public class Testing {
      * passed
      * @param condition what we are waiting for
      * @param body what to run in the loop
-     * @throws AssertionError if teh loop timed out.
+     * @throws AssertionError if the loop timed out.
      */
     public static void whileTimeout(Condition condition, Runnable body) {
         whileTimeout(TEST_TIMEOUT_MS, condition, body);
@@ -94,7 +94,7 @@ public class Testing {
      * @param timeoutMs the number of ms to wait before timing out.
      * @param condition what we are waiting for
      * @param body what to run in the loop
-     * @throws AssertionError if teh loop timed out.
+     * @throws AssertionError if the loop timed out.
      */
     public static void whileTimeout(long timeoutMs, Condition condition, Runnable body) {
         long endTime = System.currentTimeMillis() + timeoutMs;
