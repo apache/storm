@@ -1025,7 +1025,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 state = MachineState.RUNNING;
             }
 
-            this.startTime = System.currentTimeMillis();
+            this.startTime = Time.currentTimeMillis();
             this.newAssignment = newAssignment;
             this.pendingLocalization = null;
             this.pendingDownload = null;
