@@ -21,11 +21,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Timed<T> implements TimerDecorated {
     private final T measured;
     //TODO: Does this have to volatile?
-    private final AtomicReference<Timer.Context> timingRef = new AtomicReference<>();
+    private final AtomicReference<Timer.Context> timingRef;
 
     public Timed(T measured, Timer timer) {
         this.measured = measured;
-        this.timingRef.set(timer.time());
+        timingRef = new AtomicReference<>(timer.time());
     }
 
     public T getMeasured() {

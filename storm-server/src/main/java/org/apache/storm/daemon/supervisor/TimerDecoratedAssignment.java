@@ -24,20 +24,11 @@ import org.apache.storm.metric.timed.TimerDecorated;
 
 public class TimerDecoratedAssignment extends LocalAssignment implements TimerDecorated {
     //TODO: Does this have to volatile?
-    private final AtomicReference<Timer.Context> timingRef = new AtomicReference<>();
+    private final AtomicReference<Timer.Context> timingRef;
 
-    public TimerDecoratedAssignment(Timer.Context timing) {
-        this.timingRef.set(timing);
-    }
-
-    public TimerDecoratedAssignment(String topology_id, List<ExecutorInfo> executors, Timer.Context timing) {
-        super(topology_id, executors);
-        this.timingRef.set(timing);
-    }
-
-    public TimerDecoratedAssignment(LocalAssignment other, Timer.Context timing) {
+    public TimerDecoratedAssignment(LocalAssignment other, Timer timer) {
         super(other);
-        this.timingRef.set(timing);
+        timingRef = new AtomicReference<>(timer.time());
     }
 
     @Override

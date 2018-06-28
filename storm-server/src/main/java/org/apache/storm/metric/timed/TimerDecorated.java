@@ -19,6 +19,7 @@ import com.codahale.metrics.Timer;
 import java.util.concurrent.atomic.AtomicReference;
 
 public interface TimerDecorated extends AutoCloseable {
+
     boolean hasStopped();
 
     default boolean hasStopped(final AtomicReference<Timer.Context> timing) {
@@ -31,14 +32,12 @@ public interface TimerDecorated extends AutoCloseable {
      * Stop the timer for measured object. Should be executed only once.
      *
      * @return Time a object is in use, or under measurement, in nanoseconds.
-     * @throws NullPointerException this method is called more than once.
+     * @throws NullPointerException if this method is called more than once.
      */
-    default long stopTiming(final AtomicReference<Timer.Context> timingRef) throws NullPointerException {
+    default long stopTiming(final AtomicReference<Timer.Context> timingRef) {
         Timer.Context timing = timingRef.getAndSet(null);
-        if (timing != null) {
-            return timing.stop();
-        }
-        throw new NullPointerException("Timer for this object has stopped and cleared");
+        assert timing != null;
+        return timing.stop();
     }
 
     @Override

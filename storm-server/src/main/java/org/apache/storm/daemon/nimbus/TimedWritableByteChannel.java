@@ -22,6 +22,7 @@ import java.nio.channels.WritableByteChannel;
 import org.apache.storm.metric.timed.TimedResource;
 
 public class TimedWritableByteChannel extends TimedResource<WritableByteChannel> implements WritableByteChannel {
+
     public TimedWritableByteChannel(WritableByteChannel measured, Timer timer) {
         super(measured, timer);
     }

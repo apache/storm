@@ -17,13 +17,17 @@ package org.apache.storm.metric.timed;
 import com.codahale.metrics.Timer;
 
 public class TimedResource<T extends AutoCloseable> extends Timed<T> {
+
     public TimedResource(T measured, Timer timer) {
         super(measured, timer);
     }
 
     @Override
     public void close() throws Exception {
-        super.close();
-        getMeasured().close();
+        try {
+            super.close();
+        } finally {
+            getMeasured().close();
+        }
     }
 }
