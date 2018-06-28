@@ -14,11 +14,11 @@ addons:
     - node1
 
 env:
-  - MODULES=storm-client
-  - MODULES=storm-server
-  - MODULES=storm-core
-  - MODULES='!storm-client,!storm-server,!storm-core'
-  - MODULES='INTEGRATION-TEST'
+  - MODULES=Client
+  - MODULES=Server
+  - MODULES=Core
+  - MODULES=External
+  - MODULES=Integration-Test
 
 dist: trusty
 sudo: required
