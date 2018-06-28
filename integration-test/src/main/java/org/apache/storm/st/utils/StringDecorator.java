@@ -19,6 +19,11 @@ package org.apache.storm.st.utils;
 
 import org.apache.commons.lang.StringUtils;
 
+/**
+ * This class provides a method to pass data from the test bolts and spouts to the test method, via the worker log.
+ * Test components can use {@link #decorate(java.lang.String, java.lang.String) } to create a string containing a unique prefix. 
+ * Such prefixed log lines can be retrieved from the worker logs, and recognized via {@link #isDecorated(java.lang.String) }.
+ */
 public class StringDecorator {
 
     private static final String UNIQUE_PREFIX = "---bed91874d79720f7e324c43d49dba4ff---";
