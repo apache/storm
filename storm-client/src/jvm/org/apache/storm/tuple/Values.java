@@ -23,9 +23,11 @@ public class Values extends ArrayList<Object> {
     }
 
     public Values(Object... vals) {
-        super(vals.length);
-        for (Object o : vals) {
-            add(o);
+        super(vals != null ? vals.length : 0);
+        if (vals != null && vals.length != 0 ) {
+            for (Object o : vals) {
+                add(o);
+            }
         }
     }
 }
