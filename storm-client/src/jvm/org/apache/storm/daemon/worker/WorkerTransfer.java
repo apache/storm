@@ -88,9 +88,6 @@ class WorkerTransfer implements JCQueue.Consumer {
 
     @Override
     public void accept(Object tuple) {
-        if (tuple == JCQueue.INTERRUPT) {
-            throw new RuntimeException(new InterruptedException("Worker Transfer Thread interrupted"));
-        }
         TaskMessage tm = (TaskMessage) tuple;
         drainer.add(tm);
     }
@@ -138,7 +135,7 @@ class WorkerTransfer implements JCQueue.Consumer {
 
 
     public void haltTransferThd() {
-        transferQueue.haltWithInterrupt();
+        transferQueue.close();
     }
 
 }

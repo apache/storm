@@ -18,6 +18,7 @@
 
 package org.apache.storm.utils;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +37,7 @@ import org.apache.storm.shade.org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JCQueue implements IStatefulObject {
-    public static final Object INTERRUPT = new Object();
+public class JCQueue implements IStatefulObject, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(JCQueue.class);
     private static final String PREFIX = "jc-";
     private static final ScheduledThreadPoolExecutor METRICS_REPORTER_EXECUTOR =
@@ -57,7 +57,7 @@ public class JCQueue implements IStatefulObject {
     private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
     private final JCQueue.QueueMetrics metrics;
     private final IWaitStrategy backPressureWaitStrategy;
-    private String queueName;
+    private final String queueName;
 
     public JCQueue(String queueName, int size, int overflowLimit, int producerBatchSz, IWaitStrategy backPressureWaitStrategy,
                    String topologyId, String componentId, Integer taskId, int port) {
@@ -87,11 +87,11 @@ public class JCQueue implements IStatefulObject {
         return queueName;
     }
 
-    public boolean haltWithInterrupt() {
-        boolean res = tryPublishInternal(INTERRUPT);
-        metrics.close();
+    @Override
+    public void close() {
+        //No need to block, the task run by the executor is safe to run even after metrics are closed
         METRICS_REPORTER_EXECUTOR.shutdown();
-        return res;
+        metrics.close();
     }
 
     /**
@@ -425,7 +425,7 @@ public class JCQueue implements IStatefulObject {
     /**
      * This inner class provides methods to access the metrics of the JCQueue.
      */
-    public class QueueMetrics {
+    public class QueueMetrics implements Closeable {
         private final RateTracker arrivalsTracker = new RateTracker(10000, 10);
         private final RateTracker insertFailuresTracker = new RateTracker(10000, 10);
         private final AtomicLong droppedMessages = new AtomicLong(0);
@@ -477,6 +477,7 @@ public class JCQueue implements IStatefulObject {
             droppedMessages.incrementAndGet();
         }
 
+        @Override
         public void close() {
             arrivalsTracker.close();
             insertFailuresTracker.close();

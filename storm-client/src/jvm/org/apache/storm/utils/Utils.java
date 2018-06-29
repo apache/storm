@@ -347,6 +347,9 @@ public class Utils {
                 try {
                     final Callable<Long> fn = isFactory ? (Callable<Long>) afn.call() : afn;
                     while (true) {
+                        if (Thread.interrupted()) {
+                            throw new InterruptedException();
+                        }
                         final Long s = fn.call();
                         if (s == null) { // then stop running it
                             break;

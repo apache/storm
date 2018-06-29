@@ -12,15 +12,14 @@
 
 package org.apache.storm.utils;
 
-import junit.framework.TestCase;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue.Consumer;
 import org.junit.Assert;
 import org.junit.Test;
 
 
-public class JCQueueBackpressureTest extends TestCase {
-
+public class JCQueueBackpressureTest {
+    
     private static JCQueue createQueue(String name, int queueSize) {
         return new JCQueue(name, queueSize, 0, 1, new WaitStrategyPark(0), "test", "test", 1000, 1000);
     }
@@ -41,7 +40,8 @@ public class JCQueueBackpressureTest extends TestCase {
         TestConsumer consumer = new TestConsumer();
         queue.consume(consumer);
         Assert.assertEquals(MESSAGES, consumer.lastMsg);
-
+        
+        queue.close();
     }
 
     // check that tryPublish() & tryOverflowPublish() work as expected
@@ -69,6 +69,8 @@ public class JCQueueBackpressureTest extends TestCase {
         queue.consume(new TestConsumer(), () -> consumeCount.increment() <= 1);
         Assert.assertEquals(CAPACITY - 1, queue.size());
         Assert.assertTrue(queue.tryPublish(0));
+        
+        queue.close();
     }
 
     private static class TestConsumer implements Consumer {

@@ -20,7 +20,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class JCQueueTest {
 
@@ -43,7 +42,7 @@ public class JCQueueTest {
 
                 @Override
                 public void accept(Object event) {
-                    if (event == JCQueue.INTERRUPT) {
+                    if (Thread.currentThread().isInterrupted()) {
                         throw new RuntimeException(new InterruptedException("ConsumerThd interrupted"));
                     }
                     if (head) {
@@ -147,8 +146,8 @@ public class JCQueueTest {
             assertFalse("producer " + i + " is still alive", producerThreads[i].isAlive());
         }
 
-        Thread.sleep(sleepMs);
-        assertTrue("Unable to send halt interrupt", queue.haltWithInterrupt());
+        queue.close();
+        consumerThread.interrupt();
         consumerThread.join(TIMEOUT);
         assertFalse("consumer is still alive", consumerThread.isAlive());
     }
@@ -193,12 +192,8 @@ public class JCQueueTest {
 
         @Override
         public void run() {
-            try {
-                while (true) {
-                    queue.consume(handler);
-                }
-            } catch (RuntimeException e) {
-                //break
+            while (!Thread.currentThread().isInterrupted()) {
+                queue.consume(handler);
             }
         }
     }
