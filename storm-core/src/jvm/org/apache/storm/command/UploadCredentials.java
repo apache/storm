@@ -14,10 +14,19 @@ package org.apache.storm.command;
 
 import java.io.FileReader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.ClusterSummary;
+import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +37,7 @@ public class UploadCredentials {
     public static void main(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("f", "file", null)
                                     .arg("topologyName", CLI.FIRST_WINS)
-                                    .arg("rawCredentials", CLI.INTO_LIST)
+                                    .optionalArg("rawCredentials", CLI.INTO_LIST)
                                     .parse(args);
 
         String credentialFile = (String) cl.get("f");
@@ -52,7 +61,37 @@ public class UploadCredentials {
                 credentialsMap.put(rawCredentials.get(i), rawCredentials.get(i + 1));
             }
         }
-        StormSubmitter.pushCredentials(topologyName, new HashMap<>(), credentialsMap);
+
+        Map<String, Object> topologyConf = new HashMap<>();
+        //Try to get the topology conf from nimbus, so we can reuse it.
+        try (NimbusClient nc = NimbusClient.getConfiguredClient(new HashMap<>())) {
+            Nimbus.Iface client = nc.getClient();
+            ClusterSummary summary = client.getClusterInfo();
+            for (TopologySummary topo : summary.get_topologies()) {
+                if (topologyName.equals(topo.get_name())) {
+                    //We found the topology, lets get the conf
+                    String topologyId = topo.get_id();
+                    topologyConf = (Map<String, Object>) JSONValue.parse(client.getTopologyConf(topologyId));
+                    LOG.info("Using topology conf from {} as basis for getting new creds", topologyId);
+
+                    Map<String, Object> commandLine = Utils.readCommandLineOpts();
+                    List<String> clCreds = (List<String>)commandLine.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+                    List<String> topoCreds = (List<String>)topologyConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+                    
+                    if (clCreds != null) {
+                        Set<String> extra = new HashSet<>(clCreds);
+                        if (topoCreds != null) {
+                            extra.removeAll(topoCreds);
+                        }
+                        if (!extra.isEmpty()) {
+                            LOG.warn("The topology {} is not using {} but they were included here.", topologyId, extra);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap);
         LOG.info("Uploaded new creds to topology: {}", topologyName);
     }
 }

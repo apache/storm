@@ -109,7 +109,7 @@ public class CLI {
      * @param longName the multi character name of the option (no `--` characters proceed it).
      * @return a builder to be used to continue creating the command line.
      */
-    public CLIBuilder boolOpt(String shortName, String longName) {
+    public static CLIBuilder boolOpt(String shortName, String longName) {
         return new CLIBuilder().boolOpt(shortName, longName);
     }
 
@@ -118,7 +118,7 @@ public class CLI {
      * @param name the name of the argument.
      * @return a builder to be used to continue creating the command line.
      */
-    public CLIBuilder arg(String name) {
+    public static CLIBuilder arg(String name) {
         return new CLIBuilder().arg(name);
     }
 
@@ -128,7 +128,7 @@ public class CLI {
      * @param assoc an association command to decide what to do if the argument appears multiple times.  If null INTO_LIST is used.
      * @return a builder to be used to continue creating the command line.
      */
-    public CLIBuilder arg(String name, Assoc assoc) {
+    public static CLIBuilder arg(String name, Assoc assoc) {
         return new CLIBuilder().arg(name, assoc);
     }
 
@@ -138,7 +138,7 @@ public class CLI {
      * @param parse an optional function to transform the string to something else. If null a NOOP is used.
      * @return a builder to be used to continue creating the command line.
      */
-    public CLIBuilder arg(String name, Parse parse) {
+    public static CLIBuilder arg(String name, Parse parse) {
         return new CLIBuilder().arg(name, parse);
     }
 
@@ -149,8 +149,48 @@ public class CLI {
      * @param assoc an association command to decide what to do if the argument appears multiple times.  If null INTO_LIST is used.
      * @return a builder to be used to continue creating the command line.
      */
-    public CLIBuilder arg(String name, Parse parse, Assoc assoc) {
+    public static CLIBuilder arg(String name, Parse parse, Assoc assoc) {
         return new CLIBuilder().arg(name, parse, assoc);
+    }
+
+    /**
+     * Add a named argument that is optional.
+     * @param name the name of the argument.
+     * @return a builder to be used to continue creating the command line.
+     */
+    public static CLIBuilder optionalArg(String name) {
+        return new CLIBuilder().optionalArg(name);
+    }
+
+    /**
+     * Add a named argument that is optional.
+     * @param name the name of the argument.
+     * @param assoc an association command to decide what to do if the argument appears multiple times.  If null INTO_LIST is used.
+     * @return a builder to be used to continue creating the command line.
+     */
+    public static CLIBuilder optionalArg(String name, Assoc assoc) {
+        return new CLIBuilder().optionalArg(name, assoc);
+    }
+
+    /**
+     * Add a named argument that is optional.
+     * @param name the name of the argument.
+     * @param parse an optional function to transform the string to something else. If null a NOOP is used.
+     * @return a builder to be used to continue creating the command line.
+     */
+    public static CLIBuilder optionalArg(String name, Parse parse) {
+        return new CLIBuilder().optionalArg(name, parse);
+    }
+
+    /**
+     * Add a named argument that is optional.
+     * @param name the name of the argument.
+     * @param parse an optional function to transform the string to something else. If null a NOOP is used.
+     * @param assoc an association command to decide what to do if the argument appears multiple times.  If null INTO_LIST is used.
+     * @return a builder to be used to continue creating the command line.
+     */
+    public static CLIBuilder optionalArg(String name, Parse parse, Assoc assoc) {
+        return new CLIBuilder().optionalArg(name, parse, assoc);
     }
 
     public interface Parse {
@@ -213,6 +253,7 @@ public class CLI {
     public static class CLIBuilder {
         private final ArrayList<Opt> opts = new ArrayList<>();
         private final ArrayList<Arg> args = new ArrayList<>();
+        private final ArrayList<Arg> optionalArgs = new ArrayList<>();
 
         /**
          * Add an option to be parsed.
@@ -299,7 +340,51 @@ public class CLI {
          * @return a builder to be used to continue creating the command line.
          */
         public CLIBuilder arg(String name, Parse parse, Assoc assoc) {
+            if (!optionalArgs.isEmpty()) {
+                throw new IllegalStateException("Cannot have a required argument after adding in an optional argument");
+            }
             args.add(new Arg(name, parse, assoc));
+            return this;
+        }
+
+        /**
+         * Add a named argument that is optional.
+         * @param name the name of the argument.
+         * @return a builder to be used to continue creating the command line.
+         */
+        public CLIBuilder optionalArg(String name) {
+            return optionalArg(name, null, null);
+        }
+
+        /**
+         * Add a named argument that is optional.
+         * @param name the name of the argument.
+         * @param assoc an association command to decide what to do if the argument appears multiple times.  If null INTO_LIST is used.
+         * @return a builder to be used to continue creating the command line.
+         */
+        public CLIBuilder optionalArg(String name, Assoc assoc) {
+            return optionalArg(name, null, assoc);
+        }
+
+        /**
+         * Add a named argument that is optional.
+         * @param name the name of the argument.
+         * @param parse an optional function to transform the string to something else. If null a NOOP is used.
+         * @return a builder to be used to continue creating the command line.
+         */
+        public CLIBuilder optionalArg(String name, Parse parse) {
+            return optionalArg(name, parse, null);
+        }
+
+        /**
+         * Add a named argument that is optional.
+         * @param name the name of the argument.
+         * @param parse an optional function to transform the string to something else. If null a NOOP is used.
+         * @param assoc an association command to decide what to do if the argument appears multiple times.  If null INTO_LIST is used.
+         * @return a builder to be used to continue creating the command line.
+         */
+        public CLIBuilder optionalArg(String name, Parse parse, Assoc assoc) {
+            optionalArgs.add(new Arg(name, parse, assoc));
             return this;
         }
 
@@ -341,6 +426,8 @@ public class CLI {
                     ret.put(opt.shortName, current);
                 }
             }
+            List<Arg> fullArgs = new ArrayList<>(args);
+            fullArgs.addAll(optionalArgs);
             List<String> stringArgs = cl.getArgList();
             if (args.size() > stringArgs.size()) {
                 throw new RuntimeException("Wrong number of arguments at least " + args.size()
@@ -349,10 +436,10 @@ public class CLI {
 
             int argIndex = 0;
             int stringArgIndex = 0;
-            if (args.size() > 0) {
-                while (argIndex < args.size()) {
-                    Arg arg = args.get(argIndex);
-                    boolean isLastArg = (argIndex == (args.size() - 1));
+            if (fullArgs.size() > 0) {
+                while (argIndex < fullArgs.size()) {
+                    Arg arg = fullArgs.get(argIndex);
+                    boolean isLastArg = (argIndex == (fullArgs.size() - 1));
                     Object current = null;
                     int maxStringIndex = isLastArg ? stringArgs.size() : (stringArgIndex + 1);
                     for (; stringArgIndex < maxStringIndex; stringArgIndex++) {

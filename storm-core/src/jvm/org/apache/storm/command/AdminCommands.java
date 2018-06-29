@@ -30,6 +30,7 @@ import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.generated.Credentials;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.shade.org.apache.zookeeper.ZkCli;
 import org.apache.storm.utils.ConfigUtils;
@@ -80,6 +81,29 @@ public class AdminCommands {
         }
     }
 
+    private static class CredentialsDebug implements AdminCommand {
+        @Override
+        public void run(String[] args, Map<String, Object> conf, String command) throws Exception {
+            // We are pretending to be nimbus here.
+            IStormClusterState state = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
+            for (String topologyId: args) {
+                System.out.println(topologyId + ":");
+                Credentials creds = state.credentials(topologyId, null);
+                if (creds != null) {
+                    for (String key : creds.get_creds().keySet()) {
+                        System.out.println("\t" + key);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void printCliHelp(String command, PrintStream out) {
+            out.println(command + " topology_id:");
+            out.println("\tPrint the credential keys for a topology.");
+        }
+    }
+
     private static class Help implements AdminCommand {
 
         @Override
@@ -109,6 +133,7 @@ public class AdminCommands {
     static {
         COMMANDS.put("remove_corrupt_topologies", new RemoveCorruptTopologies());
         COMMANDS.put("zk_cli", new ZkCli());
+        COMMANDS.put("creds", new CredentialsDebug());
         COMMANDS.put("help", new Help());
     }
 
