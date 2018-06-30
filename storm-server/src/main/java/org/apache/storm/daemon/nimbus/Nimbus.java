@@ -170,6 +170,7 @@ import org.apache.storm.scheduler.multitenant.MultitenantScheduler;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
+import org.apache.storm.scheduler.utils.ISchedulingTracer;
 import org.apache.storm.security.INimbusCredentialPlugin;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAuthorizer;
@@ -420,7 +421,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final IScheduler scheduler;
     private final IScheduler underlyingScheduler;
     private final ILeaderElector leaderElector;
-    private final AssignmentDistributionService assignmentsDistributer;
     private final AtomicReference<Map<String, String>> idToSchedStatus;
     private final AtomicReference<Map<String, SupervisorResources>> nodeIdToResources;
     private final AtomicReference<Map<String, TopologyResources>> idToResources;
@@ -433,12 +433,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final List<ClusterMetricsConsumerExecutor> clusterConsumerExceutors;
     private final IGroupMappingServiceProvider groupMapper;
     private final IPrincipalToLocal principalToLocal;
+    private AssignmentDistributionService assignmentsDistributer;
     private MetricStore metricsStore;
     private IAuthorizer authorizationHandler;
     //Cached CuratorFramework, mainly used for BlobStore.
-    private CuratorFramework zkClient;
-    //Cached topology -> executor ids, used for deciding timeout workers of heartbeatsCache.
-    private AtomicReference<Map<String, Set<List<Integer>>>> idToExecutors;
+    private final CuratorFramework zkClient;
+    //Cached topology -> executor ids, used for scheduling.
+    private final AtomicReference<Map<String, Set<List<Integer>>>> idToExecutors;
+    //Tracer to trace scheduling key point time, mainly used for testing.
+    private ISchedulingTracer schedulingTracer;
     //Cached topology ids that do not support RPC heartbeat.
     private Set<String> topoIdsNotSupportRPCHeartbeat;
     //May be null if worker tokens are not supported by the thrift transport.
@@ -1346,6 +1349,27 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return heartbeatsCache;
     }
 
+    @VisibleForTesting
+    public AtomicBoolean getHeartbeatsReadyFlag() {
+        return heartbeatsReadyFlag;
+    }
+
+    @VisibleForTesting
+    public void setSchedulingTracer(ISchedulingTracer schedulingTracer) {
+        this.schedulingTracer = schedulingTracer;
+    }
+
+    @VisibleForTesting
+    public void setAssignmentsDistributer(AssignmentDistributionService assignmentsDistributer) {
+        this.assignmentsDistributer = assignmentsDistributer;
+    }
+
+    private void mayTraceSchedulingPoint(String point) {
+        if (this.schedulingTracer != null) {
+            this.schedulingTracer.trace(point);
+        }
+    }
+
     public AtomicReference<Map<String, Set<List<Integer>>>> getIdToExecutors() {
         return idToExecutors;
     }
@@ -2215,7 +2239,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return false;
     }
 
-    private void mkAssignments() throws Exception {
+    @VisibleForTesting
+    public void mkAssignments() throws Exception {
         mkAssignments(null);
     }
 

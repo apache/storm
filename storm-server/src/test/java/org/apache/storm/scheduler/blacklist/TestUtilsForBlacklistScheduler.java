@@ -22,43 +22,18 @@ import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.ExecutorDetails;
-import org.apache.storm.scheduler.INimbus;
-import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SchedulerAssignment;
 import org.apache.storm.scheduler.SchedulerAssignmentImpl;
+import org.apache.storm.scheduler.SchedulerTestUtils;
 import org.apache.storm.scheduler.SupervisorDetails;
-import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.BoltDeclarer;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.SpoutDeclarer;
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.topology.base.BaseRichSpout;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.Function;
 
-
-public class TestUtilsForBlacklistScheduler {
+public class TestUtilsForBlacklistScheduler extends SchedulerTestUtils{
 
     private static final Logger LOG = LoggerFactory.getLogger(TestUtilsForBlacklistScheduler.class);
 
@@ -68,36 +43,6 @@ public class TestUtilsForBlacklistScheduler {
         retList.remove(supervisor);
         return retList;
     }
-
-    public static Map<String, SupervisorDetails> removePortFromSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap, String supervisor, int port) {
-        Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
-        for (Map.Entry<String, SupervisorDetails> supervisorDetailsEntry : supervisorDetailsMap.entrySet()) {
-            String supervisorKey = supervisorDetailsEntry.getKey();
-            SupervisorDetails supervisorDetails = supervisorDetailsEntry.getValue();
-            Set<Integer> ports = new HashSet<>();
-            ports.addAll(supervisorDetails.getAllPorts());
-            if (supervisorKey.equals(supervisor)) {
-                ports.remove(port);
-            }
-            SupervisorDetails sup = new SupervisorDetails(supervisorDetails.getId(), supervisorDetails.getHost(), null, (HashSet) ports, null);
-            retList.put(sup.getId(), sup);
-        }
-        return retList;
-    }
-
-    public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts) {
-        Map<String, SupervisorDetails> retList = new HashMap<>();
-        for (int i = 0; i < numSup; i++) {
-            List<Number> ports = new LinkedList<>();
-            for (int j = 0; j < numPorts; j++) {
-                ports.add(j);
-            }
-            SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, null);
-            retList.put(sup.getId(), sup);
-        }
-        return retList;
-    }
-
 
     public static TopologyDetails getTopology(String name, Map<String, Object> config, int numSpout, int numBolt,
                                               int spoutParallelism, int boltParallelism, int launchTime, boolean blacklistEnable) {
@@ -131,171 +76,6 @@ public class TestUtilsForBlacklistScheduler {
             }
         }
         return retMap;
-    }
-
-    public static StormTopology buildTopology(int numSpout, int numBolt,
-                                              int spoutParallelism, int boltParallelism) {
-        LOG.debug("buildTopology with -> numSpout: " + numSpout + " spoutParallelism: "
-                + spoutParallelism + " numBolt: "
-                + numBolt + " boltParallelism: " + boltParallelism);
-        TopologyBuilder builder = new TopologyBuilder();
-
-        for (int i = 0; i < numSpout; i++) {
-            SpoutDeclarer s1 = builder.setSpout("spout-" + i, new TestSpout(),
-                    spoutParallelism);
-        }
-        int j = 0;
-        for (int i = 0; i < numBolt; i++) {
-            if (j >= numSpout) {
-                j = 0;
-            }
-            BoltDeclarer b1 = builder.setBolt("bolt-" + i, new TestBolt(),
-                    boltParallelism).shuffleGrouping("spout-" + j);
-        }
-
-        return builder.createTopology();
-    }
-
-    public static class TestSpout extends BaseRichSpout {
-        boolean _isDistributed;
-        SpoutOutputCollector _collector;
-
-        public TestSpout() {
-            this(true);
-        }
-
-        public TestSpout(boolean isDistributed) {
-            _isDistributed = isDistributed;
-        }
-
-        public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-            _collector = collector;
-        }
-
-        public void close() {
-        }
-
-        public void nextTuple() {
-            Utils.sleep(100);
-            final String[] words = new String[]{"nathan", "mike", "jackson", "golda", "bertels"};
-            final Random rand = new Random();
-            final String word = words[rand.nextInt(words.length)];
-            _collector.emit(new Values(word));
-        }
-
-        public void ack(Object msgId) {
-        }
-
-        public void fail(Object msgId) {
-        }
-
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("word"));
-        }
-
-        @Override
-        public Map<String, Object> getComponentConfiguration() {
-            if (!_isDistributed) {
-                Map<String, Object> ret = new HashMap<>();
-                ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 1);
-                return ret;
-            } else {
-                return null;
-            }
-        }
-    }
-
-    public static class TestBolt extends BaseRichBolt {
-        OutputCollector _collector;
-
-        @Override
-        public void prepare(Map<String, Object> conf, TopologyContext context,
-                            OutputCollector collector) {
-            _collector = collector;
-        }
-
-        @Override
-        public void execute(Tuple tuple) {
-            _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
-        }
-
-        @Override
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("word"));
-        }
-    }
-
-    public static class INimbusTest implements INimbus {
-        private volatile boolean isResourceCacheInitialized = false;
-
-        private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache =
-            new HashMap<>();
-        private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache = new HashMap<>();
-        private final Map<String, NormalizedResourceRequest> totalResourcesPerNodeCache = new HashMap<>();
-
-        private static final Function<String, Set<WorkerSlot>> MAKE_SET = (x) -> new HashSet<>();
-        private static final Function<String, Map<WorkerSlot, NormalizedResourceRequest>> MAKE_MAP =
-            (x) -> new HashMap<>();
-
-        @Override
-        public void prepare(Map<String, Object> stormConf, String schedulerLocalDir) {
-
-        }
-
-        @Override
-        public Collection<WorkerSlot> allSlotsAvailableForScheduling(Collection<SupervisorDetails> existingSupervisors, Topologies topologies, Set<String> topologiesMissingAssignments) {
-            return null;
-        }
-
-        @Override
-        public void assignSlots(Topologies topologies, Map<String, Collection<WorkerSlot>> newSlotsByTopologyId) {
-
-        }
-
-        @Override
-        public String getHostName(Map<String, SupervisorDetails> existingSupervisors, String nodeId) {
-            if (existingSupervisors.containsKey(nodeId)) {
-                return existingSupervisors.get(nodeId).getHost();
-            }
-            return null;
-        }
-
-        @Override
-        public IScheduler getForcedScheduler() {
-            return null;
-        }
-
-        @Override
-        public boolean isResourceCacheInitialized() {
-            return isResourceCacheInitialized;
-        }
-
-        @Override
-        public void setResourceCacheInitialized() {
-            isResourceCacheInitialized = true;
-        }
-
-        @Override
-        public Map<String, Map<WorkerSlot, NormalizedResourceRequest>> getNodeToScheduledResourcesCache() {
-            return nodeToScheduledResourcesCache;
-        }
-
-        @Override
-        public Map<String, Set<WorkerSlot>> getNodeToUsedSlotsCache() {
-            return nodeToUsedSlotsCache;
-        }
-
-        @Override
-        public Map<String, NormalizedResourceRequest> getTotalResourcesPerNodeCache() {
-            return totalResourcesPerNodeCache;
-        }
-
-        @Override
-        public void freeSlotCache(WorkerSlot slot) {
-            nodeToScheduledResourcesCache
-                .computeIfAbsent(slot.getNodeId(), MAKE_MAP).put(slot, new NormalizedResourceRequest());
-            nodeToUsedSlotsCache.computeIfAbsent(slot.getNodeId(), MAKE_SET).remove(slot);
-        }
     }
 
     public static Map<String, SchedulerAssignmentImpl> assignmentMapToImpl(Map<String, SchedulerAssignment> assignmentMap) {
