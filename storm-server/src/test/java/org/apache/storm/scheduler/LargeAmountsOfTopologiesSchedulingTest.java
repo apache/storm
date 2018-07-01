@@ -25,11 +25,11 @@ import org.apache.storm.generated.StormBase;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.generated.TopologyStatus;
-import org.apache.storm.nimbus.AssignmentDistributionService;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.scheduler.utils.ISchedulingTracer;
 import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.utils.ServerUtils;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 
 import org.json.simple.JSONValue;
@@ -56,15 +56,15 @@ import static org.mockito.Mockito.*;
  * This class is used to test master scheduling time cost.
  * If you wanna test time cost on some key points, try to add a {@link ISchedulingTracer} to Nimbus instance
  * and use it to trace the actions that you wanna check out. See {@link SchedulerTestUtils.TestSchedulingTracer}
- * for an example.
- *
+ * and {@link Nimbus#setSchedulingTracer} for details.
+ * <p>
  * <p>The main purpose for this test is testing scheduling performance when there are hundreds of topologies on
  * cluster. You can tweak the args in {@link #prepareData} to control the num of topologies, or add sequence of numbers
- * to test, the default num is 400.
- *
+ * to test, the default num is 200.
+ * <p>
  * <p>Other configurations:
  * <ul>
- * <li>200 supervisor nodes, 40 slots each.</li>
+ * <li>100 supervisor nodes, 40 slots each.</li>
  * <li>10 workers, 10 spout tasks, 40 bolt tasks for every topology.</li>
  * </ul>
  */
@@ -82,9 +82,11 @@ public class LargeAmountsOfTopologiesSchedulingTest {
     private final Map<String, StormBase> idToStormBase = new HashMap<>();
     private final Map<String, SupervisorInfo> allSupervisorInfo = new HashMap<>();
 
+    private Nimbus nimbus;
+
     @Parameterized.Parameters
     public static Collection prepareData() {
-        Object[][] object = {{400}};
+        Object[][] object = {{200}};
         return Arrays.asList(object);
     }
 
@@ -101,7 +103,7 @@ public class LargeAmountsOfTopologiesSchedulingTest {
         conf.put(Config.STORM_ZOOKEEPER_PORT, zookeeper.getPort());
         conf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
 
-        this.numSupervisors = 200;
+        this.numSupervisors = 100;
         initializeTopologyConfs("topo-", this.numTopologies, 10);
         initializeStormTopologies();
         normalizeStormTopologies();
@@ -116,6 +118,9 @@ public class LargeAmountsOfTopologiesSchedulingTest {
         this.idToStormTopology.clear();
         this.idToStormBase.clear();
         this.allSupervisorInfo.clear();
+        if (this.nimbus != null) {
+            this.nimbus.shutdown();
+        }
     }
 
     @Test
@@ -156,14 +161,7 @@ public class LargeAmountsOfTopologiesSchedulingTest {
         when(topoCache.readTopology(anyString(), any()))
             .thenAnswer(invocation -> idToStormTopology.get(invocation.getArgument(0)));
 
-        AssignmentDistributionService assignmentDistributionService = mock(AssignmentDistributionService.class);
-        doAnswer(AdditionalAnswers.answerVoid((id, node, port, assignments) -> {
-        }))
-            .when(assignmentDistributionService)
-            .addAssignmentsForNode(anyString(), anyString(), anyInt(), any());
-
-        ISchedulingTracer tracer = new SchedulerTestUtils.TestSchedulingTracer();
-        Nimbus nimbus = new Nimbus(
+        nimbus = new Nimbus(
             conf,
             iNimbus,
             stormClusterState,
@@ -173,11 +171,8 @@ public class LargeAmountsOfTopologiesSchedulingTest {
             leaderElector,
             null);
         nimbus.getHeartbeatsReadyFlag().getAndSet(true);
-        nimbus.setSchedulingTracer(tracer);
-        nimbus.setAssignmentsDistributer(assignmentDistributionService);
 
         nimbus.mkAssignments();
-        tracer.reset();
         // All the topologies should have been scheduled here.
         assert idToAssignment.size() == this.numTopologies;
         // Mock that one topology executors are all dead.
@@ -185,9 +180,9 @@ public class LargeAmountsOfTopologiesSchedulingTest {
         // First make a full scheduling, set scheduling resource cache not initialized
         // to trigger.
         iNimbus.setResourceCacheInitialized(false);
-        long startTimeSecs1 = System.currentTimeMillis() / 1000L;
+        long startTimeSecs1 = Time.currentTimeMillis() / 1000L;
         nimbus.mkAssignments();
-        long endTimeSecs1 = System.currentTimeMillis() / 1000L;
+        long endTimeSecs1 = Time.currentTimeMillis() / 1000L;
         assert idToAssignment.size() == this.numTopologies;
 
         // Mock that one topology executors are all dead.
@@ -197,7 +192,8 @@ public class LargeAmountsOfTopologiesSchedulingTest {
         long endTimeSecs2 = System.currentTimeMillis() / 1000L;
         assert idToAssignment.size() == this.numTopologies;
         // the second scheduling for 1 topology should be fast enough.
-        assert (endTimeSecs2 - startTimeSecs2) < 5;
+        assert (endTimeSecs2 - startTimeSecs2) < 3;
+        assert (endTimeSecs1 - startTimeSecs1) > (endTimeSecs2 - startTimeSecs2);
     }
 
     private void normalizeStormTopologies() throws InvalidTopologyException {

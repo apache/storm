@@ -433,7 +433,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final List<ClusterMetricsConsumerExecutor> clusterConsumerExceutors;
     private final IGroupMappingServiceProvider groupMapper;
     private final IPrincipalToLocal principalToLocal;
-    private AssignmentDistributionService assignmentsDistributer;
+    private final AssignmentDistributionService assignmentsDistributer;
     private MetricStore metricsStore;
     private IAuthorizer authorizationHandler;
     //Cached CuratorFramework, mainly used for BlobStore.
@@ -1357,11 +1357,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @VisibleForTesting
     public void setSchedulingTracer(ISchedulingTracer schedulingTracer) {
         this.schedulingTracer = schedulingTracer;
-    }
-
-    @VisibleForTesting
-    public void setAssignmentsDistributer(AssignmentDistributionService assignmentsDistributer) {
-        this.assignmentsDistributer = assignmentsDistributer;
     }
 
     private void mayTraceSchedulingPoint(String point) {
