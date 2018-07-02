@@ -25,11 +25,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-
-
     <artifactId>storm-jms</artifactId>
-
-
 
     <developers>
         <developer>
@@ -59,11 +55,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Active MQ -->
+        <!-- Active MQ for testing JMS-->
         <dependency>
             <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-core</artifactId>
-            <version>5.5.1</version>
+            <artifactId>activemq-all</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
