@@ -853,10 +853,16 @@ def dev_zookeeper():
     "storm.zookeeper.port" as its port. This is only intended for development/testing, the
     Zookeeper instance launched is not configured to be used in production.
     """
+    jvmopts = [
+        "-Dlogfile.name=dev-zookeeper.log",
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
+    ]
     cppaths = [CLUSTER_CONF_DIR]
     exec_storm_class(
         "org.apache.storm.command.DevZookeeper",
         jvmtype="-server",
+        daemonName="dev_zookeeper",
+        jvmopts=jvmopts,
         extrajars=[CLUSTER_CONF_DIR])
 
 def version():
