@@ -58,4 +58,38 @@ public class MessagingTest {
             Assert.assertEquals(6 * 4, Testing.readTuples(results, "2").size());
         }
     }
+    
+    @Test
+    public void testRemoteTransportWithManyTasksInReceivingExecutor() throws Exception {
+        //STORM-3141 regression test
+        //Verify that remote worker can handle many tasks in one executor
+        Config topoConf = new Config();
+        topoConf.put(Config.TOPOLOGY_WORKERS, 2);
+        topoConf.put(Config.STORM_MESSAGING_TRANSPORT, "org.apache.storm.messaging.netty.Context");
+
+        try (ILocalCluster cluster = new LocalCluster.Builder().withSimulatedTime()
+                                                               .withSupervisors(1).withPortsPerSupervisor(2)
+                                                               .withDaemonConf(topoConf).build()) {
+
+            TopologyBuilder builder = new TopologyBuilder();
+            builder.setSpout("1", new TestWordSpout(true), 1);
+            builder.setBolt("2", new TestGlobalCount(), 1)
+                .setNumTasks(10)
+                .shuffleGrouping("1");
+            StormTopology stormTopology = builder.createTopology();
+
+            List<FixedTuple> fixedTuples = new ArrayList<>();
+            for (int i = 0; i < 12; i++) {
+                fixedTuples.add(new FixedTuple(Collections.singletonList("a")));
+                fixedTuples.add(new FixedTuple(Collections.singletonList("b")));
+            }
+            Map<String, List<FixedTuple>> data = new HashMap<>();
+            data.put("1", fixedTuples);
+            MockedSources mockedSources = new MockedSources(data);
+            CompleteTopologyParam completeTopologyParam = new CompleteTopologyParam();
+            completeTopologyParam.setMockedSources(mockedSources);
+            Map<String, List<FixedTuple>> results = Testing.completeTopology(cluster, stormTopology, completeTopologyParam);
+            Assert.assertEquals(6 * 4, Testing.readTuples(results, "2").size());
+        }
+    }
 }

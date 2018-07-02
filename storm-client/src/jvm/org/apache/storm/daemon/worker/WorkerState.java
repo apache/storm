@@ -114,11 +114,9 @@ public class WorkerState {
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
-    final Map<List<Long>, JCQueue> executorReceiveQueueMap;
     // executor id is in form [start_task_id end_task_id]
-    // short executor id is start_task_id
-    final Map<Integer, JCQueue> shortExecutorReceiveQueueMap;
-    final Map<Integer, Integer> taskToShortExecutor;
+    final Map<List<Long>, JCQueue> executorReceiveQueueMap;
+    final Map<Integer, JCQueue> taskToExecutorQueue;
     final Runnable suicideCallback;
     final Utils.UptimeComputer uptime;
     final Map<String, Object> defaultSharedResources;
@@ -166,12 +164,15 @@ public class WorkerState {
         this.isTopologyActive = new AtomicBoolean(false);
         this.stormComponentToDebug = new AtomicReference<>();
         this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors);
-        this.shortExecutorReceiveQueueMap = new HashMap<>();
         this.localTaskIds = new ArrayList<>();
+        this.taskToExecutorQueue = new HashMap<>();
         this.blobToLastKnownVersion = new ConcurrentHashMap<>();
         for (Map.Entry<List<Long>, JCQueue> entry : executorReceiveQueueMap.entrySet()) {
-            this.shortExecutorReceiveQueueMap.put(entry.getKey().get(0).intValue(), entry.getValue());
-            this.localTaskIds.addAll(StormCommon.executorIdToTasks(entry.getKey()));
+            List<Integer> taskIds = StormCommon.executorIdToTasks(entry.getKey());
+            for (Integer taskId : taskIds) {
+                this.taskToExecutorQueue.put(taskId, entry.getValue());
+            }
+            this.localTaskIds.addAll(taskIds);
         }
         Collections.sort(localTaskIds);
         this.topologyConf = topologyConf;
@@ -192,12 +193,6 @@ public class WorkerState {
         this.endpointSocketLock = new ReentrantReadWriteLock();
         this.cachedNodeToPortSocket = new AtomicReference<>(new HashMap<>());
         this.cachedTaskToNodePort = new AtomicReference<>(new HashMap<>());
-        this.taskToShortExecutor = new HashMap<>();
-        for (List<Long> executor : this.localExecutors) {
-            for (Integer task : StormCommon.executorIdToTasks(executor)) {
-                taskToShortExecutor.put(task, executor.get(0).intValue());
-            }
-        }
         this.suicideCallback = Utils.mkSuicideFn();
         this.uptime = Utils.makeUptimeComputer();
         this.defaultSharedResources = makeDefaultResources();
@@ -212,7 +207,7 @@ public class WorkerState {
         }
         int maxTaskId = getMaxTaskId(componentToSortedTasks);
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
-        this.bpTracker = new BackPressureTracker(workerId, localTaskIds);
+        this.bpTracker = new BackPressureTracker(workerId, taskToExecutorQueue);
         this.deserializedWorkerHooks = deserializeWorkerHooks();
     }
 
@@ -321,10 +316,6 @@ public class WorkerState {
 
     public Map<List<Long>, JCQueue> getExecutorReceiveQueueMap() {
         return executorReceiveQueueMap;
-    }
-
-    public Map<Integer, JCQueue> getShortExecutorReceiveQueueMap() {
-        return shortExecutorReceiveQueueMap;
     }
 
     public Runnable getSuicideCallback() {
@@ -531,7 +522,7 @@ public class WorkerState {
 
         for (int i = 0; i < tupleBatch.size(); i++) {
             AddressedTuple tuple = tupleBatch.get(i);
-            JCQueue queue = shortExecutorReceiveQueueMap.get(tuple.dest);
+            JCQueue queue = taskToExecutorQueue.get(tuple.dest);
 
             // 1- try adding to main queue if its overflow is not empty
             if (queue.isEmptyOverflow()) {
@@ -542,7 +533,7 @@ public class WorkerState {
 
             // 2- BP detected (i.e MainQ is full). So try adding to overflow
             int currOverflowCount = queue.getOverflowCount();
-            if (bpTracker.recordBackPressure(tuple.dest, queue)) {
+            if (bpTracker.recordBackPressure(tuple.dest)) {
                 receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
                 lastOverflowCount = currOverflowCount;
             } else {
