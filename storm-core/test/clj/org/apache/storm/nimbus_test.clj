@@ -1829,11 +1829,6 @@
         (.setLogConfig nimbus "foo" mock-config)
         (.setTopologyLogConfig (Mockito/verify cluster-state) (Mockito/any String) (Mockito/eq expected-config) (Mockito/any Map))))))
 
-(defn teardown-heartbeats [id])
-(defn teardown-topo-errors [id])
-(defn teardown-backpressure-dirs [id])
-(defn teardown-wt-dirs [id])
-
 (defn mock-cluster-state
   ([]
     (mock-cluster-state nil nil))
@@ -1842,16 +1837,13 @@
   ([active-topos hb-topos error-topos bp-topos]
     (mock-cluster-state active-topos hb-topos error-topos bp-topos nil))
   ([active-topos hb-topos error-topos bp-topos wt-topos]
-    (reify IStormClusterState
-      (teardownHeartbeats [this id] (teardown-heartbeats id))
-      (teardownTopologyErrors [this id] (teardown-topo-errors id))
-      (removeBackpressure [this id] (teardown-backpressure-dirs id))
-      (removeAllPrivateWorkerKeys [this id] (teardown-wt-dirs id))
-      (activeStorms [this] active-topos)
-      (heartbeatStorms [this] hb-topos)
-      (errorTopologies [this] error-topos)
-      (backpressureTopologies [this] bp-topos)
-      (idsOfTopologiesWithPrivateWorkerKeys [this] (into #{} wt-topos)))))
+    (let [cluster-state (Mockito/mock IStormClusterState)]
+      (.thenReturn (Mockito/when (.activeStorms cluster-state)) active-topos)
+      (.thenReturn (Mockito/when (.heartbeatStorms cluster-state)) hb-topos)
+      (.thenReturn (Mockito/when (.errorTopologies cluster-state)) error-topos)
+      (.thenReturn (Mockito/when (.backpressureTopologies cluster-state)) bp-topos)
+      (.thenReturn (Mockito/when (.idsOfTopologiesWithPrivateWorkerKeys cluster-state)) (into #{} wt-topos))
+      cluster-state)))
 
 (deftest cleanup-storm-ids-returns-inactive-topos
          (let [mock-state (mock-cluster-state (list "topo1") (list "topo1" "topo2" "topo3"))
@@ -1892,19 +1884,16 @@
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
         (.set (.getHeartbeatsCache nimbus) hb-cache)
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (HashSet. inactive-topos))
-        (mocking
-          [teardown-heartbeats
-           teardown-topo-errors]
 
           (.doCleanup nimbus)
 
           ;; removed heartbeats znode
-          (verify-nth-call-args-for 1 teardown-heartbeats "topo2")
-          (verify-nth-call-args-for 2 teardown-heartbeats "topo3")
+          (.teardownHeartbeats (Mockito/verify mock-state) "topo2")
+          (.teardownHeartbeats (Mockito/verify mock-state) "topo3")
 
           ;; removed topo errors znode
-          (verify-nth-call-args-for 1 teardown-topo-errors "topo2")
-          (verify-nth-call-args-for 2 teardown-topo-errors "topo3")
+          (.teardownTopologyErrors (Mockito/verify mock-state) "topo2")
+          (.teardownTopologyErrors (Mockito/verify mock-state) "topo3")
 
           ;; removed topo directories
           (.forceDeleteTopoDistDir (Mockito/verify nimbus) "topo2")
@@ -1919,7 +1908,7 @@
           (.rmDependencyJarsInTopology (Mockito/verify nimbus) "topo3")
 
           ;; remove topos from heartbeat cache
-          (is (= (count (.get (.getHeartbeatsCache nimbus))) 0)))))))
+          (is (= (count (.get (.getHeartbeatsCache nimbus))) 0))))))
 
 
 (deftest do-cleanup-does-not-teardown-active-topos
@@ -1933,21 +1922,18 @@
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
         (.set (.getHeartbeatsCache nimbus) hb-cache)
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (set inactive-topos))
-        (mocking
-          [teardown-heartbeats
-           teardown-topo-errors]
 
           (.doCleanup nimbus)
 
-          (verify-call-times-for teardown-heartbeats 0)
-          (verify-call-times-for teardown-topo-errors 0)
+          (.teardownHeartbeats (Mockito/verify mock-state (Mockito/never)) (Mockito/any))
+          (.teardownTopologyErrors (Mockito/verify mock-state (Mockito/never)) (Mockito/any))
           (.forceDeleteTopoDistDir (Mockito/verify nimbus (Mockito/times 0)) (Mockito/anyObject))
           (.rmTopologyKeys (Mockito/verify nimbus (Mockito/times 0)) (Mockito/anyObject))
 
           ;; hb-cache goes down to 1 because only one topo was inactive
           (is (= (count (.get (.getHeartbeatsCache nimbus))) 2))
           (is (contains? (.get (.getHeartbeatsCache nimbus)) "topo1"))
-          (is (contains? (.get (.getHeartbeatsCache nimbus)) "topo2")))))))
+          (is (contains? (.get (.getHeartbeatsCache nimbus)) "topo2"))))))
 
 (deftest user-topologies-for-supervisor
   (let [assignment (doto (Assignment.)
