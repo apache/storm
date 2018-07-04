@@ -40,12 +40,14 @@ import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.storm.testing.TmpPath;
 
 public class KafkaUnit {
     private KafkaServer kafkaServer;
     private EmbeddedZookeeper zkServer;
     private ZkUtils zkUtils;
     private KafkaProducer<String, String> producer;
+    private TmpPath kafkaDir;
     private static final String ZK_HOST = "127.0.0.1";
     private static final String KAFKA_HOST = "127.0.0.1";
     private static final int KAFKA_PORT = 9092;
@@ -61,10 +63,11 @@ public class KafkaUnit {
         zkUtils = ZkUtils.apply(zkClient, false);
 
         // setup Broker
+        kafkaDir = new TmpPath(Files.createTempDirectory("kafka-").toAbsolutePath().toString());
         Properties brokerProps = new Properties();
         brokerProps.setProperty("zookeeper.connect", zkConnect);
         brokerProps.setProperty("broker.id", "0");
-        brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
+        brokerProps.setProperty("log.dirs", kafkaDir.getPath());
         brokerProps.setProperty("listeners", String.format("PLAINTEXT://%s:%d", KAFKA_HOST, KAFKA_PORT));
         KafkaConfig config = new KafkaConfig(brokerProps);
         MockTime mock = new MockTime();
@@ -77,6 +80,7 @@ public class KafkaUnit {
     public void tearDown() {
         closeProducer();
         kafkaServer.shutdown();
+        kafkaDir.close();
         zkUtils.close();
         zkServer.shutdown();
     }

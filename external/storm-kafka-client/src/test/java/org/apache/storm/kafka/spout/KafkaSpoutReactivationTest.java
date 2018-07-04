@@ -34,7 +34,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.storm.kafka.KafkaUnitRule;
+import org.apache.storm.kafka.KafkaUnitExtension;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
@@ -42,19 +42,19 @@ import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class KafkaSpoutReactivationTest {
 
-    @Rule
-    public KafkaUnitRule kafkaUnitRule = new KafkaUnitRule();
+    @RegisterExtension
+    public KafkaUnitExtension kafkaUnitExtension = new KafkaUnitExtension();
 
     @Captor
     private ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> commitCapture;
@@ -68,11 +68,10 @@ public class KafkaSpoutReactivationTest {
     private KafkaSpout<String, String> spout;
     private final int maxPollRecords = 10;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         KafkaSpoutConfig<String, String> spoutConfig =
-            SingleTopicKafkaSpoutConfiguration.setCommonSpoutConfig(
-                KafkaSpoutConfig.builder("127.0.0.1:" + kafkaUnitRule.getKafkaUnit().getKafkaPort(),
+            SingleTopicKafkaSpoutConfiguration.setCommonSpoutConfig(KafkaSpoutConfig.builder("127.0.0.1:" + kafkaUnitExtension.getKafkaUnit().getKafkaPort(),
                     SingleTopicKafkaSpoutConfiguration.TOPIC))
                 .setFirstPollOffsetStrategy(UNCOMMITTED_EARLIEST)
                 .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
@@ -89,7 +88,7 @@ public class KafkaSpoutReactivationTest {
     }
 
     private void prepareSpout(int messageCount) throws Exception {
-        SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitRule.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, messageCount);
+        SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitExtension.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, messageCount);
         SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
     }
 
