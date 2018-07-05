@@ -62,10 +62,6 @@
             <artifactId>metrics-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
         </dependency>

@@ -16,7 +16,6 @@
 
 package org.apache.storm.kafka;
 
-import java.util.Collections;
 import java.util.List;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.kafka.spout.RecordTranslator;

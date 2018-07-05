@@ -18,17 +18,15 @@
 package org.apache.storm.kafka.spout;
 
 
-import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.utils.Time;
-import org.junit.Test;
-
-import java.util.regex.Pattern;
-
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.regex.Pattern;
 import org.apache.storm.kafka.NullRecordTranslator;
+import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
+import org.apache.storm.utils.Time;
+import org.junit.jupiter.api.Test;
 
 public class KafkaSpoutNullTupleTest extends KafkaSpoutAbstractTest {
 
@@ -39,7 +37,7 @@ public class KafkaSpoutNullTupleTest extends KafkaSpoutAbstractTest {
 
     @Override
     KafkaSpoutConfig<String, String> createSpoutConfig() {
-        return KafkaSpoutConfig.builder("127.0.0.1:" + kafkaUnitRule.getKafkaUnit().getKafkaPort(),
+        return KafkaSpoutConfig.builder("127.0.0.1:" + kafkaUnitExtension.getKafkaUnit().getKafkaPort(),
                 Pattern.compile(SingleTopicKafkaSpoutConfiguration.TOPIC))
                 .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
                 .setRecordTranslator(new NullRecordTranslator<>())

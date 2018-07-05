@@ -297,7 +297,8 @@
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>
         <thrift.version>0.11.0</thrift.version>
-        <junit.version>4.11</junit.version>
+        <junit.jupiter.version>5.2.0</junit.jupiter.version>
+        <surefire.version>2.22.0</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
         <metrics-clojure.version>2.5.1</metrics-clojure.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
@@ -413,8 +414,14 @@
     <dependencies>
         <!-- The JUnit dependency is required for submodules by the maven-surefire-plugin <excludedGroups> configuration -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- This also puts JUnit 4 on the test classpath for all modules -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -1036,6 +1043,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
@@ -1061,10 +1074,11 @@
             </dependency>
             <!-- used by examples/storm-starter -->
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.calcite</groupId>

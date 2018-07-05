@@ -17,25 +17,25 @@
  */
 package org.apache.storm.kafka;
 
-import java.io.IOException;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
-
-public class KafkaUnitRule extends ExternalResource {
+public class KafkaUnitExtension implements BeforeEachCallback, AfterEachCallback {
 
     private final KafkaUnit kafkaUnit;
 
-    public KafkaUnitRule() {
+    public KafkaUnitExtension() {
         this.kafkaUnit = new KafkaUnit();
     }
 
     @Override
-    public void before() throws IOException {
+    public void beforeEach(ExtensionContext ctx) throws Exception {
         kafkaUnit.setUp();
     }
 
     @Override
-    public void after() {
+    public void afterEach(ExtensionContext ctx) throws Exception {
         kafkaUnit.tearDown();
     }
 

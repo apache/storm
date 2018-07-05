@@ -48,7 +48,7 @@ public class TmpPath implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         if (path.exists()) {
             try {
                 FileUtils.forceDelete(path);
