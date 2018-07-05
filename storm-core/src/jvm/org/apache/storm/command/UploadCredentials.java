@@ -86,6 +86,16 @@ public class UploadCredentials {
                         if (!extra.isEmpty()) {
                             LOG.warn("The topology {} is not using {} but they were included here.", topologyId, extra);
                         }
+
+                        //Now check for autoCreds that are missing from the command line, but only if the
+                        // command line is used.
+                        if (topoCreds != null) {
+                            Set<String> missing = new HashSet<>(topoCreds);
+                            missing.removeAll(clCreds);
+                            if (!missing.isEmpty()) {
+                                LOG.warn("The topology {} is using {} but they were not included here.", topologyId, missing);
+                            }
+                        }
                     }
                     break;
                 }
