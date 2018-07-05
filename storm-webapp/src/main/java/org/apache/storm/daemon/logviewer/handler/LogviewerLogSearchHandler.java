@@ -426,7 +426,8 @@ public class LogviewerLogSearchHandler {
 
             int newCount = matchCount + ((List<?>)theseMatches.get("matches")).size();
 
-            if (theseMatches.isEmpty()) {
+            //theseMatches is never empty! As guaranteed by the #get().size() method above
+            if (newCount == matchCount) {
                 // matches and matchCount is not changed
                 logs = rest(logs);
                 offset = 0;
