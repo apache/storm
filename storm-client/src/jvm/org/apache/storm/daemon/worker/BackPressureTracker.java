@@ -59,7 +59,7 @@ public class BackPressureTracker {
      * @return true if an update was recorded, false if taskId is already under BP
      */
     public boolean recordBackPressure(Integer taskId) {
-        return tasks.get(taskId).backpressure.getAndSet(true);
+        return tasks.get(taskId).backpressure.getAndSet(true) == false;
     }
 
     // returns true if there was a change in the BP situation
