@@ -40,18 +40,20 @@ public class TestUtils {
         return buildPartitionInfo(numPartitions, 9092);
     }
 
-    public static List<GlobalPartitionInformation> buildPartitionInfoList(GlobalPartitionInformation partitionInformation) {
-        List<GlobalPartitionInformation> map = new ArrayList<GlobalPartitionInformation>();
-        map.add(partitionInformation);
-        return map;
+    public static List<GlobalPartitionInformation> buildPartitionInfoList(GlobalPartitionInformation... partitionInformation) {
+        return new ArrayList<>(Arrays.asList(partitionInformation));
     }
 
-    public static GlobalPartitionInformation buildPartitionInfo(int numPartitions, int brokerPort) {
-        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(TOPIC);
+    public static GlobalPartitionInformation buildPartitionInfo(String topic, int numPartitions, int brokerPort) {
+        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(topic);
         for (int i = 0; i < numPartitions; i++) {
             globalPartitionInformation.addPartition(i, Broker.fromString("broker-" + i + " :" + brokerPort));
         }
         return globalPartitionInformation;
+    }
+
+    public static GlobalPartitionInformation buildPartitionInfo(int numPartitions, int brokerPort) {
+        return buildPartitionInfo(TOPIC, numPartitions, brokerPort);
     }
 
     public static SimpleConsumer getKafkaConsumer(KafkaTestBroker broker) {

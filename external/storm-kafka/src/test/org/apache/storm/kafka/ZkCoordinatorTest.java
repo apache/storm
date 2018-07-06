@@ -140,6 +140,42 @@ public class ZkCoordinatorTest {
         }
     }
 
+    @Test
+    public void testPartitionManagerRecreateMultipleTopics() throws Exception {
+        List<ZkCoordinator> coordinatorList = buildCoordinators(1);
+
+        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(
+            TestUtils.buildPartitionInfo("topic1", 1, 9092),
+            TestUtils.buildPartitionInfo("topic2", 1, 9092)));
+
+        List<PartitionManager> partitionManagersBeforeRefresh = coordinatorList.get(0).getMyManagedPartitions();
+        assertEquals(2, partitionManagersBeforeRefresh.size());
+        for (PartitionManager partitionManager : partitionManagersBeforeRefresh) {
+            partitionManager._emittedToOffset = 100L;
+            partitionManager._committedTo = 100L;
+        }
+
+        waitForRefresh();
+
+        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(
+            TestUtils.buildPartitionInfo("topic1", 1, 9093),
+            TestUtils.buildPartitionInfo("topic3", 1, 9093)));
+
+        List<PartitionManager> partitionManagersAfterRefresh = coordinatorList.get(0).getMyManagedPartitions();
+        assertEquals(2, partitionManagersAfterRefresh.size());
+        for (PartitionManager partitionManager : partitionManagersAfterRefresh) {
+            if (partitionManager.getPartition().topic.equals("topic1")) {
+                assertEquals(100, partitionManager._emittedToOffset.longValue());
+                assertEquals(100, partitionManager._committedTo.longValue());
+            }
+            if (partitionManager.getPartition().topic.equals("topic3")) {
+                // NO_OFFSET from KafkaUtils
+                assertEquals(-5, partitionManager._emittedToOffset.longValue());
+                assertEquals(-5, partitionManager._committedTo.longValue());
+            }
+        }
+    }
+
     private void assertStateIsTheSame(PartitionManager managerBefore, PartitionManager managerAfter) {
         // check if state was actually moved from old PartitionManager
         assertNotNull(managerBefore);

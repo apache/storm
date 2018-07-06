@@ -162,15 +162,6 @@ public class KafkaSpout extends BaseRichSpout {
         }
     }
 
-    private PartitionManager getManagerForPartition(int partition) {
-        for (PartitionManager partitionManager: _coordinator.getMyManagedPartitions()) {
-            if (partitionManager.getPartition().partition == partition) {
-                return partitionManager;
-            }
-        }
-        return null;
-    }
-
     @Override
     public void ack(Object msgId) {
         KafkaMessageId id = (KafkaMessageId) msgId;
@@ -179,7 +170,7 @@ public class KafkaSpout extends BaseRichSpout {
             m.ack(id.offset);
         } else {
             // managers for partitions changed - try to find new manager responsible for that partition
-            PartitionManager newManager = getManagerForPartition(id.partition.partition);
+            PartitionManager newManager = tryToFindNewManager(id.partition);
             if (newManager != null) {
                 newManager.ack(id.offset);
             }
@@ -194,7 +185,7 @@ public class KafkaSpout extends BaseRichSpout {
             m.fail(id.offset);
         } else {
             // managers for partitions changed - try to find new manager responsible for that partition
-            PartitionManager newManager = getManagerForPartition(id.partition.partition);
+            PartitionManager newManager = tryToFindNewManager(id.partition);
             if (newManager != null) {
                 newManager.fail(id.offset);
             }
@@ -254,6 +245,16 @@ public class KafkaSpout extends BaseRichSpout {
         }
         configuration.put(configKeyPrefix + "zkRoot", zkRoot);
         return configuration;
+    }
+
+    private PartitionManager tryToFindNewManager(Partition partition) {
+        for (PartitionManager partitionManager : _coordinator.getMyManagedPartitions()) {
+            if (partitionManager.getPartition().partition == partition.partition
+                && partitionManager.getPartition().topic.equals(partition.topic)) {
+                return partitionManager;
+            }
+        }
+        return null;
     }
 
     private void commit() {
