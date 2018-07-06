@@ -498,15 +498,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
         for (Killable k : containers) {
             try {
-                k.forceKill();
                 long start = Time.currentTimeMillis();
                 while (!k.areAllProcessesDead()) {
                     if ((Time.currentTimeMillis() - start) > 10_000) {
                         throw new RuntimeException("Giving up on killing " + k
                                                    + " after " + (Time.currentTimeMillis() - start) + " ms");
                     }
-                    Time.sleep(100);
                     k.forceKill();
+                    Time.sleep(100);
                 }
                 k.cleanUp();
             } catch (Exception e) {
