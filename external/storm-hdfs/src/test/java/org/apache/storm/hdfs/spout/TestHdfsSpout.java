@@ -188,6 +188,34 @@ public class TestHdfsSpout {
     }
 
     @Test
+    public void testEmptySimpleText_ACK() throws Exception {
+        Path file1 = new Path(source.toString() + "/file_empty.txt");
+        createTextFile(file1, 0);
+
+        Path file2 = new Path(source.toString() + "/file.txt");
+        createTextFile(file2, 5);
+
+        try (AutoCloseableHdfsSpout closeableSpout = makeSpout(Configs.TEXT, TextFileReader.defaultFields)) {
+            HdfsSpout spout = closeableSpout.spout;
+            spout.setCommitFrequencyCount(1);
+
+            Map<String, Object> conf = getCommonConfigs();
+            conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
+            openSpout(spout, 0, conf);
+
+            // consume empty file
+            runSpout(spout, "r1");
+            Path arc1 = new Path(archive.toString() + "/file_empty.txt");
+            checkCollectorOutput_txt((MockCollector) spout.getCollector(), arc1);
+
+            // consume file 2
+            runSpout(spout, "r5", "a0", "a1", "a2", "a3", "a4");
+            Path arc2 = new Path(archive.toString() + "/file.txt");
+            checkCollectorOutput_txt((MockCollector) spout.getCollector(), arc1, arc2);
+        }
+    }
+
+    @Test
     public void testResumeAbandoned_Text_NoAck() throws Exception {
         Path file1 = new Path(source.toString() + "/file1.txt");
         createTextFile(file1, 6);
