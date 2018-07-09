@@ -220,6 +220,7 @@ public class HdfsSpout extends BaseRichSpout {
         while (true) {
             try {
                 // 3) Select a new file if one is not open already
+                boolean newReader = false;
                 if (reader == null) {
                     reader = pickNextFile();
                     if (reader == null) {
@@ -227,6 +228,7 @@ public class HdfsSpout extends BaseRichSpout {
                         return;
                     } else {
                         fileReadCompletely = false;
+                        newReader = true;
                     }
                 }
                 if (fileReadCompletely) { // wait for more ACKs before proceeding
@@ -249,7 +251,8 @@ public class HdfsSpout extends BaseRichSpout {
                     return;
                 } else {
                     fileReadCompletely = true;
-                    if (!ackEnabled) {
+                    // if newReader is true and tuple is null then it is an empty reader
+                    if (!ackEnabled || newReader) {
                         markFileAsDone(reader.getFilePath());
                     }
                 }
