@@ -16,12 +16,14 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -207,6 +209,53 @@ public class KafkaTridentSpoutEmitterTest {
         inOrder.verify(consumerMock).poll(anyLong());
         inOrder.verify(collectorMock, times(numRecords)).emit(anyList());
         KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(batchMeta);
+        assertThat("The batch should start at the first offset of the polled records", deserializedMeta.getFirstOffset(), is(firstOffset));
+        assertThat("The batch should end at the last offset of the polled messages", deserializedMeta.getLastOffset(), is(firstOffset + numRecords - 1));
+    }
+    
+    @Test
+    public void testEmitEmptyBatches() throws Exception {
+        //Check that the emitter can handle emitting empty batches on a new partition.
+        //If the spout is configured to seek to LATEST, or the partition is empty, the initial batches may be empty
+        KafkaConsumer<String, String> consumerMock = mock(KafkaConsumer.class);
+        TridentCollector collectorMock = mock(TridentCollector.class);
+        TopicPartition tp = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0);
+        when(consumerMock.assignment()).thenReturn(Collections.singleton(tp));
+        KafkaConsumerFactory<String, String> consumerFactory = spoutConfig -> consumerMock;
+        KafkaTridentSpoutEmitter<String, String> emitter = new KafkaTridentSpoutEmitter<>(
+            SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
+                .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST)
+                .build(),
+            mock(TopologyContext.class),
+            consumerFactory, new TopicAssigner());
+        KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(tp);
+        Map<String, Object> lastBatchMeta = null;
+        //Emit 10 empty batches, simulating no new records being present in Kafka
+        for(int i = 0; i < 10; i++) {
+            clearInvocations(consumerMock);
+            when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.emptyMap()));
+            TransactionAttempt txid = new TransactionAttempt((long) i, 0);
+            lastBatchMeta = emitter.emitPartitionBatch(txid, collectorMock, kttp, lastBatchMeta);
+            assertThat(lastBatchMeta, nullValue());
+            if (i == 0) {
+                InOrder inOrder = inOrder(consumerMock, collectorMock);
+                inOrder.verify(consumerMock).seekToEnd(Collections.singleton(tp));
+                inOrder.verify(consumerMock).poll(anyLong());
+            } else {
+                verify(consumerMock).poll(anyLong());
+            }
+        }
+        clearInvocations(consumerMock);
+        //Simulate that new records were added in Kafka, and check that the next batch contains these records
+        long firstOffset = 0;
+        int numRecords = 10;
+        when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.singletonMap(
+            tp, SpoutWithMockedConsumerSetupHelper.createRecords(tp, firstOffset, numRecords))));
+        lastBatchMeta = emitter.emitPartitionBatch(new TransactionAttempt(11L, 0), collectorMock, kttp, lastBatchMeta);
+        
+        verify(consumerMock).poll(anyLong());
+        verify(collectorMock, times(numRecords)).emit(anyList());
+        KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(lastBatchMeta);
         assertThat("The batch should start at the first offset of the polled records", deserializedMeta.getFirstOffset(), is(firstOffset));
         assertThat("The batch should end at the last offset of the polled messages", deserializedMeta.getLastOffset(), is(firstOffset + numRecords - 1));
     }
