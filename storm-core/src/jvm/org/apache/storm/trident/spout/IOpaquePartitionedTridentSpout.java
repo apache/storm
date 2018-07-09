@@ -62,7 +62,7 @@ public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends IS
         /**
          * @return The list of partitions that are to be processed by the task with id {@code taskId}
          */
-        List<Partition> getPartitionsForTask(int taskId, int numTasks, Partitions allPartitionInfo);
+        List<Partition> getPartitionsForTask(int taskId, int numTasks, List<Partition> allPartitionInfoSorted);
 
         void close();
     }
