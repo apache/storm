@@ -56,7 +56,7 @@ public class NamedTopicFilter implements TopicFilter {
         Set<TopicPartition> allPartitions = new HashSet<>();
         for (String topic : topics) {
             List<PartitionInfo> partitionInfoList = consumer.partitionsFor(topic);
-            if(partitionInfoList != null) {
+            if (partitionInfoList != null) {
                 for (PartitionInfo partitionInfo : partitionInfoList) {
                     allPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
                 }

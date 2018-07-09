@@ -72,7 +72,7 @@ public class NamedTopicFilterTest {
         when(consumerMock.partitionsFor(presentTopic)).thenReturn(Collections.singletonList(createPartitionInfo(presentTopic, 2)));
         when(consumerMock.partitionsFor(absentTopic)).thenReturn(null);
         
-        List<TopicPartition> presentPartitions = filter.getFilteredTopicPartitions(consumerMock);
+        Set<TopicPartition> presentPartitions = filter.getAllSubscribedPartitions(consumerMock);
         assertThat("Expected filter to pass only topics which are present", presentPartitions,
             contains(new TopicPartition(presentTopic, 2)));
     }
