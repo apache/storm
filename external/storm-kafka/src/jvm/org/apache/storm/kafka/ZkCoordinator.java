@@ -17,6 +17,7 @@
  */
 package org.apache.storm.kafka;
 
+import kafka.common.TopicAndPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.storm.kafka.trident.GlobalPartitionInformation;
@@ -32,8 +33,8 @@ public class ZkCoordinator implements PartitionCoordinator {
     int _taskIndex;
     int _totalTasks;
     String _topologyInstanceId;
-    Map<Partition, PartitionManager> _managers = new HashMap();
-    List<PartitionManager> _cachedList = new ArrayList<PartitionManager>();
+    Map<Partition, PartitionManager> _managers = new HashMap<>();
+    List<PartitionManager> _cachedList = new ArrayList<>();
     Long _lastRefreshTime = null;
     int _refreshFreqMs;
     DynamicPartitionConnections _connections;
@@ -80,22 +81,24 @@ public class ZkCoordinator implements PartitionCoordinator {
             List<Partition> mine = KafkaUtils.calculatePartitionsForTask(brokerInfo, _totalTasks, _taskIndex);
 
             Set<Partition> curr = _managers.keySet();
-            Set<Partition> newPartitions = new HashSet<Partition>(mine);
+            Set<Partition> newPartitions = new HashSet<>(mine);
             newPartitions.removeAll(curr);
 
-            Set<Partition> deletedPartitions = new HashSet<Partition>(curr);
+            Set<Partition> deletedPartitions = new HashSet<>(curr);
             deletedPartitions.removeAll(mine);
 
-            LOG.info(taskId(_taskIndex, _totalTasks) + "Deleted partition managers: " + deletedPartitions.toString());
+            LOG.info("{}Deleted partition managers: {}",
+                taskId(_taskIndex, _totalTasks), deletedPartitions);
 
-            Map<Integer, PartitionManager> deletedManagers = new HashMap<>();
+            Map<TopicAndPartition, PartitionManager> deletedManagers = new HashMap<>();
             for (Partition id : deletedPartitions) {
-                deletedManagers.put(id.partition, _managers.remove(id));
+                PartitionManager manager = _managers.remove(id);
+                manager.close();
+                deletedManagers.put(new TopicAndPartition(id.topic, id.partition), manager);
             }
-            for (PartitionManager manager : deletedManagers.values()) {
-                if (manager != null) manager.close();
-            }
-            LOG.info(taskId(_taskIndex, _totalTasks) + "New partition managers: " + newPartitions.toString());
+
+            LOG.info("{}New partition managers: {}",
+                taskId(_taskIndex, _totalTasks), newPartitions);
 
             for (Partition id : newPartitions) {
                 PartitionManager man = new PartitionManager(
@@ -105,14 +108,14 @@ public class ZkCoordinator implements PartitionCoordinator {
                         _stormConf,
                         _spoutConfig,
                         id,
-                        deletedManagers.get(id.partition));
+                        deletedManagers.get(new TopicAndPartition(id.topic, id.partition)));
                 _managers.put(id, man);
             }
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        _cachedList = new ArrayList<PartitionManager>(_managers.values());
+        _cachedList = new ArrayList<>(_managers.values());
         LOG.info(taskId(_taskIndex, _totalTasks) + "Finished refreshing");
     }
 
