@@ -99,15 +99,16 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         }
 
         try {
-            Collection<String> workers = SupervisorUtils.supervisorWorkerIds(superConf);
+            Collection<String> detachedRunningWorkers = SupervisorUtils.supervisorWorkerIds(superConf);
             for (Slot slot : slots.values()) {
                 String workerId = slot.getWorkerId();
+                // We ignore workers that are still bound to a slot, which is monitored by a supervisor
                 if (workerId != null) {
-                    workers.remove(workerId);
+                    detachedRunningWorkers.remove(workerId);
                 }
             }
-            if (!workers.isEmpty()) {
-                supervisor.killWorkers(workers, launcher);
+            if (!detachedRunningWorkers.isEmpty()) {
+                supervisor.killWorkers(detachedRunningWorkers, launcher);
             }
         } catch (Exception e) {
             LOG.warn("Error trying to clean up old workers", e);

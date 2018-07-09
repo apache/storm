@@ -252,7 +252,7 @@ public class AsyncLocalizer implements AutoCloseable {
                                 long remoteVersion = blob.getRemoteVersion(blobStore);
                                 if (localVersion != remoteVersion || !blob.isFullyDownloaded()) {
                                     try {
-                                        long newVersion = blob.downloadToTempLocation(blobStore);
+                                        long newVersion = blob.fetchUnzipToTemp(blobStore);
                                         blob.informAllOfChangeAndWaitForConsensus();
                                         blob.commitNewVersion(newVersion);
                                         blob.informAllChangeComplete();
@@ -531,9 +531,9 @@ public class AsyncLocalizer implements AutoCloseable {
                 // go off to blobstore and get it
                 // assume dir passed in exists and has correct permission
                 LOG.debug("fetching blob: {}", key);
+                lrsrc.addReference(pna, localResource.needsCallback() ? cb : null);
                 futures.add(downloadOrUpdate(lrsrc));
                 results.add(lrsrc);
-                lrsrc.addReference(pna, localResource.needsCallback() ? cb : null);
             }
 
             for (CompletableFuture<?> futureRsrc : futures) {

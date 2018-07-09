@@ -25,8 +25,7 @@ import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.utils.WrappedDRPCExecutionException;
 
 public class BlockingOutstandingRequest extends OutstandingRequest {
-    public static final RequestFactory<BlockingOutstandingRequest> FACTORY =
-        (function, request) -> new BlockingOutstandingRequest(function, request);
+    public static final RequestFactory<BlockingOutstandingRequest> FACTORY = BlockingOutstandingRequest::new;
     private Semaphore _sem;
     private volatile String _result = null;
     private volatile DRPCExecutionException _e = null;
