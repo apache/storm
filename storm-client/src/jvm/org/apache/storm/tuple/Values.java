@@ -28,6 +28,8 @@ public class Values extends ArrayList<Object> {
             for (Object o : vals) {
                 add(o);
             }
+        } else {
+            add(null);
         }
     }
 }

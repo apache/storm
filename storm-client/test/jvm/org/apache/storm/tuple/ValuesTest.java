@@ -24,9 +24,15 @@ import org.junit.Test;
 public class ValuesTest {
 
     @Test
+    public void testNoArgsToValues() {
+        Values vals = new Values();
+        Assert.assertTrue("Failed to add null to Values", vals.size() == 0);
+    }
+
+    @Test
     public void testNullArgsToValues() {
         Values vals = new Values(null);
-        Assert.assertTrue("Failed to add null to Values", vals.size() == 0);
+        Assert.assertTrue("Failed to add null to Values", vals.size() == 1);
     }
 
     @Test
@@ -35,4 +41,9 @@ public class ValuesTest {
         Assert.assertTrue("Failed to Add values to Values", vals.size() == 2);
     }
 
+    @Test
+    public void testNullAsArgsToValues() {
+        Values vals = new Values(null, "A");
+        Assert.assertTrue("Failed to Add values to Values", vals.size() == 2);
+    }
 }
