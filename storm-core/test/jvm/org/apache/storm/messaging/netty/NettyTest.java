@@ -17,6 +17,7 @@
 package org.apache.storm.messaging.netty;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThat;
 
 import java.nio.charset.StandardCharsets;
@@ -45,6 +46,7 @@ import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.utils.Utils;
 import org.junit.Test;
+import org.mockito.internal.matchers.LessThan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -398,4 +400,41 @@ public class NettyTest {
     public void testServerAlwaysReconnectsWithSasl() throws Exception {
         doTestServerAlwaysReconnects(withSaslConf(basicConf()));
     }
+
+    private void connectToFixedPort(Map<String, Object> stormConf, int port) throws Exception {
+        LOG.info("7. Should be able to rebind to a port quickly");
+        String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
+        IContext context = TransportFactory.makeContext(stormConf);
+        try {
+            AtomicReference<TaskMessage> response = new AtomicReference<>();
+            try (IConnection server = context.bind(null, port);
+                 IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
+                server.registerRecv(mkConnectionCallback(response::set));
+                waitUntilReady(client, server);
+                byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
+
+                send(client, taskId, messageBytes);
+
+                waitForNotNull(response);
+                TaskMessage responseMessage = response.get();
+                assertThat(responseMessage.task(), is(taskId));
+                assertThat(responseMessage.message(), is(messageBytes));
+            }
+        } finally {
+            context.term();
+        }
+    }
+
+    @Test
+    public void testRebind() throws Exception {
+        for (int i = 0; i < 10; ++i) {
+            final long startTime = System.nanoTime();
+            LOG.info("Binding to port 6700 iter: " + (i+1));
+            connectToFixedPort(basicConf(), 6700);
+            final long endTime = System.nanoTime();
+            LOG.info("Expected time taken should be less than 5 sec, actual time is: " + (endTime-startTime)/1_000_000 + " ms");
+            assertThat((endTime-startTime)/1_000_000, lessThan(5_000L));
+        }
+    }
+
 }
