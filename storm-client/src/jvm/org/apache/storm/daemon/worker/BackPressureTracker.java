@@ -22,39 +22,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import org.apache.storm.Constants;
 import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.utils.JCQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.Constants.SYSTEM_TASK_ID;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import java.util.stream.Collectors;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
 
 /***
- *   Tracks the BackPressure status using a Map<TaskId, JCQueue>.
- *   Special value NONE, is used to indicate that the task is not under BackPressure
- *   ConcurrentHashMap does not allow storing null values, so we use the special value NONE instead.
+ *   Tracks the BackPressure status.
  */
 public class BackPressureTracker {
     static final Logger LOG = LoggerFactory.getLogger(BackPressureTracker.class);
-    private static final JCQueue NONE = new JCQueue("NoneQ", 2, 0, 1, null,
-                                                    "none", Constants.SYSTEM_COMPONENT_ID, -1, 0) {
-    };
-    private final Map<Integer, JCQueue> tasks = new ConcurrentHashMap<>(); // updates are more frequent than iteration
+    private final Map<Integer, BackpressureState> tasks;
     private final String workerId;
 
-    public BackPressureTracker(String workerId, List<Integer> allLocalTasks) {
+    public BackPressureTracker(String workerId, Map<Integer, JCQueue> localTasksToQueues) {
         this.workerId = workerId;
-        for (Integer taskId : allLocalTasks) {
-            if (taskId != SYSTEM_TASK_ID) {
-                tasks.put(taskId, NONE);  // all tasks are considered to be not under BP initially
-            }
-        }
+        this.tasks = localTasksToQueues.entrySet().stream()
+            .collect(Collectors.toMap(
+                entry -> entry.getKey(),
+                entry -> new BackpressureState(entry.getValue())));
     }
 
     private void recordNoBackPressure(Integer taskId) {
-        tasks.put(taskId, NONE);
+        tasks.get(taskId).backpressure.set(false);
     }
 
     /***
@@ -62,16 +58,17 @@ public class BackPressureTracker {
      * This is called by transferLocalBatch() on NettyWorker thread
      * @return true if an update was recorded, false if taskId is already under BP
      */
-    public boolean recordBackPressure(Integer taskId, JCQueue recvQ) {
-        return tasks.put(taskId, recvQ) == NONE;
+    public boolean recordBackPressure(Integer taskId) {
+        return tasks.get(taskId).backpressure.getAndSet(true) == false;
     }
 
     // returns true if there was a change in the BP situation
     public boolean refreshBpTaskList() {
         boolean changed = false;
         LOG.debug("Running Back Pressure status change check");
-        for (Entry<Integer, JCQueue> entry : tasks.entrySet()) {
-            if (entry.getValue() != NONE && entry.getValue().isEmptyOverflow()) {
+        for (Entry<Integer, BackpressureState> entry : tasks.entrySet()) {
+            BackpressureState state = entry.getValue();
+            if (state.backpressure.get() && state.queue.isEmptyOverflow()) {
                 recordNoBackPressure(entry.getKey());
                 changed = true;
             }
@@ -83,14 +80,32 @@ public class BackPressureTracker {
         ArrayList<Integer> bpTasks = new ArrayList<>(tasks.size());
         ArrayList<Integer> nonBpTasks = new ArrayList<>(tasks.size());
 
-        for (Entry<Integer, JCQueue> entry : tasks.entrySet()) {
-            JCQueue q = entry.getValue();
-            if (q != NONE) {
+        for (Entry<Integer, BackpressureState> entry : tasks.entrySet()) {
+            boolean backpressure = entry.getValue().backpressure.get();
+            if (backpressure) {
                 bpTasks.add(entry.getKey());
             } else {
                 nonBpTasks.add(entry.getKey());
             }
         }
         return new BackPressureStatus(workerId, bpTasks, nonBpTasks);
+    }
+    
+    private static class BackpressureState {
+        private final JCQueue queue;
+        //No task is under backpressure initially
+        private final AtomicBoolean backpressure = new AtomicBoolean(false);
+
+        public BackpressureState(JCQueue queue) {
+            this.queue = queue;
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                .append(queue)
+                .append(backpressure)
+                .toString();
+        }
     }
 }
