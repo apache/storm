@@ -206,10 +206,8 @@ struct NimbusSummary {
 
 struct ClusterSummary {
   1: required list<SupervisorSummary> supervisors;
-  //@deprecated, please use nimbuses.uptime_secs instead.
-  2: optional i32 nimbus_uptime_secs = 0;
-  3: required list<TopologySummary> topologies;
-  4: required list<NimbusSummary> nimbuses;
+  2: required list<TopologySummary> topologies;
+  3: required list<NimbusSummary> nimbuses;
 }
 
 struct ErrorInfo {
@@ -760,8 +758,6 @@ service Nimbus {
   void uploadChunk(1: string location, 2: binary chunk) throws (1: AuthorizationException aze);
   void finishFileUpload(1: string location) throws (1: AuthorizationException aze);
 
-  //@deprecated beginBlobDownload does that
-  string beginFileDownload(1: string file) throws (1: AuthorizationException aze);
   //can stop downloading chunks when receive 0-length byte array back
   binary downloadChunk(1: string id) throws (1: AuthorizationException aze);
 

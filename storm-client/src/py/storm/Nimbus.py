@@ -271,13 +271,6 @@ class Iface(object):
         """
         pass
 
-    def beginFileDownload(self, file):
-        """
-        Parameters:
-         - file
-        """
-        pass
-
     def downloadChunk(self, id):
         """
         Parameters:
@@ -1463,39 +1456,6 @@ class Client(Iface):
             raise result.aze
         return
 
-    def beginFileDownload(self, file):
-        """
-        Parameters:
-         - file
-        """
-        self.send_beginFileDownload(file)
-        return self.recv_beginFileDownload()
-
-    def send_beginFileDownload(self, file):
-        self._oprot.writeMessageBegin('beginFileDownload', TMessageType.CALL, self._seqid)
-        args = beginFileDownload_args()
-        args.file = file
-        args.write(self._oprot)
-        self._oprot.writeMessageEnd()
-        self._oprot.trans.flush()
-
-    def recv_beginFileDownload(self):
-        iprot = self._iprot
-        (fname, mtype, rseqid) = iprot.readMessageBegin()
-        if mtype == TMessageType.EXCEPTION:
-            x = TApplicationException()
-            x.read(iprot)
-            iprot.readMessageEnd()
-            raise x
-        result = beginFileDownload_result()
-        result.read(iprot)
-        iprot.readMessageEnd()
-        if result.success is not None:
-            return result.success
-        if result.aze is not None:
-            raise result.aze
-        raise TApplicationException(TApplicationException.MISSING_RESULT, "beginFileDownload failed: unknown result")
-
     def downloadChunk(self, id):
         """
         Parameters:
@@ -2214,7 +2174,6 @@ class Processor(Iface, TProcessor):
         self._processMap["beginFileUpload"] = Processor.process_beginFileUpload
         self._processMap["uploadChunk"] = Processor.process_uploadChunk
         self._processMap["finishFileUpload"] = Processor.process_finishFileUpload
-        self._processMap["beginFileDownload"] = Processor.process_beginFileDownload
         self._processMap["downloadChunk"] = Processor.process_downloadChunk
         self._processMap["getNimbusConf"] = Processor.process_getNimbusConf
         self._processMap["getClusterInfo"] = Processor.process_getClusterInfo
@@ -3075,32 +3034,6 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.EXCEPTION
             result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
         oprot.writeMessageBegin("finishFileUpload", msg_type, seqid)
-        result.write(oprot)
-        oprot.writeMessageEnd()
-        oprot.trans.flush()
-
-    def process_beginFileDownload(self, seqid, iprot, oprot):
-        args = beginFileDownload_args()
-        args.read(iprot)
-        iprot.readMessageEnd()
-        result = beginFileDownload_result()
-        try:
-            result.success = self._handler.beginFileDownload(args.file)
-            msg_type = TMessageType.REPLY
-        except TTransport.TTransportException:
-            raise
-        except AuthorizationException as aze:
-            msg_type = TMessageType.REPLY
-            result.aze = aze
-        except TApplicationException as ex:
-            logging.exception('TApplication exception in handler')
-            msg_type = TMessageType.EXCEPTION
-            result = ex
-        except Exception:
-            logging.exception('Unexpected exception in handler')
-            msg_type = TMessageType.EXCEPTION
-            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
-        oprot.writeMessageBegin("beginFileDownload", msg_type, seqid)
         result.write(oprot)
         oprot.writeMessageEnd()
         oprot.trans.flush()
@@ -7918,140 +7851,6 @@ class finishFileUpload_result(object):
 all_structs.append(finishFileUpload_result)
 finishFileUpload_result.thrift_spec = (
     None,  # 0
-    (1, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 1
-)
-
-
-class beginFileDownload_args(object):
-    """
-    Attributes:
-     - file
-    """
-
-
-    def __init__(self, file=None,):
-        self.file = file
-
-    def read(self, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
-            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
-            return
-        iprot.readStructBegin()
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    self.file = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('beginFileDownload_args')
-        if self.file is not None:
-            oprot.writeFieldBegin('file', TType.STRING, 1)
-            oprot.writeString(self.file.encode('utf-8') if sys.version_info[0] == 2 else self.file)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        return
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-all_structs.append(beginFileDownload_args)
-beginFileDownload_args.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'file', 'UTF8', None, ),  # 1
-)
-
-
-class beginFileDownload_result(object):
-    """
-    Attributes:
-     - success
-     - aze
-    """
-
-
-    def __init__(self, success=None, aze=None,):
-        self.success = success
-        self.aze = aze
-
-    def read(self, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
-            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
-            return
-        iprot.readStructBegin()
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 0:
-                if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 1:
-                if ftype == TType.STRUCT:
-                    self.aze = AuthorizationException()
-                    self.aze.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('beginFileDownload_result')
-        if self.success is not None:
-            oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
-            oprot.writeFieldEnd()
-        if self.aze is not None:
-            oprot.writeFieldBegin('aze', TType.STRUCT, 1)
-            self.aze.write(oprot)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        return
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-all_structs.append(beginFileDownload_result)
-beginFileDownload_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
     (1, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 1
 )
 

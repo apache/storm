@@ -72,7 +72,6 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  string beginFileUpload()')
     print('  void uploadChunk(string location, string chunk)')
     print('  void finishFileUpload(string location)')
-    print('  string beginFileDownload(string file)')
     print('  string downloadChunk(string id)')
     print('  string getNimbusConf()')
     print('  ClusterSummary getClusterInfo()')
@@ -351,12 +350,6 @@ elif cmd == 'finishFileUpload':
         print('finishFileUpload requires 1 args')
         sys.exit(1)
     pp.pprint(client.finishFileUpload(args[0],))
-
-elif cmd == 'beginFileDownload':
-    if len(args) != 1:
-        print('beginFileDownload requires 1 args')
-        sys.exit(1)
-    pp.pprint(client.beginFileDownload(args[0],))
 
 elif cmd == 'downloadChunk':
     if len(args) != 1:

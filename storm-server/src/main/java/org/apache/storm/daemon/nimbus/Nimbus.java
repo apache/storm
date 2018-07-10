@@ -236,7 +236,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final Meter beginFileUploadCalls = StormMetricsRegistry.registerMeter("nimbus:num-beginFileUpload-calls");
     private static final Meter uploadChunkCalls = StormMetricsRegistry.registerMeter("nimbus:num-uploadChunk-calls");
     private static final Meter finishFileUploadCalls = StormMetricsRegistry.registerMeter("nimbus:num-finishFileUpload-calls");
-    private static final Meter beginFileDownloadCalls = StormMetricsRegistry.registerMeter("nimbus:num-beginFileDownload-calls");
     private static final Meter downloadChunkCalls = StormMetricsRegistry.registerMeter("nimbus:num-downloadChunk-calls");
     private static final Meter getNimbusConfCalls = StormMetricsRegistry.registerMeter("nimbus:num-getNimbusConf-calls");
     private static final Meter getLogConfigCalls = StormMetricsRegistry.registerMeter("nimbus:num-getLogConfig-calls");
@@ -2692,7 +2691,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
 
         ClusterSummary ret = new ClusterSummary(summaries, topologySummaries, nimbuses);
-        ret.set_nimbus_uptime_secs(uptime);
         return ret;
     }
 
@@ -3734,27 +3732,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             uploaders.remove(location);
         } catch (Exception e) {
             LOG.warn("finish file upload exception.", e);
-            if (e instanceof TException) {
-                throw (TException) e;
-            }
-            throw new RuntimeException(e);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public String beginFileDownload(String file) throws AuthorizationException, TException {
-        try {
-            beginFileDownloadCalls.mark();
-            checkAuthorization(null, null, "fileDownload");
-            BufferInputStream is = new BufferInputStream(blobStore.getBlob(file, null),
-                                                         ObjectReader.getInt(conf.get(Config.STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES),
-                                                                             65536));
-            String id = Utils.uuid();
-            downloaders.put(id, is);
-            return id;
-        } catch (Exception e) {
-            LOG.warn("begin file download exception.", e);
             if (e instanceof TException) {
                 throw (TException) e;
             }
