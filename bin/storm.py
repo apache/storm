@@ -640,15 +640,31 @@ def kill_workers(*args):
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
 def admin(*args):
-    """Syntax: [storm admin cmd]
+    """Syntax: [storm admin cmd [options]]
 
-    This is a proxy of nimbus and allow to execute admin commands. As of now it supports
-    command to remove corrupt topologies.
-    Nimbus doesn't clean up corrupted topologies automatically. This command should clean
-    up corrupt topologies i.e.topologies whose codes are not available on blobstore.
-    In future this command would support more admin commands.
-    Supported command
-    storm admin remove_corrupt_topologies
+    The storm admin command provides access to several operations that can help
+    an administrator debug or fix a cluster.
+
+    remove_corrupt_topologies - This command should be run on a nimbus node as
+    the same user nimbus runs as.  It will go directly to zookeeper + blobstore
+    and find topologies that appear to be corrupted because of missing blobs.
+    It will kill those topologies.
+
+    zk_cli [options] - This command will launch a zookeeper cli pointing to the
+    storm zookeeper instance logged in as the nimbus user.  It should be run on
+    a nimbus server as the user nimbus runs as.
+        -s --server <connection string>: Set the connection string to use,
+            defaults to storm connection string.
+        -t --time-out <timeout>:  Set the timeout to use, defaults to storm
+            zookeeper timeout.
+        -w --write: Allow for writes, defaults to read only, we don't want to
+            cause problems.
+        -n --no-root: Don't include the storm root on the default connection string.
+        -j --jaas <jaas_file>: Include a jaas file that should be used when
+            authenticating with ZK defaults to the
+            java.security.auth.login.config conf.
+
+    creds topology_id - Print the credential keys for a topology.
     """
     exec_storm_class(
         "org.apache.storm.command.AdminCommands",
