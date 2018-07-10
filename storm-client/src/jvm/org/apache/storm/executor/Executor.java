@@ -259,9 +259,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     @Override
     public void accept(Object event) {
-        if (event == JCQueue.INTERRUPT) {
-            throw new RuntimeException(new InterruptedException("JCQ processing interrupted"));
-        }
         AddressedTuple addressedTuple = (AddressedTuple) event;
         int taskId = addressedTuple.getDest();
 

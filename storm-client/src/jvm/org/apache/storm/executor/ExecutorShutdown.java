@@ -90,7 +90,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
     public void shutdown() {
         try {
             LOG.info("Shutting down executor " + executor.getComponentId() + ":" + executor.getExecutorId());
-            executor.getReceiveQueue().haltWithInterrupt();
+            executor.getReceiveQueue().close();
             for (Utils.SmartThread t : threads) {
                 t.interrupt();
             }
