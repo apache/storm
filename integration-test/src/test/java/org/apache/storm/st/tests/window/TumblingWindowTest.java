@@ -29,7 +29,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public final class TumblingWindowTest extends AbstractTest {
-    private static Logger log = LoggerFactory.getLogger(TumblingWindowTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TumblingWindowTest.class);
+    private final WindowVerifier windowVerifier = new WindowVerifier();
     private TopoWrap topo;
 
     @DataProvider
@@ -58,7 +59,7 @@ public final class TumblingWindowTest extends AbstractTest {
             }
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
-        SlidingWindowTest.runAndVerifyCount(tumbleSize, tumbleSize, testable, topo);
+        windowVerifier.runAndVerifyCount(tumbleSize, tumbleSize, testable, topo);
     }
 
     @DataProvider
@@ -87,7 +88,7 @@ public final class TumblingWindowTest extends AbstractTest {
             }
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
-        SlidingWindowTest.runAndVerifyTime(tumbleSec, tumbleSec, testable, topo);
+        windowVerifier.runAndVerifyTime(tumbleSec, tumbleSec, testable, topo);
     }
 
     @AfterMethod

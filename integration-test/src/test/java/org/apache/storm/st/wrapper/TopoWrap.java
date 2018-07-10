@@ -39,6 +39,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.commons.io.FileUtils;
@@ -69,16 +70,15 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 
 public class TopoWrap {
-    private static Logger log = LoggerFactory.getLogger(TopoWrap.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TopoWrap.class);
+    private static final Map<String, Object> SUBMIT_CONF = getSubmitConf();
     private final StormCluster cluster;
-
     private final String name;
     private final StormTopology topology;
     private String id;
-    public static Map<String, Object> submitConf = getSubmitConf();
     static {
         String jarFile = getJarPath();
-        log.info("setting storm.jar to: " + jarFile);
+        LOG.info("setting storm.jar to: " + jarFile);
         System.setProperty("storm.jar", jarFile);
     }
 
@@ -88,9 +88,9 @@ public class TopoWrap {
         this.topology = topology;
     }
 
-    public void submit(ImmutableMap<String, Object> of) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
-        final HashMap<String, Object> newConfig = new HashMap<>(submitConf);
-        newConfig.putAll(of);
+    public void submit(ImmutableMap<String, Object> topoConf) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+        final HashMap<String, Object> newConfig = new HashMap<>(SUBMIT_CONF);
+        newConfig.putAll(topoConf);
         StormSubmitter.submitTopologyWithProgressBar(name, newConfig, topology);
     }
 
@@ -111,18 +111,17 @@ public class TopoWrap {
         Assert.assertNotNull(userDirVal, "property " + USER_DIR + " was not set.");
         File projectDir = new File(userDirVal);
         AssertUtil.exists(projectDir);
+        
         Collection<File> allJars = FileUtils.listFiles(projectDir, new String[]{"jar"}, true);
-        final Collection<File> jarFiles = Collections2.filter(allJars, new Predicate<File>() {
-            @Override
-            public boolean apply(@Nullable File input) {
-                return input != null && !input.getName().contains("surefirebooter");
-            }
-        });
-        log.info("Found jar files: " + jarFiles);
-        AssertUtil.nonEmpty(jarFiles, "The jar file is missing - did you run 'mvn clean package -DskipTests' before running tests ?");
+        final List<File> jarsExcludingSurefire = allJars.stream()
+            .filter(file -> file != null && !file.getName().contains("surefirebooter"))
+            .collect(Collectors.toList());
+        LOG.info("Found jar files: " + jarsExcludingSurefire);
+        AssertUtil.nonEmpty(jarsExcludingSurefire, "The jar file is missing - did you run 'mvn clean package -DskipTests' before running tests ?");
+        
         String jarFile = null;
-        for (File jarPath : jarFiles) {
-            log.info("jarPath = " + jarPath);
+        for (File jarPath : jarsExcludingSurefire) {
+            LOG.info("jarPath = " + jarPath);
             if (jarPath != null && !jarPath.getPath().contains("original")) {
                 AssertUtil.exists(jarPath);
                 jarFile = jarPath.getAbsolutePath();
@@ -130,31 +129,27 @@ public class TopoWrap {
             }
         }
         Assert.assertNotNull(jarFile, "Couldn't detect a suitable jar file for uploading.");
-        log.info("jarFile = " + jarFile);
+        LOG.info("jarFile = " + jarFile);
         return jarFile;
     }
 
-    public void submitSuccessfully(ImmutableMap<String, Object> config) throws TException {
-        submit(config);
+    public void submitSuccessfully(ImmutableMap<String, Object> topoConf) throws TException {
+        submit(topoConf);
         TopologySummary topologySummary = getSummary();
         Assert.assertEquals(topologySummary.get_status().toLowerCase(), "active", "Topology must be active.");
         id = topologySummary.get_id();
     }
 
     public void submitSuccessfully() throws TException {
-        submitSuccessfully(ImmutableMap.<String, Object>of());
+        submitSuccessfully(ImmutableMap.of());
     }
 
     private TopologySummary getSummary() throws TException {
-        List<TopologySummary> allTopos = cluster.getSummaries();
-        Collection<TopologySummary> oneTopo = Collections2.filter(allTopos, new Predicate<TopologySummary>() {
-            @Override
-            public boolean apply(@Nullable TopologySummary input) {
-                return input != null && input.get_name().equals(name);
-            }
-        });
+        List<TopologySummary> oneTopo = cluster.getSummaries().stream()
+            .filter(summary -> summary != null && summary.get_name().equals(name))
+            .collect(Collectors.toList());
         AssertUtil.assertOneElement(oneTopo);
-        return oneTopo.iterator().next();
+        return oneTopo.get(0);
     }
 
     public TopologyInfo getInfo() throws TException {
@@ -164,43 +159,34 @@ public class TopoWrap {
     public long getAllTimeEmittedCount(final String componentId) throws TException {
         TopologyInfo info = getInfo();
         final List<ExecutorSummary> executors = info.get_executors();
-        List<Long> ackCounts = Lists.transform(executors, new Function<ExecutorSummary, Long>() {
-            @Nullable
-            @Override
-            public Long apply(@Nullable ExecutorSummary input) {
-                if (input == null || !input.get_component_id().equals(componentId))
+        
+        return executors.stream()
+            .filter(summary -> summary != null && summary.get_component_id().equals(componentId))
+            .mapToLong(summary -> {
+                ExecutorStats executorStats = summary.get_stats();
+                if (executorStats == null) {
                     return 0L;
-                String since = ":all-time";
-                return getEmittedCount(input, since);
-            }
-
-            //possible values for since are strings :all-time, 600, 10800, 86400
-            public Long getEmittedCount(@Nonnull ExecutorSummary input, @Nonnull String since) {
-                ExecutorStats executorStats = input.get_stats();
-                if (executorStats == null)
-                    return 0L;
+                }                
                 Map<String, Map<String, Long>> emitted = executorStats.get_emitted();
-                if (emitted == null)
+                if (emitted == null) {
                     return 0L;
-                Map<String, Long> allTime = emitted.get(since);
-                if (allTime == null)
+                }
+                Map<String, Long> allTime = emitted.get(":all-time");
+                if (allTime == null) {
                     return 0L;
+                }
                 return allTime.get(Utils.DEFAULT_STREAM_ID);
-            }
-        });
-        return sum(ackCounts).longValue();
+            }).sum();
     }
 
+    /**
+     * Get the Logviewer worker log URLs for the specified component.
+     */
     public List<ExecutorURL> getLogUrls(final String componentId) throws TException, MalformedURLException {
         ComponentPageInfo componentPageInfo = cluster.getNimbusClient().getComponentPageInfo(id, componentId, null, false);
-        Map<String, ComponentAggregateStats> windowToStats = componentPageInfo.get_window_to_stats();
-        ComponentAggregateStats allTimeStats = windowToStats.get(":all-time");
-        //Long emitted = (Long) allTimeStats.getFieldValue(ComponentAggregateStats._Fields.findByName("emitted"));
-
-
-        List<ExecutorAggregateStats> execStats = componentPageInfo.get_exec_stats();
+        List<ExecutorAggregateStats> executorStats = componentPageInfo.get_exec_stats();
         Set<ExecutorURL> urls = new HashSet<>();
-        for (ExecutorAggregateStats execStat : execStats) {
+        for (ExecutorAggregateStats execStat : executorStats) {
             ExecutorSummary execSummary = execStat.get_exec_summary();
             String host = execSummary.get_host();
             int executorPort = execSummary.get_port();
@@ -215,9 +201,9 @@ public class TopoWrap {
 
     public void waitForProgress(int minEmits, String componentName, int maxWaitSec) throws TException {
         for(int i = 0; i < (maxWaitSec+9)/10; ++i) {
-            log.info(getInfo().toString());
+            LOG.info(getInfo().toString());
             long emitCount = getAllTimeEmittedCount(componentName);
-            log.info("Count for component " + componentName + " is " + emitCount);
+            LOG.info("Count for component " + componentName + " is " + emitCount);
             if (emitCount >= minEmits) {
                 break;
             }
@@ -232,9 +218,9 @@ public class TopoWrap {
     }
 
     public static class ExecutorURL {
-        private String componentId;
-        private URL viewUrl;
-        private URL downloadUrl;
+        private final String componentId;
+        private final URL viewUrl;
+        private final URL downloadUrl;
 
         @Override
         public boolean equals(Object o) {
@@ -285,91 +271,82 @@ public class TopoWrap {
         }
     }
 
-    public <T extends FromJson<T>> List<T> getLogData(final String componentId, final FromJson<T> cls) 
+    /**
+     * Get the log lines that contain the unique {@link StringDecorator} string, deserialized from json.
+     * The intent is that test bolts or spouts can write the unique string, followed by json data to log via {@link StringDecorator}.
+     * This method will recognize such lines, and deserialize the json data using the provided decoder.
+     */
+    public <T> List<T> getDeserializedDecoratedLogLines(final String componentId, final FromJson<T> jsonDeserializer) 
             throws IOException, TException, MalformedURLException {
-        final List<LogData> logData = getLogData(componentId);
-        return deserializeLogData(logData, cls);
+        final List<DecoratedLogLine> logData = getDecoratedLogLines(componentId);
+        return deserializeLogData(logData, jsonDeserializer);
     }
     
-    public <T extends FromJson<T>> List<T> deserializeLogData(final List<LogData> logData, final FromJson<T> cls) {
-        final List<T> data = new ArrayList<>(
-                Collections2.transform(logData, new Function<LogData, T>() {
-                    @Nullable
-                    @Override
-                    public T apply(@Nullable LogData input) {
-                        Assert.assertNotNull(input, "Expected LogData to be non-null.");
-                        return cls.fromJson(input.getData());
-                    }
-                }));
-        return data;
+    public <T> List<T> deserializeLogData(List<DecoratedLogLine> logData, final FromJson<T> jsonDeserializer) {
+        return logData.stream()
+            .peek(Assert::assertNotNull)
+            .map(DecoratedLogLine::getData)
+            .map(jsonDeserializer::fromJson)
+            .collect(Collectors.toList());
     }
 
-    public List<LogData> getLogData(final String componentId) throws IOException, TException, MalformedURLException {
+    /**
+     * Get the log lines that contain the unique {@link StringDecorator} string.
+     * Test spouts and bolts can write logs containing the StringDecorator string, which can be fetched using this method.
+     */
+    public List<DecoratedLogLine> getDecoratedLogLines(final String componentId) throws IOException, TException, MalformedURLException {
         final String logs = getLogs(componentId);
         final String dateRegex = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
         Pattern pattern = Pattern.compile("(?=\\n" + dateRegex + ")");
-        final String[] strings = pattern.split(logs);
-        final Collection<String> interestingLogs = Collections2.filter(Arrays.asList(strings), new Predicate<String>() {
-            @Override
-            public boolean apply(@Nullable String input) {
-                return input != null && StringDecorator.isDecorated(input);
-            }
-        });
-        final Collection<LogData> logData = Collections2.transform(interestingLogs, new Function<String, LogData>() {
-            @Nullable
-            @Override
-            public LogData apply(@Nullable String input) {
-                return new LogData(input);
-            }
-        });
-        final ArrayList<LogData> sortedLogs = new ArrayList<>(logData);
-        Collections.sort(sortedLogs);
-        log.info("Found " + sortedLogs.size() + " items for component: " + componentId);
+        final String[] logLines = pattern.split(logs);
+        List<DecoratedLogLine> sortedLogs = Arrays.asList(logLines).stream()
+            .filter(log -> log != null && StringDecorator.isDecorated(log))
+            .map(DecoratedLogLine::new)
+            .sorted()
+            .collect(Collectors.toList());
+        LOG.info("Found " + sortedLogs.size() + " items for component: " + componentId);
         return sortedLogs;
     }
 
+    /**
+     * Gets all logs for the specified component, concatenated to a single string.
+     */
     public String getLogs(final String componentId) throws IOException, TException, MalformedURLException {
-        log.info("Fetching logs for componentId = " + componentId);
-        List<ExecutorURL> exclaim2Urls = getLogUrls(componentId);
-        log.info("Found " + exclaim2Urls.size() + " urls: " + exclaim2Urls.toString());
+        LOG.info("Fetching logs for componentId = " + componentId);
+        List<ExecutorURL> componentLogUrls = getLogUrls(componentId);
+        LOG.info("Found " + componentLogUrls.size() + " urls: " + componentLogUrls.toString());
         List<String> urlContents = new ArrayList<>();
-        for(ExecutorURL executorUrl : exclaim2Urls) {
+        for(ExecutorURL executorUrl : componentLogUrls) {
             if(executorUrl == null || executorUrl.getDownloadUrl() == null) {
                 continue;
             }
-            log.info("Fetching: " + executorUrl);
+            LOG.info("Fetching: " + executorUrl);
             URL downloadUrl = executorUrl.downloadUrl;
             String urlContent = IOUtils.toString(downloadUrl, StandardCharsets.UTF_8);
             urlContents.add(urlContent);
             if (urlContent.length() < 500) {
-                log.info("Fetched: " + urlContent);
+                LOG.info("Fetched: " + urlContent);
             } else {
-                log.info("Fetched: " + NumberFormat.getNumberInstance(Locale.US).format(urlContent.length()) + " bytes.");
+                LOG.info("Fetched: " + NumberFormat.getNumberInstance(Locale.US).format(urlContent.length()) + " bytes.");
             }
             if (System.getProperty("regression.downloadWorkerLogs").equalsIgnoreCase("true")) {
-                final String userDir = System.getProperty("user.dir");
-                final File target = new File(userDir, "target");
-                final File logDir = new File(target, "logs");
-                final File logFile = new File(logDir, downloadUrl.getHost() + "-" + downloadUrl.getFile().split("/")[2]);
-                try {
-                    FileUtils.forceMkdir(logDir);
-                    FileUtils.write(logFile, urlContent, StandardCharsets.UTF_8);
-                } catch (Throwable throwable) {
-                    log.info("Caught exception: " + ExceptionUtils.getFullStackTrace(throwable));
-                }
+                downloadLogUrl(downloadUrl, urlContent);
             }
         }
         return StringUtils.join(urlContents, '\n');
     }
-
-    private Number sum(Collection<? extends Number> nums) {
-        Double retVal = 0.0;
-        for (Number num : nums) {
-            if(num != null) {
-                retVal += num.doubleValue();
-            }
+    
+    private void downloadLogUrl(URL downloadUrl, String urlContent) {
+        final String userDir = System.getProperty("user.dir");
+        final File target = new File(userDir, "target");
+        final File logDir = new File(target, "logs");
+        final File logFile = new File(logDir, downloadUrl.getHost() + "-" + downloadUrl.getFile().split("/")[2]);
+        try {
+            FileUtils.forceMkdir(logDir);
+            FileUtils.write(logFile, urlContent, StandardCharsets.UTF_8);
+        } catch (Throwable throwable) {
+            LOG.info("Caught exception: " + ExceptionUtils.getFullStackTrace(throwable));
         }
-        return retVal;
     }
 
     public void killOrThrow() throws Exception {

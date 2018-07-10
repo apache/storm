@@ -27,32 +27,33 @@ import org.apache.storm.st.utils.StringDecorator;
 import java.util.Arrays;
 import java.util.List;
 
-public class LogData implements Comparable<LogData> {
+/**
+ * Convenience class splitting log lines decorated with {@link StringDecorator}.
+ * This provides easy access to the log line timestamp and data.
+ */
+public class DecoratedLogLine implements Comparable<DecoratedLogLine> {
     private final DateTime logDate;
     private final String data;
-    private static final int dateLen = "2016-05-04 23:38:10.702".length(); //format of date in worker logs
-    private static final DateTimeFormatter dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+    private static final int DATE_LEN = "2016-05-04 23:38:10.702".length(); //format of date in worker logs
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
-    public LogData(String logLine) {
-        DateTime tempDate;
-        final String[] pair = StringDecorator.split2(StringUtils.strip(logLine));
-        final List<String> pairList = Arrays.asList(pair);
-        AssertUtil.assertTwoElements(pairList);
-        tempDate = dateFormat.parseDateTime(pairList.get(0).substring(0, dateLen));
-        this.logDate = tempDate;
-        this.data = pairList.get(1);
+    public DecoratedLogLine(String logLine) {
+        final List<String> splitOnDecorator = Arrays.asList(StringDecorator.split2(StringUtils.strip(logLine)));
+        AssertUtil.assertTwoElements(splitOnDecorator);
+        this.logDate = DATE_FORMAT.parseDateTime(splitOnDecorator.get(0).substring(0, DATE_LEN));
+        this.data = splitOnDecorator.get(1);
     }
 
     @Override
     public String toString() {
         return "LogData{" +
-                "logDate=" + dateFormat.print(logDate) +
+                "logDate=" + DATE_FORMAT.print(logDate) +
                 ", data='" + getData() + '\'' +
                 '}';
     }
 
     @Override
-    public int compareTo(LogData that) {
+    public int compareTo(DecoratedLogLine that) {
         return this.logDate.compareTo(that.logDate);
     }
 

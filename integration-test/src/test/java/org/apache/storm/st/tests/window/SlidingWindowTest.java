@@ -17,21 +17,10 @@
 
 package org.apache.storm.st.tests.window;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.List;
 import org.apache.storm.st.helper.AbstractTest;
-import org.apache.storm.st.topology.TestableTopology;
 import org.apache.storm.st.topology.window.SlidingTimeCorrectness;
 import org.apache.storm.st.topology.window.SlidingWindowCorrectness;
-import org.apache.storm.st.topology.window.data.TimeData;
-import org.apache.storm.st.topology.window.data.TimeDataWindow;
-import org.apache.storm.st.utils.TimeUtil;
-import org.apache.storm.st.wrapper.LogData;
 import org.apache.storm.st.wrapper.TopoWrap;
-import org.apache.storm.thrift.TException;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -40,7 +29,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public final class SlidingWindowTest extends AbstractTest {
-    private static Logger log = LoggerFactory.getLogger(SlidingWindowTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SlidingWindowTest.class);
+    private final WindowVerifier windowVerifier = new WindowVerifier();
     private TopoWrap topo;
 
     @DataProvider
@@ -76,41 +66,7 @@ public final class SlidingWindowTest extends AbstractTest {
             }
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
-        runAndVerifyCount(windowSize, slideSize, testable, topo);
-    }
-
-    static void runAndVerifyCount(int windowSize, int slideSize, TestableTopology testable, TopoWrap topo) throws IOException, TException, MalformedURLException {
-        topo.submitSuccessfully();
-        final int minBoltEmits = 5;
-        //Sliding windows should produce one window every slideSize tuples
-        //Wait for the spout to emit at least enough tuples to get minBoltEmit windows and at least one full window
-        final int minSpoutEmits = Math.max(windowSize, minBoltEmits * slideSize);
-        
-        String boltName = testable.getBoltName();
-        String spoutName = testable.getSpoutName();
-        //Waiting for spout tuples isn't strictly necessary since we also wait for bolt emits, but do it anyway
-        topo.assertProgress(minSpoutEmits, spoutName, 180);
-        topo.assertProgress(minBoltEmits, boltName, 180);
-        List<TopoWrap.ExecutorURL> boltUrls = topo.getLogUrls(boltName);
-        log.info(boltUrls.toString());
-        final List<LogData> allBoltData = topo.getLogData(boltName);
-        final List<LogData> allSpoutData = topo.getLogData(spoutName);
-        Assert.assertTrue(allBoltData.size() >= minBoltEmits,
-                "Expecting min " + minBoltEmits + " bolt emits, found: " + allBoltData.size() + " \n\t" + allBoltData);
-        final int numberOfWindows = allBoltData.size();
-        for(int i = 0; i < numberOfWindows; ++i ) {
-            log.info("Comparing window: " + (i + 1) + " of " + numberOfWindows);
-            final int toIndex = (i + 1) * slideSize;
-            final int fromIndex = toIndex - windowSize;
-            final int positiveFromIndex = fromIndex > 0 ? fromIndex : 0;
-            final List<LogData> windowData = allSpoutData.subList(positiveFromIndex, toIndex);
-            final String actualString = allBoltData.get(i).toString();
-            for (LogData oneLog : windowData) {
-                final String logStr = oneLog.getData();
-                Assert.assertTrue(actualString.contains(logStr),
-                        String.format("Missing: '%s' \nActual: '%s' \nCalculated window: '%s'", logStr, actualString, windowData));
-            }
-        }
+        windowVerifier.runAndVerifyCount(windowSize, slideSize, testable, topo);
     }
 
     @DataProvider
@@ -144,43 +100,7 @@ public final class SlidingWindowTest extends AbstractTest {
             }
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
-        runAndVerifyTime(windowSec, slideSec, testable, topo);
-    }
-
-    static void runAndVerifyTime(int windowSec, int slideSec, TestableTopology testable, TopoWrap topo) throws IOException, TException, java.net.MalformedURLException {
-        topo.submitSuccessfully();
-        final int minSpoutEmits = 100;
-        final int minBoltEmits = 5;
-        String boltName = testable.getBoltName();
-        String spoutName = testable.getSpoutName();
-        //Waiting for spout tuples isn't strictly necessary since we also wait for bolt emits, but do it anyway
-        topo.assertProgress(minSpoutEmits, spoutName, 60 + 10 * (windowSec + slideSec));
-        topo.assertProgress(minBoltEmits, boltName, 60 + 10 * (windowSec + slideSec));
-        final List<TimeData> allSpoutDataDeserialized = topo.getLogData(spoutName, TimeData.CLS);
-        final List<LogData> allBoltData = topo.getLogData(boltName);
-        final List<TimeDataWindow> allBoltDataDeserialized = topo.deserializeLogData(allBoltData, TimeDataWindow.CLS);
-        Assert.assertTrue(allBoltData.size() >= minBoltEmits,
-                "Expecting min " + minBoltEmits + " bolt emits, found: " + allBoltData.size() + " \n\t" + allBoltData);
-        final DateTime firstEndTime = TimeUtil.ceil(new DateTime(allSpoutDataDeserialized.get(0).getDate()).withZone(DateTimeZone.UTC), slideSec);
-        final int numberOfWindows = allBoltData.size();
-        for(int i = 0; i < numberOfWindows; ++i ) {
-            final DateTime toDate = firstEndTime.plusSeconds(i * slideSec);
-            final DateTime  fromDate =  toDate.minusSeconds(windowSec);
-            log.info("Comparing window: " + fromDate + " to " + toDate + " iter " + (i+1) + "/" + numberOfWindows);
-            final TimeDataWindow computedWindow = TimeDataWindow.newInstance(allSpoutDataDeserialized,fromDate, toDate);
-            final LogData oneBoltLog = allBoltData.get(i);
-            final TimeDataWindow actualWindow = allBoltDataDeserialized.get(i);
-            log.info("Actual window: " + actualWindow.getDescription());
-            log.info("Computed window: " + computedWindow.getDescription());
-            for (TimeData oneLog : computedWindow) {
-                Assert.assertTrue(actualWindow.contains(oneLog),
-                        String.format("Missing: '%s' \n\tActual: '%s' \n\tComputed window: '%s'", oneLog, oneBoltLog, computedWindow));
-            }
-            for (TimeData oneLog : actualWindow) {
-                Assert.assertTrue(computedWindow.contains(oneLog),
-                        String.format("Extra: '%s' \n\tActual: '%s' \n\tComputed window: '%s'", oneLog, oneBoltLog, computedWindow));
-            }
-        }
+        windowVerifier.runAndVerifyTime(windowSec, slideSec, testable, topo);
     }
 
     @AfterMethod
