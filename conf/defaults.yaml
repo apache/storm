@@ -223,7 +223,6 @@ storm.messaging.netty.buffer.high.watermark: 16777216 # 16 MB
 # dropped down below this value, any blocked clients will unblock and start processing further messages.
 storm.messaging.netty.buffer.low.watermark: 8388608 # 8 MB
 # Since nimbus.task.launch.secs and supervisor.worker.start.timeout.secs are 120, other workers should also wait at least that long before giving up on connecting to the other worker. The reconnection period need also be bigger than storm.zookeeper.session.timeout(default is 20s), so that we can abort the reconnection when the target worker is dead.
-storm.messaging.netty.max_retries: 300
 storm.messaging.netty.max_wait_ms: 1000
 storm.messaging.netty.min_wait_ms: 100
 

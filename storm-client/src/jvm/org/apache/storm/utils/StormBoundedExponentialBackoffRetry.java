@@ -21,7 +21,7 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
     private static final Logger LOG = LoggerFactory.getLogger(StormBoundedExponentialBackoffRetry.class);
     private final Random random = new Random();
     private final int linearBaseSleepMs;
-    private int stepSize;
+    private final int stepSize;
     private int expRetriesThreshold;
 
     /**
@@ -31,7 +31,6 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
      * Also adds jitter for exponential/linear retry. It guarantees `currSleepTimeMs >= prevSleepTimeMs` and `baseSleepTimeMs <=
      * currSleepTimeMs <= maxSleepTimeMs`
      */
-
     public StormBoundedExponentialBackoffRetry(int baseSleepTimeMs, int maxSleepTimeMs, int maxRetries) {
         super(baseSleepTimeMs, maxSleepTimeMs, maxRetries);
         expRetriesThreshold = 1;
@@ -39,10 +38,10 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
             expRetriesThreshold++;
         }
         LOG.debug("The baseSleepTimeMs [{}] the maxSleepTimeMs [{}] the maxRetries [{}]",
-                  baseSleepTimeMs, maxSleepTimeMs, maxRetries);
+            baseSleepTimeMs, maxSleepTimeMs, maxRetries);
         if (baseSleepTimeMs > maxSleepTimeMs) {
-            LOG.warn("Misconfiguration: the baseSleepTimeMs [" + baseSleepTimeMs + "] can't be greater than " +
-                     "the maxSleepTimeMs [" + maxSleepTimeMs + "].");
+            LOG.warn("Misconfiguration: the baseSleepTimeMs [" + baseSleepTimeMs + "] can't be greater than "
+                + "the maxSleepTimeMs [" + maxSleepTimeMs + "].");
         }
         if (maxRetries > 0 && maxRetries > expRetriesThreshold) {
             this.stepSize = Math.max(1, (maxSleepTimeMs - (1 << expRetriesThreshold)) / (maxRetries - expRetriesThreshold));
@@ -62,8 +61,8 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
             return sleepTimeMs;
         } else {
             int stepJitter = random.nextInt(stepSize);
-            long sleepTimeMs = Math.min(super.getMaxSleepTimeMs(), (linearBaseSleepMs +
-                                                                    (stepSize * (retryCount - expRetriesThreshold)) + stepJitter));
+            long sleepTimeMs = Math.min(super.getMaxSleepTimeMs(), (linearBaseSleepMs
+                + (stepSize * (retryCount - expRetriesThreshold)) + stepJitter));
             LOG.warn("WILL SLEEP FOR {}ms (MAX)", sleepTimeMs);
             return sleepTimeMs;
         }

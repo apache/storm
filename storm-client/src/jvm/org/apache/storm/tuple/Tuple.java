@@ -29,14 +29,6 @@ public interface Tuple extends ITuple {
 
     /**
      * Returns the global stream id (component + stream) of this tuple.
-     *
-     * @deprecated replaced by {@link #getSourceGlobalStreamId()} due to broken naming convention
-     */
-    @Deprecated
-    public GlobalStreamId getSourceGlobalStreamid();
-
-    /**
-     * Returns the global stream id (component + stream) of this tuple.
      */
     public GlobalStreamId getSourceGlobalStreamId();
 

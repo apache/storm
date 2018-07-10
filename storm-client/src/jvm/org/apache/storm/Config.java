@@ -1115,13 +1115,6 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String STORM_LOCAL_HOSTNAME = "storm.local.hostname";
     /**
-     * The host that the master server is running on, added only for backward compatibility, the usage deprecated in favor of nimbus.seeds
-     * config.
-     */
-    @Deprecated
-    @isString
-    public static final String NIMBUS_HOST = "nimbus.host";
-    /**
      * List of seed nimbus hosts to use for leader nimbus discovery.
      */
     @isStringList
@@ -1308,14 +1301,6 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     public static final String STORM_NETTY_MESSAGE_BATCH_SIZE = "storm.messaging.netty.transfer.batch.size";
-    /**
-     * Netty based messaging: The max # of retries that a peer will perform when a remote is not accessible
-     *
-     * @deprecated "Since netty clients should never stop reconnecting - this does not make sense anymore.
-     */
-    @Deprecated
-    @isInteger
-    public static final String STORM_MESSAGING_NETTY_MAX_RETRIES = "storm.messaging.netty.max_retries";
     /**
      * Netty based messaging: The min # of milliseconds that a peer will wait.
      */

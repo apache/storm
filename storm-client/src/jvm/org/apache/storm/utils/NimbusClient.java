@@ -136,14 +136,7 @@ public class NimbusClient extends ThriftClient {
             asUser = (String) conf.get(Config.STORM_DO_AS_USER);
         }
 
-        List<String> seeds;
-        if (conf.containsKey(Config.NIMBUS_HOST) && StringUtils.isNotBlank(conf.get(Config.NIMBUS_HOST).toString())) {
-            LOG.warn("Using deprecated config {} for backward compatibility. Please update your storm.yaml so it only has config {}",
-                     Config.NIMBUS_HOST, Config.NIMBUS_SEEDS);
-            seeds = Lists.newArrayList(conf.get(Config.NIMBUS_HOST).toString());
-        } else {
-            seeds = (List<String>) conf.get(Config.NIMBUS_SEEDS);
-        }
+        List<String> seeds = (List<String>) conf.get(Config.NIMBUS_SEEDS);
 
         for (String host : seeds) {
             int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());

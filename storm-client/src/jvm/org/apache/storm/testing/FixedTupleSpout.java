@@ -41,14 +41,6 @@ public class FixedTupleSpout implements IRichSpout, CompletableSpout {
         this(tuples, (Fields) null);
     }
 
-    /**
-     * @deprecated please use {@link #FixedTupleSpout(List, Fields)}
-     */
-    @Deprecated
-    public FixedTupleSpout(List tuples, String fieldName) {
-        this(tuples, new Fields(fieldName));
-    }
-
     public FixedTupleSpout(List tuples, Fields fields) {
         _id = UUID.randomUUID().toString();
         synchronized (acked) {

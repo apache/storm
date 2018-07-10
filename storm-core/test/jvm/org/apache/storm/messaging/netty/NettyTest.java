@@ -137,7 +137,6 @@ public class NettyTest {
         stormConf.put(Config.STORM_MESSAGING_TRANSPORT, "org.apache.storm.messaging.netty.Context");
         stormConf.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false);
         stormConf.put(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE, 1024);
-        stormConf.put(Config.STORM_MESSAGING_NETTY_MAX_RETRIES, 10);
         stormConf.put(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS, 1000);
         stormConf.put(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS, 5000);
         stormConf.put(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS, 1);
