@@ -81,11 +81,14 @@ public class BackPressureTracker {
         ArrayList<Integer> nonBpTasks = new ArrayList<>(tasks.size());
 
         for (Entry<Integer, BackpressureState> entry : tasks.entrySet()) {
-            boolean backpressure = entry.getValue().backpressure.get();
-            if (backpressure) {
-                bpTasks.add(entry.getKey());
-            } else {
-                nonBpTasks.add(entry.getKey());
+            //System bolt is not a part of backpressure.
+            if (entry.getKey() >= 0) {
+                boolean backpressure = entry.getValue().backpressure.get();
+                if (backpressure) {
+                    bpTasks.add(entry.getKey());
+                } else {
+                    nonBpTasks.add(entry.getKey());
+                }
             }
         }
         return new BackPressureStatus(workerId, bpTasks, nonBpTasks);

@@ -47,12 +47,20 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
             BackPressureStatus status = (BackPressureStatus) message;
             if (status.bpTasks != null) {
                 for (Integer bpTask : status.bpTasks) {
-                    remoteBpStatus[bpTask].set(true);
+                    try {
+                        remoteBpStatus[bpTask].set(true);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        LOG.error("BP index out of bounds {}", e);
+                    }
                 }
             }
             if (status.nonBpTasks != null) {
                 for (Integer bpTask : status.nonBpTasks) {
-                    remoteBpStatus[bpTask].set(false);
+                    try {
+                        remoteBpStatus[bpTask].set(false);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        LOG.error("BP index out of bounds {}", e);
+                    }
                 }
             }
             LOG.debug("Received BackPressure status update : {}", status);
