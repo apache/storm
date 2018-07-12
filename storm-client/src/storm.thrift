@@ -206,8 +206,9 @@ struct NimbusSummary {
 
 struct ClusterSummary {
   1: required list<SupervisorSummary> supervisors;
-  2: required list<TopologySummary> topologies;
-  3: required list<NimbusSummary> nimbuses;
+  //2: Removed. Do not reuse.
+  3: required list<TopologySummary> topologies;
+  4: required list<NimbusSummary> nimbuses;
 }
 
 struct ErrorInfo {
@@ -711,6 +712,9 @@ struct WorkerMetrics {
 }
 
 service Nimbus {
+  //Removed methods, be careful about reusing these names
+  //string beginFileDownload(1: string file) throws (1: AuthorizationException aze);
+
   void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
   void submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
   void killTopology(1: string name) throws (1: NotAliveException e, 2: AuthorizationException aze);
@@ -757,7 +761,7 @@ service Nimbus {
   string beginFileUpload() throws (1: AuthorizationException aze);
   void uploadChunk(1: string location, 2: binary chunk) throws (1: AuthorizationException aze);
   void finishFileUpload(1: string location) throws (1: AuthorizationException aze);
-
+  
   //can stop downloading chunks when receive 0-length byte array back
   binary downloadChunk(1: string id) throws (1: AuthorizationException aze);
 

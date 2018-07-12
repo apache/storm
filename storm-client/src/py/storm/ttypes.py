@@ -2630,7 +2630,7 @@ class ClusterSummary(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
-            elif fid == 2:
+            elif fid == 3:
                 if ftype == TType.LIST:
                     self.topologies = []
                     (_etype130, _size127) = iprot.readListBegin()
@@ -2641,7 +2641,7 @@ class ClusterSummary(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
-            elif fid == 3:
+            elif fid == 4:
                 if ftype == TType.LIST:
                     self.nimbuses = []
                     (_etype136, _size133) = iprot.readListBegin()
@@ -2670,14 +2670,14 @@ class ClusterSummary(object):
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.topologies is not None:
-            oprot.writeFieldBegin('topologies', TType.LIST, 2)
+            oprot.writeFieldBegin('topologies', TType.LIST, 3)
             oprot.writeListBegin(TType.STRUCT, len(self.topologies))
             for iter140 in self.topologies:
                 iter140.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.nimbuses is not None:
-            oprot.writeFieldBegin('nimbuses', TType.LIST, 3)
+            oprot.writeFieldBegin('nimbuses', TType.LIST, 4)
             oprot.writeListBegin(TType.STRUCT, len(self.nimbuses))
             for iter141 in self.nimbuses:
                 iter141.write(oprot)
@@ -10819,8 +10819,9 @@ all_structs.append(ClusterSummary)
 ClusterSummary.thrift_spec = (
     None,  # 0
     (1, TType.LIST, 'supervisors', (TType.STRUCT, [SupervisorSummary, None], False), None, ),  # 1
-    (2, TType.LIST, 'topologies', (TType.STRUCT, [TopologySummary, None], False), None, ),  # 2
-    (3, TType.LIST, 'nimbuses', (TType.STRUCT, [NimbusSummary, None], False), None, ),  # 3
+    None,  # 2
+    (3, TType.LIST, 'topologies', (TType.STRUCT, [TopologySummary, None], False), None, ),  # 3
+    (4, TType.LIST, 'nimbuses', (TType.STRUCT, [NimbusSummary, None], False), None, ),  # 4
 )
 all_structs.append(ErrorInfo)
 ErrorInfo.thrift_spec = (

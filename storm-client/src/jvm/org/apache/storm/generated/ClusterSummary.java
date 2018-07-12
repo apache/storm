@@ -29,8 +29,8 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
   private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("ClusterSummary");
 
   private static final org.apache.storm.thrift.protocol.TField SUPERVISORS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("supervisors", org.apache.storm.thrift.protocol.TType.LIST, (short)1);
-  private static final org.apache.storm.thrift.protocol.TField TOPOLOGIES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("topologies", org.apache.storm.thrift.protocol.TType.LIST, (short)2);
-  private static final org.apache.storm.thrift.protocol.TField NIMBUSES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("nimbuses", org.apache.storm.thrift.protocol.TType.LIST, (short)3);
+  private static final org.apache.storm.thrift.protocol.TField TOPOLOGIES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("topologies", org.apache.storm.thrift.protocol.TType.LIST, (short)3);
+  private static final org.apache.storm.thrift.protocol.TField NIMBUSES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("nimbuses", org.apache.storm.thrift.protocol.TType.LIST, (short)4);
 
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new ClusterSummaryStandardSchemeFactory();
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new ClusterSummaryTupleSchemeFactory();
@@ -42,8 +42,8 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
     SUPERVISORS((short)1, "supervisors"),
-    TOPOLOGIES((short)2, "topologies"),
-    NIMBUSES((short)3, "nimbuses");
+    TOPOLOGIES((short)3, "topologies"),
+    NIMBUSES((short)4, "nimbuses");
 
     private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -60,9 +60,9 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
       switch(fieldId) {
         case 1: // SUPERVISORS
           return SUPERVISORS;
-        case 2: // TOPOLOGIES
+        case 3: // TOPOLOGIES
           return TOPOLOGIES;
-        case 3: // NIMBUSES
+        case 4: // NIMBUSES
           return NIMBUSES;
         default:
           return null;
@@ -566,7 +566,7 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 2: // TOPOLOGIES
+          case 3: // TOPOLOGIES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
                 org.apache.storm.thrift.protocol.TList _list139 = iprot.readListBegin();
@@ -585,7 +585,7 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 3: // NIMBUSES
+          case 4: // NIMBUSES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
                 org.apache.storm.thrift.protocol.TList _list142 = iprot.readListBegin();
