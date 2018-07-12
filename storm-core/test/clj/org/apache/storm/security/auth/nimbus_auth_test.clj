@@ -125,7 +125,6 @@
 
         (is (thrown-cause? AuthorizationException (.uploadChunk nimbus_client nil nil)))
         (is (thrown-cause? AuthorizationException (.finishFileUpload nimbus_client nil)))
-        (is (thrown-cause? AuthorizationException (.beginFileDownload nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.downloadChunk nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.getNimbusConf nimbus_client)))
         (is (thrown-cause? AuthorizationException (.getClusterInfo nimbus_client)))
@@ -192,7 +191,6 @@
 
         (is (thrown-cause? AuthorizationException (.uploadChunk nimbus_client nil nil)))
         (is (thrown-cause? AuthorizationException (.finishFileUpload nimbus_client nil)))
-        (is (thrown-cause? AuthorizationException (.beginFileDownload nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.downloadChunk nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.getNimbusConf nimbus_client)))
         (is (thrown-cause? AuthorizationException (.getClusterInfo nimbus_client)))
