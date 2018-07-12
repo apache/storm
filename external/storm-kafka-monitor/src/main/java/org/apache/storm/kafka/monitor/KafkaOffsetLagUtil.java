@@ -30,6 +30,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.utils.Utils;
 import org.json.simple.JSONValue;
 
 import java.util.ArrayList;
@@ -71,6 +72,8 @@ public class KafkaOffsetLagUtil {
     private static final String OPTION_ZK_BROKERS_ROOT_LONG = "zk-brokers-root-node";
     private static final String OPTION_SECURITY_PROTOCOL_SHORT = "s";
     private static final String OPTION_SECURITY_PROTOCOL_LONG = "security-protocol";
+    private static final String OPTION_CONSUMER_CONFIG_SHORT = "c";
+    private static final String OPTION_CONSUMER_CONFIG_LONG = "consumer-config";
 
     public static void main (String args[]) {
         try {
@@ -136,10 +139,10 @@ public class KafkaOffsetLagUtil {
                             " is not specified");
                 }
                 NewKafkaSpoutOffsetQuery newKafkaSpoutOffsetQuery = new NewKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG),
-                        commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG), commandLine.getOptionValue(OPTION_GROUP_ID_LONG), securityProtocol);
+                        commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG), commandLine.getOptionValue(OPTION_GROUP_ID_LONG),
+                        securityProtocol, commandLine.getOptionValue(OPTION_CONSUMER_CONFIG_LONG));
                 results = getOffsetLags(newKafkaSpoutOffsetQuery);
             }
-
             Map<String, Map<Integer, KafkaPartitionOffsetLag>> keyedResult = keyByTopicAndPartition(results);
             System.out.print(JSONValue.toJSONString(keyedResult));
         } catch (Exception ex) {
@@ -195,6 +198,8 @@ public class KafkaOffsetLagUtil {
         options.addOption(OPTION_ZK_BROKERS_ROOT_SHORT, OPTION_ZK_BROKERS_ROOT_LONG, true, "Zk node prefix where kafka stores broker information e.g. " +
                 "/brokers (applicable only for old kafka spout) ");
         options.addOption(OPTION_SECURITY_PROTOCOL_SHORT, OPTION_SECURITY_PROTOCOL_LONG, true, "Security protocol to connect to kafka");
+        options.addOption(OPTION_CONSUMER_CONFIG_SHORT, OPTION_CONSUMER_CONFIG_LONG, true, "Security configuration file useful "
+                          + "when connecting to secure kafka");
         return options;
     }
 
@@ -203,7 +208,7 @@ public class KafkaOffsetLagUtil {
      * @param newKafkaSpoutOffsetQuery represents the information needed to query kafka for log head and spout offsets
      * @return log head offset, spout offset and lag for each partition
      */
-    public static List<KafkaOffsetLagResult> getOffsetLags (NewKafkaSpoutOffsetQuery newKafkaSpoutOffsetQuery) {
+    public static List<KafkaOffsetLagResult> getOffsetLags(NewKafkaSpoutOffsetQuery newKafkaSpoutOffsetQuery) throws Exception {
         KafkaConsumer<String, String> consumer = null;
         List<KafkaOffsetLagResult> result = new ArrayList<>();
         try {
@@ -216,6 +221,10 @@ public class KafkaOffsetLagUtil {
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             if (newKafkaSpoutOffsetQuery.getSecurityProtocol() != null) {
                 props.put("security.protocol", newKafkaSpoutOffsetQuery.getSecurityProtocol());
+                // Read Kafka property file for extra security options
+                if (newKafkaSpoutOffsetQuery.getConsumerConfig() != null) {
+                    props.putAll(Utils.loadProps(newKafkaSpoutOffsetQuery.getConsumerConfig()));
+                }
             }
             List<TopicPartition> topicPartitionList = new ArrayList<>();
             consumer = new KafkaConsumer<>(props);
