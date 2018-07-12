@@ -23,15 +23,10 @@ import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
 
 class StormServerPipelineFactory extends ChannelInitializer<Channel> {
 
-    private final KryoValuesSerializer ser;
-    private final KryoValuesDeserializer deser;
     private final Map<String, Object> topoConf;
     private final Server server;
 
-    StormServerPipelineFactory(KryoValuesSerializer ser, KryoValuesDeserializer deser,
-        Map<String, Object> topoConf, Server server) {
-        this.ser = ser;
-        this.deser = deser;
+    StormServerPipelineFactory(Map<String, Object> topoConf, Server server) {
         this.topoConf = topoConf;
         this.server = server;
     }
@@ -42,10 +37,10 @@ class StormServerPipelineFactory extends ChannelInitializer<Channel> {
         ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder(deser));
+        pipeline.addLast("decoder", new MessageDecoder(new KryoValuesDeserializer(topoConf)));
         // Encoders
         pipeline.addLast("netty-serializable-encoder", NettySerializableMessageEncoder.INSTANCE);
-        pipeline.addLast("backpressure-encoder", new BackPressureStatusEncoder(ser));
+        pipeline.addLast("backpressure-encoder", new BackPressureStatusEncoder(new KryoValuesSerializer(topoConf)));
 
         boolean isNettyAuth = (Boolean) topoConf
             .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);

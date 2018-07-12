@@ -62,7 +62,6 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private final int port;
     private final ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
     private final KryoValuesSerializer ser;
-    private final KryoValuesDeserializer deser;
     private volatile boolean closing = false;
     private IConnectionCallback cb = null;
     private Supplier<Object> newConnectionResponse;
@@ -71,7 +70,6 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         this.topoConf = topoConf;
         this.port = port;
         ser = new KryoValuesSerializer(topoConf);
-        deser = new KryoValuesDeserializer(topoConf);
 
         // Configure the server.
         int buffer_size = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
@@ -97,7 +95,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             .childOption(ChannelOption.SO_RCVBUF, buffer_size)
             .childOption(ChannelOption.SO_KEEPALIVE, true)
             .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-            .childHandler(new StormServerPipelineFactory(ser, deser, topoConf, this));
+            .childHandler(new StormServerPipelineFactory(topoConf, this));
 
         // Bind and start to accept incoming connections.
         try {
@@ -171,7 +169,9 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     @Override
     public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
         MessageBatch mb = new MessageBatch(1);
-        mb.add(new TaskMessage(LOAD_METRICS_TASK_ID, ser.serialize(Collections.singletonList((Object) taskToLoad))));
+        synchronized (ser) {
+            mb.add(new TaskMessage(LOAD_METRICS_TASK_ID, ser.serialize(Collections.singletonList((Object) taskToLoad))));
+        }
         allChannels.writeAndFlush(mb);
     }
 

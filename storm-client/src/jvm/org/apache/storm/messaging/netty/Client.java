@@ -118,8 +118,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private final MessageBuffer batcher;
     // wait strategy when the netty channel is not writable
     private final IWaitStrategy waitStrategy;
-    KryoValuesSerializer ser;
-    KryoValuesDeserializer deser;
     private volatile Map<Integer, Double> serverLoad = null;
     /**
      * This flag is set to true if and only if a client instance is being closed.
@@ -169,8 +167,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             waitStrategy = ReflectionUtils.newInstance(clazz);
         }
         waitStrategy.prepare(topoConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
-        ser = new KryoValuesSerializer(topoConf);
-        deser = new KryoValuesDeserializer(topoConf);
     }
 
     /**
