@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -312,7 +311,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             launch();
             Utils.addShutdownHookWithForceKillIn1Sec(this::close);
 
-            registerWorkerNumGauge("supervisor:num-slots-used-gauge", conf);
+            StormMetricsRegistry.registerGauge("supervisor:num-slots-used-gauge", () -> SupervisorUtils.supervisorWorkerIds(conf).size());
             StormMetricsRegistry.startMetricsReporters(conf);
 
             // blocking call under the hood, must invoke after launch cause some services must be initialized
@@ -441,16 +440,6 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
         SynchronizeAssignments syn = new SynchronizeAssignments(this, assignments, readState);
         eventManager.add(syn);
-    }
-
-    private void registerWorkerNumGauge(String name, final Map<String, Object> conf) {
-        StormMetricsRegistry.registerGauge(name, new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                Collection<String> pids = SupervisorUtils.supervisorWorkerIds(conf);
-                return pids.size();
-            }
-        });
     }
 
     @Override

@@ -1936,13 +1936,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private double fragmentedMemory() {
-        Double res = nodeIdToResources.get().values().parallelStream().filter(x -> isFragmented(x) == true)
+        Double res = nodeIdToResources.get().values().parallelStream().filter(this::isFragmented)
                                       .mapToDouble(SupervisorResources::getAvailableMem).filter(x -> x > 0).sum();
         return res.intValue();
     }
 
     private int fragmentedCpu() {
-        Double res = nodeIdToResources.get().values().parallelStream().filter(x -> isFragmented(x) == true)
+        Double res = nodeIdToResources.get().values().parallelStream().filter(this::isFragmented)
                                       .mapToDouble(SupervisorResources::getAvailableCpu).filter(x -> x > 0).sum();
         return res.intValue();
     }
@@ -2808,20 +2808,25 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                     });
 
             StormMetricsRegistry.registerGauge("nimbus:num-supervisors", () -> state.supervisors(null).size());
-            StormMetricsRegistry.registerGauge("nimbus:fragmented-memory", () -> fragmentedMemory());
-            StormMetricsRegistry.registerGauge("nimbus:fragmented-cpu", () -> fragmentedCpu());
-            StormMetricsRegistry.registerGauge("nimbus:available-memory", () -> nodeIdToResources.get().values().parallelStream()
-                                                                                                 .mapToDouble(
-                                                                                                     SupervisorResources::getAvailableMem)
-                                                                                                 .sum());
-            StormMetricsRegistry.registerGauge("nimbus:available-cpu", () -> nodeIdToResources.get().values().parallelStream().mapToDouble(
-                SupervisorResources::getAvailableCpu).sum());
-            StormMetricsRegistry.registerGauge("nimbus:total-memory", () -> nodeIdToResources.get().values().parallelStream()
-                                                                                             .mapToDouble(SupervisorResources::getTotalMem)
-                                                                                             .sum());
-            StormMetricsRegistry.registerGauge("nimbus:total-cpu", () -> nodeIdToResources.get().values().parallelStream()
-                                                                                          .mapToDouble(SupervisorResources::getTotalCpu)
-                                                                                          .sum());
+            StormMetricsRegistry.registerGauge("nimbus:fragmented-memory", this::fragmentedMemory);
+            StormMetricsRegistry.registerGauge("nimbus:fragmented-cpu", this::fragmentedCpu);
+            StormMetricsRegistry.registerGauge("nimbus:available-memory", () -> nodeIdToResources.get().values()
+                .parallelStream()
+                .mapToDouble(SupervisorResources::getAvailableMem)
+                .sum());
+            StormMetricsRegistry.registerGauge("nimbus:available-cpu", () -> nodeIdToResources.get().values()
+                .parallelStream()
+                .mapToDouble(SupervisorResources::getAvailableCpu)
+                .sum());
+            StormMetricsRegistry.registerGauge("nimbus:total-memory", () -> nodeIdToResources.get().values()
+                .parallelStream()
+                .mapToDouble(SupervisorResources::getTotalMem)
+                .sum());
+            StormMetricsRegistry.registerGauge("nimbus:total-cpu", () -> nodeIdToResources.get().values()
+                .parallelStream()
+                .mapToDouble(SupervisorResources::getTotalCpu)
+                .sum());
+
             StormMetricsRegistry.startMetricsReporters(conf);
 
             if (clusterConsumerExceutors != null) {

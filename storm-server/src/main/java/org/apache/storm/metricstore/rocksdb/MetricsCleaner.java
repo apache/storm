@@ -11,7 +11,6 @@
 
 package org.apache.storm.metricstore.rocksdb;
 
-import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.metricstore.FilterOptions;
@@ -40,13 +39,7 @@ public class MetricsCleaner implements Runnable, AutoCloseable {
         }
         this.failureMeter = failureMeter;
 
-        Gauge<Long> gauge = new Gauge<Long>() {
-            @Override
-            public Long getValue() {
-                return purgeTimestamp;
-            }
-        };
-        StormMetricsRegistry.registerProvidedGauge("MetricsCleaner:purgeTimestamp", gauge);
+        StormMetricsRegistry.registerGauge("MetricsCleaner:purgeTimestamp", () -> purgeTimestamp);
     }
 
     @Override
