@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
-import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.GlobalStreamId;
@@ -83,11 +82,6 @@ public class StormCommon {
         StormCommon oldInstance = _instance;
         _instance = common;
         return oldInstance;
-    }
-
-    @Deprecated
-    public static String getStormId(final IStormClusterState stormClusterState, final String topologyName) {
-        return stormClusterState.getTopoId(topologyName).get();
     }
 
     public static void validateDistributedMode(Map<String, Object> conf) {

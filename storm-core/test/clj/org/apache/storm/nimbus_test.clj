@@ -71,7 +71,7 @@
          nil))
 
 (defn storm-component->task-info [cluster storm-name]
-  (let [storm-id (StormCommon/getStormId (.getClusterState cluster) storm-name)
+  (let [storm-id (.get (.getTopoId (.getClusterState cluster) storm-name))
         nimbus (.getNimbus cluster)]
     (-> (.getUserTopology nimbus storm-id)
         (#(StormCommon/stormTaskInfo % (from-json (.getTopologyConf nimbus storm-id))))
@@ -79,12 +79,12 @@
         clojurify-structure)))
 
 (defn getCredentials [cluster storm-name]
-  (let [storm-id (StormCommon/getStormId (.getClusterState cluster) storm-name)
+  (let [storm-id (.get (.getTopoId (.getClusterState cluster) storm-name))
         creds (.credentials (.getClusterState cluster) storm-id nil)]
     (if creds (into {} (.get_creds creds)))))
 
 (defn storm-component->executor-info [cluster storm-name]
-  (let [storm-id (StormCommon/getStormId (.getClusterState cluster) storm-name)
+  (let [storm-id (.get (.getTopoId (.getClusterState cluster) storm-name))
         nimbus (.getNimbus cluster)
         storm-conf (from-json (.getTopologyConf nimbus storm-id))
         topology (.getUserTopology nimbus storm-id)
@@ -101,12 +101,12 @@
          clojurify-structure)))
 
 (defn storm-num-workers [state storm-name]
-  (let [storm-id (StormCommon/getStormId state storm-name)
+  (let [storm-id (.get (.getTopoId state storm-name))
         assignment (.assignmentInfo state storm-id nil)]
     (.size (Utils/reverseMap (.get_executor_node_port assignment)))))
 
 (defn topology-nodes [state storm-name]
-  (let [storm-id (StormCommon/getStormId state storm-name)
+  (let [storm-id (.get (.getTopoId state storm-name))
         assignment (.assignmentInfo state storm-id nil)]
     (->> assignment
          .get_executor_node_port
@@ -116,7 +116,7 @@
          )))
 
 (defn topology-slots [state storm-name]
-  (let [storm-id (StormCommon/getStormId state storm-name)
+  (let [storm-id (.get (.getTopoId state storm-name))
         assignment (.assignmentInfo state storm-id nil)]
     (->> assignment
          .get_executor_node_port
@@ -127,7 +127,7 @@
 ;TODO: when translating this function, don't call map-val, but instead use an inline for loop.
 ; map-val is a temporary kluge for clojure.
 (defn topology-node-distribution [state storm-name]
-  (let [storm-id (StormCommon/getStormId state storm-name)
+  (let [storm-id (.get (.getTopoId state storm-name))
         assignment (.assignmentInfo state storm-id nil)]
     (->> assignment
          .get_executor_node_port
@@ -206,7 +206,7 @@
 
 (defnk check-consistency [cluster storm-name :assigned? true]
   (let [state (.getClusterState cluster)
-        storm-id (StormCommon/getStormId state storm-name)
+        storm-id (.get (.getTopoId state storm-name))
         task-ids (task-ids cluster storm-id)
         assignment (.assignmentInfo state storm-id nil)
         executor->node+port (.get_executor_node_port assignment)
@@ -548,7 +548,7 @@
              (log-message "Checking user " (System/getProperty "user.name") " " hist-topo-ids)
              (is (= 0 (count hist-topo-ids))))
         (.submitTopology cluster "test" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 20, LOGS-USERS ["alice", (System/getProperty "user.name")]} topology)
-        (bind storm-id (StormCommon/getStormId state "test"))
+        (bind storm-id (.get (.getTopoId state "test")))
         (.advanceClusterTime cluster 5)
         (is (not-nil? (.stormBase state storm-id nil)))
         (is (not-nil? (.assignmentInfo state storm-id nil)))
@@ -559,7 +559,7 @@
         (.advanceClusterTime cluster 35)
         ;; kill topology read on group
         (.submitTopology cluster "killgrouptest" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 20, LOGS-GROUPS ["alice-group"]} topology)
-        (bind storm-id-killgroup (StormCommon/getStormId state "killgrouptest"))
+        (bind storm-id-killgroup (.get (.getTopoId state "killgrouptest")))
         (.advanceClusterTime cluster 5)
         (is (not-nil? (.stormBase state storm-id-killgroup nil)))
         (is (not-nil? (.assignmentInfo state storm-id-killgroup nil)))
@@ -570,7 +570,7 @@
         (.advanceClusterTime cluster 35)
         ;; kill topology can't read
         (.submitTopology cluster "killnoreadtest" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 20} topology)
-        (bind storm-id-killnoread (StormCommon/getStormId state "killnoreadtest"))
+        (bind storm-id-killnoread (.get (.getTopoId state "killnoreadtest")))
         (.advanceClusterTime cluster 5)
         (is (not-nil? (.stormBase state storm-id-killnoread nil)))
         (is (not-nil? (.assignmentInfo state storm-id-killnoread nil)))
@@ -583,19 +583,19 @@
         ;; active topology can read
         (.submitTopology cluster "2test" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10, LOGS-USERS ["alice", (System/getProperty "user.name")]} topology)
         (.advanceClusterTime cluster 11)
-        (bind storm-id2 (StormCommon/getStormId state "2test"))
+        (bind storm-id2 (.get (.getTopoId state "2test")))
         (is (not-nil? (.stormBase state storm-id2 nil)))
         (is (not-nil? (.assignmentInfo state storm-id2 nil)))
         ;; active topology can not read
         (.submitTopology cluster "testnoread" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10, LOGS-USERS ["alice"]} topology)
         (.advanceClusterTime cluster 11)
-        (bind storm-id3 (StormCommon/getStormId state "testnoread"))
+        (bind storm-id3 (.get (.getTopoId state "testnoread")))
         (is (not-nil? (.stormBase state storm-id3 nil)))
         (is (not-nil? (.assignmentInfo state storm-id3 nil)))
         ;; active topology can read based on group
         (.submitTopology cluster "testreadgroup" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10, LOGS-GROUPS ["alice-group"]} topology)
         (.advanceClusterTime cluster 11)
-        (bind storm-id4 (StormCommon/getStormId state "testreadgroup"))
+        (bind storm-id4 (.get (.getTopoId state "testreadgroup")))
         (is (not-nil? (.stormBase state storm-id4 nil)))
         (is (not-nil? (.assignmentInfo state storm-id4 nil)))
         ;; at this point have 1 running, 1 killed topo
@@ -648,7 +648,7 @@
                        {}))
       (bind state (.getClusterState cluster))
       (.submitTopology cluster "test" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 20} topology)
-      (bind storm-id (StormCommon/getStormId state "test"))
+      (bind storm-id (.get (.getTopoId state "test")))
       (.advanceClusterTime cluster 15)
       (is (not-nil? (.stormBase state storm-id nil)))
       (is (not-nil? (.assignmentInfo state storm-id nil)))
@@ -673,7 +673,7 @@
       (.advanceClusterTime cluster 11)
       (is (thrown? AlreadyAliveException (.submitTopology cluster "2test" {} topology)))
       (.advanceClusterTime cluster 11)
-      (bind storm-id (StormCommon/getStormId state "2test"))
+      (bind storm-id (.get (.getTopoId state "2test")))
       (is (not-nil? (.stormBase state storm-id nil)))
       (.killTopology (.getNimbus cluster) "2test")
       (is (thrown? AlreadyAliveException (.submitTopology cluster "2test" {} topology)))
@@ -687,7 +687,7 @@
       (is (= 0 (count (.heartbeatStorms state))))
 
       (.submitTopology cluster "test3" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 5} topology)
-      (bind storm-id3 (StormCommon/getStormId state "test3"))
+      (bind storm-id3 (.get (.getTopoId state "test3")))
       (.advanceClusterTime cluster 11)
       ;; this guarantees an immediate kill notification
       (.killTopology (.getNimbus cluster) "test3")
@@ -702,7 +702,7 @@
       (.waitForIdle cluster)
 
       (.submitTopology cluster "test3" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 5} topology)
-      (bind storm-id3 (StormCommon/getStormId state "test3"))
+      (bind storm-id3 (.get (.getTopoId state "test3")))
 
       (.advanceClusterTime cluster 11)
       (bind executor-id (first (topology-executors cluster storm-id3)))
@@ -719,7 +719,7 @@
       (.submitTopology cluster "test4" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 100} topology)
       (.advanceClusterTime cluster 11)
       (.killTopologyWithOpts (.getNimbus cluster) "test4" (doto (KillOptions.) (.set_wait_secs 10)))
-      (bind storm-id4 (StormCommon/getStormId state "test4"))
+      (bind storm-id4 (.get (.getTopoId state "test4")))
       (.advanceClusterTime cluster 9)
       (is (not-nil? (.assignmentInfo state storm-id4 nil)))
       (.advanceClusterTime cluster 2)
@@ -748,7 +748,7 @@
       (.submitTopology cluster "test" {TOPOLOGY-WORKERS 2} topology)
       (.advanceClusterTime cluster 11)
       (check-consistency cluster "test")
-      (bind storm-id (StormCommon/getStormId state "test"))
+      (bind storm-id (.get (.getTopoId state "test")))
       (bind [executor-id1 executor-id2]  (topology-executors cluster storm-id))
       (bind ass1 (executor-assignment cluster storm-id executor-id1))
       (bind ass2 (executor-assignment cluster storm-id executor-id2))
@@ -872,7 +872,7 @@
       (.submitTopology cluster "test" {TOPOLOGY-WORKERS 2} topology)
       (.advanceClusterTime cluster 11)
       (check-consistency cluster "test")
-      (bind storm-id (StormCommon/getStormId state "test"))
+      (bind storm-id (.get (.getTopoId state "test")))
       (bind [executor-id1 executor-id2]  (topology-executors cluster storm-id))
       (bind ass1 (executor-assignment cluster storm-id executor-id1))
       (bind ass2 (executor-assignment cluster storm-id executor-id2))
@@ -931,7 +931,7 @@
       (bind state (.getClusterState cluster))
       (.submitTopology cluster "test" {TOPOLOGY-WORKERS 4} topology)  ; distribution should be 2, 2, 2, 3 ideally
       (.advanceClusterTime cluster 11)
-      (bind storm-id (StormCommon/getStormId state "test"))
+      (bind storm-id (.get (.getTopoId state "test")))
       (bind slot-executors (slot-assignments cluster storm-id))
       (check-executor-distribution slot-executors [9])
       (check-consistency cluster "test")
@@ -1065,7 +1065,7 @@
                              {TOPOLOGY-WORKERS 3
                               TOPOLOGY-MESSAGE-TIMEOUT-SECS 60} topology)
       (.advanceClusterTime cluster 11)
-      (bind storm-id (StormCommon/getStormId state "test"))
+      (bind storm-id (.get (.getTopoId state "test")))
       (.addSupervisor cluster 3)
       (.addSupervisor cluster 3)
 
@@ -1115,7 +1115,7 @@
                              {TOPOLOGY-WORKERS 3
                               TOPOLOGY-MESSAGE-TIMEOUT-SECS 30} topology)
       (.advanceClusterTime cluster 11)
-      (bind storm-id (StormCommon/getStormId state "test"))
+      (bind storm-id (.get (.getTopoId state "test")))
       (bind checker (fn [distribution]
                       (check-executor-distribution
                         (slot-assignments cluster storm-id)

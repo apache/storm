@@ -23,11 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.OutputCollector;
@@ -83,7 +78,7 @@ public class LoadBolt extends BaseRichBolt {
     @Override
     public void execute(final Tuple input) {
         long startTimeNs = System.nanoTime();
-        InputStream in = inputStreams.get(input.getSourceGlobalStreamid());
+        InputStream in = inputStreams.get(input.getSourceGlobalStreamId());
         sleep.simulateProcessAndExecTime(executorIndex, startTimeNs, in, () -> {
             emitTuples(input);
             collector.ack(input);

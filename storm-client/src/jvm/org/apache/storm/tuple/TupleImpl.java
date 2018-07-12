@@ -225,11 +225,6 @@ public class TupleImpl implements Tuple {
     }
 
     @Override
-    public GlobalStreamId getSourceGlobalStreamid() {
-        return getSourceGlobalStreamId();
-    }
-
-    @Override
     public GlobalStreamId getSourceGlobalStreamId() {
         return new GlobalStreamId(getSourceComponent(), streamId);
     }
