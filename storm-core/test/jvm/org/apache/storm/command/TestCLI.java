@@ -18,6 +18,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class TestCLI {
 
@@ -60,6 +61,49 @@ public class TestCLI {
         assertEquals(2, f.size());
         assertEquals("value1", f.get("key1"));
         assertEquals("value2", f.get("key2"));
+    }
+
+
+    @Test
+    public void testOptional() throws Exception {
+        Map<String, Object> values = CLI.optionalArg("A", CLI.LAST_WINS)
+            .parse("TEST");
+
+        assertEquals(1, values.size());
+        assertEquals("TEST", values.get("A"));
+
+        values = CLI.optionalArg("A", CLI.LAST_WINS)
+            .parse();
+
+        assertEquals(1, values.size());
+        assertEquals(null, values.get("A"));
+
+
+        values = CLI.optionalArg("A", CLI.LAST_WINS)
+            .parse("THIS", "IS", "A", "TEST");
+
+        assertEquals(1, values.size());
+        assertEquals("TEST", values.get("A"));
+
+        values = CLI.arg("A", CLI.LAST_WINS)
+            .optionalArg("B", CLI.LAST_WINS)
+            .parse("THIS", "IS", "A", "TEST");
+
+        assertEquals(2, values.size());
+        assertEquals("THIS", values.get("A"));
+        assertEquals("TEST", values.get("B"));
+    }
+
+    @Test
+    public void argAfterOptional() throws Exception {
+        try {
+            CLI.optionalArg("A", CLI.LAST_WINS)
+                .arg("B");
+
+            fail("Expected an exception to be thrown by now");
+        } catch (IllegalStateException is) {
+            //Expected
+        }
     }
 
     private static final class PairParse implements CLI.Parse {
