@@ -50,6 +50,8 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
                     try {
                         remoteBpStatus[bpTask].set(true);
                     } catch (ArrayIndexOutOfBoundsException e) {
+                        //Just in case we get something we are confused about
+                        // we can continue processing the rest of the tasks
                         LOG.error("BP index out of bounds {}", e);
                     }
                 }
@@ -59,6 +61,8 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
                     try {
                         remoteBpStatus[bpTask].set(false);
                     } catch (ArrayIndexOutOfBoundsException e) {
+                        //Just in case we get something we are confused about
+                        // we can continue processing the rest of the tasks
                         LOG.error("BP index out of bounds {}", e);
                     }
                 }
