@@ -17,10 +17,9 @@
 package org.apache.storm.kafka.spout.subscription;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Set;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 
 /**
@@ -38,7 +37,7 @@ public class TopicAssigner implements Serializable {
      * @param newAssignment The partitions to assign.
      * @param listener The rebalance listener to call back on when the assignment changes
      */
-    public <K, V> void assignPartitions(KafkaConsumer<K, V> consumer, Set<TopicPartition> newAssignment,
+    public <K, V> void assignPartitions(Consumer<K, V> consumer, Set<TopicPartition> newAssignment,
         ConsumerRebalanceListener listener) {
         Set<TopicPartition> currentAssignment = consumer.assignment();
         if (!newAssignment.equals(currentAssignment)) {

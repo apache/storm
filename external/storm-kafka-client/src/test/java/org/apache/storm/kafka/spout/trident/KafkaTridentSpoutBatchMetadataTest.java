@@ -16,6 +16,8 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutBatchMetadata;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -40,24 +42,28 @@ public class KafkaTridentSpoutBatchMetadataTest {
          */
         long startOffset = 10;
         long endOffset = 20;
+        String topologyId = "topologyId";
 
-        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(startOffset, endOffset);
+        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(startOffset, endOffset, topologyId);
         Map<String, Object> map = metadata.toMap();
         Map<String, Object> deserializedMap = (Map)JSONValue.parseWithException(JSONValue.toJSONString(map));
         KafkaTridentSpoutBatchMetadata deserializedMetadata = KafkaTridentSpoutBatchMetadata.fromMap(deserializedMap);
         assertThat(deserializedMetadata.getFirstOffset(), is(metadata.getFirstOffset()));
         assertThat(deserializedMetadata.getLastOffset(), is(metadata.getLastOffset()));
+        assertThat(deserializedMetadata.getTopologyId(), is(metadata.getTopologyId()));
     }
 
     @Test
     public void testCreateMetadataFromRecords() {
         long firstOffset = 15;
         long lastOffset = 55;
+        String topologyId = "topologyId";
         List<ConsumerRecord<String, String>> records = SpoutWithMockedConsumerSetupHelper.createRecords(new TopicPartition("test", 0), firstOffset, (int) (lastOffset - firstOffset + 1));
 
-        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(records);
+        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(records, topologyId);
         assertThat("The first offset should be the first offset in the record set", metadata.getFirstOffset(), is(firstOffset));
         assertThat("The last offset should be the last offset in the record set", metadata.getLastOffset(), is(lastOffset));
+        assertThat(metadata.getTopologyId(), is(topologyId));
     }
 
 }

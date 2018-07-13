@@ -33,15 +33,17 @@ import org.slf4j.LoggerFactory;
 public class KafkaTridentSpoutBatchMetadata implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutBatchMetadata.class);
-    private static final TopicPartitionSerializer TP_SERIALIZER = new TopicPartitionSerializer();
 
     public static final String FIRST_OFFSET_KEY = "firstOffset";
     public static final String LAST_OFFSET_KEY = "lastOffset";
+    public static final String TOPOLOGY_ID_KEY = "topologyId";
 
     // first offset of this batch
     private final long firstOffset;
     // last offset of this batch
     private final long lastOffset;
+    //The unique topology id for the topology that created this metadata
+    private final String topologyId;
 
     /**
      * Builds a metadata object.
@@ -49,9 +51,10 @@ public class KafkaTridentSpoutBatchMetadata implements Serializable {
      * @param firstOffset The first offset for the batch
      * @param lastOffset The last offset for the batch
      */
-    public KafkaTridentSpoutBatchMetadata(long firstOffset, long lastOffset) {
+    public KafkaTridentSpoutBatchMetadata(long firstOffset, long lastOffset, String topologyId) {
         this.firstOffset = firstOffset;
         this.lastOffset = lastOffset;
+        this.topologyId = topologyId;
     }
 
     /**
@@ -59,11 +62,12 @@ public class KafkaTridentSpoutBatchMetadata implements Serializable {
      *
      * @param consumerRecords The non-empty set of records.
      */
-    public <K, V> KafkaTridentSpoutBatchMetadata(List<ConsumerRecord<K, V>> consumerRecords) {
+    public <K, V> KafkaTridentSpoutBatchMetadata(List<ConsumerRecord<K, V>> consumerRecords, String topologyId) {
         Validate.isTrue(!consumerRecords.isEmpty(), "There must be at least one record in order to build metadata");
 
         firstOffset = consumerRecords.get(0).offset();
         lastOffset = consumerRecords.get(consumerRecords.size() - 1).offset();
+        this.topologyId = topologyId;
         LOG.debug("Created {}", this.toString());
     }
 
@@ -75,6 +79,10 @@ public class KafkaTridentSpoutBatchMetadata implements Serializable {
         return lastOffset;
     }
 
+    public String getTopologyId() {
+        return topologyId;
+    }
+
     /**
      * Constructs a metadata object from a Map in the format produced by {@link #toMap() }.
      *
@@ -82,8 +90,11 @@ public class KafkaTridentSpoutBatchMetadata implements Serializable {
      * @return A new metadata object
      */
     public static KafkaTridentSpoutBatchMetadata fromMap(Map<String, Object> map) {
-        return new KafkaTridentSpoutBatchMetadata(((Number) map.get(FIRST_OFFSET_KEY)).longValue(),
-            ((Number) map.get(LAST_OFFSET_KEY)).longValue());
+        return new KafkaTridentSpoutBatchMetadata(
+            ((Number) map.get(FIRST_OFFSET_KEY)).longValue(),
+            ((Number) map.get(LAST_OFFSET_KEY)).longValue(),
+            (String) map.get(TOPOLOGY_ID_KEY)
+        );
     }
 
     /**
@@ -93,6 +104,7 @@ public class KafkaTridentSpoutBatchMetadata implements Serializable {
         Map<String, Object> map = new HashMap<>();
         map.put(FIRST_OFFSET_KEY, firstOffset);
         map.put(LAST_OFFSET_KEY, lastOffset);
+        map.put(TOPOLOGY_ID_KEY, topologyId);
         return map;
     }
 
@@ -101,6 +113,7 @@ public class KafkaTridentSpoutBatchMetadata implements Serializable {
         return "KafkaTridentSpoutBatchMetadata{"
             + "firstOffset=" + firstOffset
             + ", lastOffset=" + lastOffset
+            + ", topologyId=" + topologyId
             + '}';
     }
 }

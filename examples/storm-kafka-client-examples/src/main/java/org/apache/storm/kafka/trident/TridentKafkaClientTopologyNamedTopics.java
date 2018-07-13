@@ -37,6 +37,8 @@ import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutOpaque;
+import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutTransactional;
+import org.apache.storm.trident.spout.ITridentDataSource;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
@@ -53,6 +55,11 @@ public class TridentKafkaClientTopologyNamedTopics {
     private KafkaTridentSpoutOpaque<String, String> newKafkaTridentSpoutOpaque(KafkaSpoutConfig<String, String> spoutConfig) {
         return new KafkaTridentSpoutOpaque<>(spoutConfig);
     }
+    
+    private KafkaTridentSpoutTransactional<String, String> newKafkaTridentSpoutTransactional(
+        KafkaSpoutConfig<String, String> spoutConfig) {
+        return new KafkaTridentSpoutTransactional<>(spoutConfig);
+    }
 
     private static final Func<ConsumerRecord<String, String>, List<Object>> JUST_VALUE_FUNC = new JustValueFunc();
 
@@ -66,7 +73,7 @@ public class TridentKafkaClientTopologyNamedTopics {
             return new Values(record.value());
         }
     }
-
+    
     protected KafkaSpoutConfig<String, String> newKafkaSpoutConfig(String bootstrapServers) {
         return KafkaSpoutConfig.builder(bootstrapServers, TOPIC_1, TOPIC_2)
             .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup_" + System.nanoTime())
@@ -91,7 +98,8 @@ public class TridentKafkaClientTopologyNamedTopics {
     protected void run(String[] args) throws AlreadyAliveException, InvalidTopologyException,
         AuthorizationException, InterruptedException {
         final String brokerUrl = args.length > 0 ? args[0] : KAFKA_LOCAL_BROKER;
-        System.out.println("Running with broker url " + brokerUrl);
+        final boolean isOpaque = args.length > 1 ? Boolean.parseBoolean(args[1]) : true;
+        System.out.println("Running with broker url " + brokerUrl + " and isOpaque=" + isOpaque);
 
         Config tpConf = new Config();
         tpConf.setDebug(true);
@@ -101,7 +109,9 @@ public class TridentKafkaClientTopologyNamedTopics {
         StormSubmitter.submitTopology(TOPIC_1 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, TOPIC_1));
         StormSubmitter.submitTopology(TOPIC_2 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, TOPIC_2));
         // Consumer
+        KafkaSpoutConfig<String, String> spoutConfig = newKafkaSpoutConfig(brokerUrl);
+        ITridentDataSource spout = isOpaque ? newKafkaTridentSpoutOpaque(spoutConfig) : newKafkaTridentSpoutTransactional(spoutConfig);
         StormSubmitter.submitTopology("topics-consumer", tpConf,
-            TridentKafkaConsumerTopology.newTopology(newKafkaTridentSpoutOpaque(newKafkaSpoutConfig(brokerUrl))));
+            TridentKafkaConsumerTopology.newTopology(spout));
     }
 }

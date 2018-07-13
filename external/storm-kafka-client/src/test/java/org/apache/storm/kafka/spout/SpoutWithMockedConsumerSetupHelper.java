@@ -41,7 +41,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
+import org.apache.storm.kafka.spout.internal.ConsumerFactory;
 import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.kafka.spout.subscription.TopicFilter;
@@ -83,7 +83,7 @@ public class SpoutWithMockedConsumerSetupHelper {
         }).when(assigner).assignPartitions(any(), any(), any());
         when(consumerMock.assignment()).thenReturn(assignedPartitionsSet);
         
-        KafkaConsumerFactory<K, V> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
+        ConsumerFactory<K, V> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
         KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory, assigner);
         
         spout.open(topoConf, contextMock, collectorMock);

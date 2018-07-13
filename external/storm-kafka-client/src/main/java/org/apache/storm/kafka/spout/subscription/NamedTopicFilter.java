@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -52,7 +52,7 @@ public class NamedTopicFilter implements TopicFilter {
     }
     
     @Override
-    public Set<TopicPartition> getAllSubscribedPartitions(KafkaConsumer<?, ?> consumer) {
+    public Set<TopicPartition> getAllSubscribedPartitions(Consumer<?, ?> consumer) {
         Set<TopicPartition> allPartitions = new HashSet<>();
         for (String topic : topics) {
             List<PartitionInfo> partitionInfoList = consumer.partitionsFor(topic);
