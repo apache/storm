@@ -17,7 +17,7 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlExplainLevel;
-import org.apache.storm.sql.planner.trident.rel.TridentRel;
+import org.apache.storm.sql.planner.streams.rel.StreamsRel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,21 +27,17 @@ public class StormRelUtils {
     private static final AtomicInteger sequence = new AtomicInteger(0);
     private static final AtomicInteger classSequence = new AtomicInteger(0);
 
-    public static String getStageName(TridentRel relNode) {
-        return relNode.getClass().getSimpleName().toUpperCase() + "_" + relNode.getId() + "_" + sequence.getAndIncrement();
-    }
-
-    public static String getClassName(TridentRel relNode) {
+    public static String getClassName(StreamsRel relNode) {
         return "Generated_" + relNode.getClass().getSimpleName().toUpperCase() + "_" + relNode.getId() + "_" +
                classSequence.getAndIncrement();
     }
 
-    public static TridentRel getStormRelInput(RelNode input) {
+    public static StreamsRel getStormRelInput(RelNode input) {
         if (input instanceof RelSubset) {
             // go with known best input
             input = ((RelSubset) input).getBest();
         }
-        return (TridentRel) input;
+        return (StreamsRel) input;
     }
 
     public static String explain(final RelNode rel) {

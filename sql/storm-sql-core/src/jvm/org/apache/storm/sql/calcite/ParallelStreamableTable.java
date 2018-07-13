@@ -20,7 +20,7 @@ import org.apache.calcite.schema.StreamableTable;
  *
  * @see Delta
  */
-public interface ParallelStreamableTable extends StreamableTable {
+public interface ParallelStreamableTable extends StormStreamableTable {
 
     /**
      * Returns parallelism hint of this table. Returns null if don't know.

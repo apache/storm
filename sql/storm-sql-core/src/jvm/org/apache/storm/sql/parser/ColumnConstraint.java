@@ -27,7 +27,7 @@ public class ColumnConstraint extends SqlLiteral {
         private final SqlMonotonicity monotonicity;
 
         public PrimaryKey(SqlMonotonicity monotonicity, SqlParserPos pos) {
-            super(SqlDDLKeywords.PRIMARY, SqlTypeName.SYMBOL, pos);
+            super(SqlDdlKeywords.PRIMARY, SqlTypeName.SYMBOL, pos);
             this.monotonicity = monotonicity;
         }
 

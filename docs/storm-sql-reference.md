@@ -13,7 +13,7 @@ Please read [Storm SQL integration](storm-sql.html) page first to see what featu
 
 ## Grammar
 
-Calcite provides broader SQL Grammar. But Storm SQL is not database system and handles streaming data, so only subset of grammar is supported.
+Calcite provides broader SQL Grammar. But Storm SQL is not a database system and handles streaming data, so only subset of grammar is supported.
 Storm SQL doesn't redefine SQL Grammar and just utilize the parser Calcite provided, so SQL statements are still parsed based on Calcite's SQL Grammar. 
 
 SQL grammar in [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form)-like form.
@@ -1247,7 +1247,7 @@ Please note that it supports only one letter for delimiter.
 
 Socket data source is a built-in feature so users don't need to add any artifacts to `--artifacts` options.
 
-Please note that Socket data source is only for testing: it doesn't guarantee exactly-once and at-least-once.
+Please note that Socket data source is only for testing: it doesn't ensure any delivery guarantee.
 
 TIP: `netcat` is a convenient tool for Socket: users can use netcat to connect Socket data source for either or both input and output purposes.
 
@@ -1281,9 +1281,9 @@ You can use below as working reference for `--artifacts` option, and change depe
 
 MongoDB data source requires below properties to be set:
 
-`{"collection.name": "storm_sql_mongo", "trident.ser.field": "serfield"}`
+`{"collection.name": "storm_sql_mongo", "ser.field": "serfield"}`
 
-* `trident.ser.field`: field to store - record will be serialized and stored as BSON in this field
+* `ser.field`: field to store - record will be serialized and stored as BSON in this field
 * `collection.name`: Collection name
 
 Please note that `storm-sql-mongodb` requires users to provide `storm-mongodb`.
@@ -1298,7 +1298,7 @@ Storing record with preserving fields are not supported for now.
 HDFS data source requires below properties to be set:
 
 * `hdfs.file.path`: HDFS file path
-* `hdfs.file.name`: HDFS file name - please refer to [SimpleFileNameFormat]({{page.git-blob-base}}/external/storm-hdfs/src/main/java/org/apache/storm/hdfs/trident/format/SimpleFileNameFormat.java)
+* `hdfs.file.name`: HDFS file name - please refer to [SimpleFileNameFormat]({{page.git-blob-base}}/external/storm-hdfs/src/main/java/org/apache/storm/hdfs/bolt/format/SimpleFileNameFormat.java)
 * `hdfs.rotation.size.kb`: HDFS FileSizeRotationPolicy in KB
 * `hdfs.rotation.time.seconds`: HDFS TimedRotationPolicy in seconds
 

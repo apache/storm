@@ -19,34 +19,29 @@
 
 package org.apache.storm.sql;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.sql.javac.CompilingClassLoader;
-import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.utils.Utils;
-
-import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
 
 public final class SqlTestUtil {
 
-    public static void runTridentTopology(LocalCluster cluster, final int expectedValueSize, AbstractTridentProcessor proc,
-                                          TridentTopology topo) throws Exception {
+    public static void runStormTopology(LocalCluster cluster, final List<?> watchedList, final int expectedValueSize,
+                                        AbstractStreamsProcessor proc, StormTopology topo) throws Exception {
         final Config conf = new Config();
         conf.setMaxSpoutPending(20);
+        conf.setDebug(true);
 
         if (proc.getClassLoaders() != null && proc.getClassLoaders().size() > 0) {
             CompilingClassLoader lastClassloader = proc.getClassLoaders().get(proc.getClassLoaders().size() - 1);
             Utils.setClassLoaderForJavaDeSerialize(lastClassloader);
         }
 
-        try (LocalCluster.LocalTopology stormTopo = cluster.submitTopology("storm-sql", conf, topo.build())) {
-            waitForCompletion(1000 * 1000, new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return getCollectedValues().size() < expectedValueSize;
-                }
-            });
+        try (LocalCluster.LocalTopology stormTopo = cluster.submitTopology("storm-sql", conf, topo)) {
+            waitForCompletion(1000 * 1000, () -> watchedList.size() < expectedValueSize);
         } finally {
             while (cluster.getClusterInfo().get_topologies_size() > 0) {
                 Thread.sleep(10);

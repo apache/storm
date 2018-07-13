@@ -12,34 +12,42 @@
 
 package org.apache.storm.sql;
 
-import com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import com.google.common.collect.ImmutableMap;
 import org.apache.calcite.tools.ValidationException;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;
-import org.apache.storm.sql.runtime.ISqlTridentDataSource;
+import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
+import org.apache.storm.streams.Pair;
 import org.apache.storm.tuple.Values;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
-
-import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
+import org.junit.rules.ExternalResource;
 
 public class TestStormSql {
 
     public static final int WAIT_TIMEOUT_MS = 1000 * 1000;
     public static final int WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED = 1000 * 10;
     public static final int WAIT_TIMEOUT_MS_ERROR_EXPECTED = 1000;
+
+    @Rule
+    public ExternalResource mockBoltValues = TestUtils.mockBoltValueResource;
+
+    @Rule
+    public ExternalResource mockInsertBoltValues = TestUtils.mockInsertBoltValueResource;
+
     private static LocalCluster cluster;
 
     @BeforeClass
@@ -67,43 +75,39 @@ public class TestStormSql {
         }
     }
 
-    @Before
-    public void setUp() {
-        getCollectedValues().clear();
-    }
-
     @Test
     public void testExternalDataSource() throws Exception {
         List<String> stmt = new ArrayList<>();
-        stmt.add("CREATE EXTERNAL TABLE FOO (ID INT) LOCATION 'mock:///foo'");
-        stmt.add("CREATE EXTERNAL TABLE BAR (ID INT) LOCATION 'mock:///foo'");
+        stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'mock:///foo'");
+        stmt.add("CREATE EXTERNAL TABLE BAR (ID INT PRIMARY KEY) LOCATION 'mock:///foo'");
         stmt.add("INSERT INTO BAR SELECT STREAM ID + 1 FROM FOO WHERE ID > 2");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        List<List<Object>> values = getCollectedValues();
+        List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> values.size() >= 2, WAIT_TIMEOUT_MS);
 
         Assert.assertEquals(2, values.size());
-        Assert.assertEquals(4, values.get(0).get(0));
-        Assert.assertEquals(5, values.get(1).get(0));
+        Assert.assertEquals(4, values.get(0).getFirst());
+        Assert.assertEquals(5, values.get(1).getFirst());
     }
 
     @Test
     public void testExternalDataSourceNested() throws Exception {
         List<String> stmt = new ArrayList<>();
-        stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
-        stmt.add("CREATE EXTERNAL TABLE BAR (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
+        stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
+        stmt.add("CREATE EXTERNAL TABLE BAR (ID INT PRIMARY KEY, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
         stmt.add("INSERT INTO BAR SELECT STREAM ID, MAPFIELD['c'], NESTEDMAPFIELD, ARRAYFIELD " +
                  "FROM FOO " +
                  "WHERE CAST(MAPFIELD['b'] AS INTEGER) = 2 AND CAST(ARRAYFIELD[2] AS INTEGER) = 200");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        List<List<Object>> values = getCollectedValues();
+        List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();;
         impl.runLocal(cluster, stmt, (__) -> values.size() >= 1, WAIT_TIMEOUT_MS);
 
         Map<String, Integer> map = ImmutableMap.of("b", 2, "c", 4);
         Map<String, Map<String, Integer>> nestedMap = ImmutableMap.of("a", map);
-        Assert.assertEquals(new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300)), values.get(0));
+        Assert.assertEquals(2, values.get(0).getFirst());
+        Assert.assertEquals(new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300)), values.get(0).getSecond());
     }
 
     @Test
@@ -117,7 +121,7 @@ public class TestStormSql {
                  "WHERE CAST(MAPFIELD['a'] AS INTEGER) = 2");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        List<List<Object>> values = getCollectedValues();
+        List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED);
 
         Assert.assertEquals(0, values.size());
@@ -134,7 +138,7 @@ public class TestStormSql {
                  "WHERE CAST(NESTEDMAPFIELD['b']['c'] AS INTEGER) = 4");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        List<List<Object>> values = getCollectedValues();
+        List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED);
 
         Assert.assertEquals(0, values.size());
@@ -150,7 +154,7 @@ public class TestStormSql {
                  "WHERE CAST(ARRAYFIELD['a'] AS INTEGER) = 200");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        List<List<Object>> values = getCollectedValues();
+        List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED);
 
         Assert.assertEquals(0, values.size());
@@ -166,7 +170,7 @@ public class TestStormSql {
                  "WHERE CAST(ARRAYFIELD[10] AS INTEGER) = 200");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        List<List<Object>> values = getCollectedValues();
+        List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED);
 
         Assert.assertEquals(0, values.size());
@@ -204,25 +208,25 @@ public class TestStormSql {
     @Test
     public void testExternalUdf() throws Exception {
         List<String> stmt = new ArrayList<>();
-        stmt.add("CREATE EXTERNAL TABLE FOO (ID INT) LOCATION 'mock:///foo'");
-        stmt.add("CREATE EXTERNAL TABLE BAR (ID INT) LOCATION 'mock:///foo'");
+        stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'mock:///foo'");
+        stmt.add("CREATE EXTERNAL TABLE BAR (ID INT PRIMARY KEY) LOCATION 'mock:///foo'");
         stmt.add("CREATE FUNCTION MYPLUS AS 'org.apache.storm.sql.TestUtils$MyPlus'");
         stmt.add("INSERT INTO BAR SELECT STREAM MYPLUS(ID, 1) FROM FOO WHERE ID > 2");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        List<List<Object>> values = getCollectedValues();
+        List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> values.size() >= 2, WAIT_TIMEOUT_MS);
 
         Assert.assertEquals(2, values.size());
-        Assert.assertEquals(4, values.get(0).get(0));
-        Assert.assertEquals(5, values.get(1).get(0));
+        Assert.assertEquals(4, values.get(0).getFirst());
+        Assert.assertEquals(5, values.get(1).getFirst());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testExternalUdfUsingJar() throws Exception {
         List<String> stmt = new ArrayList<>();
-        stmt.add("CREATE EXTERNAL TABLE FOO (ID INT) LOCATION 'mock:///foo'");
-        stmt.add("CREATE EXTERNAL TABLE BAR (ID INT) LOCATION 'mock:///foo'");
+        stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'mock:///foo'");
+        stmt.add("CREATE EXTERNAL TABLE BAR (ID INT PRIMARY KEY) LOCATION 'mock:///foo'");
         stmt.add("CREATE FUNCTION MYPLUS AS 'org.apache.storm.sql.TestUtils$MyPlus' USING JAR 'foo'");
         stmt.add("INSERT INTO BAR SELECT STREAM MYPLUS(ID, 1) FROM FOO WHERE ID > 2");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
@@ -239,9 +243,9 @@ public class TestStormSql {
         }
 
         @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+        public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                       Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlExprDataSource();
+            return new TestUtils.MockSqlStreamsInsertDataSource();
         }
     }
 
@@ -252,9 +256,9 @@ public class TestStormSql {
         }
 
         @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+        public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                       Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlTridentNestedDataSource();
+            return new TestUtils.MockSqlStreamsInsertNestedDataSource();
         }
     }
 
@@ -265,9 +269,9 @@ public class TestStormSql {
         }
 
         @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+        public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                       Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlTridentGroupedDataSource();
+            return new TestUtils.MockSqlStreamsInsertGroupedDataSource();
         }
     }
 
@@ -278,9 +282,9 @@ public class TestStormSql {
         }
 
         @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+        public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                       Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlTridentJoinDataSourceEmp();
+            return new TestUtils.MockSqlStreamsInsertJoinDataSourceEmp();
         }
     }
 
@@ -291,9 +295,9 @@ public class TestStormSql {
         }
 
         @Override
-        public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+        public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                       Properties properties, List<FieldInfo> fields) {
-            return new TestUtils.MockSqlTridentJoinDataSourceDept();
+            return new TestUtils.MockSqlStreamsInsertJoinDataSourceDept();
         }
     }
 }

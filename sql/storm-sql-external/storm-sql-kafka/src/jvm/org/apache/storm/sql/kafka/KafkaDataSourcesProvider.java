@@ -27,24 +27,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
+import org.apache.storm.kafka.KafkaSpout;
+import org.apache.storm.kafka.SpoutConfig;
 import org.apache.storm.kafka.ZkHosts;
-import org.apache.storm.kafka.trident.OpaqueTridentKafkaSpout;
-import org.apache.storm.kafka.trident.TridentKafkaConfig;
-import org.apache.storm.kafka.trident.TridentKafkaStateFactory;
-import org.apache.storm.kafka.trident.TridentKafkaUpdater;
-import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import org.apache.storm.kafka.trident.selector.DefaultTopicSelector;
+import org.apache.storm.kafka.bolt.KafkaBolt;
+import org.apache.storm.kafka.bolt.mapper.TupleToKafkaMapper;
+import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.IOutputSerializer;
-import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
+import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.sql.runtime.utils.SerdeUtils;
-import org.apache.storm.trident.spout.ITridentDataSource;
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.IRichSpout;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 
 /**
  * Create a Kafka spout/sink based on the URI and properties. The URI has the format of
@@ -53,35 +54,36 @@ import org.apache.storm.trident.tuple.TridentTuple;
  */
 public class KafkaDataSourcesProvider implements DataSourcesProvider {
     private static final int DEFAULT_ZK_PORT = 2181;
+    private static final String CONFIG_KEY_PRODUCER = "producer";
+    private static final String CONFIG_KEY_BOOTSTRAP_SERVERS = "bootstrap.servers";
+    private static final String URI_PARAMS_TOPIC_KEY = "topic";
 
-    private static class SqlKafkaMapper implements TridentTupleToKafkaMapper<Object, ByteBuffer> {
-        private final int primaryKeyIndex;
+    private static class SqlKafkaMapper implements TupleToKafkaMapper<Object, ByteBuffer> {
         private final IOutputSerializer serializer;
 
-        private SqlKafkaMapper(int primaryKeyIndex, IOutputSerializer serializer) {
-            this.primaryKeyIndex = primaryKeyIndex;
+        private SqlKafkaMapper(IOutputSerializer serializer) {
             this.serializer = serializer;
         }
 
         @Override
-        public Object getKeyFromTuple(TridentTuple tuple) {
-            return tuple.get(primaryKeyIndex);
+        public Object getKeyFromTuple(Tuple tuple) {
+            return tuple.getValue(0);
         }
 
         @Override
-        public ByteBuffer getMessageFromTuple(TridentTuple tuple) {
-            return serializer.write(tuple.getValues(), null);
+        public ByteBuffer getMessageFromTuple(Tuple tuple) {
+            return serializer.write((Values) tuple.getValue(1), null);
         }
     }
 
-    private static class KafkaTridentDataSource implements ISqlTridentDataSource {
-        private final TridentKafkaConfig conf;
+    private static class KafkaStreamsDataSource implements ISqlStreamsDataSource {
+        private final SpoutConfig conf;
         private final String topic;
         private final int primaryKeyIndex;
         private final Properties props;
         private final IOutputSerializer serializer;
 
-        private KafkaTridentDataSource(TridentKafkaConfig conf, String topic, int primaryKeyIndex,
+        private KafkaStreamsDataSource(SpoutConfig conf, String topic, int primaryKeyIndex,
                                        Properties props, IOutputSerializer serializer) {
             this.conf = conf;
             this.topic = topic;
@@ -91,29 +93,25 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
         }
 
         @Override
-        public ITridentDataSource getProducer() {
-            return new OpaqueTridentKafkaSpout(conf);
+        public IRichSpout getProducer() {
+            return new KafkaSpout(conf);
         }
 
         @Override
-        public SqlTridentConsumer getConsumer() {
+        public IRichBolt getConsumer() {
             Preconditions.checkArgument(!props.isEmpty(),
                     "Writable Kafka Table " + topic + " must contain producer config");
-            HashMap<String, Object> producerConfig = (HashMap<String, Object>) props.get("producer");
+            HashMap<String, Object> producerConfig = (HashMap<String, Object>) props.get(CONFIG_KEY_PRODUCER);
             props.putAll(producerConfig);
-            Preconditions.checkState(props.containsKey("bootstrap.servers"),
+            Preconditions.checkState(props.containsKey(CONFIG_KEY_BOOTSTRAP_SERVERS),
                     "Writable Kafka Table " + topic + " must contain \"bootstrap.servers\" config");
 
-            SqlKafkaMapper mapper = new SqlKafkaMapper(primaryKeyIndex, serializer);
+            TupleToKafkaMapper<Object, ByteBuffer> mapper = new SqlKafkaMapper(serializer);
 
-            TridentKafkaStateFactory stateFactory = new TridentKafkaStateFactory()
-                    .withKafkaTopicSelector(new DefaultTopicSelector(topic))
+            return new KafkaBolt()
+                    .withTopicSelector(new DefaultTopicSelector(topic))
                     .withProducerProperties(props)
-                    .withTridentTupleToKafkaMapper(mapper);
-
-            TridentKafkaUpdater stateUpdater = new TridentKafkaUpdater();
-
-            return new SimpleSqlTridentConsumer(stateFactory, stateUpdater);
+                    .withTupleToKafkaMapper(mapper);
         }
     }
 
@@ -123,14 +121,14 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     }
 
     @Override
-    public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+    public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                   Properties properties, List<FieldInfo> fields) {
         int port = uri.getPort() != -1 ? uri.getPort() : DEFAULT_ZK_PORT;
         ZkHosts zk = new ZkHosts(uri.getHost() + ":" + port, uri.getPath());
         Map<String, String> values = parseUriParams(uri.getQuery());
-        String topic = values.get("topic");
+        String topic = values.get(URI_PARAMS_TOPIC_KEY);
         Preconditions.checkNotNull(topic, "No topic of the spout is specified");
-        TridentKafkaConfig conf = new TridentKafkaConfig(zk, topic);
+        SpoutConfig conf = new SpoutConfig(zk, topic, uri.getPath(), UUID.randomUUID().toString());
         List<String> fieldNames = new ArrayList<>();
         int primaryIndex = -1;
         for (int i = 0; i < fields.size(); ++i) {
@@ -145,7 +143,7 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
         conf.scheme = new SchemeAsMultiScheme(scheme);
         IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, properties, fieldNames);
 
-        return new KafkaTridentDataSource(conf, topic, primaryIndex, properties, serializer);
+        return new KafkaStreamsDataSource(conf, topic, primaryIndex, properties, serializer);
     }
 
     private static Map<String, String> parseUriParams(String query) {
