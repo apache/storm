@@ -53,8 +53,6 @@ public class KafkaSpoutTopologyDeployActivateDeactivateTest extends KafkaSpoutAb
 
         verifyAllMessagesCommitted(1);
 
-        consumerSpy = createConsumerSpy();
-
         spout.activate();
 
         nextTuple_verifyEmitted_ack_resetCollector(1);

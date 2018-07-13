@@ -56,7 +56,7 @@ public abstract class KafkaSpoutAbstractTest {
     final SpoutOutputCollector collectorMock = mock(SpoutOutputCollector.class);
     final long commitOffsetPeriodMs;
 
-    KafkaConsumer<String, String> consumerSpy;
+    private KafkaConsumer<String, String> consumerSpy;
     KafkaSpout<String, String> spout;
 
     @Captor
@@ -83,6 +83,10 @@ public abstract class KafkaSpoutAbstractTest {
         spout = new KafkaSpout<>(spoutConfig, createConsumerFactory());
 
         simulatedTime = new Time.SimulatedTime();
+    }
+    
+    protected KafkaConsumer<String, String> getKafkaConsumer() {
+        return consumerSpy;
     }
 
     private KafkaConsumerFactory<String, String> createConsumerFactory() {
