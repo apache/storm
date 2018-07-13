@@ -15,6 +15,7 @@ package org.apache.storm.messaging.netty;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.Config;
+import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.shade.io.netty.channel.Channel;
 import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
 import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
@@ -36,7 +37,7 @@ class StormClientPipelineFactory extends ChannelInitializer<Channel> {
         ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder(client.deser));
+        pipeline.addLast("decoder", new MessageDecoder(new KryoValuesDeserializer(conf)));
         // Encoder
         pipeline.addLast("encoder", NettySerializableMessageEncoder.INSTANCE);
 
