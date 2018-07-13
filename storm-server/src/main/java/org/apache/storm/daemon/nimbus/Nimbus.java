@@ -18,8 +18,13 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import com.codahale.metrics.CachedGauge;
+import com.codahale.metrics.DerivativeGauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.SlidingTimeWindowReservoir;
 import com.codahale.metrics.Timer;
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,6 +55,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -442,6 +448,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final List<ClusterMetricsConsumerExecutor> clusterConsumerExceutors;
     private final IGroupMappingServiceProvider groupMapper;
     private final IPrincipalToLocal principalToLocal;
+    private final ClusterSummaryMetricSet clusterMetricSet;
     private MetricStore metricsStore;
     private IAuthorizer authorizationHandler;
     //Cached CuratorFramework, mainly used for BlobStore.
@@ -543,6 +550,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.principalToLocal = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
         this.supervisorClasspaths = Collections.unmodifiableNavigableMap(
             Utils.getConfiguredClasspathVersions(conf, EMPTY_STRING_LIST));// We don't use the classpath part of this, so just an empty list
+        clusterMetricSet = new ClusterSummaryMetricSet();
     }
 
     // TOPOLOGY STATE TRANSITIONS
@@ -828,12 +836,21 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         if (anyChanged) {
             LOG.info("Fragmentation after scheduling is: {} MB, {} PCore CPUs", fragmentedMemory(), fragmentedCpu());
-            nodeIdToResources.get().forEach((id, node) ->
+            nodeIdToResources.get().forEach((id, node) -> {
+                final double availableMem = node.getAvailableMem();
+                if (availableMem < 0) {
+                    LOG.warn("Memory over-scheduled on {}", id, availableMem);
+                }
+                final double availableCpu = node.getAvailableCpu();
+                if (availableCpu < 0) {
+                    LOG.warn("CPU over-scheduled on {}", id, availableCpu);
+                }
                 LOG.info(
-                    "Node Id: {} Total Mem: {}, Used Mem: {}, Available Mem: {}, Total CPU: {}, Used "
-                        + "CPU: {}, Available CPU: {}, fragmented: {}",
-                    id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(),
-                    node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu(), isFragmented(node)));
+                        "Node Id: {} Total Mem: {}, Used Mem: {}, Available Mem: {}, Total CPU: {}, Used "
+                                + "CPU: {}, Available CPU: {}, fragmented: {}",
+                        id, node.getTotalMem(), node.getUsedMem(), availableMem,
+                        node.getTotalCpu(), node.getUsedCpu(), availableCpu, isFragmented(node));
+            });
         }
         return anyChanged;
     }
@@ -2657,8 +2674,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             ret.set_used_mem(resources.getUsedMem());
             ret.set_used_cpu(resources.getUsedCpu());
             if (isFragmented(resources)) {
-                ret.set_fragmented_cpu(resources.getAvailableCpu());
-                ret.set_fragmented_mem(resources.getAvailableMem());
+                final double availableCpu = resources.getAvailableCpu();
+                if (availableCpu < 0) {
+                    LOG.warn("Negative fragmented CPU on {}", supervisorId);
+                }
+                ret.set_fragmented_cpu(availableCpu);
+                final double availableMem = resources.getAvailableMem();
+                if (availableMem < 0) {
+                    LOG.warn("Negative fragmented Mem on {}", supervisorId);
+                }
+                ret.set_fragmented_mem(availableMem);
             }
         }
         if (info.is_set_version()) {
@@ -2815,6 +2840,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 for (String topoId : state.activeStorms()) {
                     transition(topoId, TopologyActions.STARTUP, null);
                 }
+                clusterMetricSet.setActive(true);
             }
 
             final boolean doNotReassign = (Boolean) conf.getOrDefault(ServerConfigUtils.NIMBUS_DO_NOT_REASSIGN, false);
@@ -2865,16 +2891,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                         }
                                     });
 
-            StormMetricsRegistry.registerGauge("nimbus:num-supervisors", () -> state.supervisors(null).size());
-            StormMetricsRegistry.registerGauge("nimbus:fragmented-memory", this::fragmentedMemory);
-            StormMetricsRegistry.registerGauge("nimbus:fragmented-cpu", this::fragmentedCpu);
-            StormMetricsRegistry.registerGauge("nimbus:available-memory", () -> nodeIdToResources.get().values()
+            //Be cautious using method reference instead of lambda. subexpression preceding :: will be evaluated only upon evaluation
+            // Num supervisor, and fragmented resources have been included in cluster summary
+            StormMetricsRegistry.registerGauge("nimbus:total-available-memory (nonegative)", () -> nodeIdToResources.get().values()
                 .parallelStream()
-                .mapToDouble(SupervisorResources::getAvailableMem)
+                .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableMem(), 0))
                 .sum());
-            StormMetricsRegistry.registerGauge("nimbus:available-cpu", () -> nodeIdToResources.get().values()
+            StormMetricsRegistry.registerGauge("nimbus:available-cpu (nonnegative)", () -> nodeIdToResources.get().values()
                 .parallelStream()
-                .mapToDouble(SupervisorResources::getAvailableCpu)
+                .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableCpu(), 0))
                 .sum());
             StormMetricsRegistry.registerGauge("nimbus:total-memory", () -> nodeIdToResources.get().values()
                 .parallelStream()
@@ -2905,6 +2930,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                             throw new RuntimeException(e);
                                         }
                                     });
+
+            //Should we make the delaySecs and recurSecs in sync with any conf value?
+            // They should be around the reporting interval, but it's not configurable
+            timer.scheduleRecurring(5, 5, clusterMetricSet);
         } catch (Exception e) {
             if (Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e)) {
                 throw e;
@@ -4581,6 +4610,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (metricsStore != null) {
                 metricsStore.close();
             }
+            //Put after timer close to avoid race condition
+            clusterMetricSet.setActive(false);
             LOG.info("Shut down master");
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -4716,4 +4747,192 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     }
 
+    //enum NotPorted {
+    //    //Declared in StormConf. I don't see the value in reporting so.
+    //    SUPERVISOR_TOTAL_RESOURCE,
+    //    //May be able to aggregate based on status;
+    //    TOPOLOGY_STATUS,
+    //    TOPOLOGY_SCHED_STATUS,
+    //    //May be aggregated, as well as other distinct values
+    //    NUM_DISTINCT_NIMBUS_VERSION;
+    //}
+
+    private class ClusterSummaryMetricSet implements MetricSet, Runnable {
+        static final int CACHING_WINDOW = 5;
+        static final int PORTED_METRICS = 25;
+        static final String SUMMARY = "summary";
+
+        private final Map<String, com.codahale.metrics.Metric> ported = new HashMap<>(PORTED_METRICS);
+        private final Function<String, Histogram> registerHistogram = (name) -> {
+            final Histogram histogram = new Histogram(new SlidingTimeWindowReservoir(CACHING_WINDOW / 2, TimeUnit.SECONDS));
+            ported.put(name, histogram);
+            return histogram;
+        };
+        private volatile boolean active = false;
+
+        //NImbus metrics distribution
+        private final Histogram nimbusUptime = registerHistogram.apply("nimbuses:uptime-secs");
+
+        //Supervisor metrics distribution
+        private final Histogram supervisorsUptime = registerHistogram.apply("supervisors:uptime-secs");
+        private final Histogram supervisorsNumWorkers = registerHistogram.apply("supervisors:num-workers");
+        private final Histogram supervisorsNumUsedWorkers = registerHistogram.apply("supervisors:num-used-workers");
+        private final Histogram supervisorsUsedMem = registerHistogram.apply("supervisors:used-mem");
+        private final Histogram supervisorsUsedCpu = registerHistogram.apply("supervisors:used-CPU");
+        private final Histogram supervisorsFragmentedMem = registerHistogram.apply("supervisors:fragmented-mem");
+        private final Histogram supervisorsFragmentedCpu = registerHistogram.apply("supervisors:fragmented-CPU");
+
+        //Topology metrics distribution
+        private final Histogram topologiesNumTasks = registerHistogram.apply("topologies:num-tasks");
+        private final Histogram topologiesNumExecutors = registerHistogram.apply("topologies:num-executors");
+        private final Histogram topologiesNumWorker = registerHistogram.apply("topologies:num-workers");
+        private final Histogram topologiesUptime = registerHistogram.apply("topologies:uptime-secs");
+        private final Histogram topologiesReplicationCount = registerHistogram.apply("topologies:replication-count");
+        private final Histogram topologiesRequestedMemOnHeap = registerHistogram.apply("topologies:requested-mem-on-heap");
+        private final Histogram topologiesRequestedMemOffHeap = registerHistogram.apply("topologies:requested-mem-off-heap");
+        private final Histogram topologiesRequestedCpu = registerHistogram.apply("topologies:requested-CPU");
+        private final Histogram topologiesAssignedMemOnHeap = registerHistogram.apply("topologies:assigned-mem-on-heap");
+        private final Histogram topologiesAssignedMemOffHeap = registerHistogram.apply("topologies:assigned-mem-off-heap");
+        private final Histogram topologiesAssignedCpu = registerHistogram.apply("topologies:assigned-CPU");
+
+        ClusterSummaryMetricSet() {
+            //Break the code if out of sync to thrift protocol
+            assert ClusterSummary._Fields.values().length == 3
+                && ClusterSummary._Fields.findByName("supervisors") == ClusterSummary._Fields.SUPERVISORS
+                && ClusterSummary._Fields.findByName("topologies") == ClusterSummary._Fields.TOPOLOGIES
+                && ClusterSummary._Fields.findByName("nimbuses") == ClusterSummary._Fields.NIMBUSES;
+
+            final CachedGauge<ClusterSummary> cachedSummary = new CachedGauge<ClusterSummary>(CACHING_WINDOW, TimeUnit.SECONDS) {
+                @Override
+                protected ClusterSummary loadValue() {
+                    try {
+                        if (active) {
+                            ClusterSummary newSummary = getClusterInfoImpl();
+                            LOG.info("the new summary is {}", newSummary);
+                            //This is ugly but I can't think of a better way to update histogram only once per caching
+                            // It also kind of depends on the implementation that gauges gets updated before histograms
+                            updateHistogram(newSummary);
+                            return newSummary;
+                        } else {
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        LOG.warn("Get cluster info exception.", e);
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+
+            ported.put("cluster:num-nimbus-leaders", new DerivativeGauge<ClusterSummary, Long>(cachedSummary) {
+                @Override
+                protected Long transform(ClusterSummary clusterSummary) {
+                    return clusterSummary.get_nimbuses().stream().filter(NimbusSummary::is_isLeader).count();
+                }
+            });
+            ported.put("cluster:num-nimbuses", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                @Override
+                protected Integer transform(ClusterSummary clusterSummary) {
+                    return clusterSummary.get_nimbuses_size();
+                }
+            });
+            ported.put("cluster:num-supervisors", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                @Override
+                protected Integer transform(ClusterSummary clusterSummary) {
+                    return clusterSummary.get_supervisors_size();
+                }
+            });
+            ported.put("cluster:num-topologies", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                @Override
+                protected Integer transform(ClusterSummary clusterSummary) {
+                    return clusterSummary.get_topologies_size();
+                }
+            });
+            ported.put("cluster:num-total-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                @Override
+                protected Integer transform(ClusterSummary clusterSummary) {
+                    return clusterSummary.get_supervisors().stream().mapToInt(SupervisorSummary::get_num_workers).sum();
+                }
+            });
+            ported.put("cluster:num-total-used-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                @Override
+                protected Integer transform(ClusterSummary clusterSummary) {
+                    return clusterSummary.get_supervisors().stream().mapToInt(SupervisorSummary::get_num_used_workers).sum();
+                }
+            });
+            ported.put("cluster:total-fragmented-memory (nonnegative)", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
+                @Override
+                protected Double transform(ClusterSummary clusterSummary) {
+                    return clusterSummary.get_supervisors().stream()
+                        //Filtered negative value
+                        .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_mem(), 0)).sum();
+                }
+            });
+            ported.put("cluster:total-fragmented-CPU (nonnegative)", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
+                @Override
+                protected Double transform(ClusterSummary clusterSummary) {
+                    return clusterSummary.get_supervisors().stream()
+                        //Filtered negative value
+                        .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_cpu(), 0)).sum();
+                }
+            });
+        }
+
+        private void updateHistogram(ClusterSummary newSummary) {
+            for (NimbusSummary nimbusSummary : newSummary.get_nimbuses()) {
+                nimbusUptime.update(nimbusSummary.get_uptime_secs());
+            }
+            for (SupervisorSummary summary : newSummary.get_supervisors()) {
+                supervisorsUptime.update(summary.get_uptime_secs());
+                supervisorsNumWorkers.update(summary.get_num_workers());
+                supervisorsNumUsedWorkers.update(summary.get_num_used_workers());
+                supervisorsUsedMem.update(Math.round(summary.get_used_mem()));
+                supervisorsUsedCpu.update(Math.round(summary.get_used_cpu()));
+                supervisorsFragmentedMem.update(Math.round(summary.get_fragmented_mem()));
+                supervisorsFragmentedCpu.update(Math.round(summary.get_fragmented_cpu()));
+            }
+            for (TopologySummary summary : newSummary.get_topologies()) {
+                topologiesNumTasks.update(summary.get_num_tasks());
+                topologiesNumExecutors.update(summary.get_num_executors());
+                topologiesNumWorker.update(summary.get_num_workers());
+                topologiesUptime.update(summary.get_uptime_secs());
+                topologiesReplicationCount.update(summary.get_replication_count());
+                topologiesRequestedMemOnHeap.update(Math.round(summary.get_requested_memonheap()));
+                topologiesRequestedMemOffHeap.update(Math.round(summary.get_requested_memoffheap()));
+                topologiesRequestedCpu.update(Math.round(summary.get_requested_cpu()));
+                topologiesAssignedMemOnHeap.update(Math.round(summary.get_assigned_memonheap()));
+                topologiesAssignedMemOffHeap.update(Math.round(summary.get_assigned_memoffheap()));
+                topologiesAssignedCpu.update(Math.round(summary.get_assigned_cpu()));
+            }
+        }
+
+        //This is not thread safe
+        void setActive(final boolean active) {
+            if (this.active != active) {
+                this.active = active;
+                if (active) {
+                    StormMetricsRegistry.registerMetricSet(this);
+                } else {
+                    //Could be replaced when metrics support remove all functions
+                    // https://github.com/dropwizard/metrics/pull/1280
+                    StormMetricsRegistry.unregisterMetricSet(this);
+                }
+            }
+        }
+
+        @Override
+        public Map<String, com.codahale.metrics.Metric> getMetrics() {
+            return ported;
+        }
+
+        @Override
+        public void run() {
+            try {
+                //State changed
+                setActive(isLeader());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }
+
