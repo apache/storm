@@ -33,7 +33,9 @@ The following features are supported in the current repository:
 * Projections
 * User defined function (scalar)
 
-Aggregations and Join are not supported for now. When Storm SQL will support native `Streaming SQL`, these features will be introduced.    
+Aggregations and Join are not supported for now. When Storm SQL will support native `Streaming SQL`, these features will be introduced.
+
+Please be aware that as Storm uses [Apache Calcite](///calcite.apache.org) to parse the supplied SQL, you will likely benefit from skimming the Calcite documentation, in particular the section on [identifiers](https://calcite.apache.org/docs/reference.html#identifiers).   
 
 ## Specifying External Data Sources
 
@@ -61,7 +63,7 @@ Default value is 1, and this option is no effect on output data source. (We migh
 For example, the following statement specifies a Kafka spout and sink:
 
 ```
-CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/brokers?topic=test' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.org.apache.storm.kafka.ByteBufferSerializer"}}'
+CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://test?bootstrap-servers=localhost:9092' TBLPROPERTIES '{"producer":{"acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer"}}'
 ```
 
 ## Plugging in External Data Sources
@@ -98,27 +100,27 @@ Let's say there is a Kafka stream that represents the transactions of orders. Ea
 The user can specify the following SQL statements in the SQL file:
 
 ```
-CREATE EXTERNAL TABLE ORDERS (ID INT PRIMARY KEY, UNIT_PRICE INT, QUANTITY INT) LOCATION 'kafka://localhost:2181/brokers?topic=orders'
-CREATE EXTERNAL TABLE LARGE_ORDERS (ID INT PRIMARY KEY, TOTAL INT) LOCATION 'kafka://localhost:2181/brokers?topic=large_orders' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.org.apache.storm.kafka.ByteBufferSerializer"}}'
+CREATE EXTERNAL TABLE ORDERS (ID INT PRIMARY KEY, UNIT_PRICE INT, QUANTITY INT) LOCATION 'kafka://orders?bootstrap-servers=localhost:9092,localhost:9093'
+CREATE EXTERNAL TABLE LARGE_ORDERS (ID INT PRIMARY KEY, TOTAL INT) LOCATION 'kafka://large_orders?bootstrap-servers=localhost:9092,localhost:9093' TBLPROPERTIES '{"producer":{"acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer"}}'
 INSERT INTO LARGE_ORDERS SELECT ID, UNIT_PRICE * QUANTITY AS TOTAL FROM ORDERS WHERE UNIT_PRICE * QUANTITY > 50
 ```
 
-The first statement defines the table `ORDER` which represents the input stream. The `LOCATION` clause specifies the ZkHost (`localhost:2181`), the path of the brokers in ZooKeeper (`/brokers`) and the topic (`orders`). 
+The first statement defines the table `ORDER` which represents the input stream. The `LOCATION` clause specifies the Kafka bootstrap servers (`localhost:9092,localhost:9093`) and the topic (`orders`). 
 
 Similarly, the second statement specifies the table `LARGE_ORDERS` which represents the output stream. The `TBLPROPERTIES` clause specifies the configuration of [KafkaProducer](http://kafka.apache.org/documentation.html#producerconfigs) and is required for a Kafka sink table. 
 
 The third statement is a `SELECT` statement which defines the topology: it instructs StormSQL to filter all orders in the external table `ORDERS`, calculates the total price and inserts matching records into the Kafka stream specified by `LARGE_ORDER`.
 
 To run this example, users need to include the data sources (`storm-sql-kafka` in this case) and its dependency in the
-class path. Dependencies for Storm SQL are automatically handled when users run `storm sql`. Users can include data sources at the submission step like below:
+class path. The Storm SQL core dependencies are automatically handled when users run `storm sql`. Users can include data sources at the submission step like below:
 
 ```
-$ bin/storm sql order_filtering.sql order_filtering --artifacts "org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka:2.0.0-SNAPSHOT,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12,org.apache.kafka:kafka-clients:0.8.2.2"
+$ bin/storm sql order_filtering.sql order_filtering --artifacts "org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka-client:2.0.0-SNAPSHOT,org.apache.kafka:kafka-clients:1.1.0^org.slf4j:slf4j-log4j12"
 ```
 
 Above command submits the SQL statements to StormSQL. Users need to modify each artifacts' version if users are using different version of Storm or Kafka. 
 
-By now you should be able to see the `order_filtering` topology in the Storm UI.
+Having run the above command, you should now be able to see the `order_filtering` topology in Storm UI.
 
 ## Showing Query Plan (explain mode)
 
@@ -129,7 +131,7 @@ In order to run `explain mode`, you need to provide topology name as `--explain`
 For example, when you run the example seen above with explain mode:
  
 ```
-$ bin/storm sql order_filtering.sql --explain --artifacts "org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka:2.0.0-SNAPSHOT,org.apache.kafka:kafka_2.10:0.8.2.2\!org.slf4j:slf4j-log4j12,org.apache.kafka:kafka-clients:0.8.2.2"
+$ bin/storm sql order_filtering.sql --explain --artifacts "org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka-client:2.0.0-SNAPSHOT,org.apache.kafka:kafka-clients:1.1.0^org.slf4j:slf4j-log4j12"
 ```
 
 StormSQL prints out like below:
@@ -138,15 +140,20 @@ StormSQL prints out like below:
 
 ===========================================================
 query>
-CREATE EXTERNAL TABLE ORDERS (ID INT PRIMARY KEY, UNIT_PRICE INT, QUANTITY INT) LOCATION 'kafka://localhost:2181/brokers?topic=orders' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.storm.kafka.ByteBufferSerializer"}}'
+CREATE EXTERNAL TABLE ORDERS (ID INT PRIMARY KEY, UNIT_PRICE INT, QUANTITY INT) LOCATION 'kafka://orders?bootstrap-servers=localhost:9092,localhost:9093'
 -----------------------------------------------------------
-16:53:43.951 [main] INFO  o.a.s.s.r.DataSourcesRegistry - Registering scheme kafka with org.apache.storm.sql.kafka.KafkaDataSourcesProvider@4d1bf319
+17:03:06.040 [main] INFO  o.a.s.s.r.DataSourcesRegistry - Registering scheme socket with org.apache.storm.sql.runtime.datasource.socket.SocketDataSourcesProvider@d62fe5b
+17:03:06.090 [main] INFO  o.a.s.s.r.DataSourcesRegistry - Registering scheme kafka with org.apache.storm.sql.kafka.KafkaDataSourcesProvider@34158c08
+17:03:06.290 [main] INFO  o.a.s.k.s.KafkaSpoutConfig - Setting Kafka consumer property 'auto.offset.reset' to 'earliest' to ensure at-least-once processing
+17:03:06.290 [main] INFO  o.a.s.k.s.KafkaSpoutConfig - Setting Kafka consumer property 'enable.auto.commit' to 'false', because the spout does not support auto-commit
 No plan presented on DDL
 ===========================================================
 ===========================================================
 query>
-CREATE EXTERNAL TABLE LARGE_ORDERS (ID INT PRIMARY KEY, TOTAL INT) LOCATION 'kafka://localhost:2181/brokers?topic=large_orders' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.storm.kafka.ByteBufferSerializer"}}'
+CREATE EXTERNAL TABLE LARGE_ORDERS (ID INT PRIMARY KEY, TOTAL INT) LOCATION 'kafka://large_orders?bootstrap-servers=localhost:9092,localhost:9093' TBLPROPERTIES '{"producer":{"acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer"}}'
 -----------------------------------------------------------
+17:03:06.504 [main] INFO  o.a.s.k.s.KafkaSpoutConfig - Setting Kafka consumer property 'auto.offset.reset' to 'earliest' to ensure at-least-once processing
+17:03:06.504 [main] INFO  o.a.s.k.s.KafkaSpoutConfig - Setting Kafka consumer property 'enable.auto.commit' to 'false', because the spout does not support auto-commit
 No plan presented on DDL
 ===========================================================
 ===========================================================
@@ -154,14 +161,36 @@ query>
 INSERT INTO LARGE_ORDERS SELECT ID, UNIT_PRICE * QUANTITY AS TOTAL FROM ORDERS WHERE UNIT_PRICE * QUANTITY > 50
 -----------------------------------------------------------
 plan>
-LogicalTableModify(table=[[LARGE_ORDERS]], operation=[INSERT], updateColumnList=[[]], flattened=[true]), id = 8
-  LogicalProject(ID=[$0], TOTAL=[*($1, $2)]), id = 7
-    LogicalFilter(condition=[>(*($1, $2), 50)]), id = 6
-      EnumerableTableScan(table=[[ORDERS]]), id = 5
+LogicalTableModify(table=[[LARGE_ORDERS]], operation=[INSERT], flattened=[true])
+  LogicalProject(ID=[$0], TOTAL=[*($1, $2)])
+    LogicalFilter(condition=[>(*($1, $2), 50)])
+      EnumerableTableScan(table=[[ORDERS]])
 
 ===========================================================
 
 ```
+
+## Debugging expressions
+When a Storm SQL topology is submitted, the code generated based on the SQL expressions will be logged. For example, the WHERE clause in the order filtering example will produce the following log during submit:
+
+```
+17:37:55.344 [main] INFO  o.a.s.s.r.s.f.EvaluationCalc - Expression code for filter:
+public class Generated_STREAMSCALCREL_33_0 implements org.apache.storm.sql.runtime.calcite.ExecutableExpression {
+  public void execute(org.apache.calcite.interpreter.Context context, Object[] outputValues) {
+    final Object[] current = context.values;
+    outputValues[0] = org.apache.calcite.runtime.SqlFunctions.toInt(current[1]) * org.apache.calcite.runtime.SqlFunctions.toInt(current[2]) > 50;
+  }
+
+  public Object execute(org.apache.calcite.interpreter.Context context) {
+    final Object[] values = new Object[1];
+    this.execute(context, values);
+    return values[0];
+  }
+
+}
+```
+
+This can be helpful in case you need to debug the topology.
 
 ## Current Limitations
 

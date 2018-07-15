@@ -28,15 +28,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-
-import org.apache.storm.kafka.KafkaSpout;
-import org.apache.storm.kafka.SpoutConfig;
-import org.apache.storm.kafka.ZkHosts;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.ByteBufferDeserializer;
+import org.apache.kafka.common.serialization.ByteBufferSerializer;
 import org.apache.storm.kafka.bolt.KafkaBolt;
 import org.apache.storm.kafka.bolt.mapper.TupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
+import org.apache.storm.kafka.spout.KafkaSpout;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig;
+
 import org.apache.storm.spout.Scheme;
-import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.IOutputSerializer;
@@ -49,14 +51,12 @@ import org.apache.storm.tuple.Values;
 
 /**
  * Create a Kafka spout/sink based on the URI and properties. The URI has the format of
- * kafka://zkhost:port/broker_path?topic=topic. The properties are in JSON format which specifies the producer config
+ * kafka://topic?bootstrap-servers=ip:port[,ip:port]. The properties are in JSON format which specifies the producer config
  * of the Kafka broker.
  */
 public class KafkaDataSourcesProvider implements DataSourcesProvider {
-    private static final int DEFAULT_ZK_PORT = 2181;
     private static final String CONFIG_KEY_PRODUCER = "producer";
-    private static final String CONFIG_KEY_BOOTSTRAP_SERVERS = "bootstrap.servers";
-    private static final String URI_PARAMS_TOPIC_KEY = "topic";
+    private static final String URI_PARAMS_BOOTSTRAP_SERVERS = "bootstrap-servers";
 
     private static class SqlKafkaMapper implements TupleToKafkaMapper<Object, ByteBuffer> {
         private final IOutputSerializer serializer;
@@ -77,38 +77,43 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     }
 
     private static class KafkaStreamsDataSource implements ISqlStreamsDataSource {
-        private final SpoutConfig conf;
+        private final KafkaSpoutConfig<ByteBuffer, ByteBuffer> kafkaSpoutConfig;
+        private final String bootstrapServers;
         private final String topic;
-        private final int primaryKeyIndex;
         private final Properties props;
         private final IOutputSerializer serializer;
 
-        private KafkaStreamsDataSource(SpoutConfig conf, String topic, int primaryKeyIndex,
-                                       Properties props, IOutputSerializer serializer) {
-            this.conf = conf;
+        public KafkaStreamsDataSource(KafkaSpoutConfig<ByteBuffer, ByteBuffer> kafkaSpoutConfig, String bootstrapServers,
+            String topic, Properties props, IOutputSerializer serializer) {
+            this.kafkaSpoutConfig = kafkaSpoutConfig;
+            this.bootstrapServers = bootstrapServers;
             this.topic = topic;
-            this.primaryKeyIndex = primaryKeyIndex;
             this.props = props;
             this.serializer = serializer;
         }
 
         @Override
         public IRichSpout getProducer() {
-            return new KafkaSpout(conf);
+            return new KafkaSpout<>(kafkaSpoutConfig);
         }
 
         @Override
         public IRichBolt getConsumer() {
             Preconditions.checkArgument(!props.isEmpty(),
-                    "Writable Kafka Table " + topic + " must contain producer config");
+                    "Writable Kafka table " + topic + " must contain producer config");
             HashMap<String, Object> producerConfig = (HashMap<String, Object>) props.get(CONFIG_KEY_PRODUCER);
             props.putAll(producerConfig);
-            Preconditions.checkState(props.containsKey(CONFIG_KEY_BOOTSTRAP_SERVERS),
-                    "Writable Kafka Table " + topic + " must contain \"bootstrap.servers\" config");
+            Preconditions.checkState(!props.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
+                    "Writable Kafka table " + topic + " must not contain \"bootstrap.servers\" config, set it in the kafka URL instead");
+            Preconditions.checkState(!props.containsKey(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG),
+                "Writable Kafka table " + topic + "must not contain " + ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG
+                    + ", it will be hardcoded to be " + ByteBufferSerializer.class);
+            props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteBufferSerializer.class);
+            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
 
             TupleToKafkaMapper<Object, ByteBuffer> mapper = new SqlKafkaMapper(serializer);
 
-            return new KafkaBolt()
+            return new KafkaBolt<Object, ByteBuffer>()
                     .withTopicSelector(new DefaultTopicSelector(topic))
                     .withProducerProperties(props)
                     .withTupleToKafkaMapper(mapper);
@@ -119,16 +124,10 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     public String scheme() {
         return "kafka";
     }
-
+    
     @Override
     public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                   Properties properties, List<FieldInfo> fields) {
-        int port = uri.getPort() != -1 ? uri.getPort() : DEFAULT_ZK_PORT;
-        ZkHosts zk = new ZkHosts(uri.getHost() + ":" + port, uri.getPath());
-        Map<String, String> values = parseUriParams(uri.getQuery());
-        String topic = values.get(URI_PARAMS_TOPIC_KEY);
-        Preconditions.checkNotNull(topic, "No topic of the spout is specified");
-        SpoutConfig conf = new SpoutConfig(zk, topic, uri.getPath(), UUID.randomUUID().toString());
         List<String> fieldNames = new ArrayList<>();
         int primaryIndex = -1;
         for (int i = 0; i < fields.size(); ++i) {
@@ -140,10 +139,22 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
         }
         Preconditions.checkState(primaryIndex != -1, "Kafka stream table must have a primary key");
         Scheme scheme = SerdeUtils.getScheme(inputFormatClass, properties, fieldNames);
-        conf.scheme = new SchemeAsMultiScheme(scheme);
+        
+        Map<String, String> values = parseUriParams(uri.getQuery());
+        String bootstrapServers = values.get(URI_PARAMS_BOOTSTRAP_SERVERS);
+        Preconditions.checkNotNull(bootstrapServers, "bootstrap-servers must be specified");
+        String topic = uri.getHost();
+        KafkaSpoutConfig<ByteBuffer, ByteBuffer> kafkaSpoutConfig = 
+            new KafkaSpoutConfig.Builder<ByteBuffer, ByteBuffer>(bootstrapServers, topic)
+            .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteBufferDeserializer.class)
+            .setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteBufferDeserializer.class)
+            .setProp(ConsumerConfig.GROUP_ID_CONFIG, "storm-sql-kafka-" + UUID.randomUUID().toString())
+            .setRecordTranslator(new RecordTranslatorSchemeAdapter(scheme))
+            .build();
+
         IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, properties, fieldNames);
 
-        return new KafkaStreamsDataSource(conf, topic, primaryIndex, properties, serializer);
+        return new KafkaStreamsDataSource(kafkaSpoutConfig, bootstrapServers, topic, properties, serializer);
     }
 
     private static Map<String, String> parseUriParams(String query) {
