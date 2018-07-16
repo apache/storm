@@ -52,7 +52,7 @@ import org.apache.storm.sql.runtime.calcite.ExecutableExpression;
 
 /**
  * Compiles a scalar expression ({@link org.apache.calcite.rex.RexNode}) to Java source code String.
- *
+ * <p/>
  * This code is inspired by JaninoRexCompiler in Calcite, but while it is returning {@link org.apache.calcite.interpreter.Scalar} which is
  * executable, we need to pass the source code to compile and serialize instance so that it can be executed on worker efficiently.
  */
@@ -67,15 +67,15 @@ public class RexNodeToJavaCodeCompiler {
      * Given a method that implements {@link ExecutableExpression#execute(Context, Object[])}, adds a bridge method that implements {@link
      * ExecutableExpression#execute(Context)}, and compiles.
      */
-    static String baz(ParameterExpression context_,
-                      ParameterExpression outputValues_, BlockStatement block, String className) {
+    static String baz(ParameterExpression context,
+                      ParameterExpression outputValues, BlockStatement block, String className) {
         final List<MemberDeclaration> declarations = Lists.newArrayList();
 
         // public void execute(Context, Object[] outputValues)
         declarations.add(
             Expressions.methodDecl(Modifier.PUBLIC, void.class,
                                    StormBuiltInMethod.EXPR_EXECUTE2.method.getName(),
-                                   ImmutableList.of(context_, outputValues_), block));
+                                   ImmutableList.of(context, outputValues), block));
 
         // public Object execute(Context)
         final BlockBuilder builder = new BlockBuilder();
@@ -86,14 +86,14 @@ public class RexNodeToJavaCodeCompiler {
             Expressions.statement(
                 Expressions.call(
                     Expressions.parameter(ExecutableExpression.class, "this"),
-                    StormBuiltInMethod.EXPR_EXECUTE2.method, context_, values_)));
+                    StormBuiltInMethod.EXPR_EXECUTE2.method, context, values_)));
         builder.add(
             Expressions.return_(null,
                                 Expressions.arrayIndex(values_, Expressions.constant(0))));
         declarations.add(
             Expressions.methodDecl(Modifier.PUBLIC, Object.class,
                                    StormBuiltInMethod.EXPR_EXECUTE1.method.getName(),
-                                   ImmutableList.of(context_), builder.toBlock()));
+                                   ImmutableList.of(context), builder.toBlock()));
 
         final ClassDeclaration classDeclaration =
             Expressions.classDecl(Modifier.PUBLIC, className, null,
@@ -141,8 +141,8 @@ public class RexNodeToJavaCodeCompiler {
         return baz(context_, outputValues_, builder.toBlock(), className);
     }
 
-    private BlockBuilder compileToBlock(final RexProgram program, ParameterExpression context_,
-                                        ParameterExpression outputValues_) {
+    private BlockBuilder compileToBlock(final RexProgram program, ParameterExpression context,
+                                        ParameterExpression outputValues) {
         RelDataType inputRowType = program.getInputRowType();
         final BlockBuilder builder = new BlockBuilder();
         final JavaTypeFactoryImpl javaTypeFactory =
@@ -152,7 +152,7 @@ public class RexNodeToJavaCodeCompiler {
             new RexToLixTranslator.InputGetterImpl(
                 ImmutableList.of(
                     Pair.<Expression, PhysType>of(
-                        Expressions.field(context_,
+                        Expressions.field(context,
                                           BuiltInMethod.CONTEXT_VALUES.field),
                         PhysTypeImpl.of(javaTypeFactory, inputRowType,
                                         JavaRowFormat.ARRAY, false))));
@@ -163,7 +163,7 @@ public class RexNodeToJavaCodeCompiler {
                 }
             };
         final Expression root =
-            Expressions.field(context_, BuiltInMethod.CONTEXT_ROOT.field);
+            Expressions.field(context, BuiltInMethod.CONTEXT_ROOT.field);
         final List<Expression> list =
             RexToLixTranslator.translateProjects(program, javaTypeFactory, builder,
                                                  null, root, inputGetter, correlates);
@@ -171,7 +171,7 @@ public class RexNodeToJavaCodeCompiler {
             builder.add(
                 Expressions.statement(
                     Expressions.assign(
-                        Expressions.arrayIndex(outputValues_,
+                        Expressions.arrayIndex(outputValues,
                                                Expressions.constant(i)),
                         list.get(i))));
         }

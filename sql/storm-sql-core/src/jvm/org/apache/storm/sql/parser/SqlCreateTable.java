@@ -14,6 +14,7 @@ package org.apache.storm.sql.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.util.ImmutableNullableList;
+import org.apache.calcite.util.NlsString;
 
 public class SqlCreateTable extends SqlCall {
     public static final SqlSpecialOperator OPERATOR = new SqlSpecialOperator(
@@ -116,9 +118,9 @@ public class SqlCreateTable extends SqlCall {
     }
 
     public Integer parallelism() {
-        String parallelismStr = getString(parallelism);
-        if (parallelismStr != null) {
-            return Integer.parseInt(parallelismStr);
+        Integer para = getInteger(parallelism);
+        if (para != null) {
+            return para;
         } else {
             return DEFAULT_PARALLELISM;
         }
@@ -146,8 +148,12 @@ public class SqlCreateTable extends SqlCall {
         return props;
     }
 
+    private Integer getInteger(SqlNode n) {
+        return n == null ? null : ((BigDecimal) SqlLiteral.value(n)).intValueExact();
+    }
+
     private String getString(SqlNode n) {
-        return n == null ? null : SqlLiteral.stringValue(n);
+        return n == null ? null : ((NlsString) SqlLiteral.value(n)).getValue();
     }
 
     @SuppressWarnings("unchecked")

@@ -19,8 +19,6 @@ import org.apache.calcite.rel.core.TableScan;
 
 public abstract class StormStreamScanRelBase extends TableScan implements StormRelNode {
 
-    // FIXME: define Table class and table.unwrap() to get it
-
     protected StormStreamScanRelBase(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
         super(cluster, traitSet, table);
     }

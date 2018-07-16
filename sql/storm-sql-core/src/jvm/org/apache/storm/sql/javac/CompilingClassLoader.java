@@ -16,6 +16,7 @@
 
 package org.apache.storm.sql.javac;
 
+import static java.util.Collections.singleton;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,13 +36,11 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
-import static java.util.Collections.singleton;
-
 /**
  * This is a Java ClassLoader that will attempt to load a class from a string of source code.
- *
+ * <p/>
  * <h3>Example</h3>
- *
+ * <p/>
  * <pre>
  * String className = "com.foo.MyClass";
  * String classSource =
@@ -61,16 +60,16 @@ import static java.util.Collections.singleton;
  * Runnable instance = (Runnable)myClass.newInstance();
  * instance.run();
  * </pre>
- *
+ * <p/>
  * Only one chunk of source can be compiled per instance of CompilingClassLoader. If you need to compile more, create multiple
  * CompilingClassLoader instances.
- *
+ * <p/>
  * Uses Java 1.6's in built compiler API.
- *
+ * <p/>
  * If the class cannot be compiled, loadClass() will throw a ClassNotFoundException and log the compile errors to System.err. If you don't
  * want the messages logged, or want to explicitly handle the messages you can provide your own {@link javax.tools.DiagnosticListener}
  * through {#setDiagnosticListener()}.
- *
+ * <p/>
  * @see java.lang.ClassLoader
  * @see javax.tools.JavaCompiler
  */
@@ -90,6 +89,8 @@ public class CompilingClassLoader extends ClassLoader {
     private final Map<String, ByteArrayOutputStream> byteCodeForClasses = new HashMap<>();
 
     /**
+     * Constructor.
+     *
      * @param parent             Parent classloader to resolve dependencies from.
      * @param className          Name of class to compile. eg. "com.foo.MyClass".
      * @param sourceCode         Java source for class. e.g. "package com.foo; class MyClass { ... }".
@@ -161,7 +162,7 @@ public class CompilingClassLoader extends ClassLoader {
     public static class CompilerException extends Exception {
         private static final long serialVersionUID = -2936958840023603270L;
 
-        public CompilerException(String message) {
+        CompilerException(String message) {
             super(message);
         }
     }
@@ -169,7 +170,10 @@ public class CompilingClassLoader extends ClassLoader {
     private static class InMemoryJavaFile extends SimpleJavaFileObject {
         private final String sourceCode;
 
-        public InMemoryJavaFile(String className, String sourceCode) {
+        /**
+         * Constructor.
+         */
+        InMemoryJavaFile(String className, String sourceCode) {
             super(makeUri(className), Kind.SOURCE);
             this.sourceCode = sourceCode;
         }
@@ -196,7 +200,7 @@ public class CompilingClassLoader extends ClassLoader {
      * @see javax.tools.JavaFileManager
      */
     private class InMemoryFileManager extends ForwardingJavaFileManager<JavaFileManager> {
-        public InMemoryFileManager(JavaFileManager fileManager) {
+        InMemoryFileManager(JavaFileManager fileManager) {
             super(fileManager);
         }
 

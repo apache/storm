@@ -16,6 +16,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
+
+import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.type.RelDataType;
@@ -25,33 +27,24 @@ import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.Statistics;
 import org.apache.calcite.schema.StreamableTable;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Util;
 import org.apache.storm.sql.calcite.ParallelStreamableTable;
+import org.apache.storm.sql.calcite.ParallelTable;
 import org.apache.storm.sql.parser.ColumnConstraint;
 
+import static org.apache.calcite.sql.validate.SqlMonotonicity.INCREASING;
 import static org.apache.calcite.rel.RelFieldCollation.Direction;
 import static org.apache.calcite.rel.RelFieldCollation.Direction.ASCENDING;
 import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
 import static org.apache.calcite.rel.RelFieldCollation.NullDirection;
-import static org.apache.calcite.sql.validate.SqlMonotonicity.INCREASING;
 
 public class CompilerUtil {
-    public static String escapeJavaString(String s, boolean nullMeansNull) {
-        if (s == null) {
-            return nullMeansNull ? "null" : "\"\"";
-        } else {
-            String s1 = Util.replace(s, "\\", "\\\\");
-            String s2 = Util.replace(s1, "\"", "\\\"");
-            String s3 = Util.replace(s2, "\n\r", "\\n");
-            String s4 = Util.replace(s3, "\n", "\\n");
-            String s5 = Util.replace(s4, "\r", "\\r");
-            return "\"" + s5 + "\"";
-        }
-    }
 
     public static class TableBuilderInfo {
         private final RelDataTypeFactory typeFactory;
@@ -61,6 +54,7 @@ public class CompilerUtil {
         private Integer parallelismHint;
         private SqlMonotonicity primaryKeyMonotonicity;
         private Statistic stats;
+
         public TableBuilderInfo(RelDataTypeFactory typeFactory) {
             this.typeFactory = typeFactory;
         }
@@ -74,16 +68,31 @@ public class CompilerUtil {
             return this;
         }
 
+        public TableBuilderInfo field(String name, SqlTypeName type, ColumnConstraint constraint) {
+            interpretConstraint(constraint, fields.size());
+            return field(name, typeFactory.createSqlType(type));
+        }
+
+        public TableBuilderInfo field(String name, RelDataType type, ColumnConstraint constraint) {
+            interpretConstraint(constraint, fields.size());
+            fields.add(new FieldType(name, type));
+            return this;
+        }
+
         public TableBuilderInfo field(String name, SqlDataTypeSpec type, ColumnConstraint constraint) {
             RelDataType dataType = type.deriveType(typeFactory);
+            interpretConstraint(constraint, fields.size());
+            fields.add(new FieldType(name, dataType));
+            return this;
+        }
+
+        private void interpretConstraint(ColumnConstraint constraint, int fieldIdx) {
             if (constraint instanceof ColumnConstraint.PrimaryKey) {
                 ColumnConstraint.PrimaryKey pk = (ColumnConstraint.PrimaryKey) constraint;
                 Preconditions.checkState(primaryKey == -1, "There are more than one primary key in the table");
-                primaryKey = fields.size();
+                primaryKey = fieldIdx;
                 primaryKeyMonotonicity = pk.monotonicity();
             }
-            fields.add(new FieldType(name, dataType));
-            return this;
         }
 
         public TableBuilderInfo statistics(Statistic stats) {
@@ -104,10 +113,21 @@ public class CompilerUtil {
 
         public StreamableTable build() {
             final Statistic stat = buildStatistic();
-            final Table tbl = new Table() {
+
+            final Table tbl = new ParallelTable() {
+                @Override
+                public Integer parallelismHint() {
+                    return parallelismHint;
+                }
+
+                @Override
+                public int primaryKey() {
+                    return primaryKey;
+                }
+
                 @Override
                 public RelDataType getRowType(
-                    RelDataTypeFactory relDataTypeFactory) {
+                        RelDataTypeFactory relDataTypeFactory) {
                     RelDataTypeFactory.FieldInfoBuilder b = relDataTypeFactory.builder();
                     for (FieldType f : fields) {
                         b.add(f.name, f.relDataType);
@@ -118,16 +138,32 @@ public class CompilerUtil {
                 @Override
                 public Statistic getStatistic() {
                     return stat != null ? stat : Statistics.of(rows.size(),
-                                                               ImmutableList.<ImmutableBitSet>of());
+                            ImmutableList.<ImmutableBitSet>of());
                 }
 
                 @Override
                 public Schema.TableType getJdbcTableType() {
                     return Schema.TableType.STREAM;
                 }
+
+                @Override
+                public boolean isRolledUp(String column) {
+                    return false;
+                }
+
+                @Override
+                public boolean rolledUpColumnValidInsideAgg(String column, SqlCall call, SqlNode parent,
+                                                            CalciteConnectionConfig config) {
+                    return false;
+                }
             };
 
             return new ParallelStreamableTable() {
+                @Override
+                public int primaryKey() {
+                    return primaryKey;
+                }
+
                 @Override
                 public Integer parallelismHint() {
                     return parallelismHint;
@@ -151,6 +187,17 @@ public class CompilerUtil {
                 @Override
                 public Schema.TableType getJdbcTableType() {
                     return Schema.TableType.STREAM;
+                }
+
+                @Override
+                public boolean isRolledUp(String column) {
+                    return false;
+                }
+
+                @Override
+                public boolean rolledUpColumnValidInsideAgg(String column, SqlCall call, SqlNode parent,
+                                                            CalciteConnectionConfig config) {
+                    return false;
                 }
             };
         }

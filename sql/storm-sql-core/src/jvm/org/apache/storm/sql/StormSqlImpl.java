@@ -26,12 +26,12 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.parser.SqlCreateFunction;
 import org.apache.storm.sql.parser.SqlCreateTable;
 import org.apache.storm.sql.parser.StormParser;
-import org.apache.storm.trident.TridentTopology;
 
 class StormSqlImpl extends StormSql {
     private final StormSqlContext sqlContext;
@@ -53,19 +53,19 @@ class StormSqlImpl extends StormSql {
             } else if (node instanceof SqlCreateFunction) {
                 sqlContext.interpretCreateFunction((SqlCreateFunction) node);
             } else {
-                AbstractTridentProcessor processor = sqlContext.compileSql(sql);
-                TridentTopology topo = processor.build();
+                AbstractStreamsProcessor processor = sqlContext.compileSql(sql);
+                StormTopology topo = processor.build();
 
                 Path jarPath = null;
                 try {
-                    // QueryPlanner on Trident mode configures the topology with compiled classes,
+                    // QueryPlanner on Streams mode configures the topology with compiled classes,
                     // so we need to add new classes into topology jar
                     // Topology will be serialized and sent to Nimbus, and deserialized and executed in workers.
 
                     jarPath = Files.createTempFile("storm-sql", ".jar");
                     System.setProperty("storm.jar", jarPath.toString());
                     packageTopology(jarPath, processor);
-                    StormSubmitter.submitTopologyAs(name, topoConf, topo.build(), opts, progressListener, asUser);
+                    StormSubmitter.submitTopologyAs(name, topoConf, topo, opts, progressListener, asUser);
                 } finally {
                     if (jarPath != null) {
                         Files.delete(jarPath);
@@ -102,7 +102,7 @@ class StormSqlImpl extends StormSql {
         }
     }
 
-    private void packageTopology(Path jar, AbstractTridentProcessor processor) throws IOException {
+    private void packageTopology(Path jar, AbstractStreamsProcessor processor) throws IOException {
         Manifest manifest = new Manifest();
         Attributes attr = manifest.getMainAttributes();
         attr.put(Attributes.Name.MANIFEST_VERSION, "1.0");

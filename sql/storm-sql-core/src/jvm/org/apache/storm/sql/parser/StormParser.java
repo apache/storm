@@ -21,6 +21,9 @@ public class StormParser {
     public static final int DEFAULT_IDENTIFIER_MAX_LENGTH = 128;
     private final StormParserImpl impl;
 
+    /**
+     * Constructor.
+     */
     public StormParser(String s) {
         this.impl = new StormParserImpl(new StringReader(s));
         this.impl.setTabSize(1);

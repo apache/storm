@@ -24,26 +24,23 @@ import java.net.URI;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.storm.hdfs.trident.HdfsState;
-import org.apache.storm.hdfs.trident.HdfsStateFactory;
-import org.apache.storm.hdfs.trident.HdfsUpdater;
-import org.apache.storm.hdfs.trident.format.FileNameFormat;
-import org.apache.storm.hdfs.trident.format.RecordFormat;
-import org.apache.storm.hdfs.trident.format.SimpleFileNameFormat;
-import org.apache.storm.hdfs.trident.rotation.FileRotationPolicy;
-import org.apache.storm.hdfs.trident.rotation.FileSizeRotationPolicy;
-import org.apache.storm.hdfs.trident.rotation.TimedRotationPolicy;
+import org.apache.storm.hdfs.bolt.HdfsBolt;
+import org.apache.storm.hdfs.bolt.format.FileNameFormat;
+import org.apache.storm.hdfs.bolt.format.RecordFormat;
+import org.apache.storm.hdfs.bolt.format.SimpleFileNameFormat;
+import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.IOutputSerializer;
-import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
+import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.sql.runtime.utils.FieldInfoUtils;
 import org.apache.storm.sql.runtime.utils.SerdeUtils;
-import org.apache.storm.trident.spout.ITridentDataSource;
-import org.apache.storm.trident.state.StateFactory;
-import org.apache.storm.trident.state.StateUpdater;
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.IRichSpout;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 
 /**
  * Create a HDFS sink based on the URI and properties. The URI has the format of hdfs://host:port/path-to-file
@@ -51,33 +48,41 @@ import org.apache.storm.trident.tuple.TridentTuple;
  */
 public class HdfsDataSourcesProvider implements DataSourcesProvider {
 
-    private static class HdfsTridentDataSource implements ISqlTridentDataSource {
+    private static final String PROPERTY_HDFS_FILE_PATH = "hdfs.file.path";
+    private static final String PROPERTY_HDFS_FILE_NAME = "hdfs.file.name";
+    private static final String DEFAULT_VALUE_HDFS_FILE_PATH = "/storm";
+    private static final String DEFAULT_VALUE_HDF_FILE_NAME = "$TIME.$NUM.txt";
+    private static final String PROPERTY_HDFS_ROTATION_SIZE_KB = "hdfs.rotation.size.kb";
+    private static final String PROPERTY_HDFS_ROTATION_TIME_SECONDS = "hdfs.rotation.time.seconds";
+    private static final String SCHEME_NAME = "hdfs";
+
+    private static class HdfsStreamsDataSource implements ISqlStreamsDataSource {
         private final String url;
         private final Properties props;
         private final IOutputSerializer serializer;
 
-        private HdfsTridentDataSource(String url, Properties props, IOutputSerializer serializer) {
+        private HdfsStreamsDataSource(String url, Properties props, IOutputSerializer serializer) {
             this.url = url;
             this.props = props;
             this.serializer = serializer;
         }
 
         @Override
-        public ITridentDataSource getProducer() {
+        public IRichSpout getProducer() {
             throw new UnsupportedOperationException(this.getClass().getName() + " doesn't provide Producer");
         }
 
         @Override
-        public SqlTridentConsumer getConsumer() {
+        public IRichBolt getConsumer() {
             FileNameFormat fileNameFormat = new SimpleFileNameFormat()
-                    .withPath(props.getProperty("hdfs.file.path", "/storm"))
-                    .withName(props.getProperty("hdfs.file.name", "$TIME.$NUM.txt"));
+                    .withPath(props.getProperty(PROPERTY_HDFS_FILE_PATH, DEFAULT_VALUE_HDFS_FILE_PATH))
+                    .withName(props.getProperty(PROPERTY_HDFS_FILE_NAME, DEFAULT_VALUE_HDF_FILE_NAME));
 
-            RecordFormat recordFormat = new TridentRecordFormat(serializer);
+            RecordFormat recordFormat = new StreamsRecordFormat(serializer);
 
             FileRotationPolicy rotationPolicy;
-            String size = props.getProperty("hdfs.rotation.size.kb");
-            String interval = props.getProperty("hdfs.rotation.time.seconds");
+            String size = props.getProperty(PROPERTY_HDFS_ROTATION_SIZE_KB);
+            String interval = props.getProperty(PROPERTY_HDFS_ROTATION_TIME_SECONDS);
             Preconditions.checkArgument(size != null || interval != null, "Hdfs data source must contain file rotation config");
 
             if (size != null) {
@@ -86,45 +91,41 @@ public class HdfsDataSourcesProvider implements DataSourcesProvider {
                 rotationPolicy = new TimedRotationPolicy(Float.parseFloat(interval), TimedRotationPolicy.TimeUnit.SECONDS);
             }
 
-            HdfsState.Options options = new HdfsState.HdfsFileOptions()
+            return new HdfsBolt()
                     .withFileNameFormat(fileNameFormat)
                     .withRecordFormat(recordFormat)
                     .withRotationPolicy(rotationPolicy)
                     .withFsUrl(url);
-
-            StateFactory stateFactory = new HdfsStateFactory().withOptions(options);
-            StateUpdater stateUpdater = new HdfsUpdater();
-
-            return new SimpleSqlTridentConsumer(stateFactory, stateUpdater);
         }
     }
 
-    private static class TridentRecordFormat implements RecordFormat {
+    private static class StreamsRecordFormat implements RecordFormat {
         private final IOutputSerializer serializer;
 
-        private TridentRecordFormat(IOutputSerializer serializer) {
+        private StreamsRecordFormat(IOutputSerializer serializer) {
             this.serializer = serializer;
         }
 
         @Override
-        public byte[] format(TridentTuple tuple) {
+        public byte[] format(Tuple tuple) {
             //TODO we should handle '\n'. ref DelimitedRecordFormat
-            return serializer.write(tuple.getValues(), null).array();
+            Values values = (Values) tuple.getValue(1);
+            return serializer.write(values, null).array();
         }
 
     }
 
     @Override
     public String scheme() {
-        return "hdfs";
+        return SCHEME_NAME;
     }
 
     @Override
-    public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+    public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                   Properties properties, List<FieldInfo> fields) {
         List<String> fieldNames = FieldInfoUtils.getFieldNames(fields);
         IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, properties, fieldNames);
-        return new HdfsTridentDataSource(uri.toString(), properties, serializer);
+        return new HdfsStreamsDataSource(uri.toString(), properties, serializer);
     }
 
 }
