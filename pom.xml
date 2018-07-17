@@ -315,13 +315,8 @@
         <rocketmq.version>4.2.0</rocketmq.version>
 
         <jackson.version>2.9.4</jackson.version>
-        <!-- Kafka version used by old storm-kafka spout code -->
-        <storm.kafka.version>0.8.2.2</storm.kafka.version>
-        <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
-
-        <!-- kafka version used by new storm-kafka-client spout code -->
+        
         <storm.kafka.client.version>0.10.1.0</storm.kafka.client.version>
-
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest, org.apache.storm.testing.PerformanceTest</java.unit.test.exclude>
@@ -365,7 +360,6 @@
 
         <!-- externals -->
         <module>external/storm-autocreds</module>
-        <module>external/storm-kafka</module>
         <module>external/storm-hdfs</module>
         <module>external/storm-hdfs-blobstore</module>
         <module>external/storm-hbase</module>
@@ -397,7 +391,6 @@
         <module>examples/storm-redis-examples</module>
         <module>examples/storm-opentsdb-examples</module>
         <module>examples/storm-solr-examples</module>
-        <module>examples/storm-kafka-examples</module>
         <module>examples/storm-kafka-client-examples</module>
         <module>examples/storm-jdbc-examples</module>
         <module>examples/storm-hdfs-examples</module>
@@ -1084,28 +1077,6 @@
                 <groupId>org.apache.calcite</groupId>
                 <artifactId>calcite-core</artifactId>
                 <version>${calcite.version}</version>
-            </dependency>
-
-            <!-- kafka artifact dependency needed for storm-kafka -->
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>${storm.kafka.artifact.id}</artifactId>
-                <version>${storm.kafka.version}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>

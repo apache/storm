@@ -111,13 +111,6 @@
         <!-- EXTERNAL -->
         <!-- only include the README file -->
         <fileSet>
-            <directory>${project.basedir}/../../../external/storm-kafka</directory>
-            <outputDirectory>external/storm-kafka</outputDirectory>
-            <includes>
-                <include>README.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../../../external/storm-kinesis</directory>
             <outputDirectory>external/storm-kinesis</outputDirectory>
             <includes>

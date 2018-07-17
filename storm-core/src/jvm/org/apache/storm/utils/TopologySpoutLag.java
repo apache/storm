@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.storm.Config;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.SpoutSpec;
@@ -49,9 +48,7 @@ public class TopologySpoutLag {
                 className = getClassNameFromComponentObject(componentObject);
                 logger.debug("spout classname: {}", className);
                 if (className.endsWith("storm.kafka.spout.KafkaSpout")) {
-                    result.put(spout.getKey(), getLagResultForNewKafkaSpout(spout.getKey(), spoutSpec, topologyConf));
-                } else if (className.endsWith("storm.kafka.KafkaSpout")) {
-                    result.put(spout.getKey(), getLagResultForOldKafkaSpout(spout.getKey(), spoutSpec, topologyConf));
+                    result.put(spout.getKey(), getLagResultForNewKafkaSpout(spout.getKey(), spoutSpec));
                 }
             } catch (Exception e) {
                 logger.warn("Exception thrown while getting lag for spout id: " + spout.getKey() + " and spout class: " + className);
@@ -93,46 +90,8 @@ public class TopologySpoutLag {
         }
         return commands;
     }
-
-    private static List<String> getCommandLineOptionsForOldKafkaSpout(Map<String, Object> jsonConf, Map<String, Object> topologyConf) {
-        logger.debug("json configuration: {}", jsonConf);
-
-        List<String> commands = new ArrayList<>();
-        String configKeyPrefix = "config.";
-        commands.add("-o");
-        commands.add("-t");
-        commands.add((String) jsonConf.get(configKeyPrefix + "topics"));
-        commands.add("-n");
-        commands.add((String) jsonConf.get(configKeyPrefix + "zkRoot"));
-        String zkServers = (String) jsonConf.get(configKeyPrefix + "zkServers");
-        if (zkServers == null || zkServers.isEmpty()) {
-            StringBuilder zkServersBuilder = new StringBuilder();
-            Integer zkPort = ((Number) topologyConf.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
-            for (String zkServer : (List<String>) topologyConf.get(Config.STORM_ZOOKEEPER_SERVERS)) {
-                zkServersBuilder.append(zkServer + ":" + zkPort + ",");
-            }
-            zkServers = zkServersBuilder.toString();
-        }
-        commands.add("-z");
-        commands.add(zkServers);
-        if (jsonConf.get(configKeyPrefix + "leaders") != null) {
-            commands.add("-p");
-            commands.add((String) jsonConf.get(configKeyPrefix + "partitions"));
-            commands.add("-l");
-            commands.add((String) jsonConf.get(configKeyPrefix + "leaders"));
-        } else {
-            commands.add("-r");
-            commands.add((String) jsonConf.get(configKeyPrefix + "zkNodeBrokers"));
-            Boolean isWildCard = (Boolean) topologyConf.get("kafka.topic.wildcard.match");
-            if (isWildCard != null && isWildCard.booleanValue()) {
-                commands.add("-w");
-            }
-        }
-        return commands;
-    }
-
-    private static Map<String, Object> getLagResultForKafka(String spoutId, SpoutSpec spoutSpec, Map<String, Object> topologyConf,
-                                                            boolean old) throws IOException {
+    
+    private static Map<String, Object> getLagResultForKafka(String spoutId, SpoutSpec spoutSpec) throws IOException {
         ComponentCommon componentCommon = spoutSpec.get_common();
         String json = componentCommon.get_json_conf();
         Map<String, Object> result = null;
@@ -150,12 +109,11 @@ public class TopologySpoutLag {
             } catch (ParseException e) {
                 throw new IOException(e);
             }
-            commands.addAll(
-                old ? getCommandLineOptionsForOldKafkaSpout(jsonMap, topologyConf) : getCommandLineOptionsForNewKafkaSpout(jsonMap));
+            commands.addAll(getCommandLineOptionsForNewKafkaSpout(jsonMap));
 
             logger.debug("Command to run: {}", commands);
 
-            // if commands contains one or more null value, spout is compiled with lower version of storm-kafka / storm-kafka-client
+            // if commands contains one or more null value, spout is compiled with lower version of storm-kafka-client
             if (!commands.contains(null)) {
                 String resultFromMonitor = new ShellCommandRunnerImpl().execCommand(commands.toArray(new String[0]));
 
@@ -182,13 +140,7 @@ public class TopologySpoutLag {
         return kafkaSpoutLagInfo;
     }
 
-    private static Map<String, Object> getLagResultForNewKafkaSpout(String spoutId, SpoutSpec spoutSpec,
-                                                                    Map<String, Object> topologyConf) throws IOException {
-        return getLagResultForKafka(spoutId, spoutSpec, topologyConf, false);
-    }
-
-    private static Map<String, Object> getLagResultForOldKafkaSpout(String spoutId, SpoutSpec spoutSpec,
-                                                                    Map<String, Object> topologyConf) throws IOException {
-        return getLagResultForKafka(spoutId, spoutSpec, topologyConf, true);
+    private static Map<String, Object> getLagResultForNewKafkaSpout(String spoutId, SpoutSpec spoutSpec) throws IOException {
+        return getLagResultForKafka(spoutId, spoutSpec);
     }
 }
