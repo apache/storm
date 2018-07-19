@@ -357,9 +357,12 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             ObjectResources rack = new ObjectResources(rackId);
             racks.add(rack);
             for (String nodeHost : nodeHosts) {
-                for (RAS_Node node : hostnameToNodes(nodeHost)) {
-                    rack.availableResources.add(node.getTotalAvailableResources());
-                    rack.totalResources.add(node.getTotalAvailableResources());
+                List<RAS_Node> nodes = hostnameToNodes(nodeHost);
+                if(nodes != null) {
+                    for (RAS_Node node : nodes) {
+                        rack.availableResources.add(node.getTotalAvailableResources());
+                        rack.totalResources.add(node.getTotalAvailableResources());
+                    }
                 }
             }
 
