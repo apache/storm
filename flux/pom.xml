@@ -56,10 +56,5 @@
             <artifactId>commons-cli</artifactId>
             <version>1.2</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>${storm.kafka.artifact.id}</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 </project>
