@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.NoSuchFileException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -374,7 +375,7 @@ public class LocalFsBlobStore extends BlobStore {
         try {
             fbs.deleteKey(key);
         } catch (IOException e) {
-            if (e instanceof FileNotFoundException) {
+            if (e instanceof FileNotFoundException || e instanceof NoSuchFileException) {
                 LOG.debug("Ignoring FileNotFoundException since we're about to delete such key... key: {}", key);
             } else {
                 throw e;
