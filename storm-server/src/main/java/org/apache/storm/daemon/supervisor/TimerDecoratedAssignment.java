@@ -15,29 +15,20 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.codahale.metrics.Timer;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.metric.timed.TimerDecorated;
 
 public class TimerDecoratedAssignment extends LocalAssignment implements TimerDecorated {
-    //TODO: Does this have to volatile?
-    private final AtomicReference<Timer.Context> timingRef;
+    private final Timer.Context timing;
 
     public TimerDecoratedAssignment(LocalAssignment other, Timer timer) {
         super(other);
-        timingRef = new AtomicReference<>(timer.time());
-    }
-
-    @Override
-    public boolean hasStopped() {
-        return hasStopped(timingRef);
+        timing = timer.time();
     }
 
     @Override
     public long stopTiming() {
-        return stopTiming(timingRef);
+        return stopTiming(timing);
     }
 }

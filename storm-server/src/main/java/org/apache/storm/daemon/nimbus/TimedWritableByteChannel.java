@@ -42,6 +42,9 @@ public class TimedWritableByteChannel extends TimedResource<WritableByteChannel>
         try {
             super.close();
         } catch (Exception e) {
+            //WritableByteChannel is a Channel which implements Closeable.
+            // Hence although declared AutoCloseable super#close here should only throws IOException
+            //We rethrow to conform the signature
             throw (IOException) e;
         }
     }

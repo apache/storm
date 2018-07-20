@@ -16,16 +16,13 @@ package org.apache.storm.metric.timed;
 
 import com.codahale.metrics.Timer;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 public class Timed<T> implements TimerDecorated {
     private final T measured;
-    //TODO: Does this have to volatile?
-    private final AtomicReference<Timer.Context> timingRef;
+    private final Timer.Context timing;
 
     public Timed(T measured, Timer timer) {
         this.measured = measured;
-        timingRef = new AtomicReference<>(timer.time());
+        timing = timer.time();
     }
 
     public T getMeasured() {
@@ -33,12 +30,7 @@ public class Timed<T> implements TimerDecorated {
     }
 
     @Override
-    public boolean hasStopped() {
-        return hasStopped(timingRef);
-    }
-
-    @Override
     public long stopTiming() {
-        return stopTiming(timingRef);
+        return stopTiming(timing);
     }
 }

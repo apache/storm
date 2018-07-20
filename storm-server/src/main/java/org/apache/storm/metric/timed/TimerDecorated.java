@@ -16,27 +16,18 @@ package org.apache.storm.metric.timed;
 
 import com.codahale.metrics.Timer;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 public interface TimerDecorated extends AutoCloseable {
-
-    boolean hasStopped();
-
-    default boolean hasStopped(final AtomicReference<Timer.Context> timing) {
-        return timing.get() == null;
-    }
 
     long stopTiming();
 
     /**
-     * Stop the timer for measured object. Should be executed only once.
+     * Stop the timer for measured object. (Copied from {@link Timer.Context#stop()})
+     * Call to this method will not reset the start time.
+     * Multiple calls result in multiple updates.
      *
      * @return Time a object is in use, or under measurement, in nanoseconds.
-     * @throws NullPointerException if this method is called more than once.
      */
-    default long stopTiming(final AtomicReference<Timer.Context> timingRef) {
-        Timer.Context timing = timingRef.getAndSet(null);
-        assert timing != null;
+    default long stopTiming(final Timer.Context timing) {
         return timing.stop();
     }
 
