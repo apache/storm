@@ -77,7 +77,7 @@ public class ServerCallbackHandler implements CallbackHandler {
         }
 
         if (pc != null) {
-            LOG.warn("No password found for user: {}", userName);
+            LOG.error("No password found for user: {}, validate klist matches jaas conf", userName);
         }
 
         if (ac != null) {
