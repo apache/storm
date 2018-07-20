@@ -12,6 +12,7 @@
 
 package org.apache.storm.metric;
 
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -25,44 +26,64 @@ import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("unchecked")
-public class StormMetricsRegistry {
-    private static final MetricRegistry DEFAULT_REGISTRY = new MetricRegistry();
+public class StormMetricsRegistry extends MetricRegistry {
+    private static final StormMetricsRegistry REGISTRY = new StormMetricsRegistry();
     private static final Logger LOG = LoggerFactory.getLogger(StormMetricsRegistry.class);
 
-    public static Meter registerMeter(final String name) {
-        return register(name, new Meter());
-    }
+    private StormMetricsRegistry() {/*Singleton pattern*/}
 
     public static <V> Gauge<V> registerGauge(final String name, final Gauge<V> gauge) {
-        return register(name, gauge);
+        return REGISTRY.register(name, gauge);
+    }
+
+    public static Histogram registerHistogram(String name) {
+        return registerHistogram(name, new ExponentiallyDecayingReservoir());
     }
 
     public static Histogram registerHistogram(String name, Reservoir reservoir) {
-        return register(name, new Histogram(reservoir));
+        return REGISTRY.register(name, new Histogram(reservoir));
     }
 
+    public static Meter registerMeter(String name) {
+        return REGISTRY.register(name, new Meter());
+    }
+
+    /**
+     * Start metrics reporters for the registry singleton.
+     *
+     * @param topoConf config that specifies reporter plugin
+     */
     public static void startMetricsReporters(Map<String, Object> topoConf) {
         for (PreparableReporter reporter : MetricsUtils.getPreparableReporters(topoConf)) {
-            reporter.prepare(StormMetricsRegistry.DEFAULT_REGISTRY, topoConf);
+            reporter.prepare(StormMetricsRegistry.REGISTRY, topoConf);
             reporter.start();
             LOG.info("Started statistics report plugin...");
         }
     }
 
-    private static <T extends Metric> T register(final String name, T metric) {
-        T ret;
+    /**
+     * Override parent method to swallow exceptions for double registration, including MetricSet registration
+     * This is more similar to super#getOrAdd than super#register.
+     * Notice that this method is only accessible to the private singleton, hence private to client code.
+     *
+     * @param name name of the metric
+     * @param metric metric to be registered
+     * @param <T> type of metric
+     * @return metric just registered or existing metric, if double registration occurs.
+     * @throws IllegalArgumentException name already exist with a different kind of metric
+     */
+    @Override
+    public <T extends Metric> T register(final String name, T metric) throws IllegalArgumentException {
         try {
-            ret = DEFAULT_REGISTRY.register(name, metric);
+            return super.register(name, metric);
         } catch (IllegalArgumentException e) {
-            // swallow IllegalArgumentException when the metric exists already
-            ret = (T) DEFAULT_REGISTRY.getMetrics().get(name);
-            if (ret == null) {
-                throw e;
-            } else {
+            @SuppressWarnings("unchecked")
+            final T existing = (T) REGISTRY.getMetrics().get(name);
+            if (metric.getClass().isInstance(existing)) {
                 LOG.warn("Metric {} has already been registered", name);
+                return existing;
             }
+            throw e;
         }
-        return ret;
     }
 }
