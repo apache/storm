@@ -76,13 +76,18 @@ public class LogviewerResponseBuilder {
      * @param file file to download
      */
     public static Response buildDownloadFile(File file) throws IOException {
-        // do not close this InputStream in method: it will be used from jetty server
-        InputStream is = new FileInputStream(file);
-        return Response.status(OK)
-                .entity(wrapWithStreamingOutput(is))
-                .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
-                .build();
+        try {
+            // do not close this InputStream in method: it will be used from jetty server
+            InputStream is = new FileInputStream(file);
+            return Response.status(OK)
+                    .entity(wrapWithStreamingOutput(is))
+                    .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+                    .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                    .build();
+        } catch (IOException e) {
+            ExceptionMeters.NUM_FILE_DOWNLOAD_EXCEPTIONS.mark();
+            throw e;
+        }
     }
 
     /**

@@ -60,7 +60,12 @@ public class DirectoryCleaner {
      * @return DirectoryStream
      */
     public DirectoryStream<Path> getStreamForDirectory(File dir) throws IOException {
-        return Files.newDirectoryStream(dir.toPath());
+        try {
+            return Files.newDirectoryStream(dir.toPath());
+        } catch (IOException e) {
+            ExceptionMeters.NUM_FILE_OPEN_EXCEPTIONS.mark();
+            throw e;
+        }
     }
 
     /**
@@ -74,11 +79,9 @@ public class DirectoryCleaner {
      * @param activeDirs only for global deletion, we want to skip the active logs in activeDirs
      * @return number of files deleted
      */
-    public int deleteOldestWhileTooLarge(List<File> dirs,
-                        long quota, boolean forPerDir, Set<String> activeDirs) throws IOException {
+    public DeletionMeta deleteOldestWhileTooLarge(List<File> dirs,
+                                                  long quota, boolean forPerDir, Set<String> activeDirs) throws IOException {
         long totalSize = 0;
-        int deletedFiles = 0;
-
         for (File dir : dirs) {
             try (DirectoryStream<Path> stream = getStreamForDirectory(dir)) {
                 for (Path path : stream) {
@@ -87,13 +90,14 @@ public class DirectoryCleaner {
                 }
             }
         }
-
         LOG.debug("totalSize: {} quota: {}", totalSize, quota);
         long toDeleteSize = totalSize - quota;
         if (toDeleteSize <= 0) {
-            return deletedFiles;
+            return DeletionMeta.EMPTY;
         }
 
+        int deletedFiles = 0;
+        long deletedSize = 0;
         // the oldest pq_size files in this directory will be placed in PQ, with the newest at the root
         PriorityQueue<File> pq = new PriorityQueue<>(PQ_SIZE, (f1, f2) -> f1.lastModified() > f2.lastModified() ? -1 : 1);
         int round = 0;
@@ -134,6 +138,7 @@ public class DirectoryCleaner {
                         Utils.forceDelete(file.getPath());
                         LOG.info("Delete file: {}, size: {}, lastModified: {}", canonicalPath, fileSize, lastModified);
                         toDeleteSize -= fileSize;
+                        deletedSize += fileSize;
                         deletedFiles++;
                     } catch (IOException e) {
                         excluded.add(file);
@@ -157,7 +162,7 @@ public class DirectoryCleaner {
                     forPerDir ? "this directory" : "root directory", toDeleteSize * 1e-6);
             }
         }
-        return deletedFiles;
+        return new DeletionMeta(deletedSize, deletedFiles);
     }
 
     private boolean isFileEligibleToSkipDelete(boolean forPerDir, Set<String> activeDirs, File dir, File file) throws IOException {
@@ -186,7 +191,11 @@ public class DirectoryCleaner {
                     break;
                 }
             }
+        } catch (IOException e) {
+            ExceptionMeters.NUM_FILE_OPEN_EXCEPTIONS.mark();
+            throw e;
         }
         return files;
     }
+
 }

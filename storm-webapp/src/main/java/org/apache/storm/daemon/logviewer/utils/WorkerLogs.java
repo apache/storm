@@ -22,7 +22,6 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.storm.Config.SUPERVISOR_RUN_WORKER_AS_USER;
 import static org.apache.storm.Config.TOPOLOGY_SUBMITTER_USER;
-import static org.apache.storm.daemon.utils.ListFunctionalSupport.takeLast;
 
 import com.google.common.collect.Lists;
 
@@ -88,9 +87,14 @@ public class WorkerLogs {
 
         if (runAsUser && topoOwner.isPresent() && file.exists() && !Files.isReadable(file.toPath())) {
             LOG.debug("Setting permissions on file {} with topo-owner {}", fileName, topoOwner);
-            ClientSupervisorUtils.processLauncherAndWait(stormConf, topoOwner.get(),
-                    Lists.newArrayList("blob", file.getCanonicalPath()), null,
-                    "setup group read permissions for file: " + fileName);
+            try {
+                ClientSupervisorUtils.processLauncherAndWait(stormConf, topoOwner.get(),
+                        Lists.newArrayList("blob", file.getCanonicalPath()), null,
+                        "setup group read permissions for file: " + fileName);
+            } catch (IOException e) {
+                ExceptionMeters.NUM_SET_PERMISSION_EXCEPTIONS.mark();
+                throw e;
+            }
         }
     }
 
@@ -127,7 +131,7 @@ public class WorkerLogs {
     /**
      * Return a sorted set of java.io.Files that were written by workers that are now active.
      */
-    public SortedSet<String> getAliveWorkerDirs() throws Exception {
+    public SortedSet<String> getAliveWorkerDirs() {
         Set<String> aliveIds = getAliveIds(Time.currentTimeSecs());
         Set<File> logDirs = getAllWorkerDirs();
         Map<String, File> idToDir = identifyWorkerLogDirs(logDirs);
@@ -177,7 +181,7 @@ public class WorkerLogs {
      *
      * @param nowSecs current time in seconds
      */
-    public Set<String> getAliveIds(int nowSecs) throws Exception {
+    public Set<String> getAliveIds(int nowSecs) {
         return SupervisorUtils.readWorkerHeartbeats(stormConf).entrySet().stream()
                 .filter(entry -> Objects.nonNull(entry.getValue())
                         && !SupervisorUtils.isWorkerHbTimedOut(nowSecs, entry.getValue(), stormConf))

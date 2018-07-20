@@ -627,6 +627,7 @@ public class LogviewerLogSearchHandlerTest {
 
     public static class TestDeepSearchLogs {
 
+        public static final int METRIC_SCANNED_FILES = 0;
         private List<File> logFiles;
         private String topoPath;
 
@@ -857,7 +858,7 @@ public class LogviewerLogSearchHandlerTest {
                 int fileOffset = (Integer) arguments[2];
                 String search = (String) arguments[4];
 
-                return new LogviewerLogSearchHandler.Matched(fileOffset, search, Collections.emptyList());
+                return new LogviewerLogSearchHandler.Matched(fileOffset, search, Collections.emptyList(), METRIC_SCANNED_FILES);
             }).when(handler).findNMatches(any(), anyInt(), anyInt(), anyInt(), any());
 
             return handler;

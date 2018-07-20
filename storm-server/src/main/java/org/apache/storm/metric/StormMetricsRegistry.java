@@ -18,18 +18,21 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Timer;
 
 import java.util.Map;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.daemon.metrics.MetricsUtils;
 import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StormMetricsRegistry extends MetricRegistry {
-    private static final StormMetricsRegistry REGISTRY = new StormMetricsRegistry();
+    @VisibleForTesting
+    static final StormMetricsRegistry REGISTRY = new StormMetricsRegistry();
     private static final Logger LOG = LoggerFactory.getLogger(StormMetricsRegistry.class);
 
     private StormMetricsRegistry() {/*Singleton pattern*/}
@@ -52,6 +55,25 @@ public class StormMetricsRegistry extends MetricRegistry {
 
     public static void registerMeter(String name, Meter meter) {
         REGISTRY.register(name, meter);
+    }
+
+    public static void registerMetricSet(MetricSet metrics) {
+        REGISTRY.registerAll(metrics);
+    }
+
+    public static void unregisterMetricSet(MetricSet metrics) {
+        unregisterMetricSet(null, metrics);
+    }
+
+    public static void unregisterMetricSet(String prefix, MetricSet metrics) {
+        for (Map.Entry<String, Metric> entry : metrics.getMetrics().entrySet()) {
+            final String name = name(prefix, entry.getKey());
+            if (entry.getValue() instanceof MetricSet) {
+                unregisterMetricSet(name, (MetricSet) entry.getValue());
+            } else {
+                REGISTRY.remove(name);
+            }
+        }
     }
 
     public static Timer registerTimer(String name) {
@@ -84,6 +106,7 @@ public class StormMetricsRegistry extends MetricRegistry {
      */
     @Override
     public <T extends Metric> T register(final String name, T metric) throws IllegalArgumentException {
+        assert !(metric instanceof MetricSet);
         try {
             return super.register(name, metric);
         } catch (IllegalArgumentException e) {
