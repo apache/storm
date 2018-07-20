@@ -13,6 +13,7 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,8 +71,9 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
     private static final Map<KillReason, Meter> numWorkersKilledFor = EnumUtil.toEnumMap(KillReason.class,
         killReason -> StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-" + killReason.toString()));
-    private static final Meter numForceKill =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-force-kill");
+    private static final Timer workerLaunchDuration = StormMetricsRegistry.registerTimer(
+        "supervisor:worker-launch-duration");
+
     private static final long ONE_SEC_IN_NANO = TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS);
     private final AtomicReference<LocalAssignment> newAssignment = new AtomicReference<>();
     private final AtomicReference<Set<TopoProfileAction>> profiling = new AtomicReference<>(new HashSet<>());
@@ -143,7 +145,10 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         }
 
         setNewAssignment(newAssignment);
-        this.dynamicState = new DynamicState(currentAssignment, container, newAssignment);
+        //if the current assignment is already running, new assignment will never be promoted to currAssignment,
+        // because Timer is not being compared in #equals or #equivalent, meaning newAssignment always equals to currAssignment.
+        // Therefore the timer in newAssignment won't be invoked
+        this.dynamicState = new DynamicState(currentAssignment, container, this.newAssignment.get());
         if (MachineState.RUNNING == dynamicState.state) {
             //We are running so we should recover the blobs.
             staticState.localizer.recoverRunningTopology(currentAssignment, port, this);
@@ -556,7 +561,6 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         }
 
         LOG.warn("SLOT {} force kill and wait...", staticState.port);
-        numForceKill.mark();
         dynamicState.container.forceKill();
         Time.sleep(staticState.killSleepMs);
         return dynamicState;
@@ -588,7 +592,6 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         if ((Time.currentTimeMillis() - dynamicState.startTime) > 120_000) {
             throw new RuntimeException("Not all processes in " + dynamicState.container + " exited after 120 seconds");
         }
-        numForceKill.mark();
         dynamicState.container.forceKill();
         Time.sleep(staticState.killSleepMs);
         return dynamicState;
@@ -808,7 +811,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
      * @param newAssignment the new assignment for this slot to run, null to run nothing
      */
     public void setNewAssignment(LocalAssignment newAssignment) {
-        this.newAssignment.set(newAssignment);
+        this.newAssignment.set(newAssignment == null ? null : new TimerDecoratedAssignment(newAssignment, workerLaunchDuration));
     }
 
     @Override
@@ -967,6 +970,11 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         KILL_BLOB_UPDATE,
         WAITING_FOR_BLOB_LOCALIZATION,
         WAITING_FOR_BLOB_UPDATE;
+
+        @Override
+        public String toString() {
+            return EnumUtil.toMetricName(this);
+        }
     }
 
     static class StaticState {
@@ -1008,6 +1016,13 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
     }
 
     static class DynamicState {
+        private static final Map<MachineState, Meter> transitionIntoState = EnumUtil.toEnumMap(MachineState.class,
+            machineState -> StormMetricsRegistry.registerMeter("supervisor:num-worker-transitions-into-" + machineState.toString()));
+        //This also tracks how many times worker transitioning out of a state
+        private static final Map<MachineState, Timer> timeSpentInState = EnumUtil.toEnumMap(MachineState.class,
+            machineState -> StormMetricsRegistry.registerTimer("supervisor:time-worker-spent-in-state-" + machineState.toString() + "-ms")
+        );
+
         public final MachineState state;
 
         /**
@@ -1064,6 +1079,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             } else {
                 state = MachineState.RUNNING;
             }
+            transitionIntoState.get(state).mark();
 
             this.startTime = Time.currentTimeMillis();
             this.newAssignment = newAssignment;
@@ -1147,8 +1163,20 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
          */
         public DynamicState withState(final MachineState state) {
             long newStartTime = Time.currentTimeMillis();
+            //We may (though unlikely) lose metering here if state transition is too frequent (less than a millisecond)
+            timeSpentInState.get(this.state).update(newStartTime - startTime, TimeUnit.MILLISECONDS);
+            transitionIntoState.get(state).mark();
+
+            LocalAssignment assignment = this.currentAssignment;
+            if (MachineState.RUNNING != this.state && MachineState.RUNNING == state
+                && this.currentAssignment instanceof TimerDecoratedAssignment) {
+                ((TimerDecoratedAssignment) assignment).stopTiming();
+                //Timer is discarded after the initial launch of an assignment
+                assignment = new LocalAssignment(this.currentAssignment);
+            }
+
             return new DynamicState(state, this.newAssignment,
-                                    this.container, this.currentAssignment,
+                                    this.container, assignment,
                                     this.pendingLocalization, newStartTime,
                                     this.pendingDownload, this.profileActions,
                                     this.pendingStopProfileActions, this.changingBlobs,

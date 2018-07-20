@@ -36,8 +36,8 @@ public class LocalizedResourceRetentionSetTest {
 
     @Test
     public void testAddResources() throws Exception {
-        PortAndAssignment pna1 = new PortAndAssignment(1, new LocalAssignment("topo1", Collections.emptyList()));
-        PortAndAssignment pna2 = new PortAndAssignment(1, new LocalAssignment("topo2", Collections.emptyList()));
+        PortAndAssignment pna1 = new PortAndAssignmentImpl(1, new LocalAssignment("topo1", Collections.emptyList()));
+        PortAndAssignment pna2 = new PortAndAssignmentImpl(1, new LocalAssignment("topo2", Collections.emptyList()));
         String user = "user";
         Map<String, Object> conf = new HashMap<>();
         IAdvancedFSOps ops = mock(IAdvancedFSOps.class);
@@ -74,7 +74,7 @@ public class LocalizedResourceRetentionSetTest {
     public void testCleanup() throws Exception {
         ClientBlobStore mockBlobstore = mock(ClientBlobStore.class);
         when(mockBlobstore.getBlobMeta(any())).thenReturn(new ReadableBlobMeta(new SettableBlobMeta(), 1));
-        PortAndAssignment pna1 = new PortAndAssignment(1, new LocalAssignment("topo1", Collections.emptyList()));
+        PortAndAssignment pna1 = new PortAndAssignmentImpl(1, new LocalAssignment("topo1", Collections.emptyList()));
         String user = "user";
         Map<String, Object> conf = new HashMap<>();
         IAdvancedFSOps ops = mock(IAdvancedFSOps.class);

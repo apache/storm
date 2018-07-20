@@ -145,8 +145,7 @@ public class DRPCServer implements AutoCloseable {
     @VisibleForTesting
     void start() throws Exception {
         LOG.info("Starting Distributed RPC servers...");
-        new Thread(() -> invokeServer.serve()).start();
-        
+        new Thread(invokeServer::serve).start();
         if (httpServer != null) {
             httpServer.start();
         }
@@ -223,7 +222,7 @@ public class DRPCServer implements AutoCloseable {
         Utils.setupDefaultUncaughtExceptionHandler();
         Map<String, Object> conf = Utils.readStormConfig();
         try (DRPCServer server = new DRPCServer(conf)) {
-            Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
+            Utils.addShutdownHookWithForceKillIn1Sec(server::close);
             StormMetricsRegistry.startMetricsReporters(conf);
             server.start();
             server.awaitTermination();

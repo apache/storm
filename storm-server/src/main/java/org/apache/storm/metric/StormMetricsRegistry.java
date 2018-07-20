@@ -19,6 +19,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reservoir;
+import com.codahale.metrics.Timer;
+
 import java.util.Map;
 
 import org.apache.storm.daemon.metrics.MetricsUtils;
@@ -46,6 +48,14 @@ public class StormMetricsRegistry extends MetricRegistry {
 
     public static Meter registerMeter(String name) {
         return REGISTRY.register(name, new Meter());
+    }
+
+    public static void registerMeter(String name, Meter meter) {
+        REGISTRY.register(name, meter);
+    }
+
+    public static Timer registerTimer(String name) {
+        return REGISTRY.register(name, new Timer());
     }
 
     /**

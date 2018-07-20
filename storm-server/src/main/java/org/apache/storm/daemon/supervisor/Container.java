@@ -18,6 +18,8 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -68,6 +70,13 @@ public abstract class Container implements Killable {
     private static final ConcurrentHashMap<Integer, TopoAndMemory> _reservedMemory =
         new ConcurrentHashMap<>();
 
+    private static final Meter numCleanupExceptions = StormMetricsRegistry.registerMeter("supervisor:num-cleanup-exceptions");
+    private static final Meter numKillExceptions = StormMetricsRegistry.registerMeter("supervisor:num-kill-exceptions");
+    private static final Meter numForceKillExceptions = StormMetricsRegistry.registerMeter("supervisor:num-force-kill-exceptions");
+    private static final Meter numForceKill = StormMetricsRegistry.registerMeter("supervisor:num-workers-force-kill");
+    private static final Timer shutdownDuration = StormMetricsRegistry.registerTimer("supervisor:worker-shutdown-duration-ns");
+    private static final Timer cleanupDuration = StormMetricsRegistry.registerTimer("supervisor:worker-per-call-clean-up-duration-ns");
+
     static {
         StormMetricsRegistry.registerGauge(
             "supervisor:current-used-memory-mb",
@@ -106,6 +115,8 @@ public abstract class Container implements Killable {
     protected String _workerId;
     protected ContainerType _type;
     private long lastMetricProcessTime = 0L;
+    private Timer.Context shutdownTimer = null;
+
     /**
      * Create a new Container.
      *
@@ -204,20 +215,34 @@ public abstract class Container implements Killable {
     @Override
     public void kill() throws IOException {
         LOG.info("Killing {}:{}", _supervisorId, _workerId);
-        Set<Long> pids = getAllPids();
+        if (shutdownTimer == null) {
+            shutdownTimer = shutdownDuration.time();
+        }
+        try {
+            Set<Long> pids = getAllPids();
 
-        for (Long pid : pids) {
-            kill(pid);
+            for (Long pid : pids) {
+                kill(pid);
+            }
+        } catch (IOException e) {
+            numKillExceptions.mark();
+            throw e;
         }
     }
 
     @Override
     public void forceKill() throws IOException {
         LOG.info("Force Killing {}:{}", _supervisorId, _workerId);
-        Set<Long> pids = getAllPids();
+        numForceKill.mark();
+        try {
+            Set<Long> pids = getAllPids();
 
-        for (Long pid : pids) {
-            forceKill(pid);
+            for (Long pid : pids) {
+                forceKill(pid);
+            }
+        } catch (IOException e) {
+            numForceKillExceptions.mark();
+            throw e;
         }
     }
 
@@ -318,14 +343,26 @@ public abstract class Container implements Killable {
                 break;
             }
         }
+
+        if (allDead && shutdownTimer != null) {
+            shutdownTimer.stop();
+            shutdownTimer = null;
+        }
+
         return allDead;
     }
 
     @Override
     public void cleanUp() throws IOException {
-        _usedMemory.remove(_port);
-        _reservedMemory.remove(_port);
-        cleanUpForRestart();
+        try (Timer.Context t = cleanupDuration.time()) {
+            _usedMemory.remove(_port);
+            _reservedMemory.remove(_port);
+            cleanUpForRestart();
+        } catch (IOException e) {
+            //This may or may not be reported depending on when process exits
+            numCleanupExceptions.mark();
+            throw e;
+        }
     }
 
     /**
