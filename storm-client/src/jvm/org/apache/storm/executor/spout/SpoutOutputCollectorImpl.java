@@ -163,8 +163,8 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             // Reusing TupleInfo object as we directly call executor.ackSpoutMsg() & are not sending msgs. perf critical
             if (isDebug) {
                 if (spoutExecutorThdId != Thread.currentThread().getId()) {
-                    throw new RuntimeException("Detected background thread emitting tuples for the spout. " +
-                                               "Spout Output Collector should only emit from the main spout executor thread.");
+                    throw new RuntimeException("Detected background thread emitting tuples for the spout. "
+                                             + "Spout Output Collector should only emit from the main spout executor thread.");
                 }
             }
             globalTupleInfo.clear();

@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.CustomIndexArray;
 
 public class WorkerTopologyContext extends GeneralTopologyContext {
     public static final String SHARED_EXECUTOR = "executor";
@@ -36,7 +37,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     public WorkerTopologyContext(
         StormTopology topology,
         Map<String, Object> topoConf,
-        Map<Integer, String> taskToComponent,
+        CustomIndexArray<String> taskToComponent,
         Map<String, List<Integer>> componentToSortedTasks,
         Map<String, Map<String, Fields>> componentToStreamToFields,
         String stormId,
@@ -72,7 +73,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     public WorkerTopologyContext(
         StormTopology topology,
         Map<String, Object> topoConf,
-        Map<Integer, String> taskToComponent,
+        CustomIndexArray<String> taskToComponent,
         Map<String, List<Integer>> componentToSortedTasks,
         Map<String, Map<String, Fields>> componentToStreamToFields,
         String stormId,

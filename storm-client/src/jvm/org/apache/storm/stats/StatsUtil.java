@@ -55,6 +55,7 @@ import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -627,7 +628,7 @@ public class StatsUtil {
      * @return TopologyPageInfo thrift structure
      */
     public static TopologyPageInfo aggTopoExecsStats(
-        String topologyId, Map exec2nodePort, Map task2component, Map<List<Integer>, Map<String, Object>> beats,
+        String topologyId, Map exec2nodePort, CustomIndexArray<String> task2component, Map<List<Integer>, Map<String, Object>> beats,
         StormTopology topology, String window, boolean includeSys, IStormClusterState clusterState) {
         List<Map<String, Object>> beatList = extractDataFromHb(exec2nodePort, task2component, beats, includeSys, topology);
         Map<String, Object> topoStats = aggregateTopoStats(window, includeSys, beatList);
@@ -653,7 +654,7 @@ public class StatsUtil {
         return initVal;
     }
 
-    public static TopologyPageInfo postAggregateTopoStats(Map task2comp, Map exec2nodePort, Map<String, Object> accData,
+    public static TopologyPageInfo postAggregateTopoStats(CustomIndexArray<String> task2comp, Map exec2nodePort, Map<String, Object> accData,
                                                           String topologyId, IStormClusterState clusterState) {
         TopologyPageInfo ret = new TopologyPageInfo(topologyId);
 
@@ -1213,7 +1214,7 @@ public class StatsUtil {
      * @return ComponentPageInfo thrift structure
      */
     public static ComponentPageInfo aggCompExecsStats(
-        Map exec2hostPort, Map task2component, Map<List<Integer>, Map<String, Object>> beats,
+        Map exec2hostPort, CustomIndexArray<String> task2component, Map<List<Integer>, Map<String, Object>> beats,
         String window, boolean includeSys, String topologyId, StormTopology topology, String componentId) {
 
         List<Map<String, Object>> beatList =
@@ -1237,7 +1238,7 @@ public class StatsUtil {
      * @return List<WorkerSummary> thrift structures
      */
     public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName,
-                                                     Map<Integer, String> task2Component,
+                                                     CustomIndexArray<String> task2Component,
                                                      Map<List<Integer>, Map<String, Object>> beats,
                                                      Map<List<Long>, List<Object>> exec2NodePort,
                                                      Map<String, String> nodeHost,
@@ -1337,7 +1338,7 @@ public class StatsUtil {
      * @return List<WorkerSummary> thrift structures
      */
     public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName,
-                                                     Map<Integer, String> task2Component,
+                                                     CustomIndexArray<String> task2Component,
                                                      Map<List<Integer>, Map<String, Object>> beats,
                                                      Map<List<Long>, List<Object>> exec2NodePort,
                                                      Map<String, String> nodeHost,
@@ -1489,7 +1490,7 @@ public class StatsUtil {
      * @return a list of host+port
      */
     public static List<Map<String, Object>> extractNodeInfosFromHbForComp(
-        Map<List<? extends Number>, List<Object>> exec2hostPort, Map<Integer, String> task2component, boolean includeSys, String compId) {
+        Map<List<? extends Number>, List<Object>> exec2hostPort, CustomIndexArray<String> task2component, boolean includeSys, String compId) {
         List<Map<String, Object>> ret = new ArrayList<>();
 
         Set<List> hostPorts = new HashSet<>();
@@ -1618,13 +1619,13 @@ public class StatsUtil {
     /**
      * extracts a list of executor data from heart beats
      */
-    public static List<Map<String, Object>> extractDataFromHb(Map executor2hostPort, Map task2component,
+    public static List<Map<String, Object>> extractDataFromHb(Map executor2hostPort, CustomIndexArray<String> task2component,
                                                               Map<List<Integer>, Map<String, Object>> beats,
                                                               boolean includeSys, StormTopology topology) {
         return extractDataFromHb(executor2hostPort, task2component, beats, includeSys, topology, null);
     }
 
-    public static List<Map<String, Object>> extractDataFromHb(Map executor2hostPort, Map task2component,
+    public static List<Map<String, Object>> extractDataFromHb(Map executor2hostPort, CustomIndexArray<String> task2component,
                                                               Map<List<Integer>, Map<String, Object>> beats,
                                                               boolean includeSys, StormTopology topology, String compId) {
         List<Map<String, Object>> ret = new ArrayList<>();

@@ -48,6 +48,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.RegisteredGlobalState;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
@@ -660,8 +661,8 @@ public class Testing {
             }
         }
 
-        Map<Integer, String> taskToComp = new HashMap<>();
-        taskToComp.put(task, component);
+        CustomIndexArray<String> taskToComp = new CustomIndexArray<>(task,task);
+        taskToComp.set(task, component);
         Map<String, Map<String, Fields>> compToStreamToFields = new HashMap<>();
         Map<String, Fields> streamToFields = new HashMap<>();
         streamToFields.put(stream, new Fields(fields));

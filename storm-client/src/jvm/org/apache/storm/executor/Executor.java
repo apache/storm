@@ -68,6 +68,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
@@ -93,7 +94,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final AtomicReference<Map<String, DebugOptions>> stormComponentDebug;
     protected final Runnable suicideFn;
     protected final IStormClusterState stormClusterState;
-    protected final Map<Integer, String> taskToComponent;
+    protected final CustomIndexArray<String> taskToComponent;
     protected final Map<Integer, Map<Integer, Map<String, IMetric>>> intervalToTaskToMetricToRegistry;
     protected final Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamToComponentToGrouper;
     protected final List<LoadAwareCustomStreamGrouping> groupers;

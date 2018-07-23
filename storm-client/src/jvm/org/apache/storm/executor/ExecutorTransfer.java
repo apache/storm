@@ -12,7 +12,6 @@
 
 package org.apache.storm.executor;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -20,9 +19,9 @@ import org.apache.storm.Config;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.tuple.AddressedTuple;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,10 +32,9 @@ public class ExecutorTransfer {
     private final WorkerState workerData;
     private final KryoTupleSerializer serializer;
     private final boolean isDebug;
+    private CustomIndexArray<JCQueue> localReceiveQueues; // [taskId] => queue : List of all recvQs local to this worker
     private int indexingBase = 0;
-    private ArrayList<JCQueue> localReceiveQueues; // [taskId-indexingBase] => queue : List of all recvQs local to this worker
-    private AtomicReferenceArray<JCQueue> queuesToFlush;
-        // [taskId-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
+    private AtomicReferenceArray<JCQueue> queuesToFlush;  // [taskId-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
 
 
     public ExecutorTransfer(WorkerState workerData, Map<String, Object> topoConf) {
@@ -47,9 +45,7 @@ public class ExecutorTransfer {
 
     // to be called after all Executor objects in the worker are created and before this object is used
     public void initLocalRecvQueues() {
-        Integer minTaskId = workerData.getLocalReceiveQueues().keySet().stream().min(Integer::compareTo).get();
-        this.localReceiveQueues = Utils.convertToArray(workerData.getLocalReceiveQueues(), minTaskId);
-        this.indexingBase = minTaskId;
+        this.localReceiveQueues = new CustomIndexArray<JCQueue>(workerData.getLocalReceiveQueues());
         this.queuesToFlush = new AtomicReferenceArray<JCQueue>(localReceiveQueues.size());
     }
 
@@ -83,12 +79,11 @@ public class ExecutorTransfer {
         }
     }
 
-
     public JCQueue getLocalQueue(AddressedTuple tuple) {
-        if ((tuple.dest - indexingBase) >= localReceiveQueues.size()) {
+        if (! localReceiveQueues.isValidIndex(tuple.dest)) {
             return null;
         }
-        return localReceiveQueues.get(tuple.dest - indexingBase);
+        return localReceiveQueues.get(tuple.dest);
     }
 
     /**

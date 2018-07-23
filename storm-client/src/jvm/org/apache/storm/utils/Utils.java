@@ -945,29 +945,6 @@ public class Utils {
         return findAndReadConfigFile(name, true);
     }
 
-    /**
-     * "[[:a 1] [:b 1] [:c 2]} -> {1 [:a :b] 2 :c}" Reverses an assoc-list style Map like reverseMap(Map...)
-     *
-     * @param listSeq to reverse
-     * @return a reversed map
-     */
-    public static Map<Object, List<Object>> reverseMap(List<List<Object>> listSeq) {
-        Map<Object, List<Object>> rtn = new HashMap<>();
-        if (listSeq == null) {
-            return rtn;
-        }
-        for (List<Object> listEntry : listSeq) {
-            Object key = listEntry.get(0);
-            Object val = listEntry.get(1);
-            List<Object> list = rtn.get(val);
-            if (list == null) {
-                list = new ArrayList<>();
-                rtn.put(val, list);
-            }
-            list.add(key);
-        }
-        return rtn;
-    }
 
     /**
      * parses the arguments to extract jvm heap memory size in MB.

@@ -188,6 +188,7 @@ import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.BufferInputStream;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
@@ -1729,8 +1730,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         Map<String, Integer> compToExecutors = base.get_component_executors();
         List<List<Integer>> ret = new ArrayList<>();
         if (compToExecutors != null) {
-            Map<Integer, String> taskInfo = StormCommon.stormTaskInfo(topology, topoConf);
-            Map<String, List<Integer>> compToTaskList = Utils.reverseMap(taskInfo);
+            CustomIndexArray<String> taskInfo = StormCommon.stormTaskInfo(topology, topoConf);
+            Map<String, List<Integer>> compToTaskList = taskInfo.getReverseMap();
             for (Entry<String, List<Integer>> entry : compToTaskList.entrySet()) {
                 List<Integer> comps = entry.getValue();
                 comps.sort(null);
@@ -1750,7 +1751,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                                   Map<String, Object> topoConf, StormTopology topology)
         throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
         List<List<Integer>> executors = new ArrayList<>(getOrUpdateExecutors(topoId, base, topoConf, topology));
-        Map<Integer, String> taskToComponent = StormCommon.stormTaskInfo(topology, topoConf);
+        CustomIndexArray<String> taskToComponent = StormCommon.stormTaskInfo(topology, topoConf);
         Map<List<Integer>, String> ret = new HashMap<>();
         for (List<Integer> executor : executors) {
             ret.put(executor, taskToComponent.get(executor.get(0)));
@@ -2731,7 +2732,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                                                                     .get_executor_node_port())) :
             Collections
             .emptyMap();
-        ret.allComponents = new HashSet<>(ret.taskToComponent.values());
+        ret.allComponents = new HashSet<>(ret.taskToComponent.getItems());
         return ret;
     }
 
@@ -3924,7 +3925,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             int launchTimeSecs = common.launchTimeSecs;
             Assignment assignment = common.assignment;
             Map<List<Integer>, Map<String, Object>> beats = common.beats;
-            Map<Integer, String> taskToComp = common.taskToComponent;
+            CustomIndexArray<String> taskToComp = common.taskToComponent;
             StormTopology topology = common.topology;
             Map<String, Object> topoConf = Utils.merge(conf, common.topoConf);
             StormBase base = common.base;
@@ -4071,7 +4072,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     String topoName = common.topoName;
                     Assignment assignment = common.assignment;
                     Map<List<Integer>, Map<String, Object>> beats = common.beats;
-                    Map<Integer, String> taskToComp = common.taskToComponent;
+                    CustomIndexArray<String> taskToComp = common.taskToComponent;
                     Map<List<Long>, List<Object>> exec2NodePort = new HashMap<>();
                     Map<String, String> nodeToHost;
                     if (assignment != null) {
@@ -4159,7 +4160,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             }
             // Add the event logger details.
-            Map<String, List<Integer>> compToTasks = Utils.reverseMap(info.taskToComponent);
+            Map<String, List<Integer>> compToTasks = info.taskToComponent.getReverseMap();
             if (compToTasks.containsKey(StormCommon.EVENTLOGGER_COMPONENT_ID)) {
                 List<Integer> tasks = compToTasks.get(StormCommon.EVENTLOGGER_COMPONENT_ID);
                 tasks.sort(null);
@@ -4661,7 +4662,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         public Map<String, Object> topoConf;
         public String topoName;
         public StormTopology topology;
-        public Map<Integer, String> taskToComponent;
+        public CustomIndexArray<String> taskToComponent;
         public StormBase base;
         public int launchTimeSecs;
         public Assignment assignment;

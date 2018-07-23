@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -69,8 +70,8 @@ public class TestSimpleFileNameFormat {
     }
 
     private TopologyContext createTopologyContext(Map<String, Object> topoConf) {
-        Map<Integer, String> taskToComponent = new HashMap<Integer, String>();
-        taskToComponent.put(7, "Xcom");
+        CustomIndexArray<String> taskToComponent = new CustomIndexArray<>(7,7);
+        taskToComponent.set(7, "Xcom");
         return new TopologyContext(null, topoConf, taskToComponent, null, null, null, null, null, null, 7, 6703, null, null, null, null,
                                    null, null);
     }

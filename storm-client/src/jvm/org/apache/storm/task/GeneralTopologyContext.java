@@ -34,6 +34,7 @@ import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.shade.org.json.simple.parser.ParseException;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
 
@@ -41,14 +42,14 @@ public class GeneralTopologyContext implements JSONAware {
     protected Map<String, Object> _topoConf;
     protected boolean _doSanityCheck;
     private StormTopology _topology;
-    private Map<Integer, String> _taskToComponent;
+    private CustomIndexArray<String> _taskToComponent;
     private Map<String, List<Integer>> _componentToTasks;
     private Map<String, Map<String, Fields>> _componentToStreamToFields;
     private String _stormId;
 
     // pass in componentToSortedTasks for the case of running tons of tasks in single executor
     public GeneralTopologyContext(StormTopology topology, Map<String, Object> topoConf,
-                                  Map<Integer, String> taskToComponent, Map<String, List<Integer>> componentToSortedTasks,
+                                  CustomIndexArray<String> taskToComponent, Map<String, List<Integer>> componentToSortedTasks,
                                   Map<String, Map<String, Fields>> componentToStreamToFields, String stormId) {
         _topology = topology;
         _topoConf = topoConf;
@@ -174,7 +175,7 @@ public class GeneralTopologyContext implements JSONAware {
     /**
      * Gets a map from task id to component id.
      */
-    public Map<Integer, String> getTaskToComponent() {
+    public CustomIndexArray<String> getTaskToComponent() {
         return _taskToComponent;
     }
 

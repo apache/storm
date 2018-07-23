@@ -112,15 +112,15 @@ public class Task {
     public List<Integer> getOutgoingTasks(Integer outTaskId, String stream, List<Object> values) {
         if (debug) {
             LOG.info("Emitting direct: {}; {} {} {} ", outTaskId, componentId, stream, values);
-        }
-        String targetComponent = workerTopologyContext.getComponentId(outTaskId);
-        Map<String, LoadAwareCustomStreamGrouping> componentGrouping = streamComponentToGrouper.get(stream);
-        LoadAwareCustomStreamGrouping grouping = componentGrouping.get(targetComponent);
-        if (null == grouping) {
-            outTaskId = null;
-        }
-        if (grouping != null && grouping != GrouperFactory.DIRECT) {
-            throw new IllegalArgumentException("Cannot emitDirect to a task expecting a regular grouping");
+            String targetComponent = workerTopologyContext.getComponentId(outTaskId);
+            Map<String, LoadAwareCustomStreamGrouping> componentGrouping = streamComponentToGrouper.get(stream);
+            LoadAwareCustomStreamGrouping grouping = componentGrouping.get(targetComponent);
+            if (null == grouping) {
+                outTaskId = null;
+            }
+            if (grouping != null && grouping != GrouperFactory.DIRECT) {
+                throw new IllegalArgumentException("Cannot emitDirect to a task expecting a regular grouping");
+            }
         }
         if (!userTopologyContext.getHooks().isEmpty()) {
             new EmitInfo(values, stream, taskId, Collections.singletonList(outTaskId)).applyOn(userTopologyContext);

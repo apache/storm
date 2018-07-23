@@ -30,6 +30,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.windowing.TupleWindow;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +53,7 @@ public class WindowedBoltExecutorTest {
     private GeneralTopologyContext getContext(final Fields fields) {
         TopologyBuilder builder = new TopologyBuilder();
         return new GeneralTopologyContext(builder.createTopology(),
-                                          new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+                                          new Config(), new CustomIndexArray<>(0,1), new HashMap(), new HashMap(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
                 return fields;

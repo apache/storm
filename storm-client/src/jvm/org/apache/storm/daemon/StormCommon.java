@@ -46,9 +46,11 @@ import org.apache.storm.task.IBolt;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedInvalidTopologyException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -455,7 +457,7 @@ public class StormCommon {
         return Thrift.getParallelismHint(common);
     }
 
-    public static Map<Integer, String> stormTaskInfo(StormTopology userTopology, Map<String, Object> topoConf) throws
+    public static CustomIndexArray<String> stormTaskInfo(StormTopology userTopology, Map<String, Object> topoConf) throws
         InvalidTopologyException {
         return _instance.stormTaskInfoImpl(userTopology, topoConf);
     }
@@ -491,7 +493,8 @@ public class StormCommon {
         try {
             StormTopology stormTopology = (StormTopology) workerData.get(Constants.SYSTEM_TOPOLOGY);
             Map<String, Object> topoConf = (Map) workerData.get(Constants.STORM_CONF);
-            Map<Integer, String> taskToComponent = (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT);
+            CustomIndexArray<String> taskToComponent =
+                new CustomIndexArray<>((Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT));
             Map<String, List<Integer>> componentToSortedTasks =
                 (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SORTED_TASKS);
             Map<String, Map<String, Fields>> componentToStreamToFields =
@@ -537,7 +540,7 @@ public class StormCommon {
     /*
      * Returns map from task -> componentId
      */
-    protected Map<Integer, String> stormTaskInfoImpl(StormTopology userTopology, Map<String, Object> topoConf) throws
+    protected CustomIndexArray<String> stormTaskInfoImpl(StormTopology userTopology, Map<String, Object> topoConf) throws
         InvalidTopologyException {
         Map<Integer, String> taskIdToComponentId = new HashMap<>();
 
@@ -560,7 +563,7 @@ public class StormCommon {
                 taskId++;
             }
         }
-        return taskIdToComponentId;
+        return new CustomIndexArray<String>(taskIdToComponentId);
     }
 
     protected IAuthorizer mkAuthorizationHandlerImpl(String klassName, Map<String, Object> conf)

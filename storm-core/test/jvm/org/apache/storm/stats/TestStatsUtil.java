@@ -20,6 +20,7 @@ import java.util.Map;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.utils.CustomIndexArray;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,7 +29,7 @@ public class TestStatsUtil {
     /*
      * aggWorkerStats tests
      */
-    private Map<Integer, String> task2Component = new HashMap<Integer, String>();
+    private CustomIndexArray<String> task2Component = new CustomIndexArray<>(1,7);
     private Map<List<Integer>, Map<String, Object>> beats = new HashMap<List<Integer>, Map<String, Object>>();
     private Map<List<Long>, List<Object>> exec2NodePort = new HashMap<List<Long>, List<Object>>();
     private Map<String, String> nodeHost = new HashMap<String, String>();
@@ -65,13 +66,13 @@ public class TestStatsUtil {
         beats.put(exec1, exec1Beat);
         beats.put(exec2, exec2Beat);
 
-        task2Component.put(1, "my-component");
-        task2Component.put(2, "__sys1");
-        task2Component.put(3, "__sys2");
-        task2Component.put(4, "__sys3");
-        task2Component.put(5, "__sys4");
-        task2Component.put(6, "__sys4");
-        task2Component.put(7, "my-component2");
+        task2Component.set(1, "my-component");
+        task2Component.set(2, "__sys1");
+        task2Component.set(3, "__sys2");
+        task2Component.set(4, "__sys3");
+        task2Component.set(5, "__sys4");
+        task2Component.set(6, "__sys4");
+        task2Component.set(7, "my-component2");
 
         WorkerResources ws1 = new WorkerResources();
         ws1.set_mem_on_heap(1);

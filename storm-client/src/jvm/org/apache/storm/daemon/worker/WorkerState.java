@@ -68,6 +68,7 @@ import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.SupervisorClient;
@@ -107,7 +108,7 @@ public class WorkerState {
     final Map<String, Object> topologyConf;
     final StormTopology topology;
     final StormTopology systemTopology;
-    final Map<Integer, String> taskToComponent;
+    final CustomIndexArray<String> taskToComponent;
     final Map<String, Map<String, Fields>> componentToStreamToFields;
     final Map<String, List<Integer>> componentToSortedTasks;
     final ConcurrentMap<String, Long> blobToLastKnownVersion;
@@ -188,7 +189,7 @@ public class WorkerState {
             }
             componentToStreamToFields.put(c, streamToFields);
         }
-        this.componentToSortedTasks = Utils.reverseMap(taskToComponent);
+        this.componentToSortedTasks = taskToComponent.getReverseMap();
         this.componentToSortedTasks.values().forEach(Collections::sort);
         this.endpointSocketLock = new ReentrantReadWriteLock();
         this.cachedNodeToPortSocket = new AtomicReference<>(new HashMap<>());
@@ -294,7 +295,7 @@ public class WorkerState {
         return systemTopology;
     }
 
-    public Map<Integer, String> getTaskToComponent() {
+    public CustomIndexArray<String> getTaskToComponent() {
         return taskToComponent;
     }
 
@@ -710,7 +711,7 @@ public class WorkerState {
 
         Set<Integer> outboundTasks = new HashSet<>();
 
-        for (Map.Entry<String, List<Integer>> entry : Utils.reverseMap(taskToComponent).entrySet()) {
+        for (Map.Entry<String, List<Integer>> entry : taskToComponent.getReverseMap().entrySet()) {
             if (components.contains(entry.getKey())) {
                 outboundTasks.addAll(entry.getValue());
             }
@@ -736,7 +737,7 @@ public class WorkerState {
      * @return true if this worker is the single worker; false otherwise.
      */
     public boolean isSingleWorker() {
-        Set<Integer> nonLocalTasks = Sets.difference(getTaskToComponent().keySet(),
+        Set<Integer> nonLocalTasks = Sets.difference(getTaskToComponent().indices(),
                 new HashSet<>(localTaskIds));
         return nonLocalTasks.isEmpty();
     }

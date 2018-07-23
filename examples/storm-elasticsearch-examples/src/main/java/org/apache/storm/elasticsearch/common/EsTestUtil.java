@@ -28,6 +28,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.CustomIndexArray;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.settings.Settings;
@@ -56,7 +57,7 @@ public final class EsTestUtil {
         GeneralTopologyContext topologyContext = new GeneralTopologyContext(
                 builder.createTopology(),
                 new Config(),
-                new HashMap<>(),
+                new CustomIndexArray<String>(0,0),
                 new HashMap<>(),
                 new HashMap<>(),
                 "") {

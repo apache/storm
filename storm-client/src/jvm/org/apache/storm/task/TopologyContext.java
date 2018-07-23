@@ -38,6 +38,7 @@ import org.apache.storm.shade.org.apache.commons.lang.NotImplementedException;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.state.ISubscribedState;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.CustomIndexArray;
 import org.apache.storm.utils.Utils;
 
 /**
@@ -59,7 +60,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
 
     public TopologyContext(StormTopology topology,
                            Map<String, Object> topoConf,
-                           Map<Integer, String> taskToComponent,
+                           CustomIndexArray<String> taskToComponent,
                            Map<String, List<Integer>> componentToSortedTasks,
                            Map<String, Map<String, Fields>> componentToStreamToFields,
                            Map<String, Long> blobToLastKnownVersionShared,
