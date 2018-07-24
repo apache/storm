@@ -198,7 +198,7 @@ public class LocalFsBlobStore extends BlobStore {
                     throw new RuntimeException(e);
                 }
             }
-        }, 0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS)));
+        }, 0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS))*1000);
 
     }
 
