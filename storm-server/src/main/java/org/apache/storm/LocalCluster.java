@@ -208,6 +208,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             conf.put(Config.STORM_CLUSTER_MODE, "local");
             conf.put(Config.BLOBSTORE_SUPERUSER, System.getProperty("user.name"));
             conf.put(Config.BLOBSTORE_DIR, nimbusTmp.getPath());
+            conf.put(Config.TOPOLOGY_MIN_REPLICATION_COUNT, 1);
 
             InProcessZookeeper zookeeper = null;
             if (!builder.daemonConf.containsKey(Config.STORM_ZOOKEEPER_SERVERS)) {
