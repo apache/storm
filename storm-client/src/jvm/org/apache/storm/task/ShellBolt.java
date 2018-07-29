@@ -153,7 +153,6 @@ public class ShellBolt implements IBolt {
         LOG.info("Launched subprocess with pid " + subpid);
 
         _logHandler = ShellUtils.getLogHandler(topoConf);
-        _logHandler.setUpContext(ShellBolt.class, _process, _context);
 
         // reader
         _readerThread = new Thread(new BoltReaderRunnable());
@@ -324,6 +323,7 @@ public class ShellBolt implements IBolt {
 
     private class BoltReaderRunnable implements Runnable {
         public void run() {
+            _logHandler.setUpContext(ShellBolt.class, _process, _context);
             while (_running) {
                 try {
                     ShellMsg shellMsg = _process.readShellMsg();
