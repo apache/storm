@@ -84,6 +84,7 @@ import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.scheduler.INimbus;
 import org.apache.storm.scheduler.ISupervisor;
@@ -144,6 +145,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     private final StormCommonInstaller commonInstaller;
     private final SimulatedTime time;
     private final NimbusClient.LocalOverride nimbusOverride;
+    private final StormMetricsRegistry metricRegistry;
 
     /**
      * Create a default LocalCluster.
@@ -219,6 +221,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             this.zookeeper = zookeeper;
             conf.putAll(builder.daemonConf);
             this.daemonConf = new HashMap<>(conf);
+            this.metricRegistry = new StormMetricsRegistry();
 
             this.portCounter = new AtomicInteger(builder.supervisorSlotPortMin);
             ClusterStateContext cs = new ClusterStateContext(DaemonType.NIMBUS, daemonConf);
@@ -232,7 +235,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             conf.put(Config.STORM_LOCAL_DIR, nimbusTmp.getPath());
             Nimbus nimbus = new Nimbus(conf, builder.inimbus == null ? new StandaloneINimbus() : builder.inimbus,
                                        this.getClusterState(), null, builder.store, builder.topoCache, builder.leaderElector,
-                                       builder.groupMapper);
+                                       builder.groupMapper, metricRegistry);
             if (builder.nimbusWrapper != null) {
                 nimbus = builder.nimbusWrapper.apply(nimbus);
             }
@@ -270,6 +273,8 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
                 this.nimbusOverride = null;
             }
             success = true;
+            
+            metricRegistry.startMetricsReporters(daemonConf);
         } finally {
             if (!success) {
                 close();
@@ -307,7 +312,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     public static <T> T withLocalModeOverride(Callable<T> c, long ttlSec) throws Exception {
         LOG.info("\n\n\t\tSTARTING LOCAL MODE CLUSTER\n\n");
         try (LocalCluster local = new LocalCluster();
-             LocalDRPC drpc = new LocalDRPC();
+             LocalDRPC drpc = new LocalDRPC(local.metricRegistry);
              DRPCClient.LocalOverride drpcOverride = new DRPCClient.LocalOverride(drpc)) {
 
             T ret = c.call();
@@ -372,6 +377,13 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
      */
     public Nimbus getNimbus() {
         return nimbus;
+    }
+
+    /**
+     * @return The metrics registry for the local cluster.
+     */
+    public StormMetricsRegistry getMetricRegistry() {
+        return metricRegistry;
     }
 
     /**
@@ -498,6 +510,9 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public synchronized void close() throws Exception {
+        if (metricRegistry != null) {
+            metricRegistry.stopMetricsReporters(daemonConf);
+        }
         if (nimbusOverride != null) {
             nimbusOverride.close();
         }
@@ -648,7 +663,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             throw new IllegalArgumentException("Cannot start server in distrubuted mode!");
         }
 
-        Supervisor s = new Supervisor(superConf, sharedContext, isuper);
+        Supervisor s = new Supervisor(superConf, sharedContext, isuper, metricRegistry);
         s.launch();
         s.setLocalNimbus(this.nimbus);
         this.nimbus.addSupervisor(s);

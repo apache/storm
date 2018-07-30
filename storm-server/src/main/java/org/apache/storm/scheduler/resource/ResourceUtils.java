@@ -39,8 +39,7 @@ public class ResourceUtils {
         return null;
     }
 
-    public static Map<String, NormalizedResourceRequest> getBoltsResources(StormTopology topology,
-                                                                           Map<String, Object> topologyConf) {
+    public static Map<String, NormalizedResourceRequest> getBoltsResources(StormTopology topology, Map<String, Object> topologyConf) {
         Map<String, NormalizedResourceRequest> boltResources = new HashMap<>();
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
@@ -55,8 +54,8 @@ public class ResourceUtils {
         return boltResources;
     }
 
-    public static NormalizedResourceRequest getSpoutResources(StormTopology topology, Map<String, Object> topologyConf,
-                                                              String componentId) {
+    public static NormalizedResourceRequest getSpoutResources(StormTopology topology,
+        Map<String, Object> topologyConf, String componentId) {
         if (topology.get_spouts() != null) {
             SpoutSpec spout = topology.get_spouts().get(componentId);
             return new NormalizedResourceRequest(spout.get_common(), topologyConf, componentId);
@@ -65,7 +64,7 @@ public class ResourceUtils {
     }
 
     public static Map<String, NormalizedResourceRequest> getSpoutsResources(StormTopology topology,
-                                                                            Map<String, Object> topologyConf) {
+        Map<String, Object> topologyConf) {
         Map<String, NormalizedResourceRequest> spoutResources = new HashMap<>();
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {

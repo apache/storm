@@ -31,8 +31,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
@@ -42,7 +42,6 @@ import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.WorkerMetricList;
 import org.apache.storm.generated.WorkerMetricPoint;
 import org.apache.storm.generated.WorkerMetrics;
-import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.metricstore.MetricException;
 import org.apache.storm.metricstore.WorkerMetricsProcessor;
 import org.apache.storm.utils.ConfigUtils;
@@ -63,35 +62,6 @@ public abstract class Container implements Killable {
     private static final String SYSTEM_COMPONENT_ID = "System";
     private static final String INVALID_EXECUTOR_ID = "-1";
     private static final String INVALID_STREAM_ID = "None";
-    private static final ConcurrentHashMap<Integer, TopoAndMemory> _usedMemory =
-        new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Integer, TopoAndMemory> _reservedMemory =
-        new ConcurrentHashMap<>();
-
-    static {
-        StormMetricsRegistry.registerGauge(
-            "supervisor:current-used-memory-mb",
-            () -> {
-                Long val =
-                    _usedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
-                int ret = val.intValue();
-                if (val > Integer.MAX_VALUE) { // Would only happen at 2 PB so we are OK for now
-                    ret = Integer.MAX_VALUE;
-                }
-                return ret;
-            });
-        StormMetricsRegistry.registerGauge(
-            "supervisor:current-reserved-memory-mb",
-            () -> {
-                Long val =
-                    _reservedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
-                int ret = val.intValue();
-                if (val > Integer.MAX_VALUE) { // Would only happen at 2 PB so we are OK for now
-                    ret = Integer.MAX_VALUE;
-                }
-                return ret;
-            });
-    }
 
     protected final Map<String, Object> _conf;
     protected final Map<String, Object> _topoConf; //Not set if RECOVER_PARTIAL
@@ -105,6 +75,7 @@ public abstract class Container implements Killable {
     protected final boolean _symlinksDisabled;
     protected String _workerId;
     protected ContainerType _type;
+    protected ContainerMemoryTracker _containerMemoryTracker;
     private long lastMetricProcessTime = 0L;
     /**
      * Create a new Container.
@@ -120,11 +91,13 @@ public abstract class Container implements Killable {
      * @param topoConf                 the config of the topology (mostly for testing) if null and not a partial recovery the real conf is
      *                                 read.
      * @param ops                      file system operations (mostly for testing) if null a new one is made
+     * @param containerMemoryTracker   The shared memory tracker for the supervisor's containers
      * @throws IOException on any error.
      */
     protected Container(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
                         int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
-                        String workerId, Map<String, Object> topoConf, AdvancedFSOps ops) throws IOException {
+                        String workerId, Map<String, Object> topoConf, AdvancedFSOps ops,
+                        ContainerMemoryTracker containerMemoryTracker) throws IOException {
         assert (type != null);
         assert (conf != null);
         assert (supervisorId != null);
@@ -169,6 +142,7 @@ public abstract class Container implements Killable {
                 _topoConf = topoConf;
             }
         }
+        _containerMemoryTracker = containerMemoryTracker;
     }
 
     @Override
@@ -323,8 +297,7 @@ public abstract class Container implements Killable {
 
     @Override
     public void cleanUp() throws IOException {
-        _usedMemory.remove(_port);
-        _reservedMemory.remove(_port);
+        _containerMemoryTracker.remove(_port);
         cleanUpForRestart();
     }
 
@@ -589,8 +562,8 @@ public abstract class Container implements Killable {
         _type.assertFull();
         long used = getMemoryUsageMb();
         long reserved = getMemoryReservationMb();
-        _usedMemory.put(_port, new TopoAndMemory(_topologyId, used));
-        _reservedMemory.put(_port, new TopoAndMemory(_topologyId, reserved));
+        _containerMemoryTracker.setUsedMemoryMb(_port, _topologyId, used);
+        _containerMemoryTracker.setReservedMemoryMb(_port, _topologyId, reserved);
     }
 
     /**
@@ -598,12 +571,7 @@ public abstract class Container implements Killable {
      */
     public long getTotalTopologyMemoryUsed() {
         updateMemoryAccounting();
-        return _usedMemory
-            .values()
-            .stream()
-            .filter((topoAndMem) -> _topologyId.equals(topoAndMem.topoId))
-            .mapToLong((topoAndMem) -> topoAndMem.memory)
-            .sum();
+        return _containerMemoryTracker.getUsedMemoryMb(_topologyId);
     }
 
     /**
@@ -615,12 +583,7 @@ public abstract class Container implements Killable {
     public long getTotalTopologyMemoryReserved(LocalAssignment withUpdatedLimits) {
         updateMemoryAccounting();
         long ret =
-            _reservedMemory
-                .values()
-                .stream()
-                .filter((topoAndMem) -> _topologyId.equals(topoAndMem.topoId))
-                .mapToLong((topoAndMem) -> topoAndMem.memory)
-                .sum();
+            _containerMemoryTracker.getReservedMemoryMb(_topologyId);
         if (withUpdatedLimits.is_set_total_node_shared()) {
             ret += withUpdatedLimits.get_total_node_shared();
         }
@@ -631,11 +594,7 @@ public abstract class Container implements Killable {
      * Get the number of workers for this topology.
      */
     public long getTotalWorkersForThisTopology() {
-        return _usedMemory
-            .values()
-            .stream()
-            .filter((topoAndMem) -> _topologyId.equals(topoAndMem.topoId))
-            .count();
+        return _containerMemoryTracker.getAssignedWorkerCount(_topologyId);
     }
 
     /**
@@ -695,7 +654,8 @@ public abstract class Container implements Killable {
      */
     void processMetrics(OnlyLatestExecutor<Integer> exec, WorkerMetricsProcessor processor) {
         try {
-            if (_usedMemory.get(_port) != null) {
+            Optional<Long> usedMemoryForPort = _containerMemoryTracker.getUsedMemoryMb(_port);
+            if (usedMemoryForPort.isPresent()) {
                 // Make sure we don't process too frequently.
                 long nextMetricProcessTime = this.lastMetricProcessTime + 60L * 1000L;
                 long currentTimeMsec = System.currentTimeMillis();
@@ -707,8 +667,7 @@ public abstract class Container implements Killable {
 
                 // create metric for memory
                 long timestamp = System.currentTimeMillis();
-                double value = _usedMemory.get(_port).memory;
-                WorkerMetricPoint workerMetric = new WorkerMetricPoint(MEMORY_USED_METRIC, timestamp, value, SYSTEM_COMPONENT_ID,
+                WorkerMetricPoint workerMetric = new WorkerMetricPoint(MEMORY_USED_METRIC, timestamp, usedMemoryForPort.get(), SYSTEM_COMPONENT_ID,
                                                                        INVALID_EXECUTOR_ID, INVALID_STREAM_ID);
 
                 WorkerMetricList metricList = new WorkerMetricList();
@@ -755,21 +714,6 @@ public abstract class Container implements Killable {
 
         public boolean isOnlyKillable() {
             return _onlyKillable;
-        }
-    }
-
-    private static class TopoAndMemory {
-        public final String topoId;
-        public final long memory;
-
-        public TopoAndMemory(String id, long mem) {
-            topoId = id;
-            memory = mem;
-        }
-
-        @Override
-        public String toString() {
-            return "{TOPO: " + topoId + " at " + memory + " MB}";
         }
     }
 }

@@ -52,11 +52,12 @@ public class DRPC implements AutoCloseable {
     private static final DRPCExecutionException TIMED_OUT = new WrappedDRPCExecutionException("Timed Out");
     private static final DRPCExecutionException SHUT_DOWN = new WrappedDRPCExecutionException("Server Shutting Down");
     private static final DRPCExecutionException DEFAULT_FAILED = new WrappedDRPCExecutionException("Request failed");
-    private static final Meter meterServerTimedOut = StormMetricsRegistry.registerMeter("drpc:num-server-timedout-requests");
-    private static final Meter meterExecuteCalls = StormMetricsRegistry.registerMeter("drpc:num-execute-calls");
-    private static final Meter meterResultCalls = StormMetricsRegistry.registerMeter("drpc:num-result-calls");
-    private static final Meter meterFailRequestCalls = StormMetricsRegistry.registerMeter("drpc:num-failRequest-calls");
-    private static final Meter meterFetchRequestCalls = StormMetricsRegistry.registerMeter("drpc:num-fetchRequest-calls");
+    
+    private final Meter meterServerTimedOut;
+    private final Meter meterExecuteCalls;
+    private final Meter meterResultCalls;
+    private final Meter meterFailRequestCalls;
+    private final Meter meterFetchRequestCalls;
 
     static {
         TIMED_OUT.set_type(DRPCExceptionType.SERVER_TIMEOUT);
@@ -74,13 +75,18 @@ public class DRPC implements AutoCloseable {
     private final AtomicLong _ctr = new AtomicLong(0);
     private final IAuthorizer _auth;
 
-    public DRPC(Map<String, Object> conf) {
-        this(mkAuthorizationHandler((String) conf.get(DaemonConfig.DRPC_AUTHORIZER), conf),
+    public DRPC(StormMetricsRegistry metricsRegistry, Map<String, Object> conf) {
+        this(metricsRegistry, mkAuthorizationHandler((String) conf.get(DaemonConfig.DRPC_AUTHORIZER), conf),
              ObjectReader.getInt(conf.get(DaemonConfig.DRPC_REQUEST_TIMEOUT_SECS), 600) * 1000);
     }
 
-    public DRPC(IAuthorizer auth, long timeoutMs) {
+    public DRPC(StormMetricsRegistry metricsRegistry, IAuthorizer auth, long timeoutMs) {
         _auth = auth;
+        this.meterServerTimedOut = metricsRegistry.registerMeter("drpc:num-server-timedout-requests");
+        this.meterExecuteCalls = metricsRegistry.registerMeter("drpc:num-execute-calls");
+        this.meterResultCalls = metricsRegistry.registerMeter("drpc:num-result-calls");
+        this.meterFailRequestCalls = metricsRegistry.registerMeter("drpc:num-failRequest-calls");
+        this.meterFetchRequestCalls = metricsRegistry.registerMeter("drpc:num-fetchRequest-calls");
         _timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {

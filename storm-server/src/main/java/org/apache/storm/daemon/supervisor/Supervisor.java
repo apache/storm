@@ -101,6 +101,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     // to really make this work well.
     private final ExecutorService heartbeatExecutor;
     private final AsyncLocalizer asyncLocalizer;
+    private final StormMetricsRegistry metricsRegistry;
+    private final ContainerMemoryTracker containerMemoryTracker;
+    private final SlotMetrics slotMetrics;
     private volatile boolean active;
     private EventManager eventManager;
     private ReadClusterState readState;
@@ -108,9 +111,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     //used for local cluster heartbeating
     private Nimbus.Iface localNimbus;
 
-    private Supervisor(ISupervisor iSupervisor)
+    private Supervisor(ISupervisor iSupervisor, StormMetricsRegistry metricsRegistry)
         throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
-        this(Utils.readStormConfig(), null, iSupervisor);
+        this(Utils.readStormConfig(), null, iSupervisor, metricsRegistry);
     }
 
     /**
@@ -121,9 +124,12 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
      * @param iSupervisor   {@link ISupervisor}
      * @throws IOException
      */
-    public Supervisor(Map<String, Object> conf, IContext sharedContext, ISupervisor iSupervisor)
+    public Supervisor(Map<String, Object> conf, IContext sharedContext, ISupervisor iSupervisor, StormMetricsRegistry metricsRegistry)
         throws IOException, IllegalAccessException, ClassNotFoundException, InstantiationException {
         this.conf = conf;
+        this.metricsRegistry = metricsRegistry;
+        this.containerMemoryTracker = new ContainerMemoryTracker(metricsRegistry);
+        this.slotMetrics = new SlotMetrics(metricsRegistry);
         this.iSupervisor = iSupervisor;
         this.active = true;
         this.upTime = Utils.makeUptimeComputer();
@@ -179,9 +185,11 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
      */
     public static void main(String[] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         @SuppressWarnings("resource")
-        Supervisor instance = new Supervisor(new StandaloneSupervisor());
+        Supervisor instance = new Supervisor(new StandaloneSupervisor(), metricsRegistry);
         instance.launchDaemon();
+        metricsRegistry.startMetricsReporters(instance.getConf());
     }
 
     /**
@@ -197,6 +205,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
     IContext getSharedContext() {
         return sharedContext;
+    }
+
+    ContainerMemoryTracker getContainerMemoryTracker() {
+        return containerMemoryTracker;
+    }
+
+    SlotMetrics getSlotMetrics() {
+        return slotMetrics;
     }
 
     public Map<String, Object> getConf() {
@@ -311,8 +327,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             launch();
             Utils.addShutdownHookWithForceKillIn1Sec(this::close);
 
-            StormMetricsRegistry.registerGauge("supervisor:num-slots-used-gauge", () -> SupervisorUtils.supervisorWorkerIds(conf).size());
-            StormMetricsRegistry.startMetricsReporters(conf);
+            metricsRegistry.registerGauge("supervisor:num-slots-used-gauge", () -> SupervisorUtils.supervisorWorkerIds(conf).size());
 
             // blocking call under the hood, must invoke after launch cause some services must be initialized
             launchSupervisorThriftServer(conf);
@@ -509,7 +524,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         } else {
             try {
                 ContainerLauncher launcher = ContainerLauncher.make(getConf(), getId(), getThriftServerPort(),
-                                                                    getSharedContext());
+                                                                    getSharedContext(), getContainerMemoryTracker());
                 killWorkers(SupervisorUtils.supervisorWorkerIds(conf), launcher);
             } catch (Exception e) {
                 throw Utils.wrapInRuntime(e);

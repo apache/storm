@@ -19,6 +19,7 @@ import org.apache.storm.generated.HBMessage;
 import org.apache.storm.generated.HBMessageData;
 import org.apache.storm.generated.HBPulse;
 import org.apache.storm.generated.HBServerMessageType;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.pacemaker.Pacemaker;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
@@ -30,15 +31,16 @@ public class PacemakerTest {
     private HBMessage hbMessage;
     private int mid;
     private Random random;
+    private Pacemaker handler;
 
     @Before
     public void init() {
         random = new Random(100);
+        handler = new Pacemaker(new ConcurrentHashMap<>(), new StormMetricsRegistry());
     }
-
+    
     @Test
     public void testServerCreatePath() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         messageWithRandId(HBServerMessageType.CREATE_PATH, HBMessageData.path("/testpath"));
         HBMessage response = handler.handleMessage(hbMessage, true);
         Assert.assertEquals(mid, response.get_message_id());
@@ -48,7 +50,6 @@ public class PacemakerTest {
 
     @Test
     public void testServerExistsFalse() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         messageWithRandId(HBServerMessageType.EXISTS, HBMessageData.path("/testpath"));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
@@ -64,7 +65,6 @@ public class PacemakerTest {
     public void testServerExistsTrue() {
         String path = "/exists_path";
         String dataString = "pulse data";
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
         hbPulse.set_details(Utils.javaSerialize(dataString));
@@ -86,7 +86,6 @@ public class PacemakerTest {
     public void testServerSendPulseGetPulse() {
         String path = "/pulsepath";
         String dataString = "pulse data";
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
         hbPulse.set_details(Utils.javaSerialize(dataString));
@@ -105,7 +104,6 @@ public class PacemakerTest {
 
     @Test
     public void testServerGetAllPulseForPath() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         messageWithRandId(HBServerMessageType.GET_ALL_PULSE_FOR_PATH, HBMessageData.path("/testpath"));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
@@ -119,7 +117,6 @@ public class PacemakerTest {
 
     @Test
     public void testServerGetAllNodesForPath() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         makeNode(handler, "/some-root-path/foo");
         makeNode(handler, "/some-root-path/bar");
         makeNode(handler, "/some-root-path/baz");
@@ -161,7 +158,6 @@ public class PacemakerTest {
 
     @Test
     public void testServerGetPulse() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         makeNode(handler, "/some-root/GET_PULSE");
         messageWithRandId(HBServerMessageType.GET_PULSE, HBMessageData.path("/some-root/GET_PULSE"));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
@@ -179,7 +175,6 @@ public class PacemakerTest {
 
     @Test
     public void testServerDeletePath() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         makeNode(handler, "/some-root/DELETE_PATH/foo");
         makeNode(handler, "/some-root/DELETE_PATH/bar");
         makeNode(handler, "/some-root/DELETE_PATH/baz");
@@ -201,7 +196,6 @@ public class PacemakerTest {
 
     @Test
     public void testServerDeletePulseId() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         makeNode(handler, "/some-root/DELETE_PULSE_ID/foo");
         makeNode(handler, "/some-root/DELETE_PULSE_ID/bar");
         makeNode(handler, "/some-root/DELETE_PULSE_ID/baz");

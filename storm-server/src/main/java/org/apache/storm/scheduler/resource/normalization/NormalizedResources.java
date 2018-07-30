@@ -35,16 +35,13 @@ import org.slf4j.LoggerFactory;
 public class NormalizedResources {
 
     private static final Logger LOG = LoggerFactory.getLogger(NormalizedResources.class);
-    public static final Meter numNegativeResourceEvents = StormMetricsRegistry.registerMeter("nimbus:num-negative-resource-events");
-
-
     public static ResourceNameNormalizer RESOURCE_NAME_NORMALIZER;
     private static ResourceMapArrayBridge RESOURCE_MAP_ARRAY_BRIDGE;
 
     static {
         resetResourceNames();
     }
-
+    
     private double cpu;
     private double[] otherResources;
 
@@ -130,14 +127,15 @@ public class NormalizedResources {
      * Remove the other resources from this. This is the same as subtracting the resources in other from this.
      *
      * @param other the resources we want removed.
+     * @param resourceMetrics The resource related metrics
      * @return true if the resources would have gone negative, but were clamped to 0.
      */
-    public boolean remove(NormalizedResources other) {
+    public boolean remove(NormalizedResources other, ResourceMetrics resourceMetrics) {
         boolean ret = false;
         this.cpu -= other.cpu;
         if (cpu < 0.0) {
             ret = true;
-            numNegativeResourceEvents.mark();
+            resourceMetrics.getNegativeResourceEventsMeter().mark();
             cpu = 0.0;
         }
         int otherLength = other.otherResources.length;
@@ -146,7 +144,7 @@ public class NormalizedResources {
             otherResources[i] -= other.otherResources[i];
             if (otherResources[i] < 0.0) {
                 ret = true;
-                numNegativeResourceEvents.mark();
+                resourceMetrics.getNegativeResourceEventsMeter().mark();
                 otherResources[i]  = 0.0;
             }
         }

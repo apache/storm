@@ -21,7 +21,7 @@ import org.apache.storm.daemon.metrics.ClientMetricsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConsolePreparableReporter implements PreparableReporter<ConsoleReporter> {
+public class ConsolePreparableReporter implements PreparableReporter {
     private static final Logger LOG = LoggerFactory.getLogger(ConsolePreparableReporter.class);
     ConsoleReporter reporter = null;
 

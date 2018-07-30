@@ -54,11 +54,11 @@ import org.slf4j.LoggerFactory;
  */
 public class LogviewerServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerServer.class);
-    private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("logviewer:num-shutdown-calls");
     private static final String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
+    private final Meter meterShutdownCalls;
     public static final String STATIC_RESOURCE_DIRECTORY_PATH = stormHome + "/public";
 
-    private static Server mkHttpServer(Map<String, Object> conf) {
+    private static Server mkHttpServer(StormMetricsRegistry metricsRegistry, Map<String, Object> conf) {
         Integer logviewerHttpPort = (Integer) conf.get(DaemonConfig.LOGVIEWER_PORT);
         Server ret = null;
         if (logviewerHttpPort != null && logviewerHttpPort >= 0) {
@@ -81,7 +81,7 @@ public class LogviewerServer implements AutoCloseable {
             final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_WANT_CLIENT_AUTH));
             final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_NEED_CLIENT_AUTH));
 
-            LogviewerApplication.setup(conf);
+            LogviewerApplication.setup(conf, metricsRegistry);
             ret = UIHelpers.jettyCreateServer(logviewerHttpPort, null, httpsPort);
 
             UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
@@ -117,9 +117,11 @@ public class LogviewerServer implements AutoCloseable {
     /**
      * Constructor.
      * @param conf Logviewer conf for the servers
+     * @param metricsRegistry The metrics registry
      */
-    public LogviewerServer(Map<String, Object> conf) {
-        httpServer = mkHttpServer(conf);
+    public LogviewerServer(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
+        httpServer = mkHttpServer(metricsRegistry, conf);
+        meterShutdownCalls = metricsRegistry.registerMeter("logviewer:num-shutdown-calls");
     }
 
     @VisibleForTesting
@@ -163,11 +165,12 @@ public class LogviewerServer implements AutoCloseable {
         WorkerLogs workerLogs = new WorkerLogs(conf, logRootDir);
         DirectoryCleaner directoryCleaner = new DirectoryCleaner();
 
-        try (LogviewerServer server = new LogviewerServer(conf);
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        try (LogviewerServer server = new LogviewerServer(conf, metricsRegistry);
              LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir)) {
             Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
             logCleaner.start();
-            StormMetricsRegistry.startMetricsReporters(conf);
+            metricsRegistry.startMetricsReporters(conf);
             server.start();
             server.awaitTermination();
         }

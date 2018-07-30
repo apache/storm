@@ -26,10 +26,12 @@ import javax.ws.rs.core.Application;
 
 import org.apache.storm.daemon.common.AuthorizationExceptionMapper;
 import org.apache.storm.daemon.drpc.DRPC;
+import org.apache.storm.metric.StormMetricsRegistry;
 
 @ApplicationPath("")
 public class DRPCApplication extends Application {
     private static DRPC _drpc;
+    private static StormMetricsRegistry metricsRegistry;
     private final Set<Object> singletons = new HashSet<Object>();
 
     /**
@@ -38,7 +40,7 @@ public class DRPCApplication extends Application {
      * and adds them to a set which can be retrieved later.
      */
     public DRPCApplication() {
-        singletons.add(new DRPCResource(_drpc));
+        singletons.add(new DRPCResource(_drpc, metricsRegistry));
         singletons.add(new DRPCExceptionMapper());
         singletons.add(new AuthorizationExceptionMapper());
     }
@@ -48,7 +50,8 @@ public class DRPCApplication extends Application {
         return singletons;
     }
 
-    public static void setup(DRPC drpc) {
+    public static void setup(DRPC drpc, StormMetricsRegistry metricsRegistry) {
         _drpc = drpc;
+        DRPCApplication.metricsRegistry = metricsRegistry;
     }
 }

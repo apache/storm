@@ -55,12 +55,14 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
      * Create metric store instance using the configurations provided via the config map.
      *
      * @param config Storm config map
+     * @param metricsRegistry The Nimbus daemon metrics registry
      * @throws MetricException on preparation error
      */
-    public void prepare(Map<String, Object> config) throws MetricException {
+    @Override
+    public void prepare(Map<String, Object> config, StormMetricsRegistry metricsRegistry) throws MetricException {
         validateConfig(config);
 
-        this.failureMeter = StormMetricsRegistry.registerMeter("RocksDB:metric-failures");
+        this.failureMeter = metricsRegistry.registerMeter("RocksDB:metric-failures");
 
         RocksDB.loadLibrary();
         boolean createIfMissing = ObjectReader.getBoolean(config.get(DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING), false);
@@ -87,7 +89,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
         if (config.containsKey(DaemonConfig.STORM_ROCKSDB_METRIC_DELETION_PERIOD_HOURS)) {
             deletionPeriod = Integer.parseInt(config.get(DaemonConfig.STORM_ROCKSDB_METRIC_DELETION_PERIOD_HOURS).toString());
         }
-        metricsCleaner = new MetricsCleaner(this, retentionHours, deletionPeriod, failureMeter);
+        metricsCleaner = new MetricsCleaner(this, retentionHours, deletionPeriod, failureMeter, metricsRegistry);
 
         // create thread to process insertion of all metrics
         metricsWriter = new RocksDbMetricsWriter(this, this.queue, this.failureMeter);

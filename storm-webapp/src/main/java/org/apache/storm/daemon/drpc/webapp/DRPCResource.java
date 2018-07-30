@@ -33,11 +33,12 @@ import org.apache.storm.thrift.TException;
 
 @Path("/drpc/")
 public class DRPCResource {
-    private static final Meter meterHttpRequests = StormMetricsRegistry.registerMeter("drpc:num-execute-http-requests");
+    private final Meter meterHttpRequests;
     private final DRPC drpc;
 
-    public DRPCResource(DRPC drpc) {
+    public DRPCResource(DRPC drpc, StormMetricsRegistry metricsRegistry) {
         this.drpc = drpc;
+        this.meterHttpRequests = metricsRegistry.registerMeter("drpc:num-execute-http-requests");
     }
     
     //TODO put in some better exception mapping...
