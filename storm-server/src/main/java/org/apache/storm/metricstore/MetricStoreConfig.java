@@ -13,6 +13,7 @@ package org.apache.storm.metricstore;
 
 import java.util.Map;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.metric.StormMetricsRegistry;
 
 
 public class MetricStoreConfig {
@@ -20,15 +21,16 @@ public class MetricStoreConfig {
     /**
      * Configures metrics store (running on Nimbus) to use the class specified in the conf.
      * @param conf Storm config map
+     * @param metricsRegistry The Nimbus daemon metrics registry
      * @return MetricStore prepared store
      * @throws MetricException  on misconfiguration
      */
-    public static MetricStore configure(Map<String, Object> conf) throws MetricException {
+    public static MetricStore configure(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) throws MetricException {
 
         try {
             String storeClass = (String) conf.get(DaemonConfig.STORM_METRIC_STORE_CLASS);
             MetricStore store = (MetricStore) (Class.forName(storeClass)).newInstance();
-            store.prepare(conf);
+            store.prepare(conf, metricsRegistry);
             return store;
         } catch (Exception e) {
             throw new MetricException("Failed to create metric store", e);

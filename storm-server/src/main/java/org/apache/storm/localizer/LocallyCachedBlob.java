@@ -12,9 +12,7 @@
 
 package org.apache.storm.localizer;
 
-import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Timer;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -52,7 +50,7 @@ public abstract class LocallyCachedBlob {
     private long lastUsed = Time.currentTimeMillis();
     private CompletableFuture<Void> doneUpdating = null;
 
-    private static final Histogram fetchingRate = StormMetricsRegistry.registerHistogram("supervisor:blob-fetching-rate-MB/s");
+    private final Histogram fetchingRate;
 
     /**
      * Create a new LocallyCachedBlob.
@@ -60,9 +58,10 @@ public abstract class LocallyCachedBlob {
      * @param blobDescription a description of the blob this represents.  Typically it should at least be the blob key, but ideally also
      *     include if it is an archive or not, what user or topology it is for, or if it is a storm.jar etc.
      */
-    protected LocallyCachedBlob(String blobDescription, String blobKey) {
+    protected LocallyCachedBlob(String blobDescription, String blobKey, StormMetricsRegistry metricsRegistry) {
         this.blobDescription = blobDescription;
         this.blobKey = blobKey;
+        this.fetchingRate = metricsRegistry.registerHistogram("supervisor:blob-fetching-rate-MB/s");
     }
 
     /**

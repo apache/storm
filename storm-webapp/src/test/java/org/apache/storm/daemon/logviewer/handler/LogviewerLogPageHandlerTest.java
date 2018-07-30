@@ -35,6 +35,7 @@ import javax.ws.rs.core.Response;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Utils;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
@@ -61,8 +62,9 @@ public class LogviewerLogPageHandlerTest {
 
         String origin = "www.origin.server.net";
         Map<String, Object> stormConf = Utils.readStormConfig();
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         LogviewerLogPageHandler handler = new LogviewerLogPageHandler(rootPath, null,
-                new WorkerLogs(stormConf, new File(rootPath)), new ResourceAuthorizer(stormConf));
+                new WorkerLogs(stormConf, new File(rootPath), metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
 
         final Response expectedAll = LogviewerResponseBuilder.buildSuccessJsonResponse(
                 Lists.newArrayList("topoA/port1/worker.log", "topoA/port2/worker.log", "topoB/port1/worker.log"),

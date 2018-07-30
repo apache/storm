@@ -58,6 +58,8 @@ import org.slf4j.LoggerFactory;
 import static org.apache.storm.daemon.nimbus.Nimbus.MIN_VERSION_SUPPORT_RPC_HEARTBEAT;
 import static org.apache.storm.utils.Utils.OR;
 
+import org.apache.storm.metric.StormMetricsRegistry;
+
 /**
  * A container that runs processes on the local box.
  */
@@ -91,12 +93,15 @@ public class BasicContainer extends Container {
      * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
      * @param localState               the local state of the supervisor.  May be null if partial recovery
      * @param workerId                 the id of the worker to use.  Must not be null if doing a partial recovery.
+     * @param metricsRegistry          The metrics registry.
+     * @param containerMemoryTracker   The shared memory tracker for the supervisor's containers
      */
     public BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
                           int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
-                          LocalState localState, String workerId) throws IOException {
+                          LocalState localState, String workerId, StormMetricsRegistry metricsRegistry, 
+                          ContainerMemoryTracker containerMemoryTracker) throws IOException {
         this(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState,
-             workerId, null, null, null);
+             workerId, metricsRegistry, containerMemoryTracker, null, null, null);
     }
 
     /**
@@ -111,18 +116,21 @@ public class BasicContainer extends Container {
      * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
      * @param localState               the local state of the supervisor.  May be null if partial recovery
      * @param workerId                 the id of the worker to use.  Must not be null if doing a partial recovery.
+     * @param metricsRegistry          The metrics registry.
+     * @param containerMemoryTracker   The shared memory tracker for the supervisor's containers
      * @param ops                      file system operations (mostly for testing) if null a new one is made
      * @param topoConf                 the config of the topology (mostly for testing) if null and not a partial recovery the real conf is
      *                                 read.
-     * @param profileCmd               the command to use when profiling (used for testing)
+     * @param profileCmd               the command to use when profiling (used for testing) 
      * @throws IOException                on any error
      * @throws ContainerRecoveryException if the Container could not be recovered.
      */
     BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort, int port,
-                   LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
-                   LocalState localState, String workerId, Map<String, Object> topoConf,
-                   AdvancedFSOps ops, String profileCmd) throws IOException {
-        super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, workerId, topoConf, ops);
+        LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager, LocalState localState, String workerId,
+        StormMetricsRegistry metricsRegistry, ContainerMemoryTracker containerMemoryTracker, Map<String, Object> topoConf,
+        AdvancedFSOps ops, String profileCmd) throws IOException {
+        super(type, conf, supervisorId, supervisorPort, port, assignment,
+            resourceIsolationManager, workerId, topoConf, ops, metricsRegistry, containerMemoryTracker);
         assert (localState != null);
         _localState = localState;
 

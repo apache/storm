@@ -63,7 +63,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
-import org.apache.storm.daemon.logviewer.utils.ExceptionMeters;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
@@ -77,11 +77,14 @@ import org.apache.storm.utils.ServerUtils;
 import org.jooq.lambda.Unchecked;
 
 public class LogviewerLogPageHandler {
-    private static final Meter numPageRead = StormMetricsRegistry.registerMeter("logviewer:num-page-read");
+    private final Meter numPageRead;
+    private final Meter numFileOpenExceptions;
+    private final Meter numFileReadExceptions;
     private final String logRoot;
     private final String daemonLogRoot;
     private final WorkerLogs workerLogs;
     private final ResourceAuthorizer resourceAuthorizer;
+    private final DirectoryCleaner directoryCleaner;
 
     /**
      * Constructor.
@@ -90,14 +93,20 @@ public class LogviewerLogPageHandler {
      * @param daemonLogRoot root daemon log directory
      * @param workerLogs {@link WorkerLogs}
      * @param resourceAuthorizer {@link ResourceAuthorizer}
+     * @param metricsRegistry The logviewer metrics registry
      */
     public LogviewerLogPageHandler(String logRoot, String daemonLogRoot,
                                    WorkerLogs workerLogs,
-                                   ResourceAuthorizer resourceAuthorizer) {
+                                   ResourceAuthorizer resourceAuthorizer,
+                                   StormMetricsRegistry metricsRegistry) {
         this.logRoot = logRoot;
         this.daemonLogRoot = daemonLogRoot;
         this.workerLogs = workerLogs;
         this.resourceAuthorizer = resourceAuthorizer;
+        this.numPageRead = metricsRegistry.registerMeter("logviewer:num-page-read");
+        this.numFileOpenExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS);
+        this.numFileReadExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_READ_EXCEPTIONS);
+        this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
     }
 
     /**
@@ -125,7 +134,7 @@ public class LogviewerLogPageHandler {
                         if (topoDirFiles != null) {
                             for (File portDir : topoDirFiles) {
                                 if (portDir.getName().equals(port.toString())) {
-                                    fileResults.addAll(DirectoryCleaner.getFilesForDir(portDir));
+                                    fileResults.addAll(directoryCleaner.getFilesForDir(portDir));
                                 }
                             }
                         }
@@ -141,7 +150,7 @@ public class LogviewerLogPageHandler {
                     File[] topoDirFiles = topoDir.listFiles();
                     if (topoDirFiles != null) {
                         for (File portDir : topoDirFiles) {
-                            fileResults.addAll(DirectoryCleaner.getFilesForDir(portDir));
+                            fileResults.addAll(directoryCleaner.getFilesForDir(portDir));
                         }
                     }
                 }
@@ -149,7 +158,7 @@ public class LogviewerLogPageHandler {
             } else {
                 File portDir = ConfigUtils.getWorkerDirFromRoot(logRoot, topologyId, port);
                 if (portDir.exists()) {
-                    fileResults = DirectoryCleaner.getFilesForDir(portDir);
+                    fileResults = directoryCleaner.getFilesForDir(portDir);
                 }
             }
         }
@@ -191,7 +200,7 @@ public class LogviewerLogPageHandler {
                 SortedSet<File> logFiles;
                 try {
                     logFiles = Arrays.stream(topoDir.listFiles())
-                            .flatMap(Unchecked.function(portDir -> DirectoryCleaner.getFilesForDir(portDir).stream()))
+                            .flatMap(Unchecked.function(portDir -> directoryCleaner.getFilesForDir(portDir).stream()))
                             .filter(File::isFile)
                             .collect(toCollection(TreeSet::new));
                 } catch (UncheckedIOException e) {
@@ -325,10 +334,10 @@ public class LogviewerLogPageHandler {
         try {
             return isZipFile ? ServerUtils.zipFileSize(file) : file.length();
         } catch (FileNotFoundException e) {
-            ExceptionMeters.NUM_FILE_OPEN_EXCEPTIONS.mark();
+            numFileOpenExceptions.mark();
             throw e;
         } catch (IOException e) {
-            ExceptionMeters.NUM_FILE_READ_EXCEPTIONS.mark();
+            numFileReadExceptions.mark();
             throw e;
         }
     }
@@ -460,10 +469,10 @@ public class LogviewerLogPageHandler {
             numPageRead.mark();
             return output.toString();
         } catch (FileNotFoundException e) {
-            ExceptionMeters.NUM_FILE_OPEN_EXCEPTIONS.mark();
+            numFileOpenExceptions.mark();
             throw e;
         } catch (IOException e) {
-            ExceptionMeters.NUM_FILE_READ_EXCEPTIONS.mark();
+            numFileReadExceptions.mark();
             throw e;
         }
     }

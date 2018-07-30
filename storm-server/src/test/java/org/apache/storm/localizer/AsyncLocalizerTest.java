@@ -79,6 +79,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.storm.metric.StormMetricsRegistry;
+
 public class AsyncLocalizerTest {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncLocalizerTest.class);
     private final String user1 = "user1";
@@ -117,7 +119,7 @@ public class AsyncLocalizerTest {
         ReflectionUtils mockedRU = mock(ReflectionUtils.class);
         ServerUtils mockedU = mock(ServerUtils.class);
 
-        AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, getTestLocalizerRoot()));
+        AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, getTestLocalizerRoot(), new StormMetricsRegistry()));
         LocallyCachedTopologyBlob jarBlob = mock(LocallyCachedTopologyBlob.class);
         doReturn(jarBlob).when(bl).getTopoJar(topoId, la.get_owner());
         when(jarBlob.getLocalVersion()).thenReturn(-1L);
@@ -213,10 +215,11 @@ public class AsyncLocalizerTest {
         topoConf.put(Config.TOPOLOGY_NAME, topoName);
 
         List<LocalizedResource> localizedList = new ArrayList<>();
-        LocalizedResource simpleLocal = new LocalizedResource(simpleKey, Paths.get(localizerRoot), false, ops, conf, user);
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        LocalizedResource simpleLocal = new LocalizedResource(simpleKey, Paths.get(localizerRoot), false, ops, conf, user, metricsRegistry);
         localizedList.add(simpleLocal);
 
-        AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, localizerRoot));
+        AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, localizerRoot, metricsRegistry));
         ConfigUtils orig = ConfigUtils.setInstance(mockedCU);
         try {
             when(mockedCU.supervisorStormDistRootImpl(conf, topoId)).thenReturn(stormRoot);
@@ -889,7 +892,7 @@ public class AsyncLocalizerTest {
     class TestLocalizer extends AsyncLocalizer {
 
         TestLocalizer(Map<String, Object> conf, String baseDir) throws IOException {
-            super(conf, AdvancedFSOps.make(conf), baseDir);
+            super(conf, AdvancedFSOps.make(conf), baseDir, new StormMetricsRegistry());
         }
 
         @Override

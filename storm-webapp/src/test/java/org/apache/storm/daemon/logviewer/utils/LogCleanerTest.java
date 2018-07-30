@@ -55,6 +55,7 @@ import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
 import org.apache.storm.daemon.logviewer.testsupport.MockRemovableFileBuilder;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Seq;
@@ -79,9 +80,10 @@ public class LogCleanerTest {
         conf.put(LOGVIEWER_CLEANUP_AGE_MINS, 60);
         conf.put(LOGVIEWER_CLEANUP_INTERVAL_SECS, 300);
 
-        WorkerLogs workerLogs = new WorkerLogs(conf, null);
+        StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+        WorkerLogs workerLogs = new WorkerLogs(conf, null, metricRegistry);
 
-        LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, null);
+        LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, null, metricRegistry);
 
         final long nowMillis = Time.currentTimeMillis();
         final long cutoffMillis = logCleaner.cleanupCutoffAgeMillis(nowMillis);
@@ -156,8 +158,9 @@ public class LogCleanerTest {
                     .setFiles(rootFiles).build();
 
             Map<String, Object> conf = Utils.readStormConfig();
-            WorkerLogs workerLogs = new WorkerLogs(conf, rootDir);
-            LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, rootDir);
+            StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+            WorkerLogs workerLogs = new WorkerLogs(conf, rootDir, metricRegistry);
+            LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, rootDir, metricRegistry);
 
             List<Integer> deletedFiles = logCleaner.perWorkerDirCleanup(1200)
                 .stream()
@@ -219,14 +222,15 @@ public class LogCleanerTest {
                     .setFiles(rootFiles).build();
 
             Map<String, Object> conf = Utils.readStormConfig();
-            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, rootDir) {
+            StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, rootDir, metricRegistry) {
                 @Override
                 public SortedSet<String> getAliveWorkerDirs() {
                     return new TreeSet<>(Collections.singletonList("/workers-artifacts/topo1/port1"));
                 }
             };
 
-            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, mockDirectoryCleaner, rootDir);
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, mockDirectoryCleaner, rootDir, metricRegistry);
             int deletedFiles = logCleaner.globalLogCleanup(2400).deletedFiles;
             assertEquals(18, deletedFiles);
         } finally {
@@ -257,7 +261,8 @@ public class LogCleanerTest {
             SupervisorUtils.setInstance(mockedSupervisorUtils);
 
             Map<String, Object> conf = Utils.readStormConfig();
-            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null) {
+            StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null, metricRegistry) {
                 @Override
                 public Map<String, File> identifyWorkerLogDirs(Set<File> logDirs) {
                     Map<String, File> ret = new HashMap<>();
@@ -270,7 +275,7 @@ public class LogCleanerTest {
                 }
             };
 
-            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(), null);
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry);
 
             when(mockedSupervisorUtils.readWorkerHeartbeatsImpl(anyMapOf(String.class, Object.class))).thenReturn(idToHb);
             assertEquals(Sets.newSet(expectedDir2, expectedDir3), logCleaner.getDeadWorkerDirs(nowSecs, logDirs));
@@ -301,9 +306,10 @@ public class LogCleanerTest {
 
 
             Map<String, Object> conf = Utils.readStormConfig();
-            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null);
+            StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null, metricRegistry);
 
-            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(), null) {
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry) {
                 @Override
                 Set<File> selectDirsForCleanup(long nowMillis) {
                     return Collections.emptySet();

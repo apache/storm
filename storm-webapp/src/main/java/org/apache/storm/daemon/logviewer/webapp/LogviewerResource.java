@@ -39,7 +39,7 @@ import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
-import org.apache.storm.daemon.logviewer.utils.ExceptionMeters;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.daemon.ui.resources.StormApiResource;
@@ -55,22 +55,24 @@ import org.slf4j.LoggerFactory;
 public class LogviewerResource {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerResource.class);
 
-    private static final Meter meterLogPageHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-log-page-http-requests");
-    private static final Meter meterDaemonLogPageHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-daemonlog-page-http-requests");
-    private static final Meter meterDownloadLogFileHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-download-log-file-http-requests");
-    private static final Meter meterDownloadLogDaemonFileHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-download-log-daemon-file-http-requests");
-    private static final Meter meterListLogsHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-list-logs-http-requests");
-
-    private static final Meter numSearchLogRequests = StormMetricsRegistry.registerMeter("logviewer:num-search-logs-requests");
-    private static final Meter numDeepSearchArchived = StormMetricsRegistry.registerMeter(
-        "logviewer:num-deep-search-requests-with-archived");
-    private static final Meter numDeepSearchNonArchived = StormMetricsRegistry.registerMeter(
-            "logviewer:num-deep-search-requests-without-archived");
-    private static final Timer searchLogRequestDuration = StormMetricsRegistry.registerTimer("logviewer:search-requests-duration-ms");
-    private static final Timer deepSearchRequestDuration = StormMetricsRegistry.registerTimer("logviewer:deep-search-request-duration-ms");
+    private final Meter meterLogPageHttpRequests;
+    private final Meter meterDaemonLogPageHttpRequests;
+    private final Meter meterDownloadLogFileHttpRequests;
+    private final Meter meterDownloadLogDaemonFileHttpRequests;
+    private final Meter meterListLogsHttpRequests;
+    private final Meter numSearchLogRequests;
+    private final Meter numDeepSearchArchived;
+    private final Meter numDeepSearchNonArchived;
+    private final Meter numReadLogExceptions;
+    private final Meter numReadDaemonLogExceptions;
+    private final Meter numListLogExceptions;
+    private final Meter numListDumpExceptions;
+    private final Meter numDownloadDumpExceptions;
+    private final Meter numDownloadLogExceptions;
+    private final Meter numDownloadDaemonLogExceptions;
+    private final Meter numSearchExceptions;
+    private final Timer searchLogRequestDuration;
+    private final Timer deepSearchRequestDuration;
 
     private final LogviewerLogPageHandler logviewer;
     private final LogviewerProfileHandler profileHandler;
@@ -86,10 +88,32 @@ public class LogviewerResource {
      * @param logDownloadHandler {@link LogviewerLogDownloadHandler}
      * @param logSearchHandler {@link LogviewerLogSearchHandler}
      * @param httpCredsHandler {@link IHttpCredentialsPlugin}
+     * @param metricsRegistry The metrics registry
      */
     public LogviewerResource(LogviewerLogPageHandler logviewerParam, LogviewerProfileHandler profileHandler,
                              LogviewerLogDownloadHandler logDownloadHandler, LogviewerLogSearchHandler logSearchHandler,
-                             IHttpCredentialsPlugin httpCredsHandler) {
+                             IHttpCredentialsPlugin httpCredsHandler, StormMetricsRegistry metricsRegistry) {
+        this.meterLogPageHttpRequests = metricsRegistry.registerMeter("logviewer:num-log-page-http-requests");
+        this.meterDaemonLogPageHttpRequests = metricsRegistry.registerMeter(
+            "logviewer:num-daemonlog-page-http-requests");
+        this.meterDownloadLogFileHttpRequests = metricsRegistry.registerMeter(
+            "logviewer:num-download-log-file-http-requests");
+        this.meterDownloadLogDaemonFileHttpRequests = metricsRegistry.registerMeter(
+            "logviewer:num-download-log-daemon-file-http-requests");
+        this.meterListLogsHttpRequests = metricsRegistry.registerMeter("logviewer:num-list-logs-http-requests");
+        this.numSearchLogRequests = metricsRegistry.registerMeter("logviewer:num-search-logs-requests");
+        this.numDeepSearchArchived = metricsRegistry.registerMeter("logviewer:num-deep-search-requests-with-archived");
+        this.numDeepSearchNonArchived = metricsRegistry.registerMeter("logviewer:num-deep-search-requests-without-archived");
+        this.numReadLogExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_READ_LOG_EXCEPTIONS);
+        this.numReadDaemonLogExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_READ_DAEMON_LOG_EXCEPTIONS);
+        this.numListLogExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_LIST_LOG_EXCEPTIONS);
+        this.numListDumpExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_LIST_DUMP_EXCEPTIONS);
+        this.numDownloadDumpExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_DOWNLOAD_DUMP_EXCEPTIONS);
+        this.numDownloadLogExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_DOWNLOAD_LOG_EXCEPTIONS);
+        this.numDownloadDaemonLogExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_DOWNLOAD_DAEMON_LOG_EXCEPTIONS);
+        this.numSearchExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_SEARCH_EXCEPTIONS);
+        this.searchLogRequestDuration = metricsRegistry.registerTimer("logviewer:search-requests-duration-ms");
+        this.deepSearchRequestDuration = metricsRegistry.registerTimer("logviewer:deep-search-request-duration-ms");
         this.logviewer = logviewerParam;
         this.profileHandler = profileHandler;
         this.logDownloadHandler = logDownloadHandler;
@@ -116,7 +140,7 @@ public class LogviewerResource {
             LOG.error(e.getMessage(), e);
             return Response.status(400).entity(e.getMessage()).build();
         } catch (IOException e) {
-            ExceptionMeters.NUM_READ_LOG_EXCEPTIONS.mark();
+            numReadLogExceptions.mark();
             throw e;
         }
     }
@@ -140,7 +164,7 @@ public class LogviewerResource {
             LOG.error(e.getMessage(), e);
             return Response.status(400).entity(e.getMessage()).build();
         } catch (IOException e) {
-            ExceptionMeters.NUM_READ_DAEMON_LOG_EXCEPTIONS.mark();
+            numReadDaemonLogExceptions.mark();
             throw e;
         }
     }
@@ -177,7 +201,7 @@ public class LogviewerResource {
         try {
             return logviewer.listLogFiles(user, portStr != null ? Integer.parseInt(portStr) : null, topologyId, callback, origin);
         } catch (IOException e) {
-            ExceptionMeters.NUM_LIST_LOG_EXCEPTIONS.mark();
+            numListLogExceptions.mark();
             throw e;
         }
     }
@@ -193,7 +217,7 @@ public class LogviewerResource {
         try {
             return profileHandler.listDumpFiles(topologyId, hostPort, user);
         } catch (IOException e) {
-            ExceptionMeters.NUM_LIST_DUMP_EXCEPTIONS.mark();
+            numListDumpExceptions.mark();
             throw e;
         }
     }
@@ -209,7 +233,7 @@ public class LogviewerResource {
         try {
             return profileHandler.downloadDumpFile(topologyId, hostPort, fileName, user);
         } catch (IOException e) {
-            ExceptionMeters.NUM_DOWNLOAD_DUMP_EXCEPTIONS.mark();
+            numDownloadDumpExceptions.mark();
             throw e;
         }
     }
@@ -228,7 +252,7 @@ public class LogviewerResource {
         try {
             return logDownloadHandler.downloadLogFile(decodedFileName, user);
         } catch (IOException e) {
-            ExceptionMeters.NUM_DOWNLOAD_LOG_EXCEPTIONS.mark();
+            numDownloadLogExceptions.mark();
             throw e;
         }
     }
@@ -247,7 +271,7 @@ public class LogviewerResource {
         try {
             return logDownloadHandler.downloadDaemonLogFile(decodedFileName, user);
         } catch (IOException e) {
-            ExceptionMeters.NUM_DOWNLOAD_DAEMON_LOG_EXCEPTIONS.mark();
+            numDownloadDaemonLogExceptions.mark();
             throw e;
         }
     }
@@ -279,7 +303,7 @@ public class LogviewerResource {
             return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(e, statusCode)).setCallback(callback)
                 .setStatus(statusCode).build();
         } catch (IOException e) {
-            ExceptionMeters.NUM_SEARCH_EXCEPTIONS.mark();
+            numSearchExceptions.mark();
             throw e;
         }
     }

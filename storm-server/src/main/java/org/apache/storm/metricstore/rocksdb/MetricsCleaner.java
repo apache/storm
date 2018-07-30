@@ -23,15 +23,15 @@ import org.slf4j.LoggerFactory;
  */
 public class MetricsCleaner implements Runnable, AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(MetricsCleaner.class);
-    private static long DEFAULT_SLEEP_MS = 4L * 60L * 60L * 1000L;
-    private RocksDbStore store;
-    private long retentionHours;
+    private static final long DEFAULT_SLEEP_MS = 4L * 60L * 60L * 1000L;
+    private final RocksDbStore store;
+    private final long retentionHours;
+    private final Meter failureMeter;
     private volatile boolean shutdown = false;
     private long sleepMs = DEFAULT_SLEEP_MS;
-    private Meter failureMeter;
     private long purgeTimestamp = 0L;
 
-    MetricsCleaner(RocksDbStore store, int retentionHours, int hourlyPeriod, Meter failureMeter) {
+    MetricsCleaner(RocksDbStore store, int retentionHours, int hourlyPeriod, Meter failureMeter, StormMetricsRegistry metricsRegistry) {
         this.store = store;
         this.retentionHours = retentionHours;
         if (hourlyPeriod > 0) {
@@ -39,7 +39,7 @@ public class MetricsCleaner implements Runnable, AutoCloseable {
         }
         this.failureMeter = failureMeter;
 
-        StormMetricsRegistry.registerGauge("MetricsCleaner:purgeTimestamp", () -> purgeTimestamp);
+        metricsRegistry.registerGauge("MetricsCleaner:purgeTimestamp", () -> purgeTimestamp);
     }
 
     @Override

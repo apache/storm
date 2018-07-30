@@ -19,6 +19,7 @@ import org.apache.storm.daemon.worker.Worker;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.messaging.IContext;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +30,10 @@ public class LocalContainer extends Container {
     private volatile boolean _isAlive = false;
 
     public LocalContainer(Map<String, Object> conf, String supervisorId, int supervisorPort, int port,
-                          LocalAssignment assignment, IContext sharedContext) throws IOException {
-        super(ContainerType.LAUNCH, conf, supervisorId, supervisorPort, port, assignment, null, null, null, null);
+                          LocalAssignment assignment, IContext sharedContext, StormMetricsRegistry metricsRegistry,
+                          ContainerMemoryTracker containerMemoryTracker) throws IOException {
+        super(ContainerType.LAUNCH, conf, supervisorId, supervisorPort, port, assignment, null, null, null, null, metricsRegistry, 
+            containerMemoryTracker);
         _sharedContext = sharedContext;
         _workerId = Utils.uuid();
     }

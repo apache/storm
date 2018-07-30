@@ -35,6 +35,9 @@ import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareSched
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userRes;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
 
+import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
+
 public class TestUser {
     private static final Logger LOG = LoggerFactory.getLogger(TestUser.class);
 
@@ -50,7 +53,7 @@ public class TestUser {
         TopologyDetails topo1 = genTopology("topo-1", config, 1, 1, 2, 1, Time.currentTimeSecs() - 24, 9, "user1");
         Topologies topologies = new Topologies(topo1);
 
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         User user1 = new User("user1", toDouble(resourceUserPool.get("user1")));
         WorkerSlot slot = cluster.getAvailableSlots().get(0);
         cluster.assign(slot, topo1.getId(), topo1.getExecutors());

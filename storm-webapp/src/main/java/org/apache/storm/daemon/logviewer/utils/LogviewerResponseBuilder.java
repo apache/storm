@@ -24,6 +24,7 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
+import com.codahale.metrics.Meter;
 import com.google.common.io.ByteStreams;
 
 import java.io.BufferedOutputStream;
@@ -75,7 +76,7 @@ public class LogviewerResponseBuilder {
      *
      * @param file file to download
      */
-    public static Response buildDownloadFile(File file) throws IOException {
+    public static Response buildDownloadFile(File file, Meter numFileDownloadExceptions) throws IOException {
         try {
             // do not close this InputStream in method: it will be used from jetty server
             InputStream is = new FileInputStream(file);
@@ -85,7 +86,7 @@ public class LogviewerResponseBuilder {
                     .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
                     .build();
         } catch (IOException e) {
-            ExceptionMeters.NUM_FILE_DOWNLOAD_EXCEPTIONS.mark();
+            numFileDownloadExceptions.mark();
             throw e;
         }
     }

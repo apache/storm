@@ -25,7 +25,6 @@ import static org.apache.storm.daemon.utils.ListFunctionalSupport.last;
 import static org.apache.storm.daemon.utils.ListFunctionalSupport.rest;
 import static org.apache.storm.daemon.utils.PathUtil.truncatePathToLastElements;
 
-import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -61,7 +60,7 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
-import org.apache.storm.daemon.logviewer.utils.ExceptionMeters;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
@@ -78,21 +77,24 @@ import org.slf4j.LoggerFactory;
 
 public class LogviewerLogSearchHandler {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerLogSearchHandler.class);
-    private static final Meter numDeepSearchNoResult = StormMetricsRegistry.registerMeter("logviewer:num-deep-search-no-result");
-    private static final Histogram numFileScanned = StormMetricsRegistry.registerHistogram("logviewer:num-files-scanned-per-deep-search");
-    private static final Meter numSearchRequestNoResult = StormMetricsRegistry.registerMeter("logviewer:num-search-request-no-result");
-
     public static final int GREP_MAX_SEARCH_SIZE = 1024;
     public static final int GREP_BUF_SIZE = 2048;
     public static final int GREP_CONTEXT_SIZE = 128;
     public static final Pattern WORKER_LOG_FILENAME_PATTERN = Pattern.compile("^worker.log(.*)");
 
+    private final Meter numDeepSearchNoResult;
+    private final Histogram numFileScanned;
+    private final Meter numSearchRequestNoResult;
+    private final Meter numFileOpenExceptions;
+    private final Meter numFileReadExceptions;
+    
     private final Map<String, Object> stormConf;
     private final String logRoot;
     private final String daemonLogRoot;
     private final ResourceAuthorizer resourceAuthorizer;
     private final Integer logviewerPort;
     private final String scheme;
+    private final DirectoryCleaner directoryCleaner;
 
     /**
      * Constructor.
@@ -101,9 +103,10 @@ public class LogviewerLogSearchHandler {
      * @param logRoot log root directory
      * @param daemonLogRoot daemon log root directory
      * @param resourceAuthorizer {@link ResourceAuthorizer}
+     * @param metricsRegistry The logviewer metrics registry
      */
     public LogviewerLogSearchHandler(Map<String, Object> stormConf, String logRoot, String daemonLogRoot,
-                                     ResourceAuthorizer resourceAuthorizer) {
+                                     ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
         this.logRoot = logRoot;
         this.daemonLogRoot = daemonLogRoot;
@@ -116,6 +119,12 @@ public class LogviewerLogSearchHandler {
             this.logviewerPort = ObjectReader.getInt(httpsPort);
             this.scheme = "https";
         }
+        this.numDeepSearchNoResult = metricsRegistry.registerMeter("logviewer:num-deep-search-no-result");
+        this.numFileScanned = metricsRegistry.registerHistogram("logviewer:num-files-scanned-per-deep-search");
+        this.numSearchRequestNoResult = metricsRegistry.registerMeter("logviewer:num-search-request-no-result");
+        this.numFileOpenExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS);
+        this.numFileReadExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_READ_EXCEPTIONS);
+        this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
     }
 
     /**
@@ -382,11 +391,11 @@ public class LogviewerLogSearchHandler {
             } catch (UnknownHostException | UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             } catch (IOException e) {
-                ExceptionMeters.NUM_FILE_READ_EXCEPTIONS.mark();
+                numFileReadExceptions.mark();
                 throw new RuntimeException(e);
             }
         } catch (IOException e) {
-            ExceptionMeters.NUM_FILE_OPEN_EXCEPTIONS.mark();
+            numFileOpenExceptions.mark();
             throw new RuntimeException(e);
         }
     }
@@ -402,7 +411,7 @@ public class LogviewerLogSearchHandler {
     @VisibleForTesting
     List<File> logsForPort(String user, File portDir) {
         try {
-            List<File> workerLogs = DirectoryCleaner.getFilesForDir(portDir).stream()
+            List<File> workerLogs = directoryCleaner.getFilesForDir(portDir).stream()
                     .filter(file -> WORKER_LOG_FILENAME_PATTERN.asPredicate().test(file.getName()))
                     .collect(toList());
 

@@ -47,6 +47,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.apache.storm.metric.StormMetricsRegistry;
+
 public class DRPCTest {
     private static final ExecutorService exec = Executors.newCachedThreadPool();
 
@@ -80,7 +82,7 @@ public class DRPCTest {
 
     @Test
     public void testGoodBlocking() throws Exception {
-        try (DRPC server = new DRPC(null, 100)) {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), null, 100)) {
             Future<String> found = exec.submit(() -> server.executeBlocking("testing", "test"));
             DRPCRequest request = getNextAvailableRequest(server, "testing");
             assertNotNull(request);
@@ -94,7 +96,7 @@ public class DRPCTest {
 
     @Test
     public void testFailedBlocking() throws Exception {
-        try (DRPC server = new DRPC(null, 100)) {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), null, 100)) {
             Future<String> found = exec.submit(() -> server.executeBlocking("testing", "test"));
             DRPCRequest request = getNextAvailableRequest(server, "testing");
             assertNotNull(request);
@@ -116,7 +118,7 @@ public class DRPCTest {
     @Test
     public void testDequeueAfterTimeout() throws Exception {
         long timeout = 1000;
-        try (DRPC server = new DRPC(null, timeout)) {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), null, timeout)) {
             long start = Time.currentTimeMillis();
             try {
                 server.executeBlocking("testing", "test");
@@ -136,7 +138,7 @@ public class DRPCTest {
 
     @Test
     public void testDeny() throws Exception {
-        try (DRPC server = new DRPC(new DenyAuthorizer(), 100)) {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), new DenyAuthorizer(), 100)) {
             assertThrows(() -> server.executeBlocking("testing", "test"), AuthorizationException.class);
             assertThrows(() -> server.fetchRequest("testing"), AuthorizationException.class);
         }

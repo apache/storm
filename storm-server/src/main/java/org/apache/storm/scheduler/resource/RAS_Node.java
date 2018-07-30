@@ -445,7 +445,7 @@ public class RAS_Node {
     public NormalizedResourceOffer getTotalAvailableResources() {
         if (sup != null) {
             NormalizedResourceOffer availableResources = new NormalizedResourceOffer(sup.getTotalResources());
-            if (availableResources.remove(cluster.getAllScheduledResourcesForNode(sup.getId()))) {
+            if (availableResources.remove(cluster.getAllScheduledResourcesForNode(sup.getId()), cluster.getResourceMetrics())) {
                 if (!loggedUnderageUsage) {
                     LOG.error("Resources on {} became negative and was clamped to 0 {}.", hostname, availableResources);
                     loggedUnderageUsage = true;

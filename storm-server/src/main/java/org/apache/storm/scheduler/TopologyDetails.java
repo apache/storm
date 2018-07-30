@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.Config;
-import org.apache.storm.Constants;
-import org.apache.storm.daemon.Acker;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentType;

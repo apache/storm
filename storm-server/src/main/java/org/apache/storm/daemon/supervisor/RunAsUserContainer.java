@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
@@ -37,17 +38,19 @@ public class RunAsUserContainer extends BasicContainer {
     public RunAsUserContainer(Container.ContainerType type, Map<String, Object> conf, String supervisorId,
                               int supervisorPort, int port, LocalAssignment assignment,
                               ResourceIsolationInterface resourceIsolationManager, LocalState localState,
-                              String workerId) throws IOException {
-        this(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState, workerId,
-             null, null, null);
+                              String workerId, StormMetricsRegistry metricsRegistry, 
+                              ContainerMemoryTracker containerMemoryTracker) throws IOException {
+        this(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState, workerId, metricsRegistry,
+            containerMemoryTracker, null, null, null);
     }
 
     RunAsUserContainer(Container.ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
                        int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
-                       LocalState localState, String workerId, Map<String, Object> topoConf, AdvancedFSOps ops,
-                       String profileCmd) throws IOException {
+                       LocalState localState, String workerId, StormMetricsRegistry metricsRegistry,
+                       ContainerMemoryTracker containerMemoryTracker, Map<String, Object> topoConf,
+                       AdvancedFSOps ops, String profileCmd) throws IOException {
         super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState,
-              workerId, topoConf, ops, profileCmd);
+              workerId, metricsRegistry, containerMemoryTracker, topoConf, ops, profileCmd);
         if (Utils.isOnWindows()) {
             throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
         }

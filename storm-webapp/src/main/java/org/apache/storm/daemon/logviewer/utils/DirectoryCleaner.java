@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
+import com.codahale.metrics.Meter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -30,6 +31,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Pattern;
+import org.apache.storm.metric.StormMetricsRegistry;
 
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -51,7 +53,11 @@ public class DirectoryCleaner {
     private static final int MAX_ROUNDS = 512; // max rounds of scanning the dirs
     public static final int MAX_NUMBER_OF_FILES_FOR_DIR = 1024;
 
-    // not defining this as static is to allow for mocking in tests
+    private final Meter numFileOpenExceptions;
+
+    public DirectoryCleaner(StormMetricsRegistry metricsRegistry) {
+        this.numFileOpenExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS);
+    }
 
     /**
      * Creates DirectoryStream for give directory.
@@ -63,7 +69,7 @@ public class DirectoryCleaner {
         try {
             return Files.newDirectoryStream(dir.toPath());
         } catch (IOException e) {
-            ExceptionMeters.NUM_FILE_OPEN_EXCEPTIONS.mark();
+            numFileOpenExceptions.mark();
             throw e;
         }
     }
@@ -182,8 +188,8 @@ public class DirectoryCleaner {
      * @param dir directory to get file list
      * @return files in directory
      */
-    public static List<File> getFilesForDir(File dir) throws IOException {
-        List<File> files = new ArrayList<File>();
+    public List<File> getFilesForDir(File dir) throws IOException {
+        List<File> files = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir.toPath())) {
             for (Path path : stream) {
                 files.add(path.toFile());
@@ -192,7 +198,7 @@ public class DirectoryCleaner {
                 }
             }
         } catch (IOException e) {
-            ExceptionMeters.NUM_FILE_OPEN_EXCEPTIONS.mark();
+            numFileOpenExceptions.mark();
             throw e;
         }
         return files;

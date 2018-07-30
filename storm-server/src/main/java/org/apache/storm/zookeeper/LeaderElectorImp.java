@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.nimbus.TopoCache;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.LeaderListenerCallback;
 import org.apache.storm.nimbus.NimbusInfo;
@@ -45,10 +46,12 @@ public class LeaderElectorImp implements ILeaderElector {
     private final TopoCache tc;
     private final IStormClusterState clusterState;
     private final List<ACL> acls;
+    private final StormMetricsRegistry metricsRegistry;
 
     public LeaderElectorImp(Map<String, Object> conf, List<String> servers, CuratorFramework zk, String leaderlockPath, String id,
                             AtomicReference<LeaderLatch> leaderLatch, AtomicReference<LeaderLatchListener> leaderLatchListener,
-                            BlobStore blobStore, final TopoCache tc, IStormClusterState clusterState, List<ACL> acls) {
+                            BlobStore blobStore, final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
+                            StormMetricsRegistry metricsRegistry) {
         this.conf = conf;
         this.servers = servers;
         this.zk = zk;
@@ -60,6 +63,7 @@ public class LeaderElectorImp implements ILeaderElector {
         this.tc = tc;
         this.clusterState = clusterState;
         this.acls = acls;
+        this.metricsRegistry = metricsRegistry;
     }
 
     @Override
@@ -72,7 +76,8 @@ public class LeaderElectorImp implements ILeaderElector {
         // if this latch is already closed, we need to create new instance.
         if (LeaderLatch.State.CLOSED.equals(leaderLatch.get().getState())) {
             leaderLatch.set(new LeaderLatch(zk, leaderlockPath));
-            LeaderListenerCallback callback = new LeaderListenerCallback(conf, zk, leaderLatch.get(), blobStore, tc, clusterState, acls);
+            LeaderListenerCallback callback = new LeaderListenerCallback(conf, zk, leaderLatch.get(), blobStore, tc, clusterState, acls,
+                metricsRegistry);
             leaderLatchListener.set(Zookeeper.leaderLatchListenerImpl(callback));
             LOG.info("LeaderLatch was in closed state. Resetted the leaderLatch and listeners.");
         }

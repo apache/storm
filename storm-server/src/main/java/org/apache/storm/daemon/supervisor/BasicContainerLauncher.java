@@ -17,6 +17,7 @@ import java.util.Map;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.LocalState;
 
 /**
@@ -27,19 +28,25 @@ public class BasicContainerLauncher extends ContainerLauncher {
     private final Map<String, Object> _conf;
     private final String _supervisorId;
     private final int _supervisorPort;
+    private final StormMetricsRegistry metricsRegistry;
+    private final ContainerMemoryTracker containerMemoryTracker;
 
     public BasicContainerLauncher(Map<String, Object> conf, String supervisorId, int supervisorPort,
-                                  ResourceIsolationInterface resourceIsolationManager) throws IOException {
+                                  ResourceIsolationInterface resourceIsolationManager, StormMetricsRegistry metricsRegistry,
+                                  ContainerMemoryTracker containerMemoryTracker) throws IOException {
         _conf = conf;
         _supervisorId = supervisorId;
         _supervisorPort = supervisorPort;
         _resourceIsolationManager = resourceIsolationManager;
+        this.metricsRegistry = metricsRegistry;
+        this.containerMemoryTracker = containerMemoryTracker;
     }
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
         Container container = new BasicContainer(ContainerType.LAUNCH, _conf, _supervisorId, _supervisorPort, port,
-                                                 assignment, _resourceIsolationManager, state, null);
+            assignment, _resourceIsolationManager, state, null, metricsRegistry,
+            containerMemoryTracker);
         container.setup();
         container.launch();
         return container;
@@ -48,12 +55,12 @@ public class BasicContainerLauncher extends ContainerLauncher {
     @Override
     public Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
         return new BasicContainer(ContainerType.RECOVER_FULL, _conf, _supervisorId, _supervisorPort, port, assignment,
-                                  _resourceIsolationManager, state, null);
+                                  _resourceIsolationManager, state, null, metricsRegistry, containerMemoryTracker);
     }
 
     @Override
     public Killable recoverContainer(String workerId, LocalState localState) throws IOException {
         return new BasicContainer(ContainerType.RECOVER_PARTIAL, _conf, _supervisorId, _supervisorPort, -1, null,
-                                  _resourceIsolationManager, localState, workerId);
+                                  _resourceIsolationManager, localState, workerId, metricsRegistry, containerMemoryTracker);
     }
 }

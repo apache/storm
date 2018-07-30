@@ -21,6 +21,7 @@ package org.apache.storm.daemon.ui.resources;
 import com.codahale.metrics.Meter;
 import java.net.URLDecoder;
 import java.util.Map;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -59,63 +60,48 @@ public class StormApiResource {
 
     public static Map<String, Object> config = ConfigUtils.readStormConfig();
 
-    public static Meter clusterConfigurationRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-cluster-configuration-http-requests");
+    private final Meter clusterConfigurationRequestMeter;
+    private final Meter clusterSummaryRequestMeter;
+    private final Meter nimbusSummaryRequestMeter;
+    private final Meter supervisorRequestMeter;
+    private final Meter supervisorSummaryRequestMeter;
+    private final Meter allTopologiesSummaryRequestMeter;
+    private final Meter topologyPageRequestMeter;
+    private final Meter topologyMetricRequestMeter;
+    private final Meter buildVisualizationRequestMeter;
+    private final Meter mkVisualizationDataRequestMeter;
+    private final Meter componentPageRequestMeter;
+    private final Meter logConfigRequestMeter;
+    private final Meter activateTopologyRequestMeter;
+    private final Meter deactivateTopologyRequestMeter;
+    private final Meter debugTopologyRequestMeter;
+    private final Meter componentOpResponseRequestMeter;
+    private final Meter topologyOpResponseMeter;
+    private final Meter topologyLagRequestMeter;
+    private final Meter getOwnerResourceSummariesMeter;
 
-    public static Meter clusterSummaryRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-cluster-summary-http-requests");
-
-    public static Meter nimbusSummaryRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-nimbus-summary-http-requests");
-
-    public static Meter supervisorRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-supervisor-http-requests");
-
-    public static Meter supervisorSummaryRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-supervisor-summary-http-requests");
-
-    public static Meter allTopologiesSummaryRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-all-topologies-summary-http-requests");
-
-    public static Meter topologyPageRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-topology-page-http-requests");
-
-    public static Meter topologyMetricRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-topology-metric-http-requests");
-
-    public static Meter buildVisualizationRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-build-visualization-http-requests");
-
-    public static Meter mkVisualizationDataRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-mk-visualization-data-http-requests");
-
-    public static Meter componentPageRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-component-page-http-requests");
-
-    public static Meter logConfigRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-log-config-http-requests");
-
-    public static Meter activateTopologyRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-activate-topology-http-requests");
-
-    public static Meter deactivateTopologyRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-deactivate-topology-http-requests");
-
-    public static Meter debugTopologyRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-debug-topology-http-requests");
-
-    public static Meter componentOpResponseRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-component-op-response-http-requests");
-
-    public static Meter topologyOpResponseMeter =
-            StormMetricsRegistry.registerMeter("ui:num-topology-op-response-http-requests");
-
-    public static Meter topologyLagRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-topology-lag-http-requests");
-
-    public static Meter getOwnerResourceSummariesMeter =
-            StormMetricsRegistry.registerMeter("ui:num-get-owner-resource-summaries-http-request");
-
+    @Inject
+    public StormApiResource(StormMetricsRegistry metricsRegistry) {
+        this.clusterConfigurationRequestMeter = metricsRegistry.registerMeter("ui:num-cluster-configuration-http-requests");
+        this.clusterSummaryRequestMeter = metricsRegistry.registerMeter("ui:num-cluster-summary-http-requests");
+        this.nimbusSummaryRequestMeter = metricsRegistry.registerMeter("ui:num-nimbus-summary-http-requests");
+        this.supervisorRequestMeter = metricsRegistry.registerMeter("ui:num-supervisor-http-requests");
+        this.supervisorSummaryRequestMeter = metricsRegistry.registerMeter("ui:num-supervisor-summary-http-requests");
+        this.allTopologiesSummaryRequestMeter = metricsRegistry.registerMeter("ui:num-all-topologies-summary-http-requests");
+        this.topologyPageRequestMeter = metricsRegistry.registerMeter("ui:num-topology-page-http-requests");
+        this.topologyMetricRequestMeter = metricsRegistry.registerMeter("ui:num-topology-metric-http-requests");
+        this.buildVisualizationRequestMeter = metricsRegistry.registerMeter("ui:num-build-visualization-http-requests");
+        this.mkVisualizationDataRequestMeter = metricsRegistry.registerMeter("ui:num-mk-visualization-data-http-requests");
+        this.componentPageRequestMeter = metricsRegistry.registerMeter("ui:num-component-page-http-requests");
+        this.logConfigRequestMeter = metricsRegistry.registerMeter("ui:num-log-config-http-requests");
+        this.activateTopologyRequestMeter = metricsRegistry.registerMeter("ui:num-activate-topology-http-requests");
+        this.deactivateTopologyRequestMeter = metricsRegistry.registerMeter("ui:num-deactivate-topology-http-requests");
+        this.debugTopologyRequestMeter = metricsRegistry.registerMeter("ui:num-debug-topology-http-requests");
+        this.componentOpResponseRequestMeter = metricsRegistry.registerMeter("ui:num-component-op-response-http-requests");
+        this.topologyOpResponseMeter = metricsRegistry.registerMeter("ui:num-topology-op-response-http-requests");
+        this.topologyLagRequestMeter = metricsRegistry.registerMeter("ui:num-topology-lag-http-requests");
+        this.getOwnerResourceSummariesMeter = metricsRegistry.registerMeter("ui:num-get-owner-resource-summaries-http-request");
+    }
 
     /**
      * /api/v1/cluster/configuration -> nimbus configuration.

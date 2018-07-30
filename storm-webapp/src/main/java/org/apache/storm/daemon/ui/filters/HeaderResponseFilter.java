@@ -20,6 +20,7 @@ package org.apache.storm.daemon.ui.filters;
 
 import com.codahale.metrics.Meter;
 import java.io.IOException;
+import javax.inject.Inject;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
@@ -33,8 +34,12 @@ import org.slf4j.LoggerFactory;
 public class HeaderResponseFilter implements ContainerResponseFilter {
     public static final Logger LOG = LoggerFactory.getLogger(HeaderResponseFilter.class);
 
-    public static Meter webRequestMeter =
-            StormMetricsRegistry.registerMeter("num-web-requests");
+    private final Meter webRequestMeter;
+    
+    @Inject
+    public HeaderResponseFilter(StormMetricsRegistry metricsRegistry) {
+        this.webRequestMeter = metricsRegistry.registerMeter("num-web-requests");
+    }
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext,

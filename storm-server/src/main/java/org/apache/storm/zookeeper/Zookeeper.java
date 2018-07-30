@@ -31,6 +31,7 @@ import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.nimbus.TopoCache;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.LeaderListenerCallback;
 import org.apache.storm.nimbus.NimbusInfo;
@@ -146,13 +147,14 @@ public class Zookeeper {
      * @throws UnknownHostException
      */
     public static ILeaderElector zkLeaderElector(Map<String, Object> conf, CuratorFramework zkClient, BlobStore blobStore,
-                                                 final TopoCache tc, IStormClusterState clusterState, List<ACL> acls) throws
-        UnknownHostException {
-        return _instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc, clusterState, acls);
+                                                 final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
+                                                 StormMetricsRegistry metricsRegistry) throws UnknownHostException {
+        return _instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc, clusterState, acls, metricsRegistry);
     }
 
     protected ILeaderElector zkLeaderElectorImpl(Map<String, Object> conf, CuratorFramework zk, BlobStore blobStore,
-                                                 final TopoCache tc, IStormClusterState clusterState, List<ACL> acls) throws
+                                                 final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
+                                                 StormMetricsRegistry metricsRegistry) throws
         UnknownHostException {
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         String leaderLockPath = "/leader-lock";
@@ -160,9 +162,9 @@ public class Zookeeper {
         AtomicReference<LeaderLatch> leaderLatchAtomicReference = new AtomicReference<>(new LeaderLatch(zk, leaderLockPath, id));
         AtomicReference<LeaderLatchListener> leaderLatchListenerAtomicReference =
             new AtomicReference<>(leaderLatchListenerImpl(
-                new LeaderListenerCallback(conf, zk, leaderLatchAtomicReference.get(), blobStore, tc, clusterState, acls)));
+                new LeaderListenerCallback(conf, zk, leaderLatchAtomicReference.get(), blobStore, tc, clusterState, acls, metricsRegistry)));
         return new LeaderElectorImp(conf, servers, zk, leaderLockPath, id, leaderLatchAtomicReference,
-                                    leaderLatchListenerAtomicReference, blobStore, tc, clusterState, acls);
+                                    leaderLatchListenerAtomicReference, blobStore, tc, clusterState, acls, metricsRegistry);
     }
 
 }

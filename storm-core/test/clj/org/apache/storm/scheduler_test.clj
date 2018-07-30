@@ -19,6 +19,8 @@
   (:import [org.apache.storm.scheduler EvenScheduler])
   (:import [org.apache.storm.daemon.nimbus Nimbus$StandaloneINimbus])
   (:import [org.apache.storm.generated StormTopology])
+  (:import [org.apache.storm.scheduler.resource.normalization ResourceMetrics])
+  (:import [org.apache.storm.metric StormMetricsRegistry])
   (:import [org.apache.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
             SchedulerAssignmentImpl Topologies TopologyDetails]))
 
@@ -128,6 +130,7 @@
         assignment2 (SchedulerAssignmentImpl. "topology2" executor->slot2 nil nil)
         assignment3 (SchedulerAssignmentImpl. "topology3" executor->slot3 nil nil)
         cluster (Cluster. (Nimbus$StandaloneINimbus.)
+                          (ResourceMetrics. (StormMetricsRegistry.))
                           {"supervisor1" supervisor1 "supervisor2" supervisor2}
                           {"topology1" assignment1 "topology2" assignment2 "topology3" assignment3}
                           topologies

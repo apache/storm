@@ -28,6 +28,7 @@ import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_PER_WORKER_LOGS_SIZE_M
 import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_SUM_WORKER_LOGS_SIZE_MB;
 
 import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -66,10 +67,13 @@ import org.slf4j.LoggerFactory;
  */
 public class LogCleaner implements Runnable, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(LogCleaner.class);
-    private static final Timer cleanupRoutineDuration = StormMetricsRegistry.registerTimer("logviewer:cleanup-routine-duration-ms");
-    private static final Histogram numFilesCleanedUp = StormMetricsRegistry.registerHistogram("logviewer:num-files-cleaned-up");
-    private static final Histogram diskSpaceFreed = StormMetricsRegistry.registerHistogram("logviewer:disk-space-freed-in-bytes");
 
+    private final Timer cleanupRoutineDuration;
+    private final Histogram numFilesCleanedUp;
+    private final Histogram diskSpaceFreed;
+    private final Meter numFileRemovalExceptions;
+    private final Meter numCleanupExceptions;
+    
     private final Map<String, Object> stormConf;
     private final Integer intervalSecs;
     private final File logRootDir;
@@ -87,9 +91,10 @@ public class LogCleaner implements Runnable, Closeable {
      * @param workerLogs {@link WorkerLogs} instance
      * @param directoryCleaner {@link DirectoryCleaner} instance
      * @param logRootDir root log directory
+     * @param metricsRegistry The logviewer metrics registry
      */
     public LogCleaner(Map<String, Object> stormConf, WorkerLogs workerLogs, DirectoryCleaner directoryCleaner,
-                      File logRootDir) {
+                      File logRootDir, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
         this.intervalSecs = ObjectReader.getInt(stormConf.get(LOGVIEWER_CLEANUP_INTERVAL_SECS), null);
         this.logRootDir = logRootDir;
@@ -101,9 +106,14 @@ public class LogCleaner implements Runnable, Closeable {
         maxPerWorkerLogsSizeMb = Math.min(maxPerWorkerLogsSizeMb, (long) (maxSumWorkerLogsSizeMb * 0.5));
 
         LOG.info("configured max total size of worker logs: {} MB, max total size of worker logs per directory: {} MB",
-                maxSumWorkerLogsSizeMb, maxPerWorkerLogsSizeMb);
+            maxSumWorkerLogsSizeMb, maxPerWorkerLogsSizeMb);
         //Switch to CachedGauge if this starts to hurt performance
-        StormMetricsRegistry.registerGauge("logviewer:worker-log-dir-size", () -> FileUtils.sizeOf(logRootDir));
+        metricsRegistry.registerGauge("logviewer:worker-log-dir-size", () -> FileUtils.sizeOf(logRootDir));
+        this.cleanupRoutineDuration = metricsRegistry.registerTimer("logviewer:cleanup-routine-duration-ms");
+        this.numFilesCleanedUp = metricsRegistry.registerHistogram("logviewer:num-files-cleaned-up");
+        this.diskSpaceFreed = metricsRegistry.registerHistogram("logviewer:disk-space-freed-in-bytes");
+        this.numFileRemovalExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_REMOVAL_EXCEPTIONS);
+        this.numCleanupExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_CLEANUP_EXCEPTIONS);
     }
 
     /**
@@ -164,7 +174,7 @@ public class LogCleaner implements Runnable, Closeable {
                     numFilesCleaned++;
                     diskSpaceCleaned += sizeInBytes;
                 } catch (Exception ex) {
-                    ExceptionMeters.NUM_FILE_REMOVAL_EXCEPTIONS.mark();
+                    numFileRemovalExceptions.mark();
                     LOG.error(ex.getMessage(), ex);
                 }
             }
@@ -176,7 +186,7 @@ public class LogCleaner implements Runnable, Closeable {
             numFilesCleaned += globalLogCleanupMeta.deletedFiles;
             diskSpaceCleaned += globalLogCleanupMeta.deletedSize;
         } catch (Exception ex) {
-            ExceptionMeters.NUM_CLEANUP_EXCEPTIONS.mark();
+            numCleanupExceptions.mark();
             LOG.error("Exception while cleaning up old log.", ex);
         }
         numFilesCleanedUp.update(numFilesCleaned);

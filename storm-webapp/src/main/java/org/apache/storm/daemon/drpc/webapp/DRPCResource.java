@@ -33,18 +33,20 @@ import org.apache.storm.metric.StormMetricsRegistry;
 
 @Path("/drpc/")
 public class DRPCResource {
-    private static final Meter meterHttpRequests = StormMetricsRegistry.registerMeter("drpc:num-execute-http-requests");
-    private static final Timer responseDuration = StormMetricsRegistry.registerTimer("drpc:HTTP-request-response-duration");
+    private final Meter meterHttpRequests;
+    private final Timer responseDuration;
     private final DRPC drpc;
 
-    public DRPCResource(DRPC drpc) {
+    public DRPCResource(DRPC drpc, StormMetricsRegistry metricsRegistry) {
         this.drpc = drpc;
+        this.meterHttpRequests = metricsRegistry.registerMeter("drpc:num-execute-http-requests");
+        this.responseDuration = metricsRegistry.registerTimer("drpc:HTTP-request-response-duration");
     }
     
     //TODO put in some better exception mapping...
     //TODO move populateContext to a filter...
     @POST
-    @Path("/{func}")
+    @Path("/{func}") 
     public String post(@PathParam("func") String func, String args, @Context HttpServletRequest request) throws Exception {
         meterHttpRequests.mark();
         return responseDuration.time(() -> drpc.executeBlocking(func, args));
@@ -59,7 +61,7 @@ public class DRPCResource {
     }
     
     @GET
-    @Path("/{func}")
+    @Path("/{func}") 
     public String get(@PathParam("func") String func, @Context HttpServletRequest request) throws Exception {
         meterHttpRequests.mark();
         return responseDuration.time(() -> drpc.executeBlocking(func, ""));
