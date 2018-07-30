@@ -29,7 +29,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
   private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("ClusterSummary");
 
   private static final org.apache.storm.thrift.protocol.TField SUPERVISORS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("supervisors", org.apache.storm.thrift.protocol.TType.LIST, (short)1);
-  private static final org.apache.storm.thrift.protocol.TField NIMBUS_UPTIME_SECS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("nimbus_uptime_secs", org.apache.storm.thrift.protocol.TType.I32, (short)2);
   private static final org.apache.storm.thrift.protocol.TField TOPOLOGIES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("topologies", org.apache.storm.thrift.protocol.TType.LIST, (short)3);
   private static final org.apache.storm.thrift.protocol.TField NIMBUSES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("nimbuses", org.apache.storm.thrift.protocol.TType.LIST, (short)4);
 
@@ -37,14 +36,12 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new ClusterSummaryTupleSchemeFactory();
 
   private java.util.List<SupervisorSummary> supervisors; // required
-  private int nimbus_uptime_secs; // optional
   private java.util.List<TopologySummary> topologies; // required
   private java.util.List<NimbusSummary> nimbuses; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
     SUPERVISORS((short)1, "supervisors"),
-    NIMBUS_UPTIME_SECS((short)2, "nimbus_uptime_secs"),
     TOPOLOGIES((short)3, "topologies"),
     NIMBUSES((short)4, "nimbuses");
 
@@ -63,8 +60,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
       switch(fieldId) {
         case 1: // SUPERVISORS
           return SUPERVISORS;
-        case 2: // NIMBUS_UPTIME_SECS
-          return NIMBUS_UPTIME_SECS;
         case 3: // TOPOLOGIES
           return TOPOLOGIES;
         case 4: // NIMBUSES
@@ -109,17 +104,12 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
   }
 
   // isset id assignments
-  private static final int __NIMBUS_UPTIME_SECS_ISSET_ID = 0;
-  private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.NIMBUS_UPTIME_SECS};
   public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
     tmpMap.put(_Fields.SUPERVISORS, new org.apache.storm.thrift.meta_data.FieldMetaData("supervisors", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.storm.thrift.meta_data.ListMetaData(org.apache.storm.thrift.protocol.TType.LIST, 
             new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, SupervisorSummary.class))));
-    tmpMap.put(_Fields.NIMBUS_UPTIME_SECS, new org.apache.storm.thrift.meta_data.FieldMetaData("nimbus_uptime_secs", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.TOPOLOGIES, new org.apache.storm.thrift.meta_data.FieldMetaData("topologies", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.storm.thrift.meta_data.ListMetaData(org.apache.storm.thrift.protocol.TType.LIST, 
             new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologySummary.class))));
@@ -131,8 +121,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
   }
 
   public ClusterSummary() {
-    this.nimbus_uptime_secs = 0;
-
   }
 
   public ClusterSummary(
@@ -150,7 +138,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
    * Performs a deep copy on <i>other</i>.
    */
   public ClusterSummary(ClusterSummary other) {
-    __isset_bitfield = other.__isset_bitfield;
     if (other.is_set_supervisors()) {
       java.util.List<SupervisorSummary> __this__supervisors = new java.util.ArrayList<SupervisorSummary>(other.supervisors.size());
       for (SupervisorSummary other_element : other.supervisors) {
@@ -158,7 +145,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
       }
       this.supervisors = __this__supervisors;
     }
-    this.nimbus_uptime_secs = other.nimbus_uptime_secs;
     if (other.is_set_topologies()) {
       java.util.List<TopologySummary> __this__topologies = new java.util.ArrayList<TopologySummary>(other.topologies.size());
       for (TopologySummary other_element : other.topologies) {
@@ -182,8 +168,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
   @Override
   public void clear() {
     this.supervisors = null;
-    this.nimbus_uptime_secs = 0;
-
     this.topologies = null;
     this.nimbuses = null;
   }
@@ -224,28 +208,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
     if (!value) {
       this.supervisors = null;
     }
-  }
-
-  public int get_nimbus_uptime_secs() {
-    return this.nimbus_uptime_secs;
-  }
-
-  public void set_nimbus_uptime_secs(int nimbus_uptime_secs) {
-    this.nimbus_uptime_secs = nimbus_uptime_secs;
-    set_nimbus_uptime_secs_isSet(true);
-  }
-
-  public void unset_nimbus_uptime_secs() {
-    __isset_bitfield = org.apache.storm.thrift.EncodingUtils.clearBit(__isset_bitfield, __NIMBUS_UPTIME_SECS_ISSET_ID);
-  }
-
-  /** Returns true if field nimbus_uptime_secs is set (has been assigned a value) and false otherwise */
-  public boolean is_set_nimbus_uptime_secs() {
-    return org.apache.storm.thrift.EncodingUtils.testBit(__isset_bitfield, __NIMBUS_UPTIME_SECS_ISSET_ID);
-  }
-
-  public void set_nimbus_uptime_secs_isSet(boolean value) {
-    __isset_bitfield = org.apache.storm.thrift.EncodingUtils.setBit(__isset_bitfield, __NIMBUS_UPTIME_SECS_ISSET_ID, value);
   }
 
   public int get_topologies_size() {
@@ -334,14 +296,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
       }
       break;
 
-    case NIMBUS_UPTIME_SECS:
-      if (value == null) {
-        unset_nimbus_uptime_secs();
-      } else {
-        set_nimbus_uptime_secs((java.lang.Integer)value);
-      }
-      break;
-
     case TOPOLOGIES:
       if (value == null) {
         unset_topologies();
@@ -366,9 +320,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
     case SUPERVISORS:
       return get_supervisors();
 
-    case NIMBUS_UPTIME_SECS:
-      return get_nimbus_uptime_secs();
-
     case TOPOLOGIES:
       return get_topologies();
 
@@ -388,8 +339,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
     switch (field) {
     case SUPERVISORS:
       return is_set_supervisors();
-    case NIMBUS_UPTIME_SECS:
-      return is_set_nimbus_uptime_secs();
     case TOPOLOGIES:
       return is_set_topologies();
     case NIMBUSES:
@@ -422,15 +371,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
         return false;
     }
 
-    boolean this_present_nimbus_uptime_secs = true && this.is_set_nimbus_uptime_secs();
-    boolean that_present_nimbus_uptime_secs = true && that.is_set_nimbus_uptime_secs();
-    if (this_present_nimbus_uptime_secs || that_present_nimbus_uptime_secs) {
-      if (!(this_present_nimbus_uptime_secs && that_present_nimbus_uptime_secs))
-        return false;
-      if (this.nimbus_uptime_secs != that.nimbus_uptime_secs)
-        return false;
-    }
-
     boolean this_present_topologies = true && this.is_set_topologies();
     boolean that_present_topologies = true && that.is_set_topologies();
     if (this_present_topologies || that_present_topologies) {
@@ -460,10 +400,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
     if (is_set_supervisors())
       hashCode = hashCode * 8191 + supervisors.hashCode();
 
-    hashCode = hashCode * 8191 + ((is_set_nimbus_uptime_secs()) ? 131071 : 524287);
-    if (is_set_nimbus_uptime_secs())
-      hashCode = hashCode * 8191 + nimbus_uptime_secs;
-
     hashCode = hashCode * 8191 + ((is_set_topologies()) ? 131071 : 524287);
     if (is_set_topologies())
       hashCode = hashCode * 8191 + topologies.hashCode();
@@ -489,16 +425,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
     }
     if (is_set_supervisors()) {
       lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.supervisors, other.supervisors);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
-    lastComparison = java.lang.Boolean.valueOf(is_set_nimbus_uptime_secs()).compareTo(other.is_set_nimbus_uptime_secs());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (is_set_nimbus_uptime_secs()) {
-      lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.nimbus_uptime_secs, other.nimbus_uptime_secs);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -550,12 +476,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
       sb.append(this.supervisors);
     }
     first = false;
-    if (is_set_nimbus_uptime_secs()) {
-      if (!first) sb.append(", ");
-      sb.append("nimbus_uptime_secs:");
-      sb.append(this.nimbus_uptime_secs);
-      first = false;
-    }
     if (!first) sb.append(", ");
     sb.append("topologies:");
     if (this.topologies == null) {
@@ -603,8 +523,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
 
   private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
     try {
-      // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-      __isset_bitfield = 0;
       read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
     } catch (org.apache.storm.thrift.TException te) {
       throw new java.io.IOException(te);
@@ -644,14 +562,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
                 iprot.readListEnd();
               }
               struct.set_supervisors_isSet(true);
-            } else { 
-              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-            }
-            break;
-          case 2: // NIMBUS_UPTIME_SECS
-            if (schemeField.type == org.apache.storm.thrift.protocol.TType.I32) {
-              struct.nimbus_uptime_secs = iprot.readI32();
-              struct.set_nimbus_uptime_secs_isSet(true);
             } else { 
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
@@ -719,11 +629,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
         }
         oprot.writeFieldEnd();
       }
-      if (struct.is_set_nimbus_uptime_secs()) {
-        oprot.writeFieldBegin(NIMBUS_UPTIME_SECS_FIELD_DESC);
-        oprot.writeI32(struct.nimbus_uptime_secs);
-        oprot.writeFieldEnd();
-      }
       if (struct.topologies != null) {
         oprot.writeFieldBegin(TOPOLOGIES_FIELD_DESC);
         {
@@ -786,14 +691,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
           _iter150.write(oprot);
         }
       }
-      java.util.BitSet optionals = new java.util.BitSet();
-      if (struct.is_set_nimbus_uptime_secs()) {
-        optionals.set(0);
-      }
-      oprot.writeBitSet(optionals, 1);
-      if (struct.is_set_nimbus_uptime_secs()) {
-        oprot.writeI32(struct.nimbus_uptime_secs);
-      }
     }
 
     @Override
@@ -835,11 +732,6 @@ public class ClusterSummary implements org.apache.storm.thrift.TBase<ClusterSumm
         }
       }
       struct.set_nimbuses_isSet(true);
-      java.util.BitSet incoming = iprot.readBitSet(1);
-      if (incoming.get(0)) {
-        struct.nimbus_uptime_secs = iprot.readI32();
-        struct.set_nimbus_uptime_secs_isSet(true);
-      }
     }
   }
 

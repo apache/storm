@@ -876,11 +876,6 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
-    public String beginFileDownload(String file) throws AuthorizationException, TException {
-        throw new WrappedAuthorizationException("FILE DOWNLOAD NOT SUPPORTED IN LOCAL MODE");
-    }
-
-    @Override
     public ByteBuffer downloadChunk(String id) throws AuthorizationException, TException {
         throw new WrappedAuthorizationException("FILE DOWNLOAD NOT SUPPORTED IN LOCAL MODE");
     }

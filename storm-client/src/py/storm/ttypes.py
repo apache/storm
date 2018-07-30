@@ -2600,15 +2600,13 @@ class ClusterSummary(object):
     """
     Attributes:
      - supervisors
-     - nimbus_uptime_secs
      - topologies
      - nimbuses
     """
 
 
-    def __init__(self, supervisors=None, nimbus_uptime_secs=0, topologies=None, nimbuses=None,):
+    def __init__(self, supervisors=None, topologies=None, nimbuses=None,):
         self.supervisors = supervisors
-        self.nimbus_uptime_secs = nimbus_uptime_secs
         self.topologies = topologies
         self.nimbuses = nimbuses
 
@@ -2630,11 +2628,6 @@ class ClusterSummary(object):
                         _elem126.read(iprot)
                         self.supervisors.append(_elem126)
                     iprot.readListEnd()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
-                if ftype == TType.I32:
-                    self.nimbus_uptime_secs = iprot.readI32()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
@@ -2675,10 +2668,6 @@ class ClusterSummary(object):
             for iter139 in self.supervisors:
                 iter139.write(oprot)
             oprot.writeListEnd()
-            oprot.writeFieldEnd()
-        if self.nimbus_uptime_secs is not None:
-            oprot.writeFieldBegin('nimbus_uptime_secs', TType.I32, 2)
-            oprot.writeI32(self.nimbus_uptime_secs)
             oprot.writeFieldEnd()
         if self.topologies is not None:
             oprot.writeFieldBegin('topologies', TType.LIST, 3)
@@ -10830,7 +10819,7 @@ all_structs.append(ClusterSummary)
 ClusterSummary.thrift_spec = (
     None,  # 0
     (1, TType.LIST, 'supervisors', (TType.STRUCT, [SupervisorSummary, None], False), None, ),  # 1
-    (2, TType.I32, 'nimbus_uptime_secs', None, 0, ),  # 2
+    None,  # 2
     (3, TType.LIST, 'topologies', (TType.STRUCT, [TopologySummary, None], False), None, ),  # 3
     (4, TType.LIST, 'nimbuses', (TType.STRUCT, [NimbusSummary, None], False), None, ),  # 4
 )
