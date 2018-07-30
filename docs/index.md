@@ -6,6 +6,7 @@ documentation: true
 ### Basics of Storm
 
 * [Javadoc](javadocs/index.html)
+* [Tutorial](Tutorial.html)
 * [Concepts](Concepts.html)
 * [Scheduler](Storm-Scheduler.html)
 * [Configuration](Configuration.html)
@@ -75,7 +76,6 @@ But small change will not affect the user experience. We will notify the user wh
 * [DSLs and multilang adapters](DSLs-and-multilang-adapters.html)
 * [Using non-JVM languages with Storm](Using-non-JVM-languages-with-Storm.html)
 * [Distributed RPC](Distributed-RPC.html)
-* [Transactional topologies](Transactional-topologies.html)
 * [Hooks](Hooks.html)
 * [Metrics (Deprecated)](Metrics.html)
 * [Metrics V2](metrics_v2.html)
