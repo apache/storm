@@ -1187,6 +1187,10 @@ public class Utils {
         final java.lang.management.ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         final java.lang.management.ThreadInfo[] threadInfos = threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds(), 100);
         for (java.lang.management.ThreadInfo threadInfo : threadInfos) {
+            if (threadInfo == null) {
+                //Thread died before we could get the info, skip
+                continue;
+            }
             dump.append('"');
             dump.append(threadInfo.getThreadName());
             dump.append("\" ");
