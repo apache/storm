@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BinaryOperator;
 import java.util.stream.StreamSupport;
 
@@ -131,10 +132,11 @@ public class LogCleaner implements Runnable, Closeable {
     @Override
     public void run() {
         try {
-            int nowSecs = Time.currentTimeSecs();
-            Set<File> oldLogDirs = selectDirsForCleanup(nowSecs * 1000);
+            final long nowMills = Time.currentTimeMillis();
+            Set<File> oldLogDirs = selectDirsForCleanup(nowMills);
 
-            SortedSet<File> deadWorkerDirs = getDeadWorkerDirs(nowSecs, oldLogDirs);
+            final long nowSecs = TimeUnit.MILLISECONDS.toSeconds(nowMills);
+            SortedSet<File> deadWorkerDirs = getDeadWorkerDirs((int) nowSecs, oldLogDirs);
 
             LOG.debug("log cleanup: now={} old log dirs {} dead worker dirs {}", nowSecs,
                     oldLogDirs.stream().map(File::getName).collect(joining(",")),
@@ -262,6 +264,7 @@ public class LogCleaner implements Runnable, Closeable {
 
     @VisibleForTesting
     long cleanupCutoffAgeMillis(long nowMillis) {
-        return nowMillis - (ObjectReader.getInt(stormConf.get(LOGVIEWER_CLEANUP_AGE_MINS)));
+        final Integer intervalMins = ObjectReader.getInt(stormConf.get(LOGVIEWER_CLEANUP_AGE_MINS));
+        return nowMillis - TimeUnit.MINUTES.toMillis(intervalMins);
     }
 }
