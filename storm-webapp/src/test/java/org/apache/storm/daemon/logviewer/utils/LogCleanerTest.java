@@ -26,11 +26,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyListOf;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMapOf;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anySetOf;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -54,7 +52,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
-import org.apache.storm.daemon.logviewer.testsupport.MockFileBuilder;
+import org.apache.storm.daemon.logviewer.testsupport.MockRemovableFileBuilder;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.utils.Time;
@@ -96,10 +94,10 @@ public class LogCleanerTest {
         matchingFiles.add(new MockDirectoryBuilder().setDirName("7077").setMtime(oldMtimeMillis).build());
 
         List<File> excludedFiles = new ArrayList<>();
-        excludedFiles.add(new MockFileBuilder().setFileName("oldlog-1-2-worker-.log").setMtime(oldMtimeMillis).build());
-        excludedFiles.add(new MockFileBuilder().setFileName("newlog-1-2-worker-.log").setMtime(newMtimeMillis).build());
-        excludedFiles.add(new MockFileBuilder().setFileName("some-old-file.txt").setMtime(oldMtimeMillis).build());
-        excludedFiles.add(new MockFileBuilder().setFileName("olddir-1-2-worker.log").setMtime(newMtimeMillis).build());
+        excludedFiles.add(new MockRemovableFileBuilder().setFileName("oldlog-1-2-worker-.log").setMtime(oldMtimeMillis).build());
+        excludedFiles.add(new MockRemovableFileBuilder().setFileName("newlog-1-2-worker-.log").setMtime(newMtimeMillis).build());
+        excludedFiles.add(new MockRemovableFileBuilder().setFileName("some-old-file.txt").setMtime(oldMtimeMillis).build());
+        excludedFiles.add(new MockRemovableFileBuilder().setFileName("olddir-1-2-worker.log").setMtime(newMtimeMillis).build());
         excludedFiles.add(new MockDirectoryBuilder().setDirName("metadata").setMtime(newMtimeMillis).build());
         excludedFiles.add(new MockDirectoryBuilder().setDirName("newdir").setMtime(newMtimeMillis).build());
 
@@ -130,13 +128,13 @@ public class LogCleanerTest {
 
             long nowMillis = Time.currentTimeMillis();
 
-            List<File> files1 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("A" + idx)
+            List<File> files1 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("A" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
-            List<File> files2 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("B" + idx)
+            List<File> files2 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("B" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
-            List<File> files3 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("C" + idx)
+            List<File> files3 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("C" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
             File port1Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1/port1")
@@ -188,13 +186,13 @@ public class LogCleanerTest {
 
             long nowMillis = Time.currentTimeMillis();
 
-            List<File> files1 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("A" + idx + ".log")
+            List<File> files1 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("A" + idx + ".log")
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
-            List<File> files2 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("B" + idx)
+            List<File> files2 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("B" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
-            List<File> files3 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("C" + idx)
+            List<File> files3 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("C" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
 
@@ -283,8 +281,8 @@ public class LogCleanerTest {
      */
     @Test
     public void testCleanupFn() throws IOException {
-        File mockFile1 = new MockFileBuilder().setFileName("delete-me1").build();
-        File mockFile2 = new MockFileBuilder().setFileName("delete-me2").build();
+        File mockFile1 = new MockRemovableFileBuilder().setFileName("delete-me1").build();
+        File mockFile2 = new MockRemovableFileBuilder().setFileName("delete-me2").build();
 
         Utils prevUtils = null;
         try {
@@ -311,6 +309,7 @@ public class LogCleanerTest {
                 @Override
                 SortedSet<File> getDeadWorkerDirs(int nowSecs, Set<File> logDirs) throws Exception {
                     SortedSet<File> dirs = new TreeSet<>();
+                    //Test maybe flawed, as those weren't actually mocked dirs but mocked regular files
                     dirs.add(mockFile1);
                     dirs.add(mockFile2);
                     return dirs;
