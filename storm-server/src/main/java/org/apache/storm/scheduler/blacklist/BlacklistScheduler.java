@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
@@ -89,13 +88,8 @@ public class BlacklistScheduler implements IScheduler {
         cachedSupervisors = new HashMap<>();
         blacklistHost = new HashSet<>();
 
-        StormMetricsRegistry.registerGauge("nimbus:num-blacklisted-supervisor", new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                //nimbus:num-blacklisted-supervisor + none blacklisted supervisor = nimbus:num-supervisors
-                return blacklistHost.size();
-            }
-        });
+        //nimbus:num-blacklisted-supervisor + non-blacklisted supervisor = nimbus:num-supervisors
+        StormMetricsRegistry.registerGauge("nimbus:num-blacklisted-supervisor", () -> blacklistHost.size());
     }
 
     @Override

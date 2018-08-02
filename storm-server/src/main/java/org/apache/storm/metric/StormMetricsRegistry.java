@@ -19,7 +19,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reservoir;
 import java.util.Map;
-import java.util.concurrent.Callable;
+
 import org.apache.storm.daemon.metrics.MetricsUtils;
 import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
 import org.slf4j.Logger;
@@ -27,52 +27,30 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unchecked")
 public class StormMetricsRegistry {
-    public static final MetricRegistry DEFAULT_REGISTRY = new MetricRegistry();
+    private static final MetricRegistry DEFAULT_REGISTRY = new MetricRegistry();
     private static final Logger LOG = LoggerFactory.getLogger(StormMetricsRegistry.class);
 
-    public static Meter registerMeter(String name) {
-        Meter meter = new Meter();
-        return register(name, meter);
+    public static Meter registerMeter(final String name) {
+        return register(name, new Meter());
     }
 
-    // TODO: should replace Callable to Gauge<Integer> when nimbus.clj is translated to java
-    public static Gauge<Integer> registerGauge(final String name, final Callable fn) {
-        Gauge<Integer> gauge = new Gauge<Integer>() {
-            @Override
-            public Integer getValue() {
-                try {
-                    return (Integer) fn.call();
-                } catch (Exception e) {
-                    LOG.error("Error getting gauge value for {}", name, e);
-                }
-                return 0;
-            }
-        };
+    public static <V> Gauge<V> registerGauge(final String name, final Gauge<V> gauge) {
         return register(name, gauge);
     }
 
-    public static void registerProvidedGauge(final String name, Gauge gauge) {
-        register(name, gauge);
-    }
-
     public static Histogram registerHistogram(String name, Reservoir reservoir) {
-        Histogram histogram = new Histogram(reservoir);
-        return register(name, histogram);
+        return register(name, new Histogram(reservoir));
     }
 
     public static void startMetricsReporters(Map<String, Object> topoConf) {
         for (PreparableReporter reporter : MetricsUtils.getPreparableReporters(topoConf)) {
-            startMetricsReporter(reporter, topoConf);
+            reporter.prepare(StormMetricsRegistry.DEFAULT_REGISTRY, topoConf);
+            reporter.start();
+            LOG.info("Started statistics report plugin...");
         }
     }
 
-    private static void startMetricsReporter(PreparableReporter reporter, Map<String, Object> topoConf) {
-        reporter.prepare(StormMetricsRegistry.DEFAULT_REGISTRY, topoConf);
-        reporter.start();
-        LOG.info("Started statistics report plugin...");
-    }
-
-    private static <T extends Metric> T register(String name, T metric) {
+    private static <T extends Metric> T register(final String name, T metric) {
         T ret;
         try {
             ret = DEFAULT_REGISTRY.register(name, metric);
