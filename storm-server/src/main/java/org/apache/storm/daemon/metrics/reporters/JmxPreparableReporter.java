@@ -22,7 +22,7 @@ import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JmxPreparableReporter implements PreparableReporter<JmxReporter> {
+public class JmxPreparableReporter implements PreparableReporter {
     private static final Logger LOG = LoggerFactory.getLogger(JmxPreparableReporter.class);
     JmxReporter reporter = null;
 
@@ -48,7 +48,7 @@ public class JmxPreparableReporter implements PreparableReporter<JmxReporter> {
             LOG.debug("Starting...");
             reporter.start();
         } else {
-            throw new IllegalStateException("Attempt to start without preparing " + getClass().getSimpleName());
+            throw new IllegalStateException("Attempt to start without preparing " + JmxPreparableReporter.class.getSimpleName());
         }
     }
 
@@ -58,7 +58,7 @@ public class JmxPreparableReporter implements PreparableReporter<JmxReporter> {
             LOG.debug("Stopping...");
             reporter.stop();
         } else {
-            throw new IllegalStateException("Attempt to stop without preparing " + getClass().getSimpleName());
+            throw new IllegalStateException("Attempt to stop without preparing " + JmxPreparableReporter.class.getSimpleName());
         }
     }
 }

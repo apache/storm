@@ -23,9 +23,9 @@ import org.apache.storm.daemon.metrics.MetricsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CsvPreparableReporter implements PreparableReporter<CsvReporter> {
+public class CsvPreparableReporter implements PreparableReporter {
     private static final Logger LOG = LoggerFactory.getLogger(CsvPreparableReporter.class);
-    CsvReporter reporter = null;
+    private CsvReporter reporter = null;
 
     @Override
     public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
@@ -53,22 +53,12 @@ public class CsvPreparableReporter implements PreparableReporter<CsvReporter> {
 
     @Override
     public void start() {
-        if (reporter != null) {
-            LOG.debug("Starting...");
-            reporter.start(10, TimeUnit.SECONDS);
-        } else {
-            throw new IllegalStateException("Attempt to start without preparing " + getClass().getSimpleName());
-        }
+        PreparableReporter.startScheduledReporter(CsvPreparableReporter.class, reporter, LOG);
     }
 
     @Override
     public void stop() {
-        if (reporter != null) {
-            LOG.debug("Stopping...");
-            reporter.stop();
-        } else {
-            throw new IllegalStateException("Attempt to stop without preparing " + getClass().getSimpleName());
-        }
+        PreparableReporter.stopScheduledReporter(CsvPreparableReporter.class, reporter, LOG);
     }
 
 }

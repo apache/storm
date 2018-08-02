@@ -21,9 +21,9 @@ import org.apache.storm.daemon.metrics.ClientMetricsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConsolePreparableReporter implements PreparableReporter<ConsoleReporter> {
+public class ConsolePreparableReporter implements PreparableReporter {
     private static final Logger LOG = LoggerFactory.getLogger(ConsolePreparableReporter.class);
-    ConsoleReporter reporter = null;
+    private ConsoleReporter reporter = null;
 
     @Override
     public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
@@ -50,21 +50,11 @@ public class ConsolePreparableReporter implements PreparableReporter<ConsoleRepo
 
     @Override
     public void start() {
-        if (reporter != null) {
-            LOG.debug("Starting...");
-            reporter.start(10, TimeUnit.SECONDS);
-        } else {
-            throw new IllegalStateException("Attempt to start without preparing " + getClass().getSimpleName());
-        }
+        PreparableReporter.startScheduledReporter(ConsolePreparableReporter.class, reporter, LOG);
     }
 
     @Override
     public void stop() {
-        if (reporter != null) {
-            LOG.debug("Stopping...");
-            reporter.stop();
-        } else {
-            throw new IllegalStateException("Attempt to stop without preparing " + getClass().getSimpleName());
-        }
+        PreparableReporter.stopScheduledReporter(ConsolePreparableReporter.class, reporter, LOG);
     }
 }

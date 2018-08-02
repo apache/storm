@@ -53,7 +53,7 @@ public class MetricsUtils {
         PreparableReporter reporter = null;
         LOG.info("Using statistics reporter plugin:" + clazz);
         if (clazz != null) {
-            reporter = (PreparableReporter) ReflectionUtils.newInstance(clazz);
+            reporter = ReflectionUtils.newInstance(clazz);
         }
         return reporter;
     }
