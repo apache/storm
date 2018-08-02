@@ -108,6 +108,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private ThriftServer thriftServer;
     //used for local cluster heartbeating
     private Nimbus.Iface localNimbus;
+    private AutoCloseable metricsReporters;
 
     private Supervisor(ISupervisor iSupervisor)
         throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
@@ -316,7 +317,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             //This will only get updated once
             StormMetricsRegistry.registerMeter("supervisor:num-launched").mark();
             StormMetricsRegistry.registerMeter("supervisor:num-shell-exceptions", ShellUtils.numShellExceptions);
-            StormMetricsRegistry.startMetricsReporters(conf);
+            metricsReporters = StormMetricsRegistry.startMetricsReporters(conf);
 
             // blocking call under the hood, must invoke after launch cause some services must be initialized
             launchSupervisorThriftServer(conf);
@@ -450,6 +451,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     public void close() {
         try {
             LOG.info("Shutting down supervisor {}", getId());
+            metricsReporters.close();
             this.active = false;
             heartbeatTimer.close();
             workerHeartbeatTimer.close();

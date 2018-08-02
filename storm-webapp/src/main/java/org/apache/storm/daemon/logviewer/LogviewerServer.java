@@ -46,6 +46,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.glassfish.jersey.servlet.ServletContainer;
+import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,7 @@ public class LogviewerServer implements AutoCloseable {
     private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("logviewer:num-shutdown-calls");
     private static final String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
     public static final String STATIC_RESOURCE_DIRECTORY_PATH = stormHome + "/public";
+    private final AutoCloseable metricsReporters;
 
     private static Server mkHttpServer(Map<String, Object> conf) {
         Integer logviewerHttpPort = (Integer) conf.get(DaemonConfig.LOGVIEWER_PORT);
@@ -120,6 +122,7 @@ public class LogviewerServer implements AutoCloseable {
      */
     public LogviewerServer(Map<String, Object> conf) {
         httpServer = mkHttpServer(conf);
+        metricsReporters = StormMetricsRegistry.startMetricsReporters(conf);
     }
 
     @VisibleForTesting
@@ -136,7 +139,7 @@ public class LogviewerServer implements AutoCloseable {
     }
 
     @Override
-    public synchronized void close() {
+    public synchronized void close() throws Exception {
         if (!closed) {
             //This is kind of useless...
             meterShutdownCalls.mark();
@@ -147,6 +150,7 @@ public class LogviewerServer implements AutoCloseable {
             //}
 
             closed = true;
+            metricsReporters.close();
         }
     }
 
@@ -165,9 +169,8 @@ public class LogviewerServer implements AutoCloseable {
 
         try (LogviewerServer server = new LogviewerServer(conf);
              LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir)) {
-            Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
+            Utils.addShutdownHookWithForceKillIn1Sec(Unchecked.runnable(server::close));
             logCleaner.start();
-            StormMetricsRegistry.startMetricsReporters(conf);
             server.start();
             server.awaitTermination();
         }

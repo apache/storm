@@ -433,6 +433,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private AtomicReference<Map<String, Set<List<Integer>>>> idToExecutors;
     //May be null if worker tokens are not supported by the thrift transport.
     private WorkerTokenManager workerTokenManager;
+    private AutoCloseable metricsReporters;
 
     public Nimbus(Map<String, Object> conf, INimbus inimbus) throws Exception {
         this(conf, inimbus, null, null, null, null, null);
@@ -2827,7 +2828,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 .mapToDouble(SupervisorResources::getTotalCpu)
                 .sum());
 
-            StormMetricsRegistry.startMetricsReporters(conf);
+            metricsReporters = StormMetricsRegistry.startMetricsReporters(conf);
 
             if (clusterConsumerExceutors != null) {
                 timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.STORM_CLUSTER_METRICS_CONSUMER_PUBLISH_INTERVAL_SECS)),
@@ -4497,6 +4498,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         shutdownCalls.mark();
         try {
             LOG.info("Shutting down master");
+            //TODO: If zookeeper closed before calling this, reporters will get stuck and cannot flush metrics correctly.
+            // Should we consider adding #removeMetric to StormMetricsRegistry so it can help circumvent the issue?
+            metricsReporters.close();
             timer.close();
             stormClusterState.disconnect();
             downloaders.cleanup();

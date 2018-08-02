@@ -38,6 +38,7 @@ public interface PreparableReporter {
     static <T, U extends ScheduledReporter> void stopScheduledReporter(Class<T> enclosingClazz, U reporter, final Logger log) {
         if (reporter != null) {
             log.debug("Flushing and Stopping...");
+            reporter.report();
             reporter.stop();
         } else {
             throw new IllegalStateException("Attempt to stop without preparing " + enclosingClazz.getSimpleName());

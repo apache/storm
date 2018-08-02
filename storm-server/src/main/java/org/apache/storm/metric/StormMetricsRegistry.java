@@ -21,6 +21,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Timer;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.daemon.metrics.MetricsUtils;
@@ -63,12 +64,14 @@ public class StormMetricsRegistry extends MetricRegistry {
      *
      * @param topoConf config that specifies reporter plugin
      */
-    public static void startMetricsReporters(Map<String, Object> topoConf) {
-        for (PreparableReporter reporter : MetricsUtils.getPreparableReporters(topoConf)) {
+    public static AutoCloseable startMetricsReporters(Map<String, Object> topoConf) {
+        final List<PreparableReporter> preparableReporters = MetricsUtils.getPreparableReporters(topoConf);
+        for (PreparableReporter reporter : preparableReporters) {
             reporter.prepare(StormMetricsRegistry.REGISTRY, topoConf);
             reporter.start();
             LOG.info("Started statistics report plugin...");
         }
+        return () -> preparableReporters.forEach(PreparableReporter::stop);
     }
 
     /**

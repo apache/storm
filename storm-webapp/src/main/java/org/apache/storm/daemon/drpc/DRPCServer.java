@@ -46,13 +46,15 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.jersey.servlet.ServletContainer;
+import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DRPCServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCServer.class);
     private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("drpc:num-shutdown-calls");
-   
+    private final AutoCloseable metricsReporters;
+
     //TODO in the future this might be better in a common webapp location
 
     /**
@@ -140,6 +142,7 @@ public class DRPCServer implements AutoCloseable {
         handlerServer = mkHandlerServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_PORT), null), conf);
         invokeServer = mkInvokeServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_INVOCATIONS_PORT), 3773), conf);
         httpServer = mkHttpServer(conf, drpc);
+        metricsReporters = StormMetricsRegistry.startMetricsReporters(conf);
     }
 
     @VisibleForTesting
@@ -166,10 +169,11 @@ public class DRPCServer implements AutoCloseable {
     }
 
     @Override
-    public synchronized void close() {
+    public synchronized void close() throws Exception {
         if (!closed) {
             //This is kind of useless...
             meterShutdownCalls.mark();
+            metricsReporters.close();
 
             if (handlerServer != null) {
                 handlerServer.stop();
@@ -222,8 +226,7 @@ public class DRPCServer implements AutoCloseable {
         Utils.setupDefaultUncaughtExceptionHandler();
         Map<String, Object> conf = Utils.readStormConfig();
         try (DRPCServer server = new DRPCServer(conf)) {
-            Utils.addShutdownHookWithForceKillIn1Sec(server::close);
-            StormMetricsRegistry.startMetricsReporters(conf);
+            Utils.addShutdownHookWithForceKillIn1Sec(Unchecked.runnable(server::close));
             server.start();
             server.awaitTermination();
         }
