@@ -285,9 +285,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                         createFetchedOffsetsMetadata(consumer.assignment());
                     try {
                         consumer.commitAsync(offsetsToCommit, null);
-                    }catch (CommitFailedException e) {
+                    } catch (CommitFailedException e) {
                         // catch the CommitFailedException
-                        LOG.warn("Commit offsets {} failed for group {}: {}", offsetsToCommit.toString());
+                        LOG.warn("Commit offsets {} failed.", offsetsToCommit.toString());
                     }
                     LOG.debug("Committed offsets {} to Kafka", offsetsToCommit);
                 }
@@ -448,7 +448,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.trace("Tuple for record [{}] has already been acked. Skipping", record);
         } else if (emitted.contains(msgId)) {   // has been emitted and it is pending ack or fail
             LOG.trace("Tuple for record [{}] has already been emitted. Skipping", record);
-        }else if(record.offset() <= offsetManagers.get(tp).getCommittedOffset()){
+        } else if (record.offset() <= offsetManagers.get(tp).getCommittedOffset()) {
             LOG.trace("Tuple for record [{}] has already been committed. Skipping", record);
         } else {
             final List<Object> tuple = kafkaSpoutConfig.getTranslator().apply(record);
@@ -531,12 +531,12 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     long position = consumer.position(tp);
                     long committedOffset = tpOffset.getValue().offset();
                     if (position < committedOffset) {
-                    /*
-                     * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed, lots of (more
-                     * than max.poll.records) later messages were acked, and the failed message then gets acked. The consumer may only be
-                     * part way through "catching up" to where it was when it went back to retry the failed tuple. Skip the consumer forward
-                     * to the committed offset and drop the current waiting to emit list, since it'll likely contain committed offsets.
-                     */
+                        /*
+                         * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed, lots of (more
+                         * than max.poll.records) later messages were acked, and the failed message then gets acked. The consumer may only be
+                         * part way through "catching up" to where it was when it went back to retry the failed tuple.  Skip the consumer forward
+                         * to the committed offset and drop the current waiting to emit list, since it'll likely contain committed offsets.
+                         */
                         LOG.debug("Consumer fell behind committed offset. Catching up. Position was [{}], skipping to [{}]",
                                 position, committedOffset);
                         consumer.seek(tp, committedOffset);
@@ -555,7 +555,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 }
             } catch (CommitFailedException e) {
                 // catch the CommitFailedException
-                LOG.warn("Commit offsets {} failed for group {}: {}", nextCommitOffsets.toString());
+                LOG.warn("Commit offsets {} failed.", nextCommitOffsets.toString());
             }
         } else {
             LOG.trace("No offsets to commit. {}", this);
@@ -610,8 +610,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         }
         // tuple which has been committed should be ignoring
         TopicPartition topicPartition = new TopicPartition(msgId.topic(), msgId.partition());
-        if (offsetManagers.containsKey(topicPartition)){
-            if (msgId.offset() <= offsetManagers.get(topicPartition).getCommittedOffset()){
+        if (offsetManagers.containsKey(topicPartition)) {
+            if (msgId.offset() <= offsetManagers.get(topicPartition).getCommittedOffset()) {
                 LOG.debug("Received fail for tuple this spout has been ack. Ignoring message [{}]", msgId);
                 return;
             }
