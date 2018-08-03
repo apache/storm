@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.Validate;
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -282,7 +283,12 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 } else if (kafkaSpoutConfig.getProcessingGuarantee() == ProcessingGuarantee.NO_GUARANTEE) {
                     Map<TopicPartition, OffsetAndMetadata> offsetsToCommit =
                         createFetchedOffsetsMetadata(consumer.assignment());
-                    consumer.commitAsync(offsetsToCommit, null);
+                    try {
+                        consumer.commitAsync(offsetsToCommit, null);
+                    } catch (CommitFailedException e) {
+                        // catch the CommitFailedException
+                        LOG.warn("Commit offsets {} failed.", offsetsToCommit.toString());
+                    }
                     LOG.debug("Committed offsets {} to Kafka", offsetsToCommit);
                 }
             }
@@ -442,6 +448,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.trace("Tuple for record [{}] has already been acked. Skipping", record);
         } else if (emitted.contains(msgId)) {   // has been emitted and it is pending ack or fail
             LOG.trace("Tuple for record [{}] has already been emitted. Skipping", record);
+        } else if (record.offset() <= offsetManagers.get(tp).getCommittedOffset()) {
+            LOG.trace("Tuple for record [{}] has already been committed. Skipping", record);
         } else {
             final List<Object> tuple = kafkaSpoutConfig.getTranslator().apply(record);
             if (isEmitTuple(tuple)) {
@@ -512,37 +520,42 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         // Commit offsets that are ready to be committed for every topic partition
         if (!nextCommitOffsets.isEmpty()) {
-            consumer.commitSync(nextCommitOffsets);
-            LOG.debug("Offsets successfully committed to Kafka [{}]", nextCommitOffsets);
-            // Instead of iterating again, it would be possible to commit and update the state for each TopicPartition
-            // in the prior loop, but the multiple network calls should be more expensive than iterating twice over a small loop
-            for (Map.Entry<TopicPartition, OffsetAndMetadata> tpOffset : nextCommitOffsets.entrySet()) {
-                //Update the OffsetManager for each committed partition, and update numUncommittedOffsets
-                final TopicPartition tp = tpOffset.getKey();
-                long position = consumer.position(tp);
-                long committedOffset = tpOffset.getValue().offset();
-                if (position < committedOffset) {
-                    /*
-                     * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed, lots of (more
-                     * than max.poll.records) later messages were acked, and the failed message then gets acked. The consumer may only be
-                     * part way through "catching up" to where it was when it went back to retry the failed tuple. Skip the consumer forward
-                     * to the committed offset and drop the current waiting to emit list, since it'll likely contain committed offsets.
-                     */
-                    LOG.debug("Consumer fell behind committed offset. Catching up. Position was [{}], skipping to [{}]",
-                        position, committedOffset);
-                    consumer.seek(tp, committedOffset);
-                    List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);
-                    if (waitingToEmitForTp != null) {
-                        //Discard the pending records that are already committed
-                        waitingToEmit.put(tp, waitingToEmitForTp.stream()
-                            .filter(record -> record.offset() >= committedOffset)
-                            .collect(Collectors.toList()));
+            try {
+                consumer.commitSync(nextCommitOffsets);
+                LOG.debug("Offsets successfully committed to Kafka [{}]", nextCommitOffsets);
+                // Instead of iterating again, it would be possible to commit and update the state for each TopicPartition
+                // in the prior loop, but the multiple network calls should be more expensive than iterating twice over a small loop
+                for (Map.Entry<TopicPartition, OffsetAndMetadata> tpOffset : nextCommitOffsets.entrySet()) {
+                    //Update the OffsetManager for each committed partition, and update numUncommittedOffsets
+                    final TopicPartition tp = tpOffset.getKey();
+                    long position = consumer.position(tp);
+                    long committedOffset = tpOffset.getValue().offset();
+                    if (position < committedOffset) {
+                        /*
+                         * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed, lots of (more
+                         * than max.poll.records) later messages were acked, and the failed message then gets acked. The consumer may only be
+                         * part way through "catching up" to where it was when it went back to retry the failed tuple.  Skip the consumer forward
+                         * to the committed offset and drop the current waiting to emit list, since it'll likely contain committed offsets.
+                         */
+                        LOG.debug("Consumer fell behind committed offset. Catching up. Position was [{}], skipping to [{}]",
+                                position, committedOffset);
+                        consumer.seek(tp, committedOffset);
+                        List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);
+                        if (waitingToEmitForTp != null) {
+                            //Discard the pending records that are already committed
+                            waitingToEmit.put(tp, waitingToEmitForTp.stream()
+                                    .filter(record -> record.offset() >= committedOffset)
+                                    .collect(Collectors.toList()));
+                        }
                     }
-                }
 
-                final OffsetManager offsetManager = offsetManagers.get(tp);
-                offsetManager.commit(tpOffset.getValue());
-                LOG.debug("[{}] uncommitted offsets for partition [{}] after commit", offsetManager.getNumUncommittedOffsets(), tp);
+                    final OffsetManager offsetManager = offsetManagers.get(tp);
+                    offsetManager.commit(tpOffset.getValue());
+                    LOG.debug("[{}] uncommitted offsets for partition [{}] after commit", offsetManager.getNumUncommittedOffsets(), tp);
+                }
+            } catch (CommitFailedException e) {
+                // catch the CommitFailedException
+                LOG.warn("Commit offsets {} failed.", nextCommitOffsets.toString());
             }
         } else {
             LOG.trace("No offsets to commit. {}", this);
@@ -594,6 +607,14 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.debug("Received fail for tuple this spout is no longer tracking."
                 + " Partitions may have been reassigned. Ignoring message [{}]", msgId);
             return;
+        }
+        // tuple which has been committed should be ignoring
+        TopicPartition topicPartition = new TopicPartition(msgId.topic(), msgId.partition());
+        if (offsetManagers.containsKey(topicPartition)) {
+            if (msgId.offset() <= offsetManagers.get(topicPartition).getCommittedOffset()) {
+                LOG.debug("Received fail for tuple this spout has been ack. Ignoring message [{}]", msgId);
+                return;
+            }
         }
         Validate.isTrue(!retryService.isScheduled(msgId), "The message id " + msgId + " is queued for retry while being failed."
             + " This should never occur barring errors in the RetryService implementation or the spout code.");
