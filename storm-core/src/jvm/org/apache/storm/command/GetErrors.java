@@ -25,6 +25,11 @@ import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
 
 public class GetErrors {
+    /**
+     * Only get errors for a topology.
+     * @param args Used to accept the topology name.
+     * @throws Exception on errors.
+     */
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             throw new IllegalArgumentException("Topology name must be provided.");

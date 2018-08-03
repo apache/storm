@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.common;
+package org.apache.storm.daemon.ui.exceptionmappers;
 
-import java.util.HashMap;
-import java.util.Map;
+import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -27,19 +26,23 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
-import org.apache.storm.generated.AuthorizationException;
-import org.json.simple.JSONValue;
-
-import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
-
 @Provider
-public class AuthorizationExceptionMapper implements ExceptionMapper<AuthorizationException> {
+public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
 
     @Inject
     public javax.inject.Provider<HttpServletRequest> request;
 
+    /**
+     * toResponse.
+     * @param throwable
+     * @return response
+     */
     @Override
-    public Response toResponse(AuthorizationException ex) {
-        return getResponse(ex, request);
+    public Response toResponse(Throwable throwable) {
+        if (throwable instanceof Exception) {
+            return getResponse((Exception) throwable, request);
+        } else {
+            return getResponse(new Exception(throwable.getMessage(), throwable), request);
+        }
     }
 }

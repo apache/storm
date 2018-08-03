@@ -16,30 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.common;
+package org.apache.storm.daemon.ui.filters;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
+import com.codahale.metrics.Meter;
+import java.io.IOException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
+import org.apache.storm.metric.StormMetricsRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.storm.generated.AuthorizationException;
-import org.json.simple.JSONValue;
-
-import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
 
 @Provider
-public class AuthorizationExceptionMapper implements ExceptionMapper<AuthorizationException> {
+public class HeaderResponseFilter implements ContainerResponseFilter {
+    public static final Logger LOG = LoggerFactory.getLogger(HeaderResponseFilter.class);
 
-    @Inject
-    public javax.inject.Provider<HttpServletRequest> request;
+    public static Meter webRequestMeter =
+            StormMetricsRegistry.registerMeter("num-web-requests");
 
     @Override
-    public Response toResponse(AuthorizationException ex) {
-        return getResponse(ex, request);
+    public void filter(ContainerRequestContext containerRequestContext,
+                       ContainerResponseContext containerResponseContext) throws IOException {
+        webRequestMeter.mark();
     }
 }

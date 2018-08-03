@@ -59,9 +59,9 @@ import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.UrlBuilder;
-import org.apache.storm.ui.InvalidRequestException;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
@@ -117,7 +117,7 @@ public class LogviewerLogSearchHandler {
      * @param search search string
      * @param numMatchesStr the count of maximum matches
      * @param offsetStr start offset for log file
-     * @param callback callback for JSONP
+     * @param callback callbackParameterName for JSONP
      * @param origin origin
      * @return Response containing JSON content representing search result
      */
@@ -173,7 +173,7 @@ public class LogviewerLogSearchHandler {
      * @param fileOffsetStr index (offset) of the log files
      * @param offsetStr start offset for log file
      * @param searchArchived true if the request wants to search also archived files, false if not
-     * @param callback callback for JSONP
+     * @param callback callbackParameterName for JSONP
      * @param origin origin
      * @return Response containing JSON content representing search result
      */

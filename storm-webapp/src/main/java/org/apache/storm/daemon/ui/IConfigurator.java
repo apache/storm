@@ -10,7 +10,7 @@
  * and limitations under the License.
  */
 
-package org.apache.storm.ui;
+package org.apache.storm.daemon.ui;
 
 import org.eclipse.jetty.server.Server;
 

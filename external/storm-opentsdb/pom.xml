@@ -36,7 +36,7 @@
     </developers>
 
     <properties>
-        <jersey.version>2.23</jersey.version>
+        <jersey.version>2.27</jersey.version>
     </properties>
 
     <dependencies>

@@ -787,12 +787,15 @@ def ui():
         "-Dlogfile.name=ui.log",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
+
+    allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
+    allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.ui.core",
+        "org.apache.storm.daemon.ui.UIServer",
         jvmtype="-server",
         daemonName="ui",
         jvmopts=jvmopts,
-        extrajars=[STORM_DIR, CLUSTER_CONF_DIR])
+        extrajars=allextrajars)
 
 def logviewer():
     """Syntax: [storm logviewer]

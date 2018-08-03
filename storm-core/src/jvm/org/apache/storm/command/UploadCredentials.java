@@ -34,6 +34,11 @@ public class UploadCredentials {
 
     private static final Logger LOG = LoggerFactory.getLogger(UploadCredentials.class);
 
+    /**
+     * Uploads credentials for a topology.
+     * @param args To accept topology name.
+     * @throws Exception on errors.
+     */
     public static void main(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("f", "file", null)
                                     .arg("topologyName", CLI.FIRST_WINS)

@@ -52,7 +52,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
-import org.apache.storm.ui.InvalidRequestException;
+import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
