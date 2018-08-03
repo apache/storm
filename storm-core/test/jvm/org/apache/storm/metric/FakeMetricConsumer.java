@@ -25,36 +25,36 @@ import org.apache.storm.task.TopologyContext;
 
 public class FakeMetricConsumer implements IMetricsConsumer {
 
-    public static final Table<String, String, Multimap<Integer, Object>> buffer = HashBasedTable.create();
+    public static final Table<String, String, Multimap<Integer, Object>> BUFFER = HashBasedTable.create();
 
     public static Map<Integer, Collection<Object>> getTaskIdToBuckets(String componentName, String metricName) {
-        synchronized (buffer) {
-            Multimap<Integer, Object> taskIdToBuckets = buffer.get(componentName, metricName);
-            return (null != taskIdToBuckets) ? taskIdToBuckets.asMap() : null;
+        synchronized (BUFFER) {
+            Multimap<Integer, Object> taskIdToBuckets = BUFFER.get(componentName, metricName);
+            return (null != taskIdToBuckets) ? new HashMap<>(taskIdToBuckets.asMap()) : null;
         }
     }
 
     @Override
     public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
-        synchronized (buffer) {
-            buffer.clear();
+        synchronized (BUFFER) {
+            BUFFER.clear();
         }
     }
 
     @Override
     public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
-        synchronized (buffer) {
+        synchronized (BUFFER) {
             for (DataPoint dp : dataPoints) {
                 for (Map.Entry<String, Object> entry : expandComplexDataPoint(dp).entrySet()) {
                     String metricName = entry.getKey();
-                    Multimap<Integer, Object> taskIdToBucket = buffer.get(taskInfo.srcComponentId, metricName);
+                    Multimap<Integer, Object> taskIdToBucket = BUFFER.get(taskInfo.srcComponentId, metricName);
                     if (null == taskIdToBucket) {
                         taskIdToBucket = ArrayListMultimap.create();
                         taskIdToBucket.put(taskInfo.srcTaskId, entry.getValue());
                     } else {
                         taskIdToBucket.get(taskInfo.srcTaskId).add(entry.getValue());
                     }
-                    buffer.put(taskInfo.srcComponentId, metricName, taskIdToBucket);
+                    BUFFER.put(taskInfo.srcComponentId, metricName, taskIdToBucket);
                 }
             }
         }
@@ -62,8 +62,8 @@ public class FakeMetricConsumer implements IMetricsConsumer {
 
     @Override
     public void cleanup() {
-        synchronized (buffer) {
-            buffer.clear();
+        synchronized (BUFFER) {
+            BUFFER.clear();
         }
     }
 
