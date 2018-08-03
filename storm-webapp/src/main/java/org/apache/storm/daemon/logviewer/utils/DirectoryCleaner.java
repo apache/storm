@@ -24,13 +24,14 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,31 +94,22 @@ public class DirectoryCleaner {
             return deletedFiles;
         }
 
-        Comparator<File> comparator = new Comparator<File>() {
-            public int compare(File f1, File f2) {
-                if (f1.lastModified() > f2.lastModified()) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            }
-        };
         // the oldest pq_size files in this directory will be placed in PQ, with the newest at the root
-        PriorityQueue<File> pq = new PriorityQueue<File>(PQ_SIZE, comparator);
+        PriorityQueue<File> pq = new PriorityQueue<>(PQ_SIZE, (f1, f2) -> f1.lastModified() > f2.lastModified() ? -1 : 1);
         int round = 0;
+        final Set<File> excluded = new HashSet<>();
         while (toDeleteSize > 0) {
             LOG.debug("To delete size is {}, start a new round of deletion, round: {}", toDeleteSize, round);
             for (File dir : dirs) {
                 try (DirectoryStream<Path> stream = getStreamForDirectory(dir)) {
                     for (Path path : stream) {
                         File file = path.toFile();
-                        if (isFileEligibleToSkipDelete(forPerDir, activeDirs, dir, file)) {
-                            continue;
-                        }
-                        if (pq.size() < PQ_SIZE) {
-                            pq.offer(file);
-                        } else {
-                            if (file.lastModified() < pq.peek().lastModified()) {
+                        if (!excluded.contains(file)) {
+                            if (isFileEligibleToSkipDelete(forPerDir, activeDirs, dir, file)) {
+                                excluded.add(file);
+                            } else if (pq.size() < PQ_SIZE) {
+                                pq.offer(file);
+                            } else if (file.lastModified() < pq.peek().lastModified()) {
                                 pq.poll();
                                 pq.offer(file);
                             }
@@ -125,31 +117,44 @@ public class DirectoryCleaner {
                     }
                 }
             }
-            // need to reverse the order of elements in PQ to delete files from oldest to newest
-            Stack<File> stack = new Stack<File>();
-            while (!pq.isEmpty()) {
-                File file = pq.poll();
-                stack.push(file);
-            }
-            while (!stack.isEmpty() && toDeleteSize > 0) {
-                File file = stack.pop();
-                toDeleteSize -= file.length();
-                LOG.info("Delete file: {}, size: {}, lastModified: {}", file.getCanonicalPath(), file.length(), file.lastModified());
-                file.delete();
-                deletedFiles++;
-            }
-            pq.clear();
-            round++;
-            if (round >= MAX_ROUNDS) {
-                if (forPerDir) {
-                    LOG.warn("Reach the MAX_ROUNDS: {} during per-dir deletion, you may have too many files in "
-                                    + "a single directory : {}, will delete the rest files in next interval.",
-                            MAX_ROUNDS, dirs.get(0).getCanonicalPath());
-                } else {
-                    LOG.warn("Reach the MAX_ROUNDS: {} during global deletion, you may have too many files, "
-                            + "will delete the rest files in next interval.", MAX_ROUNDS);
+            if (!pq.isEmpty()) {
+                // need to reverse the order of elements in PQ to delete files from oldest to newest
+                Stack<File> stack = new Stack<>();
+                while (!pq.isEmpty()) {
+                    File file = pq.poll();
+                    stack.push(file);
                 }
-                break;
+                while (!stack.isEmpty() && toDeleteSize > 0) {
+                    File file = stack.pop();
+                    final String canonicalPath = file.getCanonicalPath();
+                    final long fileSize = file.length();
+                    final long lastModified = file.lastModified();
+                    //Original implementation doesn't actually check if delete succeeded or not.
+                    try {
+                        Utils.forceDelete(file.getPath());
+                        LOG.info("Delete file: {}, size: {}, lastModified: {}", canonicalPath, fileSize, lastModified);
+                        toDeleteSize -= fileSize;
+                        deletedFiles++;
+                    } catch (IOException e) {
+                        excluded.add(file);
+                    }
+                }
+                pq.clear();
+                round++;
+                if (round >= MAX_ROUNDS) {
+                    if (forPerDir) {
+                        LOG.warn("Reach the MAX_ROUNDS: {} during per-dir deletion, you may have too many files in "
+                                + "a single directory : {}, will delete the rest files in next interval.",
+                            MAX_ROUNDS, dirs.get(0).getCanonicalPath());
+                    } else {
+                        LOG.warn("Reach the MAX_ROUNDS: {} during global deletion, you may have too many files, "
+                            + "will delete the rest files in next interval.", MAX_ROUNDS);
+                    }
+                    break;
+                }
+            } else {
+                LOG.warn("No more files able to delete this round, but {} is over quota by {} MB",
+                    forPerDir ? "this directory" : "root directory", toDeleteSize * 1e-6);
             }
         }
         return deletedFiles;
@@ -157,21 +162,12 @@ public class DirectoryCleaner {
 
     private boolean isFileEligibleToSkipDelete(boolean forPerDir, Set<String> activeDirs, File dir, File file) throws IOException {
         if (forPerDir) {
-            if (ACTIVE_LOG_PATTERN.matcher(file.getName()).matches()) {
-                return true;
-            }
+            return ACTIVE_LOG_PATTERN.matcher(file.getName()).matches();
         } else { // for global cleanup
-            if (activeDirs.contains(dir.getCanonicalPath())) { // for an active worker's dir, make sure for the last "/"
-                if (ACTIVE_LOG_PATTERN.matcher(file.getName()).matches()) {
-                    return true;
-                }
-            } else {
-                if (META_LOG_PATTERN.matcher(file.getName()).matches()) {
-                    return true;
-                }
-            }
+            // for an active worker's dir, make sure for the last "/"
+            return activeDirs.contains(dir.getCanonicalPath()) ? ACTIVE_LOG_PATTERN.matcher(file.getName()).matches() :
+                META_LOG_PATTERN.matcher(file.getName()).matches();
         }
-        return false;
     }
 
     /**
