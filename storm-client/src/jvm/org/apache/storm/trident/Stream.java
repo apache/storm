@@ -835,6 +835,15 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
         return stateQuery(state, null, function, functionFields);
     }
 
+    /**
+     * Returns the label applied to the stream.
+     *
+     * @return the label applied to the stream.
+     */
+    public String getName() {
+	return _name;
+    }
+
     @Override
     public Stream toStream() {
         return this;
