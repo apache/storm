@@ -801,6 +801,15 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
         return global().partitionPersist(spec, inputFields, new ReducerAggStateUpdater(agg), functionFields);
     }
 
+    /**
+     * Returns the label applied to the stream.
+     *
+     * @return the label applied to the stream.
+     */
+    public String getName() {
+        return name;
+    }
+
     @Override
     public Stream toStream() {
         return this;
