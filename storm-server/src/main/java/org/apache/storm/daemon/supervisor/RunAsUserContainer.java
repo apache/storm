@@ -37,17 +37,17 @@ public class RunAsUserContainer extends BasicContainer {
     public RunAsUserContainer(Container.ContainerType type, Map<String, Object> conf, String supervisorId,
                               int supervisorPort, int port, LocalAssignment assignment,
                               ResourceIsolationInterface resourceIsolationManager, LocalState localState,
-                              String workerId) throws IOException {
+                              String workerId, ContainerMemoryTracker containerMemoryTracker) throws IOException {
         this(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState, workerId,
-             null, null, null);
+            containerMemoryTracker, null, null, null);
     }
 
     RunAsUserContainer(Container.ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
                        int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
-                       LocalState localState, String workerId, Map<String, Object> topoConf, AdvancedFSOps ops,
-                       String profileCmd) throws IOException {
+                       LocalState localState, String workerId, ContainerMemoryTracker containerMemoryTracker,
+                       Map<String, Object> topoConf, AdvancedFSOps ops, String profileCmd) throws IOException {
         super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState,
-              workerId, topoConf, ops, profileCmd);
+              workerId, containerMemoryTracker, topoConf, ops, profileCmd);
         if (Utils.isOnWindows()) {
             throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
         }

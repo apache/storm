@@ -53,14 +53,11 @@ import org.slf4j.LoggerFactory;
 public class LogviewerResource {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerResource.class);
 
-    private static final Meter meterLogPageHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-log-page-http-requests");
-    private static final Meter meterDaemonLogPageHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-daemonlog-page-http-requests");
-    private static final Meter meterDownloadLogFileHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-download-log-file-http-requests");
-    private static final Meter meterDownloadLogDaemonFileHttpRequests = StormMetricsRegistry.registerMeter(
-            "logviewer:num-download-log-daemon-file-http-requests");
-    private static final Meter meterListLogsHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-list-logs-http-requests");
+    private final Meter meterLogPageHttpRequests;
+    private final Meter meterDaemonLogPageHttpRequests;
+    private final Meter meterDownloadLogFileHttpRequests;
+    private final Meter meterDownloadLogDaemonFileHttpRequests;
+    private final Meter meterListLogsHttpRequests;
 
     private final LogviewerLogPageHandler logviewer;
     private final LogviewerProfileHandler profileHandler;
@@ -76,10 +73,19 @@ public class LogviewerResource {
      * @param logDownloadHandler {@link LogviewerLogDownloadHandler}
      * @param logSearchHandler {@link LogviewerLogSearchHandler}
      * @param httpCredsHandler {@link IHttpCredentialsPlugin}
+     * @param metricsRegistry The metrics registry
      */
     public LogviewerResource(LogviewerLogPageHandler logviewerParam, LogviewerProfileHandler profileHandler,
                              LogviewerLogDownloadHandler logDownloadHandler, LogviewerLogSearchHandler logSearchHandler,
-                             IHttpCredentialsPlugin httpCredsHandler) {
+                             IHttpCredentialsPlugin httpCredsHandler, StormMetricsRegistry metricsRegistry) {
+        this.meterLogPageHttpRequests = metricsRegistry.registerMeter("logviewer:num-log-page-http-requests");
+        this.meterDaemonLogPageHttpRequests = metricsRegistry.registerMeter(
+            "logviewer:num-daemonlog-page-http-requests");
+        this.meterDownloadLogFileHttpRequests = metricsRegistry.registerMeter(
+            "logviewer:num-download-log-file-http-requests");
+        this.meterDownloadLogDaemonFileHttpRequests = metricsRegistry.registerMeter(
+            "logviewer:num-download-log-daemon-file-http-requests");
+        this.meterListLogsHttpRequests = metricsRegistry.registerMeter("logviewer:num-list-logs-http-requests");
         this.logviewer = logviewerParam;
         this.profileHandler = profileHandler;
         this.logDownloadHandler = logDownloadHandler;

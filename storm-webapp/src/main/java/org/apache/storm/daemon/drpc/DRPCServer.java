@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 
 public class DRPCServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCServer.class);
-    private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("drpc:num-shutdown-calls");
+    private final Meter meterShutdownCalls;
    
     //TODO in the future this might be better in a common webapp location
 
@@ -81,7 +81,7 @@ public class DRPCServer implements AutoCloseable {
                 ThriftConnectionType.DRPC_INVOCATIONS);
     }
     
-    private static Server mkHttpServer(Map<String, Object> conf, DRPC drpc) {
+    private static Server mkHttpServer(StormMetricsRegistry metricsRegistry, Map<String, Object> conf, DRPC drpc) {
         Integer drpcHttpPort = (Integer) conf.get(DaemonConfig.DRPC_HTTP_PORT);
         Server ret = null;
         if (drpcHttpPort != null && drpcHttpPort >= 0) {
@@ -103,7 +103,7 @@ public class DRPCServer implements AutoCloseable {
             final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.DRPC_HTTPS_NEED_CLIENT_AUTH));
 
             //TODO a better way to do this would be great.
-            DRPCApplication.setup(drpc);
+            DRPCApplication.setup(drpc, metricsRegistry);
             ret = UIHelpers.jettyCreateServer(drpcHttpPort, null, httpsPort);
             
             UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
@@ -133,13 +133,15 @@ public class DRPCServer implements AutoCloseable {
     /**
      * Constructor.
      * @param conf Drpc conf for the servers
+     * @param metricsRegistry The metrics registry
      */
-    public DRPCServer(Map<String, Object> conf) {
-        drpc = new DRPC(conf);
+    public DRPCServer(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
+        meterShutdownCalls = metricsRegistry.registerMeter("drpc:num-shutdown-calls");
+        drpc = new DRPC(metricsRegistry, conf);
         DRPCThrift thrift = new DRPCThrift(drpc);
         handlerServer = mkHandlerServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_PORT), null), conf);
         invokeServer = mkInvokeServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_INVOCATIONS_PORT), 3773), conf);
-        httpServer = mkHttpServer(conf, drpc);
+        httpServer = mkHttpServer(metricsRegistry, conf, drpc);
     }
 
     @VisibleForTesting
@@ -222,9 +224,10 @@ public class DRPCServer implements AutoCloseable {
     public static void main(String [] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
         Map<String, Object> conf = Utils.readStormConfig();
-        try (DRPCServer server = new DRPCServer(conf)) {
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        try (DRPCServer server = new DRPCServer(conf, metricsRegistry)) {
             Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
-            StormMetricsRegistry.startMetricsReporters(conf);
+            metricsRegistry.startMetricsReporters(conf);
             server.start();
             server.awaitTermination();
         }

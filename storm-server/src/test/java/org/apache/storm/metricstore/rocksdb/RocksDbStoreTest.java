@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.metric.StormMetricsRegistry;
 
 public class RocksDbStoreTest {
     private final static Logger LOG = LoggerFactory.getLogger(RocksDbStoreTest.class);
@@ -57,7 +58,7 @@ public class RocksDbStoreTest {
         conf.put(DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING, true);
         conf.put(DaemonConfig.STORM_ROCKSDB_METADATA_STRING_CACHE_CAPACITY, 4000);
         conf.put(DaemonConfig.STORM_ROCKSDB_METRIC_RETENTION_HOURS, 240);
-        store = MetricStoreConfig.configure(conf);
+        store = MetricStoreConfig.configure(conf, new StormMetricsRegistry());
     }
 
     @AfterClass
@@ -307,7 +308,7 @@ public class RocksDbStoreTest {
         Assert.assertTrue(list.size() >= 2);
 
         // delete anything older than an hour
-        MetricsCleaner cleaner = new MetricsCleaner((RocksDbStore)store, 1, 1, null);
+        MetricsCleaner cleaner = new MetricsCleaner((RocksDbStore)store, 1, 1, null, new StormMetricsRegistry());
         cleaner.purgeMetrics();
         list = getMetricsFromScan(filter);
         Assert.assertEquals(1, list.size());

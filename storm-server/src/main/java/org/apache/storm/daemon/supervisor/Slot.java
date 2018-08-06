@@ -55,10 +55,8 @@ import org.slf4j.LoggerFactory;
 
 public class Slot extends Thread implements AutoCloseable, BlobChangingCallback {
     private static final Logger LOG = LoggerFactory.getLogger(Slot.class);
-    private static final Meter numWorkersLaunched =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-launched");
 
-    private enum KillReason {
+    enum KillReason {
         ASSIGNMENT_CHANGED, BLOB_CHANGED, PROCESS_EXIT, MEMORY_VIOLATION, HB_TIMEOUT, HB_NULL;
 
         @Override
@@ -68,10 +66,6 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
     }
 
-    private static final Map<KillReason, Meter> numWorkersKilledFor = EnumUtil.toEnumMap(KillReason.class,
-        killReason -> StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-" + killReason.toString()));
-    private static final Meter numForceKill =
-        StormMetricsRegistry.registerMeter("supervisor:num-workers-force-kill");
     private static final long ONE_SEC_IN_NANO = TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS);
     private final AtomicReference<LocalAssignment> newAssignment = new AtomicReference<>();
     private final AtomicReference<Set<TopoProfileAction>> profiling = new AtomicReference<>(new HashSet<>());
@@ -91,7 +85,8 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 ISupervisor iSupervisor,
                 AtomicReference<Map<Long, LocalAssignment>> cachedCurrentAssignments,
                 OnlyLatestExecutor<Integer> metricsExec,
-                WorkerMetricsProcessor metricsProcessor) throws Exception {
+                WorkerMetricsProcessor metricsProcessor,
+                SlotMetrics slotMetrics) throws Exception {
         super("SLOT_" + port);
         this.metricsExec = metricsExec;
         this.cachedCurrentAssignments = cachedCurrentAssignments;
@@ -107,7 +102,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 iSupervisor,
                 localState,
                 this,
-                metricsExec, metricsProcessor);
+                metricsExec, metricsProcessor, slotMetrics);
 
         LocalAssignment currentAssignment = null;
         Container container = null;
@@ -267,7 +262,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             }
             dynamicState.container.kill();
         }
-        numWorkersKilledFor.get(reason).mark();
+        staticState.slotMetrics.getWorkersKilledForReasonMeter(reason).mark();
 
         DynamicState next;
         switch (reason) {
@@ -451,7 +446,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             }
 
             dynamicState = updateAssignmentIfNeeded(dynamicState);
-            numWorkersLaunched.mark();
+            staticState.slotMetrics.getWorkersLaunchedMeter().mark();
             Container c =
                 staticState.containerLauncher.launchContainer(staticState.port, dynamicState.pendingLocalization, staticState.localState);
             return dynamicState
@@ -556,7 +551,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         }
 
         LOG.warn("SLOT {} force kill and wait...", staticState.port);
-        numForceKill.mark();
+        staticState.slotMetrics.getForceKillMeter().mark();
         dynamicState.container.forceKill();
         Time.sleep(staticState.killSleepMs);
         return dynamicState;
@@ -588,7 +583,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         if ((Time.currentTimeMillis() - dynamicState.startTime) > 120_000) {
             throw new RuntimeException("Not all processes in " + dynamicState.container + " exited after 120 seconds");
         }
-        numForceKill.mark();
+        staticState.slotMetrics.getForceKillMeter().mark();
         dynamicState.container.forceKill();
         Time.sleep(staticState.killSleepMs);
         return dynamicState;
@@ -875,6 +870,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         } while (!cachedCurrentAssignments.compareAndSet(orig, update));
     }
 
+    @Override
     public void run() {
         try {
             while (!done) {
@@ -983,6 +979,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         public final BlobChangingCallback changingCallback;
         public final OnlyLatestExecutor<Integer> metricsExec;
         public final WorkerMetricsProcessor metricsProcessor;
+        public final SlotMetrics slotMetrics;
 
         StaticState(AsyncLocalizer localizer, long hbTimeoutMs, long firstHbTimeoutMs,
                     long killSleepMs, long monitorFreqMs,
@@ -990,7 +987,8 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                     ISupervisor iSupervisor, LocalState localState,
                     BlobChangingCallback changingCallback,
                     OnlyLatestExecutor<Integer> metricsExec,
-                    WorkerMetricsProcessor metricsProcessor) {
+                    WorkerMetricsProcessor metricsProcessor,
+                    SlotMetrics slotMetrics) {
             this.localizer = localizer;
             this.hbTimeoutMs = hbTimeoutMs;
             this.firstHbTimeoutMs = firstHbTimeoutMs;
@@ -1004,6 +1002,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             this.changingCallback = changingCallback;
             this.metricsExec = metricsExec;
             this.metricsProcessor = metricsProcessor;
+            this.slotMetrics = slotMetrics;
         }
     }
 

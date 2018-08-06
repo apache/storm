@@ -35,11 +35,14 @@ import org.slf4j.LoggerFactory;
 public class HeaderResponseServletFilter implements Filter {
     public static final Logger LOG = LoggerFactory.getLogger(HeaderResponseServletFilter.class);
 
-    public static Meter webRequestMeter =
-            StormMetricsRegistry.registerMeter("num-web-requests");
+    private final Meter webRequestMeter;
 
-    public static Meter mainPageRequestMeter =
-            StormMetricsRegistry.registerMeter("ui:num-main-page-http-requests");
+    private final Meter mainPageRequestMeter;
+    
+    public HeaderResponseServletFilter(StormMetricsRegistry metricsRegistry) {
+        this.webRequestMeter = metricsRegistry.registerMeter("num-web-requests");
+        this.mainPageRequestMeter = metricsRegistry.registerMeter("ui:num-main-page-http-requests");
+    }
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

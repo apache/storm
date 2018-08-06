@@ -41,9 +41,9 @@
   )
 
 (deftest test-drpc-flow
-  (let [drpc (LocalDRPC.)
+  (let [cluster (LocalCluster.)
+        drpc (LocalDRPC. (.getMetricRegistry cluster))
         spout (DRPCSpout. "test" drpc)
-        cluster (LocalCluster.)
         topology (Thrift/buildTopology
                    {"1" (Thrift/prepareSpoutDetails spout)}
                    {"2" (Thrift/prepareBoltDetails
@@ -73,8 +73,8 @@
   )
 
 (deftest test-drpc-builder
-  (let [drpc (LocalDRPC.)
-        cluster (LocalCluster.)
+  (let [cluster (LocalCluster.)
+        drpc (LocalDRPC. (.getMetricRegistry cluster))
         builder (LinearDRPCTopologyBuilder. "test")
         ]
     (.addBolt builder exclamation-bolt-drpc 3)
@@ -136,8 +136,8 @@
     ))
 
 (deftest test-drpc-coordination
-  (let [drpc (LocalDRPC.)
-        cluster (LocalCluster.)
+  (let [cluster (LocalCluster.)
+        drpc (LocalDRPC. (.getMetricRegistry cluster))
         builder (LinearDRPCTopologyBuilder. "square")
         ]
     (.addBolt builder create-tuples 3)
@@ -178,8 +178,8 @@
                )))
 
 (deftest test-drpc-coordination-tricky
-  (let [drpc (LocalDRPC.)
-        cluster (LocalCluster.)
+  (let [cluster (LocalCluster.)
+        drpc (LocalDRPC. (.getMetricRegistry cluster))
         builder (LinearDRPCTopologyBuilder. "tricky")
         ]
     (.addBolt builder id-bolt 3)
@@ -210,8 +210,8 @@
                )))
 
 (deftest test-drpc-fail-finish
-  (let [drpc (LocalDRPC.)
-        cluster (LocalCluster.)
+  (let [cluster (LocalCluster.)
+        drpc (LocalDRPC. (.getMetricRegistry cluster))
         builder (LinearDRPCTopologyBuilder. "fail2")
         ]
     (.addBolt builder fail-finish-bolt 3)

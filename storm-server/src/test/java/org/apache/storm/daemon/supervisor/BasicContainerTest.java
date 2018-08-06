@@ -41,6 +41,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ConfigUtils;
 
 public class BasicContainerTest {
@@ -659,7 +660,7 @@ public class BasicContainerTest {
                                   LocalState localState, String workerId, Map<String, Object> topoConf, AdvancedFSOps ops,
                                   String profileCmd) throws IOException {
             super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState,
-                  workerId, topoConf, ops, profileCmd);
+                  workerId, new ContainerMemoryTracker(new StormMetricsRegistry()), topoConf, ops, profileCmd);
         }
 
         @Override

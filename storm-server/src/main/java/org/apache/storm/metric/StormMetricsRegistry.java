@@ -15,11 +15,10 @@ package org.apache.storm.metric;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reservoir;
+import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.daemon.metrics.MetricsUtils;
 import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
 import org.slf4j.Logger;
@@ -27,42 +26,40 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unchecked")
 public class StormMetricsRegistry {
-    private static final MetricRegistry DEFAULT_REGISTRY = new MetricRegistry();
     private static final Logger LOG = LoggerFactory.getLogger(StormMetricsRegistry.class);
+    private final MetricRegistry registry = new MetricRegistry();
+    private List<PreparableReporter> reporters;
+    private boolean reportersStarted = false;
 
-    public static Meter registerMeter(final String name) {
-        return register(name, new Meter());
+    public Meter registerMeter(String name) {
+        return registry.meter(name);
     }
 
-    public static <V> Gauge<V> registerGauge(final String name, final Gauge<V> gauge) {
-        return register(name, gauge);
+    public <V> Gauge<V> registerGauge(final String name, Gauge<V> gauge) {
+        return registry.gauge(name, () -> gauge);
     }
 
-    public static Histogram registerHistogram(String name, Reservoir reservoir) {
-        return register(name, new Histogram(reservoir));
+    public Histogram registerHistogram(String name, Reservoir reservoir) {
+        Histogram histogram = new Histogram(reservoir);
+        return registry.histogram(name, () -> histogram);
     }
 
-    public static void startMetricsReporters(Map<String, Object> topoConf) {
-        for (PreparableReporter reporter : MetricsUtils.getPreparableReporters(topoConf)) {
-            reporter.prepare(StormMetricsRegistry.DEFAULT_REGISTRY, topoConf);
+    public void startMetricsReporters(Map<String, Object> daemonConf) {
+        reporters = MetricsUtils.getPreparableReporters(daemonConf);
+        for (PreparableReporter reporter : reporters) {
+            reporter.prepare(registry, daemonConf);
             reporter.start();
             LOG.info("Started statistics report plugin...");
         }
+        reportersStarted = true;
     }
-
-    private static <T extends Metric> T register(final String name, T metric) {
-        T ret;
-        try {
-            ret = DEFAULT_REGISTRY.register(name, metric);
-        } catch (IllegalArgumentException e) {
-            // swallow IllegalArgumentException when the metric exists already
-            ret = (T) DEFAULT_REGISTRY.getMetrics().get(name);
-            if (ret == null) {
-                throw e;
-            } else {
-                LOG.warn("Metric {} has already been registered", name);
+    
+    public void stopMetricsReporters(Map<String, Object> daemonConf) {
+        if (reportersStarted) {
+            for (PreparableReporter reporter : reporters) {
+                reporter.stop();
             }
+            reportersStarted = false;
         }
-        return ret;
     }
 }

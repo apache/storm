@@ -42,6 +42,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.storm.metric.StormMetricsRegistry;
+
 public class ContainerTest {
     private static final Joiner PATH_JOIN = Joiner.on(File.separator).skipNulls();
     private static final String DOUBLE_SEP = File.separator + File.separator;
@@ -228,7 +230,7 @@ public class ContainerTest {
                                 int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
                                 String workerId, Map<String, Object> topoConf, AdvancedFSOps ops) throws IOException {
             super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, workerId,
-                  topoConf, ops);
+                  topoConf, ops, new ContainerMemoryTracker(new StormMetricsRegistry()));
         }
 
         @Override
