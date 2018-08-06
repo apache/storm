@@ -571,7 +571,7 @@ public class UIHelpers {
         result.put("slotsTotal", totalSlots);
         result.put("slotsFree", totalSlots - usedSlots);
         result.put("tasksTotal", totalTasks);
-        result.put("totalExecutors", totalExecutors);
+        result.put("executorsTotal", totalExecutors);
 
         result.put("totalMem", supervisorTotalMemory);
         result.put("totalCpu", supervisorTotalCpu);
