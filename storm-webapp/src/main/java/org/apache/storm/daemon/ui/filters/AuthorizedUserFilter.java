@@ -99,7 +99,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
     }
 
     @Override
-    public void filter(ContainerRequestContext containerRequestContext) throws IOException {
+    public void filter(ContainerRequestContext containerRequestContext) {
         AuthNimbusOp annotation = resourceInfo.getResourceMethod().getAnnotation(AuthNimbusOp.class);
         if (annotation == null) {
             return;
