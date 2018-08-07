@@ -214,5 +214,12 @@ public class ConfigValidationAnnotations {
     public @interface CustomValidator {
         Class validatorClass();
     }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface Password {
+        Class validatorClass() default ConfigValidation.NotNullValidator.class;
+    }
+
 }
 

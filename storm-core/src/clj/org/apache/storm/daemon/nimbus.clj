@@ -61,7 +61,7 @@
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
-  (:import [org.apache.storm.utils VersionInfo Time]
+  (:import [org.apache.storm.utils VersionInfo Time ConfigUtils]
            (org.apache.storm.metric ClusterMetricsConsumerExecutor)
            (org.apache.storm.metric.api IClusterMetricsConsumer$ClusterInfo DataPoint IClusterMetricsConsumer$SupervisorInfo)
            (org.apache.storm Config)
@@ -1748,7 +1748,7 @@
                        " (storm-" (.get_storm_version topology)
                        " JDK-" (.get_jdk_version topology)
                        ") with conf "
-                       (redact-value storm-conf STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
+                       (redact-value (ConfigUtils/maskPasswords storm-conf) STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
           ;; lock protects against multiple topologies being submitted at once and
           ;; cleanup thread killing topology in b/w assignment and starting the topology
           (locking (:submit-lock nimbus)
@@ -2463,7 +2463,7 @@
 
 (defserverfn service-handler [conf inimbus]
   (.prepare inimbus conf (master-inimbus-dir conf))
-  (log-message "Starting Nimbus with conf " conf)
+  (log-message "Starting Nimbus with conf " (ConfigUtils/maskPasswords conf))
   (let [nimbus (nimbus-data conf inimbus)
         blob-store (:blob-store nimbus)]
     (.prepare ^org.apache.storm.nimbus.ITopologyValidator (:validator nimbus) conf)

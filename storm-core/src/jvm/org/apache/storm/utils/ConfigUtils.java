@@ -18,16 +18,19 @@
 
 package org.apache.storm.utils;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.ConfigValidationAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -47,6 +50,34 @@ public class ConfigUtils {
     public final static String RESOURCES_SUBDIR = "resources";
     public final static String NIMBUS_DO_NOT_REASSIGN = "NIMBUS-DO-NOT-REASSIGN";
     public static final String FILE_SEPARATOR = File.separator;
+
+    private static final Set<String> passwordConfigKeys = new HashSet<>();
+
+    static {
+        for (Field field : Config.class.getFields()) {
+            for (Annotation annotation : field.getAnnotations()) {
+                boolean isPassword = annotation.annotationType().getName().equals(
+                        ConfigValidationAnnotations.Password.class.getName());
+                if (isPassword) {
+                    try {
+                        passwordConfigKeys.add((String) field.get(null));
+                    } catch (IllegalAccessException e) {
+                        // ignore
+                    }
+                }
+            }
+        }
+    }
+
+    public static Map<String, Object> maskPasswords(final Map<String, Object> conf) {
+        Maps.EntryTransformer<String, Object, Object> maskPasswords =
+                new Maps.EntryTransformer<String, Object, Object>() {
+                    public Object transformEntry(String key, Object value) {
+                        return passwordConfigKeys.contains(key) ? "*****" : value;
+                    }
+                };
+        return Maps.transformEntries(conf, maskPasswords);
+    }
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.

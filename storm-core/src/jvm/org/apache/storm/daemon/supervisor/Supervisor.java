@@ -192,7 +192,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
      * Launch the supervisor
      */
     public void launch() throws Exception {
-        LOG.info("Starting Supervisor with conf {}", conf);
+        LOG.info("Starting Supervisor with conf {}", ConfigUtils.maskPasswords(conf));
         String path = ConfigUtils.supervisorTmpDir(conf);
         FileUtils.cleanDirectory(new File(path));
 
