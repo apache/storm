@@ -1909,21 +1909,19 @@ public class UIHelpers {
 
         for (NimbusSummary nimbusSummary : nimbusSummaries) {
             Map<String, Object> nimbusSummaryMap = new HashMap();
-            if (nimbusSeeds.contains(nimbusSummary.get_host() + ":" + String.valueOf(nimbusSummary.get_port()))) {
-                nimbusSummaryMap.put("host", nimbusSummary.get_host());
-                nimbusSummaryMap.put("port", nimbusSummary.get_port());
-                String status = "Not a Leader";
-                if (nimbusSummary.is_isLeader()) {
-                    status = "Leader";
-                }
-                nimbusSummaryMap.put("status", status);
-                nimbusSummaryMap.put("version", nimbusSummary.get_version());
-                nimbusSummaryMap.put("nimbusUpTimeSeconds", nimbusSummary.get_uptime_secs());
-                nimbusSummaryMap.put("nimbusUpTime", prettyUptimeSec(nimbusSummary.get_uptime_secs()));
-                nimbusSummaryMap.put("nimbusLogLink", getNimbusLogLink(nimbusSummary.get_host(), config));
-                resultSummaryList.add(nimbusSummaryMap);
-                nimbusSeeds.remove(nimbusSummary.get_host() + ":" + String.valueOf(nimbusSummary.get_port()));
+            nimbusSummaryMap.put("host", nimbusSummary.get_host());
+            nimbusSummaryMap.put("port", nimbusSummary.get_port());
+            String status = "Not a Leader";
+            if (nimbusSummary.is_isLeader()) {
+                status = "Leader";
             }
+            nimbusSummaryMap.put("status", status);
+            nimbusSummaryMap.put("version", nimbusSummary.get_version());
+            nimbusSummaryMap.put("nimbusUpTimeSeconds", nimbusSummary.get_uptime_secs());
+            nimbusSummaryMap.put("nimbusUpTime", prettyUptimeSec(nimbusSummary.get_uptime_secs()));
+            nimbusSummaryMap.put("nimbusLogLink", getNimbusLogLink(nimbusSummary.get_host(), config));
+            resultSummaryList.add(nimbusSummaryMap);
+            nimbusSeeds.remove(nimbusSummary.get_host() + ":" + String.valueOf(nimbusSummary.get_port()));
         }
 
         for (String nimbusSeed : nimbusSeeds) {
