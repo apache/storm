@@ -1148,7 +1148,7 @@ public class UIHelpers {
             temp.put("window", window);
             temp.put("emitted", emittedStatDisplayMap.get(window));
             temp.put("transferred", transferred.get(window));
-            temp.put("completeLatency", completeLatency.get(window));
+            temp.put("completeLatency", StatsUtil.floatStr(completeLatency.get(getWindowHint(window))));
             temp.put("acked", acked.get(window));
             temp.put("failed", failed.get(window));
 
