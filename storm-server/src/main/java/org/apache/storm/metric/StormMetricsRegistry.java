@@ -64,7 +64,7 @@ public class StormMetricsRegistry extends MetricRegistry {
      *
      * @param topoConf config that specifies reporter plugin
      */
-    public static AutoCloseable startMetricsReporters(Map<String, Object> topoConf) {
+    public static Session startMetricsReporters(Map<String, Object> topoConf) {
         final List<PreparableReporter> preparableReporters = MetricsUtils.getPreparableReporters(topoConf);
         for (PreparableReporter reporter : preparableReporters) {
             reporter.prepare(StormMetricsRegistry.REGISTRY, topoConf);
@@ -98,5 +98,11 @@ public class StormMetricsRegistry extends MetricRegistry {
             }
             throw e;
         }
+    }
+
+    @FunctionalInterface
+    public interface Session extends AutoCloseable {
+        @Override
+        void close();
     }
 }

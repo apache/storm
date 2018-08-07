@@ -14,10 +14,7 @@ package org.apache.storm.daemon.metrics.reporters;
 
 import com.codahale.metrics.MetricRegistry;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-import com.codahale.metrics.ScheduledReporter;
-import org.slf4j.Logger;
 
 public interface PreparableReporter {
     void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf);
@@ -26,22 +23,4 @@ public interface PreparableReporter {
 
     void stop();
 
-    static <T, U extends ScheduledReporter> void startScheduledReporter(Class<T> enclosingClazz, U reporter, final Logger log) {
-        if (reporter != null) {
-            log.debug("Starting...");
-            reporter.start(10, TimeUnit.SECONDS);
-        } else {
-            throw new IllegalStateException("Attempt to start without preparing " + enclosingClazz.getSimpleName());
-        }
-    }
-
-    static <T, U extends ScheduledReporter> void stopScheduledReporter(Class<T> enclosingClazz, U reporter, final Logger log) {
-        if (reporter != null) {
-            log.debug("Flushing and Stopping...");
-            reporter.report();
-            reporter.stop();
-        } else {
-            throw new IllegalStateException("Attempt to stop without preparing " + enclosingClazz.getSimpleName());
-        }
-    }
 }

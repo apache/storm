@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 public class JmxPreparableReporter implements PreparableReporter {
     private static final Logger LOG = LoggerFactory.getLogger(JmxPreparableReporter.class);
-    JmxReporter reporter = null;
+    private JmxReporter reporter = null;
 
     @Override
     public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {

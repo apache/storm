@@ -49,14 +49,7 @@ public class Pacemaker implements IServerMessageHandler {
         heartbeats = new ConcurrentHashMap<>();
         this.conf = conf;
         StormMetricsRegistry.registerGauge("pacemaker:size-total-keys", heartbeats::size);
-        final AutoCloseable metricsReporters = StormMetricsRegistry.startMetricsReporters(conf);
-        Utils.addShutdownHookWithForceKillIn1Sec(() -> {
-            try {
-                metricsReporters.close();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+        Utils.addShutdownHookWithForceKillIn1Sec(StormMetricsRegistry.startMetricsReporters(conf)::close);
     }
 
     public static void main(String[] args) {

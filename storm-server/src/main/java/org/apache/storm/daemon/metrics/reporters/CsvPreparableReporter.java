@@ -20,16 +20,12 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.daemon.metrics.ClientMetricsUtils;
 import org.apache.storm.daemon.metrics.MetricsUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class CsvPreparableReporter implements PreparableReporter {
-    private static final Logger LOG = LoggerFactory.getLogger(CsvPreparableReporter.class);
-    private CsvReporter reporter = null;
+public class CsvPreparableReporter extends ScheduledPreparableReporter<CsvReporter> {
 
     @Override
     public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
-        LOG.debug("Preparing...");
+        log.debug("Preparing...");
         CsvReporter.Builder builder = CsvReporter.forRegistry(metricsRegistry);
 
         Locale locale = ClientMetricsUtils.getMetricsReporterLocale(topoConf);
@@ -50,16 +46,6 @@ public class CsvPreparableReporter implements PreparableReporter {
         File csvMetricsDir = MetricsUtils.getCsvLogDir(topoConf);
         reporter = builder.build(csvMetricsDir);
     }
-
-    @Override
-    public void start() {
-        PreparableReporter.startScheduledReporter(CsvPreparableReporter.class, reporter, LOG);
-    }
-
-    @Override
-    public void stop() {
-        PreparableReporter.stopScheduledReporter(CsvPreparableReporter.class, reporter, LOG);
-    }
-
 }
+
 

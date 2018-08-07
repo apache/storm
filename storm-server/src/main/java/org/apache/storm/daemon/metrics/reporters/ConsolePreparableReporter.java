@@ -18,16 +18,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.daemon.metrics.ClientMetricsUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class ConsolePreparableReporter implements PreparableReporter {
-    private static final Logger LOG = LoggerFactory.getLogger(ConsolePreparableReporter.class);
-    private ConsoleReporter reporter = null;
+public class ConsolePreparableReporter extends ScheduledPreparableReporter<ConsoleReporter> {
 
     @Override
     public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
-        LOG.debug("Preparing...");
+        log.debug("Preparing...");
         ConsoleReporter.Builder builder = ConsoleReporter.forRegistry(metricsRegistry);
 
         builder.outputTo(System.out);
@@ -46,15 +42,5 @@ public class ConsolePreparableReporter implements PreparableReporter {
             builder.convertDurationsTo(durationUnit);
         }
         reporter = builder.build();
-    }
-
-    @Override
-    public void start() {
-        PreparableReporter.startScheduledReporter(ConsolePreparableReporter.class, reporter, LOG);
-    }
-
-    @Override
-    public void stop() {
-        PreparableReporter.stopScheduledReporter(ConsolePreparableReporter.class, reporter, LOG);
     }
 }
