@@ -137,8 +137,7 @@ public class UIServer {
         holderPwd.setInitParameter("dirAllowed","true");
         context.addServlet(holderPwd,"/");
 
-        StormMetricsRegistry.startMetricsReporters(conf);
-        try {
+        try (StormMetricsRegistry.Session metricsReporters = StormMetricsRegistry.startMetricsReporters(conf)) {
             jettyServer.start();
             jettyServer.join();
         } catch (Throwable t) {
