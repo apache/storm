@@ -2808,7 +2808,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                         }
                                     });
 
-            StormMetricsRegistry.registerGauge("nimbus:num-supervisors", () -> state.supervisors(null).size());
+            StormMetricsRegistry.registerGauge("nimbus:num-supervisors", () -> {
+                try {
+                    return state.supervisors(null).size();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            });
             StormMetricsRegistry.registerGauge("nimbus:fragmented-memory", this::fragmentedMemory);
             StormMetricsRegistry.registerGauge("nimbus:fragmented-cpu", this::fragmentedCpu);
             StormMetricsRegistry.registerGauge("nimbus:available-memory", () -> nodeIdToResources.get().values()
@@ -4498,11 +4505,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         shutdownCalls.mark();
         try {
             LOG.info("Shutting down master");
-            //TODO: If zookeeper closed before calling this, reporters will get stuck and cannot flush metrics correctly.
-            // Should we consider adding #removeMetric to StormMetricsRegistry so it can help circumvent the issue?
-            if (metricsReporters != null) {
-                metricsReporters.close();
-            }
             timer.close();
             stormClusterState.disconnect();
             downloaders.cleanup();
@@ -4522,6 +4524,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
             if (metricsStore != null) {
                 metricsStore.close();
+            }
+            if (metricsReporters != null) {
+                metricsReporters.close();
             }
             LOG.info("Shut down master");
         } catch (Exception e) {
