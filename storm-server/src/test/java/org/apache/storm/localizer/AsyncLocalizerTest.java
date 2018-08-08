@@ -141,7 +141,7 @@ public class AsyncLocalizerTest {
         try {
             when(mockedRU.newInstanceImpl(ClientBlobStore.class)).thenReturn(blobStore);
 
-            PortAndAssignment pna = new PortAndAssignment(port, la);
+            PortAndAssignment pna = new PortAndAssignmentImpl(port, la);
             Future<Void> f = bl.requestDownloadBaseTopologyBlobs(pna, null);
             f.get(20, TimeUnit.SECONDS);
 
@@ -345,7 +345,7 @@ public class AsyncLocalizerTest {
         arrUser1Keys.add(new LocalResource(archive1, true, false));
         LocalAssignment topo1 = new LocalAssignment("topo1", Collections.emptyList());
         topo1.set_owner(user1);
-        localizer.addReferences(arrUser1Keys, new PortAndAssignment(1, topo1), null);
+        localizer.addReferences(arrUser1Keys, new PortAndAssignmentImpl(1, topo1), null);
 
         ConcurrentMap<String, LocalizedResource> lrsrcFiles = localizer.getUserFiles().get(user1);
         ConcurrentMap<String, LocalizedResource> lrsrcArchives = localizer.getUserArchives().get(user1);
@@ -444,7 +444,7 @@ public class AsyncLocalizerTest {
             assertTrue("failed to create user dir", user1Dir.mkdirs());
             LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
             topo1Assignment.set_owner(user1);
-            PortAndAssignment topo1Pna = new PortAndAssignment(1, topo1Assignment);
+            PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
             LocalizedResource lrsrc = localizer.getBlob(new LocalResource(key1, true, false), topo1Pna, null);
             Time.advanceTime(10);
             long timeAfter = Time.currentTimeMillis();
@@ -529,7 +529,7 @@ public class AsyncLocalizerTest {
             Time.advanceTime(10);
             LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
             topo1Assignment.set_owner(user1);
-            PortAndAssignment topo1Pna = new PortAndAssignment(1, topo1Assignment);
+            PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
             LocalizedResource lrsrc = localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
             long timeAfter = Time.currentTimeMillis();
             Time.advanceTime(10);
@@ -609,7 +609,7 @@ public class AsyncLocalizerTest {
 
             LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
             topo1Assignment.set_owner(user1);
-            PortAndAssignment topo1Pna = new PortAndAssignment(1, topo1Assignment);
+            PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
             List<LocalizedResource> lrsrcs = localizer.getBlobs(keys, topo1Pna, null);
             LocalizedResource lrsrc = lrsrcs.get(0);
             LocalizedResource lrsrc2 = lrsrcs.get(1);
@@ -707,7 +707,7 @@ public class AsyncLocalizerTest {
 
         LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
         topo1Assignment.set_owner(user1);
-        PortAndAssignment topo1Pna = new PortAndAssignment(1, topo1Assignment);
+        PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
         // This should throw AuthorizationException because auth failed
         localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
     }
@@ -758,17 +758,17 @@ public class AsyncLocalizerTest {
 
         LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
         topo1Assignment.set_owner(user1);
-        PortAndAssignment topo1Pna = new PortAndAssignment(1, topo1Assignment);
+        PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
         LocalizedResource lrsrc = localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
 
         LocalAssignment topo2Assignment = new LocalAssignment(topo2, Collections.emptyList());
         topo2Assignment.set_owner(user2);
-        PortAndAssignment topo2Pna = new PortAndAssignment(2, topo2Assignment);
+        PortAndAssignment topo2Pna = new PortAndAssignmentImpl(2, topo2Assignment);
         LocalizedResource lrsrc2 = localizer.getBlob(new LocalResource(key2, false, false), topo2Pna, null);
 
         LocalAssignment topo3Assignment = new LocalAssignment(topo3, Collections.emptyList());
         topo3Assignment.set_owner(user3);
-        PortAndAssignment topo3Pna = new PortAndAssignment(3, topo3Assignment);
+        PortAndAssignment topo3Pna = new PortAndAssignmentImpl(3, topo3Assignment);
         LocalizedResource lrsrc3 = localizer.getBlob(new LocalResource(key3, false, false), topo3Pna, null);
 
         // make sure we support different user reading same blob
@@ -846,7 +846,7 @@ public class AsyncLocalizerTest {
         assertTrue("failed to create user dir", user1Dir.mkdirs());
         LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
         topo1Assignment.set_owner(user1);
-        PortAndAssignment topo1Pna = new PortAndAssignment(1, topo1Assignment);
+        PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
         LocalizedResource lrsrc = localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
 
         String expectedUserDir = joinPath(baseDir.toString(), USERCACHE, user1);
@@ -868,7 +868,7 @@ public class AsyncLocalizerTest {
 
         LocalAssignment topo2Assignment = new LocalAssignment(topo2, Collections.emptyList());
         topo2Assignment.set_owner(user1);
-        PortAndAssignment topo2Pna = new PortAndAssignment(1, topo2Assignment);
+        PortAndAssignment topo2Pna = new PortAndAssignmentImpl(1, topo2Assignment);
         localizer.getBlob(new LocalResource(key1, false, false), topo2Pna, null);
         assertTrue("blob version file not created", versionFile.exists());
         assertEquals("blob version not correct", 2, LocalizedResource.localVersionOfBlob(keyVersionFile));

@@ -69,6 +69,7 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
+import org.apache.storm.utils.ShellUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.VersionInfo;
@@ -312,6 +313,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             Utils.addShutdownHookWithForceKillIn1Sec(this::close);
 
             StormMetricsRegistry.registerGauge("supervisor:num-slots-used-gauge", () -> SupervisorUtils.supervisorWorkerIds(conf).size());
+            //This will only get updated once
+            StormMetricsRegistry.registerMeter("supervisor:num-launched").mark();
+            StormMetricsRegistry.registerMeter("supervisor:num-shell-exceptions", ShellUtils.numShellExceptions);
             StormMetricsRegistry.startMetricsReporters(conf);
 
             // blocking call under the hood, must invoke after launch cause some services must be initialized

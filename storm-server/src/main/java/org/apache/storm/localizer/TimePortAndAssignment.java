@@ -14,18 +14,38 @@
 
 package org.apache.storm.localizer;
 
+import com.codahale.metrics.Timer;
 import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.metric.timed.Timed;
 
-public interface PortAndAssignment {
-    String getToplogyId();
+public class TimePortAndAssignment extends Timed<PortAndAssignment> implements PortAndAssignment {
 
-    String getOwner();
+    public TimePortAndAssignment(PortAndAssignment measured, Timer timer) {
+        super(measured, timer);
+    }
 
-    int getPort();
+    @Override
+    public String getToplogyId() {
+        return getMeasured().getToplogyId();
+    }
 
-    LocalAssignment getAssignment();
+    @Override
+    public String getOwner() {
+        return getMeasured().getOwner();
+    }
 
-    default void complete() {
+    @Override
+    public int getPort() {
+        return getMeasured().getPort();
+    }
 
+    @Override
+    public LocalAssignment getAssignment() {
+        return getMeasured().getAssignment();
+    }
+
+    @Override
+    public void complete() {
+        stopTiming();
     }
 }

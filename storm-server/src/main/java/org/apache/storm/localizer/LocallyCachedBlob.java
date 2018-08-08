@@ -12,6 +12,9 @@
 
 package org.apache.storm.localizer;
 
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Timer;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,6 +32,7 @@ import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +51,9 @@ public abstract class LocallyCachedBlob {
     private final String blobKey;
     private long lastUsed = Time.currentTimeMillis();
     private CompletableFuture<Void> doneUpdating = null;
+
+    private static final Histogram fetchingRate = StormMetricsRegistry.registerHistogram(
+            "supervisor:blob-fetching-rate-MB/s", new ExponentiallyDecayingReservoir());
 
     /**
      * Create a new LocallyCachedBlob.
@@ -87,18 +94,27 @@ public abstract class LocallyCachedBlob {
             Path downloadPath = pathSupplier.apply(newVersion);
             LOG.debug("Downloading {} to {}", key, downloadPath);
 
+            long duration;
             long totalRead = 0;
             try (OutputStream out = outStreamSupplier.apply(downloadPath.toFile())) {
+                long startTime = Time.nanoTime();
+
                 byte[] buffer = new byte[4096];
                 int read;
                 while ((read = in.read(buffer)) >= 0) {
                     out.write(buffer, 0, read);
                     totalRead += read;
                 }
+
+                duration = Time.nanoTime() - startTime;
             }
+
             long expectedSize = in.getFileLength();
             if (totalRead != expectedSize) {
                 throw new IOException("We expected to download " + expectedSize + " bytes but found we got " + totalRead);
+            } else {
+                double downloadRate = ((double) totalRead * 1e3) / duration;
+                fetchingRate.update(Math.round(downloadRate));
             }
             return new DownloadMeta(downloadPath, newVersion);
         }

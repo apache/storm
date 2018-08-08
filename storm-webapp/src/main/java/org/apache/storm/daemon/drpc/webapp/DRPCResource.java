@@ -19,6 +19,7 @@
 package org.apache.storm.daemon.drpc.webapp;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -29,11 +30,11 @@ import javax.ws.rs.core.Context;
 
 import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.metric.StormMetricsRegistry;
-import org.apache.storm.thrift.TException;
 
 @Path("/drpc/")
 public class DRPCResource {
     private static final Meter meterHttpRequests = StormMetricsRegistry.registerMeter("drpc:num-execute-http-requests");
+    private static final Timer responseDuration = StormMetricsRegistry.registerTimer("drpc:HTTP-request-response-duration");
     private final DRPC drpc;
 
     public DRPCResource(DRPC drpc) {
@@ -43,24 +44,24 @@ public class DRPCResource {
     //TODO put in some better exception mapping...
     //TODO move populateContext to a filter...
     @POST
-    @Path("/{func}") 
-    public String post(@PathParam("func") String func, String args, @Context HttpServletRequest request) throws TException {
+    @Path("/{func}")
+    public String post(@PathParam("func") String func, String args, @Context HttpServletRequest request) throws Exception {
         meterHttpRequests.mark();
-        return drpc.executeBlocking(func, args);
+        return responseDuration.time(() -> drpc.executeBlocking(func, args));
     }
     
     @GET
     @Path("/{func}/{args}") 
     public String get(@PathParam("func") String func, @PathParam("args") String args,
-                      @Context HttpServletRequest request) throws TException {
+                      @Context HttpServletRequest request) throws Exception {
         meterHttpRequests.mark();
-        return drpc.executeBlocking(func, args);
+        return responseDuration.time(() -> drpc.executeBlocking(func, args));
     }
     
     @GET
-    @Path("/{func}") 
-    public String get(@PathParam("func") String func, @Context HttpServletRequest request) throws TException {
+    @Path("/{func}")
+    public String get(@PathParam("func") String func, @Context HttpServletRequest request) throws Exception {
         meterHttpRequests.mark();
-        return drpc.executeBlocking(func, "");
+        return responseDuration.time(() -> drpc.executeBlocking(func, ""));
     }
 }
