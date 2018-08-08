@@ -46,6 +46,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -297,7 +299,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         Assignment oldAssignment = state.assignmentInfo(topoId, null);
         state.removeStorm(topoId);
         notifySupervisorsAsKilled(state, oldAssignment, nimbus.getAssignmentsDistributer());
-        nimbus.getHeartbeatsCache().getAndUpdate(new Dissoc<>(topoId));
+        nimbus.heartbeatsCache.remove(topoId);
         nimbus.getIdToExecutors().getAndUpdate(new Dissoc<>(topoId));
         return null;
     };
@@ -404,7 +406,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Object submitLock = new Object();
     private final Object schedLock = new Object();
     private final Object credUpdateLock = new Object();
-    private final AtomicReference<Map<String, Map<List<Integer>, Map<String, Object>>>> heartbeatsCache;
+    //I don't really see a difference between AtomicReference of a Map vs. ConcurrentMap here
+    private final Map<String, ConcurrentMap<List<Integer>, Map<String, Object>>> heartbeatsCache;
     private final AtomicBoolean heartbeatsReadyFlag;
     private final IWorkerHeartbeatsRecoveryStrategy heartbeatsRecoveryStrategy;
     @SuppressWarnings("deprecation")
@@ -490,7 +493,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             stormClusterState = makeStormClusterState(conf);
         }
         this.stormClusterState = stormClusterState;
-        this.heartbeatsCache = new AtomicReference<>(new HashMap<>());
+        this.heartbeatsCache = new ConcurrentHashMap<>();
         this.heartbeatsReadyFlag = new AtomicBoolean(false);
         this.heartbeatsRecoveryStrategy = WorkerHeartbeatsRecoveryStrategyFactory.getStrategy(conf);
         this.downloaders = fileCacheMap(conf);
@@ -1407,11 +1410,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return assignmentsDistributer;
     }
 
-    @VisibleForTesting
-    public AtomicReference<Map<String, Map<List<Integer>, Map<String, Object>>>> getHeartbeatsCache() {
-        return heartbeatsCache;
-    }
-
     public AtomicReference<Map<String, Set<List<Integer>>>> getIdToExecutors() {
         return idToExecutors;
     }
@@ -1660,26 +1658,18 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private void updateHeartbeatsFromZkHeartbeat(String topoId, Set<List<Integer>> allExecutors, Assignment existingAssignment) {
         LOG.debug("Updating heartbeats for {} {} (from ZK heartbeat)", topoId, allExecutors);
-        IStormClusterState state = stormClusterState;
         Map<List<Integer>, Map<String, Object>> executorBeats =
-            StatsUtil.convertExecutorBeats(state.executorBeats(topoId, existingAssignment.get_executor_node_port()));
-        Map<List<Integer>, Map<String, Object>> cache = StatsUtil.updateHeartbeatCacheFromZkHeartbeat(heartbeatsCache.get().get(topoId),
-                                                                                                      executorBeats, allExecutors,
-                                                                                                      ObjectReader.getInt(conf.get(
-                                                                                                          DaemonConfig
-                                                                                                              .NIMBUS_TASK_TIMEOUT_SECS)));
-        heartbeatsCache.getAndUpdate(new Assoc<>(topoId, cache));
+            StatsUtil.convertExecutorBeats(stormClusterState.executorBeats(topoId, existingAssignment.get_executor_node_port()));
+        heartbeatsCache.compute(topoId, (k, v) ->
+                //Guaranteed side-effect-free
+                StatsUtil.updateHeartbeatCacheFromZkHeartbeat(v, executorBeats, allExecutors,
+                        ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS))));
     }
 
-    private void updateHeartbeats(String topoId, Set<List<Integer>> allExecutors, Assignment existingAssignment) {
+    private void updateHeartbeats(String topoId, Set<List<Integer>> allExecutors) {
         LOG.debug("Updating heartbeats for {} {}", topoId, allExecutors);
-        Map<List<Integer>, Map<String, Object>> cache = heartbeatsCache.get().get(topoId);
-        if (cache == null) {
-            cache = new HashMap<>();
-            heartbeatsCache.getAndUpdate(new Assoc<>(topoId, cache));
-        }
-        StatsUtil.updateHeartbeatCache(heartbeatsCache.get().get(topoId),
-                                       null, allExecutors, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+        StatsUtil.updateHeartbeatCache(heartbeatsCache.computeIfAbsent(topoId, k -> new ConcurrentHashMap<>()),
+                null, allExecutors, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
     }
 
     /**
@@ -1695,26 +1685,20 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (zkHeartbeatTopologies.contains(topoId)) {
                 updateHeartbeatsFromZkHeartbeat(topoId, topologyToExecutors.get(topoId), entry.getValue());
             } else {
-                updateHeartbeats(topoId, topologyToExecutors.get(topoId), entry.getValue());
+                updateHeartbeats(topoId, topologyToExecutors.get(topoId));
             }
         }
     }
 
     private void updateCachedHeartbeatsFromWorker(SupervisorWorkerHeartbeat workerHeartbeat) {
         Map<List<Integer>, Map<String, Object>> executorBeats = StatsUtil.convertWorkerBeats(workerHeartbeat);
-        String topoId = workerHeartbeat.get_storm_id();
-        Map<List<Integer>, Map<String, Object>> cache = heartbeatsCache.get().get(topoId);
-        if (cache == null) {
-            cache = new HashMap<>();
-            heartbeatsCache.getAndUpdate(new Assoc<>(topoId, cache));
-        }
         Set<List<Integer>> executors = new HashSet<>();
         for (ExecutorInfo executorInfo : workerHeartbeat.get_executors()) {
             executors.add(Arrays.asList(executorInfo.get_task_start(), executorInfo.get_task_end()));
         }
-
-        StatsUtil.updateHeartbeatCache(heartbeatsCache.get().get(topoId), executorBeats, executors,
-                                       ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+        final String topoId = workerHeartbeat.get_storm_id();
+        StatsUtil.updateHeartbeatCache(heartbeatsCache.computeIfAbsent(topoId, k -> new ConcurrentHashMap<>()),
+                executorBeats, executors, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
 
     }
 
@@ -1756,7 +1740,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private Set<List<Integer>> aliveExecutors(String topoId, Set<List<Integer>> allExecutors, Assignment assignment) {
-        Map<List<Integer>, Map<String, Object>> hbCache = heartbeatsCache.get().get(topoId);
+        Map<List<Integer>, Map<String, Object>> hbCache = heartbeatsCache.get(topoId);
         //in case that no workers report any heartbeats yet.
         if (null == hbCache) {
             hbCache = new HashMap<>();
@@ -2535,7 +2519,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 rmDependencyJarsInTopology(topoId);
                 forceDeleteTopoDistDir(topoId);
                 rmTopologyKeys(topoId);
-                heartbeatsCache.getAndUpdate(new Dissoc<>(topoId));
+                heartbeatsCache.remove(topoId);
                 idToExecutors.getAndUpdate(new Dissoc<>(topoId));
             }
         }

@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.apache.storm.cluster.ExecutorBeat;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.Bolt;
@@ -1525,27 +1528,24 @@ public class StatsUtil {
      * @param timeout       timeout
      * @return a HashMap of updated executor heart beats
      */
-    public static Map<List<Integer>, Map<String, Object>> updateHeartbeatCacheFromZkHeartbeat(Map<List<Integer>, Map<String, Object>> cache,
-                                                                                              Map<List<Integer>, Map<String, Object>>
-                                                                                                  executorBeats,
-                                                                                              Set<List<Integer>> executors,
-                                                                                              Integer timeout) {
-        Map<List<Integer>, Map<String, Object>> ret = new HashMap<>();
-        if (cache == null && executorBeats == null) {
-            return ret;
-        }
-
+    public static ConcurrentMap<List<Integer>, Map<String, Object>> updateHeartbeatCacheFromZkHeartbeat(Map<List<Integer>, Map<String, Object>> cache,
+                                                                                                        Map<List<Integer>, Map<String, Object>>
+                                                                                                                executorBeats,
+                                                                                                        Set<List<Integer>> executors,
+                                                                                                        Integer timeout) {
         if (cache == null) {
+            if (executorBeats == null) {
+                return new ConcurrentHashMap<>();
+            }
             cache = new HashMap<>();
-        }
-        if (executorBeats == null) {
+        } else if (executorBeats == null) {
             executorBeats = new HashMap<>();
         }
 
+        ConcurrentMap<List<Integer>, Map<String, Object>> ret = new ConcurrentHashMap<>(executors.size());
         for (List<Integer> executor : executors) {
             ret.put(executor, updateExecutorCache(cache.get(executor), executorBeats.get(executor), timeout));
         }
-
         return ret;
     }
 
@@ -1565,23 +1565,26 @@ public class StatsUtil {
     public static void updateHeartbeatCache(Map<List<Integer>, Map<String, Object>> cache,
                                             Map<List<Integer>, Map<String, Object>> executorBeats, Set<List<Integer>> executors,
                                             Integer timeout) {
-        //if not executor beats, refresh is-timed-out of the cache which is done by master
+        assert cache instanceof ConcurrentMap;
+        //Should we enforce update-if-newer policy?
         if (executorBeats == null) {
-            for (Map.Entry<List<Integer>, Map<String, Object>> executorbeat : cache.entrySet()) {
-                Map<String, Object> beat = executorbeat.getValue();
+            //If not executor beats, refresh is-timed-out of the cache which is done by master
+            for (Map.Entry<List<Integer>, Map<String, Object>> executorBeat : cache.entrySet()) {
+                Map<String, Object> beat = executorBeat.getValue();
                 beat.put("is-timed-out", Time.deltaSecs((Integer) beat.get("nimbus-time")) >= timeout);
             }
-            return;
-        }
-        //else refresh nimbus-time and executor-reported-time by heartbeats reporting
-        for (List<Integer> executor : executors) {
-            cache.put(executor, updateExecutorCache(cache.get(executor), executorBeats.get(executor), timeout));
+        } else {
+            //Refresh nimbus-time and executor-reported-time by heartbeats reporting
+            for (List<Integer> executor : executors) {
+                //Guaranteed side-effect-free
+                cache.compute(executor, (k, v) -> updateExecutorCache(v, executorBeats.get(k), timeout));
+            }
         }
     }
 
     // TODO: should move this method to nimbus when nimbus.clj is translated
-    public static Map<String, Object> updateExecutorCache(
-        Map<String, Object> currBeat, Map<String, Object> newBeat, Integer timeout) {
+    private static Map<String, Object> updateExecutorCache(Map<String, Object> currBeat,
+                                                           Map<String, Object> newBeat, Integer timeout) {
         Map<String, Object> ret = new HashMap<>();
 
         Integer lastNimbusTime = null, lastReportedTime = null;
