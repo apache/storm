@@ -52,7 +52,6 @@ public class ConsolePreparableReporter implements PreparableReporter<ConsoleRepo
     public void start() {
         if (reporter != null) {
             LOG.debug("Starting...");
-            //TODO: will we make the period customizable?
             reporter.start(10, TimeUnit.SECONDS);
         } else {
             throw new IllegalStateException("Attempt to start without preparing " + getClass().getSimpleName());

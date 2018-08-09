@@ -2891,13 +2891,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                         }
                                     });
 
-            //Be cautious using method reference instead of lambda. subexpression preceding :: will be evaluated only upon evaluation
             // Num supervisor, and fragmented resources have been included in cluster summary
-            StormMetricsRegistry.registerGauge("nimbus:total-available-memory (nonegative)", () -> nodeIdToResources.get().values()
+            StormMetricsRegistry.registerGauge("nimbus:total-available-memory-non-negative", () -> nodeIdToResources.get().values()
                 .parallelStream()
                 .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableMem(), 0))
                 .sum());
-            StormMetricsRegistry.registerGauge("nimbus:available-cpu (nonnegative)", () -> nodeIdToResources.get().values()
+            StormMetricsRegistry.registerGauge("nimbus:available-cpu-non-negative", () -> nodeIdToResources.get().values()
                 .parallelStream()
                 .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableCpu(), 0))
                 .sum());
@@ -4778,9 +4777,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         private final Histogram supervisorsNumWorkers = registerHistogram.apply("supervisors:num-workers");
         private final Histogram supervisorsNumUsedWorkers = registerHistogram.apply("supervisors:num-used-workers");
         private final Histogram supervisorsUsedMem = registerHistogram.apply("supervisors:used-mem");
-        private final Histogram supervisorsUsedCpu = registerHistogram.apply("supervisors:used-CPU");
+        private final Histogram supervisorsUsedCpu = registerHistogram.apply("supervisors:used-cpu");
         private final Histogram supervisorsFragmentedMem = registerHistogram.apply("supervisors:fragmented-mem");
-        private final Histogram supervisorsFragmentedCpu = registerHistogram.apply("supervisors:fragmented-CPU");
+        private final Histogram supervisorsFragmentedCpu = registerHistogram.apply("supervisors:fragmented-cpu");
 
         //Topology metrics distribution
         private final Histogram topologiesNumTasks = registerHistogram.apply("topologies:num-tasks");
@@ -4790,10 +4789,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         private final Histogram topologiesReplicationCount = registerHistogram.apply("topologies:replication-count");
         private final Histogram topologiesRequestedMemOnHeap = registerHistogram.apply("topologies:requested-mem-on-heap");
         private final Histogram topologiesRequestedMemOffHeap = registerHistogram.apply("topologies:requested-mem-off-heap");
-        private final Histogram topologiesRequestedCpu = registerHistogram.apply("topologies:requested-CPU");
+        private final Histogram topologiesRequestedCpu = registerHistogram.apply("topologies:requested-cpu");
         private final Histogram topologiesAssignedMemOnHeap = registerHistogram.apply("topologies:assigned-mem-on-heap");
         private final Histogram topologiesAssignedMemOffHeap = registerHistogram.apply("topologies:assigned-mem-off-heap");
-        private final Histogram topologiesAssignedCpu = registerHistogram.apply("topologies:assigned-CPU");
+        private final Histogram topologiesAssignedCpu = registerHistogram.apply("topologies:assigned-cpu");
 
         ClusterSummaryMetricSet() {
             //Break the code if out of sync to thrift protocol
@@ -4859,7 +4858,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     return clusterSummary.get_supervisors().stream().mapToInt(SupervisorSummary::get_num_used_workers).sum();
                 }
             });
-            ported.put("cluster:total-fragmented-memory (nonnegative)", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
+            ported.put("cluster:total-fragmented-memory-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
                 @Override
                 protected Double transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors().stream()
@@ -4867,7 +4866,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                         .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_mem(), 0)).sum();
                 }
             });
-            ported.put("cluster:total-fragmented-CPU (nonnegative)", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
+            ported.put("cluster:total-fragmented-cpu-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
                 @Override
                 protected Double transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors().stream()
