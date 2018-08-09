@@ -1348,12 +1348,12 @@ public class UIHelpers {
      */
     public static Map<String, Object> getStatMapFromExecutorSummary(ExecutorSummary executorSummary) {
         Map<String, Object> result = new HashMap();
-        result.put("host", executorSummary.get_host());
-        result.put("port", executorSummary.get_port());
-        result.put("uptime_secs", executorSummary.get_uptime_secs());
-        result.put("transferred", null);
+        result.put(":host", executorSummary.get_host());
+        result.put(":port", executorSummary.get_port());
+        result.put(":uptime_secs", executorSummary.get_uptime_secs());
+        result.put(":transferred", null);
         if (executorSummary.is_set_stats()) {
-            result.put("transferred", sanitizeTransferredStats(executorSummary.get_stats().get_transferred()));
+            result.put(":transferred", sanitizeTransferredStats(executorSummary.get_stats().get_transferred()));
         }
         return result;
     }
@@ -1366,12 +1366,11 @@ public class UIHelpers {
      * @return getInputMap
      */
     public static Map<String, Object> getInputMap(Map.Entry<GlobalStreamId,Grouping> entryInput) {
-
         Map<String, Object> result = new HashMap();
-        result.put("component", entryInput.getKey().get_componentId());
-        result.put("stream", entryInput.getKey().get_streamId());
-        result.put("sani-stream", sanitizeStreamName(entryInput.getKey().get_streamId()));
-        result.put("grouping", entryInput.getValue().getSetField().getFieldName());
+        result.put(":component", entryInput.getKey().get_componentId());
+        result.put(":stream", entryInput.getKey().get_streamId());
+        result.put(":sani-stream", sanitizeStreamName(entryInput.getKey().get_streamId()));
+        result.put(":grouping", entryInput.getValue().getSetField().getFieldName());
         return result;
     }
 
@@ -1402,17 +1401,17 @@ public class UIHelpers {
             String spoutComponentId = spoutSpecMapEntry.getKey();
             if (spoutSummaries.containsKey(spoutComponentId)) {
                 Map<String, Object> spoutData = new HashMap();
-                spoutData.put("type", "spout");
-                spoutData.put("capacity", 0);
+                spoutData.put(":type", "spout");
+                spoutData.put(":capacity", 0);
                 Map<String, Map> spoutStreamsStats = StatsUtil.spoutStreamsStats(spoutSummaries.get(spoutComponentId), true);
-                spoutData.put("latency", spoutStreamsStats.get("complete-latencies").get(window));
-                spoutData.put("transferred", spoutStreamsStats.get("transferred").get(window));
-                spoutData.put("stats", spoutSummaries.get(
+                spoutData.put(":latency", spoutStreamsStats.get("complete-latencies").get(window));
+                spoutData.put(":transferred", spoutStreamsStats.get("transferred").get(window));
+                spoutData.put(":stats", spoutSummaries.get(
                         spoutComponentId).stream().map(
                                 UIHelpers::getStatMapFromExecutorSummary).collect(Collectors.toList()));
-                spoutData.put("link", UIHelpers.urlFormat("/component.html?id=%s&topology_id=%s", spoutComponentId, topoId));
+                spoutData.put(":link", UIHelpers.urlFormat("/component.html?id=%s&topology_id=%s", spoutComponentId, topoId));
 
-                result.put("inputs",
+                spoutData.put(":inputs",
                     spoutSpecMapEntry.getValue().get_common().get_inputs().entrySet().stream().map(
                             UIHelpers::getInputMap).collect(Collectors.toList())
                 );
@@ -1422,19 +1421,19 @@ public class UIHelpers {
 
         for (Map.Entry<String, Bolt> boltEntry : boltSpecs.entrySet()) {
             String boltComponentId = boltEntry.getKey();
-            if (boltSummaries.containsKey(boltComponentId) && (sys || Utils.isSystemId(boltComponentId))) {
+            if (boltSummaries.containsKey(boltComponentId) && (sys || !Utils.isSystemId(boltComponentId))) {
                 Map<String, Object> boltMap = new HashMap();
-                boltMap.put("type", "bolt");
-                boltMap.put("capacity", StatsUtil.computeBoltCapacity(boltSummaries.get(boltComponentId)));
+                boltMap.put(":type", "bolt");
+                boltMap.put(":capacity", StatsUtil.computeBoltCapacity(boltSummaries.get(boltComponentId)));
                 Map<String, Map> boltStreamsStats = StatsUtil.boltStreamsStats(boltSummaries.get(boltComponentId), true);
-                boltMap.put("latency", boltStreamsStats.get("process-latencies").get(window));
-                boltMap.put("transferred", boltStreamsStats.get("transferred").get(window));
-                boltMap.put("stats", boltSummaries.get(
+                boltMap.put(":latency", boltStreamsStats.get("process-latencies").get(window));
+                boltMap.put(":transferred", boltStreamsStats.get("transferred").get(window));
+                boltMap.put(":stats", boltSummaries.get(
                         boltComponentId).stream().map(
                         UIHelpers::getStatMapFromExecutorSummary).collect(Collectors.toList()));
-                boltMap.put("link", UIHelpers.urlFormat("/component.html?id=%s&topology_id=%s", boltComponentId, topoId));
+                boltMap.put(":link", UIHelpers.urlFormat("/component.html?id=%s&topology_id=%s", boltComponentId, topoId));
 
-                result.put("inputs",
+                boltMap.put(":inputs",
                         boltEntry.getValue().get_common().get_inputs().entrySet().stream().map(
                                 UIHelpers::getInputMap).collect(Collectors.toList())
                 );
