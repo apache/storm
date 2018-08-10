@@ -4807,18 +4807,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 @Override
                 protected ClusterSummary loadValue() {
                     try {
-                        if (active) {
-                            ClusterSummary newSummary = getClusterInfoImpl();
-                            LOG.debug("the new summary is {}", newSummary);
-                            //Force update histogram upon each cache refresh
-                            //This behavior relies on the fact that most common implementation of Reporter
-                            // reports Gauges before Histograms. Because DerivativeGauge will trigger cache
-                            // refresh upon reporter's query, histogram will also be updated before query
-                            updateHistogram(newSummary);
-                            return newSummary;
-                        } else {
-                            return null;
-                        }
+                        ClusterSummary newSummary = getClusterInfoImpl();
+                        LOG.debug("the new summary is {}", newSummary);
+                        //Force update histogram upon each cache refresh
+                        //This behavior relies on the fact that most common implementation of Reporter
+                        // reports Gauges before Histograms. Because DerivativeGauge will trigger cache
+                        // refresh upon reporter's query, histogram will also be updated before query
+                        updateHistogram(newSummary);
+                        return newSummary;
                     } catch (Exception e) {
                         LOG.warn("Get cluster info exception.", e);
                         throw new RuntimeException(e);
@@ -4919,6 +4915,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         //This is not thread safe
         void setActive(final boolean active) {
             if (this.active != active) {
+                this.active = active;
                 if (active) {
                     StormMetricsRegistry.registerMetricSet(this);
                 } else {
@@ -4926,8 +4923,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     // https://github.com/dropwizard/metrics/pull/1280
                     StormMetricsRegistry.unregisterMetricSet(this);
                 }
-                //Update this.active after metricSet is unregistered to avoid cacheSummary loading null value
-                this.active = active;
             }
         }
 
