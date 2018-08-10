@@ -4764,7 +4764,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         private final Map<String, com.codahale.metrics.Metric> ported = new HashMap<>(PORTED_METRICS);
         private final Function<String, Histogram> registerHistogram = (name) -> {
             final Histogram histogram = new Histogram(new SlidingTimeWindowReservoir(CACHING_WINDOW / 2, TimeUnit.SECONDS));
-            ported.put(name, histogram);
+            ported.put(MetricRegistry.name(SUMMARY, name), histogram);
             return histogram;
         };
         private volatile boolean active = false;
