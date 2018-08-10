@@ -2890,7 +2890,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                         }
                                     });
 
-            // Num supervisor, and fragmented resources have been included in cluster summary
             StormMetricsRegistry.registerGauge("nimbus:total-available-memory-non-negative", () -> nodeIdToResources.get().values()
                 .parallelStream()
                 .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableMem(), 0))
@@ -4756,6 +4755,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
         };
         private final Function<String, Histogram> registerHistogram = (name) -> {
+            //This histogram reflects the data distribution across only one ClusterSummary, i.e.,
+            // data distribution across all entities of a type (e.g., data from all nimbus/topologies) at one moment.
+            // Hence we use half of the CACHING_WINDOW time to ensure it retains only data from the most recent update
             final Histogram histogram = new Histogram(new SlidingTimeWindowReservoir(CACHING_WINDOW / 2, TimeUnit.SECONDS));
             clusterSummaryMetrics.put(name, histogram);
             return histogram;
@@ -4787,6 +4789,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         private final Histogram topologiesAssignedMemOffHeap = registerHistogram.apply("topologies:assigned-mem-off-heap");
         private final Histogram topologiesAssignedCpu = registerHistogram.apply("topologies:assigned-cpu");
 
+        /**
+         * Constructor to put all items in ClusterSummary in MetricSet as a metric.
+         * All metrics are derived from a cached ClusterSummary object,
+         * expired {@link ClusterSummaryMetricSet#CACHING_WINDOW} seconds after first query in a while from reporters.
+         * In case of {@link com.codahale.metrics.ScheduledReporter}, CACHING_WINDOW should be set shorter than
+         * reporting interval to avoid outdated reporting.
+         */
         ClusterSummaryMetricSet() {
             //Break the code if out of sync to thrift protocol
             assert ClusterSummary._Fields.values().length == 3
@@ -4800,9 +4809,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     try {
                         if (active) {
                             ClusterSummary newSummary = getClusterInfoImpl();
-                            LOG.info("the new summary is {}", newSummary);
-                            //This is ugly but I can't think of a better way to update histogram only once per caching
-                            // It also kind of depends on the implementation that gauges gets updated before histograms
+                            LOG.debug("the new summary is {}", newSummary);
+                            //Force update histogram upon each cache refresh
+                            //This behavior relies on the fact that most common implementation of Reporter
+                            // reports Gauges before Histograms. Because DerivativeGauge will trigger cache
+                            // refresh upon reporter's query, histogram will also be updated before query
                             updateHistogram(newSummary);
                             return newSummary;
                         } else {
