@@ -4746,25 +4746,19 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     }
 
-    //enum NotPorted {
-    //    //Declared in StormConf. I don't see the value in reporting so.
-    //    SUPERVISOR_TOTAL_RESOURCE,
-    //    //May be able to aggregate based on status;
-    //    TOPOLOGY_STATUS,
-    //    TOPOLOGY_SCHED_STATUS,
-    //    //May be aggregated, as well as other distinct values
-    //    NUM_DISTINCT_NIMBUS_VERSION;
-    //}
-
     private class ClusterSummaryMetricSet implements MetricSet, Runnable {
         static final int CACHING_WINDOW = 5;
-        static final int PORTED_METRICS = 25;
         static final String SUMMARY = "summary";
 
-        private final Map<String, com.codahale.metrics.Metric> ported = new HashMap<>(PORTED_METRICS);
+        private final Map<String, com.codahale.metrics.Metric> clusterSummaryMetrics = new HashMap<String, com.codahale.metrics.Metric>() {
+            @Override
+            public com.codahale.metrics.Metric put(String key, com.codahale.metrics.Metric value) {
+                return super.put(StormMetricsRegistry.name(SUMMARY, key), value);
+            }
+        };
         private final Function<String, Histogram> registerHistogram = (name) -> {
             final Histogram histogram = new Histogram(new SlidingTimeWindowReservoir(CACHING_WINDOW / 2, TimeUnit.SECONDS));
-            ported.put(MetricRegistry.name(SUMMARY, name), histogram);
+            clusterSummaryMetrics.put(name, histogram);
             return histogram;
         };
         private volatile boolean active = false;
@@ -4822,43 +4816,43 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             };
 
-            ported.put("cluster:num-nimbus-leaders", new DerivativeGauge<ClusterSummary, Long>(cachedSummary) {
+            clusterSummaryMetrics.put("cluster:num-nimbus-leaders", new DerivativeGauge<ClusterSummary, Long>(cachedSummary) {
                 @Override
                 protected Long transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_nimbuses().stream().filter(NimbusSummary::is_isLeader).count();
                 }
             });
-            ported.put("cluster:num-nimbuses", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+            clusterSummaryMetrics.put("cluster:num-nimbuses", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
                 @Override
                 protected Integer transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_nimbuses_size();
                 }
             });
-            ported.put("cluster:num-supervisors", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+            clusterSummaryMetrics.put("cluster:num-supervisors", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
                 @Override
                 protected Integer transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors_size();
                 }
             });
-            ported.put("cluster:num-topologies", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+            clusterSummaryMetrics.put("cluster:num-topologies", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
                 @Override
                 protected Integer transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_topologies_size();
                 }
             });
-            ported.put("cluster:num-total-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+            clusterSummaryMetrics.put("cluster:num-total-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
                 @Override
                 protected Integer transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors().stream().mapToInt(SupervisorSummary::get_num_workers).sum();
                 }
             });
-            ported.put("cluster:num-total-used-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+            clusterSummaryMetrics.put("cluster:num-total-used-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
                 @Override
                 protected Integer transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors().stream().mapToInt(SupervisorSummary::get_num_used_workers).sum();
                 }
             });
-            ported.put("cluster:total-fragmented-memory-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
+            clusterSummaryMetrics.put("cluster:total-fragmented-memory-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
                 @Override
                 protected Double transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors().stream()
@@ -4866,7 +4860,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                         .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_mem(), 0)).sum();
                 }
             });
-            ported.put("cluster:total-fragmented-cpu-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
+            clusterSummaryMetrics.put("cluster:total-fragmented-cpu-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
                 @Override
                 protected Double transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors().stream()
@@ -4920,7 +4914,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         @Override
         public Map<String, com.codahale.metrics.Metric> getMetrics() {
-            return ported;
+            return clusterSummaryMetrics;
         }
 
         @Override
