@@ -19,6 +19,7 @@
 package org.apache.storm.daemon.logviewer.webapp;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -38,6 +39,7 @@ import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeters;
 import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.daemon.ui.resources.StormApiResource;
@@ -61,6 +63,14 @@ public class LogviewerResource {
     private static final Meter meterDownloadLogDaemonFileHttpRequests = StormMetricsRegistry.registerMeter(
             "logviewer:num-download-log-daemon-file-http-requests");
     private static final Meter meterListLogsHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-list-logs-http-requests");
+
+    private static final Meter numSearchLogRequests = StormMetricsRegistry.registerMeter("logviewer:num-search-logs-requests");
+    private static final Meter numDeepSearchArchived = StormMetricsRegistry.registerMeter(
+        "logviewer:num-deep-search-requests-with-archived");
+    private static final Meter numDeepSearchNonArchived = StormMetricsRegistry.registerMeter(
+            "logviewer:num-deep-search-requests-without-archived");
+    private static final Timer searchLogRequestDuration = StormMetricsRegistry.registerTimer("logviewer:search-requests-duration-ms");
+    private static final Timer deepSearchRequestDuration = StormMetricsRegistry.registerTimer("logviewer:deep-search-request-duration-ms");
 
     private final LogviewerLogPageHandler logviewer;
     private final LogviewerProfileHandler profileHandler;
@@ -105,6 +115,9 @@ public class LogviewerResource {
         } catch (InvalidRequestException e) {
             LOG.error(e.getMessage(), e);
             return Response.status(400).entity(e.getMessage()).build();
+        } catch (IOException e) {
+            ExceptionMeters.NUM_READ_LOG_EXCEPTIONS.mark();
+            throw e;
         }
     }
 
@@ -126,6 +139,9 @@ public class LogviewerResource {
         } catch (InvalidRequestException e) {
             LOG.error(e.getMessage(), e);
             return Response.status(400).entity(e.getMessage()).build();
+        } catch (IOException e) {
+            ExceptionMeters.NUM_READ_DAEMON_LOG_EXCEPTIONS.mark();
+            throw e;
         }
     }
 
@@ -158,7 +174,12 @@ public class LogviewerResource {
         String callback = request.getParameter(StormApiResource.callbackParameterName);
         String origin = request.getHeader("Origin");
 
-        return logviewer.listLogFiles(user, portStr != null ? Integer.parseInt(portStr) : null, topologyId, callback, origin);
+        try {
+            return logviewer.listLogFiles(user, portStr != null ? Integer.parseInt(portStr) : null, topologyId, callback, origin);
+        } catch (IOException e) {
+            ExceptionMeters.NUM_LIST_LOG_EXCEPTIONS.mark();
+            throw e;
+        }
     }
 
     /**
@@ -169,7 +190,12 @@ public class LogviewerResource {
     public Response listDumpFiles(@PathParam("topo-id") String topologyId, @PathParam("host-port") String hostPort,
                                   @Context HttpServletRequest request) throws IOException {
         String user = httpCredsHandler.getUserName(request);
-        return profileHandler.listDumpFiles(topologyId, hostPort, user);
+        try {
+            return profileHandler.listDumpFiles(topologyId, hostPort, user);
+        } catch (IOException e) {
+            ExceptionMeters.NUM_LIST_DUMP_EXCEPTIONS.mark();
+            throw e;
+        }
     }
 
     /**
@@ -180,7 +206,12 @@ public class LogviewerResource {
     public Response downloadDumpFile(@PathParam("topo-id") String topologyId, @PathParam("host-port") String hostPort,
                                      @PathParam("filename") String fileName, @Context HttpServletRequest request) throws IOException {
         String user = httpCredsHandler.getUserName(request);
-        return profileHandler.downloadDumpFile(topologyId, hostPort, fileName, user);
+        try {
+            return profileHandler.downloadDumpFile(topologyId, hostPort, fileName, user);
+        } catch (IOException e) {
+            ExceptionMeters.NUM_DOWNLOAD_DUMP_EXCEPTIONS.mark();
+            throw e;
+        }
     }
 
     /**
@@ -194,7 +225,12 @@ public class LogviewerResource {
         String user = httpCredsHandler.getUserName(request);
         String file = request.getParameter("file");
         String decodedFileName = URLDecoder.decode(file);
-        return logDownloadHandler.downloadLogFile(decodedFileName, user);
+        try {
+            return logDownloadHandler.downloadLogFile(decodedFileName, user);
+        } catch (IOException e) {
+            ExceptionMeters.NUM_DOWNLOAD_LOG_EXCEPTIONS.mark();
+            throw e;
+        }
     }
 
     /**
@@ -208,7 +244,12 @@ public class LogviewerResource {
         String user = httpCredsHandler.getUserName(request);
         String file = request.getParameter("file");
         String decodedFileName = URLDecoder.decode(file);
-        return logDownloadHandler.downloadDaemonLogFile(decodedFileName, user);
+        try {
+            return logDownloadHandler.downloadDaemonLogFile(decodedFileName, user);
+        } catch (IOException e) {
+            ExceptionMeters.NUM_DOWNLOAD_DAEMON_LOG_EXCEPTIONS.mark();
+            throw e;
+        }
     }
 
     /**
@@ -217,6 +258,8 @@ public class LogviewerResource {
     @GET
     @Path("/search")
     public Response search(@Context HttpServletRequest request) throws IOException {
+        numSearchLogRequests.mark();
+
         String user = httpCredsHandler.getUserName(request);
         boolean isDaemon = StringUtils.equals(request.getParameter("is-daemon"), "yes");
         String file = request.getParameter("file");
@@ -227,14 +270,17 @@ public class LogviewerResource {
         String callback = request.getParameter(StormApiResource.callbackParameterName);
         String origin = request.getHeader("Origin");
 
-        try {
-            return logSearchHandler.searchLogFile(decodedFileName, user, isDaemon, searchString, numMatchesStr,
-                    startByteOffset, callback, origin);
+        try (Timer.Context t = searchLogRequestDuration.time()) {
+            return logSearchHandler.searchLogFile(decodedFileName, user, isDaemon,
+                searchString, numMatchesStr, startByteOffset, callback, origin);
         } catch (InvalidRequestException e) {
             LOG.error(e.getMessage(), e);
             int statusCode = 400;
             return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(e, statusCode)).setCallback(callback)
-                    .setStatus(statusCode).build();
+                .setStatus(statusCode).build();
+        } catch (IOException e) {
+            ExceptionMeters.NUM_SEARCH_EXCEPTIONS.mark();
+            throw e;
         }
     }
 
@@ -244,7 +290,7 @@ public class LogviewerResource {
     @GET
     @Path("/deepSearch/{topoId}")
     public Response deepSearch(@PathParam("topoId") String topologyId,
-                               @Context HttpServletRequest request) throws IOException {
+                               @Context HttpServletRequest request) {
         String user = httpCredsHandler.getUserName(request);
         String searchString = request.getParameter("search-string");
         String numMatchesStr = request.getParameter("num-matches");
@@ -255,8 +301,16 @@ public class LogviewerResource {
         String callback = request.getParameter(StormApiResource.callbackParameterName);
         String origin = request.getHeader("Origin");
 
-        return logSearchHandler.deepSearchLogsForTopology(topologyId, user, searchString, numMatchesStr, portStr,
-                startFileOffset, startByteOffset, BooleanUtils.toBooleanObject(searchArchived), callback, origin);
+        Boolean alsoSearchArchived = BooleanUtils.toBooleanObject(searchArchived);
+        if (BooleanUtils.isTrue(alsoSearchArchived)) {
+            numDeepSearchArchived.mark();
+        } else {
+            numDeepSearchNonArchived.mark();
+        }
+        try (Timer.Context t = deepSearchRequestDuration.time()) {
+            return logSearchHandler.deepSearchLogsForTopology(topologyId, user, searchString, numMatchesStr, portStr, startFileOffset,
+                startByteOffset, alsoSearchArchived, callback, origin);
+        }
     }
 
     private int parseIntegerFromMap(Map<String, String[]> map, String parameterKey) throws InvalidRequestException {

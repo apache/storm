@@ -12,6 +12,9 @@
 
 package org.apache.storm.scheduler;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class WorkerSlot {
     private final String nodeId;
     private final int port;
@@ -37,6 +40,10 @@ public class WorkerSlot {
 
     public String getId() {
         return getNodeId() + ":" + getPort();
+    }
+
+    public List<Object> toList() {
+        return Arrays.asList(nodeId, (long) port);
     }
 
     @Override

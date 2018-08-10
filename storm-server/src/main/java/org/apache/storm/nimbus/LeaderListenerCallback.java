@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.security.auth.Subject;
+
+import com.codahale.metrics.Meter;
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
@@ -29,6 +31,7 @@ import org.apache.storm.daemon.nimbus.TopoCache;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.shade.com.google.common.base.Joiner;
 import org.apache.storm.shade.com.google.common.collect.Sets;
@@ -45,6 +48,8 @@ import org.slf4j.LoggerFactory;
  * A callback function when nimbus gains leadership.
  */
 public class LeaderListenerCallback {
+    private static final Meter numGainedLeader = StormMetricsRegistry.registerMeter("nimbus:num-gained-leadership");
+    private static final Meter numLostLeader = StormMetricsRegistry.registerMeter("nimbus:num-lost-leadership");
     private static final Logger LOG = LoggerFactory.getLogger(LeaderListenerCallback.class);
     private static final String STORM_JAR_SUFFIX = "-stormjar.jar";
     private static final String STORM_CODE_SUFFIX = "-stormcode.ser";
@@ -82,6 +87,7 @@ public class LeaderListenerCallback {
      * Invoke when gains leadership.
      */
     public void leaderCallBack() {
+        numGainedLeader.mark();
         //set up nimbus-info to zk
         setUpNimbusInfo(acls);
         //sync zk assignments/id-info to local
@@ -131,6 +137,7 @@ public class LeaderListenerCallback {
      * Invoke when lost leadership.
      */
     public void notLeaderCallback() {
+        numLostLeader.mark();
         tc.clear();
     }
 

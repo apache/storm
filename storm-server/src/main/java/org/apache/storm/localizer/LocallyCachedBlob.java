@@ -52,8 +52,7 @@ public abstract class LocallyCachedBlob {
     private long lastUsed = Time.currentTimeMillis();
     private CompletableFuture<Void> doneUpdating = null;
 
-    private static final Histogram fetchingRate = StormMetricsRegistry.registerHistogram(
-            "supervisor:blob-fetching-rate-MB/s", new ExponentiallyDecayingReservoir());
+    private static final Histogram fetchingRate = StormMetricsRegistry.registerHistogram("supervisor:blob-fetching-rate-MB/s");
 
     /**
      * Create a new LocallyCachedBlob.

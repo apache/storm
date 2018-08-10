@@ -18,9 +18,9 @@
 
 package org.apache.storm.daemon.nimbus;
 
-import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,6 +46,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,6 +55,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -181,6 +184,8 @@ import org.apache.storm.security.auth.workertoken.WorkerTokenManager;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.base.Strings;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
+import org.apache.storm.shade.com.google.common.collect.MapDifference;
+import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
@@ -251,10 +256,18 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final Meter getTopologyPageInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getTopologyPageInfo-calls");
     private static final Meter getSupervisorPageInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getSupervisorPageInfo-calls");
     private static final Meter getComponentPageInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getComponentPageInfo-calls");
-    private static final Histogram scheduleTopologyTimeMs = StormMetricsRegistry.registerHistogram("nimbus:time-scheduleTopology-ms",
-                                                                                                   new ExponentiallyDecayingReservoir());
     private static final Meter getOwnerResourceSummariesCalls = StormMetricsRegistry.registerMeter(
         "nimbus:num-getOwnerResourceSummaries-calls");
+    //Timer
+    private static final Timer fileUploadDuration = StormMetricsRegistry.registerTimer("nimbus:files-upload-duration-ms");
+    private static final Timer schedulingDuration = StormMetricsRegistry.registerTimer("nimbus:topology-scheduling-duration-ms");
+    //Scheduler histogram
+    private static final Histogram numAddedExecPerScheduling = StormMetricsRegistry.registerHistogram("nimbus:num-added-executors-per-scheduling");
+    private static final Histogram numAddedSlotPerScheduling = StormMetricsRegistry.registerHistogram("nimbus:num-added-slots-per-scheduling");
+    private static final Histogram numRemovedExecPerScheduling = StormMetricsRegistry.registerHistogram("nimbus:num-removed-executors-per-scheduling");
+    private static final Histogram numRemovedSlotPerScheduling = StormMetricsRegistry.registerHistogram("nimbus:num-removed-slots-per-scheduling");
+    private static final Histogram numNetExecIncreasePerScheduling = StormMetricsRegistry.registerHistogram("nimbus:num-net-executors-increase-per-scheduling");
+    private static final Histogram numNetSlotIncreasePerScheduling = StormMetricsRegistry.registerHistogram("nimbus:num-net-slots-increase-per-scheduling");
     // END Metrics
     private static final Meter shutdownCalls = StormMetricsRegistry.registerMeter("nimbus:num-shutdown-calls");
     private static final Meter processWorkerMetricsCalls = StormMetricsRegistry.registerMeter("nimbus:process-worker-metric-calls");
@@ -411,6 +424,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final StormTimer timer;
     private final IScheduler scheduler;
     private final IScheduler underlyingScheduler;
+    //Metrics related
+    private final AtomicReference<Long> schedulingStartTimeNs = new AtomicReference<>(null);
+    private final AtomicLong longestSchedulingTime = new AtomicLong();
+
     private final ILeaderElector leaderElector;
     private final AssignmentDistributionService assignmentsDistributer;
     private final AtomicReference<Map<String, String>> idToSchedStatus;
@@ -550,6 +567,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             });
     }
 
+    //Not symmetric difference. Performing A.entrySet() - B.entrySet()
     private static <K, V> Map<K, V> mapDiff(Map<? extends K, ? extends V> first, Map<? extends K, ? extends V> second) {
         Map<K, V> ret = new HashMap<>();
         for (Entry<? extends K, ? extends V> entry : second.entrySet()) {
@@ -689,25 +707,19 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      * @return {topology-id -> {executor [node port]}} mapping
      */
     private static Map<String, Map<List<Long>, List<Object>>> computeTopoToExecToNodePort(
-        Map<String, SchedulerAssignment> schedAssignments) {
+        Map<String, SchedulerAssignment> schedAssignments, List<String> assignedTopologyIds) {
         Map<String, Map<List<Long>, List<Object>>> ret = new HashMap<>();
         for (Entry<String, SchedulerAssignment> schedEntry : schedAssignments.entrySet()) {
             Map<List<Long>, List<Object>> execToNodePort = new HashMap<>();
             for (Entry<ExecutorDetails, WorkerSlot> execAndNodePort : schedEntry.getValue().getExecutorToSlot().entrySet()) {
                 ExecutorDetails exec = execAndNodePort.getKey();
                 WorkerSlot slot = execAndNodePort.getValue();
-
-                List<Long> listExec = new ArrayList<>(2);
-                listExec.add((long) exec.getStartTask());
-                listExec.add((long) exec.getEndTask());
-
-                List<Object> nodePort = new ArrayList<>(2);
-                nodePort.add(slot.getNodeId());
-                nodePort.add((long) slot.getPort());
-
-                execToNodePort.put(listExec, nodePort);
+                execToNodePort.put(exec.toList(), slot.toList());
             }
             ret.put(schedEntry.getKey(), execToNodePort);
+        }
+        for (String id : assignedTopologyIds) {
+            ret.putIfAbsent(id, null);
         }
         return ret;
     }
@@ -735,39 +747,95 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
-    private static Map<String, Map<List<Long>, List<Object>>> computeNewTopoToExecToNodePort(
-        Map<String, SchedulerAssignment> schedAssignments, Map<String, Assignment> existingAssignments) {
-        Map<String, Map<List<Long>, List<Object>>> ret = computeTopoToExecToNodePort(schedAssignments);
-        // Print some useful information
-        if (existingAssignments != null && !existingAssignments.isEmpty()) {
-            for (Entry<String, Map<List<Long>, List<Object>>> entry : ret.entrySet()) {
-                String topoId = entry.getKey();
-                Map<List<Long>, List<Object>> execToNodePort = entry.getValue();
-                Assignment assignment = existingAssignments.get(topoId);
-                if (assignment == null) {
-                    continue;
+    private boolean auditAssignmentChanges(Map<String, Assignment> existingAssignments,
+                                           Map<String, Assignment> newAssignments) {
+        assert existingAssignments != null && newAssignments != null;
+        boolean anyChanged = existingAssignments.isEmpty() ^ newAssignments.isEmpty();
+        long numRemovedExec = 0;
+        long numRemovedSlot = 0;
+        long numAddedExec   = 0;
+        long numAddedSlot   = 0;
+        if (existingAssignments.isEmpty()) {
+            for (Entry<String, Assignment> entry : newAssignments.entrySet()) {
+                final Map<List<Long>, NodeInfo> execToPort = entry.getValue().get_executor_node_port();
+                final long count = new HashSet<>(execToPort.values()).size();
+                LOG.info("Assigning {} to {} slots", entry.getKey(), count);
+                LOG.info("Assign executors: {}", execToPort.keySet());
+                numAddedSlot += count;
+                numAddedExec += execToPort.size();
+            }
+        } else if (newAssignments.isEmpty()) {
+            for (Entry<String, Assignment> entry : existingAssignments.entrySet()) {
+                final Map<List<Long>, NodeInfo> execToPort = entry.getValue().get_executor_node_port();
+                final long count = new HashSet<>(execToPort.values()).size();
+                LOG.info("Removing {} from {} slots", entry.getKey(), count);
+                LOG.info("Remove executors: {}", execToPort.keySet());
+                numRemovedSlot += count;
+                numRemovedExec += execToPort.size();
+            }
+        } else {
+            MapDifference<String, Assignment> difference = Maps.difference(existingAssignments, newAssignments);
+            if (anyChanged = !difference.areEqual()) {
+                for (Entry<String, Assignment> entry : difference.entriesOnlyOnLeft().entrySet()) {
+                    final Map<List<Long>, NodeInfo> execToPort = entry.getValue().get_executor_node_port();
+                    final long count = new HashSet<>(execToPort.values()).size();
+                    LOG.info("Removing {} from {} slots", entry.getKey(), count);
+                    LOG.info("Remove executors: {}", execToPort.keySet());
+                    numRemovedSlot += count;
+                    numRemovedExec += execToPort.size();
                 }
-                Map<List<Long>, NodeInfo> old = assignment.get_executor_node_port();
-                Map<List<Long>, List<Object>> reassigned = new HashMap<>();
-                for (Entry<List<Long>, List<Object>> execAndNodePort : execToNodePort.entrySet()) {
-                    NodeInfo oldAssigned = old.get(execAndNodePort.getKey());
-                    String node = (String) execAndNodePort.getValue().get(0);
-                    Long port = (Long) execAndNodePort.getValue().get(1);
-                    if (oldAssigned == null || !oldAssigned.get_node().equals(node)
-                        || !port.equals(oldAssigned.get_port_iterator().next())) {
-                        reassigned.put(execAndNodePort.getKey(), execAndNodePort.getValue());
-                    }
+                for (Entry<String, Assignment> entry : difference.entriesOnlyOnRight().entrySet()) {
+                    final Map<List<Long>, NodeInfo> execToPort = entry.getValue().get_executor_node_port();
+                    final long count = new HashSet<>(execToPort.values()).size();
+                    LOG.info("Assigning {} to {} slots", entry.getKey(), count);
+                    LOG.info("Assign executors: {}", execToPort.keySet());
+                    numAddedSlot += count;
+                    numAddedExec += execToPort.size();
                 }
+                for (Entry<String, MapDifference.ValueDifference<Assignment>> entry : difference.entriesDiffering().entrySet()) {
+                    final Map<List<Long>, NodeInfo> execToSlot = entry.getValue().rightValue().get_executor_node_port();
+                    final Set<NodeInfo> slots = new HashSet<>(execToSlot.values());
+                    LOG.info("Reassigning {} to {} slots", entry.getKey(), slots.size());
+                    LOG.info("Reassign executors: {}", execToSlot.keySet());
 
-                if (!reassigned.isEmpty()) {
-                    int count = (new HashSet<>(execToNodePort.values())).size();
-                    Set<List<Long>> reExecs = reassigned.keySet();
-                    LOG.info("Reassigning {} to {} slots", topoId, count);
-                    LOG.info("Reassign executors: {}", reExecs);
+                    final Map<List<Long>, NodeInfo> oldExecToSlot = entry.getValue().leftValue().get_executor_node_port();
+
+                    long commonExecCount = 0;
+                    Set<NodeInfo> commonSlots = new HashSet<>(execToSlot.size());
+                    for (Entry<List<Long>, NodeInfo> execEntry : execToSlot.entrySet()) {
+                        if (execEntry.getValue().equals(oldExecToSlot.get(execEntry.getKey()))) {
+                            commonExecCount++;
+                            commonSlots.add(execEntry.getValue());
+                        }
+                    }
+                    long commonSlotCount = commonSlots.size();
+
+                    //Treat reassign as remove and add
+                    numRemovedSlot += new HashSet<>(oldExecToSlot.values()).size() - commonSlotCount;
+                    numRemovedExec += oldExecToSlot.size() - commonExecCount;
+                    numAddedSlot += slots.size() - commonSlotCount;
+                    numAddedExec += execToSlot.size() - commonExecCount;
                 }
             }
+            LOG.debug("{} assignments unchanged: {}", difference.entriesInCommon().size(), difference.entriesInCommon().keySet());
         }
-        return ret;
+        numAddedExecPerScheduling.update(numAddedExec);
+        numAddedSlotPerScheduling.update(numAddedSlot);
+        numRemovedExecPerScheduling.update(numRemovedExec);
+        numRemovedSlotPerScheduling.update(numRemovedSlot);
+        numNetExecIncreasePerScheduling.update(numAddedExec - numRemovedExec);
+        numNetSlotIncreasePerScheduling.update(numAddedSlot - numRemovedSlot);
+
+        if (anyChanged) {
+            LOG.info("Fragmentation after scheduling is: {} MB, {} PCore CPUs", fragmentedMemory(), fragmentedCpu());
+            nodeIdToResources.get().forEach((id, node) ->
+                LOG.info(
+                    "Node Id: {} Total Mem: {}, Used Mem: {}, Available Mem: {}, Total CPU: {}, Used "
+                        + "CPU: {}, Available CPU: {}, fragmented: {}",
+                    id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(),
+                    node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu(), isFragmented(node)));
+        }
+        return anyChanged;
     }
 
     private static List<List<Long>> changedExecutors(Map<List<Long>, NodeInfo> map, Map<List<Long>,
@@ -780,7 +848,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             key.add(ni.get_node());
             key.add(ni.get_port_iterator().next());
             List<List<Long>> value = new ArrayList<>(entry.getValue());
-            value.sort((a, b) -> a.get(0).compareTo(b.get(0)));
+            value.sort(Comparator.comparing(a -> a.get(0)));
             slotAssigned.put(key, value);
         }
         HashMap<List<Object>, List<List<Long>>> tmpNewSlotAssigned = newExecToNodePort == null ? new HashMap<>() :
@@ -788,7 +856,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         HashMap<List<Object>, List<List<Long>>> newSlotAssigned = new HashMap<>();
         for (Entry<List<Object>, List<List<Long>>> entry : tmpNewSlotAssigned.entrySet()) {
             List<List<Long>> value = new ArrayList<>(entry.getValue());
-            value.sort((a, b) -> a.get(0).compareTo(b.get(0)));
+            value.sort(Comparator.comparing(a -> a.get(0)));
             newSlotAssigned.put(entry.getKey(), value);
         }
         Map<List<Object>, List<List<Long>>> diff = mapDiff(slotAssigned, newSlotAssigned);
@@ -1217,7 +1285,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             return allNodeHost;
         } else {
             // rebalance
-            Map<String, String> ret = new HashMap();
+            Map<String, String> ret = new HashMap<>();
             for (Map.Entry<List<Long>, NodeInfo> entry : newExecutorNodePort.entrySet()) {
                 NodeInfo newNodeInfo = entry.getValue();
                 NodeInfo oldNodeInfo = oldExecutorNodePort.get(entry.getKey());
@@ -1984,11 +2052,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         Cluster cluster = new Cluster(inimbus, supervisors, topoToSchedAssignment, topologies, conf);
         cluster.setStatusMap(idToSchedStatus.get());
 
-        long beforeSchedule = System.currentTimeMillis();
+        schedulingStartTimeNs.set(Time.nanoTime());
         scheduler.schedule(topologies, cluster);
-        long scheduleTimeElapsedMs = System.currentTimeMillis() - beforeSchedule;
-        LOG.debug("Scheduling took {} ms for {} topologies", scheduleTimeElapsedMs, topologies.getTopologies().size());
-        scheduleTopologyTimeMs.update(scheduleTimeElapsedMs);
+        //Get and set the start time before getting current time in order to avoid potential race with the longest-scheduling-time-ms gauge
+        final Long startTime = schedulingStartTimeNs.getAndSet(null);
+        long elapsed = Time.nanoTime() - startTime;
+        longestSchedulingTime.accumulateAndGet(elapsed, Math::max);
+        schedulingDuration.update(elapsed, TimeUnit.NANOSECONDS);
+        LOG.debug("Scheduling took {} ms for {} topologies", elapsed, topologies.getTopologies().size());
 
         //merge with existing statuses
         idToSchedStatus.set(Utils.merge(idToSchedStatus.get(), cluster.getStatusMap()));
@@ -2131,17 +2202,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
         }
         // make the new assignments for topologies
-        Map<String, SchedulerAssignment> newSchedulerAssignments = null;
         synchronized (schedLock) {
-            newSchedulerAssignments = computeNewSchedulerAssignments(existingAssignments, topologies, bases, scratchTopoId);
+            Map<String, SchedulerAssignment> newSchedulerAssignments =
+                computeNewSchedulerAssignments(existingAssignments, topologies, bases, scratchTopoId);
 
             Map<String, Map<List<Long>, List<Object>>> topologyToExecutorToNodePort =
-                computeNewTopoToExecToNodePort(newSchedulerAssignments, existingAssignments);
-            for (String id : assignedTopologyIds) {
-                if (!topologyToExecutorToNodePort.containsKey(id)) {
-                    topologyToExecutorToNodePort.put(id, null);
-                }
-            }
+                computeTopoToExecToNodePort(newSchedulerAssignments, assignedTopologyIds);
             Map<String, Map<WorkerSlot, WorkerResources>> newAssignedWorkerToResources =
                 computeTopoToNodePortToResources(newSchedulerAssignments);
             int nowSecs = Time.currentTimeSecs();
@@ -2154,14 +2220,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 if (execToNodePort == null) {
                     execToNodePort = new HashMap<>();
                 }
-                Assignment existingAssignment = existingAssignments.get(topoId);
                 Set<String> allNodes = new HashSet<>();
-                if (execToNodePort != null) {
-                    for (List<Object> nodePort : execToNodePort.values()) {
-                        allNodes.add((String) nodePort.get(0));
-                    }
+                for (List<Object> nodePort : execToNodePort.values()) {
+                    allNodes.add((String) nodePort.get(0));
                 }
                 Map<String, String> allNodeHost = new HashMap<>();
+                Assignment existingAssignment = existingAssignments.get(topoId);
                 if (existingAssignment != null) {
                     allNodeHost.putAll(existingAssignment.get_node_host());
                 }
@@ -2219,15 +2283,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 newAssignments.put(topoId, newAssignment);
             }
 
-            if (!newAssignments.equals(existingAssignments)) {
+            boolean assignmentChanged = auditAssignmentChanges(existingAssignments, newAssignments);
+            if (assignmentChanged) {
                 LOG.debug("RESETTING id->resources and id->worker-resources cache!");
-                LOG.info("Fragmentation after scheduling is: {} MB, {} PCore CPUs", fragmentedMemory(), fragmentedCpu());
-                nodeIdToResources.get().forEach((id, node) ->
-                                                    LOG.info(
-                                                        "Node Id: {} Total Mem: {}, Used Mem: {}, Available Mem: {}, Total CPU: {}, Used "
-                                                        + "CPU: {}, Available CPU: {}, fragmented: {}",
-                                                        id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(),
-                                                        node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu(), isFragmented(node)));
                 idToResources.set(new HashMap<>());
                 idToWorkerResources.set(new HashMap<>());
             }
@@ -2826,21 +2884,27 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 .parallelStream()
                 .mapToDouble(SupervisorResources::getTotalCpu)
                 .sum());
-
+            StormMetricsRegistry.registerGauge("nimbus:longest-scheduling-time-ms", () -> {
+                //We want to update longest scheduling time in real time in case scheduler get stuck
+                // Get current time before startTime to avoid potential race with scheduler's Timer
+                Long currTime = Time.nanoTime();
+                Long startTime = schedulingStartTimeNs.get();
+                return TimeUnit.NANOSECONDS.toMillis(startTime == null ?
+                        longestSchedulingTime.get() : Math.max(currTime - startTime, longestSchedulingTime.get()));
+            });
+            StormMetricsRegistry.registerMeter("nimbus:num-launched").mark();
             StormMetricsRegistry.startMetricsReporters(conf);
 
-            if (clusterConsumerExceutors != null) {
-                timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.STORM_CLUSTER_METRICS_CONSUMER_PUBLISH_INTERVAL_SECS)),
-                                        () -> {
-                                            try {
-                                                if (isLeader()) {
-                                                    sendClusterMetricsToExecutors();
-                                                }
-                                            } catch (Exception e) {
-                                                throw new RuntimeException(e);
+            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.STORM_CLUSTER_METRICS_CONSUMER_PUBLISH_INTERVAL_SECS)),
+                                    () -> {
+                                        try {
+                                            if (isLeader()) {
+                                                sendClusterMetricsToExecutors();
                                             }
-                                        });
-            }
+                                        } catch (Exception e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    });
         } catch (Exception e) {
             if (Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e)) {
                 throw e;
@@ -3689,7 +3753,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             beginFileUploadCalls.mark();
             checkAuthorization(null, null, "fileUpload");
             String fileloc = getInbox() + "/stormjar-" + Utils.uuid() + ".jar";
-            uploaders.put(fileloc, Channels.newChannel(new FileOutputStream(fileloc)));
+            uploaders.put(fileloc, new TimedWritableByteChannel(Channels.newChannel(new FileOutputStream(fileloc)), fileUploadDuration));
             LOG.info("Uploading file from client to {}", fileloc);
             return fileloc;
         } catch (Exception e) {

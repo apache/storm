@@ -27,6 +27,8 @@ import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_PER_WORKER_LOGS_SIZE_MB;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_SUM_WORKER_LOGS_SIZE_MB;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Timer;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.Closeable;
@@ -48,8 +50,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BinaryOperator;
 import java.util.stream.StreamSupport;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.StormTimer;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
@@ -62,6 +66,9 @@ import org.slf4j.LoggerFactory;
  */
 public class LogCleaner implements Runnable, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(LogCleaner.class);
+    private static final Timer cleanupRoutineDuration = StormMetricsRegistry.registerTimer("logviewer:cleanup-routine-duration-ms");
+    private static final Histogram numFilesCleanedUp = StormMetricsRegistry.registerHistogram("logviewer:num-files-cleaned-up");
+    private static final Histogram diskSpaceFreed = StormMetricsRegistry.registerHistogram("logviewer:disk-space-freed-in-bytes");
 
     private final Map<String, Object> stormConf;
     private final Integer intervalSecs;
@@ -95,6 +102,8 @@ public class LogCleaner implements Runnable, Closeable {
 
         LOG.info("configured max total size of worker logs: {} MB, max total size of worker logs per directory: {} MB",
                 maxSumWorkerLogsSizeMb, maxPerWorkerLogsSizeMb);
+        //Switch to CachedGauge if this starts to hurt performance
+        StormMetricsRegistry.registerGauge("logviewer:worker-log-dir-size", () -> FileUtils.sizeOf(logRootDir));
     }
 
     /**
@@ -131,7 +140,9 @@ public class LogCleaner implements Runnable, Closeable {
      */
     @Override
     public void run() {
-        try {
+        int numFilesCleaned = 0;
+        long diskSpaceCleaned = 0L;
+        try (Timer.Context t = cleanupRoutineDuration.time()) {
             final long nowMills = Time.currentTimeMillis();
             Set<File> oldLogDirs = selectDirsForCleanup(nowMills);
 
@@ -142,30 +153,41 @@ public class LogCleaner implements Runnable, Closeable {
                     oldLogDirs.stream().map(File::getName).collect(joining(",")),
                     deadWorkerDirs.stream().map(File::getName).collect(joining(",")));
 
-            deadWorkerDirs.forEach(Unchecked.consumer(dir -> {
+            for (File dir : deadWorkerDirs) {
                 String path = dir.getCanonicalPath();
-                LOG.info("Cleaning up: Removing {}", path);
+                long sizeInBytes = FileUtils.sizeOf(dir);
+                LOG.info("Cleaning up: Removing {}, {} KB", path, sizeInBytes * 1e-3);
 
                 try {
                     Utils.forceDelete(path);
                     cleanupEmptyTopoDirectory(dir);
+                    numFilesCleaned++;
+                    diskSpaceCleaned += sizeInBytes;
                 } catch (Exception ex) {
+                    ExceptionMeters.NUM_FILE_REMOVAL_EXCEPTIONS.mark();
                     LOG.error(ex.getMessage(), ex);
                 }
-            }));
+            }
 
-            perWorkerDirCleanup(maxPerWorkerLogsSizeMb * 1024 * 1024);
-            globalLogCleanup(maxSumWorkerLogsSizeMb * 1024 * 1024);
+            final List<DeletionMeta> perWorkerDirCleanupMeta = perWorkerDirCleanup(maxPerWorkerLogsSizeMb * 1024 * 1024);
+            numFilesCleaned += perWorkerDirCleanupMeta.stream().mapToInt(meta -> meta.deletedFiles).sum();
+            diskSpaceCleaned += perWorkerDirCleanupMeta.stream().mapToLong(meta -> meta.deletedSize).sum();
+            final DeletionMeta globalLogCleanupMeta = globalLogCleanup(maxSumWorkerLogsSizeMb * 1024 * 1024);
+            numFilesCleaned += globalLogCleanupMeta.deletedFiles;
+            diskSpaceCleaned += globalLogCleanupMeta.deletedSize;
         } catch (Exception ex) {
+            ExceptionMeters.NUM_CLEANUP_EXCEPTIONS.mark();
             LOG.error("Exception while cleaning up old log.", ex);
         }
+        numFilesCleanedUp.update(numFilesCleaned);
+        diskSpaceFreed.update(diskSpaceCleaned);
     }
 
     /**
      * Delete the oldest files in each overloaded worker log dir.
      */
     @VisibleForTesting
-    List<Integer> perWorkerDirCleanup(long size) {
+    List<DeletionMeta> perWorkerDirCleanup(long size) {
         return workerLogs.getAllWorkerDirs().stream()
                 .map(Unchecked.function(dir ->
                         directoryCleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null)))
@@ -176,7 +198,7 @@ public class LogCleaner implements Runnable, Closeable {
      * Delete the oldest files in overloaded worker-artifacts globally.
      */
     @VisibleForTesting
-    int globalLogCleanup(long size) throws Exception {
+    DeletionMeta globalLogCleanup(long size) throws Exception {
         List<File> workerDirs = new ArrayList<>(workerLogs.getAllWorkerDirs());
         Set<String> aliveWorkerDirs = new HashSet<>(workerLogs.getAliveWorkerDirs());
 
@@ -223,8 +245,8 @@ public class LogCleaner implements Runnable, Closeable {
 
     @VisibleForTesting
     FileFilter mkFileFilterForLogCleanup(long nowMillis) {
-        final long cutoffAgeMillis = cleanupCutoffAgeMillis(nowMillis);
-        return file -> !file.isFile() && lastModifiedTimeWorkerLogdir(file) <= cutoffAgeMillis;
+        //Doesn't it make more sense to do file.isDirectory here?
+        return file -> !file.isFile() && lastModifiedTimeWorkerLogdir(file) <= cleanupCutoffAgeMillis(nowMillis);
     }
 
     /**
@@ -235,7 +257,7 @@ public class LogCleaner implements Runnable, Closeable {
     private long lastModifiedTimeWorkerLogdir(File logDir) {
         long dirModified = logDir.lastModified();
 
-        DirectoryStream<Path> dirStream = null;
+        DirectoryStream<Path> dirStream;
         try {
             dirStream = directoryCleaner.getStreamForDirectory(logDir);
         } catch (IOException e) {
@@ -256,9 +278,7 @@ public class LogCleaner implements Runnable, Closeable {
             LOG.error(ex.getMessage(), ex);
             return dirModified;
         } finally {
-            if (DirectoryStream.class.isInstance(dirStream)) {
-                IOUtils.closeQuietly(dirStream);
-            }
+            IOUtils.closeQuietly(dirStream);
         }
     }
 

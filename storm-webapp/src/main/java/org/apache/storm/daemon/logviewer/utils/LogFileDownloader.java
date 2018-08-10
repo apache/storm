@@ -18,12 +18,19 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
+import com.codahale.metrics.Histogram;
+
 import java.io.File;
 import java.io.IOException;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.storm.metric.StormMetricsRegistry;
+
+
 public class LogFileDownloader {
+    private static final Histogram fileDownloadSizeDistMB= StormMetricsRegistry.registerHistogram("logviewer:download-file-size-rounded-MB");
 
     private final String logRoot;
     private final String daemonLogRoot;
@@ -55,6 +62,7 @@ public class LogFileDownloader {
         File file = new File(rootDir, fileName).getCanonicalFile();
         if (file.exists()) {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
+                fileDownloadSizeDistMB.update(Math.round((double) file.length() / FileUtils.ONE_MB));
                 return LogviewerResponseBuilder.buildDownloadFile(file);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);

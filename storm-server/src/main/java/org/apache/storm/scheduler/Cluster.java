@@ -145,11 +145,7 @@ public class Cluster implements ISchedulingState {
             String nodeId = entry.getKey();
             SupervisorDetails supervisor = entry.getValue();
             String host = supervisor.getHost();
-            List<String> ids = hostToId.get(host);
-            if (ids == null) {
-                ids = new ArrayList<>();
-                hostToId.put(host, ids);
-            }
+            List<String> ids = hostToId.computeIfAbsent(host, k -> new ArrayList<>());
             ids.add(nodeId);
         }
         this.conf = conf;
@@ -173,11 +169,7 @@ public class Cluster implements ISchedulingState {
             for (Map.Entry<String, String> entry : resolvedSuperVisors.entrySet()) {
                 String hostName = entry.getKey();
                 String rack = entry.getValue();
-                List<String> nodesForRack = this.networkTopography.get(rack);
-                if (nodesForRack == null) {
-                    nodesForRack = new ArrayList<>();
-                    this.networkTopography.put(rack, nodesForRack);
-                }
+                List<String> nodesForRack = this.networkTopography.computeIfAbsent(rack, k -> new ArrayList<>());
                 nodesForRack.add(hostName);
             }
         } else {

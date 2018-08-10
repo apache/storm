@@ -159,7 +159,10 @@ public class LogCleanerTest {
             WorkerLogs workerLogs = new WorkerLogs(conf, rootDir);
             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, rootDir);
 
-            List<Integer> deletedFiles = logCleaner.perWorkerDirCleanup(1200);
+            List<Integer> deletedFiles = logCleaner.perWorkerDirCleanup(1200)
+                .stream()
+                .map(deletionMeta -> deletionMeta.deletedFiles)
+                .collect(toList());
             assertEquals(Integer.valueOf(4), deletedFiles.get(0));
             assertEquals(Integer.valueOf(4), deletedFiles.get(1));
             assertEquals(Integer.valueOf(4), deletedFiles.get(deletedFiles.size() - 1));
@@ -218,13 +221,13 @@ public class LogCleanerTest {
             Map<String, Object> conf = Utils.readStormConfig();
             WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, rootDir) {
                 @Override
-                public SortedSet<String> getAliveWorkerDirs() throws Exception {
+                public SortedSet<String> getAliveWorkerDirs() {
                     return new TreeSet<>(Collections.singletonList("/workers-artifacts/topo1/port1"));
                 }
             };
 
             LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, mockDirectoryCleaner, rootDir);
-            int deletedFiles = logCleaner.globalLogCleanup(2400);
+            int deletedFiles = logCleaner.globalLogCleanup(2400).deletedFiles;
             assertEquals(18, deletedFiles);
         } finally {
             Utils.setInstance(prevUtils);

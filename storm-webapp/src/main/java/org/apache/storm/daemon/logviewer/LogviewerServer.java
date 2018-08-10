@@ -21,6 +21,8 @@ package org.apache.storm.daemon.logviewer;
 import static org.apache.storm.DaemonConfig.UI_HEADER_BUFFER_BYTES;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricSet;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.File;
@@ -31,6 +33,7 @@ import java.util.Map;
 
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeters;
 import org.apache.storm.daemon.logviewer.utils.LogCleaner;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.daemon.logviewer.webapp.LogviewerApplication;
@@ -126,6 +129,7 @@ public class LogviewerServer implements AutoCloseable {
     void start() throws Exception {
         LOG.info("Starting Logviewer...");
         if (httpServer != null) {
+            StormMetricsRegistry.registerMetricSet(ExceptionMeters::getMetrics);
             httpServer.start();
         }
     }
@@ -165,7 +169,7 @@ public class LogviewerServer implements AutoCloseable {
 
         try (LogviewerServer server = new LogviewerServer(conf);
              LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir)) {
-            Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
+            Utils.addShutdownHookWithForceKillIn1Sec(server::close);
             logCleaner.start();
             StormMetricsRegistry.startMetricsReporters(conf);
             server.start();

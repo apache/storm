@@ -114,20 +114,17 @@ public class SupervisorUtils {
      * @param conf
      * @return
      *
-     * @throws Exception
      */
-    public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map<String, Object> conf) throws Exception {
+    public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map<String, Object> conf) {
         return _instance.readWorkerHeartbeatsImpl(conf);
     }
 
     /**
-     * get worker heartbeat by workerId
+     * get worker heartbeat by workerId.
      *
      * @param conf
      * @param workerId
      * @return
-     *
-     * @throws IOException
      */
     private static LSWorkerHeartbeat readWorkerHeartbeat(Map<String, Object> conf, String workerId) {
         return _instance.readWorkerHeartbeatImpl(conf, workerId);
@@ -137,7 +134,7 @@ public class SupervisorUtils {
         return _instance.isWorkerHbTimedOutImpl(now, whb, conf);
     }
 
-    public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) throws Exception {
+    public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) {
         Map<String, LSWorkerHeartbeat> workerHeartbeats = new HashMap<>();
 
         Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);
