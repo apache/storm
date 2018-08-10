@@ -194,7 +194,7 @@ public class StormApiResource {
      */
     @GET
     @Path("/owner-resources/{id}")
-    @AuthNimbusOp(value = "getOwnerResourceSummaries", needsTopoId = true)
+    @AuthNimbusOp(value = "getOwnerResourceSummaries")
     @Produces("application/json")
     public Response getOwnerResource(@PathParam("id") String id,
                                      @QueryParam(callbackParameterName) String callback) throws TException {
