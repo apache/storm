@@ -22,7 +22,6 @@ import com.codahale.metrics.CachedGauge;
 import com.codahale.metrics.DerivativeGauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.SlidingTimeWindowReservoir;
 import com.codahale.metrics.Timer;
@@ -4819,7 +4818,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             clusterSummaryMetrics.put("cluster:num-nimbus-leaders", new DerivativeGauge<ClusterSummary, Long>(cachedSummary) {
                 @Override
                 protected Long transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_nimbuses().stream().filter(NimbusSummary::is_isLeader).count();
+                    return clusterSummary.get_nimbuses().stream()
+                            .filter(NimbusSummary::is_isLeader)
+                            .count();
                 }
             });
             clusterSummaryMetrics.put("cluster:num-nimbuses", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
@@ -4843,29 +4844,35 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             clusterSummaryMetrics.put("cluster:num-total-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
                 @Override
                 protected Integer transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_supervisors().stream().mapToInt(SupervisorSummary::get_num_workers).sum();
+                    return clusterSummary.get_supervisors().stream()
+                            .mapToInt(SupervisorSummary::get_num_workers)
+                            .sum();
                 }
             });
             clusterSummaryMetrics.put("cluster:num-total-used-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
                 @Override
                 protected Integer transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_supervisors().stream().mapToInt(SupervisorSummary::get_num_used_workers).sum();
+                    return clusterSummary.get_supervisors().stream()
+                            .mapToInt(SupervisorSummary::get_num_used_workers)
+                            .sum();
                 }
             });
             clusterSummaryMetrics.put("cluster:total-fragmented-memory-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
                 @Override
                 protected Double transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors().stream()
-                        //Filtered negative value
-                        .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_mem(), 0)).sum();
+                            //Filtered negative value
+                            .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_mem(), 0))
+                            .sum();
                 }
             });
             clusterSummaryMetrics.put("cluster:total-fragmented-cpu-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
                 @Override
                 protected Double transform(ClusterSummary clusterSummary) {
                     return clusterSummary.get_supervisors().stream()
-                        //Filtered negative value
-                        .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_cpu(), 0)).sum();
+                            //Filtered negative value
+                            .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_cpu(), 0))
+                            .sum();
                 }
             });
         }
