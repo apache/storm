@@ -4919,7 +4919,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         //This is not thread safe
         void setActive(final boolean active) {
             if (this.active != active) {
-                this.active = active;
                 if (active) {
                     StormMetricsRegistry.registerMetricSet(this);
                 } else {
@@ -4927,6 +4926,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     // https://github.com/dropwizard/metrics/pull/1280
                     StormMetricsRegistry.unregisterMetricSet(this);
                 }
+                //Update this.active after metricSet is unregistered to avoid cacheSummary loading null value
+                this.active = active;
             }
         }
 
