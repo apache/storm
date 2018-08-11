@@ -62,7 +62,7 @@ public class ConfigValidation {
         validateField(fieldName, conf, getConfigClasses());
     }
 
-    private static synchronized List<Class<?>> getConfigClasses() {
+    public static synchronized List<Class<?>> getConfigClasses() {
         if (configClasses == null) {
             List<Class<?>> ret = new ArrayList<>();
             Set<String> classesToScan = new HashSet<>();

@@ -25,6 +25,7 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.security.INimbusCredentialPlugin;
 import org.apache.storm.security.auth.ICredentialsRenewer;
+import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +81,8 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
 
     protected void fillHadoopConfiguration(Map topologyConf, String configKey, Configuration configuration) {
         Map<String, Object> config = (Map<String, Object>) topologyConf.get(configKey);
-        LOG.info("TopoConf {}, got config {}, for configKey {}", topologyConf, config, configKey);
+        LOG.info("TopoConf {}, got config {}, for configKey {}", ConfigUtils.maskPasswords(topologyConf),
+                ConfigUtils.maskPasswords(config), configKey);
         if (config != null) {
             List<String> resourcesToLoad = new ArrayList<>();
             for (Map.Entry<String, Object> entry : config.entrySet()) {

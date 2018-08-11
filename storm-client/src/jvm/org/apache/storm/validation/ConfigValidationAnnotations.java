@@ -197,6 +197,12 @@ public class ConfigValidationAnnotations {
         Class<?> validatorClass();
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface Password {
+        Class validatorClass() default ConfigValidation.NotNullValidator.class;
+    }
+
     /**
      * Field names for annotations
      */

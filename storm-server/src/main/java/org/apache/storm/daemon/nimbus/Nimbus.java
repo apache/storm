@@ -2798,7 +2798,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             IStormClusterState state = stormClusterState;
             NimbusInfo hpi = nimbusHostPortInfo;
 
-            LOG.info("Starting Nimbus with conf {}", conf);
+            LOG.info("Starting Nimbus with conf {}", ConfigUtils.maskPasswords(conf));
             validator.prepare(conf);
 
             //add to nimbuses
@@ -3075,7 +3075,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
             LOG.info("Received topology submission for {} (storm-{} JDK-{}) with conf {}", topoName,
                      topoVersionString, topology.get_jdk_version(),
-                     Utils.redactValue(topoConf, Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
+                     Utils.redactValue(ConfigUtils.maskPasswords(topoConf), Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
 
             // lock protects against multiple topologies being submitted at once and
             // cleanup thread killing topology in b/w assignment and starting the topology
