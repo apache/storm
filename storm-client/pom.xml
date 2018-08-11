@@ -97,12 +97,6 @@
 
         <!-- end of transitive dependency management -->
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
-
         <!-- test -->
         <dependency>
             <groupId>org.mockito</groupId>

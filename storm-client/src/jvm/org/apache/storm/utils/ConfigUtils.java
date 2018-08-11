@@ -26,9 +26,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Maps;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;
@@ -79,14 +79,34 @@ public class ConfigUtils {
         return oldInstance;
     }
 
-    public static Map<String, Object> maskPasswords(final Map<String, Object> conf) {
-        Maps.EntryTransformer<String, Object, Object> maskPasswords =
-                new Maps.EntryTransformer<String, Object, Object>() {
-                    public Object transformEntry(String key, Object value) {
-                        return passwordConfigKeys.contains(key) ? "*****" : value;
-                    }
-                };
-        return Maps.transformEntries(conf, maskPasswords);
+    private static class MaskedConf implements Supplier<Map<String, Object>> {
+        private final Map<String, Object> conf;
+
+        MaskedConf(Map<String, Object> conf) {
+            this.conf = conf;
+        }
+
+        @Override
+        public Map<String, Object> get() {
+            Map<String, Object> res = new HashMap<>();
+            for (Map.Entry<String, Object> e : conf.entrySet()) {
+                if (passwordConfigKeys.contains(e.getKey())) {
+                    res.put(e.getKey(), "*****");
+                } else {
+                    res.put(e.getKey(), e.getValue());
+                }
+            }
+            return res;
+        }
+
+        @Override
+        public String toString() {
+            return get().toString();
+        }
+    }
+
+    public static Supplier<Map<String, Object>> maskPasswords(Map<String, Object> conf) {
+        return new MaskedConf(conf);
     }
 
     public static boolean isLocalMode(Map<String, Object> conf) {

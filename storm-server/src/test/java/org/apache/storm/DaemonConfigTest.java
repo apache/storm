@@ -97,7 +97,7 @@ public class DaemonConfigTest {
         Map<String, Object> conf = new HashMap<>();
         conf.put(DaemonConfig.LOGVIEWER_HTTPS_KEY_PASSWORD, "pass1");
         conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100);
-        Map result = ConfigUtils.maskPasswords(conf);
+        Map result = ConfigUtils.maskPasswords(conf).get();
         Assert.assertEquals("*****", result.get(DaemonConfig.LOGVIEWER_HTTPS_KEY_PASSWORD));
         Assert.assertEquals(100, result.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
     }
