@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Maps;
+import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;

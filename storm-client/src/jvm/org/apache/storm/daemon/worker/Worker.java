@@ -278,8 +278,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         setupFlushTupleTimer(topologyConf, newExecutors);
         setupBackPressureCheckTimer(topologyConf);
 
-        LOG.info("Worker has topology config {}", Utils.redactValue(ConfigUtils.maskPasswords(topologyConf),
-                Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
+        LOG.info("Worker has topology config {}", ConfigUtils.maskPasswords(topologyConf));
         LOG.info("Worker {} for storm {} on {}:{}  has finished loading", workerId, topologyId, assignmentId, port);
         return this;
     }
