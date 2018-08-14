@@ -28,6 +28,7 @@ import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.storm.security.INimbusCredentialPlugin;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.security.auth.ICredentialsRenewer;
+import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,7 +150,8 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
 
     protected void fillHadoopConfiguration(Map topoConf, String configKey, Configuration configuration) {
         Map<String, Object> config = (Map<String, Object>) topoConf.get(configKey);
-        LOG.info("TopoConf {}, got config {}, for configKey {}", topoConf, config, configKey);
+        LOG.info("TopoConf {}, got config {}, for configKey {}", ConfigUtils.maskPasswords(topoConf),
+                ConfigUtils.maskPasswords(config), configKey);
         if (config != null) {
             List<String> resourcesToLoad = new ArrayList<>();
             for (Map.Entry<String, Object> entry : config.entrySet()) {

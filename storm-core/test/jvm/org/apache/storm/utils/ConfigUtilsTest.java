@@ -95,4 +95,16 @@ public class ConfigUtilsTest {
         Map map = mockMap(key, values);
         Assert.assertEquals(expectedValue, ConfigUtils.getValueAsList(key, map));
     }
+
+    @Test
+    public void testMaskPasswords() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.LOGVIEWER_HTTPS_KEY_PASSWORD, "pass1");
+        conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100);
+        Map result = ConfigUtils.maskPasswords(conf);
+        Assert.assertEquals("*****", result.get(Config.LOGVIEWER_HTTPS_KEY_PASSWORD));
+        Assert.assertEquals(100, result.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
+    }
+
+
 }
