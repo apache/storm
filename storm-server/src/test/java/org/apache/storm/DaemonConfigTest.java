@@ -18,6 +18,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.validation.ConfigValidation;
 import org.junit.Assert;
 import org.junit.Test;
@@ -88,5 +90,15 @@ public class DaemonConfigTest {
     public void testSupervisorChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
         InstantiationException, IllegalAccessException {
         stringOrStringListTest(DaemonConfig.SUPERVISOR_CHILDOPTS);
+    }
+
+    @Test
+    public void testMaskPasswords() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.LOGVIEWER_HTTPS_KEY_PASSWORD, "pass1");
+        conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100);
+        Map result = ConfigUtils.maskPasswords(conf);
+        Assert.assertEquals("*****", result.get(DaemonConfig.LOGVIEWER_HTTPS_KEY_PASSWORD));
+        Assert.assertEquals(100, result.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
     }
 }

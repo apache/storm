@@ -14,6 +14,8 @@ package org.apache.storm.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,18 +24,43 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
+
+import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.ConfigValidationAnnotations;
 
 public class ConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
     public static final String STORM_HOME = "storm.home";
     public final static String RESOURCES_SUBDIR = "resources";
+
+    private static final Set<String> passwordConfigKeys = new HashSet<>();
+
+    static {
+        for (Class<?> clazz: ConfigValidation.getConfigClasses()) {
+            for (Field field : clazz.getFields()) {
+                for (Annotation annotation : field.getAnnotations()) {
+                    boolean isPassword = annotation.annotationType().getName().equals(
+                            ConfigValidationAnnotations.Password.class.getName());
+                    if (isPassword) {
+                        try {
+                            passwordConfigKeys.add((String) field.get(null));
+                        } catch (IllegalAccessException e) {
+                            // ignore
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
@@ -50,6 +77,16 @@ public class ConfigUtils {
         ConfigUtils oldInstance = _instance;
         _instance = u;
         return oldInstance;
+    }
+
+    public static Map<String, Object> maskPasswords(final Map<String, Object> conf) {
+        Maps.EntryTransformer<String, Object, Object> maskPasswords =
+                new Maps.EntryTransformer<String, Object, Object>() {
+                    public Object transformEntry(String key, Object value) {
+                        return passwordConfigKeys.contains(key) ? "*****" : value;
+                    }
+                };
+        return Maps.transformEntries(conf, maskPasswords);
     }
 
     public static boolean isLocalMode(Map<String, Object> conf) {

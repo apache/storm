@@ -2798,7 +2798,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             IStormClusterState state = stormClusterState;
             NimbusInfo hpi = nimbusHostPortInfo;
 
-            LOG.info("Starting Nimbus with conf {}", conf);
+            LOG.info("Starting Nimbus with conf {}", ConfigUtils.maskPasswords(conf));
             validator.prepare(conf);
 
             //add to nimbuses
@@ -3074,8 +3074,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 throw new IllegalArgumentException("The cluster is configured for zookeeper authentication, but no payload was provided.");
             }
             LOG.info("Received topology submission for {} (storm-{} JDK-{}) with conf {}", topoName,
-                     topoVersionString, topology.get_jdk_version(),
-                     Utils.redactValue(topoConf, Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
+                     topoVersionString, topology.get_jdk_version(), ConfigUtils.maskPasswords(topoConf));
 
             // lock protects against multiple topologies being submitted at once and
             // cleanup thread killing topology in b/w assignment and starting the topology

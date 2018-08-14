@@ -132,7 +132,7 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     public void start() throws Exception {
         LOG.info("Launching worker for {} on {}:{} with id {} and conf {}", topologyId, assignmentId, port, workerId,
-                 conf);
+                 ConfigUtils.maskPasswords(conf));
         // because in local mode, its not a separate
         // process. supervisor will register it in this case
         // if ConfigUtils.isLocalMode(conf) returns false then it is in distributed mode.
@@ -278,7 +278,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         setupFlushTupleTimer(topologyConf, newExecutors);
         setupBackPressureCheckTimer(topologyConf);
 
-        LOG.info("Worker has topology config {}", Utils.redactValue(topologyConf, Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
+        LOG.info("Worker has topology config {}", ConfigUtils.maskPasswords(topologyConf));
         LOG.info("Worker {} for storm {} on {}:{}  has finished loading", workerId, topologyId, assignmentId, port);
         return this;
     }
