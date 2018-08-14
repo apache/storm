@@ -46,7 +46,7 @@ public class FIFOSchedulingPriorityStrategy extends DefaultSchedulingPriorityStr
             Collections.sort(tds, new TopologyBySubmissionTimeComparator());
             td = getNextHighest();
             if (td != null) {
-                LOG.info("SCORE FOR {} is {}", td.getId(), td.getUpTime());
+                LOG.debug("SCORE FOR {} is {}", td.getId(), td.getUpTime());
                 return td.getUpTime();
             }
             return Double.MAX_VALUE;
