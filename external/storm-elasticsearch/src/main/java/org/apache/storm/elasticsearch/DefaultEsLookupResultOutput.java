@@ -15,7 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -25,8 +28,6 @@ import org.apache.storm.elasticsearch.response.LookupResponse;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.elasticsearch.client.Response;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Default implementation of {@link EsLookupResultOutput}.
@@ -51,7 +52,11 @@ public class DefaultEsLookupResultOutput implements EsLookupResultOutput {
         } catch (UnsupportedOperationException | IOException e) {
             throw new IllegalArgumentException("Response " + response + " is invalid", e);
         }
-        return Collections.singleton(new Values(lookupResponse.getIndex(), lookupResponse.getType(), lookupResponse.getId(), lookupResponse.getSource()));
+        return Collections.singleton(new Values(
+                lookupResponse.getIndex(),
+                lookupResponse.getType(),
+                lookupResponse.getId(),
+                lookupResponse.getSource()));
     }
 
     @Override

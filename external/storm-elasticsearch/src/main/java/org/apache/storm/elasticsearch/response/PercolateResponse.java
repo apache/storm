@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.response;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
 import org.apache.storm.elasticsearch.doc.Shards;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Mapped response for percolate.
