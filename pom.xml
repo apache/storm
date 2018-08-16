@@ -24,7 +24,6 @@
         <version>10</version>
     </parent>
 
-
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
     <version>1.2.3-SNAPSHOT</version>
@@ -82,7 +81,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone />
+            <timezone/>
         </developer>
         <developer>
             <id>afeng</id>
@@ -109,7 +108,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone />
+            <timezone/>
         </developer>
         <developer>
             <id>jjackson</id>
@@ -277,7 +276,7 @@
         <!-- Kafka version used by old storm-kafka spout code -->
         <storm.kafka.version>0.8.2.1</storm.kafka.version>
         <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
-
+        
         <!-- kafka version used by new storm-kafka-client spout code -->
         <storm.kafka.client.version>0.10.1.0</storm.kafka.client.version>
 
@@ -895,11 +894,6 @@
                 <version>${metrics.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-ganglia</artifactId>
-                <version>${metrics.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>metrics-clojure</groupId>
                 <artifactId>metrics-clojure</artifactId>
                 <version>${metrics-clojure.version}</version>
@@ -1011,12 +1005,12 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
+                   <exclusion>
+                       <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
+                   </exclusion>
                 </exclusions>
-            </dependency>
+           </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
