@@ -1410,6 +1410,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return assignmentsDistributer;
     }
 
+    @VisibleForTesting
+    public Map<String, ConcurrentMap<List<Integer>, Map<String, Object>>> getHeartbeatsCache() {
+        return heartbeatsCache;
+    }
+    
     public AtomicReference<Map<String, Set<List<Integer>>>> getIdToExecutors() {
         return idToExecutors;
     }
