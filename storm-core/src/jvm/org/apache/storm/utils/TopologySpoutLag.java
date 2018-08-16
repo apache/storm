@@ -87,6 +87,13 @@ public class TopologySpoutLag {
         if (securityProtocol != null && !securityProtocol.isEmpty()) {
             commands.add("-s");
             commands.add(securityProtocol);
+
+            // look for optional "consumer.config" only when security.protocol is given
+            String consumerConfig = (String) jsonConf.get(configKeyPrefix + "consumer.config");
+            if (consumerConfig != null && !consumerConfig.isEmpty()) {
+                commands.add("-c");
+                commands.add(consumerConfig);
+            }
         }
         return commands;
     }
