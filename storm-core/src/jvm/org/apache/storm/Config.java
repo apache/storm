@@ -412,6 +412,7 @@ public class Config extends HashMap<String, Object> {
      * A string representing the payload for topology Zookeeper authentication. It gets serialized using UTF-8 encoding during authentication.
      */
     @isString
+    @Password
     public static final String STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD="storm.zookeeper.topology.auth.payload";
 
     /*

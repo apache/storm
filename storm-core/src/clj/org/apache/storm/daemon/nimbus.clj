@@ -1748,7 +1748,7 @@
                        " (storm-" (.get_storm_version topology)
                        " JDK-" (.get_jdk_version topology)
                        ") with conf "
-                       (redact-value (ConfigUtils/maskPasswords storm-conf) STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
+                       (ConfigUtils/maskPasswords storm-conf))
           ;; lock protects against multiple topologies being submitted at once and
           ;; cleanup thread killing topology in b/w assignment and starting the topology
           (locking (:submit-lock nimbus)

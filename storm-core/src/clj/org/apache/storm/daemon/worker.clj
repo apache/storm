@@ -778,7 +778,7 @@
     (schedule-recurring (:reset-log-levels-timer worker) 0 (conf WORKER-LOG-LEVEL-RESET-POLL-SECS) (fn [] (reset-log-levels latest-log-config)))
     (schedule-recurring (:refresh-active-timer worker) 0 (conf TASK-REFRESH-POLL-SECS) (partial refresh-storm-active worker))
 
-    (log-message "Worker has topology config " (redact-value (ConfigUtils/maskPasswords (:storm-conf worker)) STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
+    (log-message "Worker has topology config " (ConfigUtils/maskPasswords (:storm-conf worker)))
     (log-message "Worker " worker-id " for storm " storm-id " on " assignment-id ":" port " has finished loading")
     ret
     ))))))
