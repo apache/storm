@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.trident;
 
 import static java.util.Objects.requireNonNull;
@@ -36,7 +37,8 @@ public class EsStateFactory implements StateFactory {
     private final EsTupleMapper tupleMapper;
 
     /**
-     * EsStateFactory constructor
+     * EsStateFactory constructor.
+     *
      * @param esConfig Elasticsearch configuration containing node addresses and cluster name {@link EsConfig}
      * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
      */

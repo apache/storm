@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.common;
 
 import java.io.Serializable;
@@ -22,6 +23,9 @@ import java.io.Serializable;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
+/**
+ * Client for connecting Elasticsearch.
+ */
 public final class StormElasticSearchClient implements Serializable {
 
     private final EsConfig esConfig;
@@ -30,6 +34,11 @@ public final class StormElasticSearchClient implements Serializable {
         this.esConfig = esConfig;
     }
 
+    /**
+     * Creates a new {@link RestClient} using given {@link EsConfig}.
+     *
+     * @return {@link RestClient} for Elasticsearch connection
+     */
     public RestClient construct() {
         RestClientBuilder builder = RestClient.builder(esConfig.getHttpHosts());
         if (esConfig.getMaxRetryTimeoutMillis() != null) {

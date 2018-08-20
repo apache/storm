@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.bolt;
 
 import static java.util.Objects.requireNonNull;
@@ -43,7 +44,7 @@ public class EsPercolateBolt extends AbstractEsBolt {
     private final EsTupleMapper tupleMapper;
 
     /**
-     * EsPercolateBolt constructor
+     * EsPercolateBolt constructor.
      * @param esConfig Elasticsearch configuration containing node addresses {@link EsConfig}
      */
     public EsPercolateBolt(EsConfig esConfig) {
@@ -51,7 +52,7 @@ public class EsPercolateBolt extends AbstractEsBolt {
     }
 
     /**
-     * EsPercolateBolt constructor
+     * EsPercolateBolt constructor.
      * @param esConfig Elasticsearch configuration containing node addresses and cluster name {@link EsConfig}
      * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
      */
@@ -81,7 +82,8 @@ public class EsPercolateBolt extends AbstractEsBolt {
             Map<String, String> indexParams = new HashMap<>();
             indexParams.put(type, null);
             String percolateDoc = "{\"doc\": " + source + "}";
-            Response response = client.performRequest("get", getEndpoint(index, type, "_percolate"), new HashMap<>(), new StringEntity(percolateDoc));
+            Response response = client.performRequest("get", getEndpoint(index, type, "_percolate"),
+                    new HashMap<>(), new StringEntity(percolateDoc));
             PercolateResponse percolateResponse = objectMapper.readValue(response.getEntity().getContent(), PercolateResponse.class);
             if (!percolateResponse.getMatches().isEmpty()) {
                 for (PercolateResponse.Match match : percolateResponse.getMatches()) {

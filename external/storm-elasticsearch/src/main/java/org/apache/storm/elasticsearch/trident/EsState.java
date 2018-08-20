@@ -15,10 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.trident;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -38,9 +41,6 @@ import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  * Trident State for storing tuple to ES document.
  * @since 0.11
@@ -53,7 +53,8 @@ class EsState implements State {
     private EsTupleMapper tupleMapper;
 
     /**
-     * EsState constructor
+     * EsState constructor.
+     *
      * @param esConfig Elasticsearch configuration containing node addresses and cluster name {@link EsConfig}
      * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
      */
@@ -64,11 +65,9 @@ class EsState implements State {
     }
 
     /**
-     * @param txid
-     *
      * Elasticsearch index requests with same id will result in update operation
      * which means if same tuple replays, only one record will be stored in elasticsearch for same document
-     * without control with txid
+     * without control with txid.
      */
     @Override
     public void beginCommit(Long txid) {
@@ -76,11 +75,9 @@ class EsState implements State {
     }
 
     /**
-     * @param txid
-     *
      * Elasticsearch index requests with same id will result in update operation
      * which means if same tuple replays, only one record will be stored in elasticsearch for same document
-     * without control with txid
+     * without control with txid.
      */
     @Override
     public void commit(Long txid) {
@@ -121,8 +118,6 @@ class EsState implements State {
      *
      * @param tuples list of tuples for storing to ES.
      *               Each tuple should have relevant fields (source, index, type, id) for EsState's tupleMapper to extract ES document.
-     * @throws IOException
-     * @throws UnsupportedEncodingException
      */
     public void updateState(List<TridentTuple> tuples) {
         try {

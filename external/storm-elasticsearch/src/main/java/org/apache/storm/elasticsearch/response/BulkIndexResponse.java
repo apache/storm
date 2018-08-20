@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.response;
 
 import java.util.List;
@@ -58,6 +59,11 @@ public class BulkIndexResponse {
         this.items = items;
     }
 
+    /**
+     * Retrieve first error's code from response.
+     *
+     * @return error status code
+     */
     public Integer getFirstError() {
         if (items == null || items.isEmpty()) {
             return null;
@@ -71,6 +77,11 @@ public class BulkIndexResponse {
         return null;
     }
 
+    /**
+     * Retrieve first result from response.
+     *
+     * @return result text
+     */
     public String getFirstResult() {
         if (items == null || items.isEmpty()) {
             return null;
