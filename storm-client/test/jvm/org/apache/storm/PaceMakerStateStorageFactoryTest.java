@@ -65,19 +65,19 @@ public class PaceMakerStateStorageFactoryTest {
     @Test
     public void testSetWorkerHb() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.SEND_PULSE_RESPONSE, null);
-        stateStorage.set_worker_hb("/foo", Utils.javaSerialize("data"), null);
+        stateStorage.set_worker_hb("/foo", "data".getBytes("UTF-8"), null);
         verify(clientMock).send(hbMessageCaptor.capture());
         HBMessage sent = hbMessageCaptor.getValue();
         HBPulse pulse = sent.get_data().get_pulse();
         Assert.assertEquals(HBServerMessageType.SEND_PULSE, sent.get_type());
         Assert.assertEquals("/foo", pulse.get_id());
-        Assert.assertEquals("data", Utils.javaDeserialize(pulse.get_details(), String.class));
+        Assert.assertEquals("data", new String(pulse.get_details(), "UTF-8"));
     }
 
     @Test(expected = RuntimeException.class)
     public void testSetWorkerHbResponseType() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.SEND_PULSE, null);
-        stateStorage.set_worker_hb("/foo", Utils.javaSerialize("data"), null);
+        stateStorage.set_worker_hb("/foo", "data".getBytes("UTF-8"), null);
     }
 
     @Test

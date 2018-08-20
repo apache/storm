@@ -12,6 +12,7 @@
 
 package org.apache.storm;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,13 +84,13 @@ public class PacemakerTest {
     }
 
     @Test
-    public void testServerSendPulseGetPulse() {
+    public void testServerSendPulseGetPulse() throws UnsupportedEncodingException {
         String path = "/pulsepath";
         String dataString = "pulse data";
         Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
-        hbPulse.set_details(Utils.javaSerialize(dataString));
+        hbPulse.set_details(dataString.getBytes("UTF-8"));
         messageWithRandId(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
         HBMessage sendResponse = handler.handleMessage(hbMessage, true);
         Assert.assertEquals(mid, sendResponse.get_message_id());
@@ -100,7 +101,7 @@ public class PacemakerTest {
         HBMessage response = handler.handleMessage(hbMessage, true);
         Assert.assertEquals(mid, response.get_message_id());
         Assert.assertEquals(HBServerMessageType.GET_PULSE_RESPONSE, response.get_type());
-        Assert.assertEquals(dataString, Utils.javaDeserialize(response.get_data().get_pulse().get_details(), String.class));
+        Assert.assertEquals(dataString, new String(response.get_data().get_pulse().get_details(), "UTF-8"));
     }
 
     @Test
@@ -118,7 +119,7 @@ public class PacemakerTest {
     }
 
     @Test
-    public void testServerGetAllNodesForPath() {
+    public void testServerGetAllNodesForPath() throws UnsupportedEncodingException {
         Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         makeNode(handler, "/some-root-path/foo");
         makeNode(handler, "/some-root-path/bar");
@@ -160,7 +161,7 @@ public class PacemakerTest {
     }
 
     @Test
-    public void testServerGetPulse() {
+    public void testServerGetPulse() throws UnsupportedEncodingException {
         Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         makeNode(handler, "/some-root/GET_PULSE");
         messageWithRandId(HBServerMessageType.GET_PULSE, HBMessageData.path("/some-root/GET_PULSE"));
@@ -174,11 +175,11 @@ public class PacemakerTest {
         Assert.assertEquals(mid, goodResponse.get_message_id());
         Assert.assertEquals(HBServerMessageType.GET_PULSE_RESPONSE, goodResponse.get_type());
         Assert.assertEquals("/some-root/GET_PULSE", goodPulse.get_id());
-        Assert.assertEquals("nothing", Utils.javaDeserialize(goodPulse.get_details(), String.class));
+        Assert.assertEquals("nothing", new String(goodPulse.get_details(), "UTF-8"));
     }
 
     @Test
-    public void testServerDeletePath() {
+    public void testServerDeletePath() throws UnsupportedEncodingException {
         Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         makeNode(handler, "/some-root/DELETE_PATH/foo");
         makeNode(handler, "/some-root/DELETE_PATH/bar");
@@ -200,7 +201,7 @@ public class PacemakerTest {
     }
 
     @Test
-    public void testServerDeletePulseId() {
+    public void testServerDeletePulseId() throws UnsupportedEncodingException {
         Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         makeNode(handler, "/some-root/DELETE_PULSE_ID/foo");
         makeNode(handler, "/some-root/DELETE_PULSE_ID/bar");
@@ -227,10 +228,10 @@ public class PacemakerTest {
         hbMessage.set_message_id(mid);
     }
 
-    private HBMessage makeNode(Pacemaker handler, String path) {
+    private HBMessage makeNode(Pacemaker handler, String path) throws UnsupportedEncodingException {
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
-        hbPulse.set_details(Utils.javaSerialize("nothing"));
+        hbPulse.set_details("nothing".getBytes("UTF-8"));
         HBMessage message = new HBMessage(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
         return handler.handleMessage(message, true);
     }

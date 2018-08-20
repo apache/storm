@@ -720,6 +720,7 @@ def nimbus(klass="org.apache.storm.daemon.nimbus.Nimbus"):
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("nimbus.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=nimbus.log",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
     ]
@@ -741,6 +742,7 @@ def pacemaker(klass="org.apache.storm.pacemaker.Pacemaker"):
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("pacemaker.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=pacemaker.log",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
     ]
@@ -762,6 +764,7 @@ def supervisor(klass="org.apache.storm.daemon.supervisor.Supervisor"):
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("supervisor.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=" + STORM_SUPERVISOR_LOG_FILE,
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
     ]
@@ -784,6 +787,7 @@ def ui():
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("ui.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=ui.log",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
@@ -809,6 +813,7 @@ def logviewer():
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("logviewer.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=logviewer.log",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
@@ -853,6 +858,7 @@ def drpc():
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("drpc.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=drpc.log",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
