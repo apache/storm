@@ -34,6 +34,7 @@ import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
@@ -53,21 +54,24 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     private final boolean isLocalMode;
     private final Path topologyBasicBlobsRootDir;
     private final AdvancedFSOps fsOps;
+    private final String owner;
     private volatile long version = NOT_DOWNLOADED_VERSION;
     private volatile long size = 0;
+
     /**
      * Create a new LocallyCachedBlob.
-     *
-     * @param topologyId the ID of the topology.
+     *  @param topologyId the ID of the topology.
      * @param type the type of the blob.
+     * @param assignment the assignment, mostly to know who the owner is.
      */
     protected LocallyCachedTopologyBlob(final String topologyId, final boolean isLocalMode, final Map<String, Object> conf,
-                                        final AdvancedFSOps fsOps, final TopologyBlobType type) throws IOException {
+                                        final AdvancedFSOps fsOps, final TopologyBlobType type, LocalAssignment assignment) throws IOException {
         super(topologyId + " " + type.getFileName(), type.getKey(topologyId));
         this.topologyId = topologyId;
         this.type = type;
         this.isLocalMode = isLocalMode;
         this.fsOps = fsOps;
+        this.owner = assignment.get_owner();
         topologyBasicBlobsRootDir = Paths.get(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
         readVersion();
         updateSizeOnDisk();
@@ -125,6 +129,12 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     @Override
     public long fetchUnzipToTemp(ClientBlobStore store)
         throws IOException, KeyNotFoundException, AuthorizationException {
+        synchronized (LocallyCachedTopologyBlob.class) {
+            if (!Files.exists(topologyBasicBlobsRootDir)) {
+                Files.createDirectories(topologyBasicBlobsRootDir);
+                fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir.toFile());
+            }
+        }
         if (isLocalMode && type == TopologyBlobType.TOPO_JAR) {
             LOG.debug("DOWNLOADING LOCAL JAR to TEMP LOCATION... {}", topologyId);
             //This is a special case where the jar was not uploaded so we will not download it (it is already on the classpath)
@@ -229,6 +239,19 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         if (!(isLocalMode && type == TopologyBlobType.TOPO_JAR)) {
             //Don't try to move the JAR file in local mode, it does not exist because it was not uploaded
             Files.move(tempLoc, dest);
+        }
+        synchronized (LocallyCachedTopologyBlob.class) {
+            //This is a bit ugly, but it works.  In order to maintain the same directory structure that existed before
+            // we need to have storm conf, storm jar, and storm code in a shared directory, and we need to set the
+            // permissions for that entire directory, but the tracking is on a per item basis, so we are going to end
+            // up running the permission modification code once for each blob that is downloaded (3 times in this case).
+            // Because the permission modification code runs in a separate process we are doing a global lock to avoid
+            // any races between multiple versions running at the same time.  Ideally this would be on a per topology
+            // basis, but that is a lot harder and the changes run fairly quickly so it should not be a big deal.
+            fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir.toFile());
+            File sharedMemoryDirFinalLocation = new File(topologyBasicBlobsRootDir.toFile(), "shared_by_topology");
+            sharedMemoryDirFinalLocation.mkdirs();
+            fsOps.setupWorkerArtifactsDir(owner, sharedMemoryDirFinalLocation);
         }
         LOG.debug("Writing out version file {} with version {}", versionFile, newVersion);
         FileUtils.write(versionFile.toFile(), Long.toString(newVersion), "UTF8");

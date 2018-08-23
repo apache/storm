@@ -119,19 +119,19 @@ public class AsyncLocalizerTest {
 
         AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, getTestLocalizerRoot()));
         LocallyCachedTopologyBlob jarBlob = mock(LocallyCachedTopologyBlob.class);
-        doReturn(jarBlob).when(bl).getTopoJar(topoId);
+        doReturn(jarBlob).when(bl).getTopoJar(topoId, la);
         when(jarBlob.getLocalVersion()).thenReturn(-1L);
         when(jarBlob.getRemoteVersion(any())).thenReturn(100L);
         when(jarBlob.fetchUnzipToTemp(any())).thenReturn(100L);
 
         LocallyCachedTopologyBlob codeBlob = mock(LocallyCachedTopologyBlob.class);
-        doReturn(codeBlob).when(bl).getTopoCode(topoId);
+        doReturn(codeBlob).when(bl).getTopoCode(topoId, la);
         when(codeBlob.getLocalVersion()).thenReturn(-1L);
         when(codeBlob.getRemoteVersion(any())).thenReturn(200L);
         when(codeBlob.fetchUnzipToTemp(any())).thenReturn(200L);
 
         LocallyCachedTopologyBlob confBlob = mock(LocallyCachedTopologyBlob.class);
-        doReturn(confBlob).when(bl).getTopoConf(topoId);
+        doReturn(confBlob).when(bl).getTopoConf(topoId, la);
         when(confBlob.getLocalVersion()).thenReturn(-1L);
         when(confBlob.getRemoteVersion(any())).thenReturn(300L);
         when(confBlob.fetchUnzipToTemp(any())).thenReturn(300L);
