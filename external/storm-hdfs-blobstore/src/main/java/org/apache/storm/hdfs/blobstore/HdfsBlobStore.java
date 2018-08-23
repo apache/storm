@@ -162,7 +162,7 @@ public class HdfsBlobStore extends BlobStore {
                 localSubject = getHadoopUser();
             }
         } catch (IOException e) {
-            throw new RuntimeException("Error logging in from keytab!", e);
+            throw new RuntimeException("Error logging in from keytab: " + e.getMessage(), e);
         }
         aclHandler = new BlobStoreAclHandler(conf);
         Path baseDir = new Path(overrideBase, BASE_BLOBS_DIR_NAME);
