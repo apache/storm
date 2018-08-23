@@ -1,7 +1,11 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
- * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.generated.ComponentCommon;
-import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.json.simple.JSONValue;
@@ -34,63 +37,65 @@ public class TopologySpoutLag {
     private static final String SPOUT_TYPE = "spoutType";
     private static final String SPOUT_LAG_RESULT = "spoutLagResult";
     private static final String ERROR_INFO = "errorInfo";
+    private static final String CONFIG_KEY_PREFIX = "config.";
+    private static final String TOPICS_CONFIG = CONFIG_KEY_PREFIX + "topics";
+    private static final String GROUPID_CONFIG = CONFIG_KEY_PREFIX + "groupid";
+    private static final String BOOTSTRAP_CONFIG = CONFIG_KEY_PREFIX + "bootstrap.servers";
     private final static Logger logger = LoggerFactory.getLogger(TopologySpoutLag.class);
 
     public static Map<String, Map<String, Object>> lag(StormTopology stormTopology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         Map<String, SpoutSpec> spouts = stormTopology.get_spouts();
-        String className = null;
-        for (Map.Entry<String, SpoutSpec> spout : spouts.entrySet()) {
+        for (Map.Entry<String, SpoutSpec> spout: spouts.entrySet()) {
             try {
                 SpoutSpec spoutSpec = spout.getValue();
-                ComponentObject componentObject = spoutSpec.get_spout_object();
-                // FIXME: yes it's a trick so we might be better to find alternative way...
-                className = getClassNameFromComponentObject(componentObject);
-                logger.debug("spout classname: {}", className);
-                if (className.endsWith("storm.kafka.spout.KafkaSpout")) {
-                    result.put(spout.getKey(), getLagResultForNewKafkaSpout(spout.getKey(), spoutSpec));
-                }
+                addLagResultForKafkaSpout(result, spout.getKey(), spoutSpec);
             } catch (Exception e) {
-                logger.warn("Exception thrown while getting lag for spout id: " + spout.getKey() + " and spout class: " + className);
+                logger.warn("Exception thrown while getting lag for spout id: " + spout.getKey());
                 logger.warn("Exception message:" + e.getMessage(), e);
             }
         }
         return result;
     }
 
-    private static String getClassNameFromComponentObject(ComponentObject componentObject) {
-        try {
-            Object object = Utils.getSetComponentObject(componentObject);
-            return object.getClass().getCanonicalName();
-        } catch (RuntimeException e) {
-
-            if (e.getCause() instanceof ClassNotFoundException) {
-                return e.getCause().getMessage().trim();
-            }
-
-            throw e;
-        }
-    }
-
     private static List<String> getCommandLineOptionsForNewKafkaSpout(Map<String, Object> jsonConf) {
         logger.debug("json configuration: {}", jsonConf);
 
         List<String> commands = new ArrayList<>();
-        String configKeyPrefix = "config.";
         commands.add("-t");
-        commands.add((String) jsonConf.get(configKeyPrefix + "topics"));
+        commands.add((String) jsonConf.get(TOPICS_CONFIG));
         commands.add("-g");
-        commands.add((String) jsonConf.get(configKeyPrefix + "groupid"));
+        commands.add((String) jsonConf.get(GROUPID_CONFIG));
         commands.add("-b");
-        commands.add((String) jsonConf.get(configKeyPrefix + "bootstrap.servers"));
-        String securityProtocol = (String) jsonConf.get(configKeyPrefix + "security.protocol");
+        commands.add((String) jsonConf.get(BOOTSTRAP_CONFIG));
+        String securityProtocol = (String) jsonConf.get(CONFIG_KEY_PREFIX + "security.protocol");
         if (securityProtocol != null && !securityProtocol.isEmpty()) {
             commands.add("-s");
             commands.add(securityProtocol);
         }
         return commands;
     }
-    
+
+    private static void addLagResultForKafkaSpout(Map<String, Map<String, Object>> finalResult, String spoutId, SpoutSpec spoutSpec)
+        throws IOException {
+        ComponentCommon componentCommon = spoutSpec.get_common();
+        String json = componentCommon.get_json_conf();
+        if (json != null && !json.isEmpty()) {
+            Map<String, Object> jsonMap = null;
+            try {
+                jsonMap = (Map<String, Object>) JSONValue.parseWithException(json);
+            } catch (ParseException e) {
+                throw new IOException(e);
+            }
+
+            if (jsonMap.containsKey(TOPICS_CONFIG)
+                && jsonMap.containsKey(GROUPID_CONFIG)
+                && jsonMap.containsKey(BOOTSTRAP_CONFIG)) {
+                finalResult.put(spoutId, getLagResultForNewKafkaSpout(spoutId, spoutSpec));
+            }
+        }
+    }
+
     private static Map<String, Object> getLagResultForKafka(String spoutId, SpoutSpec spoutSpec) throws IOException {
         ComponentCommon componentCommon = spoutSpec.get_common();
         String json = componentCommon.get_json_conf();

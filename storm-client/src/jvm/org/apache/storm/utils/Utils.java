@@ -491,6 +491,10 @@ public class Utils {
     }
 
     public static <T> T javaDeserialize(byte[] serialized, Class<T> clazz) {
+        if ("true".equalsIgnoreCase(System.getProperty("java.deserialization.disabled"))) {
+            throw new AssertionError("java deserialization has been disabled and is only safe from within a worker process");
+        }
+
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
             ObjectInputStream ois = null;
