@@ -78,8 +78,6 @@ public class TupleCountingBolt extends BaseRichBolt {
     Reports metrics to `System.out`.
   * CSV Reporter (`org.apache.storm.metrics2.reporters.CsvReporter`):
     Reports metrics to a CSV file.
-  * Ganglia Reporter (`org.apache.storm.metrics2.reporters.GagliaStormReporter`):
-    Reports metrics to a [Ganglia](http://ganglia.info) server.
   * Graphite Reporter (`org.apache.storm.metrics2.reporters.GraphiteStormReporter`):
     Reports metrics to a [Graphite](https://graphiteapp.org) server.
   * JMX Reporter (`org.apache.storm.metrics2.reporters.JmxStormReporter`):
