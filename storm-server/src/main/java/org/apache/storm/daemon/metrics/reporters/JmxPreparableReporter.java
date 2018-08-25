@@ -12,8 +12,8 @@
 
 package org.apache.storm.daemon.metrics.reporters;
 
-import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.DaemonConfig;
