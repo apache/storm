@@ -90,7 +90,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         factory.addServerDefinition(KERBEROS, serviceName, hostName, props, server_callback_handler);
 
         //Also add in support for worker tokens
-        factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, "localhost", null,
+        factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, hostName, null,
                                     new SimpleSaslServerCallbackHandler(impersonationAllowed, new WorkerTokenAuthorizer(conf, type)));
 
         //create a wrap transport factory so that we could apply user credential during connections
@@ -119,7 +119,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     @Override
     public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException {
         WorkerToken token = WorkerTokenClientCallbackHandler.findWorkerTokenInSubject(type);
-        if (token != null && asUser != null) {
+        if (token != null) {
             CallbackHandler clientCallbackHandler = new WorkerTokenClientCallbackHandler(token);
             TSaslClientTransport wrapperTransport = new TSaslClientTransport(DIGEST,
                                                                              null,
