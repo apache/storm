@@ -213,10 +213,12 @@ public class BasicContainer extends Container {
         super.cleanUpForRestart();
         synchronized (_localState) {
             Map<String, Integer> workersToPort = _localState.getApprovedWorkers();
-            workersToPort.remove(origWorkerId);
-            removeWorkersOn(workersToPort, _port);
-            _localState.setApprovedWorkers(workersToPort);
-            LOG.info("Removed Worker ID {}", origWorkerId);
+            if (workersToPort != null) {
+                workersToPort.remove(origWorkerId);
+                removeWorkersOn(workersToPort, _port);
+                _localState.setApprovedWorkers(workersToPort);
+                LOG.info("Removed Worker ID {}", origWorkerId);
+            }
         }
     }
 
