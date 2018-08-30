@@ -62,16 +62,16 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
      * Create a new LocallyCachedBlob.
      *  @param topologyId the ID of the topology.
      * @param type the type of the blob.
-     * @param assignment the assignment, mostly to know who the owner is.
+     * @param owner the name of the user that owns this blob.
      */
     protected LocallyCachedTopologyBlob(final String topologyId, final boolean isLocalMode, final Map<String, Object> conf,
-                                        final AdvancedFSOps fsOps, final TopologyBlobType type, LocalAssignment assignment) throws IOException {
+                                        final AdvancedFSOps fsOps, final TopologyBlobType type, String owner) throws IOException {
         super(topologyId + " " + type.getFileName(), type.getKey(topologyId));
         this.topologyId = topologyId;
         this.type = type;
         this.isLocalMode = isLocalMode;
         this.fsOps = fsOps;
-        this.owner = assignment.get_owner();
+        this.owner = owner;
         topologyBasicBlobsRootDir = Paths.get(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
         readVersion();
         updateSizeOnDisk();
