@@ -218,6 +218,8 @@ public class BasicContainer extends Container {
                 removeWorkersOn(workersToPort, _port);
                 _localState.setApprovedWorkers(workersToPort);
                 LOG.info("Removed Worker ID {}", origWorkerId);
+            } else {
+                LOG.warn("No approved workers exists");
             }
         }
     }
