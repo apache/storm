@@ -20,7 +20,10 @@ package org.apache.storm.daemon.ui;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.DispatcherType;
 import org.apache.storm.DaemonConfig;
@@ -34,6 +37,7 @@ import org.apache.storm.daemon.ui.filters.HeaderResponseServletFilter;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.security.auth.ServerAuthUtils;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -79,15 +83,40 @@ public class UIServer {
      */
     public static void main(String[] args) {
 
-        Server jettyServer = new Server();
-        ServerConnector connector = new ServerConnector(jettyServer);
         Map<String, Object> conf = Utils.readStormConfig();
-        connector.setPort((Integer) conf.get(DaemonConfig.UI_PORT));
-        jettyServer.addConnector(connector);
+        int headerBufferSize = (int) conf.get(DaemonConfig.UI_HEADER_BUFFER_BYTES);
+        final Integer httpsPort = ObjectReader.getInt(conf.get(DaemonConfig.UI_HTTPS_PORT), 0);
+        final String httpsKsPath = (String) (conf.get(DaemonConfig.UI_HTTPS_KEYSTORE_PATH));
+        final String httpsKsPassword = (String) (conf.get(DaemonConfig.UI_HTTPS_KEYSTORE_PASSWORD));
+        final String httpsKsType = (String) (conf.get(DaemonConfig.UI_HTTPS_KEYSTORE_TYPE));
+        final String httpsKeyPassword = (String) (conf.get(DaemonConfig.UI_HTTPS_KEY_PASSWORD));
+        final String httpsTsPath = (String) (conf.get(DaemonConfig.UI_HTTPS_TRUSTSTORE_PATH));
+        final String httpsTsPassword = (String) (conf.get(DaemonConfig.UI_HTTPS_TRUSTSTORE_PASSWORD));
+        final String httpsTsType = (String) (conf.get(DaemonConfig.UI_HTTPS_TRUSTSTORE_TYPE));
+        final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.UI_HTTPS_WANT_CLIENT_AUTH));
+        final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.UI_HTTPS_NEED_CLIENT_AUTH));
+
+        Server jettyServer =
+                UIHelpers.jettyCreateServer(
+                        (int) conf.get(DaemonConfig.UI_PORT), null, httpsPort, headerBufferSize
+                );
+
+        UIHelpers.configSsl(jettyServer, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
+                httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
+
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         jettyServer.setHandler(context);
+
+        FilterConfiguration filterConfiguration =
+                new FilterConfiguration(
+                        (String) conf.get(DaemonConfig.UI_FILTER),
+                        (Map<String, String>) conf.get(DaemonConfig.UI_FILTER_PARAMS)
+                );
+        final List<FilterConfiguration> filterConfigurationList = Arrays.asList(filterConfiguration);
+
+        UIHelpers.configFilters(context, filterConfigurationList);
 
         ResourceConfig resourceConfig =
                 new ResourceConfig()
