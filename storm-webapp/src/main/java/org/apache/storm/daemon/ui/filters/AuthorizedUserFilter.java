@@ -169,7 +169,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                 containerRequestContext.abortWith(
                         makeResponse(new AuthorizationException("UI request '" + op + "' for '"
                                         + user + "' user is not authorized"),
-                                containerRequestContext, 401)
+                                containerRequestContext, 403)
                 );
             }
         }
