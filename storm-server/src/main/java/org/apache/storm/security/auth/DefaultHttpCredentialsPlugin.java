@@ -43,15 +43,23 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
      */
     @Override
     public String getUserName(HttpServletRequest req) {
-        Principal princ;
-        if (req != null && (princ = req.getUserPrincipal()) != null) {
-            String userName = princ.getName();
-            if (userName != null && !userName.isEmpty()) {
-                LOG.debug("HTTP request had user (" + userName + ")");
-                return userName;
+        String ret = null;
+        if (req != null) {
+            Principal princ = req.getUserPrincipal();
+            if (princ != null) {
+                ret = princ.getName();
+            }
+
+            if (ret != null && !ret.isEmpty()) {
+                LOG.debug("Get user name {} from http request principal", ret);
+            } else {
+                ret = req.getRemoteUser();
+                if (ret != null && !ret.isEmpty()) {
+                    LOG.debug("Get user name {} from http request remote user", ret);
+                }
             }
         }
-        return null;
+        return ret;
     }
 
     /**
