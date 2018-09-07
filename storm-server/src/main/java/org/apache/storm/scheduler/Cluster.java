@@ -375,6 +375,18 @@ public class Cluster implements ISchedulingState {
     }
 
     @Override
+    public List<WorkerSlot> getNonBlacklistedAvailableSlots(List<String> blacklistedSupervisorIds) {
+        List<WorkerSlot> slots = new ArrayList<>();
+        for (SupervisorDetails supervisor : this.supervisors.values()) {
+            if (!isBlackListed(supervisor.getId()) && !blacklistedSupervisorIds.contains(supervisor.getId())) {
+                slots.addAll(getAvailableSlots(supervisor));
+            }
+        }
+
+        return slots;
+    }
+
+    @Override
     public List<WorkerSlot> getAvailableSlots() {
         List<WorkerSlot> slots = new ArrayList<>();
         for (SupervisorDetails supervisor : this.supervisors.values()) {
@@ -446,6 +458,19 @@ public class Cluster implements ISchedulingState {
         Set<WorkerSlot> slots = new HashSet<>();
         slots.addAll(assignment.getExecutorToSlot().values());
         return slots.size();
+    }
+
+    @Override
+    public NormalizedResourceOffer getAvailableResources(SupervisorDetails sd) {
+        NormalizedResourceOffer ret = new NormalizedResourceOffer(sd.getTotalResources());
+        for (SchedulerAssignment assignment: assignments.values()) {
+            for (Entry<WorkerSlot, WorkerResources> entry: assignment.getScheduledResources().entrySet()) {
+                if (sd.getId().equals(entry.getKey().getNodeId())) {
+                   ret.remove(entry.getValue());
+                }
+            }
+        }
+        return ret;
     }
 
     private void addResource(Map<String, Double> resourceMap, String resourceName, Double valueToBeAdded) {
@@ -779,6 +804,18 @@ public class Cluster implements ISchedulingState {
     @Override
     public Map<String, SupervisorDetails> getSupervisors() {
         return this.supervisors;
+    }
+
+    @Override
+    public NormalizedResourceOffer getNonBlacklistedClusterAvailableResources(Collection<String> blacklistedSupervisorIds) {
+        NormalizedResourceOffer available = new NormalizedResourceOffer();
+        for (SupervisorDetails sup : supervisors.values()) {
+            if (!isBlackListed(sup.getId()) && !blacklistedSupervisorIds.contains(sup.getId())) {
+                available.add(sup.getTotalResources());
+                available.remove(getAllScheduledResourcesForNode(sup.getId()));
+            }
+        }
+        return available;
     }
 
     @Override

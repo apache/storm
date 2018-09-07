@@ -30,4 +30,8 @@ public interface NormalizedResourcesWithMemory {
      */
     void clear();
 
+    /**
+     * Return true if any of the resources are > 0.
+     */
+    boolean areAnyOverZero();
 }

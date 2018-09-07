@@ -153,6 +153,30 @@ public class NormalizedResources {
         return ret;
     }
 
+    /**
+     * Remove the resources of a worker from this.
+     *
+     * @param value the worker resources that should be removed from this.
+     */
+    public boolean remove(WorkerResources value) {
+        Map<String, Double> workerNormalizedResources = value.get_resources();
+        cpu -= workerNormalizedResources.getOrDefault(Constants.COMMON_CPU_RESOURCE_NAME, 0.0);
+        return remove(RESOURCE_MAP_ARRAY_BRIDGE.translateToResourceArray(workerNormalizedResources)) || cpu < 0;
+    }
+
+    private boolean remove(double[] resourceArray) {
+        boolean ret = false;
+        int otherLength = resourceArray.length;
+        zeroPadOtherResourcesIfNecessary(otherLength);
+        for (int i = 0; i < otherLength; i++) {
+            otherResources[i] -= resourceArray[i];
+            if (otherResources[i] < 0) {
+                ret = true;
+            }
+        }
+        return ret;
+    }
+
     @Override
     public String toString() {
         return "Normalized resources: " + toNormalizedMap();
@@ -365,5 +389,18 @@ public class NormalizedResources {
         for (int i = 0; i < otherResources.length; i++) {
             otherResources[i] = 0.0;
         }
+    }
+
+    /**
+     * Are any of the resources positive.
+     * @return true of any of the resources are positive.  False if they are all <= 0.
+     */
+    public boolean areAnyOverZero() {
+        for (int i = 0; i < otherResources.length; i++) {
+            if (otherResources[i] > 0) {
+                return true;
+            }
+        }
+        return cpu > 0;
     }
 }
