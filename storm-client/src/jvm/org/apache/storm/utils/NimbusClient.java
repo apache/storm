@@ -109,7 +109,7 @@ public class NimbusClient extends ThriftClient {
     }
 
     /**
-     * Execute cb with a configured nimbus client that will be closed one cb returns.
+     * Execute cb with a configured nimbus client that will be closed once cb returns.
      * @param cb the callback to send to nimbus.
      * @throws Exception on any kind of error.
      */
@@ -118,7 +118,7 @@ public class NimbusClient extends ThriftClient {
     }
 
     /**
-     * Execute cb with a configured nimbus client that will be closed one cb returns.
+     * Execute cb with a configured nimbus client that will be closed once cb returns.
      * @param cb the callback to send to nimbus.
      * @param conf the conf to use instead of reading the global storm conf.
      * @throws Exception on any kind of error.
