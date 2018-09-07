@@ -2772,8 +2772,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         ret.topoConf = tryReadTopoConf(topoId, topoCache);
         ret.topoName = (String) ret.topoConf.get(Config.TOPOLOGY_NAME);
         checkAuthorization(ret.topoName, ret.topoConf, operation);
-        ret.topology = tryReadTopology(topoId, topoCache);
-        ret.taskToComponent = StormCommon.stormTaskInfo(ret.topology, ret.topoConf);
+        StormTopology topology = tryReadTopology(topoId, topoCache);
+        ret.topology = StormCommon.systemTopology(ret.topoConf, topology);
+        ret.taskToComponent = StormCommon.stormTaskInfo(topology, ret.topoConf);
         ret.base = state.stormBase(topoId, null);
         if (ret.base != null && ret.base.is_set_launch_time_secs()) {
             ret.launchTimeSecs = ret.base.get_launch_time_secs();
