@@ -36,6 +36,7 @@ import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.data.Id;
 import org.apache.storm.shade.org.apache.zookeeper.server.auth.DigestAuthenticationProvider;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
@@ -300,7 +301,7 @@ public class AclEnforcement {
     }
 
     public static void main(String[] args) throws Exception {
-        Map<String, Object> conf = Utils.readStormConfig();
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
         boolean fixUp = false;
         for (String arg : args) {
             String a = arg.toLowerCase();

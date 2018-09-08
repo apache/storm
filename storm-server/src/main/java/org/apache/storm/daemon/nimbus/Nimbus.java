@@ -1224,7 +1224,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     public static Nimbus launch(INimbus inimbus) throws Exception {
-        Map<String, Object> conf = Utils.merge(Utils.readStormConfig(),
+        Map<String, Object> conf = Utils.merge(ConfigUtils.readStormConfig(),
                                                ConfigUtils.readYamlConfig("storm-cluster-auth.yaml", false));
         boolean fixupAcl = (boolean) conf.get(DaemonConfig.STORM_NIMBUS_ZOOKEEPER_ACLS_FIXUP);
         boolean checkAcl = fixupAcl || (boolean) conf.get(DaemonConfig.STORM_NIMBUS_ZOOKEEPER_ACLS_CHECK);

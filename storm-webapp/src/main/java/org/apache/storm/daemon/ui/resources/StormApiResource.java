@@ -37,8 +37,8 @@ import javax.ws.rs.core.SecurityContext;
 import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.thrift.TException;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
-import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +57,7 @@ public class StormApiResource {
     @Context
     private HttpServletRequest servletRequest;
 
-    public static Map<String, Object> config = Utils.readStormConfig();
+    public static Map<String, Object> config = ConfigUtils.readStormConfig();
 
     public static Meter clusterConfigurationRequestMeter =
             StormMetricsRegistry.registerMeter("ui:num-cluster-configuration-http-requests");
