@@ -340,6 +340,18 @@ public class TopologyDetails {
     }
 
     /**
+     * Get an approximate total resources needed for this topology.
+     * @return the approximate total resources needed for this topology.
+     */
+    public NormalizedResourceRequest getApproximateTotalResources() {
+        NormalizedResourceRequest ret = new NormalizedResourceRequest();
+        for (NormalizedResourceRequest resources : resourceList.values()) {
+            ret.add(resources);
+        }
+        return ret;
+    }
+
+    /**
      * Get the total CPU requirement for executor.
      *
      * @param exec

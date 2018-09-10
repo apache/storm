@@ -154,6 +154,12 @@ public interface ISchedulingState {
     List<WorkerSlot> getAvailableSlots();
 
     /**
+     * Get all the available worker slots in the cluster, that are not blacklisted.
+     * @param blacklistedSupervisorIds list of supervisor ids that should also be considered blacklisted.
+     */
+    List<WorkerSlot> getNonBlacklistedAvailableSlots(List<String> blacklistedSupervisorIds);
+
+    /**
      * Return all non-blacklisted slots on this supervisor.
      *
      * @param supervisor the supervisor
@@ -186,6 +192,13 @@ public interface ISchedulingState {
      * @return the number of workers assigned to this topology.
      */
     int getAssignedNumWorkers(TopologyDetails topology);
+
+    /**
+     * Get the resources on the supervisor that are available to be scheduled.
+     * @param sd the supervisor.
+     * @return the resources available to be scheduled.
+     */
+    NormalizedResourceOffer getAvailableResources(SupervisorDetails sd);
 
     /**
      * Would scheduling exec on ws fit? With a heap <= maxHeap total memory added <= memoryAvailable and cpu added <= cpuAvailable.
@@ -239,8 +252,14 @@ public interface ISchedulingState {
 
     /**
      * Get all scheduled resources for node.
-     **/
+     */
     NormalizedResourceRequest getAllScheduledResourcesForNode(String nodeId);
+
+    /**
+     * Get the resources in the cluster that are available for scheduling.
+     * @param blacklistedSupervisorIds other ids that are tentatively blacklisted.
+     */
+    NormalizedResourceOffer getNonBlacklistedClusterAvailableResources(Collection<String> blacklistedSupervisorIds);
 
     /**
      * Get the total amount of CPU resources in cluster.

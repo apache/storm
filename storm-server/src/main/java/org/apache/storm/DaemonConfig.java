@@ -122,6 +122,9 @@ public class DaemonConfig implements Validated {
 
     /**
      * The class that specifies the eviction strategy to use in blacklist scheduler.
+     * If you are using the RAS scheduler please set this to
+     * "org.apache.storm.scheduler.blacklist.strategies.RasBlacklistStrategy" or you may
+     * get odd behavior when the cluster is full and there are blacklisted nodes.
      */
     @NotNull
     @isImplementationOfClass(implementsClass = IBlacklistStrategy.class)

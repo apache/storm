@@ -242,4 +242,9 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
         offHeap = 0.0;
         onHeap = 0.0;
     }
+
+    @Override
+    public boolean areAnyOverZero() {
+        return onHeap > 0 || offHeap > 0 || normalizedResources.areAnyOverZero();
+    }
 }
