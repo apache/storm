@@ -550,8 +550,7 @@ public class BasicContainer extends Container {
     private List<String> getCommonParams() {
         final String workersArtifacts = ConfigUtils.workerArtifactsRoot(_conf);
         String stormLogDir = ConfigUtils.getLogDir();
-        String log4jConfigurationFile = getWorkerLoggingConfigFile();
-
+        
         List<String> commonParams = new ArrayList<>();
         commonParams.add("-Dlogging.sensitivity=" + OR((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
         commonParams.add("-Dlogfile.name=worker.log");
@@ -561,7 +560,6 @@ public class BasicContainer extends Container {
         commonParams.add("-Dworker.id=" + _workerId);
         commonParams.add("-Dworker.port=" + _port);
         commonParams.add("-Dstorm.log.dir=" + stormLogDir);
-        commonParams.add("-Dlog4j.configurationFile=" + log4jConfigurationFile);
         commonParams.add("-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector");
         commonParams.add("-Dstorm.local.dir=" + _conf.get(Config.STORM_LOCAL_DIR));
         if (memoryLimitMB > 0) {
@@ -626,6 +624,12 @@ public class BasicContainer extends Container {
         List<String> classPathParams = getClassPathParams(stormRoot, topoVersion);
         List<String> commonParams = getCommonParams();
 
+        String log4jConfigurationFile = getWorkerLoggingConfigFile();
+        String workerLog4jConfig = log4jConfigurationFile;
+        if (_topoConf.get(Config.TOPOLOGY_LOGGING_CONFIG_FILE) != null) {
+            workerLog4jConfig = workerLog4jConfig + "," + _topoConf.get(Config.TOPOLOGY_LOGGING_CONFIG_FILE);
+        }
+
         List<String> commandList = new ArrayList<>();
         String logWriter = getWorkerLogWriter(topoVersion);
         if (logWriter != null) {
@@ -634,6 +638,7 @@ public class BasicContainer extends Container {
             commandList.addAll(classPathParams);
             commandList.addAll(substituteChildopts(_topoConf.get(Config.TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS)));
             commandList.addAll(commonParams);
+            commandList.add("-Dlog4j.configurationFile=" + log4jConfigurationFile);
             commandList.add(logWriter); //The LogWriter in turn launches the actual worker.
         }
 
@@ -641,6 +646,7 @@ public class BasicContainer extends Container {
         commandList.add(javaCmd);
         commandList.add("-server");
         commandList.addAll(commonParams);
+        commandList.add("-Dlog4j.configurationFile=" + workerLog4jConfig);
         commandList.addAll(substituteChildopts(_conf.get(Config.WORKER_CHILDOPTS), memOnheap));
         commandList.addAll(substituteChildopts(_topoConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS), memOnheap));
         commandList.addAll(substituteChildopts(Utils.OR(

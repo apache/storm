@@ -708,6 +708,16 @@ public class Config extends HashMap<String, Object> {
     @isString(acceptedValues = { "S0", "S1", "S2", "S3" })
     public static final String TOPOLOGY_LOGGING_SENSITIVITY = "topology.logging.sensitivity";
     /**
+     * Log file the user can use to configure Log4j2.
+     * Can be a resource in the jar (specified with classpath:/path/to/resource) or a file.
+     * This configuration is applied in addition to the regular worker log4j2 configuration.
+     * The configs are merged according to the rules here:
+     *   https://logging.apache.org/log4j/2.x/manual/configuration.html#CompositeConfiguration
+     */
+    @isString
+    public static final String TOPOLOGY_LOGGING_CONFIG_FILE = "topology.logging.config";
+
+    /**
      * Sets the priority for a topology
      */
     @isInteger
