@@ -38,6 +38,7 @@ import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.security.auth.ServerAuthUtils;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
@@ -220,7 +221,7 @@ public class DRPCServer implements AutoCloseable {
      */
     public static void main(String [] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
-        Map<String, Object> conf = Utils.readStormConfig();
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
         try (DRPCServer server = new DRPCServer(conf)) {
             Utils.addShutdownHookWithForceKillIn1Sec(server::close);
             StormMetricsRegistry.startMetricsReporters(conf);

@@ -20,7 +20,6 @@ package org.apache.storm.daemon.ui;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -37,10 +36,9 @@ import org.apache.storm.daemon.ui.filters.HeaderResponseServletFilter;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.security.auth.ServerAuthUtils;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -83,7 +81,7 @@ public class UIServer {
      */
     public static void main(String[] args) {
 
-        Map<String, Object> conf = Utils.readStormConfig();
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
         int headerBufferSize = (int) conf.get(DaemonConfig.UI_HEADER_BUFFER_BYTES);
         final Integer httpsPort = ObjectReader.getInt(conf.get(DaemonConfig.UI_HTTPS_PORT), 0);
         final String httpsKsPath = (String) (conf.get(DaemonConfig.UI_HTTPS_KEYSTORE_PATH));

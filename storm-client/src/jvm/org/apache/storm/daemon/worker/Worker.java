@@ -121,7 +121,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         String supervisorPort = args[2];
         String portStr = args[3];
         String workerId = args[4];
-        Map<String, Object> conf = Utils.readStormConfig();
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
         Utils.setupDefaultUncaughtExceptionHandler();
         StormCommon.validateDistributedMode(conf);
         Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(supervisorPort),

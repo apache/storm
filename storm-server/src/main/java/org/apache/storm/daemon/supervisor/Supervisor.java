@@ -111,7 +111,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
     private Supervisor(ISupervisor iSupervisor)
         throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
-        this(Utils.readStormConfig(), null, iSupervisor);
+        this(ConfigUtils.readStormConfig(), null, iSupervisor);
     }
 
     /**
