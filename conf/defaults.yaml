@@ -97,6 +97,7 @@ ui.users: null
 ui.header.buffer.bytes: 4096
 ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
 ui.pagination: 20
+ui.disable.http.binding: true
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"
@@ -104,6 +105,7 @@ logviewer.cleanup.age.mins: 10080
 logviewer.appender.name: "A1"
 logviewer.max.sum.worker.logs.size.mb: 4096
 logviewer.max.per.worker.logs.size.mb: 2048
+logviewer.disable.http.binding: true
 
 logs.users: null
 
@@ -122,6 +124,7 @@ drpc.https.keystore.type: "JKS"
 drpc.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
 drpc.authorizer.acl.filename: "drpc-auth-acl.yaml"
 drpc.authorizer.acl.strict: false
+drpc.disable.http.binding: true
 
 transactional.zookeeper.root: "/transactional"
 transactional.zookeeper.servers: null
