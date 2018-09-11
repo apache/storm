@@ -308,10 +308,10 @@ public class StormSubmitter {
             }
             LOG.info("Finished submitting topology: {}", name);
         } catch (InvalidTopologyException e) {
-            LOG.warn("Topology submission exception: {}", e.get_msg());
+            LOG.error("Topology submission exception: {}", e.get_msg());
             throw e;
         } catch (AlreadyAliveException e) {
-            LOG.warn("Topology already alive exception", e);
+            LOG.error("Topology already alive exception", e);
             throw e;
         }
     }
@@ -512,7 +512,7 @@ public class StormSubmitter {
 
     private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException,
         InvalidTopologyException, AuthorizationException {
-        ConfigValidation.validateFields(topoConf);
+        ConfigValidation.validateTopoConf(topoConf);
         Utils.validateTopologyBlobStoreMap(topoConf);
     }
 
