@@ -193,10 +193,12 @@ function formatConfigData(data) {
 }
 
 function formatErrorTimeSecs(response){
-    var errors = response["componentErrors"];
-    for(var i = 0 ; i < errors.length ; i++){
-        var time = errors[i]['time'];
-        errors[i]['time'] = moment.utc(time).local().format("ddd, DD MMM YYYY HH:mm:ss Z");
+    if('componentErrors' in response) {
+        var errors = response["componentErrors"];
+        for(var i = 0 ; i < errors.length ; i++){
+            var time = errors[i]['time'];
+            errors[i]['time'] = moment.utc(time).local().format("ddd, DD MMM YYYY HH:mm:ss Z");
+        }
     }
     return response;
 }

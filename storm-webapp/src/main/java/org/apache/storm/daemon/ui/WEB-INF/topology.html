@@ -99,6 +99,16 @@
 </body>
 <script>
 
+function jsError(other) {
+    try {
+      other();
+    } catch (err) {
+      getStatic("/templates/json-error-template.html", function(template) {
+        $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
+      });
+    }
+}
+
 var toggleChangeLogLevel;
 
 function closeChangeLogLevel (){
@@ -251,6 +261,15 @@ $(document).ready(function() {
     var sys = $.cookies.get("sys") || "false";
     var url = "/api/v1/topology/"+topologyId+"?sys="+sys;
     if(window) url += "&window="+window;
+    $.ajaxSetup({
+        "error":function(jqXHR,textStatus,response) {
+            var errorJson = jQuery.parseJSON(jqXHR.responseText);
+            getStatic("/templates/json-error-template.html", function(template) {
+                $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
+            });
+        }
+    });
+
     $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {
         $.extend( $.fn.dataTable.defaults, {
           stateSave: true,
@@ -266,14 +285,6 @@ $(document).ready(function() {
     });
 
     renderToggleSys($("#toggle-switch"));
-    $.ajaxSetup({
-        "error":function(jqXHR,textStatus,response) {
-            var errorJson = jQuery.parseJSON(jqXHR.responseText);
-            getStatic("/templates/json-error-template.html", function(template) {
-                $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
-            });
-        }
-    });
 
     $.getJSON(url,function(response,status,jqXHR) {
         var uiUser = $("#ui-user");
