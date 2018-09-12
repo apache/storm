@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -363,7 +364,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     private void setWaitingToEmit(ConsumerRecords<K, V> consumerRecords) {
         for (TopicPartition tp : consumerRecords.partitions()) {
-            waitingToEmit.put(tp, new ArrayList<>(consumerRecords.records(tp)));
+            waitingToEmit.put(tp, new LinkedList<>(consumerRecords.records(tp)));
         }
     }
 
@@ -558,7 +559,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);
                     if (waitingToEmitForTp != null) {
                         //Discard the pending records that are already committed
-                        List<ConsumerRecord<K, V>> filteredRecords = new ArrayList<>();
+                        List<ConsumerRecord<K, V>> filteredRecords = new LinkedList<>();
                         for (ConsumerRecord<K, V> record : waitingToEmitForTp) {
                             if (record.offset() >= committedOffset) {
                                 filteredRecords.add(record);
