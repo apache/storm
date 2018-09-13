@@ -581,11 +581,9 @@ public class UIHelpers {
         result.put("schedulerDisplayResource",
                 conf.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
         result.put("memAssignedPercentUtil", supervisorTotalMemory > 0
-                ? String.valueOf((supervisorTotalMemory - supervisorUsedMemory)  * 100.0
-                / supervisorTotalMemory) : "0.0");
+                ? StatsUtil.floatStr((supervisorUsedMemory  * 100.0) / supervisorTotalMemory) : "0.0");
         result.put("cpuAssignedPercentUtil", supervisorTotalCpu > 0
-                ? String.valueOf((supervisorTotalCpu - supervisorUsedCpu) * 100.0
-                / supervisorTotalCpu) : "0.0");
+                ? StatsUtil.floatStr((supervisorUsedCpu * 100.0) / supervisorTotalCpu) : "0.0");
         result.put("bugtracker-url", conf.get(DaemonConfig.UI_PROJECT_BUGTRACKER_URL));
         result.put("central-log-url", conf.get(DaemonConfig.UI_CENTRAL_LOGGING_URL));
         return result;
