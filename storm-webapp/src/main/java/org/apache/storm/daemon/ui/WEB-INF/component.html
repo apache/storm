@@ -143,6 +143,15 @@ $(document).ready(function() {
     var url = "/api/v1/topology/"+topologyId+"/component/"+componentId+"?sys="+sys;
     if(window) url += "&window="+window;
 
+    $.ajaxSetup({
+        "error":function(jqXHR,textStatus,response) {
+            var errorJson = jQuery.parseJSON(jqXHR.responseText);
+            getStatic("/templates/json-error-template.html", function(template) {
+                $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
+            });
+        }
+    });
+
     $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {
         $.extend( $.fn.dataTable.defaults, {
           stateSave: true,
@@ -158,14 +167,6 @@ $(document).ready(function() {
     });
 
     renderToggleSys($("#toggle-switch"));
-    $.ajaxSetup({
-        "error":function(jqXHR,textStatus,response) {
-            var errorJson = jQuery.parseJSON(jqXHR.responseText);
-            getStatic("/templates/json-error-template.html", function(template) {
-                $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
-            });
-        }
-    });
 
     function renderSupervisorPageLink(data, type, row, meta) {
         return type === 'display' ? 
@@ -255,97 +256,113 @@ $(document).ready(function() {
             }
 
             if(response["componentType"] == "spout") {
-                componentStatsDetail.append(Mustache.render($(template).filter("#spout-stats-detail-template").html(),response));
-                //window, emitted, transferred, complete latency, acked, failed
-                $("#spout-stats-table").DataTable({
-                  paging: false,
-                  info: false,
-                  searching: false,
-                  columnDefs: [
-                    {type: "num", targets: [1, 2, 3, 4, 5]},
-                    {type: "time-str", targets: [0]}
-                  ]
+                jsError(function () {
+                    componentStatsDetail.append(Mustache.render($(template).filter("#spout-stats-detail-template").html(),response));
+                    //window, emitted, transferred, complete latency, acked, failed
+                    $("#spout-stats-table").DataTable({
+                        paging: false,
+                        info: false,
+                        searching: false,
+                        columnDefs: [
+                          {type: "num", targets: [1, 2, 3, 4, 5]},
+                          {type: "time-str", targets: [0]}
+                        ]
+                    });
                 });
 
-                outputStats.append(Mustache.render($(template).filter("#output-stats-template").html(),response));
-                //stream, emitted, transferred, compltete latency, acked, failed
-                dtAutoPage("#output-stats-table", {
-                  columnDefs: [
-                    {type: "num", targets: [1, 2, 3, 4, 5]}
-                  ]
+                jsError(function () {
+                    outputStats.append(Mustache.render($(template).filter("#output-stats-template").html(),response));
+                    //stream, emitted, transferred, compltete latency, acked, failed
+                    dtAutoPage("#output-stats-table", {
+                      columnDefs: [
+                        {type: "num", targets: [1, 2, 3, 4, 5]}
+                      ]
+                    });
                 });
 
-                executorStats.append(Mustache.render($(template).filter("#executor-stats-template").html(),response));
-                //id, uptime, host, port, actions, emitted, transferred, complete latency, acked, failed
-                dtAutoPage("#executor-stats-table", {
-                  columnDefs: [
-                    {render: renderSupervisorPageLink, searchable: true, targets: [2]},
-                    {render: renderActionCheckbox, searchable: false, targets: [4]},
-                    {type: "num", targets: [5, 6, 7, 8, 9]},
-                    {type: "time-str", targets: [1]},
-                  ]
-                }).on("draw", function(e,s) {setWorkerActionCheckboxesClickCallback()});
+                jsError(function () {
+                    executorStats.append(Mustache.render($(template).filter("#executor-stats-template").html(),response));
+                    //id, uptime, host, port, actions, emitted, transferred, complete latency, acked, failed
+                    dtAutoPage("#executor-stats-table", {
+                      columnDefs: [
+                        {render: renderSupervisorPageLink, searchable: true, targets: [2]},
+                        {render: renderActionCheckbox, searchable: false, targets: [4]},
+                        {type: "num", targets: [5, 6, 7, 8, 9]},
+                        {type: "time-str", targets: [1]},
+                      ]
+                    }).on("draw", function(e,s) {setWorkerActionCheckboxesClickCallback()});
+                });
             } else {
-                componentStatsDetail.append(Mustache.render($(template).filter("#bolt-stats-template").html(),response));
-                //window, emitted, transferred, execute latency, executed, process latency, acked, failed
-                dtAutoPage("#bolt-stats-table", {
-                  columnDefs: [
-                    {type: "num", targets: [1, 2, 3, 4, 5, 6, 7]},
-                    {type: "time-str", targets: [0]}
-                  ]
+                jsError(function () {
+                    componentStatsDetail.append(Mustache.render($(template).filter("#bolt-stats-template").html(),response));
+                    //window, emitted, transferred, execute latency, executed, process latency, acked, failed
+                    dtAutoPage("#bolt-stats-table", {
+                      columnDefs: [
+                        {type: "num", targets: [1, 2, 3, 4, 5, 6, 7]},
+                        {type: "time-str", targets: [0]}
+                      ]
+                    });
                 });
 
-                inputStats.append(Mustache.render($(template).filter("#bolt-input-stats-template").html(),response));
-                //component, stream, execute latency, executed, process latency, acked, failed
-                dtAutoPage("#bolt-input-stats-table", {
-                  columnDefs: [
-                    {type: "num", targets: [2, 3, 4, 5, 6]}
-                  ]
+                jsError(function () {
+                    inputStats.append(Mustache.render($(template).filter("#bolt-input-stats-template").html(),response));
+                    //component, stream, execute latency, executed, process latency, acked, failed
+                    dtAutoPage("#bolt-input-stats-table", {
+                      columnDefs: [
+                        {type: "num", targets: [2, 3, 4, 5, 6]}
+                      ]
+                    });
                 });
 
-                outputStats.append(Mustache.render($(template).filter("#bolt-output-stats-template").html(),response));
-                //stream, emitted, transferred
-                dtAutoPage("#bolt-output-stats-table", {
-                  columnDefs: [
-                    {type: "num", targets: [1, 2]}
-                  ]
+                jsError(function () {
+                    outputStats.append(Mustache.render($(template).filter("#bolt-output-stats-template").html(),response));
+                    //stream, emitted, transferred
+                    dtAutoPage("#bolt-output-stats-table", {
+                      columnDefs: [
+                        {type: "num", targets: [1, 2]}
+                      ]
+                    });
                 });
 
-                executorStats.append(Mustache.render($(template).filter("#bolt-executor-template").html(),response));
-                //id, uptime, host, port, actions, emitted, transferred, capacity, execute latency, executed, process latency, acked, failed
-                dtAutoPage("#executor-stats-table", {
-                  columnDefs: [
-                    {render: renderSupervisorPageLink, searchable: true, targets: [2]},
-                    {render: renderActionCheckbox, searchable: false, targets: [4]},
-                    {type: "num", targets: [5, 6, 7, 8, 9, 10, 11, 12]},
-                    {type: "time-str", targets: [1]},
-                  ]
-                }).on("draw", function(e,s) {setWorkerActionCheckboxesClickCallback()});
+                jsError(function () {
+                    executorStats.append(Mustache.render($(template).filter("#bolt-executor-template").html(),response));
+                    //id, uptime, host, port, actions, emitted, transferred, capacity, execute latency, executed, process latency, acked, failed
+                    dtAutoPage("#executor-stats-table", {
+                      columnDefs: [
+                        {render: renderSupervisorPageLink, searchable: true, targets: [2]},
+                        {render: renderActionCheckbox, searchable: false, targets: [4]},
+                        {type: "num", targets: [5, 6, 7, 8, 9, 10, 11, 12]},
+                        {type: "time-str", targets: [1]},
+                      ]
+                    }).on("draw", function(e,s) {setWorkerActionCheckboxesClickCallback()});
+                });
             }
             setWorkerActionCheckboxesClickCallback();
-            componentErrors.append(Mustache.render($(template).filter("#component-errors-template").html(),formatErrorTimeSecs(response)));
-            //time, error
-            dtAutoPage("#component-errors-table", {});
+            jsError(function () {
+                componentErrors.append(Mustache.render($(template).filter("#component-errors-template").html(),formatErrorTimeSecs(response)));
+                //time, error
+                dtAutoPage("#component-errors-table", {});
 
-            var errorTimeCells = document.getElementsByClassName("errorTimeSpan");
-            for (i = 0; i < errorTimeCells.length; i++)
-            {
-              var timeInMilliseconds = errorTimeCells[i].id * 1000;
-              var time = parseInt(timeInMilliseconds);
-              var date = new Date(time);
-              errorTimeCells[i].innerHTML = date.toJSON();
-            }
+                var errorTimeCells = document.getElementsByClassName("errorTimeSpan");
+                for (i = 0; i < errorTimeCells.length; i++)
+                {
+                  var timeInMilliseconds = errorTimeCells[i].id * 1000;
+                  var time = parseInt(timeInMilliseconds);
+                  var date = new Date(time);
+                  errorTimeCells[i].innerHTML = date.toJSON();
+                }
 
-            var errorCells = document.getElementsByClassName("errorSpan");
-            for (i =0; i < errorCells.length; i++)
-            {
-              var timeLapsedInSecs = errorCells[i].id;
-              if (parseInt(timeLapsedInSecs) < 1800) {
-                errorCells[i].style.color = "#9d261d";
-                errorCells[i].style.borderBottomColor = "#9d261d";
-              }
-              errorCells[i].style.whiteSpace = "pre";
-            }
+                var errorCells = document.getElementsByClassName("errorSpan");
+                for (i =0; i < errorCells.length; i++)
+                {
+                  var timeLapsedInSecs = errorCells[i].id;
+                  if (parseInt(timeLapsedInSecs) < 1800) {
+                    errorCells[i].style.color = "#9d261d";
+                    errorCells[i].style.borderBottomColor = "#9d261d";
+                  }
+                  errorCells[i].style.whiteSpace = "pre";
+                }
+            });
             $('#component-summary [data-toggle="tooltip"]').tooltip();
             $('#component-actions [data-toggle="tooltip"]').tooltip();
             $('#component-stats-detail [data-toggle="tooltip"]').tooltip();

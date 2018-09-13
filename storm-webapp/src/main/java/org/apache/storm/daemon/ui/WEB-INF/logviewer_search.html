@@ -40,12 +40,25 @@
   <div class="row">
     <div id="result"></div>
   </div>
+  <div class="row">
+    <div id="json-response-error"></div>
+  </div>
   <div>
     <p id="page-rendered-at-timestamp"></p>
   </div>
 </div>
 </body>
 <script>
+function jsError(other) {
+    try {
+      other();
+    } catch (err) {
+      getStatic("/templates/json-error-template.html", function(template) {
+        $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
+      });
+    }
+}
+
 $(document).ready(function() {
     var file = $.url("?file");
     var search = $.url("?search");
@@ -54,17 +67,30 @@ $(document).ready(function() {
     file = decodeURIComponent(file);
     search = decodeURIComponent(search);
 
+    $.ajaxSetup({
+        "error":function(jqXHR,textStatus,response) {
+            var errorJson = jQuery.parseJSON(jqXHR.responseText);
+            getStatic("/templates/json-error-template.html", function(template) {
+                $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
+            });
+        }
+    });
+
     getStatic("/templates/logviewer-search-page-template.html", function(template) {
-        $("#search-form").append(Mustache.render($(template).filter("#search-single-file").html(),{file: file, search: search, isDaemon: isDaemon}));
+        jsError(function() {
+            $("#search-form").append(Mustache.render($(template).filter("#search-single-file").html(),{file: file, search: search, isDaemon:isDaemon}));
+        });
 
         var result = $("#result");
         var url = "/api/v1/search?file="+encodeURIComponent(file)+"&search-string="+search+"&start-byte-offset="+offset+"&is-daemon="+isDaemon;
         $.getJSON(url,function(response,status,jqXHR) {
-           response.file = file;
-           result.append(Mustache.render($(template).filter("#logviewer-search-result-template").html(),response));
-       });
+            jsError(function() {
+                response.file = file;
+                result.append(Mustache.render($(template).filter("#logviewer-search-result-template").html(),response));
+            });
+        });
     });
-  });
+});
 
 getPageRenderedTimestamp("page-rendered-at-timestamp");
 

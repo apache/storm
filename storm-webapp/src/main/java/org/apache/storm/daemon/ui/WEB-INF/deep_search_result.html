@@ -41,12 +41,25 @@
   <div class="row">
     <div id="result"></div>
   </div>
+  <div class="row">
+    <div id="json-response-error" class="col-md-12"></div>
+  </div>
   <div>
     <p id="page-rendered-at-timestamp"></p>
   </div>
 </div>
 </body>
 <script type="text/javascript">
+
+function jsError(other) {
+    try {
+      other();
+    } catch (err) {
+      getStatic("/templates/json-error-template.html", function(template) {
+        $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
+      });
+    }
+}
 
 function elem_id_for_host(host) {
     return "search-results-"+host.replace(/\./g,"-");
@@ -59,113 +72,128 @@ $(document).ready(function() {
     var port = $.url("?port") || "*";
     var search_archived = $.url("?search-archived");
 
+    $.ajaxSetup({
+        "error":function(jqXHR,textStatus,response) {
+            var errorJson = jQuery.parseJSON(jqXHR.responseText);
+            getStatic("/templates/json-error-template.html", function(template) {
+                $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
+            });
+        }
+    });
+
     getStatic("/templates/deep-search-result-page-template.html", function(template) {
         var checked;
         if (search_archived) {
             checked = "checked";
         }
         $.get("/api/v1/history/summary", function (response, status, jqXHR) {
-            var findIds = function findIds(query, cb) {
-                var found = [];
-                var re = new RegExp(query, 'i');
-                for (var j in response["topo-history"]) {
-                    var id = response["topo-history"][j];
-                    if (re.test(id)) {
-                        found.push({ value: id });
+            jsError(function() {
+                var findIds = function findIds(query, cb) {
+                    var found = [];
+                    var re = new RegExp(query, 'i');
+                    for (var j in response["topo-history"]) {
+                        var id = response["topo-history"][j];
+                        if (re.test(id)) {
+                            found.push({ value: id });
+                        }
                     }
-               }
-               cb(found);
-            };
+                    cb(found);
+                };
 
-            $("#search-form").append(Mustache.render($(template).filter("#search-form-template").html(),{id: id, search: search, count: count, search_archived: checked, topologies: response["topo-history"]}));
-            $('#search-id').typeahead({
-              hint: true,
-              highlight: true,
-              minLength: 1
-            },
-            {
-              name: 'ids',
-              displayKey: 'value',
-              source: findIds 
+                $("#search-form").append(Mustache.render($(template).filter("#search-form-template").html(),{id: id, search: search, count:
+                count, search_archived: checked, topologies: response["topo-history"]}));
+                $('#search-id').typeahead({
+                  hint: true,
+                  highlight: true,
+                  minLength: 1
+                },
+                {
+                  name: 'ids',
+                  displayKey: 'value',
+                  source: findIds
+                });
+                $('#search-form [data-toggle="tooltip"]').tooltip();
             });
-            $('#search-form [data-toggle="tooltip"]').tooltip();
         });
 
         function render_file(file, host, logviewerPort, logviewerScheme, count, template) {
-            file.host = host;
-            file.id = id;
-            file.count = count;
-            file.logviewerPort = logviewerPort;
-            file.logviewerScheme = logviewerScheme;
-            file.search_archived = search_archived;
-            if (file.matches == 0) {
-               file.resultNotFound = true;
-            }
-            var searchTemplate = $(template).filter("#search-result-identified-template").html();
-            var rendered = Mustache.render(searchTemplate, file);
-            var elemId = elem_id_for_host(host);
-            $("#"+elemId).remove();
-            if (file.resultNotFound) {
-                // if no result found,
-                // and there is no "aResult" or "noResult" element exists,
-                // append "resultNotFound" element
-                if (!$("#aResult").length && !$("#noResult").length) {
-                    $("#search-result-table > tbody").append(rendered);
+            jsError(function() {
+                file.host = host;
+                file.id = id;
+                file.count = count;
+                file.logviewerPort = logviewerPort;
+                file.logviewerScheme = logviewerScheme;
+                file.search_archived = search_archived;
+                if (file.matches == 0) {
+                   file.resultNotFound = true;
                 }
-            } else {
-              // if a result found, remove "noResult" element,
-              // and append the result
-              $("#noResult").remove();
-              $("#search-result-table > tbody").append(rendered);
-            }
+                var searchTemplate = $(template).filter("#search-result-identified-template").html();
+                var rendered = Mustache.render(searchTemplate, file);
+                var elemId = elem_id_for_host(host);
+                $("#"+elemId).remove();
+                if (file.resultNotFound) {
+                    // if no result found,
+                    // and there is no "aResult" or "noResult" element exists,
+                    // append "resultNotFound" element
+                    if (!$("#aResult").length && !$("#noResult").length) {
+                        $("#search-result-table > tbody").append(rendered);
+                    }
+                } else {
+                  // if a result found, remove "noResult" element,
+                  // and append the result
+                  $("#noResult").remove();
+                  $("#search-result-table > tbody").append(rendered);
+                }
+            });
         }
 
 
         var result = $("#result");
         if(search) {
             $.get("/api/v1/supervisor/summary", function(response, status, jqXHR) {
+                jsError(function() {
+                    for(var i in response.supervisors) {
+                        response.supervisors[i].elemId = elem_id_for_host(response.supervisors[i].host);
+                    }
 
-                for(var i in response.supervisors) {
-                    response.supervisors[i].elemId = elem_id_for_host(response.supervisors[i].host);
-                }
+                    result.append(Mustache.render($(template).filter("#search-result-files-template").html(),response));
 
-                result.append(Mustache.render($(template).filter("#search-result-files-template").html(),response));
+                    var logviewerPort = response.logviewerPort;
+                    var logviewerScheme = response.logviewerScheme;
+                    var distinct_hosts = {};
+                    for (var index in response.supervisors) {
+                        distinct_hosts[response.supervisors[index].host] = true;
+                    }
 
-                var logviewerPort = response.logviewerPort;
-                var logviewerScheme = response.logviewerScheme;
-                var distinct_hosts = {};
-                for (var index in response.supervisors) {
-                    distinct_hosts[response.supervisors[index].host] = true;
-                }
+                    for (var host in distinct_hosts) {
+                        var searchURL = logviewerScheme +
+                         "://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&port="+port;
+                        if(search_archived)
+                            searchURL += "&search-archived=" + search_archived;
 
-
-                for (var host in distinct_hosts) {
-                    var searchURL = logviewerScheme + "://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&port="+port;
-                    if(search_archived)
-                        searchURL += "&search-archived=" + search_archived;
-                    
-                    
-                    $.ajax({dataType: "json",
-                            url: searchURL,
-                            xhrFields: {
-                                withCredentials: true
-                            },
-                            success: $.proxy(function(data,status,jqXHR) {
-                                if(port == "*") {
-                                    for(var by_port in data) {
-                                        for(var i in data[by_port].matches) {
-                                            render_file(data[by_port].matches[i], this.host, logviewerPort, logviewerScheme, count, template);
+                        $.ajax({dataType: "json",
+                                url: searchURL,
+                                xhrFields: {
+                                    withCredentials: true
+                                },
+                                success: $.proxy(function(data,status,jqXHR) {
+                                    if(port == "*") {
+                                        for(var by_port in data) {
+                                            for(var i in data[by_port].matches) {
+                                                render_file(data[by_port].matches[i], this.host, logviewerPort, logviewerScheme, count,
+                                             template);
+                                            }
                                         }
                                     }
-                                }
-                                else {
-                                    for(var i in data.matches) {
-                                        render_file(data.matches[i], this.host, logviewerPort, logviewerScheme, count, template);
+                                    else {
+                                        for(var i in data.matches) {
+                                            render_file(data.matches[i], this.host, logviewerPort, logviewerScheme, count, template);
+                                        }
                                     }
-                                }
-                            }, {host: host, id: id})
-                           });
-                }
+                                }, {host: host, id: id})
+                               });
+                    }
+                });
             });
         }
     });
