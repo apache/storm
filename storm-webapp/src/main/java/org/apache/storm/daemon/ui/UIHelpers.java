@@ -39,7 +39,6 @@ import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -379,18 +378,18 @@ public class UIHelpers {
     /**
      * Construct a Jetty Server instance.
      */
-    public static Server jettyCreateServer(Integer port, String host, Integer httpsPort) {
-        return jettyCreateServer(port, host, httpsPort, null);
+    public static Server jettyCreateServer(Integer port, String host, Integer httpsPort, Boolean disableHttpBinding) {
+        return jettyCreateServer(port, host, httpsPort, null, disableHttpBinding);
     }
 
     /**
      * Construct a Jetty Server instance.
      */
     public static Server jettyCreateServer(Integer port, String host,
-                                           Integer httpsPort, Integer headerBufferSize) {
+                                           Integer httpsPort, Integer headerBufferSize, Boolean disableHttpBinding) {
         Server server = new Server();
 
-        if (httpsPort == null || httpsPort <= 0) {
+        if (httpsPort == null || httpsPort <= 0 || disableHttpBinding == null || disableHttpBinding == false) {
             HttpConfiguration httpConfig = new HttpConfiguration();
             httpConfig.setSendDateHeader(true);
             if (null != headerBufferSize) {
@@ -415,7 +414,7 @@ public class UIHelpers {
     public static void stormRunJetty(Integer port, String host,
                                      Integer httpsPort, Integer headerBufferSize,
                                      IConfigurator configurator) throws Exception {
-        Server s = jettyCreateServer(port, host, httpsPort, headerBufferSize);
+        Server s = jettyCreateServer(port, host, httpsPort, headerBufferSize, false);
         if (configurator != null) {
             configurator.execute(s);
         }
