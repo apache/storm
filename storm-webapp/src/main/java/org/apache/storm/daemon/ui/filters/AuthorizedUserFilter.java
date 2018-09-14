@@ -27,6 +27,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import org.apache.commons.codec.Charsets;
@@ -79,7 +80,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
     public static Response makeResponse(Exception ex, ContainerRequestContext request, int statusCode) {
         String callback = null;
 
-        if (request.getMediaType().toString().contains("application/json")) {
+        if (request.getMediaType() != null && request.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE)) {
             try {
                 String json = IOUtils.toString(request.getEntityStream(), Charsets.UTF_8);
                 InputStream in = IOUtils.toInputStream(json);
