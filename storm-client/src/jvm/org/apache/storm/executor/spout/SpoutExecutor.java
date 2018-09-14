@@ -37,8 +37,8 @@ import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.spout.ISpout;
 import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.stats.SpoutExecutorStats;
-import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
@@ -73,7 +73,7 @@ public class SpoutExecutor extends Executor {
     private long threadId = 0;
 
     public SpoutExecutor(final WorkerState workerData, final List<Long> executorId, Map<String, String> credentials) {
-        super(workerData, executorId, credentials, StatsUtil.SPOUT);
+        super(workerData, executorId, credentials, ClientStatsUtil.SPOUT);
         this.spoutWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY));
         this.spoutWaitStrategy.prepare(topoConf, WAIT_SITUATION.SPOUT_WAIT);
         this.backPressureWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));

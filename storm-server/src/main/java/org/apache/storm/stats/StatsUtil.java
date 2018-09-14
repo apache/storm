@@ -63,26 +63,17 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("unchecked")
 public class StatsUtil {
     public static final String TYPE = "type";
-    public static final String SPOUT = "spout";
-    public static final String BOLT = "bolt";
     public static final int TEN_MIN_IN_SECONDS = 60 * 10;
     public static final String TEN_MIN_IN_SECONDS_STR = TEN_MIN_IN_SECONDS + "";
-    public static final IdentityTransformer IDENTITY = new IdentityTransformer();
-    public static final ToGlobalStreamIdTransformer TO_GSID = new ToGlobalStreamIdTransformer();
     private static final Logger LOG = LoggerFactory.getLogger(StatsUtil.class);
-    private static final String UPTIME = "uptime";
     private static final String HOST = "host";
     private static final String PORT = "port";
     private static final String NUM_TASKS = "num-tasks";
     private static final String NUM_EXECUTORS = "num-executors";
-    private static final String NUM_WORKERS = "num-workers";
     private static final String CAPACITY = "capacity";
     private static final String STATS = "stats";
-    private static final String EXECUTOR_STATS = "executor-stats";
     private static final String EXECUTOR_ID = "executor-id";
     private static final String LAST_ERROR = "lastError";
-    private static final String HEARTBEAT = "heartbeat";
-    private static final String TIME_SECS = "time-secs";
     private static final String RATE = "rate";
     private static final String ACKED = "acked";
     private static final String FAILED = "failed";
@@ -202,35 +193,35 @@ public class StatsUtil {
     public static Map<String, Object> aggPreMergeCompPageBolt(Map<String, Object> beat, String window, boolean includeSys) {
         Map<String, Object> ret = new HashMap<>();
 
-        putKV(ret, EXECUTOR_ID, getByKey(beat, "exec-id"));
-        putKV(ret, HOST, getByKey(beat, HOST));
-        putKV(ret, PORT, getByKey(beat, PORT));
-        putKV(ret, UPTIME, getByKey(beat, UPTIME));
+        putKV(ret, EXECUTOR_ID, beat.get("exec-id"));
+        putKV(ret, HOST, beat.get(HOST));
+        putKV(ret, PORT, beat.get(PORT));
+        putKV(ret, ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
         putKV(ret, NUM_EXECUTORS, 1);
-        putKV(ret, NUM_TASKS, getByKey(beat, NUM_TASKS));
+        putKV(ret, NUM_TASKS, beat.get(NUM_TASKS));
 
-        Map stat2win2sid2num = getMapByKey(beat, STATS);
-        putKV(ret, CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, UPTIME).intValue()));
+        Map stat2win2sid2num = ClientStatsUtil.getMapByKey(beat, STATS);
+        putKV(ret, CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, ClientStatsUtil.UPTIME).intValue()));
 
         // calc cid+sid->input_stats
         Map inputStats = new HashMap();
-        Map sid2acked = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, ACKED), TO_STRING).get(window);
-        Map sid2failed = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, FAILED), TO_STRING).get(window);
+        Map sid2acked = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, ACKED), TO_STRING).get(window);
+        Map sid2failed = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, FAILED), TO_STRING).get(window);
         putKV(inputStats, ACKED, sid2acked != null ? sid2acked : new HashMap());
         putKV(inputStats, FAILED, sid2failed != null ? sid2failed : new HashMap());
 
         inputStats = swapMapOrder(inputStats);
 
-        Map sid2execLat = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, EXEC_LATENCIES), TO_STRING).get(window);
-        Map sid2procLat = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, PROC_LATENCIES), TO_STRING).get(window);
-        Map sid2exec = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, EXECUTED), TO_STRING).get(window);
+        Map sid2execLat = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EXEC_LATENCIES), TO_STRING).get(window);
+        Map sid2procLat = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, PROC_LATENCIES), TO_STRING).get(window);
+        Map sid2exec = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EXECUTED), TO_STRING).get(window);
         mergeMaps(inputStats, aggBoltStreamsLatAndCount(sid2execLat, sid2procLat, sid2exec));
         putKV(ret, CID_SID_TO_IN_STATS, inputStats);
 
         // calc sid->output_stats
         Map outputStats = new HashMap();
-        Map sid2emitted = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, EMITTED), TO_STRING).get(window);
-        Map sid2transferred = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING).get(window);
+        Map sid2emitted = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EMITTED), TO_STRING).get(window);
+        Map sid2transferred = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING).get(window);
         if (sid2emitted != null) {
             putKV(outputStats, EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
         } else {
@@ -258,22 +249,22 @@ public class StatsUtil {
      */
     public static Map<String, Object> aggPreMergeCompPageSpout(Map<String, Object> beat, String window, boolean includeSys) {
         Map<String, Object> ret = new HashMap<>();
-        putKV(ret, EXECUTOR_ID, getByKey(beat, "exec-id"));
-        putKV(ret, HOST, getByKey(beat, HOST));
-        putKV(ret, PORT, getByKey(beat, PORT));
-        putKV(ret, UPTIME, getByKey(beat, UPTIME));
+        putKV(ret, EXECUTOR_ID, beat.get("exec-id"));
+        putKV(ret, HOST, beat.get(HOST));
+        putKV(ret, PORT, beat.get(PORT));
+        putKV(ret, ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
         putKV(ret, NUM_EXECUTORS, 1);
-        putKV(ret, NUM_TASKS, getByKey(beat, NUM_TASKS));
+        putKV(ret, NUM_TASKS, beat.get(NUM_TASKS));
 
-        Map stat2win2sid2num = getMapByKey(beat, STATS);
+        Map stat2win2sid2num = ClientStatsUtil.getMapByKey(beat, STATS);
 
         // calc sid->output-stats
         Map outputStats = new HashMap();
-        Map win2sid2acked = windowSetConverter(getMapByKey(stat2win2sid2num, ACKED), TO_STRING);
-        Map win2sid2failed = windowSetConverter(getMapByKey(stat2win2sid2num, FAILED), TO_STRING);
-        Map win2sid2emitted = windowSetConverter(getMapByKey(stat2win2sid2num, EMITTED), TO_STRING);
-        Map win2sid2transferred = windowSetConverter(getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING);
-        Map win2sid2compLat = windowSetConverter(getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
+        Map win2sid2acked = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, ACKED), TO_STRING);
+        Map win2sid2failed = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, FAILED), TO_STRING);
+        Map win2sid2emitted = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EMITTED), TO_STRING);
+        Map win2sid2transferred = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING);
+        Map win2sid2compLat = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
 
         putKV(outputStats, ACKED, win2sid2acked.get(window));
         putKV(outputStats, FAILED, win2sid2failed.get(window));
@@ -312,13 +303,13 @@ public class StatsUtil {
 
         Map<String, Object> subRet = new HashMap<>();
         putKV(subRet, NUM_EXECUTORS, 1);
-        putKV(subRet, NUM_TASKS, getByKey(beat, NUM_TASKS));
+        putKV(subRet, NUM_TASKS, beat.get(NUM_TASKS));
 
-        Map<String, Object> stat2win2sid2num = getMapByKey(beat, STATS);
-        putKV(subRet, CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, UPTIME).intValue()));
+        Map<String, Object> stat2win2sid2num = ClientStatsUtil.getMapByKey(beat, STATS);
+        putKV(subRet, CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, ClientStatsUtil.UPTIME).intValue()));
 
         for (String key : new String[]{ EMITTED, TRANSFERRED, ACKED, FAILED }) {
-            Map<String, Map<K, V>> stat = windowSetConverter(getMapByKey(stat2win2sid2num, key), TO_STRING);
+            Map<String, Map<K, V>> stat = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, key), TO_STRING);
             if (EMITTED.equals(key) || TRANSFERRED.equals(key)) {
                 stat = filterSysStreams(stat, includeSys);
             }
@@ -333,15 +324,15 @@ public class StatsUtil {
         }
 
         Map<String, Map<List<String>, Double>> win2sid2execLat =
-            windowSetConverter(getMapByKey(stat2win2sid2num, EXEC_LATENCIES), TO_STRING);
+            windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EXEC_LATENCIES), TO_STRING);
         Map<String, Map<List<String>, Double>> win2sid2procLat =
-            windowSetConverter(getMapByKey(stat2win2sid2num, PROC_LATENCIES), TO_STRING);
+            windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, PROC_LATENCIES), TO_STRING);
         Map<String, Map<List<String>, Long>> win2sid2exec =
-            windowSetConverter(getMapByKey(stat2win2sid2num, EXECUTED), TO_STRING);
+            windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EXECUTED), TO_STRING);
         subRet.putAll(aggBoltLatAndCount(
             win2sid2execLat.get(window), win2sid2procLat.get(window), win2sid2exec.get(window)));
 
-        ret.put((String) getByKey(beat, "comp-id"), subRet);
+        ret.put((String) beat.get("comp-id"), subRet);
         return ret;
     }
 
@@ -354,10 +345,10 @@ public class StatsUtil {
 
         Map<String, Object> subRet = new HashMap<>();
         putKV(subRet, NUM_EXECUTORS, 1);
-        putKV(subRet, NUM_TASKS, getByKey(m, NUM_TASKS));
+        putKV(subRet, NUM_TASKS, m.get(NUM_TASKS));
 
         // no capacity for spout
-        Map<String, Map<String, Map<String, V>>> stat2win2sid2num = getMapByKey(m, STATS);
+        Map<String, Map<String, Map<String, V>>> stat2win2sid2num = ClientStatsUtil.getMapByKey(m, STATS);
         for (String key : new String[]{ EMITTED, TRANSFERRED, FAILED }) {
             Map<String, Map<K, V>> stat = windowSetConverter(stat2win2sid2num.get(key), TO_STRING);
             if (EMITTED.equals(key) || TRANSFERRED.equals(key)) {
@@ -374,12 +365,12 @@ public class StatsUtil {
         }
 
         Map<String, Map<String, Double>> win2sid2compLat =
-            windowSetConverter(getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
+            windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
         Map<String, Map<String, Long>> win2sid2acked =
-            windowSetConverter(getMapByKey(stat2win2sid2num, ACKED), TO_STRING);
+            windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, ACKED), TO_STRING);
         subRet.putAll(aggSpoutLatAndCount(win2sid2compLat.get(window), win2sid2acked.get(window)));
 
-        ret.put((String) getByKey(m, "comp-id"), subRet);
+        ret.put((String) m.get("comp-id"), subRet);
         return ret;
     }
 
@@ -394,10 +385,10 @@ public class StatsUtil {
         Map<String, Object> accBoltStats, Map<String, Object> boltStats) {
         Map<String, Object> ret = new HashMap<>();
 
-        Map<List<String>, Map<String, ?>> accIn = getMapByKey(accBoltStats, CID_SID_TO_IN_STATS);
-        Map<String, Map<String, ?>> accOut = getMapByKey(accBoltStats, SID_TO_OUT_STATS);
-        Map<List<String>, Map<String, ?>> boltIn = getMapByKey(boltStats, CID_SID_TO_IN_STATS);
-        Map<String, Map<String, ?>> boltOut = getMapByKey(boltStats, SID_TO_OUT_STATS);
+        Map<List<String>, Map<String, ?>> accIn = ClientStatsUtil.getMapByKey(accBoltStats, CID_SID_TO_IN_STATS);
+        Map<String, Map<String, ?>> accOut = ClientStatsUtil.getMapByKey(accBoltStats, SID_TO_OUT_STATS);
+        Map<List<String>, Map<String, ?>> boltIn = ClientStatsUtil.getMapByKey(boltStats, CID_SID_TO_IN_STATS);
+        Map<String, Map<String, ?>> boltOut = ClientStatsUtil.getMapByKey(boltStats, SID_TO_OUT_STATS);
 
         int numExecutors = getByKeyOr0(accBoltStats, NUM_EXECUTORS).intValue();
         putKV(ret, NUM_EXECUTORS, numExecutors + 1);
@@ -414,7 +405,7 @@ public class StatsUtil {
 
         Map<String, Object> executorStats = new HashMap<>();
         putKV(executorStats, EXECUTOR_ID, boltStats.get(EXECUTOR_ID));
-        putKV(executorStats, UPTIME, boltStats.get(UPTIME));
+        putKV(executorStats, ClientStatsUtil.UPTIME, boltStats.get(ClientStatsUtil.UPTIME));
         putKV(executorStats, HOST, boltStats.get(HOST));
         putKV(executorStats, PORT, boltStats.get(PORT));
         putKV(executorStats, CAPACITY, boltStats.get(CAPACITY));
@@ -432,9 +423,9 @@ public class StatsUtil {
             putKV(executorStats, EXEC_LATENCY, null);
             putKV(executorStats, PROC_LATENCY, null);
         }
-        List executorStatsList = ((List) getByKey(accBoltStats, EXECUTOR_STATS));
+        List executorStatsList = ((List) accBoltStats.get(ClientStatsUtil.EXECUTOR_STATS));
         executorStatsList.add(executorStats);
-        putKV(ret, EXECUTOR_STATS, executorStatsList);
+        putKV(ret, ClientStatsUtil.EXECUTOR_STATS, executorStatsList);
 
         return ret;
     }
@@ -447,8 +438,8 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
 
         // {stream id -> metric -> value}, note that sid->out-stats may contain both long and double values
-        Map<String, Map<String, ?>> accOut = getMapByKey(accSpoutStats, SID_TO_OUT_STATS);
-        Map<String, Map<String, ?>> spoutOut = getMapByKey(spoutStats, SID_TO_OUT_STATS);
+        Map<String, Map<String, ?>> accOut = ClientStatsUtil.getMapByKey(accSpoutStats, SID_TO_OUT_STATS);
+        Map<String, Map<String, ?>> spoutOut = ClientStatsUtil.getMapByKey(spoutStats, SID_TO_OUT_STATS);
 
         int numExecutors = getByKeyOr0(accSpoutStats, NUM_EXECUTORS).intValue();
         putKV(ret, NUM_EXECUTORS, numExecutors + 1);
@@ -457,10 +448,10 @@ public class StatsUtil {
         putKV(ret, SID_TO_OUT_STATS, fullMergeWithSum(accOut, spoutOut));
 
         Map executorStats = new HashMap();
-        putKV(executorStats, EXECUTOR_ID, getByKey(spoutStats, EXECUTOR_ID));
-        putKV(executorStats, UPTIME, getByKey(spoutStats, UPTIME));
-        putKV(executorStats, HOST, getByKey(spoutStats, HOST));
-        putKV(executorStats, PORT, getByKey(spoutStats, PORT));
+        putKV(executorStats, EXECUTOR_ID, spoutStats.get(EXECUTOR_ID));
+        putKV(executorStats, ClientStatsUtil.UPTIME, spoutStats.get(ClientStatsUtil.UPTIME));
+        putKV(executorStats, HOST, spoutStats.get(HOST));
+        putKV(executorStats, PORT, spoutStats.get(PORT));
 
         putKV(executorStats, EMITTED, sumStreamsLong(spoutOut, EMITTED));
         putKV(executorStats, TRANSFERRED, sumStreamsLong(spoutOut, TRANSFERRED));
@@ -472,9 +463,9 @@ public class StatsUtil {
         } else {
             putKV(executorStats, COMP_LATENCY, null);
         }
-        List executorStatsList = ((List) getByKey(accSpoutStats, EXECUTOR_STATS));
+        List executorStatsList = ((List) accSpoutStats.get(ClientStatsUtil.EXECUTOR_STATS));
         executorStatsList.add(executorStats);
-        putKV(ret, EXECUTOR_STATS, executorStatsList);
+        putKV(ret, ClientStatsUtil.EXECUTOR_STATS, executorStatsList);
 
         return ret;
     }
@@ -547,15 +538,15 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
 
         Set workerSet = (Set) accStats.get(WORKERS_SET);
-        Map bolt2stats = getMapByKey(accStats, BOLT_TO_STATS);
-        Map spout2stats = getMapByKey(accStats, SPOUT_TO_STATS);
-        Map win2emitted = getMapByKey(accStats, WIN_TO_EMITTED);
-        Map win2transferred = getMapByKey(accStats, WIN_TO_TRANSFERRED);
-        Map win2compLatWgtAvg = getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG);
-        Map win2acked = getMapByKey(accStats, WIN_TO_ACKED);
-        Map win2failed = getMapByKey(accStats, WIN_TO_FAILED);
+        Map bolt2stats = ClientStatsUtil.getMapByKey(accStats, BOLT_TO_STATS);
+        Map spout2stats = ClientStatsUtil.getMapByKey(accStats, SPOUT_TO_STATS);
+        Map win2emitted = ClientStatsUtil.getMapByKey(accStats, WIN_TO_EMITTED);
+        Map win2transferred = ClientStatsUtil.getMapByKey(accStats, WIN_TO_TRANSFERRED);
+        Map win2compLatWgtAvg = ClientStatsUtil.getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG);
+        Map win2acked = ClientStatsUtil.getMapByKey(accStats, WIN_TO_ACKED);
+        Map win2failed = ClientStatsUtil.getMapByKey(accStats, WIN_TO_FAILED);
 
-        boolean isSpout = compType.equals(SPOUT);
+        boolean isSpout = compType.equals(ClientStatsUtil.SPOUT);
         // component id -> stats
         Map<String, Object> cid2stats;
         if (isSpout) {
@@ -564,39 +555,39 @@ public class StatsUtil {
             cid2stats = aggPreMergeTopoPageBolt(beat, window, includeSys);
         }
 
-        Map stats = getMapByKey(beat, STATS);
+        Map stats = ClientStatsUtil.getMapByKey(beat, STATS);
         Map w2compLatWgtAvg, w2acked;
-        Map compLatStats = getMapByKey(stats, COMP_LATENCIES);
+        Map compLatStats = ClientStatsUtil.getMapByKey(stats, COMP_LATENCIES);
         if (isSpout) { // agg spout stats
             Map mm = new HashMap();
 
-            Map acked = getMapByKey(stats, ACKED);
+            Map acked = ClientStatsUtil.getMapByKey(stats, ACKED);
             for (Object win : acked.keySet()) {
                 mm.put(win, aggSpoutLatAndCount((Map) compLatStats.get(win), (Map) acked.get(win)));
             }
             mm = swapMapOrder(mm);
-            w2compLatWgtAvg = getMapByKey(mm, COMP_LAT_TOTAL);
-            w2acked = getMapByKey(mm, ACKED);
+            w2compLatWgtAvg = ClientStatsUtil.getMapByKey(mm, COMP_LAT_TOTAL);
+            w2acked = ClientStatsUtil.getMapByKey(mm, ACKED);
         } else {
             w2compLatWgtAvg = null;
-            w2acked = aggregateCountStreams(getMapByKey(stats, ACKED));
+            w2acked = aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED));
         }
 
-        workerSet.add(Lists.newArrayList(getByKey(beat, HOST), getByKey(beat, PORT)));
+        workerSet.add(Lists.newArrayList(beat.get(HOST), beat.get(PORT)));
         putKV(ret, WORKERS_SET, workerSet);
         putKV(ret, BOLT_TO_STATS, bolt2stats);
         putKV(ret, SPOUT_TO_STATS, spout2stats);
         putKV(ret, WIN_TO_EMITTED, mergeWithSumLong(win2emitted, aggregateCountStreams(
-            filterSysStreams(getMapByKey(stats, EMITTED), includeSys))));
+            filterSysStreams(ClientStatsUtil.getMapByKey(stats, EMITTED), includeSys))));
         putKV(ret, WIN_TO_TRANSFERRED, mergeWithSumLong(win2transferred, aggregateCountStreams(
-            filterSysStreams(getMapByKey(stats, TRANSFERRED), includeSys))));
+            filterSysStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED), includeSys))));
         putKV(ret, WIN_TO_COMP_LAT_WGT_AVG, mergeWithSumDouble(win2compLatWgtAvg, w2compLatWgtAvg));
 
         //boolean isSpoutStat = SPOUT.equals(((Keyword) getByKey(stats, TYPE)).getName());
         putKV(ret, WIN_TO_ACKED, isSpout ? mergeWithSumLong(win2acked, w2acked) : win2acked);
         putKV(ret, WIN_TO_FAILED, isSpout ?
-            mergeWithSumLong(aggregateCountStreams(getMapByKey(stats, FAILED)), win2failed) : win2failed);
-        putKV(ret, TYPE, getByKey(stats, TYPE));
+            mergeWithSumLong(aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)), win2failed) : win2failed);
+        putKV(ret, TYPE, stats.get(TYPE));
 
         // (merge-with merge-agg-comp-stats-topo-page-bolt/spout (acc-stats comp-key) cid->statk->num)
         // (acc-stats comp-key) ==> bolt2stats/spout2stats
@@ -646,7 +637,7 @@ public class StatsUtil {
         putKV(initVal, WIN_TO_FAILED, new HashMap());
 
         for (Map<String, Object> heartbeat : heartbeats) {
-            String compType = (String) getByKey(heartbeat, TYPE);
+            String compType = (String) heartbeat.get(TYPE);
             initVal = aggTopoExecStats(win, includeSys, initVal, heartbeat, compType);
         }
 
@@ -658,10 +649,10 @@ public class StatsUtil {
         TopologyPageInfo ret = new TopologyPageInfo(topologyId);
 
         ret.set_num_tasks(task2comp.size());
-        ret.set_num_workers(((Set) getByKey(accData, WORKERS_SET)).size());
+        ret.set_num_workers(((Set) accData.get(WORKERS_SET)).size());
         ret.set_num_executors(exec2nodePort != null ? exec2nodePort.size() : 0);
 
-        Map bolt2stats = getMapByKey(accData, BOLT_TO_STATS);
+        Map bolt2stats = ClientStatsUtil.getMapByKey(accData, BOLT_TO_STATS);
         Map<String, ComponentAggregateStats> aggBolt2stats = new HashMap<>();
         for (Object o : bolt2stats.entrySet()) {
             Map.Entry e = (Map.Entry) o;
@@ -682,7 +673,7 @@ public class StatsUtil {
             aggBolt2stats.put(id, thriftifyBoltAggStats(m));
         }
 
-        Map spout2stats = getMapByKey(accData, SPOUT_TO_STATS);
+        Map spout2stats = ClientStatsUtil.getMapByKey(accData, SPOUT_TO_STATS);
         Map<String, ComponentAggregateStats> aggSpout2stats = new HashMap<>();
         for (Object o : spout2stats.entrySet()) {
             Map.Entry e = (Map.Entry) o;
@@ -700,10 +691,10 @@ public class StatsUtil {
         }
 
         TopologyStats topologyStats = new TopologyStats();
-        topologyStats.set_window_to_acked(mapKeyStr(getMapByKey(accData, WIN_TO_ACKED)));
-        topologyStats.set_window_to_emitted(mapKeyStr(getMapByKey(accData, WIN_TO_EMITTED)));
-        topologyStats.set_window_to_failed(mapKeyStr(getMapByKey(accData, WIN_TO_FAILED)));
-        topologyStats.set_window_to_transferred(mapKeyStr(getMapByKey(accData, WIN_TO_TRANSFERRED)));
+        topologyStats.set_window_to_acked(mapKeyStr(ClientStatsUtil.getMapByKey(accData, WIN_TO_ACKED)));
+        topologyStats.set_window_to_emitted(mapKeyStr(ClientStatsUtil.getMapByKey(accData, WIN_TO_EMITTED)));
+        topologyStats.set_window_to_failed(mapKeyStr(ClientStatsUtil.getMapByKey(accData, WIN_TO_FAILED)));
+        topologyStats.set_window_to_transferred(mapKeyStr(ClientStatsUtil.getMapByKey(accData, WIN_TO_TRANSFERRED)));
         topologyStats.set_window_to_complete_latencies_ms(computeWeightedAveragesPerWindow(
             accData, WIN_TO_COMP_LAT_WGT_AVG, WIN_TO_ACKED));
 
@@ -806,8 +797,8 @@ public class StatsUtil {
      */
     public static <T> Map<String, Map<String, Map<T, Long>>> preProcessStreamSummary(
         Map<String, Map<String, Map<T, Long>>> streamSummary, boolean includeSys) {
-        Map<String, Map<T, Long>> emitted = getMapByKey(streamSummary, EMITTED);
-        Map<String, Map<T, Long>> transferred = getMapByKey(streamSummary, TRANSFERRED);
+        Map<String, Map<T, Long>> emitted = ClientStatsUtil.getMapByKey(streamSummary, EMITTED);
+        Map<String, Map<T, Long>> transferred = ClientStatsUtil.getMapByKey(streamSummary, TRANSFERRED);
 
         putKV(streamSummary, EMITTED, filterSysStreams(emitted, includeSys));
         putKV(streamSummary, TRANSFERRED, filterSysStreams(transferred, includeSys));
@@ -923,12 +914,12 @@ public class StatsUtil {
     public static Map<String, Map> aggregateSpoutStreams(Map<String, Map> stats) {
         // actual ret is Map<String, Map<String, Long/Double>>
         Map<String, Map> ret = new HashMap<>();
-        putKV(ret, ACKED, aggregateCountStreams(getMapByKey(stats, ACKED)));
-        putKV(ret, FAILED, aggregateCountStreams(getMapByKey(stats, FAILED)));
-        putKV(ret, EMITTED, aggregateCountStreams(getMapByKey(stats, EMITTED)));
-        putKV(ret, TRANSFERRED, aggregateCountStreams(getMapByKey(stats, TRANSFERRED)));
+        putKV(ret, ACKED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED)));
+        putKV(ret, FAILED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)));
+        putKV(ret, EMITTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EMITTED)));
+        putKV(ret, TRANSFERRED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED)));
         putKV(ret, COMP_LATENCIES, aggregateAvgStreams(
-            getMapByKey(stats, COMP_LATENCIES), getMapByKey(stats, ACKED)));
+            ClientStatsUtil.getMapByKey(stats, COMP_LATENCIES), ClientStatsUtil.getMapByKey(stats, ACKED)));
         return ret;
     }
 
@@ -940,15 +931,15 @@ public class StatsUtil {
      */
     public static Map<String, Map> aggregateBoltStreams(Map<String, Map> stats) {
         Map<String, Map> ret = new HashMap<>();
-        putKV(ret, ACKED, aggregateCountStreams(getMapByKey(stats, ACKED)));
-        putKV(ret, FAILED, aggregateCountStreams(getMapByKey(stats, FAILED)));
-        putKV(ret, EMITTED, aggregateCountStreams(getMapByKey(stats, EMITTED)));
-        putKV(ret, TRANSFERRED, aggregateCountStreams(getMapByKey(stats, TRANSFERRED)));
-        putKV(ret, EXECUTED, aggregateCountStreams(getMapByKey(stats, EXECUTED)));
+        putKV(ret, ACKED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED)));
+        putKV(ret, FAILED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)));
+        putKV(ret, EMITTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EMITTED)));
+        putKV(ret, TRANSFERRED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED)));
+        putKV(ret, EXECUTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EXECUTED)));
         putKV(ret, PROC_LATENCIES, aggregateAvgStreams(
-            getMapByKey(stats, PROC_LATENCIES), getMapByKey(stats, ACKED)));
+            ClientStatsUtil.getMapByKey(stats, PROC_LATENCIES), ClientStatsUtil.getMapByKey(stats, ACKED)));
         putKV(ret, EXEC_LATENCIES, aggregateAvgStreams(
-            getMapByKey(stats, EXEC_LATENCIES), getMapByKey(stats, EXECUTED)));
+            ClientStatsUtil.getMapByKey(stats, EXEC_LATENCIES), ClientStatsUtil.getMapByKey(stats, EXECUTED)));
         return ret;
     }
 
@@ -960,38 +951,38 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
 
         Map<String, Map<String, Number>> m = new HashMap<>();
-        for (Object win : getMapByKey(newStats, EXECUTED).keySet()) {
+        for (Object win : ClientStatsUtil.getMapByKey(newStats, EXECUTED).keySet()) {
             m.put((String) win, aggBoltLatAndCount(
-                (Map) (getMapByKey(newStats, EXEC_LATENCIES)).get(win),
-                (Map) (getMapByKey(newStats, PROC_LATENCIES)).get(win),
-                (Map) (getMapByKey(newStats, EXECUTED)).get(win)));
+                (Map) (ClientStatsUtil.getMapByKey(newStats, EXEC_LATENCIES)).get(win),
+                (Map) (ClientStatsUtil.getMapByKey(newStats, PROC_LATENCIES)).get(win),
+                (Map) (ClientStatsUtil.getMapByKey(newStats, EXECUTED)).get(win)));
         }
         m = swapMapOrder(m);
 
-        Map<String, Double> win2execLatWgtAvg = getMapByKey(m, EXEC_LAT_TOTAL);
-        Map<String, Double> win2procLatWgtAvg = getMapByKey(m, PROC_LAT_TOTAL);
-        Map<String, Long> win2executed = getMapByKey(m, EXECUTED);
+        Map<String, Double> win2execLatWgtAvg = ClientStatsUtil.getMapByKey(m, EXEC_LAT_TOTAL);
+        Map<String, Double> win2procLatWgtAvg = ClientStatsUtil.getMapByKey(m, PROC_LAT_TOTAL);
+        Map<String, Long> win2executed = ClientStatsUtil.getMapByKey(m, EXECUTED);
 
-        Map<String, Map<String, Long>> emitted = getMapByKey(newStats, EMITTED);
+        Map<String, Map<String, Long>> emitted = ClientStatsUtil.getMapByKey(newStats, EMITTED);
         Map<String, Long> win2emitted = mergeWithSumLong(aggregateCountStreams(filterSysStreams(emitted, includeSys)),
-                                                         getMapByKey(accStats, WIN_TO_EMITTED));
+                                                         ClientStatsUtil.getMapByKey(accStats, WIN_TO_EMITTED));
         putKV(ret, WIN_TO_EMITTED, win2emitted);
 
-        Map<String, Map<String, Long>> transferred = getMapByKey(newStats, TRANSFERRED);
+        Map<String, Map<String, Long>> transferred = ClientStatsUtil.getMapByKey(newStats, TRANSFERRED);
         Map<String, Long> win2transferred = mergeWithSumLong(aggregateCountStreams(filterSysStreams(transferred, includeSys)),
-                                                             getMapByKey(accStats, WIN_TO_TRANSFERRED));
+                                                             ClientStatsUtil.getMapByKey(accStats, WIN_TO_TRANSFERRED));
         putKV(ret, WIN_TO_TRANSFERRED, win2transferred);
 
         putKV(ret, WIN_TO_EXEC_LAT_WGT_AVG, mergeWithSumDouble(
-            getMapByKey(accStats, WIN_TO_EXEC_LAT_WGT_AVG), win2execLatWgtAvg));
+            ClientStatsUtil.getMapByKey(accStats, WIN_TO_EXEC_LAT_WGT_AVG), win2execLatWgtAvg));
         putKV(ret, WIN_TO_PROC_LAT_WGT_AVG, mergeWithSumDouble(
-            getMapByKey(accStats, WIN_TO_PROC_LAT_WGT_AVG), win2procLatWgtAvg));
+            ClientStatsUtil.getMapByKey(accStats, WIN_TO_PROC_LAT_WGT_AVG), win2procLatWgtAvg));
         putKV(ret, WIN_TO_EXECUTED, mergeWithSumLong(
-            getMapByKey(accStats, WIN_TO_EXECUTED), win2executed));
+            ClientStatsUtil.getMapByKey(accStats, WIN_TO_EXECUTED), win2executed));
         putKV(ret, WIN_TO_ACKED, mergeWithSumLong(
-            aggregateCountStreams(getMapByKey(newStats, ACKED)), getMapByKey(accStats, WIN_TO_ACKED)));
+            aggregateCountStreams(ClientStatsUtil.getMapByKey(newStats, ACKED)), ClientStatsUtil.getMapByKey(accStats, WIN_TO_ACKED)));
         putKV(ret, WIN_TO_FAILED, mergeWithSumLong(
-            aggregateCountStreams(getMapByKey(newStats, FAILED)), getMapByKey(accStats, WIN_TO_FAILED)));
+            aggregateCountStreams(ClientStatsUtil.getMapByKey(newStats, FAILED)), ClientStatsUtil.getMapByKey(accStats, WIN_TO_FAILED)));
 
         return ret;
     }
@@ -1004,32 +995,32 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
 
         Map<String, Map<String, Number>> m = new HashMap<>();
-        for (Object win : getMapByKey(beat, ACKED).keySet()) {
+        for (Object win : ClientStatsUtil.getMapByKey(beat, ACKED).keySet()) {
             m.put((String) win, aggSpoutLatAndCount(
-                (Map<String, Double>) (getMapByKey(beat, COMP_LATENCIES)).get(win),
-                (Map<String, Long>) (getMapByKey(beat, ACKED)).get(win)));
+                (Map<String, Double>) (ClientStatsUtil.getMapByKey(beat, COMP_LATENCIES)).get(win),
+                (Map<String, Long>) (ClientStatsUtil.getMapByKey(beat, ACKED)).get(win)));
         }
         m = swapMapOrder(m);
 
-        Map<String, Double> win2compLatWgtAvg = getMapByKey(m, COMP_LAT_TOTAL);
-        Map<String, Long> win2acked = getMapByKey(m, ACKED);
+        Map<String, Double> win2compLatWgtAvg = ClientStatsUtil.getMapByKey(m, COMP_LAT_TOTAL);
+        Map<String, Long> win2acked = ClientStatsUtil.getMapByKey(m, ACKED);
 
-        Map<String, Map<String, Long>> emitted = getMapByKey(beat, EMITTED);
+        Map<String, Map<String, Long>> emitted = ClientStatsUtil.getMapByKey(beat, EMITTED);
         Map<String, Long> win2emitted = mergeWithSumLong(aggregateCountStreams(filterSysStreams(emitted, includeSys)),
-                                                         getMapByKey(accStats, WIN_TO_EMITTED));
+                                                         ClientStatsUtil.getMapByKey(accStats, WIN_TO_EMITTED));
         putKV(ret, WIN_TO_EMITTED, win2emitted);
 
-        Map<String, Map<String, Long>> transferred = getMapByKey(beat, TRANSFERRED);
+        Map<String, Map<String, Long>> transferred = ClientStatsUtil.getMapByKey(beat, TRANSFERRED);
         Map<String, Long> win2transferred = mergeWithSumLong(aggregateCountStreams(filterSysStreams(transferred, includeSys)),
-                                                             getMapByKey(accStats, WIN_TO_TRANSFERRED));
+                                                             ClientStatsUtil.getMapByKey(accStats, WIN_TO_TRANSFERRED));
         putKV(ret, WIN_TO_TRANSFERRED, win2transferred);
 
         putKV(ret, WIN_TO_COMP_LAT_WGT_AVG, mergeWithSumDouble(
-            getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG), win2compLatWgtAvg));
+            ClientStatsUtil.getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG), win2compLatWgtAvg));
         putKV(ret, WIN_TO_ACKED, mergeWithSumLong(
-            getMapByKey(accStats, WIN_TO_ACKED), win2acked));
+            ClientStatsUtil.getMapByKey(accStats, WIN_TO_ACKED), win2acked));
         putKV(ret, WIN_TO_FAILED, mergeWithSumLong(
-            aggregateCountStreams(getMapByKey(beat, FAILED)), getMapByKey(accStats, WIN_TO_FAILED)));
+            aggregateCountStreams(ClientStatsUtil.getMapByKey(beat, FAILED)), ClientStatsUtil.getMapByKey(accStats, WIN_TO_FAILED)));
 
         return ret;
     }
@@ -1067,7 +1058,7 @@ public class StatsUtil {
 
     public static Map<String, Object> aggregateCompStats(
         String window, boolean includeSys, List<Map<String, Object>> beats, String compType) {
-        boolean isSpout = SPOUT.equals(compType);
+        boolean isSpout = ClientStatsUtil.SPOUT.equals(compType);
 
         Map<String, Object> initVal = new HashMap<>();
         putKV(initVal, WIN_TO_ACKED, new HashMap());
@@ -1076,13 +1067,13 @@ public class StatsUtil {
         putKV(initVal, WIN_TO_TRANSFERRED, new HashMap());
 
         Map<String, Object> stats = new HashMap();
-        putKV(stats, EXECUTOR_STATS, new ArrayList());
+        putKV(stats, ClientStatsUtil.EXECUTOR_STATS, new ArrayList());
         putKV(stats, SID_TO_OUT_STATS, new HashMap());
         if (isSpout) {
-            putKV(initVal, TYPE, SPOUT);
+            putKV(initVal, TYPE, ClientStatsUtil.SPOUT);
             putKV(initVal, WIN_TO_COMP_LAT_WGT_AVG, new HashMap());
         } else {
-            putKV(initVal, TYPE, BOLT);
+            putKV(initVal, TYPE, ClientStatsUtil.BOLT);
             putKV(initVal, WIN_TO_EXECUTED, new HashMap());
             putKV(stats, CID_SID_TO_IN_STATS, new HashMap());
             putKV(initVal, WIN_TO_EXEC_LAT_WGT_AVG, new HashMap());
@@ -1105,15 +1096,15 @@ public class StatsUtil {
     public static Map<String, Object> aggCompExecStats(String window, boolean includeSys, Map<String, Object> accStats,
                                                        Map<String, Object> beat, String compType) {
         Map<String, Object> ret = new HashMap<>();
-        if (SPOUT.equals(compType)) {
-            ret.putAll(aggSpoutExecWinStats(accStats, getMapByKey(beat, STATS), includeSys));
+        if (ClientStatsUtil.SPOUT.equals(compType)) {
+            ret.putAll(aggSpoutExecWinStats(accStats, ClientStatsUtil.getMapByKey(beat, STATS), includeSys));
             putKV(ret, STATS, mergeAggCompStatsCompPageSpout(
-                getMapByKey(accStats, STATS),
+                ClientStatsUtil.getMapByKey(accStats, STATS),
                 aggPreMergeCompPageSpout(beat, window, includeSys)));
         } else {
-            ret.putAll(aggBoltExecWinStats(accStats, getMapByKey(beat, STATS), includeSys));
+            ret.putAll(aggBoltExecWinStats(accStats, ClientStatsUtil.getMapByKey(beat, STATS), includeSys));
             putKV(ret, STATS, mergeAggCompStatsCompPageBolt(
-                getMapByKey(accStats, STATS),
+                ClientStatsUtil.getMapByKey(accStats, STATS),
                 aggPreMergeCompPageBolt(beat, window, includeSys)));
         }
         putKV(ret, TYPE, compType);
@@ -1131,22 +1122,22 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
 
         String compType = (String) compStats.get(TYPE);
-        Map stats = getMapByKey(compStats, STATS);
+        Map stats = ClientStatsUtil.getMapByKey(compStats, STATS);
         Integer numTasks = getByKeyOr0(stats, NUM_TASKS).intValue();
         Integer numExecutors = getByKeyOr0(stats, NUM_EXECUTORS).intValue();
-        Map outStats = getMapByKey(stats, SID_TO_OUT_STATS);
+        Map outStats = ClientStatsUtil.getMapByKey(stats, SID_TO_OUT_STATS);
 
         putKV(ret, TYPE, compType);
         putKV(ret, NUM_TASKS, numTasks);
         putKV(ret, NUM_EXECUTORS, numExecutors);
-        putKV(ret, EXECUTOR_STATS, getByKey(stats, EXECUTOR_STATS));
-        putKV(ret, WIN_TO_EMITTED, mapKeyStr(getMapByKey(compStats, WIN_TO_EMITTED)));
-        putKV(ret, WIN_TO_TRANSFERRED, mapKeyStr(getMapByKey(compStats, WIN_TO_TRANSFERRED)));
-        putKV(ret, WIN_TO_ACKED, mapKeyStr(getMapByKey(compStats, WIN_TO_ACKED)));
-        putKV(ret, WIN_TO_FAILED, mapKeyStr(getMapByKey(compStats, WIN_TO_FAILED)));
+        putKV(ret, ClientStatsUtil.EXECUTOR_STATS, stats.get(ClientStatsUtil.EXECUTOR_STATS));
+        putKV(ret, WIN_TO_EMITTED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_EMITTED)));
+        putKV(ret, WIN_TO_TRANSFERRED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_TRANSFERRED)));
+        putKV(ret, WIN_TO_ACKED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_ACKED)));
+        putKV(ret, WIN_TO_FAILED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_FAILED)));
 
-        if (BOLT.equals(compType)) {
-            Map inStats = getMapByKey(stats, CID_SID_TO_IN_STATS);
+        if (ClientStatsUtil.BOLT.equals(compType)) {
+            Map inStats = ClientStatsUtil.getMapByKey(stats, CID_SID_TO_IN_STATS);
 
             Map inStats2 = new HashMap();
             for (Object o : inStats.entrySet()) {
@@ -1170,7 +1161,7 @@ public class StatsUtil {
             putKV(ret, CID_SID_TO_IN_STATS, inStats2);
 
             putKV(ret, SID_TO_OUT_STATS, outStats);
-            putKV(ret, WIN_TO_EXECUTED, mapKeyStr(getMapByKey(compStats, WIN_TO_EXECUTED)));
+            putKV(ret, WIN_TO_EXECUTED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_EXECUTED)));
             putKV(ret, WIN_TO_EXEC_LAT, computeWeightedAveragesPerWindow(
                 compStats, WIN_TO_EXEC_LAT_WGT_AVG, WIN_TO_EXECUTED));
             putKV(ret, WIN_TO_PROC_LAT, computeWeightedAveragesPerWindow(
@@ -1287,7 +1278,7 @@ public class StatsUtil {
                     // get executor heartbeat
                     int hbeatSecs = 0;
                     if (beats != null) {
-                        Map<String, Object> beat = beats.get(convertExecutor(exec));
+                        Map<String, Object> beat = beats.get(ClientStatsUtil.convertExecutor(exec));
                         hbeatSecs = beat == null ? 0 : (int) beat.get("uptime");
                     }
                     ws.set_uptime_secs(hbeatSecs);
@@ -1377,7 +1368,7 @@ public class StatsUtil {
         Map<List<Integer>, Map<String, Object>> ret = new HashMap<>();
         for (ExecutorInfo executorInfo : workerHeartbeat.get_executors()) {
             Map<String, Object> reportBeat = new HashMap<>();
-            reportBeat.put(TIME_SECS, workerHeartbeat.get_time_secs());
+            reportBeat.put(ClientStatsUtil.TIME_SECS, workerHeartbeat.get_time_secs());
             ret.put(Lists.newArrayList(executorInfo.get_task_start(), executorInfo.get_task_end()),
                     reportBeat);
         }
@@ -1391,8 +1382,8 @@ public class StatsUtil {
     public static Map<String, Object> convertZkExecutorHb(ExecutorBeat beat) {
         Map<String, Object> ret = new HashMap<>();
         if (beat != null) {
-            ret.put(TIME_SECS, beat.getTimeSecs());
-            ret.put(UPTIME, beat.getUptime());
+            ret.put(ClientStatsUtil.TIME_SECS, beat.getTimeSecs());
+            ret.put(ClientStatsUtil.UPTIME, beat.getUptime());
             ret.put(STATS, convertExecutorStats(beat.getStats()));
         }
 
@@ -1409,9 +1400,9 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
         if (workerHb != null) {
             ret.put("storm-id", workerHb.get_storm_id());
-            ret.put(EXECUTOR_STATS, convertExecutorsStats(workerHb.get_executor_stats()));
-            ret.put(UPTIME, workerHb.get_uptime_secs());
-            ret.put(TIME_SECS, workerHb.get_time_secs());
+            ret.put(ClientStatsUtil.EXECUTOR_STATS, convertExecutorsStats(workerHb.get_executor_stats()));
+            ret.put(ClientStatsUtil.UPTIME, workerHb.get_uptime_secs());
+            ret.put(ClientStatsUtil.TIME_SECS, workerHb.get_time_secs());
         }
         return ret;
     }
@@ -1443,10 +1434,10 @@ public class StatsUtil {
 
         if (stats.get_specific().is_set_bolt()) {
             ret.putAll(convertSpecificStats(stats.get_specific().get_bolt()));
-            putKV(ret, TYPE, BOLT);
+            putKV(ret, TYPE, ClientStatsUtil.BOLT);
         } else {
             ret.putAll(convertSpecificStats(stats.get_specific().get_spout()));
-            putKV(ret, TYPE, SPOUT);
+            putKV(ret, TYPE, ClientStatsUtil.SPOUT);
         }
 
         return ret;
@@ -1464,11 +1455,11 @@ public class StatsUtil {
     private static Map<String, Object> convertSpecificStats(BoltStats stats) {
         Map<String, Object> ret = new HashMap<>();
 
-        Map acked = windowSetConverter(stats.get_acked(), FROM_GSID, IDENTITY);
-        Map failed = windowSetConverter(stats.get_failed(), FROM_GSID, IDENTITY);
-        Map processAvg = windowSetConverter(stats.get_process_ms_avg(), FROM_GSID, IDENTITY);
-        Map executed = windowSetConverter(stats.get_executed(), FROM_GSID, IDENTITY);
-        Map executeAvg = windowSetConverter(stats.get_execute_ms_avg(), FROM_GSID, IDENTITY);
+        Map acked = ClientStatsUtil.windowSetConverter(stats.get_acked(), FROM_GSID, ClientStatsUtil.IDENTITY);
+        Map failed = ClientStatsUtil.windowSetConverter(stats.get_failed(), FROM_GSID, ClientStatsUtil.IDENTITY);
+        Map processAvg = ClientStatsUtil.windowSetConverter(stats.get_process_ms_avg(), FROM_GSID, ClientStatsUtil.IDENTITY);
+        Map executed = ClientStatsUtil.windowSetConverter(stats.get_executed(), FROM_GSID, ClientStatsUtil.IDENTITY);
+        Map executeAvg = ClientStatsUtil.windowSetConverter(stats.get_execute_ms_avg(), FROM_GSID, ClientStatsUtil.IDENTITY);
 
         putKV(ret, ACKED, acked);
         putKV(ret, FAILED, failed);
@@ -1516,104 +1507,10 @@ public class StatsUtil {
         return ret;
     }
 
-    /**
-     * update all executor heart beats (legacy ZK heartbeat compatibility)
-     *
-     * @param cache         existing heart beats cache
-     * @param executorBeats new heart beats
-     * @param executors     all executors
-     * @param timeout       timeout
-     * @return a HashMap of updated executor heart beats
-     */
-    public static Map<List<Integer>, Map<String, Object>> updateHeartbeatCacheFromZkHeartbeat(Map<List<Integer>, Map<String, Object>> cache,
-                                                                                              Map<List<Integer>, Map<String, Object>>
-                                                                                                  executorBeats,
-                                                                                              Set<List<Integer>> executors,
-                                                                                              Integer timeout) {
-        Map<List<Integer>, Map<String, Object>> ret = new HashMap<>();
-        if (cache == null && executorBeats == null) {
-            return ret;
-        }
-
-        if (cache == null) {
-            cache = new HashMap<>();
-        }
-        if (executorBeats == null) {
-            executorBeats = new HashMap<>();
-        }
-
-        for (List<Integer> executor : executors) {
-            ret.put(executor, updateExecutorCache(cache.get(executor), executorBeats.get(executor), timeout));
-        }
-
-        return ret;
-    }
-
 
     // =====================================================================================
     // heartbeats related
     // =====================================================================================
-
-    /**
-     * update all executor heart beats. TODO: should move this method to nimbus when nimbus.clj is translated
-     *
-     * @param cache         existing heart beats cache
-     * @param executorBeats new heart beats
-     * @param executors     all executors
-     * @param timeout       timeout
-     */
-    public static void updateHeartbeatCache(Map<List<Integer>, Map<String, Object>> cache,
-                                            Map<List<Integer>, Map<String, Object>> executorBeats, Set<List<Integer>> executors,
-                                            Integer timeout) {
-        //if not executor beats, refresh is-timed-out of the cache which is done by master
-        if (executorBeats == null) {
-            for (Map.Entry<List<Integer>, Map<String, Object>> executorbeat : cache.entrySet()) {
-                Map<String, Object> beat = executorbeat.getValue();
-                beat.put("is-timed-out", Time.deltaSecs((Integer) beat.get("nimbus-time")) >= timeout);
-            }
-            return;
-        }
-        //else refresh nimbus-time and executor-reported-time by heartbeats reporting
-        for (List<Integer> executor : executors) {
-            cache.put(executor, updateExecutorCache(cache.get(executor), executorBeats.get(executor), timeout));
-        }
-    }
-
-    // TODO: should move this method to nimbus when nimbus.clj is translated
-    public static Map<String, Object> updateExecutorCache(
-        Map<String, Object> currBeat, Map<String, Object> newBeat, Integer timeout) {
-        Map<String, Object> ret = new HashMap<>();
-
-        Integer lastNimbusTime = null, lastReportedTime = null;
-        if (currBeat != null) {
-            lastNimbusTime = (Integer) currBeat.get("nimbus-time");
-            lastReportedTime = (Integer) currBeat.get("executor-reported-time");
-        }
-
-        Integer reportedTime = null;
-        if (newBeat != null) {
-            reportedTime = (Integer) newBeat.get(TIME_SECS);
-        }
-
-        if (reportedTime == null) {
-            if (lastReportedTime != null) {
-                reportedTime = lastReportedTime;
-            } else {
-                reportedTime = lastReportedTime = 0;
-            }
-        }
-
-        if (lastNimbusTime == null || !reportedTime.equals(lastReportedTime)) {
-            lastNimbusTime = Time.currentTimeSecs();
-        }
-
-        ret.put("is-timed-out", Time.deltaSecs(lastNimbusTime) >= timeout);
-        ret.put("nimbus-time", lastNimbusTime);
-        ret.put("executor-reported-time", reportedTime);
-
-        return ret;
-    }
-
 
     /**
      * extracts a list of executor data from heart beats
@@ -1642,7 +1539,7 @@ public class StatsUtil {
             String host = (String) hostPort.get(0);
             Integer port = ((Number) hostPort.get(1)).intValue();
 
-            Map<String, Object> beat = beats.get(convertExecutor(executor));
+            Map<String, Object> beat = beats.get(ClientStatsUtil.convertExecutor(executor));
             if (beat == null) {
                 continue;
             }
@@ -1656,8 +1553,8 @@ public class StatsUtil {
                 putKV(m, HOST, host);
                 putKV(m, PORT, port);
 
-                Map stats = getMapByKey(beat, STATS);
-                putKV(m, UPTIME, beat.get(UPTIME));
+                Map stats = ClientStatsUtil.getMapByKey(beat, STATS);
+                putKV(m, ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
                 putKV(m, STATS, stats);
 
                 String type = componentType(topology, compId);
@@ -1683,23 +1580,16 @@ public class StatsUtil {
     private static Map<String, Double> computeWeightedAveragesPerWindow(Map<String, Object> accData,
                                                                         String wgtAvgKey, String divisorKey) {
         Map<String, Double> ret = new HashMap<>();
-        for (Object o : getMapByKey(accData, wgtAvgKey).entrySet()) {
+        for (Object o : ClientStatsUtil.getMapByKey(accData, wgtAvgKey).entrySet()) {
             Map.Entry e = (Map.Entry) o;
             Object window = e.getKey();
             double wgtAvg = ((Number) e.getValue()).doubleValue();
-            long divisor = ((Number) getMapByKey(accData, divisorKey).get(window)).longValue();
+            long divisor = ((Number) ClientStatsUtil.getMapByKey(accData, divisorKey).get(window)).longValue();
             if (divisor > 0) {
                 ret.put(window.toString(), wgtAvg / divisor);
             }
         }
         return ret;
-    }
-
-    /**
-     * convert a List<Long> executor to java List<Integer>
-     */
-    public static List<Integer> convertExecutor(List<Long> executor) {
-        return Lists.newArrayList(executor.get(0).intValue(), executor.get(1).intValue());
     }
 
     /**
@@ -1729,7 +1619,7 @@ public class StatsUtil {
             // {metric -> win -> value} ==> {win -> metric -> value}
             m = swapMapOrder(aggregateBoltStreams(m));
             // {metric -> value}
-            Map data = getMapByKey(m, TEN_MIN_IN_SECONDS_STR);
+            Map data = ClientStatsUtil.getMapByKey(m, TEN_MIN_IN_SECONDS_STR);
 
             int uptime = summary.get_uptime_secs();
             int win = Math.min(uptime, TEN_MIN_IN_SECONDS);
@@ -2000,29 +1890,6 @@ public class StatsUtil {
     // thriftify stats methods
     // =====================================================================================
 
-    public static ClusterWorkerHeartbeat thriftifyZkWorkerHb(Map<String, Object> heartbeat) {
-        ClusterWorkerHeartbeat ret = new ClusterWorkerHeartbeat();
-        ret.set_uptime_secs(getByKeyOr0(heartbeat, UPTIME).intValue());
-        ret.set_storm_id((String) getByKey(heartbeat, "storm-id"));
-        ret.set_time_secs(getByKeyOr0(heartbeat, TIME_SECS).intValue());
-
-        Map<ExecutorInfo, ExecutorStats> convertedStats = new HashMap<>();
-
-        Map<List<Integer>, ExecutorStats> executorStats = getMapByKey(heartbeat, EXECUTOR_STATS);
-        if (executorStats != null) {
-            for (Map.Entry<List<Integer>, ExecutorStats> entry : executorStats.entrySet()) {
-                List<Integer> executor = entry.getKey();
-                ExecutorStats stats = entry.getValue();
-                if (null != stats) {
-                    convertedStats.put(new ExecutorInfo(executor.get(0), executor.get(1)), stats);
-                }
-            }
-        }
-        ret.set_executor_stats(convertedStats);
-
-        return ret;
-    }
-
     /**
      * Used for local test.
      *
@@ -2040,7 +1907,7 @@ public class StatsUtil {
     private static ComponentAggregateStats thriftifySpoutAggStats(Map m) {
         ComponentAggregateStats stats = new ComponentAggregateStats();
         stats.set_type(ComponentType.SPOUT);
-        stats.set_last_error((ErrorInfo) getByKey(m, LAST_ERROR));
+        stats.set_last_error((ErrorInfo) m.get(LAST_ERROR));
         thriftifyCommonAggStats(stats, m);
 
         SpoutAggregateStats spoutAggStats = new SpoutAggregateStats();
@@ -2054,7 +1921,7 @@ public class StatsUtil {
     private static ComponentAggregateStats thriftifyBoltAggStats(Map m) {
         ComponentAggregateStats stats = new ComponentAggregateStats();
         stats.set_type(ComponentType.BOLT);
-        stats.set_last_error((ErrorInfo) getByKey(m, LAST_ERROR));
+        stats.set_last_error((ErrorInfo) m.get(LAST_ERROR));
         thriftifyCommonAggStats(stats, m);
 
         BoltAggregateStats boltAggStats = new BoltAggregateStats();
@@ -2072,17 +1939,17 @@ public class StatsUtil {
         ExecutorAggregateStats stats = new ExecutorAggregateStats();
 
         ExecutorSummary executorSummary = new ExecutorSummary();
-        List executor = (List) getByKey(m, EXECUTOR_ID);
+        List executor = (List) m.get(EXECUTOR_ID);
         executorSummary.set_executor_info(new ExecutorInfo(((Number) executor.get(0)).intValue(),
                                                            ((Number) executor.get(1)).intValue()));
         executorSummary.set_component_id(compId);
-        executorSummary.set_host((String) getByKey(m, HOST));
+        executorSummary.set_host((String) m.get(HOST));
         executorSummary.set_port(getByKeyOr0(m, PORT).intValue());
-        int uptime = getByKeyOr0(m, UPTIME).intValue();
+        int uptime = getByKeyOr0(m, ClientStatsUtil.UPTIME).intValue();
         executorSummary.set_uptime_secs(uptime);
         stats.set_exec_summary(executorSummary);
 
-        if (compType.equals(SPOUT)) {
+        if (compType.equals(ClientStatsUtil.SPOUT)) {
             stats.set_stats(thriftifySpoutAggStats(m));
         } else {
             stats.set_stats(thriftifyBoltAggStats(m));
@@ -2136,25 +2003,25 @@ public class StatsUtil {
         ret.set_component_id(compId);
 
         Map win2stats = new HashMap();
-        putKV(win2stats, EMITTED, getMapByKey(data, WIN_TO_EMITTED));
-        putKV(win2stats, TRANSFERRED, getMapByKey(data, WIN_TO_TRANSFERRED));
-        putKV(win2stats, ACKED, getMapByKey(data, WIN_TO_ACKED));
-        putKV(win2stats, FAILED, getMapByKey(data, WIN_TO_FAILED));
+        putKV(win2stats, EMITTED, ClientStatsUtil.getMapByKey(data, WIN_TO_EMITTED));
+        putKV(win2stats, TRANSFERRED, ClientStatsUtil.getMapByKey(data, WIN_TO_TRANSFERRED));
+        putKV(win2stats, ACKED, ClientStatsUtil.getMapByKey(data, WIN_TO_ACKED));
+        putKV(win2stats, FAILED, ClientStatsUtil.getMapByKey(data, WIN_TO_FAILED));
 
         String compType = (String) data.get(TYPE);
-        if (compType.equals(SPOUT)) {
+        if (compType.equals(ClientStatsUtil.SPOUT)) {
             ret.set_component_type(ComponentType.SPOUT);
-            putKV(win2stats, COMP_LATENCY, getMapByKey(data, WIN_TO_COMP_LAT));
+            putKV(win2stats, COMP_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_COMP_LAT));
         } else {
             ret.set_component_type(ComponentType.BOLT);
-            putKV(win2stats, EXEC_LATENCY, getMapByKey(data, WIN_TO_EXEC_LAT));
-            putKV(win2stats, PROC_LATENCY, getMapByKey(data, WIN_TO_PROC_LAT));
-            putKV(win2stats, EXECUTED, getMapByKey(data, WIN_TO_EXECUTED));
+            putKV(win2stats, EXEC_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_EXEC_LAT));
+            putKV(win2stats, PROC_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_PROC_LAT));
+            putKV(win2stats, EXECUTED, ClientStatsUtil.getMapByKey(data, WIN_TO_EXECUTED));
         }
         win2stats = swapMapOrder(win2stats);
 
         List<ExecutorAggregateStats> execStats = new ArrayList<>();
-        List executorStats = (List) getByKey(data, EXECUTOR_STATS);
+        List executorStats = (List) data.get(ClientStatsUtil.EXECUTOR_STATS);
         if (executorStats != null) {
             for (Object o : executorStats) {
                 execStats.add(thriftifyExecAggStats(compId, compType, (Map) o));
@@ -2162,22 +2029,22 @@ public class StatsUtil {
         }
 
         Map gsid2inputStats, sid2outputStats;
-        if (compType.equals(SPOUT)) {
+        if (compType.equals(ClientStatsUtil.SPOUT)) {
             Map tmp = new HashMap();
             for (Object k : win2stats.keySet()) {
                 tmp.put(k, thriftifySpoutAggStats((Map) win2stats.get(k)));
             }
             win2stats = tmp;
             gsid2inputStats = null;
-            sid2outputStats = thriftifySpoutOutputStats(getMapByKey(data, SID_TO_OUT_STATS));
+            sid2outputStats = thriftifySpoutOutputStats(ClientStatsUtil.getMapByKey(data, SID_TO_OUT_STATS));
         } else {
             Map tmp = new HashMap();
             for (Object k : win2stats.keySet()) {
                 tmp.put(k, thriftifyBoltAggStats((Map) win2stats.get(k)));
             }
             win2stats = tmp;
-            gsid2inputStats = thriftifyBoltInputStats(getMapByKey(data, CID_SID_TO_IN_STATS));
-            sid2outputStats = thriftifyBoltOutputStats(getMapByKey(data, SID_TO_OUT_STATS));
+            gsid2inputStats = thriftifyBoltInputStats(ClientStatsUtil.getMapByKey(data, CID_SID_TO_IN_STATS));
+            sid2outputStats = thriftifyBoltOutputStats(ClientStatsUtil.getMapByKey(data, SID_TO_OUT_STATS));
         }
         ret.set_num_executors(getByKeyOr0(data, NUM_EXECUTORS).intValue());
         ret.set_num_tasks(getByKeyOr0(data, NUM_TASKS).intValue());
@@ -2210,9 +2077,9 @@ public class StatsUtil {
         ExecutorSpecificStats specificStats = thriftifySpecificStats(stats);
         ret.set_specific(specificStats);
 
-        ret.set_emitted(windowSetConverter(getMapByKey(stats, EMITTED), TO_STRING, TO_STRING));
-        ret.set_transferred(windowSetConverter(getMapByKey(stats, TRANSFERRED), TO_STRING, TO_STRING));
-        ret.set_rate(((Number) getByKey(stats, RATE)).doubleValue());
+        ret.set_emitted(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, EMITTED), TO_STRING, TO_STRING));
+        ret.set_transferred(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, TRANSFERRED), TO_STRING, TO_STRING));
+        ret.set_rate(((Number) stats.get(RATE)).doubleValue());
 
         return ret;
     }
@@ -2220,20 +2087,20 @@ public class StatsUtil {
     private static ExecutorSpecificStats thriftifySpecificStats(Map stats) {
         ExecutorSpecificStats specificStats = new ExecutorSpecificStats();
 
-        String compType = (String) getByKey(stats, TYPE);
-        if (BOLT.equals(compType)) {
+        String compType = (String) stats.get(TYPE);
+        if (ClientStatsUtil.BOLT.equals(compType)) {
             BoltStats boltStats = new BoltStats();
-            boltStats.set_acked(windowSetConverter(getMapByKey(stats, ACKED), TO_GSID, TO_STRING));
-            boltStats.set_executed(windowSetConverter(getMapByKey(stats, EXECUTED), TO_GSID, TO_STRING));
-            boltStats.set_execute_ms_avg(windowSetConverter(getMapByKey(stats, EXEC_LATENCIES), TO_GSID, TO_STRING));
-            boltStats.set_failed(windowSetConverter(getMapByKey(stats, FAILED), TO_GSID, TO_STRING));
-            boltStats.set_process_ms_avg(windowSetConverter(getMapByKey(stats, PROC_LATENCIES), TO_GSID, TO_STRING));
+            boltStats.set_acked(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, ACKED), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_executed(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, EXECUTED), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_execute_ms_avg(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, EXEC_LATENCIES), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_failed(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, FAILED), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_process_ms_avg(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, PROC_LATENCIES), ClientStatsUtil.TO_GSID, TO_STRING));
             specificStats.set_bolt(boltStats);
         } else {
             SpoutStats spoutStats = new SpoutStats();
-            spoutStats.set_acked(windowSetConverter(getMapByKey(stats, ACKED), TO_STRING, TO_STRING));
-            spoutStats.set_failed(windowSetConverter(getMapByKey(stats, FAILED), TO_STRING, TO_STRING));
-            spoutStats.set_complete_ms_avg(windowSetConverter(getMapByKey(stats, COMP_LATENCIES), TO_STRING, TO_STRING));
+            spoutStats.set_acked(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, ACKED), TO_STRING, TO_STRING));
+            spoutStats.set_failed(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, FAILED), TO_STRING, TO_STRING));
+            spoutStats.set_complete_ms_avg(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, COMP_LATENCIES), TO_STRING, TO_STRING));
             specificStats.set_spout(spoutStats);
         }
         return specificStats;
@@ -2243,36 +2110,6 @@ public class StatsUtil {
     // =====================================================================================
     // helper methods
     // =====================================================================================
-
-    public static Map<List<Integer>, ExecutorStats> mkEmptyExecutorZkHbs(Set executors) {
-        Map<List<Integer>, ExecutorStats> ret = new HashMap<>();
-        for (Object executor : executors) {
-            List startEnd = (List) executor;
-            ret.put(convertExecutor(startEnd), null);
-        }
-        return ret;
-    }
-
-    /**
-     * convert Long Executor Ids in ZkHbs to Integer ones structure to java maps
-     */
-    public static Map<List<Integer>, ExecutorStats> convertExecutorZkHbs(Map<List<Long>, ExecutorStats> executorBeats) {
-        Map<List<Integer>, ExecutorStats> ret = new HashMap<>();
-        for (Map.Entry<List<Long>, ExecutorStats> entry : executorBeats.entrySet()) {
-            ret.put(convertExecutor(entry.getKey()), entry.getValue());
-        }
-        return ret;
-    }
-
-    public static Map<String, Object> mkZkWorkerHb(String stormId, Map<List<Integer>, ExecutorStats> executorStats, Integer uptime) {
-        Map<String, Object> ret = new HashMap<>();
-        ret.put("storm-id", stormId);
-        ret.put(EXECUTOR_STATS, executorStats);
-        ret.put(UPTIME, uptime);
-        ret.put(TIME_SECS, Time.currentTimeSecs());
-
-        return ret;
-    }
 
     private static GlobalStreamId toGlobalStreamId(List list) {
         return new GlobalStreamId((String) list.get(0), (String) list.get(1));
@@ -2306,8 +2143,8 @@ public class StatsUtil {
      */
     private static double computeAggCapacity(Map m, Integer uptime) {
         if (uptime != null && uptime != 0) {
-            Map execAvg = (Map) ((Map) getByKey(m, EXEC_LATENCIES)).get(TEN_MIN_IN_SECONDS_STR);
-            Map exec = (Map) ((Map) getByKey(m, EXECUTED)).get(TEN_MIN_IN_SECONDS_STR);
+            Map execAvg = (Map) ((Map) m.get(EXEC_LATENCIES)).get(TEN_MIN_IN_SECONDS_STR);
+            Map exec = (Map) ((Map) m.get(EXECUTED)).get(TEN_MIN_IN_SECONDS_STR);
 
             Set<Object> allKeys = new HashSet<>();
             if (execAvg != null) {
@@ -2379,9 +2216,9 @@ public class StatsUtil {
 
         Map<String, Bolt> bolts = topology.get_bolts();
         if (Utils.isSystemId(compId) || bolts.containsKey(compId)) {
-            return BOLT;
+            return ClientStatsUtil.BOLT;
         }
-        return SPOUT;
+        return ClientStatsUtil.SPOUT;
     }
 
     public static void putKV(Map map, String k, Object v) {
@@ -2390,17 +2227,6 @@ public class StatsUtil {
 
     private static void remove(Map map, String k) {
         map.remove(k);
-    }
-
-    public static Object getByKey(Map map, String key) {
-        return map.get(key);
-    }
-
-    public static <K, V> Map<K, V> getMapByKey(Map map, String key) {
-        if (map == null) {
-            return null;
-        }
-        return (Map<K, V>) map.get(key);
     }
 
     private static <K, V extends Number> long sumValues(Map<K, V> m) {
@@ -2541,52 +2367,11 @@ public class StatsUtil {
     // key transformers
     // =====================================================================================
 
-    public static <K> Map windowSetConverter(Map stats, KeyTransformer<K> firstKeyFunc) {
-        return windowSetConverter(stats, IDENTITY, firstKeyFunc);
+    public static <K> Map windowSetConverter(Map stats, ClientStatsUtil.KeyTransformer<K> firstKeyFunc) {
+        return ClientStatsUtil.windowSetConverter(stats, ClientStatsUtil.IDENTITY, firstKeyFunc);
     }
 
-    public static <K1, K2> Map windowSetConverter(
-        Map stats, KeyTransformer<K2> secKeyFunc, KeyTransformer<K1> firstKeyFunc) {
-        Map ret = new HashMap();
-
-        for (Object o : stats.entrySet()) {
-            Map.Entry entry = (Map.Entry) o;
-            K1 key1 = firstKeyFunc.transform(entry.getKey());
-
-            Map subRetMap = (Map) ret.get(key1);
-            if (subRetMap == null) {
-                subRetMap = new HashMap();
-            }
-            ret.put(key1, subRetMap);
-
-            Map value = (Map) entry.getValue();
-            for (Object oo : value.entrySet()) {
-                Map.Entry subEntry = (Map.Entry) oo;
-                K2 key2 = secKeyFunc.transform(subEntry.getKey());
-                subRetMap.put(key2, subEntry.getValue());
-            }
-        }
-        return ret;
-    }
-
-    interface KeyTransformer<T> {
-        T transform(Object key);
-    }
-
-    static class ToGlobalStreamIdTransformer implements KeyTransformer<GlobalStreamId> {
-        @Override
-        public GlobalStreamId transform(Object key) {
-            if (key instanceof List) {
-                List l = (List) key;
-                if (l.size() > 1) {
-                    return new GlobalStreamId((String) l.get(0), (String) l.get(1));
-                }
-            }
-            return new GlobalStreamId("", key.toString());
-        }
-    }
-
-    static class FromGlobalStreamIdTransformer implements KeyTransformer<List<String>> {
+    static class FromGlobalStreamIdTransformer implements ClientStatsUtil.KeyTransformer<List<String>> {
         @Override
         public List<String> transform(Object key) {
             GlobalStreamId sid = (GlobalStreamId) key;
@@ -2594,14 +2379,7 @@ public class StatsUtil {
         }
     }
 
-    static class IdentityTransformer implements KeyTransformer<Object> {
-        @Override
-        public Object transform(Object key) {
-            return key;
-        }
-    }
-
-    static class ToStringTransformer implements KeyTransformer<String> {
+    static class ToStringTransformer implements ClientStatsUtil.KeyTransformer<String> {
         @Override
         public String transform(Object key) {
             return key.toString();
