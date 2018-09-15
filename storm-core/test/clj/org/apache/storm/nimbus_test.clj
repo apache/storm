@@ -38,6 +38,7 @@
             InvalidTopologyException AuthorizationException
             LogConfig LogLevel LogLevelAction Assignment NodeInfo])
   (:import [java.util Map HashMap HashSet Optional])
+  (:import [java.util.concurrent ConcurrentHashMap])
   (:import [java.io File])
   (:import [javax.security.auth Subject])
   (:import [org.apache.storm.utils Time Time$SimulatedTime IPredicate StormCommonInstaller Utils$UptimeComputer ReflectionUtils Utils ConfigUtils ServerConfigUtils]
@@ -1875,14 +1876,14 @@
 
 (deftest do-cleanup-removes-inactive-znodes
   (let [inactive-topos (list "topo2" "topo3")
-        hb-cache (into {}(map vector inactive-topos '(nil nil)))
+        hb-cache (into {} (map vector inactive-topos '((ConcurrentHashMap.) (ConcurrentHashMap.))))
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
         conf {NIMBUS-MONITOR-FREQ-SECS 10 NIMBUS-TOPOLOGY-BLOBSTORE-DELETION-DELAY-MS 0}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
                     (zkLeaderElectorImpl [conf zk blob-store tc cluster-state acls] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
-        (.set (.getHeartbeatsCache nimbus) hb-cache)
+        (.putAll (.getHeartbeatsCache nimbus) hb-cache)
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (HashSet. inactive-topos))
 
           (.doCleanup nimbus)
@@ -1908,19 +1909,19 @@
           (.rmDependencyJarsInTopology (Mockito/verify nimbus) "topo3")
 
           ;; remove topos from heartbeat cache
-          (is (= (count (.get (.getHeartbeatsCache nimbus))) 0))))))
+          (is (= (count (.getHeartbeatsCache nimbus)) 0))))))
 
 
 (deftest do-cleanup-does-not-teardown-active-topos
   (let [inactive-topos ()
-        hb-cache {"topo1" nil "topo2" nil}
+        hb-cache {"topo1" (ConcurrentHashMap.) "topo2" (ConcurrentHashMap.)}
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
         conf {NIMBUS-MONITOR-FREQ-SECS 10}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
                     (zkLeaderElectorImpl [conf zk blob-store tc cluster-state acls] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
-        (.set (.getHeartbeatsCache nimbus) hb-cache)
+        (.putAll (.getHeartbeatsCache nimbus) hb-cache)
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (set inactive-topos))
 
           (.doCleanup nimbus)
@@ -1931,9 +1932,9 @@
           (.rmTopologyKeys (Mockito/verify nimbus (Mockito/times 0)) (Mockito/anyObject))
 
           ;; hb-cache goes down to 1 because only one topo was inactive
-          (is (= (count (.get (.getHeartbeatsCache nimbus))) 2))
-          (is (contains? (.get (.getHeartbeatsCache nimbus)) "topo1"))
-          (is (contains? (.get (.getHeartbeatsCache nimbus)) "topo2"))))))
+          (is (= (count (.getHeartbeatsCache nimbus)) 2))
+          (is (contains? (.getHeartbeatsCache nimbus) "topo1"))
+          (is (contains? (.getHeartbeatsCache nimbus) "topo2"))))))
 
 (deftest user-topologies-for-supervisor
   (let [assignment (doto (Assignment.)
