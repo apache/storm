@@ -46,7 +46,7 @@ public class TupleImpl implements Tuple {
     }
 
     public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent, int taskId, String streamId, MessageId id) {
-        this.values = Collections.unmodifiableList(values);
+        this.values = context.doSanityCheck() ? Collections.unmodifiableList(values) : values;
         this.taskId = taskId;
         this.streamId = streamId;
         this.id = id;
