@@ -61,6 +61,9 @@
       <span id="toggle-sys" style="display: block;" class="js-only"></span>
     </div>
   </div>
+  <div class="row">
+    <div id="json-response-error"></div>
+  </div>
   <div>
     <p id="page-rendered-at-timestamp"></p>
   </div>
@@ -73,6 +76,16 @@ $(document).ajaxStop($.unblockUI);
 $(document).ajaxStart(function(){
     $.blockUI({ message: '<img src="images/spinner.gif" /> <h3>Loading summary...</h3>'});
 });
+function jsError(other) {
+    try {
+      other();
+    } catch (err) {
+      getStatic("/templates/json-error-template.html", function(template) {
+        $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
+      });
+    }
+}
+
 $(document).ready(function() {
     var supervisorId = $.url("?id");
     var host = $.url("?host");
@@ -101,15 +114,6 @@ $(document).ready(function() {
             });
         }
     });
-    function jsError(other) {
-      try {
-        other();
-      } catch (err) {
-        getStatic("/templates/json-error-template.html", function(template) {
-          $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
-        });
-      }
-    }
 
     $.getJSON(url,function(response,status,jqXHR) {
         getStatic("/templates/supervisor-page-template.html", function(template) {

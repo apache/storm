@@ -332,7 +332,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
         private TreeSet<ObjectResources> getSortedNodesFor(String rackId) {
             return cachedNodes.computeIfAbsent(rackId,
-                (rid) -> sortNodes(rackIdToNodes.get(rid), exec, td, rid, perNodeScheduledCount));
+                (rid) -> sortNodes(rackIdToNodes.getOrDefault(rid, Collections.emptyList()), exec, td, rid, perNodeScheduledCount));
         }
 
         @Override

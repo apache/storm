@@ -304,6 +304,24 @@ public class DaemonConfig implements Validated {
     public static final String UI_PORT = "ui.port";
 
     /**
+     * This controls wheather Storm UI should bind to http port even if ui.port is > 0.
+     */
+    @isBoolean
+    public static final String UI_DISABLE_HTTP_BINDING = "ui.disable.http.binding";
+
+    /**
+     * This controls wheather Storm Logviewer should bind to http port even if logviewer.port is > 0.
+     */
+    @isBoolean
+    public static final String LOGVIEWER_DISABLE_HTTP_BINDING = "logviewer.disable.http.binding";
+
+    /**
+     * This controls wheather Storm DRPC should bind to http port even if drpc.http.port is > 0.
+     */
+    @isBoolean
+    public static final String DRPC_DISABLE_HTTP_BINDING = "drpc.disable.http.binding";
+
+    /**
      * Storm UI Project BUGTRACKER Link for reporting issue.
      */
     @isString

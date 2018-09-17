@@ -1,13 +1,19 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
- * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.storm.security.auth;
@@ -30,29 +36,24 @@ public class ReqContext {
     private static final AtomicInteger uniqueId = new AtomicInteger(0);
     //each thread will have its own request context
     private static final ThreadLocal<ReqContext> ctxt =
-        new ThreadLocal<ReqContext>() {
-            @Override
-            protected ReqContext initialValue() {
-                return new ReqContext(AccessController.getContext());
-            }
-        };
-    private Subject _subject;
-    private InetAddress _remoteAddr;
-    private Integer _reqID;
+        ThreadLocal.withInitial(() -> new ReqContext(AccessController.getContext()));
+    private Subject subject;
+    private InetAddress remoteAddr;
+    private final int reqID;
     private Principal realPrincipal;
 
     //private constructor
     @VisibleForTesting
     public ReqContext(AccessControlContext acl_ctxt) {
-        _subject = Subject.getSubject(acl_ctxt);
-        _reqID = uniqueId.incrementAndGet();
+        subject = Subject.getSubject(acl_ctxt);
+        reqID = uniqueId.incrementAndGet();
     }
 
     //private constructor
     @VisibleForTesting
     public ReqContext(Subject sub) {
-        _subject = sub;
-        _reqID = uniqueId.incrementAndGet();
+        subject = sub;
+        reqID = uniqueId.incrementAndGet();
     }
 
     /**
@@ -60,9 +61,9 @@ public class ReqContext {
      */
     @VisibleForTesting
     public ReqContext(ReqContext other) {
-        _subject = other._subject;
-        _remoteAddr = other._remoteAddr;
-        _reqID = other._reqID;
+        subject = other.subject;
+        remoteAddr = other.remoteAddr;
+        reqID = other.reqID;
         realPrincipal = other.realPrincipal;
     }
 
@@ -84,9 +85,9 @@ public class ReqContext {
     public String toString() {
         return "ReqContext{" +
                "realPrincipal=" + ((realPrincipal != null) ? realPrincipal.getName() : "null") +
-               ", _reqID=" + _reqID +
-               ", _remoteAddr=" + _remoteAddr +
-               ", _authZPrincipal=" + ((principal() != null) ? principal().getName() : "null") +
+               ", reqID=" + reqID +
+               ", remoteAddr=" + remoteAddr +
+               ", authZPrincipal=" + ((principal() != null) ? principal().getName() : "null") +
                ", ThreadId=" + Thread.currentThread().toString() +
                '}';
     }
@@ -95,35 +96,35 @@ public class ReqContext {
      * client address
      */
     public void setRemoteAddress(InetAddress addr) {
-        _remoteAddr = addr;
+        remoteAddr = addr;
     }
 
     public InetAddress remoteAddress() {
-        return _remoteAddr;
+        return remoteAddr;
     }
 
     /**
      * Set remote subject explicitly
      */
     public void setSubject(Subject subject) {
-        _subject = subject;
+        this.subject = subject;
     }
 
     /**
      * Retrieve client subject associated with this request context
      */
     public Subject subject() {
-        return _subject;
+        return subject;
     }
 
     /**
      * The primary principal associated current subject
      */
     public Principal principal() {
-        if (_subject == null) {
+        if (subject == null) {
             return null;
         }
-        Set<Principal> princs = _subject.getPrincipals();
+        Set<Principal> princs = subject.getPrincipals();
         if (princs.size() == 0) {
             return null;
         }
@@ -151,8 +152,7 @@ public class ReqContext {
     /**
      * request ID of this request
      */
-    public Integer requestID() {
-        return _reqID;
+    public int requestID() {
+        return reqID;
     }
-
 }

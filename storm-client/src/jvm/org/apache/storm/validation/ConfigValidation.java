@@ -171,6 +171,14 @@ public class ConfigValidation {
     }
 
     /**
+     * Validate topology conf.
+     * @param topoConf The topology conf.
+     */
+    public static void validateTopoConf(Map<String, Object> topoConf) {
+        validateFields(topoConf, Arrays.asList(Config.class));
+    }
+
+    /**
      * Validate all confs in map.
      *
      * @param conf map of configs

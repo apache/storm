@@ -34,7 +34,7 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
 
     /**
      * toResponse.
-     * @param throwable
+     * @param throwable throwable
      * @return response
      */
     @Override

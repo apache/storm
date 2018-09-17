@@ -27,9 +27,9 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
-
 import org.apache.commons.codec.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.DaemonConfig;
@@ -80,7 +80,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
     public static Response makeResponse(Exception ex, ContainerRequestContext request, int statusCode) {
         String callback = null;
 
-        if (request.getMediaType().toString().contains("application/json")) {
+        if (request.getMediaType() != null && request.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE)) {
             try {
                 String json = IOUtils.toString(request.getEntityStream(), Charsets.UTF_8);
                 InputStream in = IOUtils.toInputStream(json);
@@ -111,17 +111,20 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
 
         Map topoConf = null;
         if (annotation.needsTopoId()) {
-            NimbusClient nimbusClient = NimbusClient.getConfiguredClient(Utils.readStormConfig());
-            try {
-                topoConf = (Map) JSONValue.parse(nimbusClient.getClient().getTopologyConf(
-                        containerRequestContext.getUriInfo().getPathParameters().get("id").get(0)));
+            final String topoId = containerRequestContext.getUriInfo().getPathParameters().get("id").get(0);
+            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)){
+                topoConf = (Map) JSONValue.parse(nimbusClient.getClient().getTopologyConf(topoId));
+            } catch (AuthorizationException ae) {
+                LOG.error("Nimbus isn't allowing {} to access the topology conf of {}. {}", ReqContext.context(), topoId, ae.get_msg());
+                containerRequestContext.abortWith(makeResponse(ae, containerRequestContext, 403));
+                return;
             } catch (TException e) {
-                LOG.error("Unable to fetch topo conf for topo id due to ", e);
+                LOG.error("Unable to fetch topo conf for {} due to ", topoId, e);
                 containerRequestContext.abortWith(
-                    makeResponse(new IOException("Unable to fetch topo conf for topo id " +
-                            containerRequestContext.getUriInfo().getPathParameters().get("id").get(0)),
+                    makeResponse(new IOException("Unable to fetch topo conf for topo id " + topoId, e),
                             containerRequestContext, 500)
                 );
+                return;
             }
         }
 
@@ -149,6 +152,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                                             + "see SECURITY.MD to learn how to configure impersonation ACL."
                             ), containerRequestContext, 401)
                     );
+                    return;
                 }
 
             LOG.warn(" principal {} is trying to impersonate {} but {} has no authorizer configured. "
@@ -171,6 +175,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                                         + user + "' user is not authorized"),
                                 containerRequestContext, 403)
                 );
+                return;
             }
         }
     }

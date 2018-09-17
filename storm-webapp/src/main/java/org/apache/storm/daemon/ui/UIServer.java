@@ -93,11 +93,11 @@ public class UIServer {
         final String httpsTsType = (String) (conf.get(DaemonConfig.UI_HTTPS_TRUSTSTORE_TYPE));
         final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.UI_HTTPS_WANT_CLIENT_AUTH));
         final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.UI_HTTPS_NEED_CLIENT_AUTH));
+        final Boolean disableHttpBinding = (Boolean) (conf.get(DaemonConfig.UI_DISABLE_HTTP_BINDING));
 
         Server jettyServer =
                 UIHelpers.jettyCreateServer(
-                        (int) conf.get(DaemonConfig.UI_PORT), null, httpsPort, headerBufferSize
-                );
+                        (int) conf.get(DaemonConfig.UI_PORT), null, httpsPort, headerBufferSize, disableHttpBinding);
 
         UIHelpers.configSsl(jettyServer, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
                 httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
