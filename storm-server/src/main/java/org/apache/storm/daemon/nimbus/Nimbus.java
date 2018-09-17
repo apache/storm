@@ -4620,7 +4620,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return true;
     }
 
-    static final class Assoc<K, V> implements UnaryOperator<Map<K, V>> {
+    private static final class Assoc<K, V> implements UnaryOperator<Map<K, V>> {
         private final K key;
         private final V value;
 
@@ -4639,7 +4639,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     // Shutdownable methods
 
-    static final class Dissoc<K, V> implements UnaryOperator<Map<K, V>> {
+    private static final class Dissoc<K, V> implements UnaryOperator<Map<K, V>> {
         private final K key;
 
         public Dissoc(K key) {

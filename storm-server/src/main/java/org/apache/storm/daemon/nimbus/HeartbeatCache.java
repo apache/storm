@@ -46,49 +46,39 @@ public class HeartbeatCache {
 
     private static class ExecutorCache {
         private Boolean isTimedOut;
-        private Integer nimbusTime;
-        private Integer executorReportedTime;
+        private Integer nimbusTimeSecs;
+        private Integer executorReportedTimeSecs;
 
         public ExecutorCache(Map<String, Object> newBeat) {
             if (newBeat != null) {
-                executorReportedTime = (Integer) newBeat.getOrDefault(ClientStatsUtil.TIME_SECS, 0);
+                executorReportedTimeSecs = (Integer) newBeat.getOrDefault(ClientStatsUtil.TIME_SECS, 0);
             } else {
-                executorReportedTime = 0;
+                executorReportedTimeSecs = 0;
             }
 
-            nimbusTime = Time.currentTimeSecs();
+            nimbusTimeSecs = Time.currentTimeSecs();
             isTimedOut = false;
-        }
-
-        public ExecutorCache(boolean isTimedOut, Integer nimbusTime, Integer executorReportedTime) {
-            this.isTimedOut = isTimedOut;
-            this.nimbusTime = nimbusTime;
-            this.executorReportedTime = executorReportedTime;
         }
 
         public synchronized Boolean isTimedOut() {
             return isTimedOut;
         }
 
-        public synchronized Integer getNimbusTime() {
-            return nimbusTime;
-        }
-
-        public synchronized Integer getExecutorReportedTime() {
-            return executorReportedTime;
+        public synchronized Integer getNimbusTimeSecs() {
+            return nimbusTimeSecs;
         }
 
         public synchronized void updateTimeout(Integer timeout) {
-            isTimedOut = Time.deltaSecs(getNimbusTime()) >= timeout;
+            isTimedOut = Time.deltaSecs(getNimbusTimeSecs()) >= timeout;
         }
 
         public synchronized void updateFromHb(Integer timeout, Map<String,Object> newBeat) {
             if (newBeat != null) {
                 Integer newReportedTime = (Integer) newBeat.getOrDefault(ClientStatsUtil.TIME_SECS, 0);
-                if (!newReportedTime.equals(executorReportedTime)) {
-                    nimbusTime = Time.currentTimeSecs();
+                if (!newReportedTime.equals(executorReportedTimeSecs)) {
+                    nimbusTimeSecs = Time.currentTimeSecs();
                 }
-                executorReportedTime = newReportedTime;
+                executorReportedTimeSecs = newReportedTime;
             }
             updateTimeout(timeout);
         }
@@ -140,13 +130,12 @@ public class HeartbeatCache {
     }
 
     /**
-     * Update the heartbeats for a topology with no heartbeats that came in.
+     * Go through all executors and time them out if needed.
      * @param topoId the id of the topology to look at.
      * @param taskTimeoutSecs the timeout to know if they are too old.
      */
     public void timeoutOldHeartbeats(String topoId, Integer taskTimeoutSecs) {
         Map<List<Integer>, ExecutorCache> topoCache = cache.computeIfAbsent(topoId, MAKE_MAP);
-        //if not executor beats, refresh is-timed-out of the cache which is done by master
         for (ExecutorCache ec : topoCache.values()) {
             ec.updateTimeout(taskTimeoutSecs);
         }
@@ -216,9 +205,9 @@ public class HeartbeatCache {
             Long startTime = execToStartTimes.get(longExec);
             ExecutorCache executorCache = topoCache.get(exec);
             //null isTimedOut means worker never reported any heartbeat
-            Boolean isTimedOut = executorCache == null ? null : executorCache.isTimedOut();
+            boolean isTimedOut = executorCache == null ? true : executorCache.isTimedOut();
             Integer delta = startTime == null ? null : Time.deltaSecs(startTime.intValue());
-            if (startTime != null && ((delta < taskLaunchSecs) || (isTimedOut != null && !isTimedOut))) {
+            if (startTime != null && ((delta < taskLaunchSecs) || !isTimedOut)) {
                 ret.add(exec);
             } else {
                 LOG.info("Executor {}:{} not alive", topoId, exec);

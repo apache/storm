@@ -49,7 +49,7 @@ public class ClientStatsUtil {
     }
 
     /**
-     * Make and map of executors to empty stats.
+     * Make an map of executors to empty stats, in preparation for doing a heartbeat.
      * @param executors the executors as keys of the map.
      * @return and empty map of executors to stats.
      */

@@ -124,9 +124,9 @@ public class StatsUtil {
                                                          Map<List<String>, Double> id2procAvg,
                                                          Map<List<String>, Long> id2numExec) {
         Map<String, Number> ret = new HashMap<>();
-        putKV(ret, EXEC_LAT_TOTAL, weightAvgAndSum(id2execAvg, id2numExec));
-        putKV(ret, PROC_LAT_TOTAL, weightAvgAndSum(id2procAvg, id2numExec));
-        putKV(ret, EXECUTED, sumValues(id2numExec));
+        ((Map) ret).put(EXEC_LAT_TOTAL, weightAvgAndSum(id2execAvg, id2numExec));
+        ((Map) ret).put(PROC_LAT_TOTAL, weightAvgAndSum(id2procAvg, id2numExec));
+        ((Map) ret).put(EXECUTED, sumValues(id2numExec));
 
         return ret;
     }
@@ -137,8 +137,8 @@ public class StatsUtil {
     public static Map<String, Number> aggSpoutLatAndCount(Map<String, Double> id2compAvg,
                                                           Map<String, Long> id2numAcked) {
         Map<String, Number> ret = new HashMap<>();
-        putKV(ret, COMP_LAT_TOTAL, weightAvgAndSum(id2compAvg, id2numAcked));
-        putKV(ret, ACKED, sumValues(id2numAcked));
+        ((Map) ret).put(COMP_LAT_TOTAL, weightAvgAndSum(id2compAvg, id2numAcked));
+        ((Map) ret).put(ACKED, sumValues(id2numAcked));
 
         return ret;
     }
@@ -155,9 +155,9 @@ public class StatsUtil {
         }
         for (K k : id2execAvg.keySet()) {
             Map<String, Object> subMap = new HashMap<>();
-            putKV(subMap, EXEC_LAT_TOTAL, weightAvg(id2execAvg, id2numExec, k));
-            putKV(subMap, PROC_LAT_TOTAL, weightAvg(id2procAvg, id2numExec, k));
-            putKV(subMap, EXECUTED, id2numExec.get(k));
+            subMap.put(EXEC_LAT_TOTAL, weightAvg(id2execAvg, id2numExec, k));
+            subMap.put(PROC_LAT_TOTAL, weightAvg(id2procAvg, id2numExec, k));
+            subMap.put(EXECUTED, id2numExec.get(k));
             ret.put(k, subMap);
         }
         return ret;
@@ -174,8 +174,8 @@ public class StatsUtil {
         }
         for (K k : id2compAvg.keySet()) {
             Map subMap = new HashMap();
-            putKV(subMap, COMP_LAT_TOTAL, weightAvg(id2compAvg, id2acked, k));
-            putKV(subMap, ACKED, id2acked.get(k));
+            subMap.put(COMP_LAT_TOTAL, weightAvg(id2compAvg, id2acked, k));
+            subMap.put(ACKED, id2acked.get(k));
             ret.put(k, subMap);
         }
         return ret;
@@ -193,22 +193,24 @@ public class StatsUtil {
     public static Map<String, Object> aggPreMergeCompPageBolt(Map<String, Object> beat, String window, boolean includeSys) {
         Map<String, Object> ret = new HashMap<>();
 
-        putKV(ret, EXECUTOR_ID, beat.get("exec-id"));
-        putKV(ret, HOST, beat.get(HOST));
-        putKV(ret, PORT, beat.get(PORT));
-        putKV(ret, ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
-        putKV(ret, NUM_EXECUTORS, 1);
-        putKV(ret, NUM_TASKS, beat.get(NUM_TASKS));
+        ret.put(EXECUTOR_ID, beat.get("exec-id"));
+        ret.put(HOST, beat.get(HOST));
+        ret.put(PORT, beat.get(PORT));
+        ret.put(ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
+        ret.put(NUM_EXECUTORS, 1);
+        ret.put(NUM_TASKS, beat.get(NUM_TASKS));
 
         Map stat2win2sid2num = ClientStatsUtil.getMapByKey(beat, STATS);
-        putKV(ret, CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, ClientStatsUtil.UPTIME).intValue()));
+        ret.put(CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, ClientStatsUtil.UPTIME).intValue()));
 
         // calc cid+sid->input_stats
         Map inputStats = new HashMap();
         Map sid2acked = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, ACKED), TO_STRING).get(window);
         Map sid2failed = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, FAILED), TO_STRING).get(window);
-        putKV(inputStats, ACKED, sid2acked != null ? sid2acked : new HashMap());
-        putKV(inputStats, FAILED, sid2failed != null ? sid2failed : new HashMap());
+        Object v1 = sid2acked != null ? sid2acked : new HashMap();
+        inputStats.put(ACKED, v1);
+        Object v = sid2failed != null ? sid2failed : new HashMap();
+        inputStats.put(FAILED, v);
 
         inputStats = swapMapOrder(inputStats);
 
@@ -216,24 +218,24 @@ public class StatsUtil {
         Map sid2procLat = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, PROC_LATENCIES), TO_STRING).get(window);
         Map sid2exec = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EXECUTED), TO_STRING).get(window);
         mergeMaps(inputStats, aggBoltStreamsLatAndCount(sid2execLat, sid2procLat, sid2exec));
-        putKV(ret, CID_SID_TO_IN_STATS, inputStats);
+        ret.put(CID_SID_TO_IN_STATS, inputStats);
 
         // calc sid->output_stats
         Map outputStats = new HashMap();
         Map sid2emitted = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EMITTED), TO_STRING).get(window);
         Map sid2transferred = (Map) windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING).get(window);
         if (sid2emitted != null) {
-            putKV(outputStats, EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
+            outputStats.put(EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
         } else {
-            putKV(outputStats, EMITTED, new HashMap());
+            outputStats.put(EMITTED, new HashMap());
         }
         if (sid2transferred != null) {
-            putKV(outputStats, TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
+            outputStats.put(TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
         } else {
-            putKV(outputStats, TRANSFERRED, new HashMap());
+            outputStats.put(TRANSFERRED, new HashMap());
         }
         outputStats = swapMapOrder(outputStats);
-        putKV(ret, SID_TO_OUT_STATS, outputStats);
+        ret.put(SID_TO_OUT_STATS, outputStats);
 
         return ret;
     }
@@ -249,12 +251,12 @@ public class StatsUtil {
      */
     public static Map<String, Object> aggPreMergeCompPageSpout(Map<String, Object> beat, String window, boolean includeSys) {
         Map<String, Object> ret = new HashMap<>();
-        putKV(ret, EXECUTOR_ID, beat.get("exec-id"));
-        putKV(ret, HOST, beat.get(HOST));
-        putKV(ret, PORT, beat.get(PORT));
-        putKV(ret, ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
-        putKV(ret, NUM_EXECUTORS, 1);
-        putKV(ret, NUM_TASKS, beat.get(NUM_TASKS));
+        ret.put(EXECUTOR_ID, beat.get("exec-id"));
+        ret.put(HOST, beat.get(HOST));
+        ret.put(PORT, beat.get(PORT));
+        ret.put(ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
+        ret.put(NUM_EXECUTORS, 1);
+        ret.put(NUM_TASKS, beat.get(NUM_TASKS));
 
         Map stat2win2sid2num = ClientStatsUtil.getMapByKey(beat, STATS);
 
@@ -266,31 +268,31 @@ public class StatsUtil {
         Map win2sid2transferred = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING);
         Map win2sid2compLat = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
 
-        putKV(outputStats, ACKED, win2sid2acked.get(window));
-        putKV(outputStats, FAILED, win2sid2failed.get(window));
+        outputStats.put(ACKED, win2sid2acked.get(window));
+        outputStats.put(FAILED, win2sid2failed.get(window));
         Map<String, Long> sid2emitted = (Map) win2sid2emitted.get(window);
         if (sid2emitted == null) {
             sid2emitted = new HashMap<>();
         }
-        putKV(outputStats, EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
+        outputStats.put(EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
 
         Map<String, Long> sid2transferred = (Map) win2sid2transferred.get(window);
         if (sid2transferred == null) {
             sid2transferred = new HashMap<>();
         }
-        putKV(outputStats, TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
+        outputStats.put(TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
         outputStats = swapMapOrder(outputStats);
 
         Map sid2compLat = (Map) win2sid2compLat.get(window);
         Map sid2acked = (Map) win2sid2acked.get(window);
         mergeMaps(outputStats, aggSpoutStreamsLatAndCount(sid2compLat, sid2acked));
-        putKV(ret, SID_TO_OUT_STATS, outputStats);
+        ret.put(SID_TO_OUT_STATS, outputStats);
 
         return ret;
     }
 
     /**
-     * pre-merge component stats of specified bolt id
+     * pre-merge component stats of specified bolt id.
      *
      * @param beat       executor heartbeat data
      * @param window     specified window
@@ -302,11 +304,11 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
 
         Map<String, Object> subRet = new HashMap<>();
-        putKV(subRet, NUM_EXECUTORS, 1);
-        putKV(subRet, NUM_TASKS, beat.get(NUM_TASKS));
+        subRet.put(NUM_EXECUTORS, 1);
+        subRet.put(NUM_TASKS, beat.get(NUM_TASKS));
 
         Map<String, Object> stat2win2sid2num = ClientStatsUtil.getMapByKey(beat, STATS);
-        putKV(subRet, CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, ClientStatsUtil.UPTIME).intValue()));
+        subRet.put(CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, ClientStatsUtil.UPTIME).intValue()));
 
         for (String key : new String[]{ EMITTED, TRANSFERRED, ACKED, FAILED }) {
             Map<String, Map<K, V>> stat = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, key), TO_STRING);
@@ -320,7 +322,7 @@ public class StatsUtil {
                     sum += v.longValue();
                 }
             }
-            putKV(subRet, key, sum);
+            subRet.put(key, sum);
         }
 
         Map<String, Map<List<String>, Double>> win2sid2execLat =
@@ -337,15 +339,15 @@ public class StatsUtil {
     }
 
     /**
-     * pre-merge component stats of specified spout id and returns { comp id -> comp-stats }
+     * pre-merge component stats of specified spout id and returns { comp id -> comp-stats }.
      */
     public static <K, V extends Number> Map<String, Object> aggPreMergeTopoPageSpout(
         Map<String, Object> m, String window, boolean includeSys) {
         Map<String, Object> ret = new HashMap<>();
 
         Map<String, Object> subRet = new HashMap<>();
-        putKV(subRet, NUM_EXECUTORS, 1);
-        putKV(subRet, NUM_TASKS, m.get(NUM_TASKS));
+        subRet.put(NUM_EXECUTORS, 1);
+        subRet.put(NUM_TASKS, m.get(NUM_TASKS));
 
         // no capacity for spout
         Map<String, Map<String, Map<String, V>>> stat2win2sid2num = ClientStatsUtil.getMapByKey(m, STATS);
@@ -361,7 +363,7 @@ public class StatsUtil {
                     sum += v.longValue();
                 }
             }
-            putKV(subRet, key, sum);
+            subRet.put(key, sum);
         }
 
         Map<String, Map<String, Double>> win2sid2compLat =
@@ -375,7 +377,7 @@ public class StatsUtil {
     }
 
     /**
-     * merge accumulated bolt stats with pre-merged component stats
+     * merge accumulated bolt stats with pre-merged component stats.
      *
      * @param accBoltStats accumulated bolt stats
      * @param boltStats    pre-merged component stats
@@ -391,47 +393,47 @@ public class StatsUtil {
         Map<String, Map<String, ?>> boltOut = ClientStatsUtil.getMapByKey(boltStats, SID_TO_OUT_STATS);
 
         int numExecutors = getByKeyOr0(accBoltStats, NUM_EXECUTORS).intValue();
-        putKV(ret, NUM_EXECUTORS, numExecutors + 1);
-        putKV(ret, NUM_TASKS, sumOr0(
+        ret.put(NUM_EXECUTORS, numExecutors + 1);
+        ret.put(NUM_TASKS, sumOr0(
             getByKeyOr0(accBoltStats, NUM_TASKS), getByKeyOr0(boltStats, NUM_TASKS)));
 
         // (merge-with (partial merge-with sum-or-0) acc-out spout-out)
-        putKV(ret, SID_TO_OUT_STATS, fullMergeWithSum(accOut, boltOut));
+        ret.put(SID_TO_OUT_STATS, fullMergeWithSum(accOut, boltOut));
         // {component id -> metric -> value}, note that input may contain both long and double values
-        putKV(ret, CID_SID_TO_IN_STATS, fullMergeWithSum(accIn, boltIn));
+        ret.put(CID_SID_TO_IN_STATS, fullMergeWithSum(accIn, boltIn));
 
         long executed = sumStreamsLong(boltIn, EXECUTED);
-        putKV(ret, EXECUTED, executed);
+        ret.put(EXECUTED, executed);
 
         Map<String, Object> executorStats = new HashMap<>();
-        putKV(executorStats, EXECUTOR_ID, boltStats.get(EXECUTOR_ID));
-        putKV(executorStats, ClientStatsUtil.UPTIME, boltStats.get(ClientStatsUtil.UPTIME));
-        putKV(executorStats, HOST, boltStats.get(HOST));
-        putKV(executorStats, PORT, boltStats.get(PORT));
-        putKV(executorStats, CAPACITY, boltStats.get(CAPACITY));
+        executorStats.put(EXECUTOR_ID, boltStats.get(EXECUTOR_ID));
+        executorStats.put(ClientStatsUtil.UPTIME, boltStats.get(ClientStatsUtil.UPTIME));
+        executorStats.put(HOST, boltStats.get(HOST));
+        executorStats.put(PORT, boltStats.get(PORT));
+        executorStats.put(CAPACITY, boltStats.get(CAPACITY));
 
-        putKV(executorStats, EMITTED, sumStreamsLong(boltOut, EMITTED));
-        putKV(executorStats, TRANSFERRED, sumStreamsLong(boltOut, TRANSFERRED));
-        putKV(executorStats, ACKED, sumStreamsLong(boltIn, ACKED));
-        putKV(executorStats, FAILED, sumStreamsLong(boltIn, FAILED));
-        putKV(executorStats, EXECUTED, executed);
+        executorStats.put(EMITTED, sumStreamsLong(boltOut, EMITTED));
+        executorStats.put(TRANSFERRED, sumStreamsLong(boltOut, TRANSFERRED));
+        executorStats.put(ACKED, sumStreamsLong(boltIn, ACKED));
+        executorStats.put(FAILED, sumStreamsLong(boltIn, FAILED));
+        executorStats.put(EXECUTED, executed);
 
         if (executed > 0) {
-            putKV(executorStats, EXEC_LATENCY, sumStreamsDouble(boltIn, EXEC_LAT_TOTAL) / executed);
-            putKV(executorStats, PROC_LATENCY, sumStreamsDouble(boltIn, PROC_LAT_TOTAL) / executed);
+            executorStats.put(EXEC_LATENCY, sumStreamsDouble(boltIn, EXEC_LAT_TOTAL) / executed);
+            executorStats.put(PROC_LATENCY, sumStreamsDouble(boltIn, PROC_LAT_TOTAL) / executed);
         } else {
-            putKV(executorStats, EXEC_LATENCY, null);
-            putKV(executorStats, PROC_LATENCY, null);
+            executorStats.put(EXEC_LATENCY, null);
+            executorStats.put(PROC_LATENCY, null);
         }
         List executorStatsList = ((List) accBoltStats.get(ClientStatsUtil.EXECUTOR_STATS));
         executorStatsList.add(executorStats);
-        putKV(ret, ClientStatsUtil.EXECUTOR_STATS, executorStatsList);
+        ret.put(ClientStatsUtil.EXECUTOR_STATS, executorStatsList);
 
         return ret;
     }
 
     /**
-     * merge accumulated bolt stats with pre-merged component stats
+     * merge accumulated bolt stats with pre-merged component stats.
      */
     public static Map<String, Object> mergeAggCompStatsCompPageSpout(
         Map<String, Object> accSpoutStats, Map<String, Object> spoutStats) {
@@ -442,36 +444,36 @@ public class StatsUtil {
         Map<String, Map<String, ?>> spoutOut = ClientStatsUtil.getMapByKey(spoutStats, SID_TO_OUT_STATS);
 
         int numExecutors = getByKeyOr0(accSpoutStats, NUM_EXECUTORS).intValue();
-        putKV(ret, NUM_EXECUTORS, numExecutors + 1);
-        putKV(ret, NUM_TASKS, sumOr0(
+        ret.put(NUM_EXECUTORS, numExecutors + 1);
+        ret.put(NUM_TASKS, sumOr0(
             getByKeyOr0(accSpoutStats, NUM_TASKS), getByKeyOr0(spoutStats, NUM_TASKS)));
-        putKV(ret, SID_TO_OUT_STATS, fullMergeWithSum(accOut, spoutOut));
+        ret.put(SID_TO_OUT_STATS, fullMergeWithSum(accOut, spoutOut));
 
         Map executorStats = new HashMap();
-        putKV(executorStats, EXECUTOR_ID, spoutStats.get(EXECUTOR_ID));
-        putKV(executorStats, ClientStatsUtil.UPTIME, spoutStats.get(ClientStatsUtil.UPTIME));
-        putKV(executorStats, HOST, spoutStats.get(HOST));
-        putKV(executorStats, PORT, spoutStats.get(PORT));
+        executorStats.put(EXECUTOR_ID, spoutStats.get(EXECUTOR_ID));
+        executorStats.put(ClientStatsUtil.UPTIME, spoutStats.get(ClientStatsUtil.UPTIME));
+        executorStats.put(HOST, spoutStats.get(HOST));
+        executorStats.put(PORT, spoutStats.get(PORT));
 
-        putKV(executorStats, EMITTED, sumStreamsLong(spoutOut, EMITTED));
-        putKV(executorStats, TRANSFERRED, sumStreamsLong(spoutOut, TRANSFERRED));
-        putKV(executorStats, FAILED, sumStreamsLong(spoutOut, FAILED));
+        executorStats.put(EMITTED, sumStreamsLong(spoutOut, EMITTED));
+        executorStats.put(TRANSFERRED, sumStreamsLong(spoutOut, TRANSFERRED));
+        executorStats.put(FAILED, sumStreamsLong(spoutOut, FAILED));
         long acked = sumStreamsLong(spoutOut, ACKED);
-        putKV(executorStats, ACKED, acked);
+        executorStats.put(ACKED, acked);
         if (acked > 0) {
-            putKV(executorStats, COMP_LATENCY, sumStreamsDouble(spoutOut, COMP_LAT_TOTAL) / acked);
+            executorStats.put(COMP_LATENCY, sumStreamsDouble(spoutOut, COMP_LAT_TOTAL) / acked);
         } else {
-            putKV(executorStats, COMP_LATENCY, null);
+            executorStats.put(COMP_LATENCY, null);
         }
         List executorStatsList = ((List) accSpoutStats.get(ClientStatsUtil.EXECUTOR_STATS));
         executorStatsList.add(executorStats);
-        putKV(ret, ClientStatsUtil.EXECUTOR_STATS, executorStatsList);
+        ret.put(ClientStatsUtil.EXECUTOR_STATS, executorStatsList);
 
         return ret;
     }
 
     /**
-     * merge accumulated bolt stats with new bolt stats
+     * merge accumulated bolt stats with new bolt stats.
      *
      * @param accBoltStats accumulated bolt stats
      * @param boltStats    new input bolt stats
@@ -482,50 +484,35 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
 
         Integer numExecutors = getByKeyOr0(accBoltStats, NUM_EXECUTORS).intValue();
-        putKV(ret, NUM_EXECUTORS, numExecutors + 1);
-        putKV(ret, NUM_TASKS,
-              sumOr0(getByKeyOr0(accBoltStats, NUM_TASKS), getByKeyOr0(boltStats, NUM_TASKS)));
-        putKV(ret, EMITTED,
-              sumOr0(getByKeyOr0(accBoltStats, EMITTED), getByKeyOr0(boltStats, EMITTED)));
-        putKV(ret, TRANSFERRED,
-              sumOr0(getByKeyOr0(accBoltStats, TRANSFERRED), getByKeyOr0(boltStats, TRANSFERRED)));
-        putKV(ret, EXEC_LAT_TOTAL,
-              sumOr0(getByKeyOr0(accBoltStats, EXEC_LAT_TOTAL), getByKeyOr0(boltStats, EXEC_LAT_TOTAL)));
-        putKV(ret, PROC_LAT_TOTAL,
-              sumOr0(getByKeyOr0(accBoltStats, PROC_LAT_TOTAL), getByKeyOr0(boltStats, PROC_LAT_TOTAL)));
-        putKV(ret, EXECUTED,
-              sumOr0(getByKeyOr0(accBoltStats, EXECUTED), getByKeyOr0(boltStats, EXECUTED)));
-        putKV(ret, ACKED,
-              sumOr0(getByKeyOr0(accBoltStats, ACKED), getByKeyOr0(boltStats, ACKED)));
-        putKV(ret, FAILED,
-              sumOr0(getByKeyOr0(accBoltStats, FAILED), getByKeyOr0(boltStats, FAILED)));
-        putKV(ret, CAPACITY,
-              maxOr0(getByKeyOr0(accBoltStats, CAPACITY), getByKeyOr0(boltStats, CAPACITY)));
+        ret.put(NUM_EXECUTORS, numExecutors + 1);
+        ret.put(NUM_TASKS, sumOr0(getByKeyOr0(accBoltStats, NUM_TASKS), getByKeyOr0(boltStats, NUM_TASKS)));
+        ret.put(EMITTED, sumOr0(getByKeyOr0(accBoltStats, EMITTED), getByKeyOr0(boltStats, EMITTED)));
+        ret.put(TRANSFERRED, sumOr0(getByKeyOr0(accBoltStats, TRANSFERRED), getByKeyOr0(boltStats, TRANSFERRED)));
+        ret.put(EXEC_LAT_TOTAL, sumOr0(getByKeyOr0(accBoltStats, EXEC_LAT_TOTAL), getByKeyOr0(boltStats, EXEC_LAT_TOTAL)));
+        ret.put(PROC_LAT_TOTAL, sumOr0(getByKeyOr0(accBoltStats, PROC_LAT_TOTAL), getByKeyOr0(boltStats, PROC_LAT_TOTAL)));
+        ret.put(EXECUTED, sumOr0(getByKeyOr0(accBoltStats, EXECUTED), getByKeyOr0(boltStats, EXECUTED)));
+        ret.put(ACKED, sumOr0(getByKeyOr0(accBoltStats, ACKED), getByKeyOr0(boltStats, ACKED)));
+        ret.put(FAILED, sumOr0(getByKeyOr0(accBoltStats, FAILED), getByKeyOr0(boltStats, FAILED)));
+        ret.put(CAPACITY, maxOr0(getByKeyOr0(accBoltStats, CAPACITY), getByKeyOr0(boltStats, CAPACITY)));
 
         return ret;
     }
 
     /**
-     * merge accumulated bolt stats with new bolt stats
+     * merge accumulated bolt stats with new bolt stats.
      */
     public static Map<String, Object> mergeAggCompStatsTopoPageSpout(Map<String, Object> accSpoutStats,
                                                                      Map<String, Object> spoutStats) {
         Map<String, Object> ret = new HashMap<>();
 
         Integer numExecutors = getByKeyOr0(accSpoutStats, NUM_EXECUTORS).intValue();
-        putKV(ret, NUM_EXECUTORS, numExecutors + 1);
-        putKV(ret, NUM_TASKS,
-              sumOr0(getByKeyOr0(accSpoutStats, NUM_TASKS), getByKeyOr0(spoutStats, NUM_TASKS)));
-        putKV(ret, EMITTED,
-              sumOr0(getByKeyOr0(accSpoutStats, EMITTED), getByKeyOr0(spoutStats, EMITTED)));
-        putKV(ret, TRANSFERRED,
-              sumOr0(getByKeyOr0(accSpoutStats, TRANSFERRED), getByKeyOr0(spoutStats, TRANSFERRED)));
-        putKV(ret, COMP_LAT_TOTAL,
-              sumOr0(getByKeyOr0(accSpoutStats, COMP_LAT_TOTAL), getByKeyOr0(spoutStats, COMP_LAT_TOTAL)));
-        putKV(ret, ACKED,
-              sumOr0(getByKeyOr0(accSpoutStats, ACKED), getByKeyOr0(spoutStats, ACKED)));
-        putKV(ret, FAILED,
-              sumOr0(getByKeyOr0(accSpoutStats, FAILED), getByKeyOr0(spoutStats, FAILED)));
+        ret.put(NUM_EXECUTORS, numExecutors + 1);
+        ret.put(NUM_TASKS, sumOr0(getByKeyOr0(accSpoutStats, NUM_TASKS), getByKeyOr0(spoutStats, NUM_TASKS)));
+        ret.put(EMITTED, sumOr0(getByKeyOr0(accSpoutStats, EMITTED), getByKeyOr0(spoutStats, EMITTED)));
+        ret.put(TRANSFERRED, sumOr0(getByKeyOr0(accSpoutStats, TRANSFERRED), getByKeyOr0(spoutStats, TRANSFERRED)));
+        ret.put(COMP_LAT_TOTAL, sumOr0(getByKeyOr0(accSpoutStats, COMP_LAT_TOTAL), getByKeyOr0(spoutStats, COMP_LAT_TOTAL)));
+        ret.put(ACKED, sumOr0(getByKeyOr0(accSpoutStats, ACKED), getByKeyOr0(spoutStats, ACKED)));
+        ret.put(FAILED, sumOr0(getByKeyOr0(accSpoutStats, FAILED), getByKeyOr0(spoutStats, FAILED)));
 
         return ret;
     }
@@ -537,15 +524,6 @@ public class StatsUtil {
         String window, boolean includeSys, Map<String, Object> accStats, Map<String, Object> beat, String compType) {
         Map<String, Object> ret = new HashMap<>();
 
-        Set workerSet = (Set) accStats.get(WORKERS_SET);
-        Map bolt2stats = ClientStatsUtil.getMapByKey(accStats, BOLT_TO_STATS);
-        Map spout2stats = ClientStatsUtil.getMapByKey(accStats, SPOUT_TO_STATS);
-        Map win2emitted = ClientStatsUtil.getMapByKey(accStats, WIN_TO_EMITTED);
-        Map win2transferred = ClientStatsUtil.getMapByKey(accStats, WIN_TO_TRANSFERRED);
-        Map win2compLatWgtAvg = ClientStatsUtil.getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG);
-        Map win2acked = ClientStatsUtil.getMapByKey(accStats, WIN_TO_ACKED);
-        Map win2failed = ClientStatsUtil.getMapByKey(accStats, WIN_TO_FAILED);
-
         boolean isSpout = compType.equals(ClientStatsUtil.SPOUT);
         // component id -> stats
         Map<String, Object> cid2stats;
@@ -556,7 +534,8 @@ public class StatsUtil {
         }
 
         Map stats = ClientStatsUtil.getMapByKey(beat, STATS);
-        Map w2compLatWgtAvg, w2acked;
+        Map w2compLatWgtAvg;
+        Map w2acked;
         Map compLatStats = ClientStatsUtil.getMapByKey(stats, COMP_LATENCIES);
         if (isSpout) { // agg spout stats
             Map mm = new HashMap();
@@ -573,21 +552,37 @@ public class StatsUtil {
             w2acked = aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED));
         }
 
+        Set workerSet = (Set) accStats.get(WORKERS_SET);
         workerSet.add(Lists.newArrayList(beat.get(HOST), beat.get(PORT)));
-        putKV(ret, WORKERS_SET, workerSet);
-        putKV(ret, BOLT_TO_STATS, bolt2stats);
-        putKV(ret, SPOUT_TO_STATS, spout2stats);
-        putKV(ret, WIN_TO_EMITTED, mergeWithSumLong(win2emitted, aggregateCountStreams(
-            filterSysStreams(ClientStatsUtil.getMapByKey(stats, EMITTED), includeSys))));
-        putKV(ret, WIN_TO_TRANSFERRED, mergeWithSumLong(win2transferred, aggregateCountStreams(
-            filterSysStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED), includeSys))));
-        putKV(ret, WIN_TO_COMP_LAT_WGT_AVG, mergeWithSumDouble(win2compLatWgtAvg, w2compLatWgtAvg));
+        ret.put(WORKERS_SET, workerSet);
 
-        //boolean isSpoutStat = SPOUT.equals(((Keyword) getByKey(stats, TYPE)).getName());
-        putKV(ret, WIN_TO_ACKED, isSpout ? mergeWithSumLong(win2acked, w2acked) : win2acked);
-        putKV(ret, WIN_TO_FAILED, isSpout ?
-            mergeWithSumLong(aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)), win2failed) : win2failed);
-        putKV(ret, TYPE, stats.get(TYPE));
+        Map bolt2stats = ClientStatsUtil.getMapByKey(accStats, BOLT_TO_STATS);
+        ret.put(BOLT_TO_STATS, bolt2stats);
+
+        Map spout2stats = ClientStatsUtil.getMapByKey(accStats, SPOUT_TO_STATS);
+        ret.put(SPOUT_TO_STATS, spout2stats);
+
+        Map win2emitted = ClientStatsUtil.getMapByKey(accStats, WIN_TO_EMITTED);
+        ret.put(WIN_TO_EMITTED, mergeWithSumLong(win2emitted, aggregateCountStreams(
+            filterSysStreams(ClientStatsUtil.getMapByKey(stats, EMITTED), includeSys))));
+
+        Map win2transferred = ClientStatsUtil.getMapByKey(accStats, WIN_TO_TRANSFERRED);
+        ret.put(WIN_TO_TRANSFERRED, mergeWithSumLong(win2transferred, aggregateCountStreams(
+            filterSysStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED), includeSys))));
+
+        Map win2compLatWgtAvg = ClientStatsUtil.getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG);
+        ret.put(WIN_TO_COMP_LAT_WGT_AVG, mergeWithSumDouble(win2compLatWgtAvg, w2compLatWgtAvg));
+
+        Map win2acked = ClientStatsUtil.getMapByKey(accStats, WIN_TO_ACKED);
+        Object v1 = isSpout ? mergeWithSumLong(win2acked, w2acked) : win2acked;
+        ret.put(WIN_TO_ACKED, v1);
+
+        Map win2failed = ClientStatsUtil.getMapByKey(accStats, WIN_TO_FAILED);
+        Object v = isSpout
+            ? mergeWithSumLong(aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)), win2failed) : win2failed;
+
+        ret.put(WIN_TO_FAILED, v);
+        ret.put(TYPE, stats.get(TYPE));
 
         // (merge-with merge-agg-comp-stats-topo-page-bolt/spout (acc-stats comp-key) cid->statk->num)
         // (acc-stats comp-key) ==> bolt2stats/spout2stats
@@ -605,7 +600,7 @@ public class StatsUtil {
     }
 
     /**
-     * aggregate topo executors stats
+     * aggregate topo executors stats.
      *
      * @param topologyId     topology id
      * @param exec2nodePort  executor -> host+port
@@ -625,16 +620,16 @@ public class StatsUtil {
         return postAggregateTopoStats(task2component, exec2nodePort, topoStats, topologyId, clusterState);
     }
 
-    public static Map<String, Object> aggregateTopoStats(String win, boolean includeSys, List<Map<String, Object>> heartbeats) {
+    private static Map<String, Object> aggregateTopoStats(String win, boolean includeSys, List<Map<String, Object>> heartbeats) {
         Map<String, Object> initVal = new HashMap<>();
-        putKV(initVal, WORKERS_SET, new HashSet());
-        putKV(initVal, BOLT_TO_STATS, new HashMap());
-        putKV(initVal, SPOUT_TO_STATS, new HashMap());
-        putKV(initVal, WIN_TO_EMITTED, new HashMap());
-        putKV(initVal, WIN_TO_TRANSFERRED, new HashMap());
-        putKV(initVal, WIN_TO_COMP_LAT_WGT_AVG, new HashMap());
-        putKV(initVal, WIN_TO_ACKED, new HashMap());
-        putKV(initVal, WIN_TO_FAILED, new HashMap());
+        initVal.put(WORKERS_SET, new HashSet());
+        initVal.put(BOLT_TO_STATS, new HashMap());
+        initVal.put(SPOUT_TO_STATS, new HashMap());
+        initVal.put(WIN_TO_EMITTED, new HashMap());
+        initVal.put(WIN_TO_TRANSFERRED, new HashMap());
+        initVal.put(WIN_TO_COMP_LAT_WGT_AVG, new HashMap());
+        initVal.put(WIN_TO_ACKED, new HashMap());
+        initVal.put(WIN_TO_FAILED, new HashMap());
 
         for (Map<String, Object> heartbeat : heartbeats) {
             String compType = (String) heartbeat.get(TYPE);
@@ -644,7 +639,7 @@ public class StatsUtil {
         return initVal;
     }
 
-    public static TopologyPageInfo postAggregateTopoStats(Map task2comp, Map exec2nodePort, Map<String, Object> accData,
+    private static TopologyPageInfo postAggregateTopoStats(Map task2comp, Map exec2nodePort, Map<String, Object> accData,
                                                           String topologyId, IStormClusterState clusterState) {
         TopologyPageInfo ret = new TopologyPageInfo(topologyId);
 
@@ -656,19 +651,19 @@ public class StatsUtil {
         Map<String, ComponentAggregateStats> aggBolt2stats = new HashMap<>();
         for (Object o : bolt2stats.entrySet()) {
             Map.Entry e = (Map.Entry) o;
-            String id = (String) e.getKey();
             Map m = (Map) e.getValue();
             long executed = getByKeyOr0(m, EXECUTED).longValue();
             if (executed > 0) {
                 double execLatencyTotal = getByKeyOr0(m, EXEC_LAT_TOTAL).doubleValue();
-                putKV(m, EXEC_LATENCY, execLatencyTotal / executed);
+                m.put(EXEC_LATENCY, execLatencyTotal / executed);
 
                 double procLatencyTotal = getByKeyOr0(m, PROC_LAT_TOTAL).doubleValue();
-                putKV(m, PROC_LATENCY, procLatencyTotal / executed);
+                m.put(PROC_LATENCY, procLatencyTotal / executed);
             }
-            remove(m, EXEC_LAT_TOTAL);
-            remove(m, PROC_LAT_TOTAL);
-            putKV(m, "last-error", getLastError(clusterState, topologyId, id));
+            m.remove(EXEC_LAT_TOTAL);
+            m.remove(PROC_LAT_TOTAL);
+            String id = (String) e.getKey();
+            m.put("last-error", getLastError(clusterState, topologyId, id));
 
             aggBolt2stats.put(id, thriftifyBoltAggStats(m));
         }
@@ -682,10 +677,10 @@ public class StatsUtil {
             long acked = getByKeyOr0(m, ACKED).longValue();
             if (acked > 0) {
                 double compLatencyTotal = getByKeyOr0(m, COMP_LAT_TOTAL).doubleValue();
-                putKV(m, COMP_LATENCY, compLatencyTotal / acked);
+                m.put(COMP_LATENCY, compLatencyTotal / acked);
             }
-            remove(m, COMP_LAT_TOTAL);
-            putKV(m, "last-error", getLastError(clusterState, topologyId, id));
+            m.remove(COMP_LAT_TOTAL);
+            m.put("last-error", getLastError(clusterState, topologyId, id));
 
             aggSpout2stats.put(id, thriftifySpoutAggStats(m));
         }
@@ -706,7 +701,7 @@ public class StatsUtil {
     }
 
     /**
-     * aggregate bolt stats
+     * aggregate bolt stats.
      *
      * @param statsSeq   a seq of ExecutorStats
      * @param includeSys whether to include system streams
@@ -733,17 +728,17 @@ public class StatsUtil {
             executeLatencies.add(stat.get_specific().get_bolt().get_execute_ms_avg());
         }
         mergeMaps(ret, commonStats);
-        putKV(ret, ACKED, aggregateCounts(acked));
-        putKV(ret, FAILED, aggregateCounts(failed));
-        putKV(ret, EXECUTED, aggregateCounts(executed));
-        putKV(ret, PROC_LATENCIES, aggregateAverages(processLatencies, acked));
-        putKV(ret, EXEC_LATENCIES, aggregateAverages(executeLatencies, executed));
+        ((Map) ret).put(ACKED, aggregateCounts(acked));
+        ((Map) ret).put(FAILED, aggregateCounts(failed));
+        ((Map) ret).put(EXECUTED, aggregateCounts(executed));
+        ((Map) ret).put(PROC_LATENCIES, aggregateAverages(processLatencies, acked));
+        ((Map) ret).put(EXEC_LATENCIES, aggregateAverages(executeLatencies, executed));
 
         return ret;
     }
 
     /**
-     * aggregate spout stats
+     * aggregate spout stats.
      *
      * @param statsSeq   a seq of ExecutorStats
      * @param includeSys whether to include system streams
@@ -767,15 +762,15 @@ public class StatsUtil {
             completeLatencies.add(stats.get_specific().get_spout().get_complete_ms_avg());
         }
         ret.putAll(commonStats);
-        putKV(ret, ACKED, aggregateCounts(acked));
-        putKV(ret, FAILED, aggregateCounts(failed));
-        putKV(ret, COMP_LATENCIES, aggregateAverages(completeLatencies, acked));
+        ((Map) ret).put(ACKED, aggregateCounts(acked));
+        ((Map) ret).put(FAILED, aggregateCounts(failed));
+        ((Map) ret).put(COMP_LATENCIES, aggregateAverages(completeLatencies, acked));
 
         return ret;
     }
 
     /**
-     * aggregate common stats from a spout/bolt, called in aggregateSpoutStats/aggregateBoltStats
+     * aggregate common stats from a spout/bolt, called in aggregateSpoutStats/aggregateBoltStats.
      */
     public static <T> Map<String, Map<String, Map<T, Long>>> aggregateCommonStats(List<ExecutorSummary> statsSeq) {
         Map<String, Map<String, Map<T, Long>>> ret = new HashMap<>();
@@ -786,28 +781,28 @@ public class StatsUtil {
             emitted.add(summ.get_stats().get_emitted());
             transferred.add(summ.get_stats().get_transferred());
         }
-        putKV(ret, EMITTED, aggregateCounts(emitted));
-        putKV(ret, TRANSFERRED, aggregateCounts(transferred));
+        ((Map) ret).put(EMITTED, aggregateCounts(emitted));
+        ((Map) ret).put(TRANSFERRED, aggregateCounts(transferred));
 
         return ret;
     }
 
     /**
-     * filter system streams of aggregated spout/bolt stats if necessary
+     * filter system streams of aggregated spout/bolt stats if necessary.
      */
     public static <T> Map<String, Map<String, Map<T, Long>>> preProcessStreamSummary(
         Map<String, Map<String, Map<T, Long>>> streamSummary, boolean includeSys) {
         Map<String, Map<T, Long>> emitted = ClientStatsUtil.getMapByKey(streamSummary, EMITTED);
         Map<String, Map<T, Long>> transferred = ClientStatsUtil.getMapByKey(streamSummary, TRANSFERRED);
 
-        putKV(streamSummary, EMITTED, filterSysStreams(emitted, includeSys));
-        putKV(streamSummary, TRANSFERRED, filterSysStreams(transferred, includeSys));
+        ((Map) streamSummary).put(EMITTED, filterSysStreams(emitted, includeSys));
+        ((Map) streamSummary).put(TRANSFERRED, filterSysStreams(transferred, includeSys));
 
         return streamSummary;
     }
 
     /**
-     * aggregate count streams by window
+     * aggregate count streams by window.
      *
      * @param stats a Map of value: {win -> stream -> value}
      * @return a Map of value: {win -> value}
@@ -817,7 +812,7 @@ public class StatsUtil {
         Map<String, Long> ret = new HashMap<>();
         for (Map.Entry<String, Map<K, V>> entry : stats.entrySet()) {
             Map<K, V> value = entry.getValue();
-            long sum = 0l;
+            long sum = 0L;
             for (V num : value.values()) {
                 sum += num.longValue();
             }
@@ -827,7 +822,7 @@ public class StatsUtil {
     }
 
     /**
-     * compute an weighted average from a list of average maps and a corresponding count maps extracted from a list of ExecutorSummary
+     * compute an weighted average from a list of average maps and a corresponding count maps extracted from a list of ExecutorSummary.
      *
      * @param avgSeq   a list of {win -> global stream id -> avg value}
      * @param countSeq a list of {win -> global stream id -> count value}
@@ -854,7 +849,7 @@ public class StatsUtil {
     }
 
     /**
-     * aggregate weighted average of all streams
+     * aggregate weighted average of all streams.
      *
      * @param avgs   a Map of {win -> stream -> average value}
      * @param counts a Map of {win -> stream -> count value}
@@ -869,7 +864,7 @@ public class StatsUtil {
             String win = entry.getKey();
 
             double avgTotal = 0.0;
-            long cntTotal = 0l;
+            long cntTotal = 0L;
             Map<K, List> inner = entry.getValue();
             for (K kk : inner.keySet()) {
                 List vv = inner.get(kk);
@@ -883,7 +878,7 @@ public class StatsUtil {
     }
 
     /**
-     * aggregates spout stream stats, returns a Map of {metric -> win -> aggregated value}
+     * aggregates spout stream stats, returns a Map of {metric -> win -> aggregated value}.
      */
     public static Map<String, Map> spoutStreamsStats(List<ExecutorSummary> summs, boolean includeSys) {
         if (summs == null) {
@@ -895,7 +890,7 @@ public class StatsUtil {
     }
 
     /**
-     * aggregates bolt stream stats, returns a Map of {metric -> win -> aggregated value}
+     * aggregates bolt stream stats, returns a Map of {metric -> win -> aggregated value}.
      */
     public static Map<String, Map> boltStreamsStats(List<ExecutorSummary> summs, boolean includeSys) {
         if (summs == null) {
@@ -906,7 +901,7 @@ public class StatsUtil {
     }
 
     /**
-     * aggregate all spout streams
+     * aggregate all spout streams.
      *
      * @param stats a Map of {metric -> win -> stream id -> value}
      * @return a Map of {metric -> win -> aggregated value}
@@ -914,37 +909,37 @@ public class StatsUtil {
     public static Map<String, Map> aggregateSpoutStreams(Map<String, Map> stats) {
         // actual ret is Map<String, Map<String, Long/Double>>
         Map<String, Map> ret = new HashMap<>();
-        putKV(ret, ACKED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED)));
-        putKV(ret, FAILED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)));
-        putKV(ret, EMITTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EMITTED)));
-        putKV(ret, TRANSFERRED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED)));
-        putKV(ret, COMP_LATENCIES, aggregateAvgStreams(
+        ((Map) ret).put(ACKED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED)));
+        ((Map) ret).put(FAILED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)));
+        ((Map) ret).put(EMITTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EMITTED)));
+        ((Map) ret).put(TRANSFERRED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED)));
+        ((Map) ret).put(COMP_LATENCIES, aggregateAvgStreams(
             ClientStatsUtil.getMapByKey(stats, COMP_LATENCIES), ClientStatsUtil.getMapByKey(stats, ACKED)));
         return ret;
     }
 
     /**
-     * aggregate all bolt streams
+     * aggregate all bolt streams.
      *
      * @param stats a Map of {metric -> win -> stream id -> value}
      * @return a Map of {metric -> win -> aggregated value}
      */
     public static Map<String, Map> aggregateBoltStreams(Map<String, Map> stats) {
         Map<String, Map> ret = new HashMap<>();
-        putKV(ret, ACKED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED)));
-        putKV(ret, FAILED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)));
-        putKV(ret, EMITTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EMITTED)));
-        putKV(ret, TRANSFERRED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED)));
-        putKV(ret, EXECUTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EXECUTED)));
-        putKV(ret, PROC_LATENCIES, aggregateAvgStreams(
+        ((Map) ret).put(ACKED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED)));
+        ((Map) ret).put(FAILED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, FAILED)));
+        ((Map) ret).put(EMITTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EMITTED)));
+        ((Map) ret).put(TRANSFERRED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, TRANSFERRED)));
+        ((Map) ret).put(EXECUTED, aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, EXECUTED)));
+        ((Map) ret).put(PROC_LATENCIES, aggregateAvgStreams(
             ClientStatsUtil.getMapByKey(stats, PROC_LATENCIES), ClientStatsUtil.getMapByKey(stats, ACKED)));
-        putKV(ret, EXEC_LATENCIES, aggregateAvgStreams(
+        ((Map) ret).put(EXEC_LATENCIES, aggregateAvgStreams(
             ClientStatsUtil.getMapByKey(stats, EXEC_LATENCIES), ClientStatsUtil.getMapByKey(stats, EXECUTED)));
         return ret;
     }
 
     /**
-     * aggregate windowed stats from a bolt executor stats with a Map of accumulated stats
+     * aggregate windowed stats from a bolt executor stats with a Map of accumulated stats.
      */
     public static Map<String, Object> aggBoltExecWinStats(
         Map<String, Object> accStats, Map<String, Object> newStats, boolean includeSys) {
@@ -966,29 +961,29 @@ public class StatsUtil {
         Map<String, Map<String, Long>> emitted = ClientStatsUtil.getMapByKey(newStats, EMITTED);
         Map<String, Long> win2emitted = mergeWithSumLong(aggregateCountStreams(filterSysStreams(emitted, includeSys)),
                                                          ClientStatsUtil.getMapByKey(accStats, WIN_TO_EMITTED));
-        putKV(ret, WIN_TO_EMITTED, win2emitted);
+        ret.put(WIN_TO_EMITTED, win2emitted);
 
         Map<String, Map<String, Long>> transferred = ClientStatsUtil.getMapByKey(newStats, TRANSFERRED);
         Map<String, Long> win2transferred = mergeWithSumLong(aggregateCountStreams(filterSysStreams(transferred, includeSys)),
                                                              ClientStatsUtil.getMapByKey(accStats, WIN_TO_TRANSFERRED));
-        putKV(ret, WIN_TO_TRANSFERRED, win2transferred);
+        ret.put(WIN_TO_TRANSFERRED, win2transferred);
 
-        putKV(ret, WIN_TO_EXEC_LAT_WGT_AVG, mergeWithSumDouble(
+        ret.put(WIN_TO_EXEC_LAT_WGT_AVG, mergeWithSumDouble(
             ClientStatsUtil.getMapByKey(accStats, WIN_TO_EXEC_LAT_WGT_AVG), win2execLatWgtAvg));
-        putKV(ret, WIN_TO_PROC_LAT_WGT_AVG, mergeWithSumDouble(
+        ret.put(WIN_TO_PROC_LAT_WGT_AVG, mergeWithSumDouble(
             ClientStatsUtil.getMapByKey(accStats, WIN_TO_PROC_LAT_WGT_AVG), win2procLatWgtAvg));
-        putKV(ret, WIN_TO_EXECUTED, mergeWithSumLong(
+        ret.put(WIN_TO_EXECUTED, mergeWithSumLong(
             ClientStatsUtil.getMapByKey(accStats, WIN_TO_EXECUTED), win2executed));
-        putKV(ret, WIN_TO_ACKED, mergeWithSumLong(
+        ret.put(WIN_TO_ACKED, mergeWithSumLong(
             aggregateCountStreams(ClientStatsUtil.getMapByKey(newStats, ACKED)), ClientStatsUtil.getMapByKey(accStats, WIN_TO_ACKED)));
-        putKV(ret, WIN_TO_FAILED, mergeWithSumLong(
+        ret.put(WIN_TO_FAILED, mergeWithSumLong(
             aggregateCountStreams(ClientStatsUtil.getMapByKey(newStats, FAILED)), ClientStatsUtil.getMapByKey(accStats, WIN_TO_FAILED)));
 
         return ret;
     }
 
     /**
-     * aggregate windowed stats from a spout executor stats with a Map of accumulated stats
+     * aggregate windowed stats from a spout executor stats with a Map of accumulated stats.
      */
     public static Map<String, Object> aggSpoutExecWinStats(
         Map<String, Object> accStats, Map<String, Object> beat, boolean includeSys) {
@@ -1008,18 +1003,18 @@ public class StatsUtil {
         Map<String, Map<String, Long>> emitted = ClientStatsUtil.getMapByKey(beat, EMITTED);
         Map<String, Long> win2emitted = mergeWithSumLong(aggregateCountStreams(filterSysStreams(emitted, includeSys)),
                                                          ClientStatsUtil.getMapByKey(accStats, WIN_TO_EMITTED));
-        putKV(ret, WIN_TO_EMITTED, win2emitted);
+        ret.put(WIN_TO_EMITTED, win2emitted);
 
         Map<String, Map<String, Long>> transferred = ClientStatsUtil.getMapByKey(beat, TRANSFERRED);
         Map<String, Long> win2transferred = mergeWithSumLong(aggregateCountStreams(filterSysStreams(transferred, includeSys)),
                                                              ClientStatsUtil.getMapByKey(accStats, WIN_TO_TRANSFERRED));
-        putKV(ret, WIN_TO_TRANSFERRED, win2transferred);
+        ret.put(WIN_TO_TRANSFERRED, win2transferred);
 
-        putKV(ret, WIN_TO_COMP_LAT_WGT_AVG, mergeWithSumDouble(
+        ret.put(WIN_TO_COMP_LAT_WGT_AVG, mergeWithSumDouble(
             ClientStatsUtil.getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG), win2compLatWgtAvg));
-        putKV(ret, WIN_TO_ACKED, mergeWithSumLong(
+        ret.put(WIN_TO_ACKED, mergeWithSumLong(
             ClientStatsUtil.getMapByKey(accStats, WIN_TO_ACKED), win2acked));
-        putKV(ret, WIN_TO_FAILED, mergeWithSumLong(
+        ret.put(WIN_TO_FAILED, mergeWithSumLong(
             aggregateCountStreams(ClientStatsUtil.getMapByKey(beat, FAILED)), ClientStatsUtil.getMapByKey(accStats, WIN_TO_FAILED)));
 
         return ret;
@@ -1027,7 +1022,7 @@ public class StatsUtil {
 
 
     /**
-     * aggregate a list of count maps into one map
+     * aggregate a list of count maps into one map.
      *
      * @param countsSeq a seq of {win -> GlobalStreamId -> value}
      */
@@ -1056,30 +1051,33 @@ public class StatsUtil {
         return ret;
     }
 
+    /**
+     * Aggregate the stats for a component over a given window of time.
+     */
     public static Map<String, Object> aggregateCompStats(
         String window, boolean includeSys, List<Map<String, Object>> beats, String compType) {
-        boolean isSpout = ClientStatsUtil.SPOUT.equals(compType);
 
         Map<String, Object> initVal = new HashMap<>();
-        putKV(initVal, WIN_TO_ACKED, new HashMap());
-        putKV(initVal, WIN_TO_FAILED, new HashMap());
-        putKV(initVal, WIN_TO_EMITTED, new HashMap());
-        putKV(initVal, WIN_TO_TRANSFERRED, new HashMap());
+        initVal.put(WIN_TO_ACKED, new HashMap());
+        initVal.put(WIN_TO_FAILED, new HashMap());
+        initVal.put(WIN_TO_EMITTED, new HashMap());
+        initVal.put(WIN_TO_TRANSFERRED, new HashMap());
 
         Map<String, Object> stats = new HashMap();
-        putKV(stats, ClientStatsUtil.EXECUTOR_STATS, new ArrayList());
-        putKV(stats, SID_TO_OUT_STATS, new HashMap());
+        stats.put(ClientStatsUtil.EXECUTOR_STATS, new ArrayList());
+        stats.put(SID_TO_OUT_STATS, new HashMap());
+        boolean isSpout = ClientStatsUtil.SPOUT.equals(compType);
         if (isSpout) {
-            putKV(initVal, TYPE, ClientStatsUtil.SPOUT);
-            putKV(initVal, WIN_TO_COMP_LAT_WGT_AVG, new HashMap());
+            initVal.put(TYPE, ClientStatsUtil.SPOUT);
+            initVal.put(WIN_TO_COMP_LAT_WGT_AVG, new HashMap());
         } else {
-            putKV(initVal, TYPE, ClientStatsUtil.BOLT);
-            putKV(initVal, WIN_TO_EXECUTED, new HashMap());
-            putKV(stats, CID_SID_TO_IN_STATS, new HashMap());
-            putKV(initVal, WIN_TO_EXEC_LAT_WGT_AVG, new HashMap());
-            putKV(initVal, WIN_TO_PROC_LAT_WGT_AVG, new HashMap());
+            initVal.put(TYPE, ClientStatsUtil.BOLT);
+            initVal.put(WIN_TO_EXECUTED, new HashMap());
+            stats.put(CID_SID_TO_IN_STATS, new HashMap());
+            initVal.put(WIN_TO_EXEC_LAT_WGT_AVG, new HashMap());
+            initVal.put(WIN_TO_PROC_LAT_WGT_AVG, new HashMap());
         }
-        putKV(initVal, STATS, stats);
+        initVal.put(STATS, stats);
 
         // iterate through all executor heartbeats
         for (Map<String, Object> beat : beats) {
@@ -1098,16 +1096,16 @@ public class StatsUtil {
         Map<String, Object> ret = new HashMap<>();
         if (ClientStatsUtil.SPOUT.equals(compType)) {
             ret.putAll(aggSpoutExecWinStats(accStats, ClientStatsUtil.getMapByKey(beat, STATS), includeSys));
-            putKV(ret, STATS, mergeAggCompStatsCompPageSpout(
-                ClientStatsUtil.getMapByKey(accStats, STATS),
-                aggPreMergeCompPageSpout(beat, window, includeSys)));
+            ret.put(STATS, mergeAggCompStatsCompPageSpout(
+                    ClientStatsUtil.getMapByKey(accStats, STATS),
+                    aggPreMergeCompPageSpout(beat, window, includeSys)));
         } else {
             ret.putAll(aggBoltExecWinStats(accStats, ClientStatsUtil.getMapByKey(beat, STATS), includeSys));
-            putKV(ret, STATS, mergeAggCompStatsCompPageBolt(
-                ClientStatsUtil.getMapByKey(accStats, STATS),
-                aggPreMergeCompPageBolt(beat, window, includeSys)));
+            ret.put(STATS, mergeAggCompStatsCompPageBolt(
+                    ClientStatsUtil.getMapByKey(accStats, STATS),
+                    aggPreMergeCompPageBolt(beat, window, includeSys)));
         }
-        putKV(ret, TYPE, compType);
+        ret.put(TYPE, compType);
 
         return ret;
     }
@@ -1127,14 +1125,14 @@ public class StatsUtil {
         Integer numExecutors = getByKeyOr0(stats, NUM_EXECUTORS).intValue();
         Map outStats = ClientStatsUtil.getMapByKey(stats, SID_TO_OUT_STATS);
 
-        putKV(ret, TYPE, compType);
-        putKV(ret, NUM_TASKS, numTasks);
-        putKV(ret, NUM_EXECUTORS, numExecutors);
-        putKV(ret, ClientStatsUtil.EXECUTOR_STATS, stats.get(ClientStatsUtil.EXECUTOR_STATS));
-        putKV(ret, WIN_TO_EMITTED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_EMITTED)));
-        putKV(ret, WIN_TO_TRANSFERRED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_TRANSFERRED)));
-        putKV(ret, WIN_TO_ACKED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_ACKED)));
-        putKV(ret, WIN_TO_FAILED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_FAILED)));
+        ret.put(TYPE, compType);
+        ret.put(NUM_TASKS, numTasks);
+        ret.put(NUM_EXECUTORS, numExecutors);
+        ret.put(ClientStatsUtil.EXECUTOR_STATS, stats.get(ClientStatsUtil.EXECUTOR_STATS));
+        ret.put(WIN_TO_EMITTED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_EMITTED)));
+        ret.put(WIN_TO_TRANSFERRED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_TRANSFERRED)));
+        ret.put(WIN_TO_ACKED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_ACKED)));
+        ret.put(WIN_TO_FAILED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_FAILED)));
 
         if (ClientStatsUtil.BOLT.equals(compType)) {
             Map inStats = ClientStatsUtil.getMapByKey(stats, CID_SID_TO_IN_STATS);
@@ -1142,30 +1140,29 @@ public class StatsUtil {
             Map inStats2 = new HashMap();
             for (Object o : inStats.entrySet()) {
                 Map.Entry e = (Map.Entry) o;
-                Object k = e.getKey();
                 Map v = (Map) e.getValue();
                 long executed = getByKeyOr0(v, EXECUTED).longValue();
                 if (executed > 0) {
                     double executeLatencyTotal = getByKeyOr0(v, EXEC_LAT_TOTAL).doubleValue();
                     double processLatencyTotal = getByKeyOr0(v, PROC_LAT_TOTAL).doubleValue();
-                    putKV(v, EXEC_LATENCY, executeLatencyTotal / executed);
-                    putKV(v, PROC_LATENCY, processLatencyTotal / executed);
+                    v.put(EXEC_LATENCY, executeLatencyTotal / executed);
+                    v.put(PROC_LATENCY, processLatencyTotal / executed);
                 } else {
-                    putKV(v, EXEC_LATENCY, 0.0);
-                    putKV(v, PROC_LATENCY, 0.0);
+                    v.put(EXEC_LATENCY, 0.0);
+                    v.put(PROC_LATENCY, 0.0);
                 }
-                remove(v, EXEC_LAT_TOTAL);
-                remove(v, PROC_LAT_TOTAL);
-                inStats2.put(k, v);
+                v.remove(EXEC_LAT_TOTAL);
+                v.remove(PROC_LAT_TOTAL);
+                inStats2.put(e.getKey(), v);
             }
-            putKV(ret, CID_SID_TO_IN_STATS, inStats2);
+            ret.put(CID_SID_TO_IN_STATS, inStats2);
 
-            putKV(ret, SID_TO_OUT_STATS, outStats);
-            putKV(ret, WIN_TO_EXECUTED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_EXECUTED)));
-            putKV(ret, WIN_TO_EXEC_LAT, computeWeightedAveragesPerWindow(
-                compStats, WIN_TO_EXEC_LAT_WGT_AVG, WIN_TO_EXECUTED));
-            putKV(ret, WIN_TO_PROC_LAT, computeWeightedAveragesPerWindow(
-                compStats, WIN_TO_PROC_LAT_WGT_AVG, WIN_TO_EXECUTED));
+            ret.put(SID_TO_OUT_STATS, outStats);
+            ret.put(WIN_TO_EXECUTED, mapKeyStr(ClientStatsUtil.getMapByKey(compStats, WIN_TO_EXECUTED)));
+            ret.put(WIN_TO_EXEC_LAT, computeWeightedAveragesPerWindow(
+                    compStats, WIN_TO_EXEC_LAT_WGT_AVG, WIN_TO_EXECUTED));
+            ret.put(WIN_TO_PROC_LAT, computeWeightedAveragesPerWindow(
+                    compStats, WIN_TO_PROC_LAT_WGT_AVG, WIN_TO_EXECUTED));
         } else {
             Map outStats2 = new HashMap();
             for (Object o : outStats.entrySet()) {
@@ -1175,23 +1172,23 @@ public class StatsUtil {
                 long acked = getByKeyOr0(v, ACKED).longValue();
                 if (acked > 0) {
                     double compLatencyTotal = getByKeyOr0(v, COMP_LAT_TOTAL).doubleValue();
-                    putKV(v, COMP_LATENCY, compLatencyTotal / acked);
+                    v.put(COMP_LATENCY, compLatencyTotal / acked);
                 } else {
-                    putKV(v, COMP_LATENCY, 0.0);
+                    v.put(COMP_LATENCY, 0.0);
                 }
-                remove(v, COMP_LAT_TOTAL);
+                v.remove(COMP_LAT_TOTAL);
                 outStats2.put(k, v);
             }
-            putKV(ret, SID_TO_OUT_STATS, outStats2);
-            putKV(ret, WIN_TO_COMP_LAT, computeWeightedAveragesPerWindow(
-                compStats, WIN_TO_COMP_LAT_WGT_AVG, WIN_TO_ACKED));
+            ret.put(SID_TO_OUT_STATS, outStats2);
+            ret.put(WIN_TO_COMP_LAT, computeWeightedAveragesPerWindow(
+                    compStats, WIN_TO_COMP_LAT_WGT_AVG, WIN_TO_ACKED));
         }
 
         return ret;
     }
 
     /**
-     * aggregate component executor stats
+     * aggregate component executor stats.
      *
      * @param exec2hostPort  a Map of {executor -> host+port}
      * @param task2component a Map of {task id -> component}
@@ -1225,7 +1222,6 @@ public class StatsUtil {
      * @param includeSys       whether to include system streams
      * @param userAuthorized   whether the user is authorized to view topology info
      * @param filterSupervisor if not null, only return WorkerSummaries for that supervisor
-     * @return List<WorkerSummary> thrift structures
      */
     public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName,
                                                      Map<Integer, String> task2Component,
@@ -1313,8 +1309,8 @@ public class StatsUtil {
     }
 
     /**
-     * Aggregate statistics per worker for a topology. Optionally filtering on specific supervisors
-     *
+     * Aggregate statistics per worker for a topology. Optionally filtering on specific supervisors.
+     * <br/>
      * Convenience overload when called from the topology page code (in that case we want data for all workers in the topology, not filtered
      * by supervisor)
      *
@@ -1325,7 +1321,6 @@ public class StatsUtil {
      * @param exec2NodePort  a Map of {executor -> host+port}
      * @param includeSys     whether to include system streams
      * @param userAuthorized whether the user is authorized to view topology info
-     * @return List<WorkerSummary> thrift structures
      */
     public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName,
                                                      Map<Integer, String> task2Component,
@@ -1344,7 +1339,7 @@ public class StatsUtil {
     // =====================================================================================
 
     /**
-     * convert thrift executor heartbeats into a java HashMap
+     * convert thrift executor heartbeats into a java HashMap.
      */
     public static Map<List<Integer>, Map<String, Object>> convertExecutorBeats(Map<ExecutorInfo, ExecutorBeat> beats) {
         Map<List<Integer>, Map<String, Object>> ret = new HashMap<>();
@@ -1359,10 +1354,7 @@ public class StatsUtil {
     }
 
     /**
-     * convert {@link SupervisorWorkerHeartbeat} to nimbus local report executor heartbeats
-     *
-     * @param workerHeartbeat
-     * @return
+     * convert {@link SupervisorWorkerHeartbeat} to nimbus local report executor heartbeats.
      */
     public static Map<List<Integer>, Map<String, Object>> convertWorkerBeats(SupervisorWorkerHeartbeat workerHeartbeat) {
         Map<List<Integer>, Map<String, Object>> ret = new HashMap<>();
@@ -1377,7 +1369,7 @@ public class StatsUtil {
     }
 
     /**
-     * convert thrift ExecutorBeat into a java HashMap
+     * convert thrift ExecutorBeat into a java HashMap.
      */
     public static Map<String, Object> convertZkExecutorHb(ExecutorBeat beat) {
         Map<String, Object> ret = new HashMap<>();
@@ -1391,10 +1383,7 @@ public class StatsUtil {
     }
 
     /**
-     * convert a thrift worker heartbeat into a java HashMap
-     *
-     * @param workerHb
-     * @return
+     * convert a thrift worker heartbeat into a java HashMap.
      */
     public static Map<String, Object> convertZkWorkerHb(ClusterWorkerHeartbeat workerHb) {
         Map<String, Object> ret = new HashMap<>();
@@ -1408,7 +1397,7 @@ public class StatsUtil {
     }
 
     /**
-     * convert executors stats into a HashMap, note that ExecutorStats are remained unchanged
+     * convert executors stats into a HashMap, note that ExecutorStats are remained unchanged.
      */
     public static Map<List<Integer>, ExecutorStats> convertExecutorsStats(Map<ExecutorInfo, ExecutorStats> stats) {
         Map<List<Integer>, ExecutorStats> ret = new HashMap<>();
@@ -1423,21 +1412,21 @@ public class StatsUtil {
     }
 
     /**
-     * convert thrift ExecutorStats structure into a java HashMap
+     * convert thrift ExecutorStats structure into a java HashMap.
      */
     public static Map<String, Object> convertExecutorStats(ExecutorStats stats) {
         Map<String, Object> ret = new HashMap<>();
 
-        putKV(ret, EMITTED, stats.get_emitted());
-        putKV(ret, TRANSFERRED, stats.get_transferred());
-        putKV(ret, RATE, stats.get_rate());
+        ret.put(EMITTED, stats.get_emitted());
+        ret.put(TRANSFERRED, stats.get_transferred());
+        ret.put(RATE, stats.get_rate());
 
         if (stats.get_specific().is_set_bolt()) {
             ret.putAll(convertSpecificStats(stats.get_specific().get_bolt()));
-            putKV(ret, TYPE, ClientStatsUtil.BOLT);
+            ret.put(TYPE, ClientStatsUtil.BOLT);
         } else {
             ret.putAll(convertSpecificStats(stats.get_specific().get_spout()));
-            putKV(ret, TYPE, ClientStatsUtil.SPOUT);
+            ret.put(TYPE, ClientStatsUtil.SPOUT);
         }
 
         return ret;
@@ -1445,9 +1434,9 @@ public class StatsUtil {
 
     private static Map<String, Object> convertSpecificStats(SpoutStats stats) {
         Map<String, Object> ret = new HashMap<>();
-        putKV(ret, ACKED, stats.get_acked());
-        putKV(ret, FAILED, stats.get_failed());
-        putKV(ret, COMP_LATENCIES, stats.get_complete_ms_avg());
+        ret.put(ACKED, stats.get_acked());
+        ret.put(FAILED, stats.get_failed());
+        ret.put(COMP_LATENCIES, stats.get_complete_ms_avg());
 
         return ret;
     }
@@ -1461,17 +1450,17 @@ public class StatsUtil {
         Map executed = ClientStatsUtil.windowSetConverter(stats.get_executed(), FROM_GSID, ClientStatsUtil.IDENTITY);
         Map executeAvg = ClientStatsUtil.windowSetConverter(stats.get_execute_ms_avg(), FROM_GSID, ClientStatsUtil.IDENTITY);
 
-        putKV(ret, ACKED, acked);
-        putKV(ret, FAILED, failed);
-        putKV(ret, PROC_LATENCIES, processAvg);
-        putKV(ret, EXECUTED, executed);
-        putKV(ret, EXEC_LATENCIES, executeAvg);
+        ret.put(ACKED, acked);
+        ret.put(FAILED, failed);
+        ret.put(PROC_LATENCIES, processAvg);
+        ret.put(EXECUTED, executed);
+        ret.put(EXEC_LATENCIES, executeAvg);
 
         return ret;
     }
 
     /**
-     * extract a list of host port info for specified component
+     * extract a list of host port info for specified component.
      *
      * @param exec2hostPort  {executor -> host+port}
      * @param task2component {task id -> component}
@@ -1499,8 +1488,8 @@ public class StatsUtil {
 
         for (List hostPort : hostPorts) {
             Map<String, Object> m = new HashMap<>();
-            putKV(m, HOST, hostPort.get(0));
-            putKV(m, PORT, hostPort.get(1));
+            m.put(HOST, hostPort.get(0));
+            m.put(PORT, hostPort.get(1));
             ret.add(m);
         }
 
@@ -1513,7 +1502,7 @@ public class StatsUtil {
     // =====================================================================================
 
     /**
-     * extracts a list of executor data from heart beats
+     * extracts a list of executor data from heart beats.
      */
     public static List<Map<String, Object>> extractDataFromHb(Map executor2hostPort, Map task2component,
                                                               Map<List<Integer>, Map<String, Object>> beats,
@@ -1521,6 +1510,9 @@ public class StatsUtil {
         return extractDataFromHb(executor2hostPort, task2component, beats, includeSys, topology, null);
     }
 
+    /**
+     * extracts a list of executor data from heart beats.
+     */
     public static List<Map<String, Object>> extractDataFromHb(Map executor2hostPort, Map task2component,
                                                               Map<List<Integer>, Map<String, Object>> beats,
                                                               boolean includeSys, StormTopology topology, String compId) {
@@ -1547,21 +1539,21 @@ public class StatsUtil {
 
             Map<String, Object> m = new HashMap<>();
             if ((compId == null || compId.equals(id)) && (includeSys || !Utils.isSystemId(id))) {
-                putKV(m, "exec-id", entry.getKey());
-                putKV(m, "comp-id", id);
-                putKV(m, NUM_TASKS, end - start + 1);
-                putKV(m, HOST, host);
-                putKV(m, PORT, port);
+                m.put("exec-id", entry.getKey());
+                m.put("comp-id", id);
+                m.put(NUM_TASKS, end - start + 1);
+                m.put(HOST, host);
+                m.put(PORT, port);
 
                 Map stats = ClientStatsUtil.getMapByKey(beat, STATS);
-                putKV(m, ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
-                putKV(m, STATS, stats);
+                m.put(ClientStatsUtil.UPTIME, beat.get(ClientStatsUtil.UPTIME));
+                m.put(STATS, stats);
 
                 String type = componentType(topology, compId);
                 if (type != null) {
-                    putKV(m, TYPE, type);
+                    m.put(TYPE, type);
                 } else {
-                    putKV(m, TYPE, stats.get(TYPE));
+                    m.put(TYPE, stats.get(TYPE));
                 }
                 ret.add(m);
             }
@@ -1570,7 +1562,7 @@ public class StatsUtil {
     }
 
     /**
-     * compute weighted avg from a Map of stats and given avg/count keys
+     * compute weighted avg from a Map of stats and given avg/count keys.
      *
      * @param accData    a Map of {win -> key -> value}
      * @param wgtAvgKey  weighted average key
@@ -1593,7 +1585,7 @@ public class StatsUtil {
     }
 
     /**
-     * computes max bolt capacity
+     * computes max bolt capacity.
      *
      * @param executorSumms a list of ExecutorSummary
      * @return max bolt capacity
@@ -1609,6 +1601,11 @@ public class StatsUtil {
         return max;
     }
 
+    /**
+     * Compute the capacity of a executor. approximation of the % of time spent doing real work.
+     * @param summary the stats for the executor.
+     * @return the capacity of the executor.
+     */
     public static double computeExecutorCapacity(ExecutorSummary summary) {
         ExecutorStats stats = summary.get_stats();
         if (stats == null) {
@@ -1633,7 +1630,7 @@ public class StatsUtil {
     }
 
     /**
-     * filter ExecutorSummary whose stats is null
+     * filter ExecutorSummary whose stats is null.
      *
      * @param summs a list of ExecutorSummary
      * @return filtered summs
@@ -1687,7 +1684,7 @@ public class StatsUtil {
     }
 
     /**
-     * same as clojure's (merge-with merge m1 m2)
+     * same as clojure's (merge-with merge m1 m2).
      */
     private static Map mergeMaps(Map m1, Map m2) {
         if (m2 == null) {
@@ -1709,7 +1706,7 @@ public class StatsUtil {
 
 
     /**
-     * filter system streams from stats
+     * filter system streams from stats.
      *
      * @param stream2stat { stream id -> value }
      * @param includeSys  whether to filter system streams
@@ -1729,7 +1726,7 @@ public class StatsUtil {
     }
 
     /**
-     * filter system streams from stats
+     * filter system streams from stats.
      *
      * @param stats      { win -> stream id -> value }
      * @param includeSys whether to filter system streams
@@ -1753,7 +1750,7 @@ public class StatsUtil {
     }
 
     /**
-     * equals to clojure's: (merge-with (partial merge-with sum-or-0) acc-out spout-out)
+     * equals to clojure's: (merge-with (partial merge-with sum-or-0) acc-out spout-out).
      */
     private static <K1, K2> Map<K1, Map<K2, Number>> fullMergeWithSum(Map<K1, Map<K2, ?>> m1,
                                                                       Map<K1, Map<K2, ?>> m2) {
@@ -1767,7 +1764,8 @@ public class StatsUtil {
 
         Map<K1, Map<K2, Number>> ret = new HashMap<>();
         for (K1 k : allKeys) {
-            Map<K2, ?> mm1 = null, mm2 = null;
+            Map<K2, ?> mm1 = null;
+            Map<K2, ?> mm2 = null;
             if (m1 != null) {
                 mm1 = m1.get(k);
             }
@@ -1842,7 +1840,7 @@ public class StatsUtil {
     }
 
     /**
-     * this method merges 2 two-level-deep maps, which is different from mergeWithSum, and we expect the two maps have the same keys
+     * this method merges 2 two-level-deep maps, which is different from mergeWithSum, and we expect the two maps have the same keys.
      */
     private static <K> Map<String, Map<K, List>> mergeWithAddPair(Map<String, Map<K, List>> m1,
                                                                   Map<String, Map<K, List>> m2) {
@@ -1892,10 +1890,8 @@ public class StatsUtil {
 
     /**
      * Used for local test.
-     *
-     * @return
      */
-    public static SupervisorWorkerHeartbeat thriftifyRPCWorkerHb(String stormId, List<Long> executorId) {
+    public static SupervisorWorkerHeartbeat thriftifyRpcWorkerHb(String stormId, List<Long> executorId) {
         SupervisorWorkerHeartbeat supervisorWorkerHeartbeat = new SupervisorWorkerHeartbeat();
         supervisorWorkerHeartbeat.set_storm_id(stormId);
         supervisorWorkerHeartbeat
@@ -1936,8 +1932,6 @@ public class StatsUtil {
     }
 
     private static ExecutorAggregateStats thriftifyExecAggStats(String compId, String compType, Map m) {
-        ExecutorAggregateStats stats = new ExecutorAggregateStats();
-
         ExecutorSummary executorSummary = new ExecutorSummary();
         List executor = (List) m.get(EXECUTOR_ID);
         executorSummary.set_executor_info(new ExecutorInfo(((Number) executor.get(0)).intValue(),
@@ -1947,6 +1941,7 @@ public class StatsUtil {
         executorSummary.set_port(getByKeyOr0(m, PORT).intValue());
         int uptime = getByKeyOr0(m, ClientStatsUtil.UPTIME).intValue();
         executorSummary.set_uptime_secs(uptime);
+        ExecutorAggregateStats stats = new ExecutorAggregateStats();
         stats.set_exec_summary(executorSummary);
 
         if (compType.equals(ClientStatsUtil.SPOUT)) {
@@ -2003,20 +1998,20 @@ public class StatsUtil {
         ret.set_component_id(compId);
 
         Map win2stats = new HashMap();
-        putKV(win2stats, EMITTED, ClientStatsUtil.getMapByKey(data, WIN_TO_EMITTED));
-        putKV(win2stats, TRANSFERRED, ClientStatsUtil.getMapByKey(data, WIN_TO_TRANSFERRED));
-        putKV(win2stats, ACKED, ClientStatsUtil.getMapByKey(data, WIN_TO_ACKED));
-        putKV(win2stats, FAILED, ClientStatsUtil.getMapByKey(data, WIN_TO_FAILED));
+        win2stats.put(EMITTED, ClientStatsUtil.getMapByKey(data, WIN_TO_EMITTED));
+        win2stats.put(TRANSFERRED, ClientStatsUtil.getMapByKey(data, WIN_TO_TRANSFERRED));
+        win2stats.put(ACKED, ClientStatsUtil.getMapByKey(data, WIN_TO_ACKED));
+        win2stats.put(FAILED, ClientStatsUtil.getMapByKey(data, WIN_TO_FAILED));
 
         String compType = (String) data.get(TYPE);
         if (compType.equals(ClientStatsUtil.SPOUT)) {
             ret.set_component_type(ComponentType.SPOUT);
-            putKV(win2stats, COMP_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_COMP_LAT));
+            win2stats.put(COMP_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_COMP_LAT));
         } else {
             ret.set_component_type(ComponentType.BOLT);
-            putKV(win2stats, EXEC_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_EXEC_LAT));
-            putKV(win2stats, PROC_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_PROC_LAT));
-            putKV(win2stats, EXECUTED, ClientStatsUtil.getMapByKey(data, WIN_TO_EXECUTED));
+            win2stats.put(EXEC_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_EXEC_LAT));
+            win2stats.put(PROC_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_PROC_LAT));
+            win2stats.put(EXECUTED, ClientStatsUtil.getMapByKey(data, WIN_TO_EXECUTED));
         }
         win2stats = swapMapOrder(win2stats);
 
@@ -2028,7 +2023,8 @@ public class StatsUtil {
             }
         }
 
-        Map gsid2inputStats, sid2outputStats;
+        Map gsid2inputStats;
+        Map sid2outputStats;
         if (compType.equals(ClientStatsUtil.SPOUT)) {
             Map tmp = new HashMap();
             for (Object k : win2stats.keySet()) {
@@ -2058,20 +2054,11 @@ public class StatsUtil {
         return ret;
     }
 
-    public static Map thriftifyStats(List stats) {
-        Map ret = new HashMap();
-        for (Object o : stats) {
-            List stat = (List) o;
-            List executor = (List) stat.get(0);
-            int start = ((Number) executor.get(0)).intValue();
-            int end = ((Number) executor.get(1)).intValue();
-            Map executorStat = (Map) stat.get(1);
-            ExecutorInfo executorInfo = new ExecutorInfo(start, end);
-            ret.put(executorInfo, thriftifyExecutorStats(executorStat));
-        }
-        return ret;
-    }
-
+    /**
+     * Convert Executor stats to thrift data structure.
+     * @param stats the stats in the form of a map.
+     * @return teh thrift structure for the stats.
+     */
     public static ExecutorStats thriftifyExecutorStats(Map stats) {
         ExecutorStats ret = new ExecutorStats();
         ExecutorSpecificStats specificStats = thriftifySpecificStats(stats);
@@ -2090,17 +2077,23 @@ public class StatsUtil {
         String compType = (String) stats.get(TYPE);
         if (ClientStatsUtil.BOLT.equals(compType)) {
             BoltStats boltStats = new BoltStats();
-            boltStats.set_acked(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, ACKED), ClientStatsUtil.TO_GSID, TO_STRING));
-            boltStats.set_executed(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, EXECUTED), ClientStatsUtil.TO_GSID, TO_STRING));
-            boltStats.set_execute_ms_avg(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, EXEC_LATENCIES), ClientStatsUtil.TO_GSID, TO_STRING));
-            boltStats.set_failed(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, FAILED), ClientStatsUtil.TO_GSID, TO_STRING));
-            boltStats.set_process_ms_avg(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, PROC_LATENCIES), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_acked(
+                ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, ACKED), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_executed(
+                ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, EXECUTED), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_execute_ms_avg(
+                ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, EXEC_LATENCIES), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_failed(
+                ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, FAILED), ClientStatsUtil.TO_GSID, TO_STRING));
+            boltStats.set_process_ms_avg(
+                ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, PROC_LATENCIES), ClientStatsUtil.TO_GSID, TO_STRING));
             specificStats.set_bolt(boltStats);
         } else {
             SpoutStats spoutStats = new SpoutStats();
             spoutStats.set_acked(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, ACKED), TO_STRING, TO_STRING));
             spoutStats.set_failed(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, FAILED), TO_STRING, TO_STRING));
-            spoutStats.set_complete_ms_avg(ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, COMP_LATENCIES), TO_STRING, TO_STRING));
+            spoutStats.set_complete_ms_avg(
+                ClientStatsUtil.windowSetConverter(ClientStatsUtil.getMapByKey(stats, COMP_LATENCIES), TO_STRING, TO_STRING));
             specificStats.set_spout(spoutStats);
         }
         return specificStats;
@@ -2116,15 +2109,15 @@ public class StatsUtil {
     }
 
     /**
-     * Returns true if x is a number that is not NaN or Infinity, false otherwise
+     * Returns true if x is a number that is not NaN or Infinity, false otherwise.
      */
     private static boolean isValidNumber(Object x) {
-        return x != null && x instanceof Number &&
-               !Double.isNaN(((Number) x).doubleValue()) &&
-               !Double.isInfinite(((Number) x).doubleValue());
+        return x != null && x instanceof Number
+            && !Double.isNaN(((Number) x).doubleValue())
+            && !Double.isInfinite(((Number) x).doubleValue());
     }
 
-    /**
+    /*
      * the value of m is as follows:
      * <pre>
      * #org.apache.storm.stats.CommonStats {
@@ -2209,6 +2202,12 @@ public class StatsUtil {
         return productOr0(id2Avg.get(key), id2num.get(key));
     }
 
+    /**
+     * Get the coponenet type for a give id.
+     * @param topology the topology this is a part of.
+     * @param compId the id of the component.
+     * @return the type as a String "BOLT" or "SPOUT".
+     */
     public static String componentType(StormTopology topology, String compId) {
         if (compId == null) {
             return null;
@@ -2219,14 +2218,6 @@ public class StatsUtil {
             return ClientStatsUtil.BOLT;
         }
         return ClientStatsUtil.SPOUT;
-    }
-
-    public static void putKV(Map map, String k, Object v) {
-        map.put(k, v);
-    }
-
-    private static void remove(Map map, String k) {
-        map.remove(k);
     }
 
     private static <K, V extends Number> long sumValues(Map<K, V> m) {
@@ -2293,6 +2284,7 @@ public class StatsUtil {
     }
 
     /**
+     * Expand the count/average out into total, count.
      * @param avgs   a HashMap of values: { win -> GlobalStreamId -> value }
      * @param counts a HashMap of values: { win -> GlobalStreamId -> value }
      * @return a HashMap of values: {win -> GlobalStreamId -> [cnt*avg, cnt]}
@@ -2320,7 +2312,7 @@ public class StatsUtil {
     }
 
     /**
-     * first zip the two seqs, then do expand-average, then merge with sum
+     * first zip the two seqs, then do expand-average, then merge with sum.
      *
      * @param avgSeq   list of avgs like: [{win -> GlobalStreamId -> value}, ...]
      * @param countSeq list of counts like [{win -> GlobalStreamId -> value}, ...]
@@ -2347,6 +2339,11 @@ public class StatsUtil {
         return t / c;
     }
 
+    /**
+     * Convert a float to a string for display.
+     * @param n the value to format.
+     * @return the string ready for display.
+     */
     public static String floatStr(Double n) {
         if (n == null) {
             return "0";

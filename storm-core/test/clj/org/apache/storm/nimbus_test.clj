@@ -171,7 +171,7 @@
 
     (.workerHeartbeat state storm-id node port
       (ClientStatsUtil/thriftifyZkWorkerHb (ClientStatsUtil/mkZkWorkerHb storm-id stats (int 10))))
-    (.sendSupervisorWorkerHeartbeat (.getNimbus cluster) (StatsUtil/thriftifyRPCWorkerHb storm-id executor))))
+    (.sendSupervisorWorkerHeartbeat (.getNimbus cluster) (StatsUtil/thriftifyRpcWorkerHb storm-id executor))))
 
 (defn slot-assignments [cluster storm-id]
   (let [state (.getClusterState cluster)
