@@ -135,7 +135,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             (String) conf.get(DaemonConfig.SUPERVISOR_AUTHORIZER), conf);
         if (authorizationHandler == null && conf.get(DaemonConfig.NIMBUS_AUTHORIZER) != null) {
             throw new IllegalStateException("It looks like authorization is turned on for nimbus but not for the "
-                + "supervisor.... ( " + DaemonConfig.SUPERVISOR_AUTHORIZER + " is not set)");
+                + "supervisor. ( " + DaemonConfig.SUPERVISOR_AUTHORIZER + " is not set)");
         }
 
         iSupervisor.prepare(conf, ServerConfigUtils.supervisorIsupervisorDir(conf));
