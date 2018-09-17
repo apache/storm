@@ -171,7 +171,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
                 <configuration>
-                    <maxAllowedViolations>757</maxAllowedViolations>
+                    <maxAllowedViolations>763</maxAllowedViolations>
                 </configuration>
             </plugin>
             <plugin>
