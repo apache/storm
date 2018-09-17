@@ -53,6 +53,7 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.ui.InvalidRequestException;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
@@ -849,7 +850,7 @@ public class LogviewerLogSearchHandlerTest {
         private LogviewerLogSearchHandler getStubbedSearchHandler() {
             Map<String, Object> stormConf = Utils.readStormConfig();
             LogviewerLogSearchHandler handler = new LogviewerLogSearchHandler(stormConf, topoPath, null,
-                    new ResourceAuthorizer(stormConf));
+                    new ResourceAuthorizer(stormConf), new StormMetricsRegistry());
             handler = spy(handler);
 
             doReturn(logFiles).when(handler).logsForPort(any(), any());
@@ -868,14 +869,14 @@ public class LogviewerLogSearchHandlerTest {
     private static LogviewerLogSearchHandler getSearchHandler() {
         Map<String, Object> stormConf = Utils.readStormConfig();
         return new LogviewerLogSearchHandler(stormConf, null, null,
-                new ResourceAuthorizer(stormConf));
+                new ResourceAuthorizer(stormConf), new StormMetricsRegistry());
     }
 
     private static LogviewerLogSearchHandler getSearchHandlerWithPort(int port) {
         Map<String, Object> stormConf = Utils.readStormConfig();
         stormConf.put(DaemonConfig.LOGVIEWER_PORT, port);
         return new LogviewerLogSearchHandler(stormConf, null, null,
-                new ResourceAuthorizer(stormConf));
+                new ResourceAuthorizer(stormConf), new StormMetricsRegistry());
     }
 
 }

@@ -52,6 +52,9 @@ import org.slf4j.LoggerFactory;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
 import static org.junit.Assert.*;
 
+import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
+
 public class TestGenericResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareStrategy.class);
 
@@ -99,7 +102,7 @@ public class TestGenericResourceAwareStrategy {
 
         Topologies topologies = new Topologies(topo);
 
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, conf);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
 
@@ -187,7 +190,7 @@ public class TestGenericResourceAwareStrategy {
                 genExecsAndComps(stormToplogy), currentTime, "user");
 
         Topologies topologies = new Topologies(topo);
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, conf);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
 
@@ -241,7 +244,7 @@ public class TestGenericResourceAwareStrategy {
 
         //Schedule the simple topology first
         Topologies topologies = new Topologies(tdSimple);
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         rs.schedule(topologies, cluster);
 
         TopologyBuilder builder = topologyBuilder(1, 5, 100, 300);

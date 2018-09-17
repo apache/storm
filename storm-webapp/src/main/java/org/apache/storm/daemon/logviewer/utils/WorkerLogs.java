@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.storm.Config.SUPERVISOR_RUN_WORKER_AS_USER;
 import static org.apache.storm.Config.TOPOLOGY_SUBMITTER_USER;
 
+import com.codahale.metrics.Meter;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -42,6 +43,7 @@ import java.util.stream.Stream;
 import org.apache.storm.daemon.supervisor.ClientSupervisorUtils;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.utils.PathUtil;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
@@ -57,18 +59,25 @@ public class WorkerLogs {
     private static final Logger LOG = LoggerFactory.getLogger(LogCleaner.class);
 
     public static final String WORKER_YAML = "worker.yaml";
+    
+    private final Meter numSetPermissionsExceptions;
+    
     private final Map<String, Object> stormConf;
     private final File logRootDir;
+    private final DirectoryCleaner directoryCleaner;
 
     /**
      * Constructor.
      *
      * @param stormConf storm configuration
      * @param logRootDir the log root directory
+     * @param metricsRegistry The logviewer metrics registry
      */
-    public WorkerLogs(Map<String, Object> stormConf, File logRootDir) {
+    public WorkerLogs(Map<String, Object> stormConf, File logRootDir, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
         this.logRootDir = logRootDir;
+        this.numSetPermissionsExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_SET_PERMISSION_EXCEPTIONS);
+        this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
     }
 
     /**
@@ -92,7 +101,7 @@ public class WorkerLogs {
                         Lists.newArrayList("blob", file.getCanonicalPath()), null,
                         "setup group read permissions for file: " + fileName);
             } catch (IOException e) {
-                ExceptionMeters.NUM_SET_PERMISSION_EXCEPTIONS.mark();
+                numSetPermissionsExceptions.mark();
                 throw e;
             }
         }
@@ -106,7 +115,7 @@ public class WorkerLogs {
         Set<File> topoDirFiles = getAllWorkerDirs();
         if (topoDirFiles != null) {
             for (File portDir : topoDirFiles) {
-                files.addAll(DirectoryCleaner.getFilesForDir(portDir));
+                files.addAll(directoryCleaner.getFilesForDir(portDir));
             }
         }
 

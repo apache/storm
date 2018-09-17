@@ -71,7 +71,7 @@ public class RasBlacklistStrategy extends DefaultBlacklistStrategy {
             //Now we need to free up some resources...
             Map<String, SupervisorDetails> availableSupervisors = cluster.getSupervisors();
             NormalizedResourceOffer shortage = new NormalizedResourceOffer(needed);
-            shortage.remove(available);
+            shortage.remove(available, cluster.getResourceMetrics());
             int shortageSlots = neededSlots - availableSlots;
             LOG.debug("Need {} and {} slots.", needed, neededSlots);
             LOG.debug("Available {} and {} slots.", available, availableSlots);
@@ -86,7 +86,7 @@ public class RasBlacklistStrategy extends DefaultBlacklistStrategy {
                         NormalizedResourcesWithMemory sdAvailable = cluster.getAvailableResources(sd);
                         int sdAvailableSlots = cluster.getAvailablePorts(sd).size();
                         readyToRemove.add(supervisor);
-                        shortage.remove(sdAvailable);
+                        shortage.remove(sdAvailable, cluster.getResourceMetrics());
                         shortageSlots -= sdAvailableSlots;
                         LOG.debug("Releasing {} with {} and {} slots leaving {} and {} slots to go", supervisor,
                             sdAvailable, sdAvailableSlots, shortage, shortageSlots);

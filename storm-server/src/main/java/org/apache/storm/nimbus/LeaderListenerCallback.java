@@ -48,12 +48,14 @@ import org.slf4j.LoggerFactory;
  * A callback function when nimbus gains leadership.
  */
 public class LeaderListenerCallback {
-    private static final Meter numGainedLeader = StormMetricsRegistry.registerMeter("nimbus:num-gained-leadership");
-    private static final Meter numLostLeader = StormMetricsRegistry.registerMeter("nimbus:num-lost-leadership");
     private static final Logger LOG = LoggerFactory.getLogger(LeaderListenerCallback.class);
     private static final String STORM_JAR_SUFFIX = "-stormjar.jar";
     private static final String STORM_CODE_SUFFIX = "-stormcode.ser";
     private static final String STORM_CONF_SUFFIX = "-stormconf.ser";
+    
+    private final Meter numGainedLeader;
+    private final Meter numLostLeader;
+    
     private final BlobStore blobStore;
     private final TopoCache tc;
     private final IStormClusterState clusterState;
@@ -73,7 +75,7 @@ public class LeaderListenerCallback {
      * @param acls zookeeper acls
      */
     public LeaderListenerCallback(Map conf, CuratorFramework zk, LeaderLatch leaderLatch, BlobStore blobStore,
-                                  TopoCache tc, IStormClusterState clusterState, List<ACL> acls) {
+                                  TopoCache tc, IStormClusterState clusterState, List<ACL> acls, StormMetricsRegistry metricsRegistry) {
         this.blobStore = blobStore;
         this.tc = tc;
         this.clusterState = clusterState;
@@ -81,6 +83,8 @@ public class LeaderListenerCallback {
         this.leaderLatch = leaderLatch;
         this.conf = conf;
         this.acls = acls;
+        this.numGainedLeader = metricsRegistry.registerMeter("nimbus:num-gained-leadership");
+        this.numLostLeader = metricsRegistry.registerMeter("nimbus:num-lost-leadership");
     }
 
     /**

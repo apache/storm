@@ -13,12 +13,10 @@
 package org.apache.storm.daemon.metrics.reporters;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Reporter;
-import java.io.Closeable;
 import java.util.Map;
 
 
-public interface PreparableReporter<T extends Reporter & Closeable> {
+public interface PreparableReporter {
     void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf);
 
     void start();

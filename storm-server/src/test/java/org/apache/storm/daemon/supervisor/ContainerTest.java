@@ -42,6 +42,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.storm.metric.StormMetricsRegistry;
+
 public class ContainerTest {
     private static final Joiner PATH_JOIN = Joiner.on(File.separator).skipNulls();
     private static final String DOUBLE_SEP = File.separator + File.separator;
@@ -71,7 +73,7 @@ public class ContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
-                                             "SUPERVISOR", 6628, 8080, la, null, "worker", new HashMap<>(), ops);
+                                             "SUPERVISOR", 6628, 8080, la, null, "worker", new HashMap<>(), ops, new StormMetricsRegistry());
         mc.kill();
         assertEquals(Collections.EMPTY_LIST, mc.killedPids);
         assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
@@ -134,7 +136,7 @@ public class ContainerTest {
         la.set_topology_id(topoId);
         la.set_owner(user);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
-                                             "SUPERVISOR", 6628, 8080, la, null, workerId, topoConf, ops);
+                                             "SUPERVISOR", 6628, 8080, la, null, workerId, topoConf, ops, new StormMetricsRegistry());
 
         mc.setup();
 
@@ -205,7 +207,7 @@ public class ContainerTest {
         la.set_owner(user);
         la.set_topology_id(topoId);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
-                                             "SUPERVISOR", supervisorPort, port, la, iso, workerId, topoConf, ops);
+                                             "SUPERVISOR", supervisorPort, port, la, iso, workerId, topoConf, ops, new StormMetricsRegistry());
         mc.allPids.add(pid);
 
         mc.cleanUp();
@@ -226,9 +228,9 @@ public class ContainerTest {
         public final Set<Long> allPids = new HashSet<>();
         protected MockContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
                                 int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
-                                String workerId, Map<String, Object> topoConf, AdvancedFSOps ops) throws IOException {
+                                String workerId, Map<String, Object> topoConf, AdvancedFSOps ops, StormMetricsRegistry metricsRegistry) throws IOException {
             super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, workerId,
-                  topoConf, ops);
+                  topoConf, ops, metricsRegistry, new ContainerMemoryTracker(new StormMetricsRegistry()));
         }
 
         @Override

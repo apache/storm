@@ -73,13 +73,10 @@ public class AsyncLocalizer implements AutoCloseable {
     private static final CompletableFuture<Void> ALL_DONE_FUTURE = new CompletableFuture<>();
     private static final int ATTEMPTS_INTERVAL_TIME = 100;
 
-    private static final Timer singleBlobLocalizationDuration = StormMetricsRegistry.registerTimer(
-        "supervisor:single-blob-localization-duration");
-    private static final Timer blobCacheUpdateDuration = StormMetricsRegistry.registerTimer("supervisor:blob-cache-update-duration");
-    private static final Timer blobLocalizationDuration = StormMetricsRegistry.registerTimer("supervisor:blob-localization-duration");
-
-    private static final Meter numBlobUpdateVersionChanged = StormMetricsRegistry.registerMeter(
-            "supervisor:num-blob-update-version-changed");
+    private final Timer singleBlobLocalizationDuration;
+    private final Timer blobCacheUpdateDuration;
+    private final Timer blobLocalizationDuration;
+    private final Meter numBlobUpdateVersionChanged;
 
     static {
         ALL_DONE_FUTURE.complete(null);
@@ -103,14 +100,19 @@ public class AsyncLocalizer implements AutoCloseable {
     private final int blobDownloadRetries;
     private final ScheduledExecutorService execService;
     private final long cacheCleanupPeriod;
+    private final StormMetricsRegistry metricsRegistry;
     // cleanup
     @VisibleForTesting
     protected long cacheTargetSize;
 
     @VisibleForTesting
-    AsyncLocalizer(Map<String, Object> conf, AdvancedFSOps ops, String baseDir) throws IOException {
-
+    AsyncLocalizer(Map<String, Object> conf, AdvancedFSOps ops, String baseDir, StormMetricsRegistry metricsRegistry) throws IOException {
         this.conf = conf;
+        this.singleBlobLocalizationDuration = metricsRegistry.registerTimer("supervisor:single-blob-localization-duration");
+        this.blobCacheUpdateDuration = metricsRegistry.registerTimer("supervisor:blob-cache-update-duration");
+        this.blobLocalizationDuration = metricsRegistry.registerTimer("supervisor:blob-localization-duration");
+        this.numBlobUpdateVersionChanged = metricsRegistry.registerMeter("supervisor:num-blob-update-version-changed");
+        this.metricsRegistry = metricsRegistry;
         isLocalMode = ConfigUtils.isLocalMode(conf);
         fsOps = ops;
         localBaseDir = Paths.get(baseDir);
@@ -134,8 +136,8 @@ public class AsyncLocalizer implements AutoCloseable {
         blobPending = new ConcurrentHashMap<>();
     }
 
-    public AsyncLocalizer(Map<String, Object> conf) throws IOException {
-        this(conf, AdvancedFSOps.make(conf), ConfigUtils.supervisorLocalDir(conf));
+    public AsyncLocalizer(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) throws IOException {
+        this(conf, AdvancedFSOps.make(conf), ConfigUtils.supervisorLocalDir(conf), metricsRegistry);
     }
 
     @VisibleForTesting
@@ -145,7 +147,7 @@ public class AsyncLocalizer implements AutoCloseable {
                                                  try {
                                                      return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
                                                                                           LocallyCachedTopologyBlob.TopologyBlobType
-                                                                                              .TOPO_JAR, owner);
+                                                                                              .TOPO_JAR, owner, metricsRegistry);
                                                  } catch (IOException e) {
                                                      throw new RuntimeException(e);
                                                  }
@@ -159,7 +161,7 @@ public class AsyncLocalizer implements AutoCloseable {
                                                  try {
                                                      return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
                                                                                           LocallyCachedTopologyBlob.TopologyBlobType
-                                                                                              .TOPO_CODE, owner);
+                                                                                              .TOPO_CODE, owner, metricsRegistry);
                                                  } catch (IOException e) {
                                                      throw new RuntimeException(e);
                                                  }
@@ -173,7 +175,7 @@ public class AsyncLocalizer implements AutoCloseable {
                                                  try {
                                                      return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
                                                                                           LocallyCachedTopologyBlob.TopologyBlobType
-                                                                                              .TOPO_CONF, owner);
+                                                                                              .TOPO_CONF, owner, metricsRegistry);
                                                  } catch (IOException e) {
                                                      throw new RuntimeException(e);
                                                  }
@@ -183,13 +185,15 @@ public class AsyncLocalizer implements AutoCloseable {
     private LocalizedResource getUserArchive(String user, String key) {
         assert user != null : "All user archives require a user present";
         ConcurrentMap<String, LocalizedResource> keyToResource = userArchives.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
-        return keyToResource.computeIfAbsent(key, (k) -> new LocalizedResource(key, localBaseDir, true, fsOps, conf, user));
+        return keyToResource.computeIfAbsent(key, 
+            (k) -> new LocalizedResource(key, localBaseDir, true, fsOps, conf, user, metricsRegistry));
     }
 
     private LocalizedResource getUserFile(String user, String key) {
         assert user != null : "All user archives require a user present";
         ConcurrentMap<String, LocalizedResource> keyToResource = userFiles.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
-        return keyToResource.computeIfAbsent(key, (k) -> new LocalizedResource(key, localBaseDir, false, fsOps, conf, user));
+        return keyToResource.computeIfAbsent(key, 
+            (k) -> new LocalizedResource(key, localBaseDir, false, fsOps, conf, user, metricsRegistry));
     }
 
     /**

@@ -119,15 +119,16 @@ public class MapStateTest {
                                           .persistentAggregate(factory, new Count(), new Fields("state"))
                                           .parallelismHint(1);
 
-        LocalDRPC client = new LocalDRPC();
+        LocalCluster cluster = new LocalCluster();
+        LocalDRPC client = new LocalDRPC(cluster.getMetricRegistry());
+        
         topology.newDRPCStream("words", client)
                 .each(new Fields("args"), new Split(), new Fields("word"))
                 .groupBy(new Fields("word"))
                 .stateQuery(wordCounts, new Fields("word"), new MapGet(), new Fields("state"))
                 .each(new Fields("state"), new FilterNull())
                 .aggregate(new Fields("state"), new Sum(), new Fields("sum"));
-
-        LocalCluster cluster = new LocalCluster();
+        
         logger.info("Submitting topology.");
         cluster.submitTopology("test", new HashMap(), topology.build());
 

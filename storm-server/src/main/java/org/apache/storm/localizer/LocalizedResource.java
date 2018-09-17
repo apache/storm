@@ -49,6 +49,7 @@ import org.apache.storm.daemon.supervisor.IAdvancedFSOps;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
@@ -92,8 +93,8 @@ public class LocalizedResource extends LocallyCachedBlob {
     private long size = -1;
 
     LocalizedResource(String key, Path localBaseDir, boolean shouldUncompress, IAdvancedFSOps fsOps, Map<String, Object> conf,
-                      String user) {
-        super(key + (shouldUncompress ? " archive" : " file"), key);
+                      String user, StormMetricsRegistry metricRegistry) {
+        super(key + (shouldUncompress ? " archive" : " file"), key, metricRegistry);
         Path base = getLocalUserFileCacheDir(localBaseDir, user);
         this.baseDir = shouldUncompress ? getCacheDirForArchives(base) : getCacheDirForFiles(base);
         this.conf = conf;

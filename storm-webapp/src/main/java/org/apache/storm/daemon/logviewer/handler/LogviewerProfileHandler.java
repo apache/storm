@@ -28,6 +28,7 @@ import static j2html.TagCreator.title;
 import static j2html.TagCreator.ul;
 import static java.util.stream.Collectors.toList;
 
+import com.codahale.metrics.Meter;
 import j2html.tags.DomContent;
 
 import java.io.File;
@@ -37,25 +38,34 @@ import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ServerUtils;
 
 public class LogviewerProfileHandler {
 
     public static final String WORKER_LOG_FILENAME = "worker.log";
+    
+    private final Meter numFileDownloadExceptions;
+    
     private final String logRoot;
     private final ResourceAuthorizer resourceAuthorizer;
+    private final DirectoryCleaner directoryCleaner;
 
     /**
      * Constructor.
      *
      * @param logRoot worker log root directory
      * @param resourceAuthorizer {@link ResourceAuthorizer}
+     * @param metricsRegistry The logviewer metrisc registry
      */
-    public LogviewerProfileHandler(String logRoot, ResourceAuthorizer resourceAuthorizer) {
+    public LogviewerProfileHandler(String logRoot, ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
         this.logRoot = logRoot;
         this.resourceAuthorizer = resourceAuthorizer;
+        this.numFileDownloadExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS);
+        this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
     }
 
     /**
@@ -101,7 +111,7 @@ public class LogviewerProfileHandler {
         if (dir.exists() && file.exists()) {
             String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
-                return LogviewerResponseBuilder.buildDownloadFile(file);
+                return LogviewerResponseBuilder.buildDownloadFile(file, numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
@@ -129,7 +139,7 @@ public class LogviewerProfileHandler {
     }
 
     private List<String> getProfilerDumpFiles(File dir) throws IOException {
-        List<File> filesForDir = DirectoryCleaner.getFilesForDir(dir);
+        List<File> filesForDir = directoryCleaner.getFilesForDir(dir);
         return filesForDir.stream().filter(file -> {
             String fileName = file.getName();
             return StringUtils.isNotEmpty(fileName)

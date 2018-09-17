@@ -39,6 +39,7 @@ import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.security.auth.ServerAuthUtils;
 import org.apache.storm.utils.ConfigUtils;
@@ -47,7 +48,8 @@ import org.apache.storm.utils.ObjectReader;
 @ApplicationPath("")
 public class LogviewerApplication extends Application {
     private static Map<String, Object> stormConf;
-    private final Set<Object> singletons = new HashSet<Object>();
+    private static StormMetricsRegistry metricsRegistry;
+    private final Set<Object> singletons = new HashSet<>();
 
     /**
      * Constructor.
@@ -57,17 +59,19 @@ public class LogviewerApplication extends Application {
         String daemonLogRoot = logRootDir(ObjectReader.getString(stormConf.get(LOGVIEWER_APPENDER_NAME)));
 
         ResourceAuthorizer resourceAuthorizer = new ResourceAuthorizer(stormConf);
-        WorkerLogs workerLogs = new WorkerLogs(stormConf, new File(logRoot));
+        WorkerLogs workerLogs = new WorkerLogs(stormConf, new File(logRoot), metricsRegistry);
 
-        LogviewerLogPageHandler logviewer = new LogviewerLogPageHandler(logRoot, daemonLogRoot, workerLogs, resourceAuthorizer);
-        LogviewerProfileHandler profileHandler = new LogviewerProfileHandler(logRoot, resourceAuthorizer);
+        LogviewerLogPageHandler logviewer = new LogviewerLogPageHandler(logRoot, daemonLogRoot, workerLogs, resourceAuthorizer,
+            metricsRegistry);
+        LogviewerProfileHandler profileHandler = new LogviewerProfileHandler(logRoot, resourceAuthorizer, metricsRegistry);
         LogviewerLogDownloadHandler logDownloadHandler = new LogviewerLogDownloadHandler(logRoot, daemonLogRoot,
-                workerLogs, resourceAuthorizer);
+                workerLogs, resourceAuthorizer, metricsRegistry);
         LogviewerLogSearchHandler logSearchHandler = new LogviewerLogSearchHandler(stormConf, logRoot, daemonLogRoot,
-                resourceAuthorizer);
+                resourceAuthorizer, metricsRegistry);
         IHttpCredentialsPlugin httpCredsHandler = ServerAuthUtils.getUiHttpCredentialsPlugin(stormConf);
 
-        singletons.add(new LogviewerResource(logviewer, profileHandler, logDownloadHandler, logSearchHandler, httpCredsHandler));
+        singletons.add(new LogviewerResource(logviewer, profileHandler, logDownloadHandler, logSearchHandler,
+            httpCredsHandler, metricsRegistry));
         singletons.add(new AuthorizationExceptionMapper());
     }
     
@@ -80,9 +84,11 @@ public class LogviewerApplication extends Application {
      * Spot to inject storm configuration before initializing LogviewerApplication instance.
      *
      * @param stormConf storm configuration
+     * @param metricRegistry The metrics registry
      */
-    public static void setup(Map<String, Object> stormConf) {
+    public static void setup(Map<String, Object> stormConf, StormMetricsRegistry metricRegistry) {
         LogviewerApplication.stormConf = stormConf;
+        LogviewerApplication.metricsRegistry = metricRegistry;
     }
 
     /**

@@ -42,6 +42,7 @@ public class BlacklistScheduler implements IScheduler {
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME = 300;
     private static final Logger LOG = LoggerFactory.getLogger(BlacklistScheduler.class);
     private final IScheduler underlyingScheduler;
+    private final StormMetricsRegistry metricsRegistry;
     protected int toleranceTime;
     protected int toleranceCount;
     protected int resumeTime;
@@ -55,8 +56,9 @@ public class BlacklistScheduler implements IScheduler {
     protected Set<String> blacklistHost;
     private Map<String, Object> conf;
 
-    public BlacklistScheduler(IScheduler underlyingScheduler) {
+    public BlacklistScheduler(IScheduler underlyingScheduler, StormMetricsRegistry metricsRegistry) {
         this.underlyingScheduler = underlyingScheduler;
+        this.metricsRegistry = metricsRegistry;
     }
 
     @Override
@@ -89,7 +91,7 @@ public class BlacklistScheduler implements IScheduler {
         blacklistHost = new HashSet<>();
 
         //nimbus:num-blacklisted-supervisor + non-blacklisted supervisor = nimbus:num-supervisors
-        StormMetricsRegistry.registerGauge("nimbus:num-blacklisted-supervisor", () -> blacklistHost.size());
+        metricsRegistry.registerGauge("nimbus:num-blacklisted-supervisor", () -> blacklistHost.size());
     }
 
     @Override

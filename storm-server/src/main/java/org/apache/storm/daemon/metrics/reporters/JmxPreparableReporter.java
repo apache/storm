@@ -22,7 +22,7 @@ import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JmxPreparableReporter implements PreparableReporter<JmxReporter> {
+public class JmxPreparableReporter implements PreparableReporter {
     private static final Logger LOG = LoggerFactory.getLogger(JmxPreparableReporter.class);
     JmxReporter reporter = null;
 
