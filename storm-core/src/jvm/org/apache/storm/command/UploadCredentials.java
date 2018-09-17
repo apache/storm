@@ -41,6 +41,7 @@ public class UploadCredentials {
      */
     public static void main(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("f", "file", null)
+                                    .opt("u", "user", null)
                                     .arg("topologyName", CLI.FIRST_WINS)
                                     .optionalArg("rawCredentials", CLI.INTO_LIST)
                                     .parse(args);
@@ -106,7 +107,7 @@ public class UploadCredentials {
                 }
             }
         }
-        StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap);
+        StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap, (String) cl.get("u"));
         LOG.info("Uploaded new creds to topology: {}", topologyName);
     }
 }
