@@ -12,6 +12,7 @@
 
 package org.apache.storm.localizer;
 
+import com.codahale.metrics.Timer;
 import com.google.common.base.Joiner;
 import java.io.File;
 import java.io.FileInputStream;
@@ -884,6 +885,17 @@ public class AsyncLocalizerTest {
         assertTrue("blob version file not created", versionFile.exists());
         assertEquals("blob version not correct", 3, LocalizedResource.localVersionOfBlob(keyVersionFile));
         assertTrue("blob file with version 3 not created", new File(expectedFileDir, key1 + ".3").exists());
+    }
+
+    @Test
+    public void validatePNAImplementationsMatch() {
+        LocalAssignment la = new LocalAssignment("Topology1", null);
+        PortAndAssignment pna = new PortAndAssignmentImpl(1, la);
+        PortAndAssignment tpna = new TimePortAndAssignment(pna, new Timer());
+
+        assertTrue(pna.equals(tpna));
+        assertTrue(tpna.equals(pna));
+        assertTrue(pna.hashCode() == tpna.hashCode());
     }
 
     class TestLocalizer extends AsyncLocalizer {
