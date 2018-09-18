@@ -29,15 +29,18 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
   private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("Credentials");
 
   private static final org.apache.storm.thrift.protocol.TField CREDS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("creds", org.apache.storm.thrift.protocol.TType.MAP, (short)1);
+  private static final org.apache.storm.thrift.protocol.TField TOPO_OWNER_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("topoOwner", org.apache.storm.thrift.protocol.TType.STRING, (short)2);
 
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new CredentialsStandardSchemeFactory();
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new CredentialsTupleSchemeFactory();
 
   private java.util.Map<java.lang.String,java.lang.String> creds; // required
+  private java.lang.String topoOwner; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
-    CREDS((short)1, "creds");
+    CREDS((short)1, "creds"),
+    TOPO_OWNER((short)2, "topoOwner");
 
     private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -54,6 +57,8 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
       switch(fieldId) {
         case 1: // CREDS
           return CREDS;
+        case 2: // TOPO_OWNER
+          return TOPO_OWNER;
         default:
           return null;
       }
@@ -94,6 +99,7 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
   }
 
   // isset id assignments
+  private static final _Fields optionals[] = {_Fields.TOPO_OWNER};
   public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -101,6 +107,8 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
         new org.apache.storm.thrift.meta_data.MapMetaData(org.apache.storm.thrift.protocol.TType.MAP, 
             new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING), 
             new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING))));
+    tmpMap.put(_Fields.TOPO_OWNER, new org.apache.storm.thrift.meta_data.FieldMetaData("topoOwner", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
     org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Credentials.class, metaDataMap);
   }
@@ -123,6 +131,9 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
       java.util.Map<java.lang.String,java.lang.String> __this__creds = new java.util.HashMap<java.lang.String,java.lang.String>(other.creds);
       this.creds = __this__creds;
     }
+    if (other.is_set_topoOwner()) {
+      this.topoOwner = other.topoOwner;
+    }
   }
 
   public Credentials deepCopy() {
@@ -132,6 +143,7 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
   @Override
   public void clear() {
     this.creds = null;
+    this.topoOwner = null;
   }
 
   public int get_creds_size() {
@@ -168,6 +180,29 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
     }
   }
 
+  public java.lang.String get_topoOwner() {
+    return this.topoOwner;
+  }
+
+  public void set_topoOwner(java.lang.String topoOwner) {
+    this.topoOwner = topoOwner;
+  }
+
+  public void unset_topoOwner() {
+    this.topoOwner = null;
+  }
+
+  /** Returns true if field topoOwner is set (has been assigned a value) and false otherwise */
+  public boolean is_set_topoOwner() {
+    return this.topoOwner != null;
+  }
+
+  public void set_topoOwner_isSet(boolean value) {
+    if (!value) {
+      this.topoOwner = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, java.lang.Object value) {
     switch (field) {
     case CREDS:
@@ -178,6 +213,14 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
       }
       break;
 
+    case TOPO_OWNER:
+      if (value == null) {
+        unset_topoOwner();
+      } else {
+        set_topoOwner((java.lang.String)value);
+      }
+      break;
+
     }
   }
 
@@ -185,6 +228,9 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
     switch (field) {
     case CREDS:
       return get_creds();
+
+    case TOPO_OWNER:
+      return get_topoOwner();
 
     }
     throw new java.lang.IllegalStateException();
@@ -199,6 +245,8 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
     switch (field) {
     case CREDS:
       return is_set_creds();
+    case TOPO_OWNER:
+      return is_set_topoOwner();
     }
     throw new java.lang.IllegalStateException();
   }
@@ -227,6 +275,15 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
         return false;
     }
 
+    boolean this_present_topoOwner = true && this.is_set_topoOwner();
+    boolean that_present_topoOwner = true && that.is_set_topoOwner();
+    if (this_present_topoOwner || that_present_topoOwner) {
+      if (!(this_present_topoOwner && that_present_topoOwner))
+        return false;
+      if (!this.topoOwner.equals(that.topoOwner))
+        return false;
+    }
+
     return true;
   }
 
@@ -237,6 +294,10 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
     hashCode = hashCode * 8191 + ((is_set_creds()) ? 131071 : 524287);
     if (is_set_creds())
       hashCode = hashCode * 8191 + creds.hashCode();
+
+    hashCode = hashCode * 8191 + ((is_set_topoOwner()) ? 131071 : 524287);
+    if (is_set_topoOwner())
+      hashCode = hashCode * 8191 + topoOwner.hashCode();
 
     return hashCode;
   }
@@ -255,6 +316,16 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
     }
     if (is_set_creds()) {
       lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.creds, other.creds);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = java.lang.Boolean.valueOf(is_set_topoOwner()).compareTo(other.is_set_topoOwner());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_topoOwner()) {
+      lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.topoOwner, other.topoOwner);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -286,6 +357,16 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
       sb.append(this.creds);
     }
     first = false;
+    if (is_set_topoOwner()) {
+      if (!first) sb.append(", ");
+      sb.append("topoOwner:");
+      if (this.topoOwner == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.topoOwner);
+      }
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }
@@ -353,6 +434,14 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 2: // TOPO_OWNER
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRING) {
+              struct.topoOwner = iprot.readString();
+              struct.set_topoOwner_isSet(true);
+            } else { 
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -379,6 +468,13 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
         }
         oprot.writeFieldEnd();
       }
+      if (struct.topoOwner != null) {
+        if (struct.is_set_topoOwner()) {
+          oprot.writeFieldBegin(TOPO_OWNER_FIELD_DESC);
+          oprot.writeString(struct.topoOwner);
+          oprot.writeFieldEnd();
+        }
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -404,6 +500,14 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
           oprot.writeString(_iter601.getValue());
         }
       }
+      java.util.BitSet optionals = new java.util.BitSet();
+      if (struct.is_set_topoOwner()) {
+        optionals.set(0);
+      }
+      oprot.writeBitSet(optionals, 1);
+      if (struct.is_set_topoOwner()) {
+        oprot.writeString(struct.topoOwner);
+      }
     }
 
     @Override
@@ -422,6 +526,11 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
         }
       }
       struct.set_creds_isSet(true);
+      java.util.BitSet incoming = iprot.readBitSet(1);
+      if (incoming.get(0)) {
+        struct.topoOwner = iprot.readString();
+        struct.set_topoOwner_isSet(true);
+      }
     }
   }
 

@@ -445,9 +445,12 @@ def kill(*args):
 
 
 def upload_credentials(*args):
-    """Syntax: [storm upload-credentials topology-name [credkey credvalue]*]
+    """Syntax: [storm upload-credentials topology-name [options] [credkey credvalue]*]
 
-    Uploads a new set of credentials to a running topology
+    Uploads a new set of credentials to a running topology.
+
+    -f --file <FILE>: provide a properties file with credentials in it to be uploaded
+    -u --user <USER_NAME>: give the name of the owner of the topology (security precaution).
     """
     if not args:
         print_usage(command="upload-credentials")

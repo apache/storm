@@ -110,7 +110,23 @@ public class StormSubmitter {
      * @throws NotAliveException        if the topology is not alive
      * @throws InvalidTopologyException if any other error happens
      */
-    public static void pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials)
+    public static void pushCredentials(String name, Map<String,Object> topoConf, Map<String,String> credentials)
+        throws AuthorizationException, NotAliveException, InvalidTopologyException {
+        pushCredentials(name, topoConf, credentials, null);
+    }
+
+    /**
+     * Push a new set of credentials to the running topology.
+     *
+     * @param name        the name of the topology to push credentials to.
+     * @param topoConf    the topology-specific configuration, if desired. See {@link Config}.
+     * @param credentials the credentials to push.
+     * @param expectedUser the user you expect the topology to be owned by.
+     * @throws AuthorizationException   if you are not authorized ot push credentials.
+     * @throws NotAliveException        if the topology is not alive
+     * @throws InvalidTopologyException if any other error happens
+     */
+    public static void pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials, String expectedUser)
         throws AuthorizationException, NotAliveException, InvalidTopologyException {
         topoConf = new HashMap(topoConf);
         topoConf.putAll(Utils.readCommandLineOpts());
@@ -124,7 +140,11 @@ public class StormSubmitter {
         try {
             try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
                 LOG.info("Uploading new credentials to {}", name);
-                client.getClient().uploadNewCredentials(name, new Credentials(fullCreds));
+                Credentials creds = new Credentials(fullCreds);
+                if (expectedUser != null) {
+                    creds.set_topoOwner(expectedUser);
+                }
+                client.getClient().uploadNewCredentials(name, creds);
             }
             LOG.info("Finished pushing creds to topology: {}", name);
         } catch (TException e) {

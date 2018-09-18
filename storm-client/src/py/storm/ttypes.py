@@ -5793,11 +5793,13 @@ class Credentials(object):
     """
     Attributes:
      - creds
+     - topoOwner
     """
 
 
-    def __init__(self, creds=None,):
+    def __init__(self, creds=None, topoOwner=None,):
         self.creds = creds
+        self.topoOwner = topoOwner
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -5819,6 +5821,11 @@ class Credentials(object):
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRING:
+                    self.topoOwner = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -5836,6 +5843,10 @@ class Credentials(object):
                 oprot.writeString(kiter540.encode('utf-8') if sys.version_info[0] == 2 else kiter540)
                 oprot.writeString(viter541.encode('utf-8') if sys.version_info[0] == 2 else viter541)
             oprot.writeMapEnd()
+            oprot.writeFieldEnd()
+        if self.topoOwner is not None:
+            oprot.writeFieldBegin('topoOwner', TType.STRING, 2)
+            oprot.writeString(self.topoOwner.encode('utf-8') if sys.version_info[0] == 2 else self.topoOwner)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -12580,6 +12591,7 @@ all_structs.append(Credentials)
 Credentials.thrift_spec = (
     None,  # 0
     (1, TType.MAP, 'creds', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 1
+    (2, TType.STRING, 'topoOwner', 'UTF8', None, ),  # 2
 )
 all_structs.append(SubmitOptions)
 SubmitOptions.thrift_spec = (
