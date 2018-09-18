@@ -48,4 +48,29 @@ public class TimePortAndAssignment extends Timed<PortAndAssignment> implements P
     public void complete() {
         stopTiming();
     }
+
+    @Override
+    public String toString() {
+        return "TimePortAndAssignment{" + getAssignment().get_topology_id() + " on " + getPort() + "}";
+    }
+
+    /**
+     * All implementations of PortAndAssignment should implement the same hashCode() method
+     */
+    @Override
+    public int hashCode() {
+        return (17 * getPort()) + getAssignment().hashCode();
+    }
+
+    /**
+     * All implementations of PortAndAssignment should implement the same equals() method
+     */
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof PortAndAssignment)) {
+            return false;
+        }
+        PortAndAssignment pna = (PortAndAssignment) other;
+        return pna.getPort() == getPort() && getAssignment().equals(pna.getAssignment());
+    }
 }

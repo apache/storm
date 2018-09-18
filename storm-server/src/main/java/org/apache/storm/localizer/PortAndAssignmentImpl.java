@@ -26,13 +26,16 @@ class PortAndAssignmentImpl implements PortAndAssignment {
         this.assignment = assignment;
     }
 
+    /**
+     * All implementations of PortAndAssignment should implement the same equals() method
+     */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof PortAndAssignmentImpl)) {
+        if (!(other instanceof PortAndAssignment)) {
             return false;
         }
-        PortAndAssignmentImpl pna = (PortAndAssignmentImpl) other;
-        return pna.port == port && assignment.equals(pna.assignment);
+        PortAndAssignment pna = (PortAndAssignment) other;
+        return pna.getPort() == getPort() && getAssignment().equals(pna.getAssignment());
     }
 
     @Override
@@ -45,14 +48,17 @@ class PortAndAssignmentImpl implements PortAndAssignment {
         return assignment.get_owner();
     }
 
+    /**
+     * All implementations of PortAndAssignment should implement the same hashCode() method
+     */
     @Override
     public int hashCode() {
-        return (17 * port) + assignment.hashCode();
+        return (17 * getPort()) + getAssignment().hashCode();
     }
 
     @Override
     public String toString() {
-        return "{" + assignment.get_topology_id() + " on " + port + "}";
+        return "PortAndAssignmentImpl{" + assignment.get_topology_id() + " on " + port + "}";
     }
 
     /**
