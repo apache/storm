@@ -55,7 +55,7 @@ public class TimePortAndAssignment extends Timed<PortAndAssignment> implements P
     }
 
     /**
-     * All implementations of PortAndAssignment should implement the same hashCode() method
+     * All implementations of PortAndAssignment should implement the same hashCode() method.
      */
     @Override
     public int hashCode() {
@@ -63,7 +63,7 @@ public class TimePortAndAssignment extends Timed<PortAndAssignment> implements P
     }
 
     /**
-     * All implementations of PortAndAssignment should implement the same equals() method
+     * All implementations of PortAndAssignment should implement the same equals() method.
      */
     @Override
     public boolean equals(Object other) {
