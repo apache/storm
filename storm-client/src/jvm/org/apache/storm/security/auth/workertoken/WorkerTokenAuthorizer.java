@@ -112,13 +112,21 @@ public class WorkerTokenAuthorizer implements PasswordProvider {
         if (keyCache == null) {
             return Optional.empty();
         }
+        byte[] user = null;
+        WorkerTokenInfo deser = null;
         try {
-            byte[] user = Base64.getDecoder().decode(userName);
-            WorkerTokenInfo deser = Utils.deserialize(user, WorkerTokenInfo.class);
+            user = Base64.getDecoder().decode(userName);
+            deser = Utils.deserialize(user, WorkerTokenInfo.class);
+        } catch (Exception e) {
+            LOG.debug("Could not decode {}, might just be a plain digest request...", userName, e);
+            return Optional.empty();
+        }
+
+        try {
             byte[] password = getSignedPasswordFor(user, deser);
             return Optional.of(Base64.getEncoder().encodeToString(password).toCharArray());
         } catch (Exception e) {
-            LOG.debug("Could not decode {}, might just be a plain digest request...", userName, e);
+            LOG.error("Could not get password for token {}/{}", deser.get_userName(), deser.get_topologyId(), e);
             return Optional.empty();
         }
     }
