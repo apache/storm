@@ -57,7 +57,11 @@
   </thead>
   <tbody>
     <tr>
-      <td>{{stormVersion}}</td>
+      <td>{{stormVersion}}
+          {{#alternativeWorkerVersions}}
+          </br>Topologies matching {{versionMatch}} will run under {{installedVersion}}.
+          {{/alternativeWorkerVersions}}
+      </td>
       <td>{{supervisors}}</td>
       <td>{{slotsUsed}}</td>
       <td>{{slotsFree}}</td>

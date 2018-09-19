@@ -1458,6 +1458,27 @@ public class Utils {
     }
 
     /**
+     * Get a mapping of the configured supported versions of storm to their actual versions.
+     * @param conf what to read the configuration out of.
+     * @return the map.
+     */
+    public static NavigableMap<String, String> getAlternativeVersionsMap(Map<String, Object> conf) {
+        TreeMap<String, String> ret = new TreeMap<>();
+        Map<String, String> fromConf =
+            (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections.emptyMap());
+        for (Map.Entry<String, String> entry : fromConf.entrySet()) {
+            IVersionInfo version = VersionInfo.getFromClasspath(entry.getValue());
+            if (version != null) {
+                ret.put(entry.getKey(), version.getVersion());
+            } else {
+                LOG.error("Could not find the real version of {} from CP {}", entry.getKey(), entry.getValue());
+                ret.put(entry.getKey(), "Unknown");
+            }
+        }
+        return ret;
+    }
+
+    /**
      * Get a map of version to worker main from the conf Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP
      *
      * @param conf what to read it out of
