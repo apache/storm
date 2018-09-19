@@ -118,7 +118,7 @@ public class WorkerTokenAuthorizer implements PasswordProvider {
             user = Base64.getDecoder().decode(userName);
             deser = Utils.deserialize(user, WorkerTokenInfo.class);
         } catch (Exception e) {
-            LOG.debug("Could not decode {}, might just be a plain digest request...", userName, e);
+            LOG.info("Could not decode {}, might just be a plain digest request...", userName, e);
             return Optional.empty();
         }
 
