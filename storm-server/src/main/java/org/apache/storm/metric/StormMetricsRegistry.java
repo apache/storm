@@ -15,7 +15,9 @@ package org.apache.storm.metric;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Timer;
 import java.util.List;
@@ -53,6 +55,17 @@ public class StormMetricsRegistry {
 
     public <V> Gauge<V> registerGauge(final String name, Gauge<V> gauge) {
         return registry.gauge(name, () -> gauge);
+    }
+    
+    public void registerAll(MetricSet metrics) {
+        registry.registerAll(metrics);
+    }
+    
+    public void removeAll(MetricSet metrics) {
+        //Could be replaced when metrics support remove all functions
+        // https://github.com/dropwizard/metrics/pull/1280
+        Map<String, Metric> nameToMetric = metrics.getMetrics();
+        registry.removeMatching((name, metric) -> nameToMetric.containsKey(name));
     }
 
     public void startMetricsReporters(Map<String, Object> daemonConf) {
