@@ -99,7 +99,8 @@ public class WorkerTokenAuthorizer implements PasswordProvider {
         try {
             key = keyCache.getUnchecked(deser);
         } catch (CacheLoader.InvalidCacheLoadException e) {
-            //This happens when the cache has a null returned to it.
+            //This happens when the key is not found, the cache loader returns a null and this exception is thrown.
+            // because the cache cannot store a null.
             throw new IllegalArgumentException("Token is not valid, private key not found.", e);
         }
 

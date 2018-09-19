@@ -856,7 +856,7 @@ public class StormClusterStateImpl implements IStormClusterState {
         stateStorage.mkdirs(ClusterUtils.SECRET_KEYS_SUBTREE, defaultAcls);
         List<ACL> secretAcls = context.getZkSecretAcls(type);
         String path = ClusterUtils.secretKeysPath(type, topologyId, keyVersion);
-        LOG.debug("Storing private key for {} connecting to a {} at {} with ACL {}\n\n", topologyId, type, path, secretAcls);
+        LOG.info("Storing private key for {} connecting to a {} at {} with ACL {}", topologyId, type, path, secretAcls);
         stateStorage.set_data(path, Utils.serialize(key), secretAcls);
     }
 
@@ -886,7 +886,7 @@ public class StormClusterStateImpl implements IStormClusterState {
                         PrivateWorkerKey key =
                             ClusterUtils.maybeDeserialize(stateStorage.get_data(fullPath, false), PrivateWorkerKey.class);
                         if (Time.currentTimeMillis() > key.get_expirationTimeMillis()) {
-                            LOG.debug("Removing expired worker key {}", fullPath);
+                            LOG.info("Removing expired worker key {}", fullPath);
                             stateStorage.delete_node(fullPath);
                         }
                     } catch (RuntimeException e) {
@@ -911,7 +911,7 @@ public class StormClusterStateImpl implements IStormClusterState {
         for (WorkerTokenServiceType type : WorkerTokenServiceType.values()) {
             String path = ClusterUtils.secretKeysPath(type, topologyId);
             try {
-                LOG.debug("Removing worker keys under {}", path);
+                LOG.info("Removing worker keys under {}", path);
                 stateStorage.delete_node(path);
             } catch (RuntimeException e) {
                 //This should never happen because only the primary nimbus is active, but just in case
