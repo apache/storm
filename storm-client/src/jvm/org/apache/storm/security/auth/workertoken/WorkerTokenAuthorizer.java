@@ -95,9 +95,12 @@ public class WorkerTokenAuthorizer implements PasswordProvider {
             throw new IllegalArgumentException("Token is not valid, token has expired.");
         }
 
-        PrivateWorkerKey key = keyCache.getUnchecked(deser);
-        if (key == null) {
-            throw new IllegalArgumentException("Token is not valid, private key not found.");
+        PrivateWorkerKey key;
+        try {
+            key = keyCache.getUnchecked(deser);
+        } catch (CacheLoader.InvalidCacheLoadException e) {
+            //This happens when the cache has a null returned to it.
+            throw new IllegalArgumentException("Token is not valid, private key not found.", e);
         }
 
         if (key.is_set_expirationTimeMillis() && key.get_expirationTimeMillis() <= Time.currentTimeMillis()) {
