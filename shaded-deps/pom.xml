@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>storm</artifactId>
+        <groupId>org.apache.storm</groupId>
+        <version>2.0.0-SNAPSHOT</version>
+        <relativePath>..</relativePath>
+    </parent>
+
+    <groupId>org.apache.storm</groupId>
+    <artifactId>shaded-deps</artifactId>
+    <packaging>jar</packaging>
+    <name>Shaded Deps for Storm Client</name>
+    <description>Shaded version of dependencies used only for internal storm code.</description>
+
+    <dependencies>
+        <!-- All dependencies should be marked as optional to work around
+             https://issues.apache.org/jira/browse/MSHADE-206 which makes it so
+             the dependency reduced pom is not reflected in a multi-module build
+             correctly. -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-client</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- curator-recipes is not used by storm-client, but because storm-server
+             uses the same zookeeper initialization code as storm-client all
+             curator usage, including that by curator-recipes, must also be shaded. -->
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <!-- This is only used for interactive zookeeper shell, and not needed for the client-->
+                    <groupId>jline</groupId>
+                    <artifactId>jline</artifactId>
+                </exclusion>
+                <exclusion>
+                    <!-- Annotations are not needed for runtime operation.-->
+                    <groupId>org.apache.yetus</groupId>
+                    <artifactId>audience-annotations</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>javax.servlet-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.lidalia</groupId>
+            <artifactId>sysout-over-slf4j</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                    <createDependencyReducedPom>true</createDependencyReducedPom>
+                    <minimizeJar>false</minimizeJar>
+                    <artifactSet>
+                        <includes>
+                            <include>com.google.guava:guava</include>
+                            <include>com.googlecode.json-simple:json-simple</include>
+                            <include>commons-codec:commons-codec</include>
+                            <include>commons-collections:commons-collections</include>
+                            <include>commons-io:commons-io</include>
+                            <include>commons-lang:commons-lang</include>
+                            <!-- Pulled in by Zookeeper -->
+                            <include>io.netty:netty</include>
+                            <include>io.netty:netty-all</include>
+                            <include>org.apache.curator:*</include>
+                            <include>org.apache.httpcomponents:httpclient</include>
+                            <include>org.apache.thrift:*</include>
+                            <include>org.apache.zookeeper:zookeeper</include>
+                            <include>org.jctools:jctools-core</include>
+                            <include>org.jgrapht:jgrapht-core</include>
+                            <include>org.yaml:snakeyaml</include>
+                            <include>uk.org.lidalia:sysout-over-slf4j</include>
+                        </includes>
+                    </artifactSet>
+                    <relocations>
+                        <relocation>
+                            <pattern>org.apache.thrift</pattern>
+                            <!-- This pattern is inconsistent for backwards compatibility purposes. -->
+                            <shadedPattern>org.apache.storm.thrift</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.common</pattern>
+                            <shadedPattern>org.apache.storm.shade.com.google.common</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.thirdparty</pattern>
+                            <shadedPattern>org.apache.storm.shade.com.google.thirdparty</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.curator</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.curator</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.zookeeper</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.zookeeper</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <!--This is a part of zookeeper-->
+                            <pattern>org.apache.jute</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.jute</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.io</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.io</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.lang</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.lang</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.collections</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.jctools</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.jctools</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.json.simple</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.json.simple</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.yaml.snakeyaml</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.yaml.snakeyaml</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.jboss.netty</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.jboss.netty</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.netty</pattern>
+                            <shadedPattern>org.apache.storm.shade.io.netty</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.jgrapht</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.jgrapht</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.codec</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.codec</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>uk.org.lidalia.sysoutslf4j</pattern>
+                            <shadedPattern>org.apache.storm.shade.uk.org.lidalia.sysoutslf4j</shadedPattern>
+                        </relocation>
+                    </relocations>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.sf</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.dsa</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                                <exclude>META-INF/*.rsa</exclude>
+                                <exclude>META-INF/*.EC</exclude>
+                                <exclude>META-INF/*.ec</exclude>
+                                <exclude>META-INF/MSFTSIG.SF</exclude>
+                                <exclude>META-INF/MSFTSIG.RSA</exclude>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

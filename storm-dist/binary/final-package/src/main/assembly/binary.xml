@@ -68,7 +68,7 @@
             maven assembly plugin should inject a value.
         -->
         <fileSet>
-            <directory>${project.basedir}/../../../storm-core/src/ui/public</directory>
+            <directory>${project.basedir}/../../../storm-webapp/target/classes/WEB-INF/</directory>
             <outputDirectory>public</outputDirectory>
             <includes>
                 <include>*.html</include>
@@ -81,7 +81,7 @@
             Include rest of public/ directory, without any filtering
         -->
         <fileSet>
-            <directory>${project.basedir}/../../../storm-core/src/ui/public</directory>
+            <directory>${project.basedir}/../../../storm-webapp/target/classes/WEB-INF/</directory>
             <outputDirectory>public</outputDirectory>
             <includes>
                 <include>*/**</include>
@@ -110,13 +110,6 @@
         </fileSet>
         <!-- EXTERNAL -->
         <!-- only include the README file -->
-        <fileSet>
-            <directory>${project.basedir}/../../../external/storm-kafka</directory>
-            <outputDirectory>external/storm-kafka</outputDirectory>
-            <includes>
-                <include>README.*</include>
-            </includes>
-        </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../../external/storm-kinesis</directory>
             <outputDirectory>external/storm-kinesis</outputDirectory>

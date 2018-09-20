@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.starter.streams;
 
 import org.apache.storm.Config;
@@ -40,10 +35,10 @@ public class AggregateExample {
          * results are merged and the final result is emitted.
          */
         builder.newStream(new RandomIntegerSpout(), new ValueMapper<Integer>(0), 2)
-                .window(TumblingWindows.of(BaseWindowedBolt.Duration.seconds(5)))
-                .filter(x -> x > 0 && x < 500)
-                .aggregate(new Avg())
-                .print();
+               .window(TumblingWindows.of(BaseWindowedBolt.Duration.seconds(5)))
+               .filter(x -> x > 0 && x < 500)
+               .aggregate(new Avg())
+               .print();
 
         Config config = new Config();
         String topoName = "AGG_EXAMPLE";
@@ -69,14 +64,14 @@ public class AggregateExample {
         public Pair<Integer, Integer> merge(Pair<Integer, Integer> sumAndCount1, Pair<Integer, Integer> sumAndCount2) {
             System.out.println("Merge " + sumAndCount1 + " and " + sumAndCount2);
             return Pair.of(
-                    sumAndCount1._1 + sumAndCount2._1,
-                    sumAndCount1._2 + sumAndCount2._2
+                sumAndCount1._1 + sumAndCount2._1,
+                sumAndCount1._2 + sumAndCount2._2
             );
         }
 
         @Override
         public Double result(Pair<Integer, Integer> sumAndCount) {
-            return (double) sumAndCount._1/sumAndCount._2;
+            return (double) sumAndCount._1 / sumAndCount._2;
         }
     }
 }

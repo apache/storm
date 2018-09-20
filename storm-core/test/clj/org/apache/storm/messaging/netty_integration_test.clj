@@ -31,7 +31,6 @@
                                                     STORM-MESSAGING-TRANSPORT  "org.apache.storm.messaging.netty.Context"
                                                     STORM-MESSAGING-NETTY-AUTHENTICATION false
                                                     STORM-MESSAGING-NETTY-BUFFER-SIZE 1024000
-                                                    STORM-MESSAGING-NETTY-MAX-RETRIES 10
                                                     STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000 
                                                     STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
                                                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1

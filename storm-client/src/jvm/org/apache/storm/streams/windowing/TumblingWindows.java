@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.streams.windowing;
 
 import org.apache.storm.topology.base.BaseWindowedBolt;
@@ -32,16 +27,6 @@ public class TumblingWindows<L> extends BaseWindow<L, L> {
 
     private TumblingWindows(L windowLength) {
         this.windowLength = windowLength;
-    }
-
-    @Override
-    public L getWindowLength() {
-        return windowLength;
-    }
-
-    @Override
-    public L getSlidingInterval() {
-        return windowLength;
     }
 
     /**
@@ -62,10 +47,20 @@ public class TumblingWindows<L> extends BaseWindow<L, L> {
         return new TumblingWindows<>(duration);
     }
 
+    @Override
+    public L getWindowLength() {
+        return windowLength;
+    }
+
+    @Override
+    public L getSlidingInterval() {
+        return windowLength;
+    }
+
     /**
-     * The name of the field in the tuple that contains the timestamp when the event occurred as a long value.
-     * This is used of event-time based processing. If this config is set and the field is not present in the incoming tuple,
-     * an {@link IllegalArgumentException} will be thrown.
+     * The name of the field in the tuple that contains the timestamp when the event occurred as a long value. This is used of event-time
+     * based processing. If this config is set and the field is not present in the incoming tuple, an {@link IllegalArgumentException} will
+     * be thrown.
      *
      * @param fieldName the name of the field that contains the timestamp
      */
@@ -75,10 +70,9 @@ public class TumblingWindows<L> extends BaseWindow<L, L> {
     }
 
     /**
-     * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the
-     * {@link org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field.
-     * It must be defined on a per-component basis, and in conjunction with the
-     * {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
+     * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the {@link
+     * org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field. It must be defined on a per-component basis, and in
+     * conjunction with the {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
      *
      * @param streamId the name of the stream used to emit late tuples on
      */
@@ -88,8 +82,8 @@ public class TumblingWindows<L> extends BaseWindow<L, L> {
     }
 
     /**
-     * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps
-     * cannot be out of order by more than this amount.
+     * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps cannot be out of order by
+     * more than this amount.
      *
      * @param duration the max lag duration
      */
@@ -100,9 +94,15 @@ public class TumblingWindows<L> extends BaseWindow<L, L> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         TumblingWindows<?> that = (TumblingWindows<?>) o;
 

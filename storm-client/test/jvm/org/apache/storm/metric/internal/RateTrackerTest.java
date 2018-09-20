@@ -1,25 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.metric.internal;
 
-import org.junit.Test;
 import junit.framework.TestCase;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * Unit test for RateTracker
@@ -33,26 +27,26 @@ public class RateTrackerTest extends TestCase {
         final long interval = 1000l;
         long time = 0l;
         RateTracker rt = new RateTracker(10000, 10, time);
-        double [] expected = new double[] {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0};
+        double[] expected = new double[]{ 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0 };
         for (int i = 0; i < expected.length; i++) {
             double exp = expected[i];
             rt.notify(10);
             time += interval;
             double actual = rt.reportRate(time);
             rt.forceRotate(1, interval);
-            assertEquals("Expected rate on iteration "+i+" is wrong.", exp, actual, 0.00001);
+            assertEquals("Expected rate on iteration " + i + " is wrong.", exp, actual, 0.00001);
         }
         //In the second part of the test the rate doubles to 20 per second but the rate tracker
         // increases its result slowly as we push the 10 tuples per second buckets out and relpace them
         // with 20 tuples per second. 
-        expected = new double[] {11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0};
+        expected = new double[]{ 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0 };
         for (int i = 0; i < expected.length; i++) {
             double exp = expected[i];
             rt.notify(20);
             time += interval;
             double actual = rt.reportRate(time);
             rt.forceRotate(1, interval);
-            assertEquals("Expected rate on iteration "+i+" is wrong.", exp, actual, 0.00001);
+            assertEquals("Expected rate on iteration " + i + " is wrong.", exp, actual, 0.00001);
         }
     }
 

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.RecordTranslator;
+import org.apache.storm.kafka.spout.trident.internal.OutputFieldsExtractor;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.tuple.Fields;
@@ -35,21 +36,26 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaque.class);
 
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
+    private final OutputFieldsExtractor outputFieldsExtractor;
     
+    /**
+     * Creates a new opaque transactional Trident Kafka spout.
+     */
     public KafkaTridentSpoutOpaque(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
+        this.outputFieldsExtractor = new OutputFieldsExtractor();
         LOG.debug("Created {}", this.toString());
     }
 
     @Override
     public Emitter<List<Map<String, Object>>, KafkaTridentSpoutTopicPartition, Map<String, Object>> getEmitter(
             Map<String, Object> conf, TopologyContext context) {
-        return new KafkaTridentSpoutEmitter<>(kafkaSpoutConfig, context);
+        return new KafkaTridentOpaqueSpoutEmitter<>(new KafkaTridentSpoutEmitter<>(kafkaSpoutConfig, context));
     }
 
     @Override
     public Coordinator<List<Map<String, Object>>> getCoordinator(Map<String, Object> conf, TopologyContext context) {
-        return new KafkaTridentSpoutOpaqueCoordinator<>(kafkaSpoutConfig);
+        return new KafkaTridentSpoutCoordinator<>(kafkaSpoutConfig);
     }
 
     @Override
@@ -59,13 +65,7 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     @Override
     public Fields getOutputFields() {
-        RecordTranslator<K, V> translator = kafkaSpoutConfig.getTranslator();
-        int numStreams = translator.streams().size();
-        if (numStreams > 1) {
-            throw new IllegalStateException("Trident spouts must have at most one output stream,"
-                + " found streams [" + translator.streams() + "]");
-        }
-        final Fields outputFields = translator.getFieldsFor(translator.streams().get(0));
+        final Fields outputFields = outputFieldsExtractor.getOutputFields(kafkaSpoutConfig);
         LOG.debug("OutputFields = {}", outputFields);
         return outputFields;
     }

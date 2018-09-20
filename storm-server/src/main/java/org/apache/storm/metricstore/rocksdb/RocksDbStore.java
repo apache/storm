@@ -1,19 +1,12 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.metricstore.rocksdb;
@@ -25,7 +18,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.metricstore.AggLevel;
@@ -33,6 +25,7 @@ import org.apache.storm.metricstore.FilterOptions;
 import org.apache.storm.metricstore.Metric;
 import org.apache.storm.metricstore.MetricException;
 import org.apache.storm.metricstore.MetricStore;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.IndexType;
@@ -48,9 +41,9 @@ import org.slf4j.LoggerFactory;
 
 
 public class RocksDbStore implements MetricStore, AutoCloseable {
+    static final int INVALID_METADATA_STRING_ID = 0;
     private static final Logger LOG = LoggerFactory.getLogger(RocksDbStore.class);
     private static final int MAX_QUEUE_CAPACITY = 4000;
-    static final int INVALID_METADATA_STRING_ID = 0;
     RocksDB db;
     private ReadOnlyStringMetadataCache readOnlyStringMetadataCache = null;
     private BlockingQueue queue = new LinkedBlockingQueue(MAX_QUEUE_CAPACITY);
@@ -58,20 +51,18 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
     private MetricsCleaner metricsCleaner = null;
     private Meter failureMeter = null;
 
-    interface RocksDbScanCallback {
-        boolean cb(RocksDbKey key, RocksDbValue val);  // return false to stop scan
-    }
-
     /**
      * Create metric store instance using the configurations provided via the config map.
      *
      * @param config Storm config map
+     * @param metricsRegistry The Nimbus daemon metrics registry
      * @throws MetricException on preparation error
      */
-    public void prepare(Map<String, Object> config) throws MetricException {
+    @Override
+    public void prepare(Map<String, Object> config, StormMetricsRegistry metricsRegistry) throws MetricException {
         validateConfig(config);
 
-        this.failureMeter = StormMetricsRegistry.registerMeter("RocksDB:metric-failures");
+        this.failureMeter = metricsRegistry.registerMeter("RocksDB:metric-failures");
 
         RocksDB.loadLibrary();
         boolean createIfMissing = ObjectReader.getBoolean(config.get(DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING), false);
@@ -98,7 +89,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
         if (config.containsKey(DaemonConfig.STORM_ROCKSDB_METRIC_DELETION_PERIOD_HOURS)) {
             deletionPeriod = Integer.parseInt(config.get(DaemonConfig.STORM_ROCKSDB_METRIC_DELETION_PERIOD_HOURS).toString());
         }
-        metricsCleaner = new MetricsCleaner(this, retentionHours, deletionPeriod, failureMeter);
+        metricsCleaner = new MetricsCleaner(this, retentionHours, deletionPeriod, failureMeter, metricsRegistry);
 
         // create thread to process insertion of all metrics
         metricsWriter = new RocksDbMetricsWriter(this, this.queue, this.failureMeter);
@@ -132,7 +123,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
 
         if (!(config.containsKey(DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING))) {
             throw new MetricException("Not a vaild RocksDB configuration - Does not specify creation policy "
-                    + DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING);
+                                      + DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING);
         }
 
         // validate path defined
@@ -147,26 +138,26 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
 
         if (!(config.containsKey(DaemonConfig.STORM_ROCKSDB_METADATA_STRING_CACHE_CAPACITY))) {
             throw new MetricException("Not a valid RocksDB configuration - Missing metadata string cache size "
-                    + DaemonConfig.STORM_ROCKSDB_METADATA_STRING_CACHE_CAPACITY);
+                                      + DaemonConfig.STORM_ROCKSDB_METADATA_STRING_CACHE_CAPACITY);
         }
 
         if (!config.containsKey(DaemonConfig.STORM_ROCKSDB_METRIC_RETENTION_HOURS)) {
             throw new MetricException("Not a valid RocksDB configuration - Missing metric retention "
-                    + DaemonConfig.STORM_ROCKSDB_METRIC_RETENTION_HOURS);
+                                      + DaemonConfig.STORM_ROCKSDB_METRIC_RETENTION_HOURS);
         }
     }
 
     private String getRocksDbAbsoluteDir(Map<String, Object> conf) throws MetricException {
-        String storePath = (String)conf.get(DaemonConfig.STORM_ROCKSDB_LOCATION);
+        String storePath = (String) conf.get(DaemonConfig.STORM_ROCKSDB_LOCATION);
         if (storePath == null) {
             throw new MetricException("Not a vaild RocksDB configuration - Missing store location " + DaemonConfig.STORM_ROCKSDB_LOCATION);
         } else {
             if (new File(storePath).isAbsolute()) {
                 return storePath;
             } else {
-                String stormHome = System.getProperty("storm.home");
+                String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
                 if (stormHome == null) {
-                    throw new MetricException("storm.home not set");
+                    throw new MetricException(ConfigUtils.STORM_HOME + " not set");
                 }
                 return (stormHome + File.separator + storePath);
             }
@@ -201,7 +192,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
      * Fill out the numeric values for a metric.
      *
      * @param metric  Metric to populate
-     * @return   true if the metric was populated, false otherwise
+     * @return true if the metric was populated, false otherwise
      * @throws MetricException  if read from database fails
      */
     @Override
@@ -234,7 +225,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
         }
 
         RocksDbKey key = RocksDbKey.createMetricKey(metric.getAggLevel(), topologyId, metric.getTimestamp(), metricId,
-                componentId, executorId, hostId, metric.getPort(), streamId);
+                                                    componentId, executorId, hostId, metric.getPort(), streamId);
 
         return populateFromKey(key, metric);
     }
@@ -461,9 +452,9 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
         for (AggLevel aggLevel : filter.getAggLevels()) {
 
             RocksDbKey startKey = RocksDbKey.createMetricKey(aggLevel, startTopologyId, startTime, startMetricId,
-                    startComponentId, startExecutorId, startHostId, startPort, startStreamId);
+                                                             startComponentId, startExecutorId, startHostId, startPort, startStreamId);
             RocksDbKey endKey = RocksDbKey.createMetricKey(aggLevel, endTopologyId, endTime, endMetricId,
-                    endComponentId, endExecutorId, endHostId, endPort, endStreamId);
+                                                           endComponentId, endExecutorId, endHostId, endPort, endStreamId);
 
             RocksIterator iterator = db.newIterator(ro);
             for (iterator.seek(startKey.getRaw()); iterator.isValid(); iterator.next()) {
@@ -519,7 +510,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
                         String streamId = metadataIdToString(KeyType.STREAM_ID_STRING, key.getStreamId(), idToStringCache);
 
                         Metric metric = new Metric(metricName, timestamp, topologyId, 0.0, componentId, executorId, hostname,
-                                streamId, key.getPort(), aggLevel);
+                                                   streamId, key.getPort(), aggLevel);
 
                         val.populateMetric(metric);
 
@@ -561,7 +552,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
             s = rdbValue.getMetdataString();
             lookupCache.put(id, s);
             return s;
-        }  catch (RocksDBException e) {
+        } catch (RocksDBException e) {
             if (this.failureMeter != null) {
                 this.failureMeter.mark();
             }
@@ -634,6 +625,10 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
                 }
             }
         }
+    }
+
+    interface RocksDbScanCallback {
+        boolean cb(RocksDbKey key, RocksDbValue val);  // return false to stop scan
     }
 }
 

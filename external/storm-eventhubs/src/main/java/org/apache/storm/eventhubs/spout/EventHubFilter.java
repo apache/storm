@@ -15,32 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import java.time.Instant;
 
-public class EventHubFilter implements IEventFilter{
+public class EventHubFilter implements IEventFilter {
 
     String offset = null;
     Instant time = null;
 
-    public EventHubFilter(String offset){
+    public EventHubFilter(String offset) {
         this.offset = offset;
         this.time = null;
     }
 
-    public EventHubFilter(Instant time){
+    public EventHubFilter(Instant time) {
         this.time = time;
         this.offset = null;
     }
 
     @Override
-    public String getOffset(){
+    public String getOffset() {
         return offset;
     }
 
     @Override
-    public Instant getTime(){
+    public Instant getTime() {
         return time;
     }
 }

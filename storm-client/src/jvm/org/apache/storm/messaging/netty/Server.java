@@ -1,22 +1,28 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.messaging.netty;
 
+import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
@@ -26,54 +32,44 @@ import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.serialization.KryoValuesSerializer;
+import org.apache.storm.shade.io.netty.bootstrap.ServerBootstrap;
+import org.apache.storm.shade.io.netty.buffer.PooledByteBufAllocator;
+import org.apache.storm.shade.io.netty.channel.Channel;
+import org.apache.storm.shade.io.netty.channel.ChannelFuture;
+import org.apache.storm.shade.io.netty.channel.ChannelOption;
+import org.apache.storm.shade.io.netty.channel.EventLoopGroup;
+import org.apache.storm.shade.io.netty.channel.group.ChannelGroup;
+import org.apache.storm.shade.io.netty.channel.group.DefaultChannelGroup;
+import org.apache.storm.shade.io.netty.channel.nio.NioEventLoopGroup;
+import org.apache.storm.shade.io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.apache.storm.shade.io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.storm.utils.ObjectReader;
-
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServer {
 
+    public static final int LOAD_METRICS_TASK_ID = -1;
+    
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    Map<String, Object> topoConf;
-    int port;
+    private final EventLoopGroup bossEventLoopGroup;
+    private final EventLoopGroup workerEventLoopGroup;
+    private final ServerBootstrap bootstrap;
     private final ConcurrentHashMap<String, AtomicInteger> messagesEnqueued = new ConcurrentHashMap<>();
     private final AtomicInteger messagesDequeued = new AtomicInteger(0);
-    
-    volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server");
-    final ChannelFactory factory;
-    final ServerBootstrap bootstrap;
- 
-    private volatile boolean closing = false;
-    KryoValuesSerializer _ser;
-    KryoValuesDeserializer deser;
-    private IConnectionCallback _cb = null;
-    private Supplier<Object> newConnectionResponse;
     private final int boundPort;
-    
+    private final Map<String, Object> topoConf;
+    private final int port;
+    private final ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
+    private final KryoValuesSerializer ser;
+    private volatile boolean closing = false;
+    private IConnectionCallback cb = null;
+    private Supplier<Object> newConnectionResponse;
+
     Server(Map<String, Object> topoConf, int port) {
         this.topoConf = topoConf;
         this.port = port;
-        _ser = new KryoValuesSerializer(topoConf);
-        deser = new KryoValuesDeserializer(topoConf);
+        ser = new KryoValuesSerializer(topoConf);
 
         // Configure the server.
         int buffer_size = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
@@ -83,31 +79,35 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         ThreadFactory bossFactory = new NettyRenameThreadFactory(netty_name() + "-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory(netty_name() + "-worker");
 
-        if (maxWorkers > 0) {
-            factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                Executors.newCachedThreadPool(workerFactory), maxWorkers);
-        } else {
-            factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                Executors.newCachedThreadPool(workerFactory));
-        }
+        bossEventLoopGroup = new NioEventLoopGroup(1, bossFactory);
+        // 0 means DEFAULT_EVENT_LOOP_THREADS
+        // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
+        this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
 
         LOG.info("Create Netty Server " + netty_name() + ", buffer_size: " + buffer_size + ", maxWorkers: " + maxWorkers);
 
-        bootstrap = new ServerBootstrap(factory);
-        bootstrap.setOption("child.tcpNoDelay", true);
-        bootstrap.setOption("child.receiveBufferSize", buffer_size);
-        bootstrap.setOption("child.keepAlive", true);
-        bootstrap.setOption("backlog", backlog);
-
-        // Set up the pipeline factory.
-        bootstrap.setPipelineFactory(new StormServerPipelineFactory(this));
+        bootstrap = new ServerBootstrap()
+            .group(bossEventLoopGroup, workerEventLoopGroup)
+            .channel(NioServerSocketChannel.class)
+            .option(ChannelOption.SO_REUSEADDR, true)
+            .option(ChannelOption.SO_BACKLOG, backlog)
+            .childOption(ChannelOption.TCP_NODELAY, true)
+            .childOption(ChannelOption.SO_RCVBUF, buffer_size)
+            .childOption(ChannelOption.SO_KEEPALIVE, true)
+            .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+            .childHandler(new StormServerPipelineFactory(topoConf, this));
 
         // Bind and start to accept incoming connections.
-        Channel channel = bootstrap.bind(new InetSocketAddress(port));
-        boundPort = ((InetSocketAddress)channel.getLocalAddress()).getPort();
-        allChannels.add(channel);
+        try {
+            ChannelFuture bindFuture = bootstrap.bind(new InetSocketAddress(port)).sync();
+            Channel channel = bindFuture.channel();
+            boundPort = ((InetSocketAddress) channel.localAddress()).getPort();
+            allChannels.add(channel);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
-    
+
     private void addReceiveCount(String from, int amount) {
         //This is possibly lossy in the case where a value is deleted
         // because it has received no messages over the metrics collection
@@ -128,21 +128,22 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     /**
      * enqueue a received message
+     *
      * @throws InterruptedException
      */
     protected void enqueue(List<TaskMessage> msgs, String from) throws InterruptedException {
-        if (null == msgs || msgs.size() == 0 || closing) {
+        if (null == msgs || msgs.isEmpty() || closing) {
             return;
         }
         addReceiveCount(from, msgs.size());
-        if (_cb != null) {
-            _cb.recv(msgs);
+        if (cb != null) {
+            cb.recv(msgs);
         }
     }
 
     @Override
     public void registerRecv(IConnectionCallback cb) {
-        _cb = cb;
+        this.cb = cb;
     }
 
     @Override
@@ -150,42 +151,35 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         this.newConnectionResponse = newConnectionResponse;
     }
 
-    /**
-     * @param channel channel to close
-     */
-    public void closeChannel(Channel channel) {
-        channel.close().awaitUninterruptibly();
-        allChannels.remove(channel);
-    }
-
     @Override
     public int getPort() {
         return boundPort;
     }
-    
+
     /**
      * close all channels, and release resources
      */
-    public synchronized void close() {
-        if (allChannels != null) {
-            allChannels.close().awaitUninterruptibly();
-            factory.releaseExternalResources();
-            allChannels = null;
-        }
+    @Override
+    public void close() {
+        allChannels.close().awaitUninterruptibly();
+        workerEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
+        bossEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
     }
 
     @Override
-    synchronized public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
+    public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
         MessageBatch mb = new MessageBatch(1);
-        mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object)taskToLoad))));
-        allChannels.write(mb);
+        synchronized (ser) {
+            mb.add(new TaskMessage(LOAD_METRICS_TASK_ID, ser.serialize(Collections.singletonList((Object) taskToLoad))));
+        }
+        allChannels.writeAndFlush(mb);
     }
 
     // this method expected to be thread safe
     @Override
-    synchronized public void sendBackPressureStatus(BackPressureStatus bpStatus)  {
+    public void sendBackPressureStatus(BackPressureStatus bpStatus) {
         LOG.info("Sending BackPressure status update to connected workers. BPStatus = {}", bpStatus);
-        allChannels.write(bpStatus);
+        allChannels.writeAndFlush(bpStatus);
     }
 
     @Override
@@ -194,34 +188,27 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     @Override
-    public void send(int task, byte[] message) {
+    public void send(Iterator<TaskMessage> msgs) {
         throw new UnsupportedOperationException("Server connection should not send any messages");
     }
 
-    @Override
-    public void send(Iterator<TaskMessage> msgs) {
-      throw new UnsupportedOperationException("Server connection should not send any messages");
-    }
-
-    public String netty_name() {
-      return "Netty-server-localhost-" + port;
+    public final String netty_name() {
+        return "Netty-server-localhost-" + port;
     }
 
     @Override
     public Status status() {
         if (closing) {
-          return Status.Closed;
-        }
-        else if (!connectionEstablished(allChannels)) {
+            return Status.Closed;
+        } else if (!connectionEstablished(allChannels)) {
             return Status.Connecting;
-        }
-        else {
+        } else {
             return Status.Ready;
         }
     }
 
     private boolean connectionEstablished(Channel channel) {
-      return channel != null && channel.isBound();
+        return channel != null && channel.isActive();
     }
 
     private boolean connectionEstablished(ChannelGroup allChannels) {
@@ -235,11 +222,12 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         return allEstablished;
     }
 
+    @Override
     public Object getState() {
         LOG.debug("Getting metrics for server on port {}", port);
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("dequeuedMessages", messagesDequeued.getAndSet(0));
-        HashMap<String, Integer> enqueued = new HashMap<String, Integer>();
+        HashMap<String, Integer> enqueued = new HashMap<>();
         Iterator<Map.Entry<String, AtomicInteger>> it = messagesEnqueued.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, AtomicInteger> ent = it.next();
@@ -252,41 +240,47 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             }
         }
         ret.put("enqueued", enqueued);
-        
+
         // Report messageSizes metric, if enabled (non-null).
-        if (_cb instanceof IMetric) {
-            Object metrics = ((IMetric) _cb).getValueAndReset();
+        if (cb instanceof IMetric) {
+            Object metrics = ((IMetric) cb).getValueAndReset();
             if (metrics instanceof Map) {
                 ret.put("messageBytes", metrics);
             }
         }
-        
+
         return ret;
     }
 
-    /** Implementing IServer. **/
-    public void channelConnected(Channel c) {
+    /**
+     * Implementing IServer.
+     **/
+    @Override
+    public void channelActive(Channel c) {
         if (newConnectionResponse != null) {
-            c.write( newConnectionResponse.get() ); // not synchronized since it is not yet in channel grp, so pvt to this thread
+            c.writeAndFlush(newConnectionResponse.get(), c.voidPromise());
         }
         allChannels.add(c);
     }
 
-    public void received(Object message, String remote, Channel channel)  throws InterruptedException {
-        List<TaskMessage>msgs = (List<TaskMessage>)message;
+    @Override
+    public void received(Object message, String remote, Channel channel) throws InterruptedException {
+        List<TaskMessage> msgs = (List<TaskMessage>) message;
         enqueue(msgs, remote);
     }
 
+    @Override
     public String name() {
-        return (String)topoConf.get(Config.TOPOLOGY_NAME);
+        return (String) topoConf.get(Config.TOPOLOGY_NAME);
     }
 
+    @Override
     public String secretKey() {
         return SaslUtils.getSecretKey(topoConf);
     }
 
+    @Override
     public void authenticated(Channel c) {
-        return;
     }
 
     @Override

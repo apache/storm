@@ -15,8 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.trident;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Serializable;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -43,32 +55,154 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-
 public class HdfsState implements State {
+
+    public static final Logger LOG = LoggerFactory.getLogger(HdfsState.class);
+    private Options options;
+    private volatile TxnRecord lastSeenTxn;
+    private Path indexFilePath;
+
+
+    HdfsState(Options options) {
+        this.options = options;
+    }
+
+    void prepare(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        this.options.prepare(conf, partitionIndex, numPartitions);
+        initLastTxn(conf, partitionIndex);
+    }
+
+    private TxnRecord readTxnRecord(Path path) throws IOException {
+        FSDataInputStream inputStream = null;
+        try {
+            inputStream = this.options.fs.open(path);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            String line;
+            if ((line = reader.readLine()) != null) {
+                String[] fields = line.split(",");
+                return new TxnRecord(Long.valueOf(fields[0]), fields[1], Long.valueOf(fields[2]));
+            }
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        }
+        return new TxnRecord(0, options.currentFile.toString(), 0);
+    }
+
+    /**
+     * Returns temp file path corresponding to a file name.
+     */
+    private Path tmpFilePath(String filename) {
+        return new Path(filename + ".tmp");
+    }
+
+    /**
+     * Reads the last txn record from index file if it exists, if not from .tmp file if exists.
+     *
+     * @param indexFilePath the index file path
+     * @return the txn record from the index file or a default initial record.
+     *
+     * @throws IOException
+     */
+    private TxnRecord getTxnRecord(Path indexFilePath) throws IOException {
+        Path tmpPath = tmpFilePath(indexFilePath.toString());
+        if (this.options.fs.exists(indexFilePath)) {
+            return readTxnRecord(indexFilePath);
+        } else if (this.options.fs.exists(tmpPath)) {
+            return readTxnRecord(tmpPath);
+        }
+        return new TxnRecord(0, options.currentFile.toString(), 0);
+    }
+
+    private void initLastTxn(Map<String, Object> conf, int partition) {
+        // include partition id in the file name so that index for different partitions are independent.
+        String indexFileName = String.format(".index.%s.%d", conf.get(Config.TOPOLOGY_NAME), partition);
+        this.indexFilePath = new Path(options.fileNameFormat.getPath(), indexFileName);
+        try {
+            this.lastSeenTxn = getTxnRecord(indexFilePath);
+            LOG.debug("initLastTxn updated lastSeenTxn to [{}]", this.lastSeenTxn);
+        } catch (IOException e) {
+            LOG.warn("initLastTxn failed due to IOException.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void updateIndex(long txId) {
+        LOG.debug("Starting index update.");
+        final Path tmpPath = tmpFilePath(indexFilePath.toString());
+
+        try (FSDataOutputStream out = this.options.fs.create(tmpPath, true);
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
+            TxnRecord txnRecord = new TxnRecord(txId, options.currentFile.toString(), this.options.getCurrentOffset());
+            bw.write(txnRecord.toString());
+            bw.newLine();
+            bw.flush();
+            out.close();       /* In non error scenarios, for the Azure Data Lake Store File System (adl://),
+                               the output stream must be closed before the file associated with it is deleted.
+                               For ADLFS deleting the file also removes any handles to the file, hence out.close() will fail. */
+            /*
+             * Delete the current index file and rename the tmp file to atomically
+             * replace the index file. Orphan .tmp files are handled in getTxnRecord.
+             */
+            options.fs.delete(this.indexFilePath, false);
+            options.fs.rename(tmpPath, this.indexFilePath);
+            lastSeenTxn = txnRecord;
+            LOG.debug("updateIndex updated lastSeenTxn to [{}]", this.lastSeenTxn);
+        } catch (IOException e) {
+            LOG.warn("Begin commit failed due to IOException. Failing batch", e);
+            throw new FailedException(e);
+        }
+    }
+
+    @Override
+    public void beginCommit(Long txId) {
+        if (txId <= lastSeenTxn.txnid) {
+            LOG.info("txID {} is already processed, lastSeenTxn {}. Triggering recovery.", txId, lastSeenTxn);
+            long start = System.currentTimeMillis();
+            options.recover(lastSeenTxn.dataFilePath, lastSeenTxn.offset);
+            LOG.info("Recovery took {} ms.", System.currentTimeMillis() - start);
+        }
+        updateIndex(txId);
+    }
+
+    @Override
+    public void commit(Long txId) {
+        try {
+            options.doCommit(txId);
+        } catch (IOException e) {
+            LOG.warn("Commit failed due to IOException. Failing the batch.", e);
+            throw new FailedException(e);
+        }
+    }
+
+    public void updateState(List<TridentTuple> tuples, TridentCollector tridentCollector) {
+        try {
+            this.options.execute(tuples);
+        } catch (IOException e) {
+            LOG.warn("Failing batch due to IOException.", e);
+            throw new FailedException(e);
+        }
+    }
+
+    /**
+     * for unit tests
+     */
+    void close() throws IOException {
+        this.options.closeOutputFile();
+    }
 
     public static abstract class Options implements Serializable {
 
         protected String fsUrl;
         protected String configKey;
         protected transient FileSystem fs;
-        private Path currentFile;
         protected FileRotationPolicy rotationPolicy;
         protected FileNameFormat fileNameFormat;
         protected int rotation = 0;
         protected transient Configuration hdfsConfig;
         protected ArrayList<RotationAction> rotationActions = new ArrayList<RotationAction>();
-
+        private Path currentFile;
 
         abstract void closeOutputFile() throws IOException;
 
@@ -78,7 +212,7 @@ public class HdfsState implements State {
 
         abstract void doPrepare(Map<String, Object> conf, int partitionIndex, int numPartitions) throws IOException;
 
-        abstract long getCurrentOffset() throws  IOException;
+        abstract long getCurrentOffset() throws IOException;
 
         abstract void doCommit(Long txId) throws IOException;
 
@@ -143,8 +277,7 @@ public class HdfsState implements State {
         }
 
         /**
-         * Recovers nBytes from srcFile to the new file created
-         * by calling rotateOutputFile and then deletes the srcFile.
+         * Recovers nBytes from srcFile to the new file created by calling rotateOutputFile and then deletes the srcFile.
          */
         private void recover(String srcFile, long nBytes) {
             try {
@@ -169,10 +302,10 @@ public class HdfsState implements State {
 
     public static class HdfsFileOptions extends Options {
 
-        private transient FSDataOutputStream out;
         protected RecordFormat format;
+        private transient FSDataOutputStream out;
         private long offset = 0;
-        private int bufferSize =  131072; // default 128 K
+        private int bufferSize = 131072; // default 128 K
 
         public HdfsFileOptions withFsUrl(String fsUrl) {
             this.fsUrl = fsUrl;
@@ -360,24 +493,25 @@ public class HdfsState implements State {
         @Override
         void doRecover(Path srcPath, long nBytes) throws Exception {
             SequenceFile.Reader reader = new SequenceFile.Reader(this.hdfsConfig,
-                    SequenceFile.Reader.file(srcPath), SequenceFile.Reader.length(nBytes));
+                                                                 SequenceFile.Reader.file(srcPath), SequenceFile.Reader.length(nBytes));
 
             Writable key = (Writable) this.format.keyClass().newInstance();
             Writable value = (Writable) this.format.valueClass().newInstance();
-            while(reader.next(key, value)) {
+            while (reader.next(key, value)) {
                 this.writer.append(key, value);
             }
         }
 
         @Override
         Path createOutputFile() throws IOException {
-            Path p = new Path(this.fsUrl + this.fileNameFormat.getPath(), this.fileNameFormat.getName(this.rotation, System.currentTimeMillis()));
+            Path p = new Path(this.fsUrl + this.fileNameFormat.getPath(),
+                              this.fileNameFormat.getName(this.rotation, System.currentTimeMillis()));
             this.writer = SequenceFile.createWriter(
-                    this.hdfsConfig,
-                    SequenceFile.Writer.file(p),
-                    SequenceFile.Writer.keyClass(this.format.keyClass()),
-                    SequenceFile.Writer.valueClass(this.format.valueClass()),
-                    SequenceFile.Writer.compression(this.compressionType, this.codecFactory.getCodecByName(this.compressionCodec))
+                this.hdfsConfig,
+                SequenceFile.Writer.file(p),
+                SequenceFile.Writer.keyClass(this.format.keyClass()),
+                SequenceFile.Writer.valueClass(this.format.valueClass()),
+                SequenceFile.Writer.compression(this.compressionType, this.codecFactory.getCodecByName(this.compressionCodec))
             );
             return p;
         }
@@ -417,139 +551,5 @@ public class HdfsState implements State {
         public String toString() {
             return Long.toString(txnid) + "," + dataFilePath + "," + Long.toString(offset);
         }
-    }
-
-
-    public static final Logger LOG = LoggerFactory.getLogger(HdfsState.class);
-    private Options options;
-    private volatile TxnRecord lastSeenTxn;
-    private Path indexFilePath;
-
-    HdfsState(Options options) {
-        this.options = options;
-    }
-
-    void prepare(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-        this.options.prepare(conf, partitionIndex, numPartitions);
-        initLastTxn(conf, partitionIndex);
-    }
-
-    private TxnRecord readTxnRecord(Path path) throws IOException {
-        FSDataInputStream inputStream = null;
-        try {
-            inputStream = this.options.fs.open(path);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            String line;
-            if ((line = reader.readLine()) != null) {
-                String[] fields = line.split(",");
-                return new TxnRecord(Long.valueOf(fields[0]), fields[1], Long.valueOf(fields[2]));
-            }
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-        }
-        return new TxnRecord(0, options.currentFile.toString(), 0);
-    }
-
-    /**
-     * Returns temp file path corresponding to a file name.
-     */
-    private Path tmpFilePath(String filename) {
-        return new Path(filename + ".tmp");
-    }
-    /**
-     * Reads the last txn record from index file if it exists, if not
-     * from .tmp file if exists.
-     *
-     * @param indexFilePath the index file path
-     * @return the txn record from the index file or a default initial record.
-     * @throws IOException
-     */
-    private TxnRecord getTxnRecord(Path indexFilePath) throws IOException {
-        Path tmpPath = tmpFilePath(indexFilePath.toString());
-        if (this.options.fs.exists(indexFilePath)) {
-            return readTxnRecord(indexFilePath);
-        } else if (this.options.fs.exists(tmpPath)) {
-            return readTxnRecord(tmpPath);
-        }
-        return new TxnRecord(0, options.currentFile.toString(), 0);
-    }
-
-    private void initLastTxn(Map<String, Object> conf, int partition) {
-        // include partition id in the file name so that index for different partitions are independent.
-        String indexFileName = String.format(".index.%s.%d", conf.get(Config.TOPOLOGY_NAME), partition);
-        this.indexFilePath = new Path(options.fileNameFormat.getPath(), indexFileName);
-        try {
-            this.lastSeenTxn = getTxnRecord(indexFilePath);
-            LOG.debug("initLastTxn updated lastSeenTxn to [{}]", this.lastSeenTxn);
-        } catch (IOException e) {
-            LOG.warn("initLastTxn failed due to IOException.", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void updateIndex(long txId) {
-        LOG.debug("Starting index update.");
-        final Path tmpPath = tmpFilePath(indexFilePath.toString());
-
-        try (FSDataOutputStream out = this.options.fs.create(tmpPath, true);
-                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
-            TxnRecord txnRecord = new TxnRecord(txId, options.currentFile.toString(), this.options.getCurrentOffset());
-            bw.write(txnRecord.toString());
-            bw.newLine();
-            bw.flush();
-            out.close();       /* In non error scenarios, for the Azure Data Lake Store File System (adl://),
-                               the output stream must be closed before the file associated with it is deleted.
-                               For ADLFS deleting the file also removes any handles to the file, hence out.close() will fail. */
-            /*
-             * Delete the current index file and rename the tmp file to atomically
-             * replace the index file. Orphan .tmp files are handled in getTxnRecord.
-             */
-            options.fs.delete(this.indexFilePath, false);
-            options.fs.rename(tmpPath, this.indexFilePath);
-            lastSeenTxn = txnRecord;
-            LOG.debug("updateIndex updated lastSeenTxn to [{}]", this.lastSeenTxn);
-        } catch (IOException e) {
-            LOG.warn("Begin commit failed due to IOException. Failing batch", e);
-            throw new FailedException(e);
-        }
-    }
-
-    @Override
-    public void beginCommit(Long txId) {
-        if (txId <= lastSeenTxn.txnid) {
-            LOG.info("txID {} is already processed, lastSeenTxn {}. Triggering recovery.", txId, lastSeenTxn);
-            long start = System.currentTimeMillis();
-            options.recover(lastSeenTxn.dataFilePath, lastSeenTxn.offset);
-            LOG.info("Recovery took {} ms.", System.currentTimeMillis() - start);
-        }
-        updateIndex(txId);
-    }
-
-    @Override
-    public void commit(Long txId) {
-        try {
-            options.doCommit(txId);
-        } catch (IOException e) {
-            LOG.warn("Commit failed due to IOException. Failing the batch.", e);
-            throw new FailedException(e);
-        }
-    }
-
-    public void updateState(List<TridentTuple> tuples, TridentCollector tridentCollector) {
-        try {
-            this.options.execute(tuples);
-        } catch (IOException e) {
-            LOG.warn("Failing batch due to IOException.", e);
-            throw new FailedException(e);
-        }
-    }
-
-    /**
-     * for unit tests
-     */
-    void close() throws IOException {
-        this.options.closeOutputFile();
     }
 }

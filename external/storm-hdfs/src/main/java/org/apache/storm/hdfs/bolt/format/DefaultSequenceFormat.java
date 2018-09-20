@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt.format;
 
-import org.apache.storm.tuple.Tuple;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.storm.tuple.Tuple;
 
 /**
  * Basic <code>SequenceFormat</code> implementation that uses
  * <code>LongWritable</code> for keys and <code>Text</code> for values.
- *
  */
 public class DefaultSequenceFormat implements SequenceFormat {
     private transient LongWritable key;
@@ -34,7 +34,7 @@ public class DefaultSequenceFormat implements SequenceFormat {
     private String keyField;
     private String valueField;
 
-    public DefaultSequenceFormat(String keyField, String valueField){
+    public DefaultSequenceFormat(String keyField, String valueField) {
         this.keyField = keyField;
         this.valueField = valueField;
     }
@@ -51,8 +51,8 @@ public class DefaultSequenceFormat implements SequenceFormat {
 
     @Override
     public Writable key(Tuple tuple) {
-        if(this.key == null){
-            this.key  = new LongWritable();
+        if (this.key == null) {
+            this.key = new LongWritable();
         }
         this.key.set(tuple.getLongByField(this.keyField));
         return this.key;
@@ -60,7 +60,7 @@ public class DefaultSequenceFormat implements SequenceFormat {
 
     @Override
     public Writable value(Tuple tuple) {
-        if(this.value == null){
+        if (this.value == null) {
             this.value = new Text();
         }
         this.value.set(tuple.getStringByField(this.valueField));

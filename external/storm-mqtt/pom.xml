@@ -29,9 +29,6 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-
-
-
     <repositories>
         <repository>
             <id>bintray</id>
@@ -49,19 +46,16 @@
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-broker</artifactId>
-            <version>5.9.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-mqtt</artifactId>
-            <version>5.9.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-kahadb-store</artifactId>
-            <version>5.9.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -127,7 +121,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
                 <configuration>
-                    <maxAllowedViolations>158</maxAllowedViolations>
+                    <maxAllowedViolations>39</maxAllowedViolations>
                 </configuration>
             </plugin>
         </plugins>

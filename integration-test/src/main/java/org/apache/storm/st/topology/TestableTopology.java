@@ -19,11 +19,11 @@ package org.apache.storm.st.topology;
 
 import org.apache.storm.generated.StormTopology;
 
-import java.util.List;
-
 public interface TestableTopology {
     String DUMMY_FIELD = "dummy";
-    List<String> getExpectedOutput();
+    //Some tests rely on reading the worker log. If emits are too close together and too much is logged, the log might roll, breaking the test.
+    int MIN_SLEEP_BETWEEN_EMITS_MS = 10;
+    int MAX_SLEEP_BETWEEN_EMITS_MS = 100;
     StormTopology newTopology();
     String getBoltName();
     String getSpoutName();

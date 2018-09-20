@@ -1,25 +1,17 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.metricstore.rocksdb;
 
 import com.codahale.metrics.Meter;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.ListIterator;
@@ -28,7 +20,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadLocalRandom;
-
 import org.apache.http.annotation.NotThreadSafe;
 import org.apache.storm.metricstore.AggLevel;
 import org.apache.storm.metricstore.Metric;
@@ -79,7 +70,7 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
      * @param store   The RocksDB store
      * @param queue   The queue to receive metrics for insertion
      */
-    RocksDbMetricsWriter(RocksDbStore store, BlockingQueue queue, Meter failureMeter)  {
+    RocksDbMetricsWriter(RocksDbStore store, BlockingQueue queue, Meter failureMeter) {
         this.store = store;
         this.queue = queue;
         this.failureMeter = failureMeter;
@@ -134,7 +125,7 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
         Integer streamId = storeMetadataString(KeyType.STREAM_ID_STRING, metric.getStreamId(), metricTimestamp);
 
         RocksDbKey key = RocksDbKey.createMetricKey(AggLevel.AGG_LEVEL_NONE, topologyId, metric.getTimestamp(), metricId,
-                componentId, executorId, hostId, metric.getPort(), streamId);
+                                                    componentId, executorId, hostId, metric.getPort(), streamId);
 
         // save metric key/value to be batched
         RocksDbValue value = new RocksDbValue(metric);
@@ -146,7 +137,7 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
         ListIterator li = aggBuckets.listIterator(aggBuckets.size());
         boolean populate = true;
         while (li.hasPrevious()) {
-            AggLevel bucket = (AggLevel)li.previous();
+            AggLevel bucket = (AggLevel) li.previous();
             Metric aggMetric = new Metric(metric);
             aggMetric.setAggLevel(bucket);
 
@@ -155,7 +146,7 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
             aggMetric.setTimestamp(roundedToBucket);
 
             RocksDbKey aggKey = RocksDbKey.createMetricKey(bucket, topologyId, aggMetric.getTimestamp(), metricId,
-                    componentId, executorId, hostId, aggMetric.getPort(), streamId);
+                                                           componentId, executorId, hostId, aggMetric.getPort(), streamId);
 
             if (populate) {
                 // retrieve any existing aggregation matching this one and update the values
@@ -217,7 +208,7 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
         generateUniqueStringIds();
         int id = unusedIds.iterator().next();
         unusedIds.remove(id);
-        return  id;
+        return id;
     }
 
     // guarantees a list of unused string Ids exists.  Once the list is empty, creates a new list
@@ -290,8 +281,8 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
         // get all metadata from the cache to put into the database
         TreeMap<RocksDbKey, RocksDbValue> batchMap = new TreeMap<>();  // use a new map to prevent threading issues with writer thread
         for (Map.Entry entry : stringMetadataCache.entrySet()) {
-            String metadataString = (String)entry.getKey();
-            StringMetadata val = (StringMetadata)entry.getValue();
+            String metadataString = (String) entry.getKey();
+            StringMetadata val = (StringMetadata) entry.getValue();
             RocksDbValue rval = new RocksDbValue(val.getLastTimestamp(), metadataString);
 
             for (KeyType type : val.getMetadataTypes()) {   // save the metadata for all types of strings it matches

@@ -21,9 +21,12 @@ package org.apache.storm.hbase.state;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.procedure2.util.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.state.DefaultStateSerializer;
@@ -33,10 +36,6 @@ import org.apache.storm.state.StateProvider;
 import org.apache.storm.task.TopologyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Provides {@link HBaseKeyValueState}.
@@ -86,12 +85,12 @@ public class HBaseKeyValueStateProvider implements StateProvider {
         HBaseClient hbaseClient = new HBaseClient(hbaseConfMap, hbConfig, config.tableName);
 
         return new HBaseKeyValueState(hbaseClient, config.columnFamily, namespace,
-                getKeySerializer(stormConf, context, config), getValueSerializer(stormConf, context, config));
+                                      getKeySerializer(stormConf, context, config), getValueSerializer(stormConf, context, config));
     }
 
     private Configuration getHBaseConfigurationInstance(Map<String, Object> conf) {
         final Configuration hbConfig = HBaseConfiguration.create();
-        for(String key : conf.keySet()) {
+        for (String key : conf.keySet()) {
             hbConfig.set(key, String.valueOf(conf.get(key)));
         }
         return hbConfig;
@@ -99,11 +98,11 @@ public class HBaseKeyValueStateProvider implements StateProvider {
 
     private Map<String, Object> getHBaseConfigMap(Map<String, Object> stormConfMap, String hbaseConfigKey) {
         Map<String, Object> conf = (Map<String, Object>) stormConfMap.get(hbaseConfigKey);
-        if(conf == null) {
+        if (conf == null) {
             throw new IllegalArgumentException("HBase configuration not found using key '" + hbaseConfigKey + "'");
         }
 
-        if(conf.get("hbase.rootdir") == null) {
+        if (conf.get("hbase.rootdir") == null) {
             LOG.warn("No 'hbase.rootdir' value found in configuration! Using HBase defaults.");
         }
         return conf;
@@ -153,14 +152,14 @@ public class HBaseKeyValueStateProvider implements StateProvider {
         @Override
         public String toString() {
             return "StateConfig{" +
-                    "keyClass='" + keyClass + '\'' +
-                    ", valueClass='" + valueClass + '\'' +
-                    ", keySerializerClass='" + keySerializerClass + '\'' +
-                    ", valueSerializerClass='" + valueSerializerClass + '\'' +
-                    ", hbaseConfigKey='" + hbaseConfigKey + '\'' +
-                    ", tableName='" + tableName + '\'' +
-                    ", columnFamily='" + columnFamily + '\'' +
-                    '}';
+                   "keyClass='" + keyClass + '\'' +
+                   ", valueClass='" + valueClass + '\'' +
+                   ", keySerializerClass='" + keySerializerClass + '\'' +
+                   ", valueSerializerClass='" + valueSerializerClass + '\'' +
+                   ", hbaseConfigKey='" + hbaseConfigKey + '\'' +
+                   ", tableName='" + tableName + '\'' +
+                   ", columnFamily='" + columnFamily + '\'' +
+                   '}';
         }
     }
 }

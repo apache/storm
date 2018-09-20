@@ -15,10 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.maven.shade.clojure;
 
-import org.apache.maven.plugins.shade.relocation.Relocator;
-import org.apache.maven.plugins.shade.resource.ResourceTransformer;
+package org.apache.storm.maven.shade.clojure;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import org.apache.maven.plugins.shade.relocation.Relocator;
+import org.apache.maven.plugins.shade.resource.ResourceTransformer;
 
 
 public class ClojureTransformer implements ResourceTransformer {
@@ -35,7 +35,7 @@ public class ClojureTransformer implements ResourceTransformer {
 
     @Override
     public boolean canTransformResource(String s) {
-        if(s.endsWith(".clj")){
+        if (s.endsWith(".clj")) {
             return true;
         }
         return false;
@@ -46,12 +46,12 @@ public class ClojureTransformer implements ResourceTransformer {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         int b;
-        while((b = inputStream.read()) != -1){
+        while ((b = inputStream.read()) != -1) {
             out.write(b);
         }
         String data = out.toString();
 
-        for(Relocator rel : relocators){
+        for (Relocator rel : relocators) {
             data = rel.applyToSourceContent(data);
         }
         this.entries.put(s, data);
@@ -64,7 +64,7 @@ public class ClojureTransformer implements ResourceTransformer {
 
     @Override
     public void modifyOutputStream(JarOutputStream jarOut) throws IOException {
-        for(String key : this.entries.keySet()){
+        for (String key : this.entries.keySet()) {
             jarOut.putNextEntry(new JarEntry(key));
             jarOut.write(this.entries.get(key).getBytes());
         }

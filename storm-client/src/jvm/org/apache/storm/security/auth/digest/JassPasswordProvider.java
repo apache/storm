@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.security.auth.digest;
@@ -22,28 +16,26 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
-import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.security.auth.ThriftConnectionType;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.PasswordProvider;
 
 /**
  * Provides passwords out of a jaas conf for typical MD5-DIGEST authentication support.
  */
 public class JassPasswordProvider implements PasswordProvider {
-    private static final String USER_PREFIX = "user_";
     /**
-     * The system property that sets a super user password.  This can be used in addition to the
-     * jaas conf, and takes precedent over a "super" user in the jaas conf if this is set.
+     * The system property that sets a super user password.  This can be used in addition to the jaas conf, and takes precedent over a
+     * "super" user in the jaas conf if this is set.
      */
     public static final String SYSPROP_SUPER_PASSWORD = "storm.SASLAuthenticationProvider.superPassword";
-
+    private static final String USER_PREFIX = "user_";
     private Map<String, char[]> credentials = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
+     *
      * @param configuration the jaas configuration to get the credentials out of.
      * @throws IOException if we could not read the Server section in the jaas conf.
      */
@@ -52,10 +44,10 @@ public class JassPasswordProvider implements PasswordProvider {
             return;
         }
 
-        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_SERVER);
+        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
-            String errorMessage = "Could not find a '" + AuthUtils.LOGIN_CONTEXT_SERVER
-                + "' entry in this configuration: Server cannot start.";
+            String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_SERVER
+                                  + "' entry in this configuration: Server cannot start.";
             throw new IOException(errorMessage);
         }
         credentials.clear();

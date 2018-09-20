@@ -21,6 +21,8 @@ package org.apache.storm.daemon.common;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
@@ -28,13 +30,16 @@ import javax.ws.rs.ext.Provider;
 import org.apache.storm.generated.AuthorizationException;
 import org.json.simple.JSONValue;
 
+import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
+
 @Provider
 public class AuthorizationExceptionMapper implements ExceptionMapper<AuthorizationException> {
+
+    @Inject
+    public javax.inject.Provider<HttpServletRequest> request;
+
     @Override
     public Response toResponse(AuthorizationException ex) {
-        Map<String, String> body = new HashMap<>();
-        body.put("error", "Not Authorized");
-        body.put("errorMessage", ex.get_msg());
-        return Response.status(403).entity(JSONValue.toJSONString(body)).type("application/json").build();
+        return getResponse(ex, request);
     }
 }

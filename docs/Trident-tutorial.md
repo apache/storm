@@ -6,6 +6,8 @@ documentation: true
 
 Trident is a high-level abstraction for doing realtime computing on top of Storm. It allows you to seamlessly intermix high throughput (millions of messages per second), stateful stream processing with low latency distributed querying. If you're familiar with high level batch processing tools like Pig or Cascading, the concepts of Trident will be very familiar – Trident has joins, aggregations, grouping, functions, and filters. In addition to these, Trident adds primitives for doing stateful, incremental processing on top of any database or persistence store. Trident has consistent, exactly-once semantics, so it is easy to reason about Trident topologies.
 
+Trident developed from an earlier effort to provide exactly-once guarantees for Storm. While this earlier API is no longer present in Storm, the [documentation](Transactional-topologies.html) provides a gentle introduction to some of the concepts used by Trident, and may be worth reading as an addendum to the Trident documentation.
+
 ## Illustrative example
 
 Let's look at an illustrative example of Trident. This example will do two things:

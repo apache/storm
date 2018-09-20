@@ -7,9 +7,7 @@ There are three distinct layers to Storm's codebase.
 
 First, Storm was designed from the very beginning to be compatible with multiple languages. Nimbus is a Thrift service and topologies are defined as Thrift structures. The usage of Thrift allows Storm to be used from any language.
 
-Second, all of Storm's interfaces are specified as Java interfaces. So even though there's a lot of Clojure in Storm's implementation, all usage must go through the Java API. This means that every feature of Storm is always available via Java.
-
-Third, Storm's implementation is largely in Clojure. Line-wise, Storm is about half Java code, half Clojure code. But Clojure is much more expressive, so in reality the great majority of the implementation logic is in Clojure. 
+Second, all of Storm's interfaces are specified as Java interfaces. This means that every feature of Storm is always available via Java.
 
 The following sections explain each of these layers in more detail.
 
@@ -53,30 +51,30 @@ You can see this strategy at work with the [BaseRichSpout](javadocs/org/apache/s
 
 Spouts and bolts are serialized into the Thrift definition of the topology as described above. 
 
-One subtle aspect of the interfaces is the difference between `IBolt` and `ISpout` vs. `IRichBolt` and `IRichSpout`. The main difference between them is the addition of the `declareOutputFields` method in the "Rich" versions of the interfaces. The reason for the split is that the output fields declaration for each output stream needs to be part of the Thrift struct (so it can be specified from any language), but as a user you want to be able to declare the streams as part of your class. What `TopologyBuilder` does when constructing the Thrift representation is call `declareOutputFields` to get the declaration and convert it into the Thrift structure. The conversion happens [at this portion]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/topology/TopologyBuilder.java) of the `TopologyBuilder` code.
+One subtle aspect of the interfaces is the difference between `IBolt` and `ISpout` vs. `IRichBolt` and `IRichSpout`. The main difference between them is the addition of the `declareOutputFields` method in the "Rich" versions of the interfaces. The reason for the split is that the output fields declaration for each output stream needs to be part of the Thrift struct (so it can be specified from any language), but as a user you want to be able to declare the streams as part of your class. What `TopologyBuilder` does when constructing the Thrift representation is call `declareOutputFields` to get the declaration and convert it into the Thrift structure. The conversion happens in the `TopologyBuilder` code.
 
 
 ### Implementation
 
 Specifying all the functionality via Java interfaces ensures that every feature of Storm is available via Java. Moreso, the focus on Java interfaces ensures that the user experience from Java-land is pleasant as well.
 
-The implementation of Storm, on the other hand, is primarily in Clojure. While the codebase is about 50% Java and 50% Clojure in terms of LOC, most of the implementation logic is in Clojure. There are two notable exceptions to this, and that is the [DRPC](https://github.com/apache/storm/wiki/Distributed-RPC) and [transactional topologies](https://github.com/apache/storm/wiki/Transactional-topologies) implementations. These are implemented purely in Java. This was done to serve as an illustration for how to implement a higher level abstraction on Storm. The DRPC and transactional topologies implementations are in the [org.apache.storm.coordination]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/coordination), [org.apache.storm.drpc]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/drpc), and [org.apache.storm.transactional]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/transactional) packages.
+Storm was originally implemented in Clojure, but most of the code has since been ported to Java.
 
-Here's a summary of the purpose of the main Java packages and Clojure namespace:
+Here's a summary of the purpose of the main Java packages:
 
 #### Java packages
 
-[org.apache.storm.coordination]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/coordination): Implements the pieces required to coordinate batch-processing on top of Storm, which both DRPC and transactional topologies use. `CoordinatedBolt` is the most important class here.
+[org.apache.storm.coordination]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/coordination): Implements the pieces required to coordinate batch-processing on top of Storm, which DRPC uses. `CoordinatedBolt` is the most important class here.
 
 [org.apache.storm.drpc]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/drpc): Implementation of the DRPC higher level abstraction
 
-[org.apache.storm.generated]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/generated): The generated Thrift code for Storm (generated using [this fork](https://github.com/nathanmarz/thrift) of Thrift, which simply renames the packages to org.apache.thrift7 to avoid conflicts with other Thrift versions)
+[org.apache.storm.generated]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/generated): The generated Thrift code for Storm.
 
 [org.apache.storm.grouping]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/grouping): Contains interface for making custom stream groupings
 
-[org.apache.storm.hooks]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/hooks): Interfaces for hooking into various events in Storm, such as when tasks emit tuples, when tuples are acked, etc. User guide for hooks is [here](https://github.com/apache/storm/wiki/Hooks).
+[org.apache.storm.hooks]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/hooks): Interfaces for hooking into various events in Storm, such as when tasks emit tuples, when tuples are acked, etc. User guide for hooks is [here](Hooks.html).
 
-[org.apache.storm.serialization]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/serialization): Implementation of how Storm serializes/deserializes tuples. Built on top of [Kryo](http://code.google.com/p/kryo/).
+[org.apache.storm.serialization]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/serialization): Implementation of how Storm serializes/deserializes tuples. Built on top of [Kryo](https://github.com/EsotericSoftware/kryo).
 
 [org.apache.storm.spout]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/spout): Definition of spout and associated interfaces (like the `SpoutOutputCollector`). Also contains `ShellSpout` which implements the protocol for defining spouts in non-JVM languages.
 
@@ -86,13 +84,12 @@ Here's a summary of the purpose of the main Java packages and Clojure namespace:
 
 [org.apache.storm.topology]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/topology): Java layer over the underlying Thrift structure to provide a clean, pure-Java API to Storm (users don't have to know about Thrift). `TopologyBuilder` is here as well as the helpful base classes for the different spouts and bolts. The slightly-higher level `IBasicBolt` interface is here, which is a simpler way to write certain kinds of bolts.
 
-[org.apache.storm.transactional]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/transactional): Implementation of transactional topologies.
-
 [org.apache.storm.tuple]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/tuple): Implementation of Storm's tuple data model.
 
-[org.apache.storm.utils]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/utils): Data structures and miscellaneous utilities used throughout the codebase.
+[org.apache.storm.utils]({{page.git-tree-base}}/storm-client/src/jvm/org/apache/storm/utils): Data structures and miscellaneous utilities used throughout the codebase. This includes utilities for time simulation.
 
 [org.apache.storm.command.*]({{page.git-blob-base}}/storm-core/src/jvm/org/apache/storm/command): These implement various commands for the `storm` command line client. These implementations are very short.
+
 [org.apache.storm.cluster]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/cluster): This code manages how cluster state (like what tasks are running where, what spout/bolt each task runs as) is stored, typically in Zookeeper.
 
 [org.apache.storm.daemon.Acker]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/daemon/Acker.java): Implementation of the "acker" bolt, which is a key part of how Storm guarantees data processing.
@@ -100,6 +97,8 @@ Here's a summary of the purpose of the main Java packages and Clojure namespace:
 [org.apache.storm.daemon.DrpcServer]({{page.git-blob-base}}/storm-webapp/src/jvm/org/apache/storm/daemon/DrpcServer.java): Implementation of the DRPC server for use with DRPC topologies.
 
 [org.apache.storm.event]({{page.git-blob-base}}/storm-server/src/jvm/org/apache/storm/event): Implements a simple asynchronous function executor. Used in various places in Nimbus and Supervisor to make functions execute in serial to avoid any race conditions.
+
+[org.apache.storm.LocalCluster]({{page.git-blob-base}}/storm-server/src/main/java/org/apache/storm/LocalCluster.java): Utility to boot up Storm inside an existing Java process. Often used in conjunction with `Testing.java` to implement integration tests.
 
 [org.apache.storm.messaging.*]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/messaging): Defines a higher level interface to implementing point to point messaging. In local mode Storm uses in-memory Java queues to do this; on a cluster, it uses Netty, but it is pluggable.
 
@@ -117,14 +116,14 @@ Here's a summary of the purpose of the main Java packages and Clojure namespace:
 
 [org.apache.storm.daemon.worker]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/daemon/worker/Worker.java): Implementation of a worker process (which will contain many tasks within). Implements message transferring and task launching.
 
+[org.apache.storm.Testing]({{page.git-blob-base}}/storm-server/src/main/java/org/apache/storm/Testing.java): Various utilities for working with local clusters during tests, e.g. `completeTopology` for running a fixed set of tuples through a topology for capturing the output, tracker topologies for having fine grained control over detecting when a cluster is "idle", and other utilities.
+
 #### Clojure namespaces
 
 [org.apache.storm.clojure]({{page.git-blob-base}}/storm-clojure/src/clj/org/apache/storm/clojure.clj): Implementation of the Clojure DSL for Storm.
 
-[org.apache.storm.config]({{page.git-blob-base}}/storm-core/src/clj/org/apache/storm/config.clj): Created clojure symbols for config names in [Config.java](javadocs/org/apache/storm/Config.html)
+[org.apache.storm.config]({{page.git-blob-base}}/storm-clojure/src/clj/org/apache/storm/config.clj): Created clojure symbols for config names in [Config.java](javadocs/org/apache/storm/Config.html)
  
-[org.apache.storm.log]({{page.git-blob-base}}/storm-core/src/clj/org/apache/storm/log.clj): Defines the functions used to log messages to log4j.
-
-[org.apache.storm.testing]({{page.git-blob-base}}/storm-clojure/src/clj/org/apache/storm/testing.clj): Implementation of facilities used to test Storm topologies. Includes time simulation, `complete-topology` for running a fixed set of tuples through a topology and capturing the output, tracker topologies for having fine grained control over detecting when a cluster is "idle", and other utilities.
+[org.apache.storm.log]({{page.git-blob-base}}/storm-clojure/src/clj/org/apache/storm/log.clj): Defines the functions used to log messages to log4j.
 
 [org.apache.storm.ui.*]({{page.git-blob-base}}/storm-core/src/clj/org/apache/storm/ui): Implementation of Storm UI. Completely independent from rest of code base and uses the Nimbus Thrift API to get data.

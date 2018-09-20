@@ -1,25 +1,23 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.daemon;
 
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import org.apache.storm.Config;
 import org.apache.storm.Thrift;
 import org.apache.storm.generated.GlobalStreamId;
@@ -29,24 +27,39 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadAwareShuffleGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.grouping.ShuffleGrouping;
+import org.apache.storm.shade.com.google.common.collect.Ordering;
+import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.TupleUtils;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import org.apache.storm.utils.Utils;
 
 public class GrouperFactory {
 
-    public static LoadAwareCustomStreamGrouping mkGrouper(WorkerTopologyContext context, String componentId, String streamId, Fields outFields,
-                                    Grouping thriftGrouping,
-                                    List<Integer> unsortedTargetTasks,
-                                    Map<String, Object> topoConf) {
+    // A no-op grouper
+    public static final LoadAwareCustomStreamGrouping DIRECT = new LoadAwareCustomStreamGrouping() {
+        @Override
+        public void refreshLoad(LoadMapping loadMapping) {
+
+        }
+
+        @Override
+        public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+
+        }
+
+        @Override
+        public List<Integer> chooseTasks(int taskId, List<Object> values) {
+            return null;
+        }
+
+    };
+
+    public static LoadAwareCustomStreamGrouping mkGrouper(WorkerTopologyContext context, String componentId, String streamId,
+                                                          Fields outFields,
+                                                          Grouping thriftGrouping,
+                                                          List<Integer> unsortedTargetTasks,
+                                                          Map<String, Object> topoConf) {
         List<Integer> targetTasks = Ordering.natural().sortedCopy(unsortedTargetTasks);
         final boolean isNotLoadAware = (null != topoConf.get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING) && (boolean) topoConf
             .get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING));
@@ -103,7 +116,7 @@ public class GrouperFactory {
         if (result instanceof LoadAwareCustomStreamGrouping) {
             return (LoadAwareCustomStreamGrouping) result;
         } else {
-            return new BasicLoadAwareCustomStreamGrouping (result);
+            return new BasicLoadAwareCustomStreamGrouping(result);
         }
     }
 
@@ -137,7 +150,7 @@ public class GrouperFactory {
     public static class FieldsGrouper implements CustomStreamGrouping {
 
         private Fields outFields;
-        private List<List<Integer> > targetTasks;
+        private List<List<Integer>> targetTasks;
         private Fields groupFields;
         private int numTasks;
 
@@ -188,9 +201,9 @@ public class GrouperFactory {
 
     public static class NoneGrouper implements CustomStreamGrouping {
 
+        private final Random random;
         private List<Integer> targetTasks;
         private int numTasks;
-        private final Random random;
 
         public NoneGrouper() {
             random = new Random();
@@ -223,24 +236,5 @@ public class GrouperFactory {
             return targetTasks;
         }
     }
-
-    // A no-op grouper
-    public static final LoadAwareCustomStreamGrouping DIRECT = new LoadAwareCustomStreamGrouping() {
-        @Override
-        public void refreshLoad(LoadMapping loadMapping) {
-
-        }
-
-        @Override
-        public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
-
-        }
-
-        @Override
-        public List<Integer> chooseTasks(int taskId, List<Object> values) {
-            return null;
-        }
-
-    };
 
 }

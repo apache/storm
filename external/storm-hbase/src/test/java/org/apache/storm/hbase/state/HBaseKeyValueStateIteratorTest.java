@@ -16,13 +16,7 @@
 
 package org.apache.storm.hbase.state;
 
-import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import com.google.common.primitives.UnsignedBytes;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Mutation;
@@ -41,6 +34,11 @@ import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.state.Serializer;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for HBaseKeyValueStateIterator.
@@ -81,8 +79,8 @@ public class HBaseKeyValueStateIteratorTest {
         applyPendingStateToHBase(chunkMap);
 
         HBaseKeyValueStateIterator<byte[], byte[]> kvIterator =
-                new HBaseKeyValueStateIterator<>(namespace, columnFamily, mockHBaseClient, pendingPrepare.entrySet().iterator(),
-                        pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
+            new HBaseKeyValueStateIterator<>(namespace, columnFamily, mockHBaseClient, pendingPrepare.entrySet().iterator(),
+                                             pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
 
         assertNextEntry(kvIterator, "key0".getBytes(), "value0".getBytes());
 
@@ -111,8 +109,8 @@ public class HBaseKeyValueStateIteratorTest {
         applyPendingStateToHBase(chunkMap);
 
         HBaseKeyValueStateIterator<byte[], byte[]> kvIterator =
-                new HBaseKeyValueStateIterator<>(namespace, columnFamily, mockHBaseClient, pendingPrepare.entrySet().iterator(),
-                        pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
+            new HBaseKeyValueStateIterator<>(namespace, columnFamily, mockHBaseClient, pendingPrepare.entrySet().iterator(),
+                                             pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
 
         // keys shouldn't appear twice
 
@@ -134,8 +132,8 @@ public class HBaseKeyValueStateIteratorTest {
         NavigableMap<byte[], byte[]> pendingCommit = getBinaryTreeMap();
 
         HBaseKeyValueStateIterator<byte[], byte[]> kvIterator =
-                new HBaseKeyValueStateIterator<>(namespace, columnFamily, mockHBaseClient, pendingPrepare.entrySet().iterator(),
-                        pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
+            new HBaseKeyValueStateIterator<>(namespace, columnFamily, mockHBaseClient, pendingPrepare.entrySet().iterator(),
+                                             pendingCommit.entrySet().iterator(), chunkSize, keySerializer, valueSerializer);
 
         assertFalse(kvIterator.hasNext());
     }
@@ -170,7 +168,7 @@ public class HBaseKeyValueStateIteratorTest {
                 mutations.add(new Delete(getRowKeyForStateKey(rowKey)));
             } else {
                 List<Mutation> mutationsForRow = prepareMutateRow(getRowKeyForStateKey(rowKey), columnFamily,
-                        Collections.singletonMap(STATE_QUALIFIER, value));
+                                                                  Collections.singletonMap(STATE_QUALIFIER, value));
                 mutations.addAll(mutationsForRow);
             }
         }
@@ -204,7 +202,7 @@ public class HBaseKeyValueStateIteratorTest {
     }
 
     private void mutateRow(byte[] rowKey, byte[] columnFamily, Map<byte[], byte[]> map)
-            throws Exception {
+        throws Exception {
         mutateRow(rowKey, columnFamily, map, Durability.USE_DEFAULT);
     }
 

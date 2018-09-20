@@ -1,41 +1,34 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.nimbus;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.Config;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.generated.SupervisorWorkerHeartbeats;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 
 /**
  * Test for nimbus heartbeats max throughput, This is a client to collect the statistics.
@@ -51,15 +44,14 @@ public class NimbusHeartbeatsPressureTest {
     private static int THREAD_SUBMIT_NUM = 1;
     private static int MOCKED_STORM_NUM = 5000;
     private static volatile boolean[] readyFlags = new boolean[THREADS_NUM];
+    private static Random rand = new Random(47);
+    private static List<double[]> totalCostTimesBook = new ArrayList<>();
 
     static {
         for (int i = 0; i < THREADS_NUM; i++) {
             readyFlags[i] = false;
         }
     }
-
-    private static Random rand = new Random(47);
-    private static List<double[]> totalCostTimesBook = new ArrayList<>();
 
     /**
      * Initialize a fake config.
@@ -131,6 +123,53 @@ public class NimbusHeartbeatsPressureTest {
         }
     }
 
+    private static void printTimeCostArray(Double[] array) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("[");
+        for (int i = 0; i < array.length; i++) {
+            if (i != array.length - 1) {
+                builder.append(array[i] + ",");
+            } else {
+                builder.append(array[i] + "");
+            }
+        }
+        builder.append("]");
+        System.out.println(builder.toString());
+    }
+
+    private static void printStatistics(List<double[]> data) {
+
+        List<Double> totalPoints = new ArrayList<>();
+        double total = 0D;
+        for (double[] item : data) {
+            for (Double point : item) {
+                if (point != null) {
+                    totalPoints.add(point);
+                    total += point;
+                }
+            }
+        }
+        Double[] totalPointsArray = new Double[totalPoints.size()];
+
+        totalPoints.toArray(totalPointsArray);
+        Arrays.sort(totalPointsArray);
+        // printTimeCostArray(totalPointsArray);
+        println("===== statistics ================");
+        println("===== min time cost: " + totalPointsArray[0] + " =====");
+        println("===== max time cost: " + totalPointsArray[totalPointsArray.length - 2] + " =====");
+
+        double meanVal = total / totalPointsArray.length;
+        println("===== mean time cost: " + meanVal + " =====");
+        int middleIndex = (int) (totalPointsArray.length * 0.5);
+        println("===== median time cost: " + totalPointsArray[middleIndex] + " =====");
+        int top90Index = (int) (totalPointsArray.length * 0.9);
+        println("===== top90 time cost: " + totalPointsArray[top90Index] + " =====");
+    }
+
+    public static void main(String[] args) {
+        testMaxThroughput();
+    }
+
     static class HeartbeatSendTask implements Runnable {
         private double[] runtimesBook;
         private int taskId;
@@ -189,53 +228,6 @@ public class NimbusHeartbeatsPressureTest {
                 e.printStackTrace();
             }
         }
-    }
-
-    private static void printTimeCostArray(Double[] array) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("[");
-        for (int i = 0; i < array.length; i++) {
-            if (i != array.length - 1) {
-                builder.append(array[i] + ",");
-            } else {
-                builder.append(array[i] + "");
-            }
-        }
-        builder.append("]");
-        System.out.println(builder.toString());
-    }
-
-    private static void printStatistics(List<double[]> data) {
-
-        List<Double> totalPoints = new ArrayList<>();
-        double total = 0D;
-        for (double[] item : data) {
-            for (Double point : item) {
-                if (point != null) {
-                    totalPoints.add(point);
-                    total += point;
-                }
-            }
-        }
-        Double[] totalPointsArray = new Double[totalPoints.size()];
-
-        totalPoints.toArray(totalPointsArray);
-        Arrays.sort(totalPointsArray);
-        // printTimeCostArray(totalPointsArray);
-        println("===== statistics ================");
-        println("===== min time cost: " + totalPointsArray[0] + " =====");
-        println("===== max time cost: " + totalPointsArray[totalPointsArray.length - 2] + " =====");
-
-        double meanVal = total / totalPointsArray.length;
-        println("===== mean time cost: " + meanVal + " =====");
-        int middleIndex = (int) (totalPointsArray.length * 0.5);
-        println("===== median time cost: " + totalPointsArray[middleIndex] + " =====");
-        int top90Index = (int) (totalPointsArray.length * 0.9);
-        println("===== top90 time cost: " + totalPointsArray[top90Index] + " =====");
-    }
-
-    public static void main(String[] args) {
-        testMaxThroughput();
     }
 
 }

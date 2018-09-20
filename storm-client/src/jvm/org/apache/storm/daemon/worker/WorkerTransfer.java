@@ -62,11 +62,11 @@ class WorkerTransfer implements JCQueue.Consumer {
         Integer xferBatchSz = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE));
         if (xferBatchSz > xferQueueSz / 2) {
             throw new IllegalArgumentException(Config.TOPOLOGY_TRANSFER_BATCH_SIZE + ":" + xferBatchSz + " must be no more than half of "
-                + Config.TOPOLOGY_TRANSFER_BUFFER_SIZE + ":" + xferQueueSz);
+                                               + Config.TOPOLOGY_TRANSFER_BUFFER_SIZE + ":" + xferQueueSz);
         }
 
         this.transferQueue = new JCQueue("worker-transfer-queue", xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy,
-                workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, workerState.getPort());
+                                         workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, workerState.getPort());
     }
 
     public JCQueue getTransferQueue() {
@@ -88,9 +88,6 @@ class WorkerTransfer implements JCQueue.Consumer {
 
     @Override
     public void accept(Object tuple) {
-        if (tuple == JCQueue.INTERRUPT) {
-            throw new RuntimeException(new InterruptedException("Worker Transfer Thread interrupted"));
-        }
         TaskMessage tm = (TaskMessage) tuple;
         drainer.add(tm);
     }
@@ -109,7 +106,7 @@ class WorkerTransfer implements JCQueue.Consumer {
 
     /* Not a Blocking call. If cannot emit, will add 'tuple' to 'pendingEmits' and return 'false'. 'pendingEmits' can be null */
     public boolean tryTransferRemote(AddressedTuple addressedTuple, Queue<AddressedTuple> pendingEmits, ITupleSerializer serializer) {
-        if (pendingEmits != null  &&  !pendingEmits.isEmpty()) {
+        if (pendingEmits != null && !pendingEmits.isEmpty()) {
             pendingEmits.add(addressedTuple);
             return false;
         }
@@ -138,7 +135,7 @@ class WorkerTransfer implements JCQueue.Consumer {
 
 
     public void haltTransferThd() {
-        transferQueue.haltWithInterrupt();
+        transferQueue.close();
     }
 
 }

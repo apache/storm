@@ -15,40 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.storm.eventhubs.spout.IStateStore;
-
 /**
  * A state store mocker
  */
 public class StateStoreMock implements IStateStore {
-  Map<String, String> myDataMap;
-  @Override
-  public void open() {
-    myDataMap = new HashMap<String, String>();
-  }
+    Map<String, String> myDataMap;
 
-  @Override
-  public void close() {
-    myDataMap = null;
-  }
-
-  @Override
-  public void saveData(String path, String data) {
-    if(myDataMap != null) {
-      myDataMap.put(path, data);
+    @Override
+    public void open() {
+        myDataMap = new HashMap<String, String>();
     }
-  }
 
-  @Override
-  public String readData(String path) {
-    if(myDataMap != null) {
-      return myDataMap.get(path);
+    @Override
+    public void close() {
+        myDataMap = null;
     }
-    return null;
-  }
+
+    @Override
+    public void saveData(String path, String data) {
+        if (myDataMap != null) {
+            myDataMap.put(path, data);
+        }
+    }
+
+    @Override
+    public String readData(String path) {
+        if (myDataMap != null) {
+            return myDataMap.get(path);
+        }
+        return null;
+    }
 }

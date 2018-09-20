@@ -1,25 +1,22 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.topology;
 
-import com.google.common.collect.ImmutableSet;
+import java.util.Map;
+import java.util.Set;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.state.State;
 import org.apache.storm.task.TopologyContext;
@@ -28,9 +25,6 @@ import org.apache.storm.topology.base.BaseStatefulBolt;
 import org.apache.storm.tuple.Tuple;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Map;
-import java.util.Set;
 
 import static org.mockito.Mockito.mock;
 
@@ -58,20 +52,20 @@ public class TopologyBuilderTest {
     }
 
     // TODO enable if setStateSpout gets implemented
-//    @Test(expected = IllegalArgumentException.class)
-//    public void testSetStateSpout() {
-//        builder.setStateSpout("stateSpout", mock(IRichStateSpout.class), 0);
-//    }
+    //    @Test(expected = IllegalArgumentException.class)
+    //    public void testSetStateSpout() {
+    //        builder.setStateSpout("stateSpout", mock(IRichStateSpout.class), 0);
+    //    }
 
     @Test
     public void testStatefulTopology() {
         builder.setSpout("spout1", makeDummySpout());
         builder.setSpout("spout2", makeDummySpout());
         builder.setBolt("bolt1", makeDummyStatefulBolt(), 1)
-                .shuffleGrouping("spout1").shuffleGrouping("spout2");
+               .shuffleGrouping("spout1").shuffleGrouping("spout2");
         builder.setBolt("bolt2", makeDummyStatefulBolt(), 1).shuffleGrouping("spout1");
         builder.setBolt("bolt3", makeDummyStatefulBolt(), 1)
-                .shuffleGrouping("bolt1").shuffleGrouping("bolt2");
+               .shuffleGrouping("bolt1").shuffleGrouping("bolt2");
         StormTopology topology = builder.createTopology();
 
         Assert.assertNotNull(topology);
@@ -98,10 +92,13 @@ public class TopologyBuilderTest {
         return new BaseRichSpout() {
             @Override
             public void declareOutputFields(OutputFieldsDeclarer declarer) {}
+
             @Override
             public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {}
+
             @Override
             public void nextTuple() {}
+
             private void writeObject(java.io.ObjectOutputStream stream) {}
         };
     }
@@ -110,8 +107,10 @@ public class TopologyBuilderTest {
         return new BaseStatefulBolt() {
             @Override
             public void execute(Tuple input) {}
+
             @Override
             public void initState(State state) {}
+
             private void writeObject(java.io.ObjectOutputStream stream) {}
         };
     }

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.utils;
 
 import org.hamcrest.BaseMatcher;
@@ -28,6 +29,10 @@ public class ThrowableNestedCauseMatcher extends BaseMatcher<Throwable> {
         this.exceptionCause = exceptionCause;
     }
 
+    public static ThrowableNestedCauseMatcher isCausedBy(Class<? extends Throwable> exceptionCause) {
+        return new ThrowableNestedCauseMatcher(exceptionCause);
+    }
+
     @Override
     public boolean matches(Object throwable) {
         return Utils.exceptionCauseIsInstanceOf(exceptionCause, (Throwable) throwable);
@@ -36,9 +41,5 @@ public class ThrowableNestedCauseMatcher extends BaseMatcher<Throwable> {
     @Override
     public void describeTo(Description description) {
         description.appendText(exceptionCause.getName());
-    }
-
-    public static ThrowableNestedCauseMatcher isCausedBy(Class<? extends Throwable> exceptionCause) {
-        return new ThrowableNestedCauseMatcher(exceptionCause);
     }
 }

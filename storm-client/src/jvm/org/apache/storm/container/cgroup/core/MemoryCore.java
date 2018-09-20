@@ -1,26 +1,20 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.container.cgroup.core;
 
+import java.io.IOException;
 import org.apache.storm.container.cgroup.CgroupUtils;
 import org.apache.storm.container.cgroup.SubSystemType;
-
-import java.io.IOException;
 
 public class MemoryCore implements CgroupCore {
 
@@ -47,6 +41,84 @@ public class MemoryCore implements CgroupCore {
     @Override
     public SubSystemType getType() {
         return SubSystemType.memory;
+    }
+
+    public Stat getStat() throws IOException {
+        String output = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_STAT)).get(0);
+        Stat stat = new Stat(output);
+        return stat;
+    }
+
+    public long getPhysicalUsage() throws IOException {
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_USAGE_IN_BYTES)).get(0));
+    }
+
+    public long getWithSwapUsage() throws IOException {
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_USAGE_IN_BYTES)).get(0));
+    }
+
+    public long getMaxPhysicalUsage() throws IOException {
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MAX_USAGE_IN_BYTES)).get(0));
+    }
+
+    public long getMaxWithSwapUsage() throws IOException {
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_MAX_USAGE_IN_BYTES)).get(0));
+    }
+
+    public long getPhysicalUsageLimit() throws IOException {
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_LIMIT_IN_BYTES)).get(0));
+    }
+
+    public void setPhysicalUsageLimit(long value) throws IOException {
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_LIMIT_IN_BYTES), String.valueOf(value));
+    }
+
+    public long getWithSwapUsageLimit() throws IOException {
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_LIMIT_IN_BYTES)).get(0));
+    }
+
+    public void setWithSwapUsageLimit(long value) throws IOException {
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_LIMIT_IN_BYTES), String.valueOf(value));
+    }
+
+    public int getPhysicalFailCount() throws IOException {
+        return Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_FAILCNT)).get(0));
+    }
+
+    public int getWithSwapFailCount() throws IOException {
+        return Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_FAILCNT)).get(0));
+    }
+
+    public void clearForceEmpty() throws IOException {
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_FORCE_EMPTY), String.valueOf(0));
+    }
+
+    public int getSwappiness() throws IOException {
+        return Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_SWAPPINESS)).get(0));
+    }
+
+    public void setSwappiness(int value) throws IOException {
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_SWAPPINESS), String.valueOf(value));
+    }
+
+    public boolean isUseHierarchy() throws IOException {
+        int output = Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_USE_HIERARCHY)).get(0));
+        return output > 0;
+    }
+
+    public void setUseHierarchy(boolean flag) throws IOException {
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_USE_HIERARCHY), String.valueOf(flag ? 1 : 0));
+    }
+
+    public boolean isOomControl() throws IOException {
+        String output = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_OOM_CONTROL)).get(0);
+        output = output.split("\n")[0].split("[\\s]")[1];
+        int value = Integer.parseInt(output);
+        return value > 0;
+    }
+
+    public void setOomControl(boolean flag) throws IOException {
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_OOM_CONTROL), String.valueOf(flag ? 1 : 0));
     }
 
     public static class Stat {
@@ -106,83 +178,5 @@ public class MemoryCore implements CgroupCore {
             this.totalHierarchicalMemoryLimitSize = Long.parseLong(splits[24]);
             this.totalHierarchicalMemSwapLimitSize = Long.parseLong(splits[25]);
         }
-    }
-
-    public Stat getStat() throws IOException {
-        String output = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_STAT)).get(0);
-        Stat stat = new Stat(output);
-        return stat;
-    }
-
-    public long getPhysicalUsage() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_USAGE_IN_BYTES)).get(0));
-    }
-
-    public long getWithSwapUsage() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_USAGE_IN_BYTES)).get(0));
-    }
-
-    public long getMaxPhysicalUsage() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MAX_USAGE_IN_BYTES)).get(0));
-    }
-
-    public long getMaxWithSwapUsage() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_MAX_USAGE_IN_BYTES)).get(0));
-    }
-
-    public void setPhysicalUsageLimit(long value) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_LIMIT_IN_BYTES), String.valueOf(value));
-    }
-
-    public long getPhysicalUsageLimit() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_LIMIT_IN_BYTES)).get(0));
-    }
-
-    public void setWithSwapUsageLimit(long value) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_LIMIT_IN_BYTES), String.valueOf(value));
-    }
-
-    public long getWithSwapUsageLimit() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_LIMIT_IN_BYTES)).get(0));
-    }
-
-    public int getPhysicalFailCount() throws IOException {
-        return Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_FAILCNT)).get(0));
-    }
-
-    public int getWithSwapFailCount() throws IOException {
-        return Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_MEMSW_FAILCNT)).get(0));
-    }
-
-    public void clearForceEmpty() throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_FORCE_EMPTY), String.valueOf(0));
-    }
-
-    public void setSwappiness(int value) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_SWAPPINESS), String.valueOf(value));
-    }
-
-    public int getSwappiness() throws IOException {
-        return Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_SWAPPINESS)).get(0));
-    }
-
-    public void setUseHierarchy(boolean flag) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_USE_HIERARCHY), String.valueOf(flag ? 1 : 0));
-    }
-
-    public boolean isUseHierarchy() throws IOException {
-        int output = Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_USE_HIERARCHY)).get(0));
-        return output > 0;
-    }
-
-    public void setOomControl(boolean flag) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, MEMORY_OOM_CONTROL), String.valueOf(flag ? 1 : 0));
-    }
-
-    public boolean isOomControl() throws IOException {
-        String output = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, MEMORY_OOM_CONTROL)).get(0);
-        output = output.split("\n")[0].split("[\\s]")[1];
-        int value = Integer.parseInt(output);
-        return value > 0;
     }
 }

@@ -1,35 +1,29 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.tuple;
 
 import java.util.Collections;
 import java.util.List;
-
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.GeneralTopologyContext;
 
 public class TupleImpl implements Tuple {
+    private final String srcComponent;
     private List<Object> values;
     private int taskId;
     private String streamId;
     private GeneralTopologyContext context;
     private MessageId id;
-    private final String srcComponent;
     private Long _processSampleStartTime;
     private Long _executeSampleStartTime;
     private long _outAckVal = 0;
@@ -52,7 +46,7 @@ public class TupleImpl implements Tuple {
     }
 
     public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent, int taskId, String streamId, MessageId id) {
-        this.values = Collections.unmodifiableList(values);
+        this.values = context.doSanityCheck() ? Collections.unmodifiableList(values) : values;
         this.taskId = taskId;
         this.streamId = streamId;
         this.id = id;
@@ -64,40 +58,42 @@ public class TupleImpl implements Tuple {
             Fields schema = context.getComponentOutputFields(componentId, streamId);
             if (values.size() != schema.size()) {
                 throw new IllegalArgumentException("Tuple created with wrong number of fields. Expected " + schema.size()
-                    + " fields but got " + values.size() + " fields");
+                                                   + " fields but got " + values.size() + " fields");
             }
         }
     }
 
     public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent, int taskId, String streamId) {
         this(context, values, srcComponent, taskId, streamId, MessageId.makeUnanchored());
-    }    
-
-    public void setProcessSampleStartTime(long ms) {
-        _processSampleStartTime = ms;
     }
 
     public Long getProcessSampleStartTime() {
         return _processSampleStartTime;
     }
-    
-    public void setExecuteSampleStartTime(long ms) {
-        _executeSampleStartTime = ms;
+
+    public void setProcessSampleStartTime(long ms) {
+        _processSampleStartTime = ms;
     }
 
     public Long getExecuteSampleStartTime() {
         return _executeSampleStartTime;
     }
 
+    public void setExecuteSampleStartTime(long ms) {
+        _executeSampleStartTime = ms;
+    }
+
     public void updateAckVal(long val) {
         _outAckVal = _outAckVal ^ val;
     }
-    
+
     public long getAckVal() {
         return _outAckVal;
     }
 
-    /** Tuple APIs*/
+    /**
+     * Tuple APIs
+     */
     @Override
     public int size() {
         return values.size();
@@ -107,12 +103,12 @@ public class TupleImpl implements Tuple {
     public int fieldIndex(String field) {
         return getFields().fieldIndex(field);
     }
-    
+
     @Override
     public boolean contains(String field) {
         return getFields().contains(field);
     }
-    
+
     @Override
     public Object getValue(int i) {
         return values.get(i);
@@ -227,11 +223,6 @@ public class TupleImpl implements Tuple {
     public List<Object> select(Fields selector) {
         return getFields().select(selector, values);
     }
-    
-    @Override
-    public GlobalStreamId getSourceGlobalStreamid() {
-        return getSourceGlobalStreamId();
-    }
 
     @Override
     public GlobalStreamId getSourceGlobalStreamId() {
@@ -257,7 +248,7 @@ public class TupleImpl implements Tuple {
     public MessageId getMessageId() {
         return id;
     }
-    
+
     @Override
     public GeneralTopologyContext getContext() {
         return context;
@@ -265,14 +256,16 @@ public class TupleImpl implements Tuple {
 
     @Override
     public String toString() {
-        return "source: " + getSourceComponent() + ":" + taskId + ", stream: " + streamId + ", id: "+ id.toString() + ", " + values.toString() + " PROC_START_TIME(sampled): " + _processSampleStartTime + " EXEC_START_TIME(sampled): " + _executeSampleStartTime;
+        return "source: " + getSourceComponent() + ":" + taskId + ", stream: " + streamId + ", id: " + id.toString() + ", " +
+               values.toString() + " PROC_START_TIME(sampled): " + _processSampleStartTime + " EXEC_START_TIME(sampled): " +
+               _executeSampleStartTime;
     }
-    
+
     @Override
     public boolean equals(Object other) {
         return this == other;
-    }    
-    
+    }
+
     @Override
     public int hashCode() {
         return System.identityHashCode(this);

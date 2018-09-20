@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.utils;
 
 import java.net.ConnectException;
@@ -22,7 +17,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.ILocalDRPC;
 import org.apache.storm.generated.AuthorizationException;
@@ -30,34 +24,51 @@ import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DistributedRPC;
 import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCClient.class);
     private static volatile ILocalDRPC _localOverrideClient = null;
-    
-    public static class LocalOverride implements AutoCloseable {
-        public LocalOverride(ILocalDRPC client) {
-            _localOverrideClient = client;
-        }
-        
-        @Override
-        public void close() throws Exception {
-            _localOverrideClient = null;
-        }
+    private DistributedRPC.Iface client;
+    private String host;
+    private int port;
+
+    private DRPCClient(DistributedRPC.Iface override) {
+        super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE,
+              "localhost", 1234, null, null);
+        this.host = "localhost";
+        this.port = 1234;
+        this.client = override;
     }
-    
+
+    public DRPCClient(Map<String, Object> conf, String host, int port) throws TTransportException {
+        this(conf, host, port, null);
+        _retryForever = true;
+    }
+
+    public DRPCClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
+        super(conf, _localOverrideClient != null ? ThriftConnectionType.LOCAL_FAKE : ThriftConnectionType.DRPC,
+              host, port, timeout, null);
+        this.host = host;
+        this.port = port;
+        if (_localOverrideClient != null) {
+            this.client = _localOverrideClient;
+        } else {
+            this.client = new DistributedRPC.Client(_protocol);
+        }
+        _retryForever = true;
+    }
+
     /**
-     * @return true of new clients will be overridden to connect to a local cluster
-     * and not the configured remote cluster.
+     * @return true of new clients will be overridden to connect to a local cluster and not the configured remote cluster.
      */
     public static boolean isLocalOverride() {
         return _localOverrideClient != null;
     }
-    
+
     /**
      * @return the service ID of the local override DRPC instance
      */
@@ -83,7 +94,7 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
         }
         Collections.shuffle(servers);
         RuntimeException excpt = null;
-        for (String host: servers) {
+        for (String host : servers) {
             try {
                 return new DRPCClient(fullConf, host, port);
             } catch (RuntimeException e) {
@@ -99,48 +110,17 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
         }
         throw new IllegalStateException("It appears that no drpc servers were configured.");
     }
-    
-    private DistributedRPC.Iface client;
-    private String host;
-    private int port;
 
-    private DRPCClient(DistributedRPC.Iface override) {
-        super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE,
-                "localhost", 1234, null, null);
-        this.host = "localhost";
-        this.port = 1234;
-        this.client = override;
-    }
-    
-    public DRPCClient(Map<String, Object> conf, String host, int port) throws TTransportException {
-        this(conf, host, port, null);
-        _retryForever = true;
-    }
-
-    public DRPCClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
-        super(conf, _localOverrideClient != null ? ThriftConnectionType.LOCAL_FAKE : ThriftConnectionType.DRPC,
-                host, port, timeout, null);
-        this.host = host;
-        this.port = port;
-        if (_localOverrideClient != null) {
-            this.client = _localOverrideClient;
-        } else {
-            this.client = new DistributedRPC.Client(_protocol);
-        }
-        _retryForever = true;
-    }
-        
     public String getHost() {
         return host;
     }
-    
+
     public int getPort() {
         return port;
     }
-    
+
     public String execute(String func, String args) throws TException, DRPCExecutionException, AuthorizationException {
-        if (func == null)
-        {
+        if (func == null) {
             throw new IllegalArgumentException("DRPC Function cannot be null");
         }
         LOG.debug("DRPC RUNNING \"{}\"(\"{}\")", func, args);
@@ -149,5 +129,16 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
 
     public DistributedRPC.Iface getClient() {
         return client;
+    }
+
+    public static class LocalOverride implements AutoCloseable {
+        public LocalOverride(ILocalDRPC client) {
+            _localOverrideClient = client;
+        }
+
+        @Override
+        public void close() throws Exception {
+            _localOverrideClient = null;
+        }
     }
 }

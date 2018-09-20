@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.drpc;
 
+import com.codahale.metrics.Meter;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +28,6 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.generated.AuthorizationException;
@@ -38,30 +39,62 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.authorizer.DRPCAuthorizerBase;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.WrappedAuthorizationException;
+import org.apache.storm.utils.WrappedDRPCExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Meter;
-import com.google.common.annotations.VisibleForTesting;
-
 public class DRPC implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPC.class);
-    private static final DRPCRequest NOTHING_REQUEST = new DRPCRequest("","");
-    private static final DRPCExecutionException TIMED_OUT = new DRPCExecutionException("Timed Out");
-    private static final DRPCExecutionException SHUT_DOWN = new DRPCExecutionException("Server Shutting Down");
-    private static final DRPCExecutionException DEFAULT_FAILED = new DRPCExecutionException("Request failed");
+    private static final DRPCRequest NOTHING_REQUEST = new DRPCRequest("", "");
+    private static final DRPCExecutionException TIMED_OUT = new WrappedDRPCExecutionException("Timed Out");
+    private static final DRPCExecutionException SHUT_DOWN = new WrappedDRPCExecutionException("Server Shutting Down");
+    private static final DRPCExecutionException DEFAULT_FAILED = new WrappedDRPCExecutionException("Request failed");
+    
+    private final Meter meterServerTimedOut;
+    private final Meter meterExecuteCalls;
+    private final Meter meterResultCalls;
+    private final Meter meterFailRequestCalls;
+    private final Meter meterFetchRequestCalls;
+
     static {
         TIMED_OUT.set_type(DRPCExceptionType.SERVER_TIMEOUT);
         SHUT_DOWN.set_type(DRPCExceptionType.SERVER_SHUTDOWN);
         DEFAULT_FAILED.set_type(DRPCExceptionType.FAILED_REQUEST);
     }
-    private static final Meter meterServerTimedOut = StormMetricsRegistry.registerMeter("drpc:num-server-timedout-requests");
-    private static final Meter meterExecuteCalls = StormMetricsRegistry.registerMeter("drpc:num-execute-calls");
-    private static final Meter meterResultCalls = StormMetricsRegistry.registerMeter("drpc:num-result-calls");
-    private static final Meter meterFailRequestCalls = StormMetricsRegistry.registerMeter("drpc:num-failRequest-calls");
-    private static final Meter meterFetchRequestCalls = StormMetricsRegistry.registerMeter("drpc:num-fetchRequest-calls");
-    
+
+    //Waiting to be fetched
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<OutstandingRequest>> _queues =
+        new ConcurrentHashMap<>();
+    //Waiting to be returned
+    private final ConcurrentHashMap<String, OutstandingRequest> _requests =
+        new ConcurrentHashMap<>();
+    private final Timer _timer = new Timer();
+    private final AtomicLong _ctr = new AtomicLong(0);
+    private final IAuthorizer _auth;
+
+    public DRPC(StormMetricsRegistry metricsRegistry, Map<String, Object> conf) {
+        this(metricsRegistry, mkAuthorizationHandler((String) conf.get(DaemonConfig.DRPC_AUTHORIZER), conf),
+             ObjectReader.getInt(conf.get(DaemonConfig.DRPC_REQUEST_TIMEOUT_SECS), 600) * 1000);
+    }
+
+    public DRPC(StormMetricsRegistry metricsRegistry, IAuthorizer auth, long timeoutMs) {
+        _auth = auth;
+        this.meterServerTimedOut = metricsRegistry.registerMeter("drpc:num-server-timedout-requests");
+        this.meterExecuteCalls = metricsRegistry.registerMeter("drpc:num-execute-calls");
+        this.meterResultCalls = metricsRegistry.registerMeter("drpc:num-result-calls");
+        this.meterFailRequestCalls = metricsRegistry.registerMeter("drpc:num-failRequest-calls");
+        this.meterFetchRequestCalls = metricsRegistry.registerMeter("drpc:num-fetchRequest-calls");
+        _timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                cleanupAll(timeoutMs, TIMED_OUT);
+            }
+        }, timeoutMs / 2, timeoutMs / 2);
+    }
+
     private static IAuthorizer mkAuthorizationHandler(String klassname, Map<String, Object> conf) {
         try {
             return StormCommon.mkAuthorizationHandler(klassname, conf);
@@ -76,7 +109,7 @@ public class DRPC implements AutoCloseable {
 
     private static void logAccess(ReqContext reqContext, String operation, String function) {
         ThriftAccessLogger.logAccessFunction(reqContext.requestID(), reqContext.remoteAddress(), reqContext.principal(), operation,
-            function);
+                                             function);
     }
 
     @VisibleForTesting
@@ -96,37 +129,11 @@ public class DRPC implements AutoCloseable {
             if (!auth.permit(reqContext, operation, map)) {
                 Principal principal = reqContext.principal();
                 String user = (principal != null) ? principal.getName() : "unknown";
-                throw new AuthorizationException("DRPC request '" + operation + "' for '" + user + "' user is not authorized");
+                throw new WrappedAuthorizationException("DRPC request '" + operation + "' for '" + user + "' user is not authorized");
             }
         }
     }
-    
-    //Waiting to be fetched
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<OutstandingRequest>> _queues =
-            new ConcurrentHashMap<>();
-    //Waiting to be returned
-    private final ConcurrentHashMap<String, OutstandingRequest> _requests = 
-            new ConcurrentHashMap<>();
-    private final Timer _timer = new Timer();
-    private final AtomicLong _ctr = new AtomicLong(0);
-    private final IAuthorizer _auth;
-    
-    public DRPC(Map<String, Object> conf) {
-        this(mkAuthorizationHandler((String)conf.get(DaemonConfig.DRPC_AUTHORIZER), conf),
-                ObjectReader.getInt(conf.get(DaemonConfig.DRPC_REQUEST_TIMEOUT_SECS), 600) * 1000);
-    }
-    
-    public DRPC(IAuthorizer auth, long timeoutMs) {
-        _auth = auth;
-        _timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                cleanupAll(timeoutMs, TIMED_OUT);
-            }
-        }, timeoutMs/2, timeoutMs/2);
-    }
-    
-    
+
     private void checkAuthorization(String operation, String function) throws AuthorizationException {
         checkAuthorization(ReqContext.context(), _auth, operation, function);
     }
@@ -134,7 +141,7 @@ public class DRPC implements AutoCloseable {
     private void checkAuthorizationNoLog(String operation, String function) throws AuthorizationException {
         checkAuthorization(ReqContext.context(), _auth, operation, function, false);
     }
-    
+
     private void cleanup(String id) {
         OutstandingRequest req = _requests.remove(id);
         if (req != null && !req.wasFetched()) {
@@ -152,7 +159,7 @@ public class DRPC implements AutoCloseable {
             }
         }
     }
-    
+
     private String nextId() {
         return String.valueOf(_ctr.incrementAndGet());
     }
@@ -207,7 +214,8 @@ public class DRPC implements AutoCloseable {
         }
     }
 
-    public <T extends OutstandingRequest> T execute(String functionName, String funcArgs, RequestFactory<T> factory) throws AuthorizationException {
+    public <T extends OutstandingRequest> T execute(String functionName, String funcArgs, RequestFactory<T> factory) throws
+        AuthorizationException {
         meterExecuteCalls.mark();
         checkAuthorization("execute", functionName);
         String id = nextId();
@@ -218,11 +226,11 @@ public class DRPC implements AutoCloseable {
         q.add(req);
         return req;
     }
-    
+
     public String executeBlocking(String functionName, String funcArgs) throws DRPCExecutionException, AuthorizationException {
         BlockingOutstandingRequest req = execute(functionName, funcArgs, BlockingOutstandingRequest.FACTORY);
         try {
-            LOG.debug("Waiting for result {} {}",functionName, funcArgs);
+            LOG.debug("Waiting for result {} {}", functionName, funcArgs);
             return req.getResult();
         } catch (DRPCExecutionException e) {
             throw e;

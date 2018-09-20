@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.topology;
 
+import java.util.Properties;
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.rocketmq.RocketMqConfig;
@@ -33,15 +33,13 @@ import org.apache.storm.rocketmq.spout.RocketMqSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
-import java.util.Properties;
-
 public class WordCountTopology {
     private static final String WORD_SPOUT = "WORD_SPOUT";
     private static final String COUNT_BOLT = "COUNT_BOLT";
     private static final String INSERT_BOLT = "INSERT_BOLT";
 
     private static final String CONSUMER_GROUP = "wordcount";
-    private static final String CONSUMER_TOPIC = "wordcountsource";
+    private static final String CONSUMER_TOPIC = "source";
 
     public static StormTopology buildTopology(String nameserverAddr, String topic){
         Properties properties = new Properties();
@@ -68,8 +66,8 @@ public class WordCountTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         builder.setSpout(WORD_SPOUT, spout, 1);
-        builder.setBolt(COUNT_BOLT, bolt, 1).shuffleGrouping(WORD_SPOUT);
-        builder.setBolt(INSERT_BOLT, insertBolt, 1).fieldsGrouping(COUNT_BOLT, new Fields("word"));
+        builder.setBolt(COUNT_BOLT, bolt, 1).fieldsGrouping(WORD_SPOUT, new Fields("str"));
+        builder.setBolt(INSERT_BOLT, insertBolt, 1).shuffleGrouping(COUNT_BOLT);
 
         return builder.createTopology();
     }
@@ -77,19 +75,16 @@ public class WordCountTopology {
     public static void main(String[] args) throws Exception {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
-        if (args.length == 2) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(args[0], args[1]));) {
-                Thread.sleep(120 * 1000);
-            }
-            System.exit(0);
-        }
-        else if(args.length == 3) {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[2], conf, buildTopology(args[0], args[1]));
-        } else{
+        conf.setNumWorkers(3);
+
+        String topologyName = "wordCounter";
+        if (args.length < 2) {
             System.out.println("Usage: WordCountTopology <nameserver addr> <topic> [topology name]");
+        } else {
+            if (args.length > 3) {
+                topologyName = args[2];
+            }
+            StormSubmitter.submitTopology(topologyName, conf, buildTopology(args[0], args[1]));
         }
     }
-
 }

@@ -24,17 +24,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.localizer.LocalResource;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.LocalState;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,9 +41,11 @@ public class SupervisorUtils {
 
     private static final SupervisorUtils INSTANCE = new SupervisorUtils();
     private static SupervisorUtils _instance = INSTANCE;
+
     public static void setInstance(SupervisorUtils u) {
         _instance = u;
     }
+
     public static void resetInstance() {
         _instance = INSTANCE;
     }
@@ -64,9 +63,9 @@ public class SupervisorUtils {
     }
 
     /**
-     * Given the blob information returns the value of the uncompress field, handling it either being a string or a boolean value, or if it's not specified then
-     * returns false
-     * 
+     * Given the blob information returns the value of the uncompress field, handling it either being a string or a boolean value, or if
+     * it's not specified then returns false
+     *
      * @param blobInfo
      * @return
      */
@@ -75,8 +74,8 @@ public class SupervisorUtils {
     }
 
     /**
-     * Given the blob information returns the value of the workerRestart field, handling it either being a string or a boolean value, or
-     * if it's not specified then returns false.
+     * Given the blob information returns the value of the workerRestart field, handling it either being a string or a boolean value, or if
+     * it's not specified then returns false.
      *
      * @param blobInfo the info for the blob.
      * @return true if the blob needs a worker restart by way of the callback else false.
@@ -87,7 +86,7 @@ public class SupervisorUtils {
 
     /**
      * Returns a list of LocalResources based on the blobstore-map passed in
-     * 
+     *
      * @param blobstoreMap
      * @return
      */
@@ -96,7 +95,8 @@ public class SupervisorUtils {
         if (blobstoreMap != null) {
             for (Map.Entry<String, Map<String, Object>> map : blobstoreMap.entrySet()) {
                 Map<String, Object> blobConf = map.getValue();
-                LocalResource localResource = new LocalResource(map.getKey(), shouldUncompressBlob(blobConf), blobNeedsWorkerRestart(blobConf));
+                LocalResource localResource =
+                    new LocalResource(map.getKey(), shouldUncompressBlob(blobConf), blobNeedsWorkerRestart(blobConf));
                 localResourceList.add(localResource);
             }
         }
@@ -113,13 +113,28 @@ public class SupervisorUtils {
      *
      * @param conf
      * @return
-     * @throws Exception
+     *
      */
-    public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map<String, Object> conf) throws Exception {
+    public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map<String, Object> conf) {
         return _instance.readWorkerHeartbeatsImpl(conf);
     }
 
-    public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) throws Exception {
+    /**
+     * get worker heartbeat by workerId.
+     *
+     * @param conf
+     * @param workerId
+     * @return
+     */
+    private static LSWorkerHeartbeat readWorkerHeartbeat(Map<String, Object> conf, String workerId) {
+        return _instance.readWorkerHeartbeatImpl(conf, workerId);
+    }
+
+    public static boolean isWorkerHbTimedOut(int now, LSWorkerHeartbeat whb, Map<String, Object> conf) {
+        return _instance.isWorkerHbTimedOutImpl(now, whb, conf);
+    }
+
+    public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) {
         Map<String, LSWorkerHeartbeat> workerHeartbeats = new HashMap<>();
 
         Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);
@@ -132,19 +147,6 @@ public class SupervisorUtils {
         return workerHeartbeats;
     }
 
-
-    /**
-     * get worker heartbeat by workerId
-     *
-     * @param conf
-     * @param workerId
-     * @return
-     * @throws IOException
-     */
-    private static LSWorkerHeartbeat readWorkerHeartbeat(Map<String, Object> conf, String workerId) {
-        return _instance.readWorkerHeartbeatImpl(conf, workerId);
-    }
-
     protected LSWorkerHeartbeat readWorkerHeartbeatImpl(Map<String, Object> conf, String workerId) {
         try {
             LocalState localState = ConfigUtils.workerState(conf, workerId);
@@ -155,11 +157,7 @@ public class SupervisorUtils {
         }
     }
 
-    public static boolean  isWorkerHbTimedOut(int now, LSWorkerHeartbeat whb, Map<String, Object> conf) {
-        return _instance.isWorkerHbTimedOutImpl(now, whb, conf);
-    }
-
-    private  boolean  isWorkerHbTimedOutImpl(int now, LSWorkerHeartbeat whb, Map<String, Object> conf) {
+    private boolean isWorkerHbTimedOutImpl(int now, LSWorkerHeartbeat whb, Map<String, Object> conf) {
         return (now - whb.get_time_secs()) > ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
     }
 }

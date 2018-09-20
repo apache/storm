@@ -21,6 +21,8 @@ package org.apache.storm.daemon.logviewer;
 import static org.apache.storm.DaemonConfig.UI_HEADER_BUFFER_BYTES;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricSet;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.File;
@@ -31,12 +33,13 @@ import java.util.Map;
 
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogCleaner;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.daemon.logviewer.webapp.LogviewerApplication;
+import org.apache.storm.daemon.ui.FilterConfiguration;
+import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.metric.StormMetricsRegistry;
-import org.apache.storm.ui.FilterConfiguration;
-import org.apache.storm.ui.UIHelpers;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
@@ -54,11 +57,11 @@ import org.slf4j.LoggerFactory;
  */
 public class LogviewerServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerServer.class);
-    private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("logviewer:num-shutdown-calls");
-    private static final String stormHome = System.getProperty("storm.home");
+    private static final String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
     public static final String STATIC_RESOURCE_DIRECTORY_PATH = stormHome + "/public";
+    private final Meter meterShutdownCalls;
 
-    private static Server mkHttpServer(Map<String, Object> conf) {
+    private static Server mkHttpServer(StormMetricsRegistry metricsRegistry, Map<String, Object> conf) {
         Integer logviewerHttpPort = (Integer) conf.get(DaemonConfig.LOGVIEWER_PORT);
         Server ret = null;
         if (logviewerHttpPort != null && logviewerHttpPort >= 0) {
@@ -80,9 +83,10 @@ public class LogviewerServer implements AutoCloseable {
             final String httpsTsType = (String) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_TRUSTSTORE_TYPE));
             final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_WANT_CLIENT_AUTH));
             final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_NEED_CLIENT_AUTH));
+            final Boolean disableHttpBinding = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_DISABLE_HTTP_BINDING));
 
-            LogviewerApplication.setup(conf);
-            ret = UIHelpers.jettyCreateServer(logviewerHttpPort, null, httpsPort);
+            LogviewerApplication.setup(conf, metricsRegistry);
+            ret = UIHelpers.jettyCreateServer(logviewerHttpPort, null, httpsPort, disableHttpBinding);
 
             UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
                     httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
@@ -117,9 +121,12 @@ public class LogviewerServer implements AutoCloseable {
     /**
      * Constructor.
      * @param conf Logviewer conf for the servers
+     * @param metricsRegistry The metrics registry
      */
-    public LogviewerServer(Map<String, Object> conf) {
-        httpServer = mkHttpServer(conf);
+    public LogviewerServer(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
+        httpServer = mkHttpServer(metricsRegistry, conf);
+        meterShutdownCalls = metricsRegistry.registerMeter("logviewer:num-shutdown-calls");
+        ExceptionMeterNames.registerMeters(metricsRegistry);
     }
 
     @VisibleForTesting
@@ -157,17 +164,22 @@ public class LogviewerServer implements AutoCloseable {
         Utils.setupDefaultUncaughtExceptionHandler();
         Map<String, Object> conf = ConfigUtils.readStormConfig();
 
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         String logRoot = ConfigUtils.workerArtifactsRoot(conf);
         File logRootDir = new File(logRoot);
         logRootDir.mkdirs();
-        WorkerLogs workerLogs = new WorkerLogs(conf, logRootDir);
-        DirectoryCleaner directoryCleaner = new DirectoryCleaner();
+        WorkerLogs workerLogs = new WorkerLogs(conf, logRootDir, metricsRegistry);
+        DirectoryCleaner directoryCleaner = new DirectoryCleaner(metricsRegistry);
 
-        try (LogviewerServer server = new LogviewerServer(conf);
-             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir)) {
-            Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
+        try (LogviewerServer server = new LogviewerServer(conf, metricsRegistry);
+             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir, metricsRegistry)) {
+            metricsRegistry.startMetricsReporters(conf);
+            Utils.addShutdownHookWithForceKillIn1Sec(() -> {
+                metricsRegistry.stopMetricsReporters();
+                server.close();
+            });
             logCleaner.start();
-            StormMetricsRegistry.startMetricsReporters(conf);
+
             server.start();
             server.awaitTermination();
         }

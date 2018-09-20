@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.localizer;
@@ -22,7 +16,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
@@ -35,14 +28,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.blobstore.ClientBlobStore;
-import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
@@ -54,8 +46,37 @@ import org.slf4j.LoggerFactory;
  * The version number of the blob's file will be stored in `${basename}.version`
  */
 public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
-    private static final Logger LOG = LoggerFactory.getLogger(LocallyCachedTopologyBlob.class);
     public static final long LOCAL_MODE_JAR_VERSION = 1;
+    private static final Logger LOG = LoggerFactory.getLogger(LocallyCachedTopologyBlob.class);
+    private static final Pattern EXTRACT_BASE_NAME_AND_VERSION = Pattern.compile("^(.*)\\.([0-9]+)$");
+    private final TopologyBlobType type;
+    private final String topologyId;
+    private final boolean isLocalMode;
+    private final Path topologyBasicBlobsRootDir;
+    private final AdvancedFSOps fsOps;
+    private final String owner;
+    private volatile long version = NOT_DOWNLOADED_VERSION;
+    private volatile long size = 0;
+
+    /**
+     * Create a new LocallyCachedBlob.
+     * @param topologyId the ID of the topology.
+     * @param type the type of the blob.
+     * @param owner the name of the user that owns this blob.
+     */
+    protected LocallyCachedTopologyBlob(final String topologyId, final boolean isLocalMode, final Map<String, Object> conf,
+                                        final AdvancedFSOps fsOps, final TopologyBlobType type,
+                                        String owner, StormMetricsRegistry metricsRegistry) throws IOException {
+        super(topologyId + " " + type.getFileName(), type.getKey(topologyId), metricsRegistry);
+        this.topologyId = topologyId;
+        this.type = type;
+        this.isLocalMode = isLocalMode;
+        this.fsOps = fsOps;
+        this.owner = owner;
+        topologyBasicBlobsRootDir = Paths.get(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
+        readVersion();
+        updateSizeOnDisk();
+    }
 
     private static String resourcesJar() throws IOException {
         String path = ServerUtils.currentClasspath();
@@ -71,76 +92,6 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
             }
         }
         return null;
-    }
-
-    public enum TopologyBlobType {
-        TOPO_JAR("stormjar.jar", "-stormjar.jar", "resources"),
-        TOPO_CODE("stormcode.ser", "-stormcode.ser", null),
-        TOPO_CONF("stormconf.ser", "-stormconf.ser", null);
-
-        private final String fileName;
-        private final String keySuffix;
-        private final String extractionDir;
-
-        TopologyBlobType(String fileName, String keySuffix, String extractionDir) {
-            this.fileName = fileName;
-            this.keySuffix = keySuffix;
-            this.extractionDir = extractionDir;
-        }
-
-        public String getFileName() {
-            return fileName;
-        }
-
-        public String getTempFileName(long version) {
-            return fileName + "." + version;
-        }
-
-        public String getVersionFileName() {
-            return fileName + ".version";
-        }
-
-        public String getKey(String topologyId) {
-            return topologyId + keySuffix;
-        }
-
-        public boolean needsExtraction() {
-            return extractionDir != null;
-        }
-
-        public String getExtractionDir() {
-            return extractionDir;
-        }
-
-        public String getTempExtractionDir(long version) {
-            return extractionDir + "." + version;
-        }
-    }
-
-    private final TopologyBlobType type;
-    private final String topologyId;
-    private final boolean isLocalMode;
-    private final Path topologyBasicBlobsRootDir;
-    private final AdvancedFSOps fsOps;
-    private volatile long version = NOT_DOWNLOADED_VERSION;
-    private volatile long size = 0;
-
-    /**
-     * Create a new LocallyCachedBlob.
-     *
-     * @param topologyId the ID of the topology.
-     * @param type the type of the blob.
-     */
-    protected LocallyCachedTopologyBlob(final String topologyId, final boolean isLocalMode, final Map<String, Object> conf,
-                                        final AdvancedFSOps fsOps, final TopologyBlobType type) throws IOException {
-        super(topologyId + " " + type.getFileName(), type.getKey(topologyId));
-        this.topologyId = topologyId;
-        this.type = type;
-        this.isLocalMode = isLocalMode;
-        this.fsOps = fsOps;
-        topologyBasicBlobsRootDir = Paths.get(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
-        readVersion();
-        updateSizeOnDisk();
     }
 
     private void updateSizeOnDisk() throws IOException {
@@ -177,8 +128,14 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     }
 
     @Override
-    public long downloadToTempLocation(ClientBlobStore store)
+    public long fetchUnzipToTemp(ClientBlobStore store)
         throws IOException, KeyNotFoundException, AuthorizationException {
+        synchronized (LocallyCachedTopologyBlob.class) {
+            if (!Files.exists(topologyBasicBlobsRootDir)) {
+                Files.createDirectories(topologyBasicBlobsRootDir);
+                fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir.toFile());
+            }
+        }
         if (isLocalMode && type == TopologyBlobType.TOPO_JAR) {
             LOG.debug("DOWNLOADING LOCAL JAR to TEMP LOCATION... {}", topologyId);
             //This is a special case where the jar was not uploaded so we will not download it (it is already on the classpath)
@@ -202,17 +159,21 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         }
 
 
-        long newVersion = downloadToTempLocation(store, type.getKey(topologyId), version, fsOps,
-            (version) -> topologyBasicBlobsRootDir.resolve(type.getTempFileName(version)));
+        DownloadMeta downloadMeta = fetch(store, type.getKey(topologyId),
+            v -> {
+                Path path = topologyBasicBlobsRootDir.resolve(type.getTempFileName(v));
+                fsOps.forceMkdir(path.getParent());
+                return path;
+            }, fsOps::getOutputStream);
 
-        Path tmpLocation = topologyBasicBlobsRootDir.resolve(type.getTempFileName(newVersion));
+        Path tmpLocation = downloadMeta.getDownloadPath();
 
         if (type.needsExtraction()) {
-            Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getTempExtractionDir(newVersion));
+            Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getTempExtractionDir(downloadMeta.getVersion()));
             extractDirFromJar(tmpLocation.toAbsolutePath().toString(), ServerConfigUtils.RESOURCES_SUBDIR,
-                extractionDest);
+                              extractionDest);
         }
-        return newVersion;
+        return downloadMeta.getVersion();
     }
 
     protected void extractDirFromJar(String jarpath, String dir, Path dest) throws IOException {
@@ -280,6 +241,19 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
             //Don't try to move the JAR file in local mode, it does not exist because it was not uploaded
             Files.move(tempLoc, dest);
         }
+        synchronized (LocallyCachedTopologyBlob.class) {
+            //This is a bit ugly, but it works.  In order to maintain the same directory structure that existed before
+            // we need to have storm conf, storm jar, and storm code in a shared directory, and we need to set the
+            // permissions for that entire directory, but the tracking is on a per item basis, so we are going to end
+            // up running the permission modification code once for each blob that is downloaded (3 times in this case).
+            // Because the permission modification code runs in a separate process we are doing a global lock to avoid
+            // any races between multiple versions running at the same time.  Ideally this would be on a per topology
+            // basis, but that is a lot harder and the changes run fairly quickly so it should not be a big deal.
+            fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir.toFile());
+            File sharedMemoryDirFinalLocation = new File(topologyBasicBlobsRootDir.toFile(), "shared_by_topology");
+            sharedMemoryDirFinalLocation.mkdirs();
+            fsOps.setupWorkerArtifactsDir(owner, sharedMemoryDirFinalLocation);
+        }
         LOG.debug("Writing out version file {} with version {}", versionFile, newVersion);
         FileUtils.write(versionFile.toFile(), Long.toString(newVersion), "UTF8");
         this.version = newVersion;
@@ -295,16 +269,14 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         }
     }
 
-    private static final Pattern EXTRACT_BASE_NAME_AND_VERSION = Pattern.compile("^(.*)\\.([0-9]+)$");
-
     private void cleanUpTemp(String baseName) throws IOException {
         LOG.debug("Cleaning up temporary data in {}", topologyBasicBlobsRootDir);
         try (DirectoryStream<Path> children = fsOps.newDirectoryStream(topologyBasicBlobsRootDir,
-            (p) -> {
-                String fileName = p.getFileName().toString();
-                Matcher m = EXTRACT_BASE_NAME_AND_VERSION.matcher(fileName);
-                return m.matches() && baseName.equals(m.group(1));
-            })) {
+                                                                       (p) -> {
+                                                                           String fileName = p.getFileName().toString();
+                                                                           Matcher m = EXTRACT_BASE_NAME_AND_VERSION.matcher(fileName);
+                                                                           return m.matches() && baseName.equals(m.group(1));
+                                                                       })) {
             //children is only ever null if topologyBasicBlobsRootDir does not exist.  This happens during unit tests
             // And because a non-existant directory is by definition clean we are ignoring it.
             if (children != null) {
@@ -344,7 +316,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     @Override
     public boolean equals(Object other) {
         if (other instanceof LocallyCachedTopologyBlob) {
-            LocallyCachedTopologyBlob o = (LocallyCachedTopologyBlob)other;
+            LocallyCachedTopologyBlob o = (LocallyCachedTopologyBlob) other;
             return topologyId.equals(o.topologyId) && type == o.type && topologyBasicBlobsRootDir.equals(o.topologyBasicBlobsRootDir);
         }
         return false;
@@ -358,5 +330,49 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     @Override
     public String toString() {
         return "LOCAL TOPO BLOB " + type + " " + topologyId;
+    }
+
+    public enum TopologyBlobType {
+        TOPO_JAR("stormjar.jar", "-stormjar.jar", "resources"),
+        TOPO_CODE("stormcode.ser", "-stormcode.ser", null),
+        TOPO_CONF("stormconf.ser", "-stormconf.ser", null);
+
+        private final String fileName;
+        private final String keySuffix;
+        private final String extractionDir;
+
+        TopologyBlobType(String fileName, String keySuffix, String extractionDir) {
+            this.fileName = fileName;
+            this.keySuffix = keySuffix;
+            this.extractionDir = extractionDir;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public String getTempFileName(long version) {
+            return fileName + "." + version;
+        }
+
+        public String getVersionFileName() {
+            return fileName + ".version";
+        }
+
+        public String getKey(String topologyId) {
+            return topologyId + keySuffix;
+        }
+
+        public boolean needsExtraction() {
+            return extractionDir != null;
+        }
+
+        public String getExtractionDir() {
+            return extractionDir;
+        }
+
+        public String getTempExtractionDir(long version) {
+            return extractionDir + "." + version;
+        }
     }
 }

@@ -13,7 +13,7 @@ Storm has a website at [storm.apache.org](http://storm.apache.org). Follow [@sto
 Documentation and tutorials can be found on the [Storm website](http://storm.apache.org/documentation/Home.html).
 
 Developers and contributors should also take a look at our [Developer documentation](DEVELOPER.md).
-
+ 
 
 ## Getting help
 
@@ -113,6 +113,7 @@ under the License.
 * Hugo da Cruz Louro ([@hmcl](https://github.com/hmcl))
 * Stig Rohde Døssing ([@srdo](https://github.com/srdo/))
 * Roshan Naik ([@roshannaik](http://github.com/roshannaik))
+* Ethan Li ([@Ethanlm](https://github.com/Ethanlm))
 
 ## Acknowledgements
 

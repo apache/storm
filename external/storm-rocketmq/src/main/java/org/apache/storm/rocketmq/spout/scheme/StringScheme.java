@@ -29,6 +29,7 @@ import org.apache.storm.utils.Utils;
 public class StringScheme implements Scheme {
     public static final String STRING_SCHEME_KEY = "str";
 
+    @Override
     public List<Object> deserialize(ByteBuffer bytes) {
         return new Values(deserializeString(bytes));
     }
@@ -41,12 +42,14 @@ public class StringScheme implements Scheme {
     public static String deserializeString(ByteBuffer byteBuffer) {
         if (byteBuffer.hasArray()) {
             int base = byteBuffer.arrayOffset();
-            return new String(byteBuffer.array(), base + byteBuffer.position(), byteBuffer.remaining());
+            return new String(byteBuffer.array(), base + byteBuffer.position(), byteBuffer.remaining(),
+                StandardCharsets.UTF_8);
         } else {
             return new String(Utils.toByteArray(byteBuffer), StandardCharsets.UTF_8);
         }
     }
 
+    @Override
     public Fields getOutputFields() {
         return new Fields(STRING_SCHEME_KEY);
     }

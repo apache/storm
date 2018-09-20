@@ -1,21 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.cassandra.executor;
 
 import com.datastax.driver.core.ResultSet;
@@ -27,10 +21,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.storm.topology.FailedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +29,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.storm.topology.FailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Service to asynchronously executes cassandra statements.
@@ -69,7 +62,7 @@ public class AsyncExecutor<T> implements Serializable {
      * @param executorService The executor service responsible to execute handler.
      */
     private AsyncExecutor(Session session, ExecutorService executorService, AsyncResultHandler<T> handler) {
-        this.session   = session;
+        this.session = session;
         this.executorService = executorService;
         this.handler = handler;
     }
@@ -86,11 +79,11 @@ public class AsyncExecutor<T> implements Serializable {
 
         List<SettableFuture<T>> settableFutures = new ArrayList<>(statements.size());
 
-        for(Statement s : statements)
+        for (Statement s : statements)
             settableFutures.add(execAsync(s, input, AsyncResultHandler.NO_OP_HANDLER));
 
         ListenableFuture<List<T>> allAsList = Futures.allAsList(settableFutures);
-        Futures.addCallback(allAsList, new FutureCallback<List<T>>(){
+        Futures.addCallback(allAsList, new FutureCallback<List<T>>() {
             @Override
             public void onSuccess(List<T> inputs) {
                 handler.success(input);
@@ -147,7 +140,8 @@ public class AsyncExecutor<T> implements Serializable {
      * Asynchronously executes the specified select statements. Results will be passed to the {@link AsyncResultSetHandler}
      * once each query has succeed or failed.
      */
-    public SettableFuture<List<T>> execAsync(final List<Statement> statements, final List<T> inputs, Semaphore throttle, final AsyncResultSetHandler<T> handler) {
+    public SettableFuture<List<T>> execAsync(final List<Statement> statements, final List<T> inputs, Semaphore throttle,
+                                             final AsyncResultSetHandler<T> handler) {
 
         final SettableFuture<List<T>> settableFuture = SettableFuture.create();
         if (inputs.size() == 0) {
@@ -184,11 +178,10 @@ public class AsyncExecutor<T> implements Serializable {
                                 handler.failure(throwable, input);
                             } catch (Throwable throwable2) {
                                 asyncContext.exception(throwable2);
-                            }
-                            finally {
+                            } finally {
                                 asyncContext
-                                        .exception(throwable)
-                                        .release();
+                                    .exception(throwable)
+                                    .release();
                                 pending.decrementAndGet();
                                 LOG.error(String.format("Failed to execute statement '%s' ", statement), throwable);
                             }
@@ -196,7 +189,7 @@ public class AsyncExecutor<T> implements Serializable {
                     }, executorService);
                 } catch (Throwable throwable) {
                     asyncContext.exception(throwable)
-                            .release();
+                                .release();
                     pending.decrementAndGet();
                     break;
                 }
@@ -207,12 +200,26 @@ public class AsyncExecutor<T> implements Serializable {
         return settableFuture;
     }
 
+    /**
+     * Returns the number of currently executed tasks which are not yet completed.
+     */
+    public int getPendingTasksSize() {
+        return this.pending.intValue();
+    }
+
+    public void shutdown() {
+        if (!executorService.isShutdown()) {
+            LOG.info("shutting down async handler executor");
+            this.executorService.shutdownNow();
+        }
+    }
+
     private static class AsyncContext<T> {
         private final List<T> inputs;
         private final SettableFuture<List<T>> future;
-        private final  AtomicInteger latch;
-        private final  List<Throwable> exceptions;
-        private final  Semaphore throttle;
+        private final AtomicInteger latch;
+        private final List<Throwable> exceptions;
+        private final Semaphore throttle;
 
         public AsyncContext(List<T> inputs, Semaphore throttle, SettableFuture<List<T>> settableFuture) {
             this.inputs = inputs;
@@ -238,8 +245,7 @@ public class AsyncExecutor<T> implements Serializable {
             if (remaining == 0) {
                 if (exceptions.size() == 0) {
                     future.set(inputs);
-                }
-                else {
+                } else {
                     future.setException(new MultiFailedException(exceptions));
                 }
 
@@ -251,20 +257,6 @@ public class AsyncExecutor<T> implements Serializable {
         public AsyncContext exception(Throwable throwable) {
             this.exceptions.add(throwable);
             return this;
-        }
-    }
-
-    /**
-     * Returns the number of currently executed tasks which are not yet completed.
-     */
-    public int getPendingTasksSize() {
-        return this.pending.intValue();
-    }
-
-    public void shutdown( ) {
-        if( ! executorService.isShutdown() ) {
-            LOG.info("shutting down async handler executor");
-            this.executorService.shutdownNow();
         }
     }
 
@@ -280,12 +272,12 @@ public class AsyncExecutor<T> implements Serializable {
             int top5 = Math.min(exceptions.size(), 5);
             StringBuilder sb = new StringBuilder();
             sb.append("First ")
-                    .append(top5)
-                    .append(" exceptions: ")
-                    .append(System.lineSeparator());
+              .append(top5)
+              .append(" exceptions: ")
+              .append(System.lineSeparator());
             for (int i = 0; i < top5; i++) {
                 sb.append(exceptions.get(i).getMessage())
-                        .append(System.lineSeparator());
+                  .append(System.lineSeparator());
             }
             return sb.toString();
         }
@@ -295,13 +287,13 @@ public class AsyncExecutor<T> implements Serializable {
             StringBuilder sb = new StringBuilder();
 
             sb.append(getMessage())
-                    .append(System.lineSeparator())
-                    .append("Multiple exceptions encountered: ")
-                    .append(System.lineSeparator());
+              .append(System.lineSeparator())
+              .append("Multiple exceptions encountered: ")
+              .append(System.lineSeparator());
 
             for (Throwable exception : exceptions) {
                 sb.append(exception.toString())
-                        .append(System.lineSeparator());
+                  .append(System.lineSeparator());
             }
 
             return super.toString();

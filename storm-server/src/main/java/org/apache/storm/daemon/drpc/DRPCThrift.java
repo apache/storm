@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.drpc;
 
 import org.apache.storm.generated.AuthorizationException;
@@ -52,7 +53,7 @@ public class DRPCThrift implements DistributedRPC.Iface, DistributedRPCInvocatio
 
     @Override
     public String execute(String functionName, String funcArgs)
-            throws DRPCExecutionException, AuthorizationException {
+        throws DRPCExecutionException, AuthorizationException {
         return _drpc.executeBlocking(functionName, funcArgs);
     }
 }

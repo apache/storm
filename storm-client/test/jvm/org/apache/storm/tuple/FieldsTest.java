@@ -1,27 +1,20 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.tuple;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,7 +23,7 @@ public class FieldsTest {
     @Test
     public void fieldsConstructorDoesNotThrowWithValidArgsTest() {
         Assert.assertEquals(new Fields("foo", "bar").size(), 2);
-        Assert.assertEquals(new Fields(new String[] {"foo", "bar"}).size(), 2);
+        Assert.assertEquals(new Fields(new String[]{ "foo", "bar" }).size(), 2);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -40,7 +33,7 @@ public class FieldsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void duplicateFieldsNotAllowedTestWhenConstructingFromListTest() {
-        new Fields(new String[] {"foo", "bar", "foo"});
+        new Fields(new String[]{ "foo", "bar", "foo" });
     }
 
     @Test
@@ -107,13 +100,13 @@ public class FieldsTest {
 
     @Test
     public void selectTest() {
-        Fields fields = new Fields("foo", "bar"); 
-        List<Object> second = Arrays.asList(new Object[]{"b"});
-        List<Object> tuple = Arrays.asList(new Object[]{"a", "b", "c"});
+        Fields fields = new Fields("foo", "bar");
+        List<Object> second = Arrays.asList(new Object[]{ "b" });
+        List<Object> tuple = Arrays.asList(new Object[]{ "a", "b", "c" });
         List<Object> pickSecond = fields.select(new Fields("bar"), tuple);
         Assert.assertTrue(pickSecond.equals(second));
 
-        List<Object> secondAndFirst = Arrays.asList(new Object[]{"b", "a"});
+        List<Object> secondAndFirst = Arrays.asList(new Object[]{ "b", "a" });
         List<Object> pickSecondAndFirst = fields.select(new Fields("bar", "foo"), tuple);
         Assert.assertTrue(pickSecondAndFirst.equals(secondAndFirst));
     }
@@ -121,6 +114,6 @@ public class FieldsTest {
     @Test(expected = IllegalArgumentException.class)
     public void selectingUnknownFieldThrowsTest() {
         Fields fields = new Fields("foo", "bar");
-        fields.select(new Fields("bar", "baz"), Arrays.asList(new Object[]{"a", "b", "c"}));
+        fields.select(new Fields("bar", "baz"), Arrays.asList(new Object[]{ "a", "b", "c" }));
     }
 }

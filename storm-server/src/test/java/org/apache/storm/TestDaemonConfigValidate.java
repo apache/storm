@@ -18,21 +18,21 @@
 
 package org.apache.storm;
 
-import org.apache.storm.validation.ConfigValidation;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import org.apache.storm.validation.ConfigValidation;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TestDaemonConfigValidate {
 
     @Test
-    public void testSupervisorSchedulerMetaIsStringMap() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testSupervisorSchedulerMetaIsStringMap() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         Map<String, Object> conf = new HashMap<String, Object>();
         Map<String, Object> schedulerMeta = new HashMap<String, Object>();
         conf.put(DaemonConfig.SUPERVISOR_SCHEDULER_META, schedulerMeta);
@@ -52,7 +52,8 @@ public class TestDaemonConfigValidate {
     }
 
     @Test
-    public void testIsolationSchedulerMachinesIsMap() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testIsolationSchedulerMachinesIsMap() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         Map<String, Object> conf = new HashMap<String, Object>();
         Map<String, Integer> isolationMap = new HashMap<String, Integer>();
         conf.put(DaemonConfig.ISOLATION_SCHEDULER_MACHINES, isolationMap);
@@ -73,19 +74,20 @@ public class TestDaemonConfigValidate {
     }
 
     @Test
-    public void testSupervisorSlotsPorts() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testSupervisorSlotsPorts() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         Map<String, Object> conf = new HashMap<String, Object>();
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
 
-        Integer[] test1 = {1233, 1234, 1235};
-        Integer[] test2 = {1233};
+        Integer[] test1 = { 1233, 1234, 1235 };
+        Integer[] test2 = { 1233 };
         passCases.add(Arrays.asList(test1));
         passCases.add(Arrays.asList(test2));
 
-        String[] test3 = {"1233", "1234", "1235"};
+        String[] test3 = { "1233", "1234", "1235" };
         //duplicate case
-        Integer[] test4 = {1233, 1233, 1235};
+        Integer[] test4 = { 1233, 1233, 1235 };
         failCases.add(test3);
         failCases.add(test4);
         failCases.add(null);

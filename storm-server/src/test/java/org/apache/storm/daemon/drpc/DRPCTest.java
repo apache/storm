@@ -15,9 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.drpc;
 
-import static org.junit.Assert.*;
+package org.apache.storm.daemon.drpc;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,9 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
 import javax.security.auth.Subject;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCExceptionType;
@@ -39,19 +36,22 @@ import org.apache.storm.security.auth.DefaultPrincipalToLocal;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.SingleUserPrincipal;
 import org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer;
-import org.apache.storm.security.auth.authorizer.DenyAuthorizer;
 import org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer.AclFunctionEntry;
+import org.apache.storm.security.auth.authorizer.DenyAuthorizer;
 import org.apache.storm.utils.Time;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import org.apache.storm.metric.StormMetricsRegistry;
+
 public class DRPCTest {
     private static final ExecutorService exec = Executors.newCachedThreadPool();
-    
-    public static interface ThrowStuff {
-        public void run() throws Exception;
-    }
-    
+
     private static void assertThrows(ThrowStuff t, Class<? extends Exception> expected) {
         try {
             t.run();
@@ -60,12 +60,12 @@ public class DRPCTest {
             assertTrue("Expected " + t + " to throw " + expected + " but threw " + e, expected.isInstance(e));
         }
     }
-    
+
     @AfterClass
     public static void close() {
         exec.shutdownNow();
     }
-    
+
     public static DRPCRequest getNextAvailableRequest(DRPC server, String func) throws Exception {
         DRPCRequest request = null;
         long timedout = System.currentTimeMillis() + 5_000;
@@ -79,10 +79,10 @@ public class DRPCTest {
         fail("Test timed out waiting for a request on " + func);
         return request;
     }
-    
+
     @Test
     public void testGoodBlocking() throws Exception {
-        try (DRPC server = new DRPC(null, 100)) {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), null, 100)) {
             Future<String> found = exec.submit(() -> server.executeBlocking("testing", "test"));
             DRPCRequest request = getNextAvailableRequest(server, "testing");
             assertNotNull(request);
@@ -93,10 +93,10 @@ public class DRPCTest {
             assertEquals("tested", result);
         }
     }
-    
+
     @Test
     public void testFailedBlocking() throws Exception {
-        try (DRPC server = new DRPC(null, 100)) {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), null, 100)) {
             Future<String> found = exec.submit(() -> server.executeBlocking("testing", "test"));
             DRPCRequest request = getNextAvailableRequest(server, "testing");
             assertNotNull(request);
@@ -108,17 +108,17 @@ public class DRPCTest {
                 fail("exec did not throw an exception");
             } catch (ExecutionException e) {
                 Throwable t = e.getCause();
-                assertEquals(t.getClass(), DRPCExecutionException.class);
+                assertTrue(t instanceof DRPCExecutionException);
                 //Don't know a better way to validate that it failed.
-                assertEquals(DRPCExceptionType.FAILED_REQUEST, ((DRPCExecutionException)t).get_type());
+                assertEquals(DRPCExceptionType.FAILED_REQUEST, ((DRPCExecutionException) t).get_type());
             }
         }
     }
-    
+
     @Test
     public void testDequeueAfterTimeout() throws Exception {
         long timeout = 1000;
-        try (DRPC server = new DRPC(null, timeout)) {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), null, timeout)) {
             long start = Time.currentTimeMillis();
             try {
                 server.executeBlocking("testing", "test");
@@ -135,15 +135,15 @@ public class DRPCTest {
             assertEquals("", request.get_func_args());
         }
     }
-    
+
     @Test
     public void testDeny() throws Exception {
-        try (DRPC server = new DRPC(new DenyAuthorizer(), 100)) {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), new DenyAuthorizer(), 100)) {
             assertThrows(() -> server.executeBlocking("testing", "test"), AuthorizationException.class);
             assertThrows(() -> server.fetchRequest("testing"), AuthorizationException.class);
         }
     }
-    
+
     @Test
     public void testStrict() throws Exception {
         ReqContext jt = new ReqContext(new Subject());
@@ -174,29 +174,29 @@ public class DRPCTest {
         DRPC.checkAuthorization(jt, auth, "fetchRequest", "jump");
         assertThrows(() -> DRPC.checkAuthorization(jc, auth, "fetchRequest", "jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "fetchRequest", "jump"), AuthorizationException.class);
-        
+
         DRPC.checkAuthorization(jt, auth, "result", "jump");
         assertThrows(() -> DRPC.checkAuthorization(jc, auth, "result", "jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "result", "jump"), AuthorizationException.class);
-        
+
         assertThrows(() -> DRPC.checkAuthorization(jt, auth, "execute", "jump"), AuthorizationException.class);
         DRPC.checkAuthorization(jc, auth, "execute", "jump");
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "execute", "jump"), AuthorizationException.class);
-        
+
         //not_jump (closed in strict mode)
         assertThrows(() -> DRPC.checkAuthorization(jt, auth, "fetchRequest", "not_jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(jc, auth, "fetchRequest", "not_jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "fetchRequest", "not_jump"), AuthorizationException.class);
-        
+
         assertThrows(() -> DRPC.checkAuthorization(jt, auth, "result", "not_jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(jc, auth, "result", "not_jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "result", "not_jump"), AuthorizationException.class);
-        
+
         assertThrows(() -> DRPC.checkAuthorization(jt, auth, "execute", "not_jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(jc, auth, "execute", "not_jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "execute", "not_jump"), AuthorizationException.class);
     }
-    
+
     @Test
     public void testNotStrict() throws Exception {
         ReqContext jt = new ReqContext(new Subject());
@@ -227,26 +227,30 @@ public class DRPCTest {
         DRPC.checkAuthorization(jt, auth, "fetchRequest", "jump");
         assertThrows(() -> DRPC.checkAuthorization(jc, auth, "fetchRequest", "jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "fetchRequest", "jump"), AuthorizationException.class);
-        
+
         DRPC.checkAuthorization(jt, auth, "result", "jump");
         assertThrows(() -> DRPC.checkAuthorization(jc, auth, "result", "jump"), AuthorizationException.class);
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "result", "jump"), AuthorizationException.class);
-        
+
         assertThrows(() -> DRPC.checkAuthorization(jt, auth, "execute", "jump"), AuthorizationException.class);
         DRPC.checkAuthorization(jc, auth, "execute", "jump");
         assertThrows(() -> DRPC.checkAuthorization(other, auth, "execute", "jump"), AuthorizationException.class);
-        
+
         //not_jump (open in not strict mode)
         DRPC.checkAuthorization(jt, auth, "fetchRequest", "not_jump");
         DRPC.checkAuthorization(jc, auth, "fetchRequest", "not_jump");
         DRPC.checkAuthorization(other, auth, "fetchRequest", "not_jump");
-        
+
         DRPC.checkAuthorization(jt, auth, "result", "not_jump");
         DRPC.checkAuthorization(jc, auth, "result", "not_jump");
         DRPC.checkAuthorization(other, auth, "result", "not_jump");
-        
+
         DRPC.checkAuthorization(jt, auth, "execute", "not_jump");
         DRPC.checkAuthorization(jc, auth, "execute", "not_jump");
         DRPC.checkAuthorization(other, auth, "execute", "not_jump");
+    }
+
+    public static interface ThrowStuff {
+        public void run() throws Exception;
     }
 }

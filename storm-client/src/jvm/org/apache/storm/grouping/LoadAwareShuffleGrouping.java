@@ -1,25 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.grouping;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Sets;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -32,11 +23,12 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
@@ -44,29 +36,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, Serializable {
-    private int capacity;
     private static final int MAX_WEIGHT = 100;
-    private static class IndexAndWeights {
-        final int index;
-        int weight;
-
-        IndexAndWeights(int index) {
-            this.index = index;
-            weight = MAX_WEIGHT;
-        }
-
-        void resetWeight() {
-            weight = MAX_WEIGHT;
-        }
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(LoadAwareShuffleGrouping.class);
     private final Map<Integer, IndexAndWeights> orig = new HashMap<>();
-    private Random random;
     @VisibleForTesting
     List<Integer>[] rets;
     @VisibleForTesting
     volatile int[] choices;
+    private int capacity;
+    private Random random;
     private volatile int[] prepareChoices;
     private AtomicInteger current;
     private Scope currentScope;
@@ -137,7 +115,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
         localityGroup.values().stream().forEach(v -> v.clear());
 
-        for (int target: targetTasks) {
+        for (int target : targetTasks) {
             Scope scope = calculateScope(cachedTaskToNodePort, hostToRack, target);
             if (!localityGroup.containsKey(scope)) {
                 localityGroup.put(scope, new ArrayList<>());
@@ -203,7 +181,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
         //We will adjust weights based off of the minimum load
         double min = load == null ? 0 : targetsInScope.stream().mapToDouble((key) -> load.get(key)).min().getAsDouble();
-        for (int target: targetsInScope) {
+        for (int target : targetsInScope) {
             IndexAndWeights val = orig.get(target);
             double l = load == null ? 0.0 : load.get(target);
             if (l <= min + (0.05)) {
@@ -221,7 +199,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
         int currentIdx = 0;
         if (weightSum > 0) {
-            for (int target: targetsInScope) {
+            for (int target : targetsInScope) {
                 IndexAndWeights indexAndWeights = orig.get(target);
                 int count = (int) ((indexAndWeights.weight / (double) weightSum) * capacity);
                 for (int i = 0; i < count && currentIdx < capacity; i++) {
@@ -240,7 +218,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         if (currentIdx == 0) {
             //This really should be impossible, because we go off of the min load, and inc anything within 5% of it.
             // But just to be sure it is never an issue, especially with float rounding etc.
-            for (;currentIdx < capacity; currentIdx++) {
+            for (; currentIdx < capacity; currentIdx++) {
                 prepareChoices[currentIdx] = currentIdx % rets.length;
             }
         }
@@ -268,7 +246,6 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         arr[j] = tmp;
     }
 
-
     private Scope calculateScope(Map<Integer, NodeInfo> taskToNodePort, Map<String, String> hostToRack, int target) {
         NodeInfo targetNodeInfo = taskToNodePort.get(target);
 
@@ -279,9 +256,9 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         String sourceRack = hostToRack.get(sourceNodeInfo.get_node());
         String targetRack = hostToRack.get(targetNodeInfo.get_node());
 
-        if(sourceRack != null && targetRack != null && sourceRack.equals(targetRack)) {
-            if(sourceNodeInfo.get_node().equals(targetNodeInfo.get_node())) {
-                if(sourceNodeInfo.get_port().equals(targetNodeInfo.get_port())) {
+        if (sourceRack != null && targetRack != null && sourceRack.equals(targetRack)) {
+            if (sourceNodeInfo.get_node().equals(targetNodeInfo.get_node())) {
+                if (sourceNodeInfo.get_port().equals(targetNodeInfo.get_port())) {
                     return Scope.WORKER_LOCAL;
                 }
                 return Scope.HOST_LOCAL;
@@ -294,7 +271,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
     private Map<String, String> getHostToRackMapping(Map<Integer, NodeInfo> taskToNodePort) {
         Set<String> hosts = new HashSet();
-        for (int task: targetTasks) {
+        for (int task : targetTasks) {
             //if this task containing worker will be killed by a assignments sync,
             //taskToNodePort will be an empty map which is refreshed by WorkerState
             if (taskToNodePort.containsKey(task)) {
@@ -307,13 +284,20 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         return dnsToSwitchMapping.resolve(new ArrayList<>(hosts));
     }
 
+    //only for test
+    public int getCapacity() {
+        return capacity;
+    }
+
     enum Scope {
         WORKER_LOCAL, HOST_LOCAL, RACK_LOCAL, EVERYTHING;
 
         public static Scope downgrade(Scope current) {
             switch (current) {
-                case EVERYTHING: return RACK_LOCAL;
-                case RACK_LOCAL: return HOST_LOCAL;
+                case EVERYTHING:
+                    return RACK_LOCAL;
+                case RACK_LOCAL:
+                    return HOST_LOCAL;
                 case HOST_LOCAL:
                 case WORKER_LOCAL:
                 default:
@@ -323,8 +307,10 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
         public static Scope upgrade(Scope current) {
             switch (current) {
-                case WORKER_LOCAL: return HOST_LOCAL;
-                case HOST_LOCAL: return RACK_LOCAL;
+                case WORKER_LOCAL:
+                    return HOST_LOCAL;
+                case HOST_LOCAL:
+                    return RACK_LOCAL;
                 case RACK_LOCAL:
                 case EVERYTHING:
                 default:
@@ -333,8 +319,17 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         }
     }
 
-    //only for test
-    public int getCapacity() {
-        return capacity;
+    private static class IndexAndWeights {
+        final int index;
+        int weight;
+
+        IndexAndWeights(int index) {
+            this.index = index;
+            weight = MAX_WEIGHT;
+        }
+
+        void resetWeight() {
+            weight = MAX_WEIGHT;
+        }
     }
 }

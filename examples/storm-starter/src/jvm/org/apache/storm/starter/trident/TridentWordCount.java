@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.starter.trident;
 
 import org.apache.storm.Config;
@@ -36,32 +31,25 @@ import org.apache.storm.utils.DRPCClient;
 
 
 public class TridentWordCount {
-    public static class Split extends BaseFunction {
-        @Override
-        public void execute(TridentTuple tuple, TridentCollector collector) {
-            String sentence = tuple.getString(0);
-            for (String word : sentence.split(" ")) {
-                collector.emit(new Values(word));
-            }
-        }
-    }
-
     public static StormTopology buildTopology() {
         FixedBatchSpout spout = new FixedBatchSpout(new Fields("sentence"), 3, new Values("the cow jumped over the moon"),
-                new Values("the man went to the store and bought some candy"), new Values("four score and seven years ago"),
-                new Values("how many apples can you eat"), new Values("to be or not to be the person"));
+                                                    new Values("the man went to the store and bought some candy"),
+                                                    new Values("four score and seven years ago"),
+                                                    new Values("how many apples can you eat"), new Values("to be or not to be the person"));
         spout.setCycle(true);
 
         TridentTopology topology = new TridentTopology();
         TridentState wordCounts = topology.newStream("spout1", spout).parallelismHint(16).each(new Fields("sentence"),
-                new Split(), new Fields("word")).groupBy(new Fields("word")).persistentAggregate(new MemoryMapState.Factory(),
-                        new Count(), new Fields("count")).parallelismHint(16);
+                                                                                               new Split(), new Fields("word"))
+                                          .groupBy(new Fields("word")).persistentAggregate(new MemoryMapState.Factory(),
+                                                                                           new Count(), new Fields("count"))
+                                          .parallelismHint(16);
 
         topology.newDRPCStream("words").each(new Fields("args"), new Split(), new Fields("word"))
-        .groupBy(new Fields("word"))
-        .stateQuery(wordCounts, new Fields("word"), new MapGet(), new Fields("count"))
-        .each(new Fields("count"), new FilterNull())
-        .project(new Fields("word", "count"));
+                .groupBy(new Fields("word"))
+                .stateQuery(wordCounts, new Fields("word"), new MapGet(), new Fields("count"))
+                .each(new Fields("count"), new FilterNull())
+                .project(new Fields("word", "count"));
         return topology.build();
     }
 
@@ -78,6 +66,16 @@ public class TridentWordCount {
             for (int i = 0; i < 10; i++) {
                 System.out.println("DRPC RESULT: " + drpc.execute("words", "cat the dog jumped"));
                 Thread.sleep(1000);
+            }
+        }
+    }
+
+    public static class Split extends BaseFunction {
+        @Override
+        public void execute(TridentTuple tuple, TridentCollector collector) {
+            String sentence = tuple.getString(0);
+            for (String word : sentence.split(" ")) {
+                collector.emit(new Values(word));
             }
         }
     }

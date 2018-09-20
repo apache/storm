@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.nimbus;
@@ -27,11 +21,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.generated.SupervisorAssignments;
-import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.SupervisorClient;
@@ -93,6 +85,17 @@ public class AssignmentDistributionService implements Closeable {
     private Map conf;
 
     private boolean isLocalMode = false; // boolean cache for local mode decision
+
+    /**
+     * Factory method for initialize a instance.
+     * @param conf config.
+     * @return an instance of {@link AssignmentDistributionService}
+     */
+    public static AssignmentDistributionService getInstance(Map conf) {
+        AssignmentDistributionService service = new AssignmentDistributionService();
+        service.prepare(conf);
+        return service;
+    }
 
     /**
      * Function for initialization.
@@ -163,6 +166,47 @@ public class AssignmentDistributionService implements Closeable {
         }
     }
 
+    public void addLocalSupervisor(Supervisor supervisor) {
+        this.localSupervisors.put(supervisor.getId(), supervisor);
+    }
+
+    private Integer nextQueueId() {
+        return this.random.nextInt(threadsNum);
+    }
+
+    private LinkedBlockingQueue<NodeAssignments> nextQueue() {
+        return this.assignmentsQueue.get(nextQueueId());
+    }
+
+    private LinkedBlockingQueue<NodeAssignments> getQueueById(Integer queueIndex) {
+        return this.assignmentsQueue.get(queueIndex);
+    }
+
+    /**
+     * Get an assignments from the target queue with the specific index.
+     * @param queueIndex index of the queue
+     * @return an {@link NodeAssignments}
+     * @throws InterruptedException
+     */
+    public NodeAssignments nextAssignments(Integer queueIndex) throws InterruptedException {
+        NodeAssignments target = null;
+        while (true) {
+            target = getQueueById(queueIndex).poll();
+            if (target != null) {
+                return target;
+            }
+            Time.sleep(100L);
+        }
+    }
+
+    public boolean isActive() {
+        return this.active;
+    }
+
+    public Map getConf() {
+        return this.conf;
+    }
+
     static class NodeAssignments {
         private String node;
         private String host;
@@ -177,7 +221,7 @@ public class AssignmentDistributionService implements Closeable {
         }
 
         public static NodeAssignments getInstance(String node, String host, Integer serverPort,
-            SupervisorAssignments assignments) {
+                                                  SupervisorAssignments assignments) {
             return new NodeAssignments(node, host, serverPort, assignments);
         }
 
@@ -237,12 +281,12 @@ public class AssignmentDistributionService implements Closeable {
                     supervisor.sendSupervisorAssignments(assignments.getAssignments());
                 } else {
                     LOG.error("Can not find node {} for assignments distribution", assignments.getNode());
-                    throw new RuntimeException("null for node " + assignments.getNode() +  " supervisor instance.");
+                    throw new RuntimeException("null for node " + assignments.getNode() + " supervisor instance.");
                 }
             } else {
                 // distributed mode
                 try (SupervisorClient client = SupervisorClient.getConfiguredClient(service.getConf(),
-                    assignments.getHost(), assignments.getServerPort())){
+                                                                                    assignments.getHost(), assignments.getServerPort())) {
                     try {
                         client.getClient().sendSupervisorAssignments(assignments.getAssignments());
                     } catch (Exception e) {
@@ -256,57 +300,5 @@ public class AssignmentDistributionService implements Closeable {
 
             }
         }
-    }
-
-    public void addLocalSupervisor(Supervisor supervisor) {
-        this.localSupervisors.put(supervisor.getId(), supervisor);
-    }
-
-    private Integer nextQueueId() {
-        return this.random.nextInt(threadsNum);
-    }
-
-    private LinkedBlockingQueue<NodeAssignments> nextQueue() {
-        return this.assignmentsQueue.get(nextQueueId());
-    }
-
-    private LinkedBlockingQueue<NodeAssignments> getQueueById(Integer queueIndex) {
-        return this.assignmentsQueue.get(queueIndex);
-    }
-
-    /**
-     * Get an assignments from the target queue with the specific index.
-     * @param queueIndex index of the queue
-     * @return an {@link NodeAssignments}
-     * @throws InterruptedException
-     */
-    public NodeAssignments nextAssignments(Integer queueIndex) throws InterruptedException {
-        NodeAssignments target = null;
-        while (true) {
-            target = getQueueById(queueIndex).poll();
-            if (target != null) {
-                return target;
-            }
-            Time.sleep(100L);
-        }
-    }
-
-    public boolean isActive() {
-        return this.active;
-    }
-
-    public Map getConf() {
-        return this.conf;
-    }
-
-    /**
-     * Factory method for initialize a instance.
-     * @param conf config.
-     * @return an instance of {@link AssignmentDistributionService}
-     */
-    public static AssignmentDistributionService getInstance(Map conf) {
-        AssignmentDistributionService service = new AssignmentDistributionService();
-        service.prepare(conf);
-        return service;
     }
 }

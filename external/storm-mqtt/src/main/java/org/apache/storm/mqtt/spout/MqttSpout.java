@@ -1,32 +1,31 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.mqtt.spout;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.storm.Config;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.IRichSpout;
-import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.mqtt.MqttMessageMapper;
 import org.apache.storm.mqtt.common.MqttOptions;
 import org.apache.storm.mqtt.common.MqttUtils;
 import org.apache.storm.mqtt.common.SslUtils;
 import org.apache.storm.mqtt.ssl.KeyStoreLoader;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.IRichSpout;
+import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.UTF8Buffer;
 import org.fusesource.mqtt.client.Callback;
@@ -38,53 +37,43 @@ import org.fusesource.mqtt.client.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
-
 public class MqttSpout implements IRichSpout, Listener {
     private static final Logger LOG = LoggerFactory.getLogger(MqttSpout.class);
-
-    private String topologyName;
-
-
-    private CallbackConnection connection;
-
     protected transient SpoutOutputCollector collector;
     protected transient TopologyContext context;
     protected transient LinkedBlockingQueue<AckableMessage> incoming;
     protected transient HashMap<Long, AckableMessage> pending;
-    private transient Map<String, Object> conf;
     protected MqttMessageMapper type;
     protected MqttOptions options;
     protected KeyStoreLoader keyStoreLoader;
-
+    private String topologyName;
+    private CallbackConnection connection;
+    private transient Map<String, Object> conf;
     private boolean mqttConnected = false;
     private boolean mqttConnectFailed = false;
 
 
     private Long sequence = Long.MIN_VALUE;
 
-    private Long nextId(){
-        this.sequence++;
-        if(this.sequence == Long.MAX_VALUE){
-            this.sequence = Long.MIN_VALUE;
-        }
-        return this.sequence;
-    }
+    protected MqttSpout() {}
 
-    protected MqttSpout(){}
-
-    public MqttSpout(MqttMessageMapper type, MqttOptions options){
+    public MqttSpout(MqttMessageMapper type, MqttOptions options) {
         this(type, options, null);
     }
 
-    public MqttSpout(MqttMessageMapper type, MqttOptions options, KeyStoreLoader keyStoreLoader){
+    public MqttSpout(MqttMessageMapper type, MqttOptions options, KeyStoreLoader keyStoreLoader) {
         this.type = type;
         this.options = options;
         this.keyStoreLoader = keyStoreLoader;
         SslUtils.checkSslConfig(this.options.getUrl(), this.keyStoreLoader);
+    }
+
+    private Long nextId() {
+        this.sequence++;
+        if (this.sequence == Long.MAX_VALUE) {
+            this.sequence = Long.MIN_VALUE;
+        }
+        return this.sequence;
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -96,7 +85,7 @@ public class MqttSpout implements IRichSpout, Listener {
     }
 
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        this.topologyName = (String)conf.get(Config.TOPOLOGY_NAME);
+        this.topologyName = (String) conf.get(Config.TOPOLOGY_NAME);
 
         this.collector = collector;
         this.context = context;
@@ -116,29 +105,28 @@ public class MqttSpout implements IRichSpout, Listener {
 
     private void connectMqtt() throws Exception {
         String clientId = this.topologyName + "-" + this.context.getThisComponentId() + "-" +
-                this.context.getThisTaskId();
+                          this.context.getThisTaskId();
 
         MQTT client = MqttUtils.configureClient(this.options, clientId, this.keyStoreLoader);
         this.connection = client.callbackConnection();
         this.connection.listener(this);
         this.connection.connect(new ConnectCallback());
 
-        while(!this.mqttConnected && !this.mqttConnectFailed){
+        while (!this.mqttConnected && !this.mqttConnectFailed) {
             LOG.info("Waiting for connection...");
             Thread.sleep(500);
         }
 
-        if(this.mqttConnected){
+        if (this.mqttConnected) {
             List<String> topicList = this.options.getTopics();
             Topic[] topics = new Topic[topicList.size()];
             QoS qos = MqttUtils.qosFromInt(this.options.getQos());
-            for(int i = 0;i < topicList.size();i++){
+            for (int i = 0; i < topicList.size(); i++) {
                 topics[i] = new Topic(topicList.get(i), qos);
             }
             connection.subscribe(topics, new SubscribeCallback());
         }
     }
-
 
 
     public void close() {
@@ -161,7 +149,7 @@ public class MqttSpout implements IRichSpout, Listener {
      */
     public void nextTuple() {
         AckableMessage tm = this.incoming.poll();
-        if(tm != null){
+        if (tm != null) {
             Long id = nextId();
             this.collector.emit(this.type.toValues(tm.getMessage()), id);
             this.pending.put(id, tm);
@@ -237,7 +225,7 @@ public class MqttSpout implements IRichSpout, Listener {
     }
 
     // ################# Subscribe Callback Implementation ######################
-    private class SubscribeCallback implements Callback<byte[]>{
+    private class SubscribeCallback implements Callback<byte[]> {
         public void onSuccess(byte[] qos) {
             LOG.info("Subscripton sucessful.");
         }
@@ -249,7 +237,7 @@ public class MqttSpout implements IRichSpout, Listener {
     }
 
     // ################# Subscribe Callback Implementation ######################
-    private class DisconnectCallback implements Callback<Void>{
+    private class DisconnectCallback implements Callback<Void> {
         public void onSuccess(Void aVoid) {
             LOG.info("MQTT Disconnect successful.");
         }

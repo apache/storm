@@ -95,7 +95,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
                 <configuration>
-                    <maxAllowedViolations>100</maxAllowedViolations>
+                    <maxAllowedViolations>65</maxAllowedViolations>
                 </configuration>
             </plugin>
         </plugins>
@@ -126,6 +126,10 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
         </dependency>
     </dependencies>
 

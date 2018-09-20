@@ -45,6 +45,18 @@
       <scope>${provided.scope}</scope>
     </dependency>
     <dependency>
+      <!-- This is here to remove jdk.tools as a dependency -->
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-annotations</artifactId>
+      <version>${hadoop.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>jdk.tools</groupId>
+          <artifactId>jdk.tools</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-client</artifactId>
       <version>${project.version}</version>
@@ -202,7 +214,7 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <!--Note - the version would be inherited-->
         <configuration>
-          <maxAllowedViolations>259</maxAllowedViolations>
+          <maxAllowedViolations>58</maxAllowedViolations>
         </configuration>
       </plugin>
     </plugins>

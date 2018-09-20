@@ -45,10 +45,10 @@ class WorkerTokenSigner {
         });
 
     /**
-     * Compute HMAC of the identifier using the secret key and return the
-     * output as password.
+     * Compute HMAC of the identifier using the secret key and return the output as password.
+     *
      * @param identifier the bytes of the identifier
-     * @param key the secret key
+     * @param key        the secret key
      * @return the bytes of the generated password
      */
     static byte[] createPassword(byte[] identifier, SecretKey key) {

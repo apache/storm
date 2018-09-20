@@ -1,49 +1,47 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm;
 
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.generated.HBMessage;
 import org.apache.storm.generated.HBMessageData;
 import org.apache.storm.generated.HBPulse;
 import org.apache.storm.generated.HBServerMessageType;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.pacemaker.Pacemaker;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PacemakerTest {
 
     private HBMessage hbMessage;
     private int mid;
     private Random random;
+    private Pacemaker handler;
 
     @Before
     public void init() {
         random = new Random(100);
+        handler = new Pacemaker(new ConcurrentHashMap<>(), new StormMetricsRegistry());
     }
 
     @Test
     public void testServerCreatePath() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         messageWithRandId(HBServerMessageType.CREATE_PATH, HBMessageData.path("/testpath"));
         HBMessage response = handler.handleMessage(hbMessage, true);
         Assert.assertEquals(mid, response.get_message_id());
@@ -53,7 +51,6 @@ public class PacemakerTest {
 
     @Test
     public void testServerExistsFalse() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         messageWithRandId(HBServerMessageType.EXISTS, HBMessageData.path("/testpath"));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
@@ -69,7 +66,6 @@ public class PacemakerTest {
     public void testServerExistsTrue() {
         String path = "/exists_path";
         String dataString = "pulse data";
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
         hbPulse.set_details(Utils.javaSerialize(dataString));
@@ -88,13 +84,12 @@ public class PacemakerTest {
     }
 
     @Test
-    public void testServerSendPulseGetPulse() {
+    public void testServerSendPulseGetPulse() throws UnsupportedEncodingException {
         String path = "/pulsepath";
         String dataString = "pulse data";
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
-        hbPulse.set_details(Utils.javaSerialize(dataString));
+        hbPulse.set_details(dataString.getBytes("UTF-8"));
         messageWithRandId(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
         HBMessage sendResponse = handler.handleMessage(hbMessage, true);
         Assert.assertEquals(mid, sendResponse.get_message_id());
@@ -105,12 +100,11 @@ public class PacemakerTest {
         HBMessage response = handler.handleMessage(hbMessage, true);
         Assert.assertEquals(mid, response.get_message_id());
         Assert.assertEquals(HBServerMessageType.GET_PULSE_RESPONSE, response.get_type());
-        Assert.assertEquals(dataString, Utils.javaDeserialize(response.get_data().get_pulse().get_details(), String.class));
+        Assert.assertEquals(dataString, new String(response.get_data().get_pulse().get_details(), "UTF-8"));
     }
 
     @Test
     public void testServerGetAllPulseForPath() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
         messageWithRandId(HBServerMessageType.GET_ALL_PULSE_FOR_PATH, HBMessageData.path("/testpath"));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
@@ -123,8 +117,7 @@ public class PacemakerTest {
     }
 
     @Test
-    public void testServerGetAllNodesForPath() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
+    public void testServerGetAllNodesForPath() throws UnsupportedEncodingException {
         makeNode(handler, "/some-root-path/foo");
         makeNode(handler, "/some-root-path/bar");
         makeNode(handler, "/some-root-path/baz");
@@ -165,8 +158,7 @@ public class PacemakerTest {
     }
 
     @Test
-    public void testServerGetPulse() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
+    public void testServerGetPulse() throws UnsupportedEncodingException {
         makeNode(handler, "/some-root/GET_PULSE");
         messageWithRandId(HBServerMessageType.GET_PULSE, HBMessageData.path("/some-root/GET_PULSE"));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
@@ -179,12 +171,11 @@ public class PacemakerTest {
         Assert.assertEquals(mid, goodResponse.get_message_id());
         Assert.assertEquals(HBServerMessageType.GET_PULSE_RESPONSE, goodResponse.get_type());
         Assert.assertEquals("/some-root/GET_PULSE", goodPulse.get_id());
-        Assert.assertEquals("nothing", Utils.javaDeserialize(goodPulse.get_details(), String.class));
+        Assert.assertEquals("nothing", new String(goodPulse.get_details(), "UTF-8"));
     }
 
     @Test
-    public void testServerDeletePath() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
+    public void testServerDeletePath() throws UnsupportedEncodingException {
         makeNode(handler, "/some-root/DELETE_PATH/foo");
         makeNode(handler, "/some-root/DELETE_PATH/bar");
         makeNode(handler, "/some-root/DELETE_PATH/baz");
@@ -205,8 +196,7 @@ public class PacemakerTest {
     }
 
     @Test
-    public void testServerDeletePulseId() {
-        Pacemaker handler = new Pacemaker(new ConcurrentHashMap());
+    public void testServerDeletePulseId() throws UnsupportedEncodingException {
         makeNode(handler, "/some-root/DELETE_PULSE_ID/foo");
         makeNode(handler, "/some-root/DELETE_PULSE_ID/bar");
         makeNode(handler, "/some-root/DELETE_PULSE_ID/baz");
@@ -232,10 +222,10 @@ public class PacemakerTest {
         hbMessage.set_message_id(mid);
     }
 
-    private HBMessage makeNode(Pacemaker handler, String path) {
+    private HBMessage makeNode(Pacemaker handler, String path) throws UnsupportedEncodingException {
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
-        hbPulse.set_details(Utils.javaSerialize("nothing"));
+        hbPulse.set_details("nothing".getBytes("UTF-8"));
         HBMessage message = new HBMessage(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
         return handler.handleMessage(message, true);
     }

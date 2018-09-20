@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.daemon.supervisor;
@@ -28,7 +22,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.supervisor.Slot.MachineState;
@@ -51,7 +44,17 @@ import org.slf4j.LoggerFactory;
 
 public class ReadClusterState implements Runnable, AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ReadClusterState.class);
-    
+    private static final long ERROR_MILLIS = 60_000; //1 min.  This really means something is wrong.  Even on a very slow node
+    public static final UniFunc<Slot> DEFAULT_ON_ERROR_TIMEOUT = (slot) -> {
+        throw new IllegalStateException("It took over " + ERROR_MILLIS + "ms to shut down slot " + slot);
+    };
+    public static final UniFunc<Slot> THREAD_DUMP_ON_ERROR = (slot) -> {
+        LOG.warn("Shutdown of slot {} appears to be stuck\n{}", slot, Utils.threadDump());
+        DEFAULT_ON_ERROR_TIMEOUT.call(slot);
+    };
+    private static final long WARN_MILLIS = 1_000; //Initial timeout 1 second.  Workers commit suicide after this
+    public static final UniFunc<Slot> DEFAULT_ON_WARN_TIMEOUT =
+        (slot) -> LOG.warn("It has taken {}ms so far and {} is still not shut down.", WARN_MILLIS, slot);
     private final Map<String, Object> superConf;
     private final IStormClusterState stormClusterState;
     private final Map<Integer, Slot> slots = new HashMap<>();
@@ -65,6 +68,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private final LocalState localState;
     private final AtomicReference<Map<Long, LocalAssignment>> cachedAssignments;
     private final OnlyLatestExecutor<Integer> metricsExec;
+    private final SlotMetrics slotMetrics;
     private WorkerMetricsProcessor metricsProcessor;
 
     public ReadClusterState(Supervisor supervisor) throws Exception {
@@ -78,8 +82,10 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         this.localState = supervisor.getLocalState();
         this.cachedAssignments = supervisor.getCurrAssignment();
         this.metricsExec = new OnlyLatestExecutor<>(supervisor.getHeartbeatExecutor());
+        this.slotMetrics = supervisor.getSlotMetrics();
 
-        this.launcher = ContainerLauncher.make(superConf, assignmentId, supervisorPort, supervisor.getSharedContext());
+        this.launcher = ContainerLauncher.make(superConf, assignmentId, supervisorPort,
+            supervisor.getSharedContext(), supervisor.getMetricsRegistry(), supervisor.getContainerMemoryTracker());
 
         this.metricsProcessor = null;
         try {
@@ -90,54 +96,55 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         }
 
         @SuppressWarnings("unchecked")
-        List<Number> ports = (List<Number>)superConf.get(DaemonConfig.SUPERVISOR_SLOTS_PORTS);
-        for (Number port: ports) {
+        List<Number> ports = (List<Number>) superConf.get(DaemonConfig.SUPERVISOR_SLOTS_PORTS);
+        for (Number port : ports) {
             slots.put(port.intValue(), mkSlot(port.intValue()));
         }
-        
+
         try {
-            Collection<String> workers = SupervisorUtils.supervisorWorkerIds(superConf);
-            for (Slot slot: slots.values()) {
+            Collection<String> detachedRunningWorkers = SupervisorUtils.supervisorWorkerIds(superConf);
+            for (Slot slot : slots.values()) {
                 String workerId = slot.getWorkerId();
+                // We ignore workers that are still bound to a slot, which is monitored by a supervisor
                 if (workerId != null) {
-                    workers.remove(workerId);
+                    detachedRunningWorkers.remove(workerId);
                 }
             }
-            if (!workers.isEmpty()) {
-                supervisor.killWorkers(workers, launcher);
+            if (!detachedRunningWorkers.isEmpty()) {
+                supervisor.killWorkers(detachedRunningWorkers, launcher);
             }
         } catch (Exception e) {
             LOG.warn("Error trying to clean up old workers", e);
         }
-        
-        for (Slot slot: slots.values()) {
+
+        for (Slot slot : slots.values()) {
             slot.start();
         }
     }
 
     private Slot mkSlot(int port) throws Exception {
         return new Slot(localizer, superConf, launcher, host, port,
-                localState, stormClusterState, iSuper, cachedAssignments, metricsExec, metricsProcessor);
+                        localState, stormClusterState, iSuper, cachedAssignments, metricsExec, metricsProcessor, slotMetrics);
     }
-    
+
     @Override
     public synchronized void run() {
         try {
             List<String> stormIds = stormClusterState.assignments(null);
             Map<String, Assignment> assignmentsSnapshot = getAssignmentsSnapshot(stormClusterState);
-            
+
             Map<Integer, LocalAssignment> allAssignments = readAssignments(assignmentsSnapshot);
             if (allAssignments == null) {
                 //Something odd happened try again later
                 return;
             }
             Map<String, List<ProfileRequest>> topoIdToProfilerActions = getProfileActions(stormClusterState, stormIds);
-            
+
             HashSet<Integer> assignedPorts = new HashSet<>();
             LOG.debug("Synchronizing supervisor");
             LOG.debug("All assignment: {}", allAssignments);
             LOG.debug("Topology Ids -> Profiler Actions {}", topoIdToProfilerActions);
-            for (Integer port: allAssignments.keySet()) {
+            for (Integer port : allAssignments.keySet()) {
                 if (iSuper.confirmAssigned(port)) {
                     assignedPorts.add(port);
                 }
@@ -145,12 +152,12 @@ public class ReadClusterState implements Runnable, AutoCloseable {
             HashSet<Integer> allPorts = new HashSet<>(assignedPorts);
             iSuper.assigned(allPorts);
             allPorts.addAll(slots.keySet());
-            
+
             Map<Integer, Set<TopoProfileAction>> filtered = new HashMap<>();
-            for (Entry<String, List<ProfileRequest>> entry: topoIdToProfilerActions.entrySet()) {
+            for (Entry<String, List<ProfileRequest>> entry : topoIdToProfilerActions.entrySet()) {
                 String topoId = entry.getKey();
                 if (entry.getValue() != null) {
-                    for (ProfileRequest req: entry.getValue()) {
+                    for (ProfileRequest req : entry.getValue()) {
                         NodeInfo ni = req.get_nodeInfo();
                         if (host.equals(ni.get_node())) {
                             Long port = ni.get_port().iterator().next();
@@ -164,8 +171,8 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                     }
                 }
             }
-            
-            for (Integer port: allPorts) {
+
+            for (Integer port : allPorts) {
                 Slot slot = slots.get(port);
                 if (slot == null) {
                     slot = mkSlot(port);
@@ -175,18 +182,19 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                 slot.setNewAssignment(allAssignments.get(port));
                 slot.addProfilerActions(filtered.get(port));
             }
-            
+
         } catch (Exception e) {
             LOG.error("Failed to Sync Supervisor", e);
             throw new RuntimeException(e);
         }
     }
-    
+
     protected Map<String, Assignment> getAssignmentsSnapshot(IStormClusterState stormClusterState) throws Exception {
         return stormClusterState.assignmentsInfo();
     }
-    
-    protected Map<String, List<ProfileRequest>> getProfileActions(IStormClusterState stormClusterState, List<String> stormIds) throws Exception {
+
+    protected Map<String, List<ProfileRequest>> getProfileActions(IStormClusterState stormClusterState, List<String> stormIds) throws
+        Exception {
         Map<String, List<ProfileRequest>> ret = new HashMap<String, List<ProfileRequest>>();
         for (String stormId : stormIds) {
             List<ProfileRequest> profileRequests = stormClusterState.getTopologyProfileRequests(stormId);
@@ -194,7 +202,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         }
         return ret;
     }
-    
+
     protected Map<Integer, LocalAssignment> readAssignments(Map<String, Assignment> assignmentsSnapshot) {
         try {
             Map<Integer, LocalAssignment> portLA = new HashMap<>();
@@ -214,7 +222,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                         portLA.put(port, la);
                     } else {
                         throw new RuntimeException("Should not have multiple topologies assigned to one port "
-                          + port + " " + la + " " + portLA);
+                                                   + port + " " + la + " " + portLA);
                     }
                 }
             }
@@ -230,7 +238,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
             return null;
         }
     }
-    
+
     protected Map<Integer, LocalAssignment> readMyExecutors(String topoId, String assignmentId, Assignment assignment) {
         Map<Integer, LocalAssignment> portTasks = new HashMap<>();
         Map<Long, WorkerResources> slotsResources = new HashMap<>();
@@ -276,7 +284,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                         }
                         List<ExecutorInfo> executorInfoList = localAssignment.get_executors();
                         executorInfoList.add(new ExecutorInfo(entry.getKey().get(0).intValue(),
-                                entry.getKey().get(entry.getKey().size() - 1).intValue()));
+                                                              entry.getKey().get(entry.getKey().size() - 1).intValue()));
                     }
                 }
             }
@@ -284,34 +292,23 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         return portTasks;
     }
 
-    private static final long WARN_MILLIS = 1_000; //Initial timeout 1 second.  Workers commit suicide after this
-    private static final long ERROR_MILLIS = 60_000; //1 min.  This really means something is wrong.  Even on a very slow node
-    public static final UniFunc<Slot> DEFAULT_ON_ERROR_TIMEOUT = (slot) -> {
-        throw new IllegalStateException("It took over " + ERROR_MILLIS + "ms to shut down slot " + slot);
-    };
-    public static final UniFunc<Slot> DEFAULT_ON_WARN_TIMEOUT = (slot) -> LOG.warn("It has taken {}ms so far and {} is still not shut down.", WARN_MILLIS, slot);
-    public static final UniFunc<Slot> THREAD_DUMP_ON_ERROR = (slot) -> {
-        LOG.warn("Shutdown of slot {} appears to be stuck\n{}", slot, Utils.threadDump());
-        DEFAULT_ON_ERROR_TIMEOUT.call(slot);
-    };
-    
     public synchronized void shutdownAllWorkers(UniFunc<Slot> onWarnTimeout, UniFunc<Slot> onErrorTimeout) {
-        for (Slot slot: slots.values()) {
+        for (Slot slot : slots.values()) {
             LOG.info("Setting {} assignment to null", slot);
             slot.setNewAssignment(null);
         }
-        
+
         if (onWarnTimeout == null) {
             onWarnTimeout = DEFAULT_ON_WARN_TIMEOUT;
         }
-        
+
         if (onErrorTimeout == null) {
             onErrorTimeout = DEFAULT_ON_ERROR_TIMEOUT;
         }
-        
+
         long startTime = Time.currentTimeMillis();
         Exception exp = null;
-        for (Slot slot: slots.values()) {
+        for (Slot slot : slots.values()) {
             LOG.info("Waiting for {} to be EMPTY, currently {}", slot, slot.getMachineState());
             try {
                 while (slot.getMachineState() != MachineState.EMPTY) {
@@ -319,7 +316,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                     if (timeSpentMillis > ERROR_MILLIS) {
                         onErrorTimeout.call(slot);
                     }
-                    
+
                     if (timeSpentMillis > WARN_MILLIS) {
                         onWarnTimeout.call(slot);
                     }
@@ -335,15 +332,15 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         }
         if (exp != null) {
             if (exp instanceof RuntimeException) {
-                throw (RuntimeException)exp;
+                throw (RuntimeException) exp;
             }
             throw new RuntimeException(exp);
         }
     }
-    
+
     @Override
     public void close() {
-        for (Slot slot: slots.values()) {
+        for (Slot slot : slots.values()) {
             try {
                 slot.close();
             } catch (Exception e) {

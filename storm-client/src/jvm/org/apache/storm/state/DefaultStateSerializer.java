@@ -1,25 +1,26 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.state;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.serialization.KryoTupleDeserializer;
 import org.apache.storm.serialization.KryoTupleSerializer;
@@ -28,16 +29,8 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.TupleImpl;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 /**
- * A default implementation that uses Kryo to serialize and de-serialize
- * the state.
+ * A default implementation that uses Kryo to serialize and de-serialize the state.
  */
 public class DefaultStateSerializer<T> implements Serializer<T> {
     private final TopologyContext context;
@@ -69,8 +62,7 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
     };
 
     /**
-     * Constructs a {@link DefaultStateSerializer} instance with the given list
-     * of classes registered in kryo.
+     * Constructs a {@link DefaultStateSerializer} instance with the given list of classes registered in kryo.
      *
      * @param classesToRegister the classes to register.
      */

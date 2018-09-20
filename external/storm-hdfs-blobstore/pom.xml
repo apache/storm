@@ -166,6 +166,11 @@
                     <groupId>javax.servlet.jsp</groupId>
                     <artifactId>jsp-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- This is leaking from hadoop-annotations. -->
+                    <groupId>jdk.tools</groupId>
+                    <artifactId>jdk.tools</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>

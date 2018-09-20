@@ -50,14 +50,10 @@
         </dependency>
 
         <!--Hadoop Mini Cluster cannot use log4j2 bridge,
-            Surefire has a way to exclude the conflicting log4j API jar
-            from the classpath, classpathDependencyExcludes, but it didn't work in practice.
-            This is here as a work around to place it at the beginning of the classpath
-            even though maven does not officially support ordering of the classpath.-->
-        <dependency>
-            <groupId>uk.org.lidalia</groupId>
-            <artifactId>sysout-over-slf4j</artifactId>
-        </dependency>
+        Surefire has a way to exclude the conflicting log4j API jar
+        from the classpath, classpathDependencyExcludes, but it didn't work in practice.
+        This is here as a work around to place it at the beginning of the classpath
+        even though maven does not officially support ordering of the classpath.-->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -140,11 +136,6 @@
             <artifactId>data.codec</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-          <groupId>org.clojure</groupId>
-          <artifactId>java.jmx</artifactId>
-          <version>${java_jmx.version}</version>
-        </dependency>
 
         <!--java-->
         <dependency>
@@ -154,90 +145,18 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-compress</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-exec</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-collections</groupId>
-            <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>javax.servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-framework</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-recipes</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twitter</groupId>
-            <artifactId>carbonite</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jgrapht</groupId>
-            <artifactId>jgrapht-core</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -251,41 +170,27 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
+
+
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>log4j-over-slf4j</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>metrics-clojure</groupId>
-            <artifactId>metrics-clojure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>java-hamcrest</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -318,10 +223,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-smile</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-client</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>
@@ -378,17 +279,17 @@
             <resource>
                 <directory>${basedir}/src/resources</directory>
                 <excludes>
-                  <exclude>storm-core-version-info.properties</exclude>
+                    <exclude>storm-core-version-info.properties</exclude>
                 </excludes>
                 <filtering>false</filtering>
-           </resource>
-           <resource>
-              <directory>${basedir}/src/resources</directory>
-              <includes>
-                <include>storm-core-version-info.properties</include>
-             </includes>
-             <filtering>true</filtering>
-         </resource>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/resources</directory>
+                <includes>
+                    <include>storm-core-version-info.properties</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
         </resources>
         <testResources>
             <testResource>
@@ -449,7 +350,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
                 <configuration>
-                    <maxAllowedViolations>254</maxAllowedViolations>
+                    <maxAllowedViolations>73</maxAllowedViolations>
                 </configuration>
             </plugin>
             <plugin>
@@ -469,29 +370,29 @@
                 </configuration>
             </plugin>
             <plugin>
-               <groupId>org.apache.storm</groupId>
-               <artifactId>storm-maven-plugins</artifactId>
-               <version>${project.version}</version>
-               <executions>
-                 <execution>
-                   <id>version-info</id>
-                   <phase>generate-resources</phase>
-                   <goals>
-                     <goal>version-info</goal>
-                   </goals>
-                   <configuration>
-                   <source>
-                      <directory>${basedir}/src/</directory>
-                      <includes>
-                        <include>jvm/**/*.java</include>
-                        <include>clj/**/*.clj</include>
-                      </includes>
-                  </source>
-                 </configuration>
-               </execution>
-             </executions>
-          </plugin>
-          <plugin>
+                <groupId>org.apache.storm</groupId>
+                <artifactId>storm-maven-plugins</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>version-info</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>version-info</goal>
+                        </goals>
+                        <configuration>
+                            <source>
+                                <directory>${basedir}/src/</directory>
+                                <includes>
+                                    <include>jvm/**/*.java</include>
+                                    <include>clj/**/*.clj</include>
+                                </includes>
+                            </source>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>2.8</version>
                 <executions>
@@ -509,33 +410,33 @@
                         </configuration>
                     </execution>
                     <!-- multi-lang resources -->
-                               <execution>
-                                 <id>unpack</id>
-                                 <phase>process-test-resources</phase>
-                                 <goals>
-                                   <goal>unpack</goal>
-                                 </goals>
-                                 <configuration>
-                                   <artifactItems>
-                                     <artifactItem>
-                                       <groupId>org.apache.storm</groupId>
-                                       <artifactId>multilang-ruby</artifactId>
-                                       <version>${project.version}</version>
-                                     </artifactItem>
-                                     <artifactItem>
-                                        <groupId>org.apache.storm</groupId>
-                                        <artifactId>multilang-python</artifactId>
-                                        <version>${project.version}</version>
-                                      </artifactItem>
-                                      <artifactItem>
-                                         <groupId>org.apache.storm</groupId>
-                                         <artifactId>multilang-javascript</artifactId>
-                                         <version>${project.version}</version>
-                                       </artifactItem>
-                                   </artifactItems>
-                                   <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
-                                 </configuration>
-                               </execution>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-ruby</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-python</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-javascript</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
 
                 </executions>
             </plugin>
@@ -571,7 +472,9 @@
     <profiles>
         <profile>
             <id>coverage</id>
-            <activation><activeByDefault>true</activeByDefault></activation>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -670,7 +573,9 @@
                         <executions>
                             <execution>
                                 <phase>generate-sources</phase>
-                                <goals><goal>exec</goal></goals>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
                                 <configuration>
                                     <executable>sh</executable>
                                     <arguments>

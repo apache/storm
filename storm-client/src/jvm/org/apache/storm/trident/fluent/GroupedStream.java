@@ -1,23 +1,17 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.trident.fluent;
 
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.operation.Aggregator;
@@ -32,33 +26,34 @@ import org.apache.storm.trident.state.StateSpec;
 import org.apache.storm.trident.state.map.MapCombinerAggStateUpdater;
 import org.apache.storm.trident.state.map.MapReducerAggStateUpdater;
 import org.apache.storm.trident.util.TridentUtils;
+import org.apache.storm.tuple.Fields;
 
 
 public class GroupedStream implements IAggregatableStream, GlobalAggregationScheme<GroupedStream> {
     Fields _groupFields;
     Stream _stream;
-    
+
     public GroupedStream(Stream stream, Fields groupFields) {
         _groupFields = groupFields;
         _stream = stream;
     }
-    
+
     public GroupedStream name(String name) {
         return new GroupedStream(_stream.name(name), _groupFields);
     }
-    
+
     public ChainedAggregatorDeclarer chainedAgg() {
         return new ChainedAggregatorDeclarer(this, this);
     }
-    
+
     public Stream aggregate(Aggregator agg, Fields functionFields) {
         return aggregate(null, agg, functionFields);
     }
-    
+
     public Stream aggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
         return new ChainedAggregatorDeclarer(this, this)
-                .aggregate(inputFields, agg, functionFields)
-                .chainEnd();
+            .aggregate(inputFields, agg, functionFields)
+            .chainEnd();
     }
 
     public Stream aggregate(CombinerAggregator agg, Fields functionFields) {
@@ -67,8 +62,8 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
 
     public Stream aggregate(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
         return new ChainedAggregatorDeclarer(this, this)
-                .aggregate(inputFields, agg, functionFields)
-                .chainEnd();
+            .aggregate(inputFields, agg, functionFields)
+            .chainEnd();
     }
 
     public Stream aggregate(ReducerAggregator agg, Fields functionFields) {
@@ -77,8 +72,8 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
 
     public Stream aggregate(Fields inputFields, ReducerAggregator agg, Fields functionFields) {
         return new ChainedAggregatorDeclarer(this, this)
-                .aggregate(inputFields, agg, functionFields)
-                .chainEnd();
+            .aggregate(inputFields, agg, functionFields)
+            .chainEnd();
     }
 
     public TridentState persistentAggregate(StateFactory stateFactory, CombinerAggregator agg, Fields functionFields) {
@@ -95,10 +90,10 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
 
     public TridentState persistentAggregate(StateSpec spec, Fields inputFields, CombinerAggregator agg, Fields functionFields) {
         return aggregate(inputFields, agg, functionFields)
-                .partitionPersist(spec,
-                        TridentUtils.fieldsUnion(_groupFields, functionFields),
-                        new MapCombinerAggStateUpdater(agg, _groupFields, functionFields),
-                        TridentUtils.fieldsConcat(_groupFields, functionFields)); 
+            .partitionPersist(spec,
+                              TridentUtils.fieldsUnion(_groupFields, functionFields),
+                              new MapCombinerAggStateUpdater(agg, _groupFields, functionFields),
+                              TridentUtils.fieldsConcat(_groupFields, functionFields));
     }
 
     public TridentState persistentAggregate(StateFactory stateFactory, Fields inputFields, ReducerAggregator agg, Fields functionFields) {
@@ -107,32 +102,32 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
 
     public TridentState persistentAggregate(StateSpec spec, Fields inputFields, ReducerAggregator agg, Fields functionFields) {
         return _stream.partitionBy(_groupFields)
-                .partitionPersist(spec,
-                    TridentUtils.fieldsUnion(_groupFields, inputFields),
-                    new MapReducerAggStateUpdater(agg, _groupFields, inputFields),
-                    TridentUtils.fieldsConcat(_groupFields, functionFields));
+                      .partitionPersist(spec,
+                                        TridentUtils.fieldsUnion(_groupFields, inputFields),
+                                        new MapReducerAggStateUpdater(agg, _groupFields, inputFields),
+                                        TridentUtils.fieldsConcat(_groupFields, functionFields));
     }
 
     public Stream stateQuery(TridentState state, Fields inputFields, QueryFunction function, Fields functionFields) {
         return _stream.partitionBy(_groupFields)
                       .stateQuery(state,
-                         inputFields,
-                         function,
-                         functionFields);
-    }    
+                                  inputFields,
+                                  function,
+                                  functionFields);
+    }
 
     public TridentState persistentAggregate(StateFactory stateFactory, ReducerAggregator agg, Fields functionFields) {
         return persistentAggregate(new StateSpec(stateFactory), agg, functionFields);
     }
-    
+
     public TridentState persistentAggregate(StateSpec spec, ReducerAggregator agg, Fields functionFields) {
         return persistentAggregate(spec, null, agg, functionFields);
-    }    
-    
+    }
+
     public Stream stateQuery(TridentState state, QueryFunction function, Fields functionFields) {
         return stateQuery(state, null, function, functionFields);
     }
-    
+
     @Override
     public IAggregatableStream each(Fields inputFields, Function function, Fields functionFields) {
         Stream s = _stream.each(inputFields, function, functionFields);
@@ -161,8 +156,8 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
     @Override
     public Fields getOutputFields() {
         return _stream.getOutputFields();
-    }    
-    
+    }
+
     public Fields getGroupFields() {
         return _groupFields;
     }

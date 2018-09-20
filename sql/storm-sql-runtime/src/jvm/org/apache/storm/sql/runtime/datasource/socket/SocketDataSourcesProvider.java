@@ -26,16 +26,13 @@ import org.apache.storm.spout.Scheme;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.IOutputSerializer;
-import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
-import org.apache.storm.sql.runtime.datasource.socket.trident.SocketState;
-import org.apache.storm.sql.runtime.datasource.socket.trident.SocketStateUpdater;
-import org.apache.storm.sql.runtime.datasource.socket.trident.TridentSocketSpout;
+import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
+import org.apache.storm.sql.runtime.datasource.socket.bolt.SocketBolt;
+import org.apache.storm.sql.runtime.datasource.socket.spout.SocketSpout;
 import org.apache.storm.sql.runtime.utils.FieldInfoUtils;
 import org.apache.storm.sql.runtime.utils.SerdeUtils;
-import org.apache.storm.trident.spout.ITridentDataSource;
-import org.apache.storm.trident.state.StateFactory;
-import org.apache.storm.trident.state.StateUpdater;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.IRichSpout;
 
 /**
  * Create a Socket data source based on the URI and properties. The URI has the format of
@@ -50,35 +47,33 @@ public class SocketDataSourcesProvider implements DataSourcesProvider {
         return "socket";
     }
 
-    private static class SocketTridentDataSource implements ISqlTridentDataSource {
+    private static class SocketStreamsDataSource implements ISqlStreamsDataSource {
 
         private final String host;
         private final int port;
         private final Scheme scheme;
         private final IOutputSerializer serializer;
 
-        SocketTridentDataSource(Scheme scheme, IOutputSerializer serializer, String host, int port) {
-            this.scheme = scheme;
-            this.serializer = serializer;
+        SocketStreamsDataSource(String host, int port, Scheme scheme, IOutputSerializer serializer) {
             this.host = host;
             this.port = port;
+            this.scheme = scheme;
+            this.serializer = serializer;
         }
 
         @Override
-        public ITridentDataSource getProducer() {
-            return new TridentSocketSpout(scheme, host, port);
+        public IRichSpout getProducer() {
+            return new SocketSpout(scheme, host, port);
         }
 
         @Override
-        public SqlTridentConsumer getConsumer() {
-            StateFactory stateFactory = new SocketState.Factory(host, port);
-            StateUpdater<SocketState> stateUpdater = new SocketStateUpdater(serializer);
-            return new SimpleSqlTridentConsumer(stateFactory, stateUpdater);
+        public IRichBolt getConsumer() {
+            return new SocketBolt(serializer, host, port);
         }
     }
 
     @Override
-    public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+    public ISqlStreamsDataSource constructStreams(URI uri, String inputFormatClass, String outputFormatClass,
                                                   Properties properties, List<FieldInfo> fields) {
         String host = uri.getHost();
         int port = uri.getPort();
@@ -90,6 +85,6 @@ public class SocketDataSourcesProvider implements DataSourcesProvider {
         Scheme scheme = SerdeUtils.getScheme(inputFormatClass, properties, fieldNames);
         IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, properties, fieldNames);
 
-        return new SocketTridentDataSource(scheme, serializer, host, port);
+        return new SocketDataSourcesProvider.SocketStreamsDataSource(host, port, scheme, serializer);
     }
 }

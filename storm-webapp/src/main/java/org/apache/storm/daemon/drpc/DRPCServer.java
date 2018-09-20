@@ -29,15 +29,16 @@ import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.drpc.webapp.DRPCApplication;
 import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
+import org.apache.storm.daemon.ui.FilterConfiguration;
+import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.generated.DistributedRPC;
 import org.apache.storm.generated.DistributedRPCInvocations;
 import org.apache.storm.metric.StormMetricsRegistry;
-import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
+import org.apache.storm.security.auth.ServerAuthUtils;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
-import org.apache.storm.ui.FilterConfiguration;
-import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
@@ -51,7 +52,7 @@ import org.slf4j.LoggerFactory;
 
 public class DRPCServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCServer.class);
-    private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("drpc:num-shutdown-calls");
+    private final Meter meterShutdownCalls;
    
     //TODO in the future this might be better in a common webapp location
 
@@ -62,7 +63,7 @@ public class DRPCServer implements AutoCloseable {
      * @param conf Conf to be added in context filter
      */
     public static void addRequestContextFilter(ServletContextHandler context, String configName, Map<String, Object> conf) {
-        IHttpCredentialsPlugin auth = AuthUtils.GetHttpCredentialsPlugin(conf, (String)conf.get(configName));
+        IHttpCredentialsPlugin auth = ServerAuthUtils.getHttpCredentialsPlugin(conf, (String)conf.get(configName));
         ReqContextFilter filter = new ReqContextFilter(auth);
         context.addFilter(new FilterHolder(filter), "/*", EnumSet.allOf(DispatcherType.class));
     }
@@ -81,7 +82,7 @@ public class DRPCServer implements AutoCloseable {
                 ThriftConnectionType.DRPC_INVOCATIONS);
     }
     
-    private static Server mkHttpServer(Map<String, Object> conf, DRPC drpc) {
+    private static Server mkHttpServer(StormMetricsRegistry metricsRegistry, Map<String, Object> conf, DRPC drpc) {
         Integer drpcHttpPort = (Integer) conf.get(DaemonConfig.DRPC_HTTP_PORT);
         Server ret = null;
         if (drpcHttpPort != null && drpcHttpPort >= 0) {
@@ -101,10 +102,11 @@ public class DRPCServer implements AutoCloseable {
             final String httpsTsType = (String) (conf.get(DaemonConfig.DRPC_HTTPS_TRUSTSTORE_TYPE));
             final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.DRPC_HTTPS_WANT_CLIENT_AUTH));
             final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.DRPC_HTTPS_NEED_CLIENT_AUTH));
+            final Boolean disableHttpBinding = (Boolean) (conf.get(DaemonConfig.DRPC_DISABLE_HTTP_BINDING));
 
             //TODO a better way to do this would be great.
-            DRPCApplication.setup(drpc);
-            ret = UIHelpers.jettyCreateServer(drpcHttpPort, null, httpsPort);
+            DRPCApplication.setup(drpc, metricsRegistry);
+            ret = UIHelpers.jettyCreateServer(drpcHttpPort, null, httpsPort, disableHttpBinding);
             
             UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
                     httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
@@ -118,7 +120,7 @@ public class DRPCServer implements AutoCloseable {
             jerseyServlet.setInitParameter("javax.ws.rs.Application", DRPCApplication.class.getName());
             
             UIHelpers.configFilters(context, filterConfigurations);
-            addRequestContextFilter(context, Config.DRPC_HTTP_CREDS_PLUGIN, conf);
+            addRequestContextFilter(context, DaemonConfig.DRPC_HTTP_CREDS_PLUGIN, conf);
         }
         return ret;
     }
@@ -133,20 +135,21 @@ public class DRPCServer implements AutoCloseable {
     /**
      * Constructor.
      * @param conf Drpc conf for the servers
+     * @param metricsRegistry The metrics registry
      */
-    public DRPCServer(Map<String, Object> conf) {
-        drpc = new DRPC(conf);
+    public DRPCServer(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
+        meterShutdownCalls = metricsRegistry.registerMeter("drpc:num-shutdown-calls");
+        drpc = new DRPC(metricsRegistry, conf);
         DRPCThrift thrift = new DRPCThrift(drpc);
         handlerServer = mkHandlerServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_PORT), null), conf);
         invokeServer = mkInvokeServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_INVOCATIONS_PORT), 3773), conf);
-        httpServer = mkHttpServer(conf, drpc);
+        httpServer = mkHttpServer(metricsRegistry, conf, drpc);
     }
 
     @VisibleForTesting
     void start() throws Exception {
         LOG.info("Starting Distributed RPC servers...");
-        new Thread(() -> invokeServer.serve()).start();
-        
+        new Thread(invokeServer::serve).start();
         if (httpServer != null) {
             httpServer.start();
         }
@@ -189,22 +192,25 @@ public class DRPCServer implements AutoCloseable {
             closed = true;
         }
     }
-    
+
     /**
+     * The port the DRPC handler server is listening on.
      * @return The port the DRPC handler server is listening on.
      */
     public int getDrpcPort() {
         return handlerServer.getPort();
     }
-    
+
     /**
+     * The port the DRPC invoke server is listening on.
      * @return The port the DRPC invoke server is listening on.
      */
     public int getDrpcInvokePort() {
         return invokeServer.getPort();
     }
-    
+
     /**
+     * The port the HTTP server is listening on. Not available until {@link #start() } has run.
      * @return The port the HTTP server is listening on. Not available until {@link #start() } has run.
      */
     public int getHttpServerPort() {
@@ -218,10 +224,14 @@ public class DRPCServer implements AutoCloseable {
      */
     public static void main(String [] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
-        Map<String, Object> conf = Utils.readStormConfig();
-        try (DRPCServer server = new DRPCServer(conf)) {
-            Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
-            StormMetricsRegistry.startMetricsReporters(conf);
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        try (DRPCServer server = new DRPCServer(conf, metricsRegistry)) {
+            metricsRegistry.startMetricsReporters(conf);
+            Utils.addShutdownHookWithForceKillIn1Sec(() -> {
+                metricsRegistry.stopMetricsReporters();
+                server.close();
+            });
             server.start();
             server.awaitTermination();
         }

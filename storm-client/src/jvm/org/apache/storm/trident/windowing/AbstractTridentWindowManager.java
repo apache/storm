@@ -1,25 +1,24 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.trident.windowing;
 
-import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.storm.coordination.BatchOutputCollector;
+import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.trident.operation.Aggregator;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.tuple.TridentTuple;
@@ -32,17 +31,9 @@ import org.apache.storm.windowing.WindowManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * Basic functionality to manage trident tuple events using {@code WindowManager} and {@code WindowsStore} for storing
- * tuples and triggers related information.
- *
+ * Basic functionality to manage trident tuple events using {@code WindowManager} and {@code WindowsStore} for storing tuples and triggers
+ * related information.
  */
 public abstract class AbstractTridentWindowManager<T> implements ITridentWindowManager {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractTridentWindowManager.class);
@@ -90,7 +81,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         // get trigger count value from store
         Object result = windowStore.get(windowTriggerCountId);
         Integer currentCount = 0;
-        if(result == null) {
+        if (result == null) {
             LOG.info("No current trigger count in windows store.");
         } else {
             currentCount = (Integer) result + 1;
@@ -108,26 +99,6 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
      * Load and initialize any resources into window manager before windowing for component/task is activated.
      */
     protected abstract void initialize();
-
-    /**
-     * Listener to reeive any activation/expiry of windowing events and take further action on them.
-     */
-    class TridentWindowLifeCycleListener implements WindowLifecycleListener<T> {
-
-        @Override
-        public void onExpiry(List<T> expiredEvents) {
-            LOG.debug("onExpiry is invoked");
-            onTuplesExpired(expiredEvents);
-        }
-
-        @Override
-        public void onActivation(List<T> events, List<T> newEvents, List<T> expired, Long timestamp) {
-            LOG.debug("onActivation is invoked with events size: [{}]", events.size());
-            // trigger occurred, create an aggregation and keep them in store
-            int currentTriggerId = triggerId.incrementAndGet();
-            execAggregatorAndStoreResult(currentTriggerId, events);
-        }
-    }
 
     /**
      * Handle expired tuple events which can be removing from cache or store.
@@ -150,7 +121,10 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         List<List<Object>> resultantAggregatedValue = collector.values;
 
         ArrayList<WindowsStore.Entry> entries = Lists.newArrayList(new WindowsStore.Entry(windowTriggerCountId, currentTriggerId + 1),
-                new WindowsStore.Entry(WindowTridentProcessor.generateWindowTriggerKey(windowTaskId, currentTriggerId), resultantAggregatedValue));
+                                                                   new WindowsStore.Entry(WindowTridentProcessor
+                                                                                              .generateWindowTriggerKey(windowTaskId,
+                                                                                                                        currentTriggerId),
+                                                                                          resultantAggregatedValue));
         windowStore.putAll(entries);
 
         pendingTriggers.add(new TriggerResult(currentTriggerId, resultantAggregatedValue));
@@ -158,10 +132,25 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
     /**
      * Return {@code TridentTuple}s from given {@code tupleEvents}.
+     *
      * @param tupleEvents
      * @return
      */
     protected abstract List<TridentTuple> getTridentTuples(List<T> tupleEvents);
+
+    public Queue<TriggerResult> getPendingTriggers() {
+        return pendingTriggers;
+    }
+
+    public void shutdown() {
+        try {
+            LOG.info("window manager [{}] is being shutdown", windowManager);
+            windowManager.shutdown();
+        } finally {
+            LOG.info("window store [{}] is being shutdown", windowStore);
+            windowStore.shutdown();
+        }
+    }
 
     /**
      * This {@code TridentCollector} accumulates all the values emitted.
@@ -203,8 +192,12 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof TriggerResult)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof TriggerResult)) {
+                return false;
+            }
 
             TriggerResult that = (TriggerResult) o;
 
@@ -220,23 +213,29 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         @Override
         public String toString() {
             return "TriggerResult{" +
-                    "id=" + id +
-                    ", result=" + result +
-                    '}';
+                   "id=" + id +
+                   ", result=" + result +
+                   '}';
         }
     }
 
-    public Queue<TriggerResult> getPendingTriggers() {
-        return pendingTriggers;
-    }
+    /**
+     * Listener to reeive any activation/expiry of windowing events and take further action on them.
+     */
+    class TridentWindowLifeCycleListener implements WindowLifecycleListener<T> {
 
-    public void shutdown() {
-        try {
-            LOG.info("window manager [{}] is being shutdown", windowManager);
-            windowManager.shutdown();
-        } finally {
-            LOG.info("window store [{}] is being shutdown", windowStore);
-            windowStore.shutdown();
+        @Override
+        public void onExpiry(List<T> expiredEvents) {
+            LOG.debug("onExpiry is invoked");
+            onTuplesExpired(expiredEvents);
+        }
+
+        @Override
+        public void onActivation(List<T> events, List<T> newEvents, List<T> expired, Long timestamp) {
+            LOG.debug("onActivation is invoked with events size: [{}]", events.size());
+            // trigger occurred, create an aggregation and keep them in store
+            int currentTriggerId = triggerId.incrementAndGet();
+            execAggregatorAndStoreResult(currentTriggerId, events);
         }
     }
 

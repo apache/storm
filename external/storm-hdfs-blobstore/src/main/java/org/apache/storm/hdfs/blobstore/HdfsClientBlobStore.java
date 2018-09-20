@@ -51,7 +51,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     public void prepare(Map<String, Object> conf) {
         this._conf = conf;
         _blobStore = new HdfsBlobStore();
-        _blobStore.prepare(conf, null, null);
+        _blobStore.prepare(conf, null, null, null);
     }
 
     @Override
@@ -70,6 +70,16 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     public ReadableBlobMeta getBlobMeta(String key)
             throws AuthorizationException, KeyNotFoundException {
         return _blobStore.getBlobMeta(key, null);
+    }
+
+    @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
+        try {
+            _blobStore.getBlob(blobKey, null);
+        } catch (KeyNotFoundException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override

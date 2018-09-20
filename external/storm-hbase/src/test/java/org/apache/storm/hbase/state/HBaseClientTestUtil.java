@@ -18,11 +18,7 @@
 
 package org.apache.storm.hbase.state;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-
 import com.google.common.primitives.UnsignedBytes;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +30,6 @@ import java.util.NavigableSet;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.KeyValue;
@@ -45,6 +40,7 @@ import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.metrics.ScanMetrics;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.common.ColumnList;
 import org.apache.storm.hbase.common.HBaseClient;
@@ -52,27 +48,30 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+
 public class HBaseClientTestUtil {
     private HBaseClientTestUtil() {
     }
 
     public static HBaseClient mockedHBaseClient() throws Exception {
         return mockedHBaseClient(new ConcurrentSkipListMap<byte[], NavigableMap<byte[], NavigableMap<byte[], byte[]>>>(
-                UnsignedBytes.lexicographicalComparator()));
+            UnsignedBytes.lexicographicalComparator()));
     }
 
     public static HBaseClient mockedHBaseClient(
-            ConcurrentNavigableMap<byte[], NavigableMap<byte[], NavigableMap<byte[], byte[]>>> internalMap)
-            throws Exception {
+        ConcurrentNavigableMap<byte[], NavigableMap<byte[], NavigableMap<byte[], byte[]>>> internalMap)
+        throws Exception {
         HBaseClient mockClient = mock(HBaseClient.class);
 
         Mockito.doNothing().when(mockClient).close();
 
         Mockito.when(mockClient.constructGetRequests(any(byte[].class), any(HBaseProjectionCriteria.class)))
-                .thenCallRealMethod();
+               .thenCallRealMethod();
 
         Mockito.when(mockClient.constructMutationReq(any(byte[].class), any(ColumnList.class), any(Durability.class)))
-                .thenCallRealMethod();
+               .thenCallRealMethod();
 
         Mockito.when(mockClient.exists(any(Get.class))).thenAnswer(new ExistsAnswer(internalMap));
         Mockito.when(mockClient.batchGet(any(List.class))).thenAnswer(new BatchGetAnswer(internalMap));
@@ -84,8 +83,8 @@ public class HBaseClientTestUtil {
 
     static class BuildCellsHelper {
         public static void addMatchingColumnFamilies(byte[] rowKey, Map<byte[], NavigableSet<byte[]>> familyMap,
-                                               NavigableMap<byte[], NavigableMap<byte[], byte[]>> cfToQualifierToValueMap,
-                                               List<Cell> cells) {
+                                                     NavigableMap<byte[], NavigableMap<byte[], byte[]>> cfToQualifierToValueMap,
+                                                     List<Cell> cells) {
             for (Map.Entry<byte[], NavigableSet<byte[]>> entry : familyMap.entrySet()) {
                 byte[] columnFamily = entry.getKey();
 
@@ -101,9 +100,9 @@ public class HBaseClientTestUtil {
         }
 
         public static void addMatchingQualifiers(byte[] rowKey, byte[] columnFamily,
-                                           Map.Entry<byte[], NavigableSet<byte[]>> qualifierSet,
-                                           NavigableMap<byte[], byte[]> qualifierToValueMap,
-                                           List<Cell> cells) {
+                                                 Map.Entry<byte[], NavigableSet<byte[]>> qualifierSet,
+                                                 NavigableMap<byte[], byte[]> qualifierToValueMap,
+                                                 List<Cell> cells) {
             for (byte[] qualifier : qualifierSet.getValue()) {
                 byte[] value = qualifierToValueMap.get(qualifier);
                 if (value != null) {
@@ -113,7 +112,7 @@ public class HBaseClientTestUtil {
         }
 
         public static void addAllColumnFamilies(byte[] rowKey, NavigableMap<byte[], NavigableMap<byte[], byte[]>> cfToQualifierToValueMap,
-                                          List<Cell> cells) {
+                                                List<Cell> cells) {
             for (Map.Entry<byte[], NavigableMap<byte[], byte[]>> entry : cfToQualifierToValueMap.entrySet()) {
                 byte[] columnFamily = entry.getKey();
                 addAllQualifiers(rowKey, columnFamily, entry.getValue(), cells);
@@ -121,7 +120,7 @@ public class HBaseClientTestUtil {
         }
 
         public static void addAllQualifiers(byte[] rowKey, byte[] columnFamily,
-                                      NavigableMap<byte[], byte[]> qualifierToValueMap, List<Cell> cells) {
+                                            NavigableMap<byte[], byte[]> qualifierToValueMap, List<Cell> cells) {
             for (Map.Entry<byte[], byte[]> entry2 : qualifierToValueMap.entrySet()) {
                 byte[] qualifier = entry2.getKey();
                 byte[] value = entry2.getValue();
@@ -149,7 +148,7 @@ public class HBaseClientTestUtil {
                 byte[] rowKey = get.getRow();
 
                 NavigableMap<byte[], NavigableMap<byte[], byte[]>> cfToQualifierToValueMap =
-                        mockMap.get(rowKey);
+                    mockMap.get(rowKey);
 
                 if (cfToQualifierToValueMap != null) {
                     Map<byte[], NavigableSet<byte[]>> familyMap = get.getFamilyMap();
@@ -310,7 +309,7 @@ public class HBaseClientTestUtil {
             byte[] endKey = (byte[]) args[1];
 
             final ConcurrentNavigableMap<byte[], NavigableMap<byte[], NavigableMap<byte[], byte[]>>> subMap =
-                    mockMap.subMap(startKey, true, endKey, false);
+                mockMap.subMap(startKey, true, endKey, false);
 
             final List<Result> results = buildResults(subMap);
 
@@ -343,7 +342,7 @@ public class HBaseClientTestUtil {
             }
 
             @Override
-            public Result next() throws IOException {
+            public Result next() {
                 if (results.size() <= position) {
                     return null;
                 }
@@ -351,9 +350,9 @@ public class HBaseClientTestUtil {
             }
 
             @Override
-            public Result[] next(int nbRows) throws IOException {
+            public Result[] next(int nbRows) {
                 List<Result> bulkResult = new ArrayList<>();
-                for (int i = 0 ; i < nbRows ; i++) {
+                for (int i = 0; i < nbRows; i++) {
                     Result result = next();
                     if (result == null) {
                         break;
@@ -366,7 +365,17 @@ public class HBaseClientTestUtil {
 
             @Override
             public void close() {
+                //NO-OP
+            }
 
+            @Override
+            public boolean renewLease() {
+                return true;
+            }
+
+            @Override
+            public ScanMetrics getScanMetrics() {
+                return null;
             }
 
             @Override

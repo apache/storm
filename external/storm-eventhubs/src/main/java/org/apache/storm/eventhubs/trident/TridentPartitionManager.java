@@ -15,72 +15,75 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.trident;
 
-import org.apache.storm.eventhubs.spout.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.apache.storm.eventhubs.trident;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.storm.eventhubs.spout.EventDataWrap;
+import org.apache.storm.eventhubs.spout.EventHubException;
+import org.apache.storm.eventhubs.spout.EventHubFilter;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
+import org.apache.storm.eventhubs.spout.FieldConstants;
+import org.apache.storm.eventhubs.spout.IEventHubReceiver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TridentPartitionManager implements ITridentPartitionManager {
-  private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
-  private final int receiveTimeoutMs = 5000;
-  private final IEventHubReceiver receiver;
-  private final EventHubSpoutConfig spoutConfig;
-  private String lastOffset = FieldConstants.DefaultStartingOffset;
-  
-  public TridentPartitionManager(EventHubSpoutConfig spoutConfig, IEventHubReceiver receiver) {
-    this.receiver = receiver;
-    this.spoutConfig = spoutConfig;
-  }
-  
-  @Override
-  public boolean open(String offset) {
-    try {
-      if((offset == null || offset.equals(FieldConstants.DefaultStartingOffset))
-        && spoutConfig.getEnqueueTimeFilter() != 0) {
-          receiver.open(new EventHubFilter(Instant.ofEpochMilli(spoutConfig.getEnqueueTimeFilter())));
-      }
-      else {
-        receiver.open(new EventHubFilter(offset));
-      }
-      lastOffset = offset;
-      return true;
+    private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
+    private final int receiveTimeoutMs = 5000;
+    private final IEventHubReceiver receiver;
+    private final EventHubSpoutConfig spoutConfig;
+    private String lastOffset = FieldConstants.DefaultStartingOffset;
+
+    public TridentPartitionManager(EventHubSpoutConfig spoutConfig, IEventHubReceiver receiver) {
+        this.receiver = receiver;
+        this.spoutConfig = spoutConfig;
     }
-    catch(EventHubException ex) {
-      logger.error("failed to open eventhub receiver: " + ex.getMessage());
-      return false;
+
+    @Override
+    public boolean open(String offset) {
+        try {
+            if ((offset == null || offset.equals(FieldConstants.DefaultStartingOffset))
+                && spoutConfig.getEnqueueTimeFilter() != 0) {
+                receiver.open(new EventHubFilter(Instant.ofEpochMilli(spoutConfig.getEnqueueTimeFilter())));
+            } else {
+                receiver.open(new EventHubFilter(offset));
+            }
+            lastOffset = offset;
+            return true;
+        } catch (EventHubException ex) {
+            logger.error("failed to open eventhub receiver: " + ex.getMessage());
+            return false;
+        }
     }
-  }
-  
-  @Override
-  public void close() {
-    receiver.close();
-  }
-  
-  @Override
-  public List<EventDataWrap> receiveBatch(String offset, int count) {
-    List<EventDataWrap> batch = new ArrayList<EventDataWrap>(count);
-    if(!offset.equals(lastOffset) || !receiver.isOpen()) {
-      //re-establish connection to eventhub servers using the right offset
-      //TBD: might be optimized with cache.
-      close();
-      if(!open(offset)) {
+
+    @Override
+    public void close() {
+        receiver.close();
+    }
+
+    @Override
+    public List<EventDataWrap> receiveBatch(String offset, int count) {
+        List<EventDataWrap> batch = new ArrayList<EventDataWrap>(count);
+        if (!offset.equals(lastOffset) || !receiver.isOpen()) {
+            //re-establish connection to eventhub servers using the right offset
+            //TBD: might be optimized with cache.
+            close();
+            if (!open(offset)) {
+                return batch;
+            }
+        }
+
+        for (int i = 0; i < count; ++i) {
+            EventDataWrap ed = receiver.receive();
+            if (ed == null) {
+                break;
+            }
+            batch.add(ed);
+            lastOffset = ed.getMessageId().getOffset();
+        }
         return batch;
-      }
     }
-    
-    for(int i=0; i<count; ++i) {
-      EventDataWrap ed = receiver.receive();
-      if(ed == null) {
-        break;
-      }
-      batch.add(ed);
-      lastOffset = ed.getMessageId().getOffset();
-    }
-    return batch;
-  }
 }

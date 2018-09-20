@@ -15,17 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import java.io.Serializable;
 
 public interface IStateStore extends Serializable {
 
-  public void open();
+    public void open();
 
-  public void close();
+    public void close();
 
-  public void saveData(String path, String data);
+    public void saveData(String path, String data);
 
-  public String readData(String path);
+    public String readData(String path);
 }

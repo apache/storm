@@ -21,7 +21,7 @@
   (:import [org.apache.storm.blobstore BlobStore])
   (:import [org.apache.storm.daemon.nimbus TopoCache])
   (:import [org.apache.storm.generated NotAliveException StormBase])
-  (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient
+  (:import [org.apache.storm.security.auth ThriftServer ThriftClient
                                          ReqContext ThriftConnectionType])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Processor
             AuthorizationException SubmitOptions TopologyInitialStatus KillOptions])
@@ -125,7 +125,6 @@
 
         (is (thrown-cause? AuthorizationException (.uploadChunk nimbus_client nil nil)))
         (is (thrown-cause? AuthorizationException (.finishFileUpload nimbus_client nil)))
-        (is (thrown-cause? AuthorizationException (.beginFileDownload nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.downloadChunk nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.getNimbusConf nimbus_client)))
         (is (thrown-cause? AuthorizationException (.getClusterInfo nimbus_client)))
@@ -192,7 +191,6 @@
 
         (is (thrown-cause? AuthorizationException (.uploadChunk nimbus_client nil nil)))
         (is (thrown-cause? AuthorizationException (.finishFileUpload nimbus_client nil)))
-        (is (thrown-cause? AuthorizationException (.beginFileDownload nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.downloadChunk nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.getNimbusConf nimbus_client)))
         (is (thrown-cause? AuthorizationException (.getClusterInfo nimbus_client)))

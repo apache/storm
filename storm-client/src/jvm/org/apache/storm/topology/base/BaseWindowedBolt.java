@@ -1,22 +1,21 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.topology.base;
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.Config;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -27,151 +26,12 @@ import org.apache.storm.windowing.TimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 public abstract class BaseWindowedBolt implements IWindowedBolt {
     private static final Logger LOG = LoggerFactory.getLogger(BaseWindowedBolt.class);
 
     protected final transient Map<String, Object> windowConfiguration;
     protected TimestampExtractor timestampExtractor;
 
-    /**
-     * Holds a count value for count based windows and sliding intervals.
-     */
-    public static class Count implements Serializable {
-        public final int value;
-
-        public Count(int value) {
-            this.value = value;
-        }
-
-        /**
-         * Returns a {@link Count} of given value.
-         *
-         * @param value the count value
-         * @return the Count
-         */
-        public static Count of(int value) {
-            return new Count(value);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Count count = (Count) o;
-
-            return value == count.value;
-
-        }
-
-        @Override
-        public int hashCode() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return "Count{" +
-                    "value=" + value +
-                    '}';
-        }
-    }
-
-    /**
-     * Holds a Time duration for time based windows and sliding intervals.
-     */
-    public static class Duration implements Serializable {
-        public final int value;
-
-        public Duration(int value, TimeUnit timeUnit) {
-            if (value < 0) {
-                throw new IllegalArgumentException("Duration cannot be negative");
-            }
-            long longVal = timeUnit.toMillis(value);
-            if (longVal > (long) Integer.MAX_VALUE) {
-                throw new IllegalArgumentException("Duration is too long");
-            }
-            this.value = (int)longVal;
-        }
-
-        /**
-         * Returns a {@link Duration} corresponding to the the given value in milli seconds.
-         *
-         * @param milliseconds the duration in milliseconds
-         * @return the Duration
-         */
-        public static Duration of(int milliseconds) {
-            return new Duration(milliseconds, TimeUnit.MILLISECONDS);
-        }
-
-        /**
-         * Returns a {@link Duration} corresponding to the the given value in days.
-         *
-         * @param days the number of days
-         * @return the Duration
-         */
-        public static Duration days(int days) {
-            return new Duration(days, TimeUnit.DAYS);
-        }
-
-        /**
-         * Returns a {@link Duration} corresponding to the the given value in hours.
-         *
-         * @param hours the number of hours
-         * @return the Duration
-         */
-        public static Duration hours(int hours) {
-            return new Duration(hours, TimeUnit.HOURS);
-        }
-
-        /**
-         * Returns a {@link Duration} corresponding to the the given value in minutes.
-         *
-         * @param minutes the number of minutes
-         * @return the Duration
-         */
-        public static Duration minutes(int minutes) {
-            return new Duration(minutes, TimeUnit.MINUTES);
-        }
-
-        /**
-         * Returns a {@link Duration} corresponding to the the given value in seconds.
-         *
-         * @param seconds the number of seconds
-         * @return the Duration
-         */
-        public static Duration seconds(int seconds) {
-            return new Duration(seconds, TimeUnit.SECONDS);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Duration duration = (Duration) o;
-
-            return value == duration.value;
-
-        }
-
-        @Override
-        public int hashCode() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return "Duration{" +
-                    "value=" + value +
-                    '}';
-        }
-    }
     protected BaseWindowedBolt() {
         windowConfiguration = new HashMap<>();
     }
@@ -298,9 +158,8 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
-     * Specify a field in the tuple that represents the timestamp as a long value. If this
-     * field is not present in the incoming tuple, an {@link IllegalArgumentException} will be thrown.
-     * The field MUST contain a timestamp in milliseconds
+     * Specify a field in the tuple that represents the timestamp as a long value. If this field is not present in the incoming tuple, an
+     * {@link IllegalArgumentException} will be thrown. The field MUST contain a timestamp in milliseconds
      *
      * @param fieldName the name of the field that contains the timestamp
      */
@@ -330,10 +189,9 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
-     * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the
-     * {@link org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field.
-     * It must be defined on a per-component basis, and in conjunction with the
-     * {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
+     * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the {@link
+     * org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field. It must be defined on a per-component basis, and in
+     * conjunction with the {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
      *
      * @param streamId the name of the stream used to emit late tuples on
      */
@@ -345,10 +203,9 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
         return this;
     }
 
-
     /**
-     * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps
-     * cannot be out of order by more than this amount.
+     * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps cannot be out of order by
+     * more than this amount.
      *
      * @param duration the max lag duration
      */
@@ -358,8 +215,7 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
-     * Specify the watermark event generation interval. For tuple based timestamps, watermark events
-     * are used to track the progress of time
+     * Specify the watermark event generation interval. For tuple based timestamps, watermark events are used to track the progress of time
      *
      * @param interval the interval at which watermark events are generated
      */
@@ -389,5 +245,148 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         return windowConfiguration;
+    }
+
+    /**
+     * Holds a count value for count based windows and sliding intervals.
+     */
+    public static class Count implements Serializable {
+        public final int value;
+
+        public Count(int value) {
+            this.value = value;
+        }
+
+        /**
+         * Returns a {@link Count} of given value.
+         *
+         * @param value the count value
+         * @return the Count
+         */
+        public static Count of(int value) {
+            return new Count(value);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Count count = (Count) o;
+
+            return value == count.value;
+
+        }
+
+        @Override
+        public int hashCode() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return "Count{" +
+                   "value=" + value +
+                   '}';
+        }
+    }
+
+    /**
+     * Holds a Time duration for time based windows and sliding intervals.
+     */
+    public static class Duration implements Serializable {
+        public final int value;
+
+        public Duration(int value, TimeUnit timeUnit) {
+            if (value < 0) {
+                throw new IllegalArgumentException("Duration cannot be negative");
+            }
+            long longVal = timeUnit.toMillis(value);
+            if (longVal > (long) Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("Duration is too long");
+            }
+            this.value = (int) longVal;
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in milli seconds.
+         *
+         * @param milliseconds the duration in milliseconds
+         * @return the Duration
+         */
+        public static Duration of(int milliseconds) {
+            return new Duration(milliseconds, TimeUnit.MILLISECONDS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in days.
+         *
+         * @param days the number of days
+         * @return the Duration
+         */
+        public static Duration days(int days) {
+            return new Duration(days, TimeUnit.DAYS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in hours.
+         *
+         * @param hours the number of hours
+         * @return the Duration
+         */
+        public static Duration hours(int hours) {
+            return new Duration(hours, TimeUnit.HOURS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in minutes.
+         *
+         * @param minutes the number of minutes
+         * @return the Duration
+         */
+        public static Duration minutes(int minutes) {
+            return new Duration(minutes, TimeUnit.MINUTES);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in seconds.
+         *
+         * @param seconds the number of seconds
+         * @return the Duration
+         */
+        public static Duration seconds(int seconds) {
+            return new Duration(seconds, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Duration duration = (Duration) o;
+
+            return value == duration.value;
+
+        }
+
+        @Override
+        public int hashCode() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return "Duration{" +
+                   "value=" + value +
+                   '}';
+        }
     }
 }

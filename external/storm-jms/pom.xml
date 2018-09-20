@@ -25,11 +25,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-
-
     <artifactId>storm-jms</artifactId>
-
-
 
     <developers>
         <developer>
@@ -52,18 +48,11 @@
             <artifactId>geronimo-jms_1.1_spec</artifactId>
             <version>1.1.1</version>
         </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.10</version>
-            <scope>test</scope>
-        </dependency>
 
-        <!-- Active MQ -->
+        <!-- Active MQ for testing JMS-->
         <dependency>
             <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-core</artifactId>
-            <version>5.5.1</version>
+            <artifactId>activemq-all</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -94,7 +83,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
                 <configuration>
-                    <maxAllowedViolations>235</maxAllowedViolations>
+                    <maxAllowedViolations>63</maxAllowedViolations>
                 </configuration>
             </plugin>
         </plugins>

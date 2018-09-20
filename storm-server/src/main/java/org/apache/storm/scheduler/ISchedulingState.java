@@ -27,17 +27,22 @@ import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 
-/** An interface that provides access to the current scheduling state. */
+/**
+ * An interface that provides access to the current scheduling state.
+ * The scheduling state is not guaranteed to be thread safe.
+ */
 public interface ISchedulingState {
 
     /**
      * Get all of the topologies.
+     *
      * @return all of the topologies that are a part of the cluster.
      */
     Topologies getTopologies();
 
     /**
      * Get all of the topologies that need scheduling.
+     *
      * @return all of the topologies that are not fully scheduled.
      */
     List<TopologyDetails> needsSchedulingTopologies();
@@ -48,16 +53,16 @@ public interface ISchedulingState {
      * <p>A topology needs scheduling if one of the following conditions holds:
      *
      * <ul>
-     *   <li>Although the topology is assigned slots, but is squeezed. i.e. the topology is assigned
-     *       less slots than desired.
-     *   <li>There are unassigned executors in this topology
+     * <li>Although the topology is assigned slots, but is squeezed. i.e. the topology is assigned
+     * less slots than desired.
+     * <li>There are unassigned executors in this topology
      * </ul>
      */
     boolean needsScheduling(TopologyDetails topology);
 
     /**
-     * Like {@link #needsScheduling(TopologyDetails)} but does not take into account the number of
-     * workers requested. This is because the number of workers is ignored in RAS
+     * Like {@link #needsScheduling(TopologyDetails)} but does not take into account the number of workers requested. This is because the
+     * number of workers is ignored in RAS
      *
      * @param topology the topology to check
      * @return true if the topology needs scheduling else false.
@@ -66,6 +71,7 @@ public interface ISchedulingState {
 
     /**
      * Get all of the hosts that are blacklisted.
+     *
      * @return all of the hosts that are blacklisted
      */
     Set<String> getBlacklistedHosts();
@@ -104,6 +110,7 @@ public interface ISchedulingState {
 
     /**
      * Get the executor to component name map for executors that need to be scheduled.
+     *
      * @param topology the topology this is for
      * @return a executor -> component-id map which needs scheduling in this topology.
      */
@@ -111,16 +118,21 @@ public interface ISchedulingState {
 
     /**
      * Get the component name to executor list for executors that need to be scheduled.
+     *
      * @param topology the topology this is for
      * @return a component-id -> executors map which needs scheduling in this topology.
      */
     Map<String, List<ExecutorDetails>> getNeedsSchedulingComponentToExecutors(
         TopologyDetails topology);
 
-    /** Get all the used ports of this supervisor. */
+    /**
+     * Get all the used ports of this supervisor.
+     */
     Set<Integer> getUsedPorts(SupervisorDetails supervisor);
 
-    /** Return the available ports of this supervisor. */
+    /**
+     * Return the available ports of this supervisor.
+     */
     Set<Integer> getAvailablePorts(SupervisorDetails supervisor);
 
     /**
@@ -131,11 +143,21 @@ public interface ISchedulingState {
      */
     Set<Integer> getAssignablePorts(SupervisorDetails supervisor);
 
-    /** Return all the available slots on this supervisor. */
+    /**
+     * Return all the available slots on this supervisor.
+     */
     List<WorkerSlot> getAvailableSlots(SupervisorDetails supervisor);
 
-    /** Get all the available worker slots in the cluster. */
+    /**
+     * Get all the available worker slots in the cluster.
+     */
     List<WorkerSlot> getAvailableSlots();
+
+    /**
+     * Get all the available worker slots in the cluster, that are not blacklisted.
+     * @param blacklistedSupervisorIds list of supervisor ids that should also be considered blacklisted.
+     */
+    List<WorkerSlot> getNonBlacklistedAvailableSlots(List<String> blacklistedSupervisorIds);
 
     /**
      * Return all non-blacklisted slots on this supervisor.
@@ -145,14 +167,19 @@ public interface ISchedulingState {
      */
     List<WorkerSlot> getAssignableSlots(SupervisorDetails supervisor);
 
-    /** Get all non-blacklisted slots in the cluster. */
+    /**
+     * Get all non-blacklisted slots in the cluster.
+     */
     List<WorkerSlot> getAssignableSlots();
 
-    /** Get all currently occupied slots. */
+    /**
+     * Get all currently occupied slots.
+     */
     Collection<WorkerSlot> getUsedSlots();
 
     /**
      * Check if a slot is occupied or not.
+     *
      * @param slot the slot be to checked.
      * @return true if the specified slot is occupied.
      */
@@ -160,20 +187,27 @@ public interface ISchedulingState {
 
     /**
      * Get the number of workers assigned to a topology.
+     *
      * @param topology the topology this is for
      * @return the number of workers assigned to this topology.
      */
     int getAssignedNumWorkers(TopologyDetails topology);
 
     /**
-     * Would scheduling exec on ws fit? With a heap <= maxHeap total memory added <= memoryAvailable
-     * and cpu added <= cpuAvailable.
+     * Get the resources on the supervisor that are available to be scheduled.
+     * @param sd the supervisor.
+     * @return the resources available to be scheduled.
+     */
+    NormalizedResourceOffer getAvailableResources(SupervisorDetails sd);
+
+    /**
+     * Would scheduling exec on ws fit? With a heap <= maxHeap total memory added <= memoryAvailable and cpu added <= cpuAvailable.
      *
-     * @param ws the slot to put it in
-     * @param exec the executor to investigate
-     * @param td the topology detains for this executor
+     * @param ws                 the slot to put it in
+     * @param exec               the executor to investigate
+     * @param td                 the topology detains for this executor
      * @param resourcesAvailable all the available resources
-     * @param maxHeap the maximum heap size for ws
+     * @param maxHeap            the maximum heap size for ws
      * @return true it fits else false
      */
     boolean wouldFit(
@@ -183,13 +217,19 @@ public interface ISchedulingState {
         NormalizedResourceOffer resourcesAvailable,
         double maxHeap);
 
-    /** get the current assignment for the topology. */
+    /**
+     * get the current assignment for the topology.
+     */
     SchedulerAssignment getAssignmentById(String topologyId);
 
-    /** get slots used by a topology. */
+    /**
+     * get slots used by a topology.
+     */
     Collection<WorkerSlot> getUsedSlotsByTopologyId(String topologyId);
 
-    /** Get a specific supervisor with the <code>nodeId</code>. */
+    /**
+     * Get a specific supervisor with the <code>nodeId</code>.
+     */
     SupervisorDetails getSupervisorById(String nodeId);
 
     /**
@@ -200,45 +240,61 @@ public interface ISchedulingState {
      */
     List<SupervisorDetails> getSupervisorsByHost(String host);
 
-    /** Get all the assignments. */
+    /**
+     * Get all the assignments.
+     */
     Map<String, SchedulerAssignment> getAssignments();
 
-    /** Get all the supervisors. */
+    /**
+     * Get all the supervisors.
+     */
     Map<String, SupervisorDetails> getSupervisors();
 
-    /** Get all scheduled resources for node. **/
+    /**
+     * Get all scheduled resources for node.
+     */
     NormalizedResourceRequest getAllScheduledResourcesForNode(String nodeId);
 
-    /** Get the total amount of CPU resources in cluster. */
+    /**
+     * Get the resources in the cluster that are available for scheduling.
+     * @param blacklistedSupervisorIds other ids that are tentatively blacklisted.
+     */
+    NormalizedResourceOffer getNonBlacklistedClusterAvailableResources(Collection<String> blacklistedSupervisorIds);
+
+    /**
+     * Get the total amount of CPU resources in cluster.
+     */
     double getClusterTotalCpuResource();
 
-    /** Get the total amount of memory resources in cluster. */
+    /**
+     * Get the total amount of memory resources in cluster.
+     */
     double getClusterTotalMemoryResource();
 
-    /** Get the network topography (rackId -> nodes in the rack). */
+    /**
+     * Get the network topography (rackId -> nodes in the rack).
+     */
     Map<String, List<String>> getNetworkTopography();
 
-    /** Get all topology scheduler statuses. */
+    /**
+     * Get all topology scheduler statuses.
+     */
     Map<String, String> getStatusMap();
 
     /**
-     * Get the amount of resources used by topologies. Used for displaying resource information on the
-     * UI.
+     * Get the amount of resources used by topologies. Used for displaying resource information on the UI.
      *
-     * @return a map that contains multiple topologies and the resources the topology requested and
-     *     assigned. Key: topology id Value: an array that describes the resources the topology
-     *     requested and assigned in the following format: {requestedMemOnHeap, requestedMemOffHeap,
-     *     requestedCpu, assignedMemOnHeap, assignedMemOffHeap, assignedCpu}
+     * @return a map that contains multiple topologies and the resources the topology requested and assigned. Key: topology id Value: an
+     *     array that describes the resources the topology requested and assigned in the following format: {requestedMemOnHeap,
+     *     requestedMemOffHeap, requestedCpu, assignedMemOnHeap, assignedMemOffHeap, assignedCpu}
      */
     Map<String, TopologyResources> getTopologyResourcesMap();
 
     /**
-     * Get the amount of used and free resources on a supervisor. Used for displaying resource
-     * information on the UI
+     * Get the amount of used and free resources on a supervisor. Used for displaying resource information on the UI
      *
-     * @return a map where the key is the supervisor id and the value is a map that represents
-     *     resource usage for a supervisor in the following format: {totalMem, totalCpu, usedMem,
-     *     usedCpu}
+     * @return a map where the key is the supervisor id and the value is a map that represents resource usage for a supervisor in the
+     *     following format: {totalMem, totalCpu, usedMem, usedCpu}
      */
     Map<String, SupervisorResources> getSupervisorsResourcesMap();
 
@@ -273,6 +329,8 @@ public interface ISchedulingState {
      */
     double getScheduledCpuForNode(String nodeId);
 
-    /** Get the nimbus configuration. */
+    /**
+     * Get the nimbus configuration.
+     */
     Map<String, Object> getConf();
 }

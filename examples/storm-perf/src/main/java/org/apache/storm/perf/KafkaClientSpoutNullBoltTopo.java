@@ -65,15 +65,16 @@ public class KafkaClientSpoutNullBoltTopo {
         String kafkaTopic = Optional.ofNullable(Helper.getStr(config, KAFKA_TOPIC)).orElse("storm-perf-null-bolt-topic");
         ProcessingGuarantee processingGuarantee = ProcessingGuarantee.valueOf(
             Optional.ofNullable(Helper.getStr(config, PROCESSING_GUARANTEE))
-                .orElse(ProcessingGuarantee.AT_LEAST_ONCE.name()));
+                    .orElse(ProcessingGuarantee.AT_LEAST_ONCE.name()));
         int offsetCommitPeriodMs = Helper.getInt(config, OFFSET_COMMIT_PERIOD_MS, 30_000);
 
         KafkaSpoutConfig<String, String> kafkaSpoutConfig = KafkaSpoutConfig.builder(bootstrapServers, kafkaTopic)
-            .setProcessingGuarantee(processingGuarantee)
-            .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
-            .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST)
-            .setTupleTrackingEnforced(true)
-            .build();
+                                                                            .setProcessingGuarantee(processingGuarantee)
+                                                                            .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
+                                                                            .setFirstPollOffsetStrategy(
+                                                                                KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST)
+                                                                            .setTupleTrackingEnforced(true)
+                                                                            .build();
 
         KafkaSpout<String, String> spout = new KafkaSpout<>(kafkaSpoutConfig);
 
@@ -84,7 +85,7 @@ public class KafkaClientSpoutNullBoltTopo {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-            .localOrShuffleGrouping(SPOUT_ID);
+               .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }

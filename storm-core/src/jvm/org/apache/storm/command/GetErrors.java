@@ -1,36 +1,35 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.command;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.generated.ErrorInfo;
 import org.apache.storm.generated.GetInfoOptions;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.NumErrorsChoice;
 import org.apache.storm.generated.TopologyInfo;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class GetErrors {
+    /**
+     * Only get errors for a topology.
+     * @param args Used to accept the topology name.
+     * @throws Exception on errors.
+     */
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             throw new IllegalArgumentException("Topology name must be provided.");

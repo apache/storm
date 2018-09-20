@@ -1,27 +1,18 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.cluster;
 
 import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,11 +21,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.framework.state.ConnectionStateListener;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.assignments.ILocalAssignmentsBackend;
 import org.apache.storm.callback.ZKStateChangedCallback;
 import org.apache.storm.generated.Assignment;
@@ -53,21 +41,25 @@ import org.apache.storm.generated.StormBase;
 import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionState;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
+import org.apache.storm.shade.org.apache.zookeeper.Watcher;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StormClusterStateImpl implements IStormClusterState {
 
     private static Logger LOG = LoggerFactory.getLogger(StormClusterStateImpl.class);
-
+    private final List<ACL> defaultAcls;
+    private final String stateId;
+    private final boolean solo;
+    private final ClusterStateContext context;
     private IStateStorage stateStorage;
     private ILocalAssignmentsBackend assignmentsBackend;
-
     private ConcurrentHashMap<String, Runnable> assignmentInfoCallback;
     private ConcurrentHashMap<String, Runnable> assignmentInfoWithVersionCallback;
     private ConcurrentHashMap<String, Runnable> assignmentVersionCallback;
@@ -81,13 +73,8 @@ public class StormClusterStateImpl implements IStormClusterState {
     private ConcurrentHashMap<String, Runnable> credentialsCallback;
     private ConcurrentHashMap<String, Runnable> logConfigCallback;
 
-    private final List<ACL> defaultAcls;
-    private final String stateId;
-    private final boolean solo;
-    private final ClusterStateContext context;
-
     public StormClusterStateImpl(IStateStorage StateStorage, ILocalAssignmentsBackend assignmentsassignmentsBackend,
-        ClusterStateContext context, boolean solo) throws Exception {
+                                 ClusterStateContext context, boolean solo) throws Exception {
 
         this.stateStorage = StateStorage;
         this.solo = solo;
@@ -149,19 +136,32 @@ public class StormClusterStateImpl implements IStormClusterState {
 
         });
 
-        String[] pathlist = { ClusterUtils.ASSIGNMENTS_SUBTREE, 
-                              ClusterUtils.STORMS_SUBTREE, 
-                              ClusterUtils.SUPERVISORS_SUBTREE, 
-                              ClusterUtils.WORKERBEATS_SUBTREE,
-                              ClusterUtils.ERRORS_SUBTREE, 
-                              ClusterUtils.BLOBSTORE_SUBTREE, 
-                              ClusterUtils.NIMBUSES_SUBTREE, 
-                              ClusterUtils.LOGCONFIG_SUBTREE,
-                              ClusterUtils.BACKPRESSURE_SUBTREE };
+        String[] pathlist = {
+            ClusterUtils.ASSIGNMENTS_SUBTREE,
+            ClusterUtils.STORMS_SUBTREE,
+            ClusterUtils.SUPERVISORS_SUBTREE,
+            ClusterUtils.WORKERBEATS_SUBTREE,
+            ClusterUtils.ERRORS_SUBTREE,
+            ClusterUtils.BLOBSTORE_SUBTREE,
+            ClusterUtils.NIMBUSES_SUBTREE,
+            ClusterUtils.LOGCONFIG_SUBTREE,
+            ClusterUtils.BACKPRESSURE_SUBTREE
+        };
         for (String path : pathlist) {
             this.stateStorage.mkdirs(path, defaultAcls);
         }
 
+    }
+
+    private static List<String> tokenizePath(String path) {
+        String[] toks = path.split("/");
+        java.util.ArrayList<String> rtn = new ArrayList<>();
+        for (String str : toks) {
+            if (!str.isEmpty()) {
+                rtn.add(str);
+            }
+        }
+        return rtn;
     }
 
     protected void issueCallback(AtomicReference<Runnable> cb) {
@@ -284,17 +284,13 @@ public class StormClusterStateImpl implements IStormClusterState {
     public void addNimbusHost(final String nimbusId, final NimbusSummary nimbusSummary) {
         // explicit delete for ephmeral node to ensure this session creates the entry.
         stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
-        stateStorage.add_listener(new ConnectionStateListener() {
-            @Override
-            public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
-                LOG.info("Connection state listener invoked, zookeeper connection state has changed to {}", connectionState);
-                if (connectionState.equals(ConnectionState.RECONNECTED)) {
-                    LOG.info("Connection state has changed to reconnected so setting nimbuses entry one more time");
-                    // explicit delete for ephmeral node to ensure this session creates the entry.
-                    stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
-                    stateStorage.set_ephemeral_node(ClusterUtils.nimbusPath(nimbusId), Utils.serialize(nimbusSummary), defaultAcls);
-                }
-
+        stateStorage.add_listener((curatorFramework, connectionState) -> {
+            LOG.info("Connection state listener invoked, zookeeper connection state has changed to {}", connectionState);
+            if (connectionState.equals(ConnectionState.RECONNECTED)) {
+                LOG.info("Connection state has changed to reconnected so setting nimbuses entry one more time");
+                // explicit delete for ephemeral node to ensure this session creates the entry.
+                stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
+                stateStorage.set_ephemeral_node(ClusterUtils.nimbusPath(nimbusId), Utils.serialize(nimbusSummary), defaultAcls);
             }
         });
 
@@ -323,10 +319,10 @@ public class StormClusterStateImpl implements IStormClusterState {
     public void syncRemoteIds(Map<String, String> remote) {
         if (null != remote) {
             this.assignmentsBackend.syncRemoteIds(remote);
-        }else {
+        } else {
             Map<String, String> tmp = new HashMap<>();
             List<String> activeStorms = activeStorms();
-            for (String stormId: activeStorms) {
+            for (String stormId : activeStorms) {
                 tmp.put(stormId, stormBase(stormId, null).get_name());
             }
             this.assignmentsBackend.syncRemoteIds(tmp);
@@ -390,11 +386,11 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     /**
-     * need to take executor->node+port in explicitly so that we don't run into a situation where a long dead worker
-     * with a skewed clock overrides all the timestamps. By only checking heartbeats with an assigned node+port,
-     * and only reading executors from that heartbeat that are actually assigned, we avoid situations like that.
-     * 
-     * @param stormId topology id
+     * need to take executor->node+port in explicitly so that we don't run into a situation where a long dead worker with a skewed clock
+     * overrides all the timestamps. By only checking heartbeats with an assigned node+port, and only reading executors from that heartbeat
+     * that are actually assigned, we avoid situations like that.
+     *
+     * @param stormId          topology id
      * @param executorNodePort executor id -> node + port
      * @return mapping of executorInfo -> executor beat
      */
@@ -435,8 +431,9 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setupHeatbeats(String stormId) {
-        stateStorage.mkdirs(ClusterUtils.workerbeatStormRoot(stormId), defaultAcls);
+    public void setupHeatbeats(String stormId, Map<String, Object> topoConf) {
+        stateStorage.mkdirs(ClusterUtils.WORKERBEATS_SUBTREE, defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.workerbeatStormRoot(stormId), ClusterUtils.mkTopoReadWriteAcls(topoConf));
     }
 
     @Override
@@ -491,13 +488,14 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setTopologyLogConfig(String stormId, LogConfig logConfig) {
-        stateStorage.set_data(ClusterUtils.logConfigPath(stormId), Utils.serialize(logConfig), defaultAcls);
+    public void setTopologyLogConfig(String stormId, LogConfig logConfig, Map<String, Object> topoConf) {
+        stateStorage.mkdirs(ClusterUtils.LOGCONFIG_SUBTREE, defaultAcls);
+        stateStorage.set_data(ClusterUtils.logConfigPath(stormId), Utils.serialize(logConfig), ClusterUtils.mkTopoReadOnlyAcls(topoConf));
     }
 
     @Override
     public LogConfig topologyLogConfig(String stormId, Runnable cb) {
-        if (cb != null){
+        if (cb != null) {
             logConfigCallback.put(stormId, cb);
         }
         String path = ClusterUtils.logConfigPath(stormId);
@@ -525,13 +523,13 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     /**
-     * Check whether a topology is in throttle-on status or not:
-     * if the backpresure/storm-id dir is not empty, this topology has throttle-on, otherwise throttle-off.
-     * But if the backpresure/storm-id dir is not empty and has not been updated for more than timeoutMs, we treat it as throttle-off.
-     * This will prevent the spouts from getting stuck indefinitely if something wrong happens.
-     * @param stormId The topology Id
+     * Check whether a topology is in throttle-on status or not: if the backpresure/storm-id dir is not empty, this topology has
+     * throttle-on, otherwise throttle-off. But if the backpresure/storm-id dir is not empty and has not been updated for more than
+     * timeoutMs, we treat it as throttle-off. This will prevent the spouts from getting stuck indefinitely if something wrong happens.
+     *
+     * @param stormId   The topology Id
      * @param timeoutMs How long until the backpressure znode is invalid.
-     * @param callback The callback function
+     * @param callback  The callback function
      * @return True is backpresure/storm-id dir is not empty and at least one of the backpressure znodes has not timed out; false otherwise.
      */
     @Override
@@ -541,22 +539,24 @@ public class StormClusterStateImpl implements IStormClusterState {
         }
         String path = ClusterUtils.backpressureStormRoot(stormId);
         long mostRecentTimestamp = 0;
-        if(stateStorage.node_exists(path, false)) {
+        if (stateStorage.node_exists(path, false)) {
             List<String> children = stateStorage.get_children(path, callback != null);
             mostRecentTimestamp = children.stream()
-                .map(childPath -> stateStorage.get_data(ClusterUtils.backpressurePath(stormId, childPath), false))
-                .filter(data -> data != null)
-                .mapToLong(data -> ByteBuffer.wrap(data).getLong())
-                .max()
-                .orElse(0);
+                                          .map(childPath -> stateStorage.get_data(ClusterUtils.backpressurePath(stormId, childPath), false))
+                                          .filter(data -> data != null)
+                                          .mapToLong(data -> ByteBuffer.wrap(data).getLong())
+                                          .max()
+                                          .orElse(0);
         }
         boolean ret = ((System.currentTimeMillis() - mostRecentTimestamp) < timeoutMs);
         LOG.debug("topology backpressure is {}", ret ? "on" : "off");
         return ret;
     }
+
     @Override
-    public void setupBackpressure(String stormId) {
-        stateStorage.mkdirs(ClusterUtils.backpressureStormRoot(stormId), defaultAcls);
+    public void setupBackpressure(String stormId, Map<String, Object> topoConf) {
+        stateStorage.mkdirs(ClusterUtils.BACKPRESSURE_SUBTREE, defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.backpressureStormRoot(stormId), ClusterUtils.mkTopoReadWriteAcls(topoConf));
     }
 
     @Override
@@ -581,22 +581,23 @@ public class StormClusterStateImpl implements IStormClusterState {
             stateStorage.delete_node(path);
         }
     }
+
     @Override
-    public void activateStorm(String stormId, StormBase stormBase) {
+    public void activateStorm(String stormId, StormBase stormBase, Map<String, Object> topoConf) {
         String path = ClusterUtils.stormPath(stormId);
-        stateStorage.set_data(path, Utils.serialize(stormBase), defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.STORMS_SUBTREE, defaultAcls);
+        stateStorage.set_data(path, Utils.serialize(stormBase), ClusterUtils.mkTopoReadOnlyAcls(topoConf));
         this.assignmentsBackend.keepStormId(stormBase.get_name(), stormId);
     }
 
     /**
      * To update this function due to APersistentMap/APersistentSet is clojure's structure
-     * 
+     *
      * @param stormId
      * @param newElems
      */
     @Override
     public void updateStorm(String stormId, StormBase newElems) {
-
         StormBase stormBase = stormBase(stormId, null);
         if (stormBase.get_component_executors() != null) {
 
@@ -683,14 +684,15 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setAssignment(String stormId, Assignment info) {
+    public void setAssignment(String stormId, Assignment info, Map<String, Object> topoConf) {
         byte[] serAssignment = Utils.serialize(info);
-        stateStorage.set_data(ClusterUtils.assignmentPath(stormId), serAssignment, defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.ASSIGNMENTS_SUBTREE, defaultAcls);
+        stateStorage.set_data(ClusterUtils.assignmentPath(stormId), Utils.serialize(info), ClusterUtils.mkTopoReadOnlyAcls(topoConf));
         this.assignmentsBackend.keepOrUpdateAssignment(stormId, info);
     }
 
     @Override
-    public void setupBlobstore(String key, NimbusInfo nimbusInfo, Integer versionInfo) {
+    public void setupBlob(String key, NimbusInfo nimbusInfo, Integer versionInfo) {
         String path = ClusterUtils.blobstorePath(key) + ClusterUtils.ZK_SEPERATOR + nimbusInfo.toHostPortString() + "-" + versionInfo;
         LOG.info("set-path: {}", path);
         stateStorage.mkdirs(ClusterUtils.blobstorePath(key), defaultAcls);
@@ -736,8 +738,13 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void reportError(String stormId, String componentId, String node, Long port, Throwable error) {
+    public void setupErrors(String stormId, Map<String, Object> topoConf) {
+        stateStorage.mkdirs(ClusterUtils.ERRORS_SUBTREE, defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.errorStormRoot(stormId), ClusterUtils.mkTopoReadWriteAcls(topoConf));
+    }
 
+    @Override
+    public void reportError(String stormId, String componentId, String node, Long port, Throwable error) {
         String path = ClusterUtils.errorPath(stormId, componentId);
         String lastErrorPath = ClusterUtils.lastErrorPath(stormId, componentId);
         ErrorInfo errorInfo = new ErrorInfo(ClusterUtils.stringifyError(error), Time.currentTimeSecs());
@@ -795,7 +802,6 @@ public class StormClusterStateImpl implements IStormClusterState {
 
     @Override
     public ErrorInfo lastError(String stormId, String componentId) {
-
         String path = ClusterUtils.lastErrorPath(stormId, componentId);
         if (stateStorage.node_exists(path, false)) {
             ErrorInfo errorInfo = ClusterUtils.maybeDeserialize(stateStorage.get_data(path, false), ErrorInfo.class);
@@ -806,11 +812,10 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) throws NoSuchAlgorithmException {
-        List<ACL> aclList = ClusterUtils.mkTopoOnlyAcls(topoConf);
+    public void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) {
+        List<ACL> aclList = ClusterUtils.mkTopoReadOnlyAcls(topoConf);
         String path = ClusterUtils.credentialsPath(stormId);
         stateStorage.set_data(path, Utils.serialize(creds), aclList);
-
     }
 
     @Override
@@ -828,22 +833,30 @@ public class StormClusterStateImpl implements IStormClusterState {
         stateStorage.unregister(stateId);
         if (solo) {
             stateStorage.close();
-        this.assignmentsBackend.close();
+            this.assignmentsBackend.close();
         }
     }
 
     @Override
     public PrivateWorkerKey getPrivateWorkerKey(WorkerTokenServiceType type, String topologyId, long keyVersion) {
         String path = ClusterUtils.secretKeysPath(type, topologyId, keyVersion);
-        return ClusterUtils.maybeDeserialize(stateStorage.get_data(path, false), PrivateWorkerKey.class);
+        byte[] data = stateStorage.get_data(path, false);
+        if (data == null) {
+            LOG.debug("Could not find entry at {} will sync to see if that fixes it", path);
+            //We didn't find it, but there are races, so we want to check again after a sync
+            stateStorage.sync_path(path);
+            data = stateStorage.get_data(path, false);
+        }
+        return ClusterUtils.maybeDeserialize(data, PrivateWorkerKey.class);
     }
 
     @Override
     public void addPrivateWorkerKey(WorkerTokenServiceType type, String topologyId, long keyVersion, PrivateWorkerKey key) {
         assert context.getDaemonType() == DaemonType.NIMBUS;
+        stateStorage.mkdirs(ClusterUtils.SECRET_KEYS_SUBTREE, defaultAcls);
         List<ACL> secretAcls = context.getZkSecretAcls(type);
         String path = ClusterUtils.secretKeysPath(type, topologyId, keyVersion);
-        LOG.debug("Storing private key for {} connecting to a {} at {} with ACL {}\n\n", topologyId, type, path, secretAcls);
+        LOG.info("Storing private key for {} connecting to a {} at {} with ACL {}", topologyId, type, path, secretAcls);
         stateStorage.set_data(path, Utils.serialize(key), secretAcls);
     }
 
@@ -870,8 +883,10 @@ public class StormClusterStateImpl implements IStormClusterState {
                 for (String version : stateStorage.get_children(basePath, false)) {
                     String fullPath = basePath + ClusterUtils.ZK_SEPERATOR + version;
                     try {
-                        PrivateWorkerKey key = ClusterUtils.maybeDeserialize(stateStorage.get_data(fullPath, false), PrivateWorkerKey.class);
+                        PrivateWorkerKey key =
+                            ClusterUtils.maybeDeserialize(stateStorage.get_data(fullPath, false), PrivateWorkerKey.class);
                         if (Time.currentTimeMillis() > key.get_expirationTimeMillis()) {
+                            LOG.info("Removing expired worker key {}", fullPath);
                             stateStorage.delete_node(fullPath);
                         }
                     } catch (RuntimeException e) {
@@ -896,6 +911,7 @@ public class StormClusterStateImpl implements IStormClusterState {
         for (WorkerTokenServiceType type : WorkerTokenServiceType.values()) {
             String path = ClusterUtils.secretKeysPath(type, topologyId);
             try {
+                LOG.info("Removing worker keys under {}", path);
                 stateStorage.delete_node(path);
             } catch (RuntimeException e) {
                 //This should never happen because only the primary nimbus is active, but just in case
@@ -922,16 +938,5 @@ public class StormClusterStateImpl implements IStormClusterState {
             }
         }
         return ret;
-    }
-    
-    private static List<String> tokenizePath(String path) {
-        String[] toks = path.split("/");
-        java.util.ArrayList<String> rtn = new ArrayList<>();
-        for (String str : toks) {
-            if (!str.isEmpty()) {
-                rtn.add(str);
-            }
-        }
-        return rtn;
     }
 }

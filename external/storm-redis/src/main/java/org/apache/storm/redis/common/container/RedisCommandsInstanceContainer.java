@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.common.container;
 
-import org.apache.storm.redis.common.commands.RedisCommands;
-
 import java.io.Closeable;
+import org.apache.storm.redis.common.commands.RedisCommands;
 
 /**
  * Interfaces for containers which stores instances implementing RedisCommands.
@@ -27,12 +27,14 @@ import java.io.Closeable;
 public interface RedisCommandsInstanceContainer extends Closeable {
     /**
      * Borrows instance from container.
+     *
      * @return instance which implements RedisCommands
      */
     RedisCommands getInstance();
 
     /**
      * Returns instance to container.
+     *
      * @param redisCommands borrowed instance
      */
     void returnInstance(RedisCommands redisCommands);

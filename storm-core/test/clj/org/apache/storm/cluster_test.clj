@@ -17,10 +17,10 @@
   (:import [java.util Arrays]
            [org.apache.storm.nimbus NimbusInfo])
   (:import [org.apache.storm.generated SupervisorInfo StormBase Assignment NimbusSummary TopologyStatus NodeInfo Credentials])
-  (:import [org.apache.zookeeper ZooDefs ZooDefs$Ids Watcher$Event$EventType])
+  (:import [org.apache.storm.shade.org.apache.zookeeper ZooDefs ZooDefs$Ids Watcher$Event$EventType])
   (:import [org.mockito Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
-  (:import [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder])
+  (:import [org.apache.storm.shade.org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder])
   (:import [org.apache.storm.utils Time Time$SimulatedTime ZookeeperAuthInfo ConfigUtils Utils CuratorUtils])
   (:import [org.apache.storm.cluster IStateStorage ZKStateStorage ClusterStateContext StormClusterStateImpl ClusterUtils])
   (:import [org.apache.storm.zookeeper Zookeeper ClientZookeeper])
@@ -205,21 +205,21 @@
           base1 (mkStormBase "/tmp/storm1" 1 TopologyStatus/ACTIVE 2)
           base2 (mkStormBase "/tmp/storm2" 2 TopologyStatus/ACTIVE 2)]
       (is (= [] (.assignments state nil)))
-      (.setAssignment state "storm1" assignment1)
+      (.setAssignment state "storm1" assignment1 {})
       (is (= assignment1 (.assignmentInfo state "storm1" nil)))
       (is (= nil (.assignmentInfo state "storm3" nil)))
-      (.setAssignment state "storm1" assignment2)
-      (.setAssignment state "storm3" assignment1)
+      (.setAssignment state "storm1" assignment2 {})
+      (.setAssignment state "storm3" assignment1 {})
       (is (= #{"storm1" "storm3"} (set (.assignments state nil))))
       (is (= assignment2 (.assignmentInfo state "storm1" nil)))
       (is (= assignment1 (.assignmentInfo state "storm3" nil)))
 
       (is (= [] (.activeStorms state)))
-      (.activateStorm state "storm1" base1)
+      (.activateStorm state "storm1" base1 {})
       (is (= ["storm1"] (.activeStorms state)))
       (is (= base1 (.stormBase state "storm1" nil)))
       (is (= nil (.stormBase state "storm2" nil)))
-      (.activateStorm state "storm2" base2)
+      (.activateStorm state "storm2" base2 {})
       (is (= base1 (.stormBase state "storm1" nil)))
       (is (= base2 (.stormBase state "storm2" nil)))
       (is (= #{"storm1" "storm2"} (set (.activeStorms state))))
@@ -234,10 +234,10 @@
       (is (= {"b" "b"} (.get_creds (.credentials state "storm1" nil))))
 
       (is (= [] (.blobstoreInfo state "")))
-      (.setupBlobstore state "key1" nimbusInfo1 (Integer/parseInt "1"))
+      (.setupBlob state "key1" nimbusInfo1 (Integer/parseInt "1"))
       (is (= ["key1"] (.blobstoreInfo state "")))
       (is (= [(str (.toHostPortString nimbusInfo1) "-1")] (.blobstoreInfo state "key1")))
-      (.setupBlobstore state "key1" nimbusInfo2 (Integer/parseInt "1"))
+      (.setupBlob state "key1" nimbusInfo2 (Integer/parseInt "1"))
       (is (= #{(str (.toHostPortString nimbusInfo1) "-1")
                (str (.toHostPortString nimbusInfo2) "-1")} (set (.blobstoreInfo state "key1"))))
       (.removeBlobstoreKey state "key1")
@@ -353,7 +353,8 @@
           curator-frameworke (reify CuratorFramework (^void close [this] nil))]
       ;; No need for when clauses because we just want to return nil
       (with-open [_ (MockedClientZookeeper. zk-mock)]
-        (. (Mockito/when (.mkClientImpl zk-mock (Mockito/anyMap) (Mockito/any) (Mockito/any) (Mockito/anyString) (Mockito/any) (Mockito/any))) (thenReturn curator-frameworke))
+        (. (Mockito/when (.mkClientImpl zk-mock (Mockito/anyMap) (Mockito/any) (Mockito/any) (Mockito/anyString) (Mockito/any)
+         (Mockito/any) (Mockito/any))) (thenReturn curator-frameworke))
         (ClusterUtils/mkStateStorage {} nil (ClusterStateContext.))
         (.mkdirsImpl (Mockito/verify zk-mock (Mockito/times 1)) (Mockito/any) (Mockito/anyString) (Mockito/eq nil))))
     (let [distributed-state-storage (reify IStateStorage

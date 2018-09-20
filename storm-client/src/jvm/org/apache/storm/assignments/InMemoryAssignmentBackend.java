@@ -1,43 +1,35 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.assignments;
 
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.generated.Assignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An assignment backend which will keep all assignments and id-info in memory. Only used if no backend is specified
- * internal.
+ * An assignment backend which will keep all assignments and id-info in memory. Only used if no backend is specified internal.
  * <p>About thread safe: idToAssignment,idToName,nameToId are all memory cache in nimbus local, for
  * <ul>
- *     <li>idToAssignment: nimbus will modify it and supervisors will sync it at fixed interval,
- *         so the assignments would come to eventual consistency.</li>
- *     <li>idToName: storm submitting/killing is guarded by the same lock, a {@link ConcurrentHashMap} is ok.</li>
- *     <li>nameToId: same as <i>idToName</i>.
+ * <li>idToAssignment: nimbus will modify it and supervisors will sync it at fixed interval,
+ * so the assignments would come to eventual consistency.</li>
+ * <li>idToName: storm submitting/killing is guarded by the same lock, a {@link ConcurrentHashMap} is ok.</li>
+ * <li>nameToId: same as <i>idToName</i>.
  * </ul>
  */
 public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
@@ -83,7 +75,7 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
 
     @Override
     public List<String> assignments() {
-        if(idToAssignment == null) {
+        if (idToAssignment == null) {
             return new ArrayList<>();
         }
         List<String> ret = new ArrayList<>();
@@ -102,7 +94,7 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     @Override
     public void syncRemoteAssignments(Map<String, byte[]> remote) {
         Map<String, Assignment> tmp = new ConcurrentHashMap<>();
-        for(Map.Entry<String, byte[]> entry: remote.entrySet()) {
+        for (Map.Entry<String, byte[]> entry : remote.entrySet()) {
             tmp.put(entry.getKey(), ClusterUtils.maybeDeserialize(entry.getValue(), Assignment.class));
         }
         this.idToAssignment = tmp;
@@ -123,7 +115,7 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     public void syncRemoteIds(Map<String, String> remote) {
         Map<String, String> tmpNameToId = new ConcurrentHashMap<>();
         Map<String, String> tmpIdToName = new ConcurrentHashMap<>();
-        for(Map.Entry<String, String> entry: remote.entrySet()) {
+        for (Map.Entry<String, String> entry : remote.entrySet()) {
             tmpIdToName.put(entry.getKey(), entry.getValue());
             tmpNameToId.put(entry.getValue(), entry.getKey());
         }

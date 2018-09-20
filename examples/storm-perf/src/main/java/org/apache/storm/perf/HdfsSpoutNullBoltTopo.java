@@ -19,7 +19,6 @@
 package org.apache.storm.perf;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hdfs.spout.HdfsSpout;
@@ -78,7 +77,7 @@ public class HdfsSpoutNullBoltTopo {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-            .localOrShuffleGrouping(SPOUT_ID);
+               .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }

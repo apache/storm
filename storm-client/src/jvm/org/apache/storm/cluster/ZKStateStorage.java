@@ -18,26 +18,23 @@
 
 package org.apache.storm.cluster;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.state.*;
-import org.apache.curator.framework.state.ConnectionState;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.Config;
 import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.callback.ZKStateChangedCallback;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
+import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
+import org.apache.storm.shade.org.apache.zookeeper.Watcher;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.zookeeper.ClientZookeeper;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,42 +51,23 @@ public class ZKStateStorage implements IStateStorage {
     private Map<String, Object> authConf;
     private Map<String, Object> conf;
 
-    private class ZkWatcherCallBack implements WatcherCallBack{
-        @Override
-        public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path) {
-            if (active.get()) {
-                if (!(state.equals(Watcher.Event.KeeperState.SyncConnected))) {
-                    LOG.debug("Received event {} : {}: {} with disconnected Zookeeper.", state, type, path);
-                } else {
-                    LOG.debug("Received event {} : {} : {}", state, type, path);
-                }
-
-                if (!type.equals(Watcher.Event.EventType.None)) {
-                    for (Map.Entry<String, ZKStateChangedCallback> e : callbacks.entrySet()) {
-                        ZKStateChangedCallback fn = e.getValue();
-                        fn.changed(type, path);
-                    }
-                }
-            }
-        }
-    }
-
     public ZKStateStorage(Map<String, Object> conf, Map<String, Object> authConf, ClusterStateContext context) throws Exception {
         this.conf = conf;
         this.authConf = authConf;
-        if (context.getDaemonType().equals(DaemonType.NIMBUS))
+        if (context.getDaemonType().equals(DaemonType.NIMBUS)) {
             this.isNimbus = true;
+        }
 
         // just mkdir STORM_ZOOKEEPER_ROOT dir
-        CuratorFramework zkTemp = mkZk();
+        CuratorFramework zkTemp = mkZk(context.getDaemonType());
         String rootPath = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT));
         ClientZookeeper.mkdirs(zkTemp, rootPath, context.getDefaultZkAcls());
         zkTemp.close();
 
         active = new AtomicBoolean(true);
-        zkWriter = mkZk(new ZkWatcherCallBack());
+        zkWriter = mkZk(new ZkWatcherCallBack(), context.getDaemonType());
         if (isNimbus) {
-            zkReader = mkZk(new ZkWatcherCallBack());
+            zkReader = mkZk(new ZkWatcherCallBack(), context.getDaemonType());
         } else {
             zkReader = zkWriter;
         }
@@ -97,15 +75,16 @@ public class ZKStateStorage implements IStateStorage {
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk() throws IOException {
-        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT), "",
-                new DefaultWatcherCallBack(), authConf);
+    private CuratorFramework mkZk(DaemonType type) {
+        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
+                                        conf.get(Config.STORM_ZOOKEEPER_PORT), "", new DefaultWatcherCallBack(), authConf, type);
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk(WatcherCallBack watcher) throws NumberFormatException, IOException {
-        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT),
-                String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)), watcher, authConf);
+    private CuratorFramework mkZk(WatcherCallBack watcher, DaemonType type) throws NumberFormatException {
+        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
+                                        conf.get(Config.STORM_ZOOKEEPER_PORT), String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)),
+                                        watcher, authConf, type);
     }
 
     @Override
@@ -238,16 +217,32 @@ public class ZKStateStorage implements IStateStorage {
 
     @Override
     public void add_listener(final ConnectionStateListener listener) {
-        ClientZookeeper.addListener(zkReader, new ConnectionStateListener() {
-            @Override
-            public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
-                listener.stateChanged(curatorFramework, connectionState);
-            }
-        });
+        ClientZookeeper.addListener(zkReader,
+            (curatorFramework, connectionState) -> listener.stateChanged(curatorFramework, connectionState));
     }
 
     @Override
     public void sync_path(String path) {
         ClientZookeeper.syncPath(zkWriter, path);
+    }
+
+    private class ZkWatcherCallBack implements WatcherCallBack {
+        @Override
+        public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path) {
+            if (active.get()) {
+                if (!(state.equals(Watcher.Event.KeeperState.SyncConnected))) {
+                    LOG.debug("Received event {} : {}: {} with disconnected Zookeeper.", state, type, path);
+                } else {
+                    LOG.debug("Received event {} : {} : {}", state, type, path);
+                }
+
+                if (!type.equals(Watcher.Event.EventType.None)) {
+                    for (Map.Entry<String, ZKStateChangedCallback> e : callbacks.entrySet()) {
+                        ZKStateChangedCallback fn = e.getValue();
+                        fn.changed(type, path);
+                    }
+                }
+            }
+        }
     }
 }

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm;
 
 import java.io.File;
@@ -23,12 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.dependency.DependencyPropertiesParser;
 import org.apache.storm.dependency.DependencyUploader;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -41,36 +38,30 @@ import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.hooks.SubmitterHookException;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.utils.BufferFileInputStream;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
-import org.apache.thrift.TException;
-import org.json.simple.JSONValue;
+import org.apache.storm.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
-
 /**
- * Use this class to submit topologies to run on the Storm cluster. You should run your program
- * with the "storm jar" command from the command-line, and then use this class to
- * submit your topologies.
+ * Use this class to submit topologies to run on the Storm cluster. You should run your program with the "storm jar" command from the
+ * command-line, and then use this class to submit your topologies.
  */
 public class StormSubmitter {
     public static final Logger LOG = LoggerFactory.getLogger(StormSubmitter.class);
-
+    public static final Pattern zkDigestPattern = Pattern.compile("\\S+:\\S+");
     private static final int THRIFT_CHUNK_SIZE_BYTES = 307200;
-
-    private static ILocalCluster localNimbus = null;
 
     private static String generateZookeeperDigestSecretPayload() {
         return Utils.secureRandomLong() + ":" + Utils.secureRandomLong();
     }
-
-    public static final Pattern zkDigestPattern = Pattern.compile("\\S+:\\S+");
 
     public static boolean validateZKDigestPayload(String payload) {
         if (payload != null) {
@@ -84,10 +75,10 @@ public class StormSubmitter {
         Map<String, Object> toRet = new HashMap<>();
         String secretPayload = (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         // Is the topology ZooKeeper authentication configuration unset?
-        if (! conf.containsKey(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) ||
-                conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) == null ||
-                !  validateZKDigestPayload((String)
-                    conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
+        if (!conf.containsKey(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) ||
+            conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) == null ||
+            !validateZKDigestPayload((String)
+                                         conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
             secretPayload = generateZookeeperDigestSecretPayload();
             LOG.info("Generated ZooKeeper secret payload for MD5-digest: " + secretPayload);
         }
@@ -97,10 +88,10 @@ public class StormSubmitter {
         return toRet;
     }
 
-    private static Map<String,String> populateCredentials(Map<String, Object> conf, Map<String, String> creds) {
-        Map<String,String> ret = new HashMap<>();
-        for (IAutoCredentials autoCred: AuthUtils.GetAutoCredentials(conf)) {
-            LOG.info("Running "+autoCred);
+    private static Map<String, String> populateCredentials(Map<String, Object> conf, Map<String, String> creds) {
+        Map<String, String> ret = new HashMap<>();
+        for (IAutoCredentials autoCred : ClientAuthUtils.getAutoCredentials(conf)) {
+            LOG.info("Running " + autoCred);
             autoCred.populateCredentials(ret);
         }
         if (creds != null) {
@@ -111,96 +102,109 @@ public class StormSubmitter {
 
     /**
      * Push a new set of credentials to the running topology.
-     * @param name the name of the topology to push credentials to.
-     * @param topoConf the topology-specific configuration, if desired. See {@link Config}.
+     *
+     * @param name        the name of the topology to push credentials to.
+     * @param topoConf    the topology-specific configuration, if desired. See {@link Config}.
      * @param credentials the credentials to push.
-     * @throws AuthorizationException if you are not authorized ot push credentials.
-     * @throws NotAliveException if the topology is not alive
+     * @throws AuthorizationException   if you are not authorized ot push credentials.
+     * @throws NotAliveException        if the topology is not alive
      * @throws InvalidTopologyException if any other error happens
      */
-    public static void pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials)
-            throws AuthorizationException, NotAliveException, InvalidTopologyException {
+    public static void pushCredentials(String name, Map<String,Object> topoConf, Map<String,String> credentials)
+        throws AuthorizationException, NotAliveException, InvalidTopologyException {
+        pushCredentials(name, topoConf, credentials, null);
+    }
+
+    /**
+     * Push a new set of credentials to the running topology.
+     *
+     * @param name        the name of the topology to push credentials to.
+     * @param topoConf    the topology-specific configuration, if desired. See {@link Config}.
+     * @param credentials the credentials to push.
+     * @param expectedUser the user you expect the topology to be owned by.
+     * @throws AuthorizationException   if you are not authorized ot push credentials.
+     * @throws NotAliveException        if the topology is not alive
+     * @throws InvalidTopologyException if any other error happens
+     */
+    public static void pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials, String expectedUser)
+        throws AuthorizationException, NotAliveException, InvalidTopologyException {
         topoConf = new HashMap(topoConf);
         topoConf.putAll(Utils.readCommandLineOpts());
         Map<String, Object> conf = Utils.readStormConfig();
         conf.putAll(topoConf);
-        Map<String,String> fullCreds = populateCredentials(conf, credentials);
+        Map<String, String> fullCreds = populateCredentials(conf, credentials);
         if (fullCreds.isEmpty()) {
             LOG.warn("No credentials were found to push to " + name);
             return;
         }
         try {
-            if (localNimbus!=null) {
-                LOG.info("Pushing Credentials to topology {} in local mode", name);
-                localNimbus.uploadNewCredentials(name, new Credentials(fullCreds));
-            } else {
-                try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
-                    LOG.info("Uploading new credentials to {}", name);
-                    client.getClient().uploadNewCredentials(name, new Credentials(fullCreds));
+            try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
+                LOG.info("Uploading new credentials to {}", name);
+                Credentials creds = new Credentials(fullCreds);
+                if (expectedUser != null) {
+                    creds.set_topoOwner(expectedUser);
                 }
+                client.getClient().uploadNewCredentials(name, creds);
             }
             LOG.info("Finished pushing creds to topology: {}", name);
-        } catch(TException e) {
+        } catch (TException e) {
             throw new RuntimeException(e);
         }
     }
 
 
     /**
-     * Submits a topology to run on the cluster. A topology runs forever or until
-     * explicitly killed.
+     * Submits a topology to run on the cluster. A topology runs forever or until explicitly killed.
      *
-     *
-     * @param name the name of the storm.
+     * @param name     the name of the storm.
      * @param topoConf the topology-specific configuration. See {@link Config}.
      * @param topology the processing to execute.
-     * @throws AlreadyAliveException if a topology with this name is already running
+     * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
-     * @throws AuthorizationException if authorization is failed
+     * @throws AuthorizationException   if authorization is failed
      * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
     public static void submitTopology(String name, Map<String, Object> topoConf, StormTopology topology)
-            throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+        throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
         submitTopology(name, topoConf, topology, null, null);
     }
 
     /**
-     * Submits a topology to run on the cluster. A topology runs forever or until
-     * explicitly killed.
+     * Submits a topology to run on the cluster. A topology runs forever or until explicitly killed.
      *
-     * @param name the name of the storm.
+     * @param name     the name of the storm.
      * @param topoConf the topology-specific configuration. See {@link Config}.
      * @param topology the processing to execute.
-     * @param opts to manipulate the starting of the topology.
-     * @throws AlreadyAliveException if a topology with this name is already running
+     * @param opts     to manipulate the starting of the topology.
+     * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
-     * @throws AuthorizationException if authorization is failed
+     * @throws AuthorizationException   if authorization is failed
      * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
     public static void submitTopology(String name, Map<String, Object> topoConf, StormTopology topology, SubmitOptions opts)
-            throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+        throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
         submitTopology(name, topoConf, topology, opts, null);
     }
 
     /**
-     * Submits a topology to run on the cluster as a particular user. A topology runs forever or until
-     * explicitly killed.
+     * Submits a topology to run on the cluster as a particular user. A topology runs forever or until explicitly killed.
      *
      * @param name
      * @param topoConf
      * @param topology
      * @param opts
      * @param progressListener
-     * @param asUser The user as which this topology should be submitted.
+     * @param asUser           The user as which this topology should be submitted.
      * @throws AlreadyAliveException
      * @throws InvalidTopologyException
      * @throws AuthorizationException
      * @throws IllegalArgumentException thrown if configs will yield an unschedulable topology. validateConfs validates confs
      * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
-    public static void submitTopologyAs(String name, Map<String, Object> topoConf, StormTopology topology, SubmitOptions opts, ProgressListener progressListener, String asUser)
-            throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, IllegalArgumentException {
-        if(!Utils.isValidConf(topoConf)) {
+    public static void submitTopologyAs(String name, Map<String, Object> topoConf, StormTopology topology, SubmitOptions opts,
+                                        ProgressListener progressListener, String asUser)
+        throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, IllegalArgumentException {
+        if (!Utils.isValidConf(topoConf)) {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }
         topoConf = new HashMap(topoConf);
@@ -211,14 +215,14 @@ public class StormSubmitter {
 
         validateConfs(conf, topology);
 
-        Map<String,String> passedCreds = new HashMap<>();
+        Map<String, String> passedCreds = new HashMap<>();
         if (opts != null) {
             Credentials tmpCreds = opts.get_creds();
             if (tmpCreds != null) {
                 passedCreds = tmpCreds.get_creds();
             }
         }
-        Map<String,String> fullCreds = populateCredentials(conf, passedCreds);
+        Map<String, String> fullCreds = populateCredentials(conf, passedCreds);
         if (!fullCreds.isEmpty()) {
             if (opts == null) {
                 opts = new SubmitOptions(TopologyInitialStatus.ACTIVE);
@@ -226,55 +230,47 @@ public class StormSubmitter {
             opts.set_creds(new Credentials(fullCreds));
         }
         try {
-            if (localNimbus!=null) {
-                LOG.info("Submitting topology " + name + " in local mode");
-                if (opts!=null) {
-                    localNimbus.submitTopologyWithOpts(name, topoConf, topology, opts);
-                } else {
-                    // this is for backwards compatibility
-                    localNimbus.submitTopology(name, topoConf, topology);
+            String serConf = JSONValue.toJSONString(topoConf);
+            try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
+                if (topologyNameExists(name, client)) {
+                    throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
                 }
-                LOG.info("Finished submitting topology: " +  name);
-            } else {
-                String serConf = JSONValue.toJSONString(topoConf);
-                try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
-                    if (topologyNameExists(name, client)) {
-                        throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
-                    }
+                if (!Utils.isValidKey(name)) {
+                    throw new IllegalArgumentException(name + " does not appear to be a valid topology name.");
+                }
 
-                    // Dependency uploading only makes sense for distributed mode
-                    List<String> jarsBlobKeys = Collections.emptyList();
-                    List<String> artifactsBlobKeys;
+                // Dependency uploading only makes sense for distributed mode
+                List<String> jarsBlobKeys = Collections.emptyList();
+                List<String> artifactsBlobKeys;
 
-                    DependencyUploader uploader = new DependencyUploader();
-                    try {
-                        uploader.init();
+                DependencyUploader uploader = new DependencyUploader();
+                try {
+                    uploader.init();
 
-                        jarsBlobKeys = uploadDependencyJarsToBlobStore(uploader);
+                    jarsBlobKeys = uploadDependencyJarsToBlobStore(uploader);
 
-                        artifactsBlobKeys = uploadDependencyArtifactsToBlobStore(uploader);
-                    } catch (Throwable e) {
-                        // remove uploaded jars blobs, not artifacts since they're shared across the cluster
-                        uploader.deleteBlobs(jarsBlobKeys);
-                        uploader.shutdown();
-                        throw e;
-                    }
+                    artifactsBlobKeys = uploadDependencyArtifactsToBlobStore(uploader);
+                } catch (Throwable e) {
+                    // remove uploaded jars blobs, not artifacts since they're shared across the cluster
+                    uploader.deleteBlobs(jarsBlobKeys);
+                    uploader.shutdown();
+                    throw e;
+                }
 
-                    try {
-                        setDependencyBlobsToTopology(topology, jarsBlobKeys, artifactsBlobKeys);
-                        submitTopologyInDistributeMode(name, topology, opts, progressListener, asUser, conf, serConf, client);
-                    } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
-                        // remove uploaded jars blobs, not artifacts since they're shared across the cluster
-                        // Note that we don't handle TException to delete jars blobs
-                        // because it's safer to leave some blobs instead of topology not running
-                        uploader.deleteBlobs(jarsBlobKeys);
-                        throw e;
-                    } finally {
-                        uploader.shutdown();
-                    }
+                try {
+                    setDependencyBlobsToTopology(topology, jarsBlobKeys, artifactsBlobKeys);
+                    submitTopologyInDistributeMode(name, topology, opts, progressListener, asUser, conf, serConf, client);
+                } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
+                    // remove uploaded jars blobs, not artifacts since they're shared across the cluster
+                    // Note that we don't handle TException to delete jars blobs
+                    // because it's safer to leave some blobs instead of topology not running
+                    uploader.deleteBlobs(jarsBlobKeys);
+                    throw e;
+                } finally {
+                    uploader.shutdown();
                 }
             }
-        } catch(TException e) {
+        } catch (TException e) {
             throw new RuntimeException(e);
         }
         invokeSubmitterHook(name, asUser, conf, topology);
@@ -332,22 +328,21 @@ public class StormSubmitter {
             }
             LOG.info("Finished submitting topology: {}", name);
         } catch (InvalidTopologyException e) {
-            LOG.warn("Topology submission exception: {}", e.get_msg());
+            LOG.error("Topology submission exception: {}", e.get_msg());
             throw e;
         } catch (AlreadyAliveException e) {
-            LOG.warn("Topology already alive exception", e);
+            LOG.error("Topology already alive exception", e);
             throw e;
         }
     }
 
     /**
-     *
      * @param name
      * @param asUser
      * @param topoConf
      * @param topology
-     *
-     * @thorws SubmitterHookException This is thrown when any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
+     * @thorws SubmitterHookException This is thrown when any Exception occurs during initialization or invocation of registered {@link
+     *     ISubmitterHook}
      */
     private static void invokeSubmitterHook(String name, String asUser, Map<String, Object> topoConf, StormTopology topology) {
         String submissionNotifierClassName = null;
@@ -356,8 +351,9 @@ public class StormSubmitter {
                 submissionNotifierClassName = topoConf.get(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN).toString();
                 LOG.info("Initializing the registered ISubmitterHook [{}]", submissionNotifierClassName);
 
-                if(submissionNotifierClassName == null || submissionNotifierClassName.isEmpty()) {
-                    throw new IllegalArgumentException(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN + " property must be a non empty string.");
+                if (submissionNotifierClassName == null || submissionNotifierClassName.isEmpty()) {
+                    throw new IllegalArgumentException(
+                        Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN + " property must be a non empty string.");
                 }
 
                 ISubmitterHook submitterHook = (ISubmitterHook) Class.forName(submissionNotifierClassName).newInstance();
@@ -366,64 +362,62 @@ public class StormSubmitter {
                 submitterHook.notify(topologyInfo, topoConf, topology);
             }
         } catch (Exception e) {
-            LOG.warn("Error occurred in invoking submitter hook:[{}] ",submissionNotifierClassName, e);
+            LOG.warn("Error occurred in invoking submitter hook:[{}] ", submissionNotifierClassName, e);
             throw new SubmitterHookException(e);
         }
     }
 
     /**
-     * Submits a topology to run on the cluster. A topology runs forever or until
-     * explicitly killed.
+     * Submits a topology to run on the cluster. A topology runs forever or until explicitly killed.
      *
-     *
-     * @param name the name of the storm.
-     * @param topoConf the topology-specific configuration. See {@link Config}.
-     * @param topology the processing to execute.
-     * @param opts to manipulate the starting of the topology
+     * @param name             the name of the storm.
+     * @param topoConf         the topology-specific configuration. See {@link Config}.
+     * @param topology         the processing to execute.
+     * @param opts             to manipulate the starting of the topology
      * @param progressListener to track the progress of the jar upload process
-     * @throws AlreadyAliveException if a topology with this name is already running
+     * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
-     * @throws AuthorizationException if authorization is failed
+     * @throws AuthorizationException   if authorization is failed
      * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
     @SuppressWarnings("unchecked")
     public static void submitTopology(String name, Map<String, Object> topoConf, StormTopology topology, SubmitOptions opts,
-             ProgressListener progressListener) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+                                      ProgressListener progressListener) throws AlreadyAliveException, InvalidTopologyException,
+        AuthorizationException {
         submitTopologyAs(name, topoConf, topology, opts, progressListener, null);
     }
 
     /**
-     * Submits a topology to run on the cluster with a progress bar. A topology runs forever or until
-     * explicitly killed.
+     * Submits a topology to run on the cluster with a progress bar. A topology runs forever or until explicitly killed.
      *
-     *
-     * @param name the name of the storm.
+     * @param name     the name of the storm.
      * @param topoConf the topology-specific configuration. See {@link Config}.
      * @param topology the processing to execute.
-     * @throws AlreadyAliveException if a topology with this name is already running
+     * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
-     * @throws AuthorizationException if authorization is failed
+     * @throws AuthorizationException   if authorization is failed
      */
 
-    public static void submitTopologyWithProgressBar(String name, Map<String, Object> topoConf, StormTopology topology) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+    public static void submitTopologyWithProgressBar(String name, Map<String, Object> topoConf, StormTopology topology) throws
+        AlreadyAliveException, InvalidTopologyException, AuthorizationException {
         submitTopologyWithProgressBar(name, topoConf, topology, null);
     }
 
     /**
-     * Submits a topology to run on the cluster with a progress bar. A topology runs forever or until
-     * explicitly killed.
+     * Submits a topology to run on the cluster with a progress bar. A topology runs forever or until explicitly killed.
      *
-     *
-     * @param name the name of the storm.
+     * @param name     the name of the storm.
      * @param topoConf the topology-specific configuration. See {@link Config}.
      * @param topology the processing to execute.
-     * @param opts to manipulate the starting of the topology
-     * @throws AlreadyAliveException if a topology with this name is already running
+     * @param opts     to manipulate the starting of the topology
+     * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
-     * @throws AuthorizationException if authorization is failed
+     * @throws AuthorizationException   if authorization is failed
      * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
-    public static void submitTopologyWithProgressBar(String name, Map<String, Object> topoConf, StormTopology topology, SubmitOptions opts) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+    public static void submitTopologyWithProgressBar(String name, Map<String, Object> topoConf, StormTopology topology,
+                                                     SubmitOptions opts) throws AlreadyAliveException, InvalidTopologyException,
+        AuthorizationException {
         // show a progress bar so we know we're not stuck (especially on slow connections)
         submitTopology(name, topoConf, topology, opts, new StormSubmitter.ProgressListener() {
             @Override
@@ -434,7 +428,7 @@ public class StormSubmitter {
             @Override
             public void onProgress(String srcFile, String targetFile, long bytesUploaded, long totalBytes) {
                 int length = 50;
-                int p = (int)((length * bytesUploaded) / totalBytes);
+                int p = (int) ((length * bytesUploaded) / totalBytes);
                 String progress = StringUtils.repeat("=", p);
                 String todo = StringUtils.repeat(" ", length - p);
 
@@ -451,18 +445,19 @@ public class StormSubmitter {
     private static boolean topologyNameExists(String name, NimbusClient client) {
         try {
             return !client.getClient().isTopologyNameAllowed(name);
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     private static String submitJar(Map<String, Object> conf, ProgressListener listener) {
-        return  submitJar(conf, System.getProperty("storm.jar"), listener);
+        return submitJar(conf, System.getProperty("storm.jar"), listener);
     }
 
     /**
      * Submit jar file
-     * @param conf the topology-specific configuration. See {@link Config}.
+     *
+     * @param conf     the topology-specific configuration. See {@link Config}.
      * @param localJar file path of the jar file to submit
      * @return the remote location of the submitted jar
      */
@@ -472,7 +467,8 @@ public class StormSubmitter {
 
     public static String submitJarAs(Map<String, Object> conf, String localJar, ProgressListener listener, NimbusClient client) {
         if (localJar == null) {
-            throw new RuntimeException("Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
+            throw new RuntimeException(
+                "Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
         }
 
         try {
@@ -486,14 +482,16 @@ public class StormSubmitter {
             }
 
             long bytesUploaded = 0;
-            while(true) {
+            while (true) {
                 byte[] toSubmit = is.read();
                 bytesUploaded += toSubmit.length;
                 if (listener != null) {
                     listener.onProgress(localJar, uploadLocation, bytesUploaded, totalSize);
                 }
 
-                if(toSubmit.length==0) break;
+                if (toSubmit.length == 0) {
+                    break;
+                }
                 client.getClient().uploadChunk(uploadLocation, ByteBuffer.wrap(toSubmit));
             }
             client.getClient().finishFileUpload(uploadLocation);
@@ -504,14 +502,15 @@ public class StormSubmitter {
 
             LOG.info("Successfully uploaded topology jar to assigned location: " + uploadLocation);
             return uploadLocation;
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static String submitJarAs(Map<String, Object> conf, String localJar, ProgressListener listener, String asUser) {
         if (localJar == null) {
-            throw new RuntimeException("Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
+            throw new RuntimeException(
+                "Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
         }
 
         try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
@@ -521,13 +520,20 @@ public class StormSubmitter {
 
     /**
      * Submit jar file
-     * @param conf the topology-specific configuration. See {@link Config}.
+     *
+     * @param conf     the topology-specific configuration. See {@link Config}.
      * @param localJar file path of the jar file to submit
      * @param listener progress listener to track the jar file upload
      * @return the remote location of the submitted jar
      */
     public static String submitJar(Map<String, Object> conf, String localJar, ProgressListener listener) {
-        return submitJarAs(conf,localJar, listener, (String)null);
+        return submitJarAs(conf, localJar, listener, (String) null);
+    }
+
+    private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException,
+        InvalidTopologyException, AuthorizationException {
+        ConfigValidation.validateTopoConf(topoConf);
+        Utils.validateTopologyBlobStoreMap(topoConf);
     }
 
     /**
@@ -536,7 +542,8 @@ public class StormSubmitter {
     public interface ProgressListener {
         /**
          * called before file is uploaded
-         * @param srcFile - jar file to be uploaded
+         *
+         * @param srcFile    - jar file to be uploaded
          * @param targetFile - destination file
          * @param totalBytes - total number of bytes of the file
          */
@@ -544,24 +551,21 @@ public class StormSubmitter {
 
         /**
          * called whenever a chunk of bytes is uploaded
-         * @param srcFile - jar file to be uploaded
-         * @param targetFile - destination file
+         *
+         * @param srcFile       - jar file to be uploaded
+         * @param targetFile    - destination file
          * @param bytesUploaded - number of bytes transferred so far
-         * @param totalBytes - total number of bytes of the file
+         * @param totalBytes    - total number of bytes of the file
          */
         public void onProgress(String srcFile, String targetFile, long bytesUploaded, long totalBytes);
 
         /**
          * called when the file is uploaded
-         * @param srcFile - jar file to be uploaded
+         *
+         * @param srcFile    - jar file to be uploaded
          * @param targetFile - destination file
          * @param totalBytes - total number of bytes of the file
          */
         public void onCompleted(String srcFile, String targetFile, long totalBytes);
-    }
-
-    private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException, InvalidTopologyException, AuthorizationException {
-        ConfigValidation.validateFields(topoConf);
-        Utils.validateTopologyBlobStoreMap(topoConf);
     }
 }

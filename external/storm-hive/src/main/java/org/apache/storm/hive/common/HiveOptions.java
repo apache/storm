@@ -1,25 +1,18 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.hive.common;
 
 import java.io.Serializable;
-
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
 
 public class HiveOptions implements Serializable {
@@ -43,15 +36,14 @@ public class HiveOptions implements Serializable {
     protected String kerberosKeytab;
     protected Integer tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
 
-    public HiveOptions(String metaStoreURI,String databaseName,String tableName,HiveMapper mapper) {
+    public HiveOptions(String metaStoreURI, String databaseName, String tableName, HiveMapper mapper) {
         this.metaStoreURI = metaStoreURI;
         this.databaseName = databaseName;
         this.tableName = tableName;
         this.mapper = mapper;
     }
 
-    public HiveOptions withTickTupleInterval(Integer tickInterval)
-    {
+    public HiveOptions withTickTupleInterval(Integer tickInterval) {
         this.tickTupleInterval = tickInterval;
         return this;
     }

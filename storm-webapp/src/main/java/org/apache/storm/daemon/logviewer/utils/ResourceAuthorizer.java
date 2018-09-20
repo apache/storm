@@ -34,7 +34,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.utils.ObjectReader;
@@ -54,8 +54,8 @@ public class ResourceAuthorizer {
      */
     public ResourceAuthorizer(Map<String, Object> stormConf) {
         this.stormConf = stormConf;
-        this.groupMappingServiceProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(stormConf);
-        this.principalToLocal = AuthUtils.GetPrincipalToLocalPlugin(stormConf);
+        this.groupMappingServiceProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(stormConf);
+        this.principalToLocal = ClientAuthUtils.getPrincipalToLocalPlugin(stormConf);
     }
 
     /**

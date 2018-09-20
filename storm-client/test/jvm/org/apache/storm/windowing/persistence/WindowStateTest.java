@@ -1,38 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.windowing.persistence;
-
-import org.apache.storm.state.KeyValueState;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.windowing.Event;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +21,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.storm.state.KeyValueState;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.windowing.Event;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import static org.mockito.AdditionalAnswers.returnsArgAt;
 
@@ -105,7 +96,7 @@ public class WindowStateTest {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
                 Object[] args = invocation.getArguments();
-                partitionMap.put((long)args[0], (WindowState.WindowPartition<Event<Tuple>>)args[1]);
+                partitionMap.put((long) args[0], (WindowState.WindowPartition<Event<Tuple>>) args[1]);
                 return null;
             }
         }).when(windowState).put(Mockito.any(), Mockito.any());
@@ -173,7 +164,7 @@ public class WindowStateTest {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
                 Object[] args = invocation.getArguments();
-                partitionMap.put((long)args[0], (WindowState.WindowPartition<Event<Tuple>>)args[1]);
+                partitionMap.put((long) args[0], (WindowState.WindowPartition<Event<Tuple>>) args[1]);
                 return null;
             }
         }).when(windowState).put(Mockito.any(), Mockito.any());
@@ -192,7 +183,7 @@ public class WindowStateTest {
 
         // Stop iterating in the middle of the 10th partition
         Iterator<Event<Integer>> it = ws.iterator();
-        for(int i=0; i<9500; i++) {
+        for (int i = 0; i < 9500; i++) {
             it.next();
         }
 
@@ -231,6 +222,6 @@ public class WindowStateTest {
 
     private WindowState<Integer> getWindowState(int maxEvents) {
         return new WindowState<>(windowState, partitionIdsState, systemState,
-            supplier, maxEvents);
+                                 supplier, maxEvents);
     }
 }

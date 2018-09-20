@@ -15,8 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.jms.spout;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 import org.apache.storm.Config;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -25,22 +38,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.HashMap;
-import java.util.Map;
-
 public class JmsSpoutTest {
     private static final Logger LOG =
-            LoggerFactory.getLogger(JmsSpoutTest.class);
+        LoggerFactory.getLogger(JmsSpoutTest.class);
 
     @Test
     public void testFailure() throws JMSException, Exception {
@@ -53,7 +53,6 @@ public class JmsSpoutTest {
             spout.setJmsProvider(new MockJmsProvider());
             spout.setJmsTupleProducer(new MockTupleProducer());
             spout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-            spout.setRecoveryPeriodMs(10); // Rapid recovery for testing.
             spout.open(new HashMap<>(), null, collector);
             ConnectionFactory connectionFactory = mockProvider.connectionFactory();
             Destination destination = mockProvider.destination();
@@ -85,9 +84,8 @@ public class JmsSpoutTest {
     }
 
     /**
-     * Make sure that {@link JmsSpout#open} returns correctly regardless of
-     * the type of {@link Number} that is the value of
-     * {@link Config#TOPOLOGY_MESSAGE_TIMEOUT_SECS}.
+     * Make sure that {@link JmsSpout#open} returns correctly regardless of the type of {@link Number} that is the value of {@link
+     * Config#TOPOLOGY_MESSAGE_TIMEOUT_SECS}.
      */
     @Test
     public void testOpenWorksMultipleTypesOfNumberObjects() throws Exception {
@@ -118,8 +116,8 @@ public class JmsSpoutTest {
                                Destination destination) throws JMSException {
 
         Session mySess = connectionFactory.createConnection().createSession(
-                false,
-                Session.CLIENT_ACKNOWLEDGE);
+            false,
+            Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = mySess.createProducer(destination);
         TextMessage msg = mySess.createTextMessage();
         msg.setText("Hello World");

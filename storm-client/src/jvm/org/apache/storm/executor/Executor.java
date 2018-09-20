@@ -1,25 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.executor;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -37,7 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
@@ -65,8 +55,13 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.shade.org.jctools.queues.MpscChunkedArrayQueue;
+import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.stats.CommonStats;
-import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
@@ -77,9 +72,6 @@ import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.jctools.queues.MpscChunkedArrayQueue;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +108,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final Boolean hasEventLoggers;
     protected final boolean ackingEnabled;
     protected final ErrorReportingMetrics errorReportingMetrics;
-    protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits = new MpscChunkedArrayQueue<>(1024);
+    protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits = new MpscChunkedArrayQueue<>(1024, (int)Math.pow(2, 30));
     private final AddressedTuple flushTuple;
     protected ExecutorTransfer executorTransfer;
     protected ArrayList<Task> idToTask;
@@ -144,7 +136,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.suicideFn = workerData.getSuicideCallback();
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(),
-                new ClusterStateContext(DaemonType.WORKER, topoConf));
+                                                                      new ClusterStateContext(DaemonType.WORKER, topoConf));
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -154,8 +146,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, topoConf);
         if (this.streamToComponentToGrouper != null) {
             this.groupers = streamToComponentToGrouper.values().stream()
-                .filter(Objects::nonNull)
-                .flatMap(m -> m.values().stream()).collect(Collectors.toList());
+                                                      .filter(Objects::nonNull)
+                                                      .flatMap(m -> m.values().stream()).collect(Collectors.toList());
         } else {
             this.groupers = Collections.emptyList();
         }
@@ -185,7 +177,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         String componentId = workerTopologyContext.getComponentId(taskIds.get(0));
 
         String type = getExecutorType(workerTopologyContext, componentId);
-        if (StatsUtil.SPOUT.equals(type)) {
+        if (ClientStatsUtil.SPOUT.equals(type)) {
             executor = new SpoutExecutor(workerState, executorId, credentials);
         } else {
             executor = new BoltExecutor(workerState, executorId, credentials);
@@ -213,28 +205,28 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         Map<String, SpoutSpec> spouts = topology.get_spouts();
         Map<String, Bolt> bolts = topology.get_bolts();
         if (spouts.containsKey(componentId)) {
-            return StatsUtil.SPOUT;
+            return ClientStatsUtil.SPOUT;
         } else if (bolts.containsKey(componentId)) {
-            return StatsUtil.BOLT;
+            return ClientStatsUtil.BOLT;
         } else {
             throw new RuntimeException("Could not find " + componentId + " in " + topology);
         }
     }
 
     /**
-     * Retrieves all values of all static fields of {@link Config} which
-     * represent all available configuration keys through reflection. The method
-     * assumes that they are {@code String}s through reflection.
+     * Retrieves all values of all static fields of {@link Config} which represent all available configuration keys through reflection. The
+     * method assumes that they are {@code String}s through reflection.
+     *
      * @return the list of retrieved field values
-     * @throws ClassCastException if one of the fields is not of type
-     * {@code String}
+     *
+     * @throws ClassCastException if one of the fields is not of type {@code String}
      */
     private static List<String> retrieveAllConfigKeys() {
         List<String> ret = new ArrayList<>();
         Field[] fields = Config.class.getFields();
         for (int i = 0; i < fields.length; i++) {
             try {
-                String fieldValue = (String)fields[i].get(null);
+                String fieldValue = (String) fields[i].get(null);
                 ret.add(fieldValue);
             } catch (IllegalArgumentException e) {
                 LOG.error(e.getMessage(), e);
@@ -257,7 +249,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
         String handlerName = componentId + "-executor" + executorId;
         Utils.SmartThread handler =
-                Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, true, true, handlerName);
+            Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, true, true, handlerName);
 
         LOG.info("Finished loading executor " + componentId + ":" + executorId);
         return new ExecutorShutdown(this, Lists.newArrayList(handler), idToTask, receiveQueue);
@@ -267,9 +259,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     @Override
     public void accept(Object event) {
-        if (event == JCQueue.INTERRUPT) {
-            throw new RuntimeException(new InterruptedException("JCQ processing interrupted"));
-        }
         AddressedTuple addressedTuple = (AddressedTuple) event;
         int taskId = addressedTuple.getDest();
 
@@ -320,7 +309,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                 }
                 if (!dataPoints.isEmpty()) {
                     task.sendUnanchored(Constants.METRICS_STREAM_ID,
-                        new Values(taskInfo, dataPoints), executorTransfer, pendingEmits);
+                                        new Values(taskInfo, dataPoints), executorTransfer, pendingEmits);
                     executorTransfer.flush();
                 }
             }
@@ -333,19 +322,20 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
             StormTimer timerTask = workerData.getUserTimer();
             timerTask.scheduleRecurring(interval, interval,
-                () -> {
-                    TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
-                        (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                    AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                    try {
-                        receiveQueue.publish(metricsTickTuple);
-                        receiveQueue.flush();  // avoid buffering
-                    } catch (InterruptedException e) {
-                        LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                }
+                                        () -> {
+                                            TupleImpl tuple =
+                                                new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
+                                                              (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
+                                            AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                                            try {
+                                                receiveQueue.publish(metricsTickTuple);
+                                                receiveQueue.flush();  // avoid buffering
+                                            } catch (InterruptedException e) {
+                                                LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
+                                                Thread.currentThread().interrupt();
+                                                return;
+                                            }
+                                        }
             );
         }
     }
@@ -360,19 +350,21 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             } else {
                 StormTimer timerTask = workerData.getUserTimer();
                 timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs,
-                    () -> {
-                        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
-                            Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TICK_STREAM_ID);
-                        AddressedTuple tickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                        try {
-                            receiveQueue.publish(tickTuple);
-                            receiveQueue.flush(); // avoid buffering
-                        } catch (InterruptedException e) {
-                            LOG.warn("Thread interrupted when emitting tick tuple. Setting interrupt flag.");
-                            Thread.currentThread().interrupt();
-                            return;
-                        }
-                    }
+                                            () -> {
+                                                TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
+                                                                                Constants.SYSTEM_COMPONENT_ID,
+                                                                                (int) Constants.SYSTEM_TASK_ID,
+                                                                                Constants.SYSTEM_TICK_STREAM_ID);
+                                                AddressedTuple tickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                                                try {
+                                                    receiveQueue.publish(tickTuple);
+                                                    receiveQueue.flush(); // avoid buffering
+                                                } catch (InterruptedException e) {
+                                                    LOG.warn("Thread interrupted when emitting tick tuple. Setting interrupt flag.");
+                                                    Thread.currentThread().interrupt();
+                                                    return;
+                                                }
+                                            }
                 );
             }
         }
@@ -435,7 +427,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     // =============================================================================
 
     private Map<String, Object> normalizedComponentConf(
-            Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
+        Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
         List<String> keysToRemove = retrieveAllConfigKeys();
         keysToRemove.remove(Config.TOPOLOGY_DEBUG);
         keysToRemove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);

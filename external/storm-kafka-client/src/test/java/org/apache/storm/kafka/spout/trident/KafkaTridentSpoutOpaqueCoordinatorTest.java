@@ -16,10 +16,11 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,7 +55,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
         KafkaSpoutConfig<String, String> spoutConfig = 
             SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(mockFilter, mock(ManualPartitioner.class), -1)
                 .build();
-        KafkaTridentSpoutOpaqueCoordinator<String, String> coordinator = new KafkaTridentSpoutOpaqueCoordinator<>(spoutConfig, ignored -> mockConsumer);
+        KafkaTridentSpoutCoordinator<String, String> coordinator = new KafkaTridentSpoutCoordinator<>(spoutConfig, ignored -> mockConsumer);
 
         List<Map<String, Object>> partitionsForBatch = coordinator.getPartitionsForBatch();
 
@@ -82,7 +83,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
             KafkaSpoutConfig<String, String> spoutConfig = 
                 SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(mockFilter, mock(ManualPartitioner.class), -1)
                     .build();
-            KafkaTridentSpoutOpaqueCoordinator<String, String> coordinator = new KafkaTridentSpoutOpaqueCoordinator<>(spoutConfig, ignored -> mockConsumer);
+            KafkaTridentSpoutCoordinator<String, String> coordinator = new KafkaTridentSpoutCoordinator<>(spoutConfig, ignored -> mockConsumer);
 
             List<Map<String, Object>> partitionsForBatch = coordinator.getPartitionsForBatch();
 
@@ -91,7 +92,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
             verify(mockFilter).getAllSubscribedPartitions(mockConsumer);
             assertThat(firstBatchTps, contains(expectedPartition));
 
-            Time.advanceTime(KafkaTridentSpoutOpaqueCoordinator.TIMER_DELAY_MS + spoutConfig.getPartitionRefreshPeriodMs());
+            Time.advanceTime(KafkaTridentSpoutCoordinator.TIMER_DELAY_MS + spoutConfig.getPartitionRefreshPeriodMs());
 
             List<Map<String, Object>> partitionsForSecondBatch = coordinator.getPartitionsForBatch();
             

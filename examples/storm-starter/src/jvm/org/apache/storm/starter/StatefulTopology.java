@@ -19,7 +19,6 @@
 package org.apache.storm.starter;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.starter.spout.RandomIntegerSpout;
@@ -38,20 +37,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An example topology that demonstrates the use of {@link org.apache.storm.topology.IStatefulBolt}
- * to manage state. To run the example,
+ * An example topology that demonstrates the use of {@link org.apache.storm.topology.IStatefulBolt} to manage state. To run the example,
  * <pre>
  * $ storm jar examples/storm-starter/storm-starter-topologies-*.jar storm.starter.StatefulTopology statetopology
  * </pre>
  * <p/>
- * The default state used is 'InMemoryKeyValueState' which does not persist the state across restarts. You could use
- * 'RedisKeyValueState' to test state persistence by setting below property in conf/storm.yaml
+ * The default state used is 'InMemoryKeyValueState' which does not persist the state across restarts. You could use 'RedisKeyValueState' to
+ * test state persistence by setting below property in conf/storm.yaml
  * <pre>
  * topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider
  * </pre>
  * <p/>
- * You should also start a local redis instance before running the 'storm jar' command. The default
- * RedisKeyValueStateProvider parameters can be overridden in conf/storm.yaml, for e.g.
+ * You should also start a local redis instance before running the 'storm jar' command. The default RedisKeyValueStateProvider parameters
+ * can be overridden in conf/storm.yaml, for e.g.
  * <p/>
  * <pre>
  * topology.state.provider.config: '{"keyClass":"...", "valueClass":"...",
@@ -64,6 +62,22 @@ import org.slf4j.LoggerFactory;
  */
 public class StatefulTopology {
     private static final Logger LOG = LoggerFactory.getLogger(StatefulTopology.class);
+
+    public static void main(String[] args) throws Exception {
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("spout", new RandomIntegerSpout());
+        builder.setBolt("partialsum", new StatefulSumBolt("partial"), 1).shuffleGrouping("spout");
+        builder.setBolt("printer", new PrinterBolt(), 2).shuffleGrouping("partialsum");
+        builder.setBolt("total", new StatefulSumBolt("total"), 1).shuffleGrouping("printer");
+        Config conf = new Config();
+        conf.setDebug(false);
+        String topoName = "test";
+        if (args != null && args.length > 0) {
+            topoName = args[0];
+        }
+        conf.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
+    }
 
     /**
      * A bolt that uses {@link KeyValueState} to save its state.
@@ -118,21 +132,5 @@ public class StatefulTopology {
             ofd.declare(new Fields("value"));
         }
 
-    }
-
-    public static void main(String[] args) throws Exception {
-        TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new RandomIntegerSpout());
-        builder.setBolt("partialsum", new StatefulSumBolt("partial"), 1).shuffleGrouping("spout");
-        builder.setBolt("printer", new PrinterBolt(), 2).shuffleGrouping("partialsum");
-        builder.setBolt("total", new StatefulSumBolt("total"), 1).shuffleGrouping("printer");
-        Config conf = new Config();
-        conf.setDebug(false);
-        String topoName = "test";
-        if (args != null && args.length > 0) {
-            topoName = args[0];
-        }
-        conf.setNumWorkers(1);
-        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
     }
 }

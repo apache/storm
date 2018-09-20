@@ -15,34 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt.rotation;
 
 import org.apache.storm.tuple.Tuple;
 
 public class TimedRotationPolicy implements FileRotationPolicy {
 
-    public static enum TimeUnit {
-
-        SECONDS((long)1000),
-        MINUTES((long)1000*60),
-        HOURS((long)1000*60*60),
-        DAYS((long)1000*60*60*24);
-
-        private long milliSeconds;
-
-        private TimeUnit(long milliSeconds){
-            this.milliSeconds = milliSeconds;
-        }
-
-        public long getMilliSeconds(){
-            return milliSeconds;
-        }
-    }
-
     private long interval;
 
-    public TimedRotationPolicy(float count, TimeUnit units){
-        this.interval = (long)(count * units.getMilliSeconds());
+    public TimedRotationPolicy(float count, TimeUnit units) {
+        this.interval = (long) (count * units.getMilliSeconds());
     }
 
     protected TimedRotationPolicy(long interval) {
@@ -74,7 +57,25 @@ public class TimedRotationPolicy implements FileRotationPolicy {
         return new TimedRotationPolicy(this.interval);
     }
 
-    public long getInterval(){
+    public long getInterval() {
         return this.interval;
+    }
+
+    public static enum TimeUnit {
+
+        SECONDS((long) 1000),
+        MINUTES((long) 1000 * 60),
+        HOURS((long) 1000 * 60 * 60),
+        DAYS((long) 1000 * 60 * 60 * 24);
+
+        private long milliSeconds;
+
+        private TimeUnit(long milliSeconds) {
+            this.milliSeconds = milliSeconds;
+        }
+
+        public long getMilliSeconds() {
+            return milliSeconds;
+        }
     }
 }

@@ -1,27 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.windowing;
-
-import com.google.common.collect.ImmutableMap;
-import org.apache.storm.windowing.EvictionPolicy.Action;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,39 +23,40 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
+import org.apache.storm.windowing.EvictionPolicy.Action;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.windowing.EvictionPolicy.Action.EXPIRE;
 import static org.apache.storm.windowing.EvictionPolicy.Action.PROCESS;
 import static org.apache.storm.windowing.EvictionPolicy.Action.STOP;
 
 /**
- * Tracks a window of events and fires {@link WindowLifecycleListener} callbacks
- * on expiry of events or activation of the window due to {@link TriggerPolicy}.
+ * Tracks a window of events and fires {@link WindowLifecycleListener} callbacks on expiry of events or activation of the window due to
+ * {@link TriggerPolicy}.
  *
  * @param <T> the type of event in the window.
  */
 public class WindowManager<T> implements TriggerHandler {
+    /**
+     * Expire old events every EXPIRE_EVENTS_THRESHOLD to keep the window size in check.
+     *
+     * Note that if the eviction policy is based on watermarks, events will not be evicted until a new watermark would cause them to be
+     * considered expired anyway, regardless of this limit
+     */
+    public static final int EXPIRE_EVENTS_THRESHOLD = 100;
     private static final Logger LOG = LoggerFactory.getLogger(WindowManager.class);
     private static final String EVICTION_STATE_KEY = "es";
     private static final String TRIGGER_STATE_KEY = "ts";
-
-    /**
-     * Expire old events every EXPIRE_EVENTS_THRESHOLD to
-     * keep the window size in check.
-     * 
-     * Note that if the eviction policy is based on watermarks, events will not be evicted until a new
-     * watermark would cause them to be considered expired anyway, regardless of this limit
-     */
-    public static final int EXPIRE_EVENTS_THRESHOLD = 100;
-
     protected final Collection<Event<T>> queue;
-    protected EvictionPolicy<T, ?> evictionPolicy;
-    protected TriggerPolicy<T, ?> triggerPolicy;
     protected final WindowLifecycleListener<T> windowLifecycleListener;
     private final List<T> expiredEvents;
     private final Set<Event<T>> prevWindowEvents;
     private final AtomicInteger eventsSinceLastExpiry;
     private final ReentrantLock lock;
+    protected EvictionPolicy<T, ?> evictionPolicy;
+    protected TriggerPolicy<T, ?> triggerPolicy;
 
     public WindowManager(WindowLifecycleListener<T> lifecycleListener) {
         this(lifecycleListener, new ConcurrentLinkedQueue<>());
@@ -74,10 +64,10 @@ public class WindowManager<T> implements TriggerHandler {
 
     /**
      * Constructs a {@link WindowManager}
+     *
      * @param lifecycleListener the {@link WindowLifecycleListener}
-     * @param queue a collection where the events in the window can be enqueued.
-     *              <br/>
-     *              <b>Note:</b> This collection has to be thread safe.
+     * @param queue             a collection where the events in the window can be enqueued. <br/>
+     *                          <b>Note:</b> This collection has to be thread safe.
      */
     public WindowManager(WindowLifecycleListener<T> lifecycleListener, Collection<Event<T>> queue) {
         windowLifecycleListener = lifecycleListener;
@@ -98,8 +88,7 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Add an event into the window, with {@link System#currentTimeMillis()} as
-     * the tracking ts.
+     * Add an event into the window, with {@link System#currentTimeMillis()} as the tracking ts.
      *
      * @param event the event to add
      */
@@ -180,9 +169,7 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * expires events that fall out of the window every
-     * EXPIRE_EVENTS_THRESHOLD so that the window does not grow
-     * too big.
+     * expires events that fall out of the window every EXPIRE_EVENTS_THRESHOLD so that the window does not grow too big.
      */
     protected void compactWindow() {
         if (eventsSinceLastExpiry.incrementAndGet() >= EXPIRE_EVENTS_THRESHOLD) {
@@ -191,8 +178,7 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * feed the event to the eviction and trigger policies
-     * for bookkeeping and optionally firing the trigger.
+     * feed the event to the eviction and trigger policies for bookkeeping and optionally firing the trigger.
      */
     private void track(Event<T> windowEvent) {
         evictionPolicy.track(windowEvent);
@@ -200,11 +186,10 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Scan events in the queue, using the expiration policy to check
-     * if the event should be evicted or not.
+     * Scan events in the queue, using the expiration policy to check if the event should be evicted or not.
      *
-     * @param fullScan if set, will scan the entire queue; if not set, will stop
-     *                 as soon as an event not satisfying the expiration policy is found
+     * @param fullScan if set, will scan the entire queue; if not set, will stop as soon as an event not satisfying the expiration policy is
+     *                 found
      * @return the list of events to be processed as a part of the current window
      */
     private List<Event<T>> scanEvents(boolean fullScan) {
@@ -240,11 +225,10 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Scans the event queue and returns the next earliest event ts
-     * between the startTs and endTs
+     * Scans the event queue and returns the next earliest event ts between the startTs and endTs
      *
      * @param startTs the start ts (exclusive)
-     * @param endTs the end ts (inclusive)
+     * @param endTs   the end ts (inclusive)
      * @return the earliest event ts between startTs and endTs
      */
     public long getEarliestEventTs(long startTs, long endTs) {
@@ -258,8 +242,7 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Scans the event queue and returns number of events having
-     * timestamp less than or equal to the reference time.
+     * Scans the event queue and returns number of events having timestamp less than or equal to the reference time.
      *
      * @param referenceTime the reference timestamp in millis
      * @return the count of events with timestamp less than or equal to referenceTime
@@ -275,12 +258,11 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Scans the event queue and returns the list of event ts
-     * falling between startTs (exclusive) and endTs (inclusive)
-     * at each sliding interval counts.
+     * Scans the event queue and returns the list of event ts falling between startTs (exclusive) and endTs (inclusive) at each sliding
+     * interval counts.
      *
-     * @param startTs the start timestamp (exclusive)
-     * @param endTs the end timestamp (inclusive)
+     * @param startTs      the start timestamp (exclusive)
+     * @param endTs        the end timestamp (inclusive)
      * @param slidingCount the sliding interval count
      * @return the list of event ts
      */
@@ -304,24 +286,24 @@ public class WindowManager<T> implements TriggerHandler {
     @Override
     public String toString() {
         return "WindowManager{" +
-                "evictionPolicy=" + evictionPolicy +
-                ", triggerPolicy=" + triggerPolicy +
-                '}';
+               "evictionPolicy=" + evictionPolicy +
+               ", triggerPolicy=" + triggerPolicy +
+               '}';
     }
 
     public void restoreState(Map<String, Optional<?>> state) {
         Optional.ofNullable(state.get(EVICTION_STATE_KEY))
-            .flatMap(x -> x)
-            .ifPresent(v -> ((EvictionPolicy) evictionPolicy).restoreState(v));
+                .flatMap(x -> x)
+                .ifPresent(v -> ((EvictionPolicy) evictionPolicy).restoreState(v));
         Optional.ofNullable(state.get(TRIGGER_STATE_KEY))
-            .flatMap(x -> x)
-            .ifPresent(v -> ((TriggerPolicy) triggerPolicy).restoreState(v));
+                .flatMap(x -> x)
+                .ifPresent(v -> ((TriggerPolicy) triggerPolicy).restoreState(v));
     }
 
     public Map<String, Optional<?>> getState() {
         return ImmutableMap.of(
-                EVICTION_STATE_KEY, Optional.ofNullable(evictionPolicy.getState()),
-                TRIGGER_STATE_KEY, Optional.ofNullable(triggerPolicy.getState())
+            EVICTION_STATE_KEY, Optional.ofNullable(evictionPolicy.getState()),
+            TRIGGER_STATE_KEY, Optional.ofNullable(triggerPolicy.getState())
         );
     }
 }

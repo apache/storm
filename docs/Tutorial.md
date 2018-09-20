@@ -280,9 +280,9 @@ For more information on writing spouts and bolts in other languages, and to lear
 
 Earlier on in this tutorial, we skipped over a few aspects of how tuples are emitted. Those aspects were part of Storm's reliability API: how Storm guarantees that every message coming off a spout will be fully processed. See [Guaranteeing message processing](Guaranteeing-message-processing.html) for information on how this works and what you have to do as a user to take advantage of Storm's reliability capabilities.
 
-## Transactional topologies
+## Trident
 
-Storm guarantees that every message will be played through the topology at least once. A common question asked is "how do you do things like counting on top of Storm? Won't you overcount?" Storm has a feature called transactional topologies that let you achieve exactly-once messaging semantics for most computations. Read more about transactional topologies [here](Transactional-topologies.html). 
+Storm guarantees that every message will be played through the topology at least once. A common question asked is "how do you do things like counting on top of Storm? Won't you overcount?" Storm has a higher level API called Trudent that let you achieve exactly-once messaging semantics for most computations. Read more about Trident [here](Trident-tutorial.html). 
 
 ## Distributed RPC
 

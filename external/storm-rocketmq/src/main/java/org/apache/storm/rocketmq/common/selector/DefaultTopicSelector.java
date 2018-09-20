@@ -18,7 +18,6 @@
 
 package org.apache.storm.rocketmq.common.selector;
 
-import org.apache.storm.rocketmq.RocketMqConfig;
 import org.apache.storm.tuple.ITuple;
 
 public class DefaultTopicSelector implements TopicSelector {
@@ -31,7 +30,7 @@ public class DefaultTopicSelector implements TopicSelector {
     }
 
     public DefaultTopicSelector(final String topicName) {
-        this(topicName, RocketMqConfig.DEFAULT_TAG);
+        this(topicName, "");
     }
 
     @Override

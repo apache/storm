@@ -22,11 +22,33 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 /**
- * Used as a way to give feedback that the listener is ready for the caller to change the blob.
- * By calling @{link GoodToGo#getLatch()} the listener indicates that it wants to block
- * changing the blob until the CountDownLatch is triggered with a call to @{link CountDownLatch#countDown()}.
+ * Used as a way to give feedback that the listener is ready for the caller to change the blob. By calling @{link GoodToGo#getLatch()} the
+ * listener indicates that it wants to block changing the blob until the CountDownLatch is triggered with a call to @{link
+ * CountDownLatch#countDown()}.
  */
 public class GoodToGo {
+    private final GoodToGoLatch latch;
+    private boolean gotLatch = false;
+    public GoodToGo(CountDownLatch latch, Future<Void> doneChanging) {
+        this.latch = new GoodToGoLatch(latch, doneChanging);
+    }
+
+    /**
+     * Get the latch and indicate that you want to block the blob being changed.
+     *
+     * @return the latch to use when you are ready.
+     */
+    public synchronized GoodToGoLatch getLatch() {
+        gotLatch = true;
+        return latch;
+    }
+
+    synchronized void countDownIfLatchWasNotGotten() {
+        if (!gotLatch) {
+            latch.countDown();
+        }
+    }
+
     public static class GoodToGoLatch {
         private final CountDownLatch latch;
         private final Future<Void> doneChanging;
@@ -43,28 +65,6 @@ public class GoodToGo {
                 wasCounted = true;
             }
             return doneChanging;
-        }
-    }
-
-    private final GoodToGoLatch latch;
-    private boolean gotLatch = false;
-
-    public GoodToGo(CountDownLatch latch, Future<Void> doneChanging) {
-        this.latch = new GoodToGoLatch(latch, doneChanging);
-    }
-
-    /**
-     * Get the latch and indicate that you want to block the blob being changed.
-     * @return the latch to use when you are ready.
-     */
-    public synchronized GoodToGoLatch getLatch() {
-        gotLatch = true;
-        return latch;
-    }
-
-    synchronized void countDownIfLatchWasNotGotten() {
-        if (!gotLatch) {
-            latch.countDown();
         }
     }
 }

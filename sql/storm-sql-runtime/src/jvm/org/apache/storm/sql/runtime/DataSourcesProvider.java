@@ -29,7 +29,18 @@ public interface DataSourcesProvider {
      */
     String scheme();
 
-    ISqlTridentDataSource constructTrident(
+    /**
+     * Construct a new data source for streams mode.
+     *
+     * @param uri               The URI that specifies the data source. The format of the URI
+     *                          is fully customizable.
+     * @param inputFormatClass  the name of the class that deserializes data.
+     *                          It is null when unspecified.
+     * @param outputFormatClass the name of the class that serializes data. It
+     *                          is null when unspecified.
+     * @param fields            The name of the fields and the schema of the table.
+     */
+    ISqlStreamsDataSource constructStreams(
             URI uri, String inputFormatClass, String outputFormatClass,
             Properties properties, List<FieldInfo> fields);
 }

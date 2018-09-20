@@ -1,24 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.daemon.worker;
-
-import com.google.common.base.Preconditions;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,20 +19,13 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import javax.security.auth.Subject;
-
-import com.google.common.collect.Sets;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -64,9 +49,13 @@ import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.metrics2.StormMetricRegistry;
-import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
-import org.apache.storm.stats.StatsUtil;
+import org.apache.storm.shade.com.google.common.base.Preconditions;
+import org.apache.storm.shade.org.apache.commons.io.FileUtils;
+import org.apache.storm.shade.org.apache.commons.lang.ObjectUtils;
+import org.apache.storm.shade.uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
+import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.NimbusClient;
@@ -76,8 +65,6 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class Worker implements Shutdownable, DaemonCommon {
 
@@ -103,21 +90,20 @@ public class Worker implements Shutdownable, DaemonCommon {
 
 
     /**
-     * TODO: should worker even take the topologyId as input? this should be
-     * deducible from cluster state (by searching through assignments)
+     * TODO: should worker even take the topologyId as input? this should be deducible from cluster state (by searching through assignments)
      * what about if there's inconsistency in assignments? -> but nimbus should guarantee this consistency.
      *
-     * @param conf         - Storm configuration
-     * @param context      -
-     * @param topologyId   - topology id
-     * @param assignmentId - assignment id
+     * @param conf           - Storm configuration
+     * @param context        -
+     * @param topologyId     - topology id
+     * @param assignmentId   - assignment id
      * @param supervisorPort - parent supervisor thrift server port
-     * @param port         - port on which the worker runs
-     * @param workerId     - worker id
+     * @param port           - port on which the worker runs
+     * @param workerId       - worker id
      */
 
     public Worker(Map<String, Object> conf, IContext context, String topologyId, String assignmentId,
-            int supervisorPort, int port, String workerId) {
+                  int supervisorPort, int port, String workerId) {
         this.conf = conf;
         this.context = context;
         this.topologyId = topologyId;
@@ -128,9 +114,25 @@ public class Worker implements Shutdownable, DaemonCommon {
         this.logConfigManager = new LogConfigManager();
     }
 
+    public static void main(String[] args) throws Exception {
+        Preconditions.checkArgument(args.length == 5, "Illegal number of arguments. Expected: 5, Actual: " + args.length);
+        String stormId = args[0];
+        String assignmentId = args[1];
+        String supervisorPort = args[2];
+        String portStr = args[3];
+        String workerId = args[4];
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
+        Utils.setupDefaultUncaughtExceptionHandler();
+        StormCommon.validateDistributedMode(conf);
+        Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(supervisorPort),
+                                   Integer.parseInt(portStr), workerId);
+        worker.start();
+        Utils.addShutdownHookWithForceKillIn1Sec(worker::shutdown);
+    }
+
     public void start() throws Exception {
         LOG.info("Launching worker for {} on {}:{} with id {} and conf {}", topologyId, assignmentId, port, workerId,
-            conf);
+                 ConfigUtils.maskPasswords(conf));
         // because in local mode, its not a separate
         // process. supervisor will register it in this case
         // if ConfigUtils.isLocalMode(conf) returns false then it is in distributed mode.
@@ -140,7 +142,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             String pid = Utils.processPid();
             FileUtils.touch(new File(ConfigUtils.workerPidPath(conf, workerId, pid)));
             FileUtils.writeStringToFile(new File(ConfigUtils.workerArtifactsPidPath(conf, topologyId, port)), pid,
-                Charset.forName("UTF-8"));
+                                        Charset.forName("UTF-8"));
         }
         final Map<String, Object> topologyConf =
             ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
@@ -155,8 +157,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         if (initialCredentials != null) {
             initCreds.putAll(initialCredentials.get_creds());
         }
-        autoCreds = AuthUtils.GetAutoCredentials(topologyConf);
-        subject = AuthUtils.populateSubject(null, autoCreds, initCreds);
+        autoCreds = ClientAuthUtils.getAutoCredentials(topologyConf);
+        subject = ClientAuthUtils.populateSubject(null, autoCreds, initCreds);
 
         Subject.doAs(subject, (PrivilegedExceptionAction<Object>)
             () -> loadWorker(topologyConf, stateStorage, stormClusterState, initCreds, initialCredentials)
@@ -168,7 +170,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                               Map<String, String> initCreds, Credentials initialCredentials)
         throws Exception {
         workerState = new WorkerState(conf, context, topologyId, assignmentId, supervisorPort, port, workerId,
-            topologyConf, stateStorage, stormClusterState, autoCreds);
+                                      topologyConf, stateStorage, stormClusterState, autoCreds);
 
         // Heartbeat here so that worker process dies if this fails
         // it's important that worker heartbeat to supervisor ASAP so that supervisor knows
@@ -190,7 +192,7 @@ public class Worker implements Shutdownable, DaemonCommon {
 
         workerState.executorHeartbeatTimer
             .scheduleRecurring(0, (Integer) conf.get(Config.EXECUTOR_METRICS_FREQUENCY_SECS),
-                Worker.this::doExecutorHeartbeats);
+                               Worker.this::doExecutorHeartbeats);
 
         workerState.registerCallbacks();
 
@@ -226,10 +228,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         executorsAtom.set(newExecutors);
 
         // This thread will send out messages destined for remote tasks (on other workers)
-        // If there are no remote tasks, don't start the thread.
-        Set<Integer> remoteTasks = Sets.difference(new HashSet<>( workerState.getOutboundTasks()),
-                new HashSet<>(workerState.getLocalTaskIds()));
-        if (!remoteTasks.isEmpty()) {
+        // If there are no remote outbound tasks, don't start the thread.
+        if (workerState.hasRemoteOutboundTasks()) {
             transferThread = workerState.makeTransferThread();
             transferThread.setName("Worker-Transfer");
         }
@@ -241,21 +241,22 @@ public class Worker implements Shutdownable, DaemonCommon {
         workerState.stormClusterState.credentials(topologyId, Worker.this::checkCredentialsChanged);
 
         workerState.refreshCredentialsTimer.scheduleRecurring(0,
-            (Integer) conf.get(Config.TASK_CREDENTIALS_POLL_SECS), () -> {
+                                                              (Integer) conf.get(Config.TASK_CREDENTIALS_POLL_SECS), () -> {
                 checkCredentialsChanged();
             });
 
         workerState.checkForUpdatedBlobsTimer.scheduleRecurring(0,
-            (Integer) conf.getOrDefault(Config.WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS, 10),
-            () -> {
-                try {
-                    LOG.debug("Checking if blobs have updated");
-                    updateBlobUpdates();
-                } catch (IOException e) {
-                    // IOException from reading the version files to be ignored
-                    LOG.error(e.getStackTrace().toString());
-                }
-            }
+                                                                (Integer) conf
+                                                                    .getOrDefault(Config.WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS, 10),
+                                                                () -> {
+                                                                    try {
+                                                                        LOG.debug("Checking if blobs have updated");
+                                                                        updateBlobUpdates();
+                                                                    } catch (IOException e) {
+                                                                        // IOException from reading the version files to be ignored
+                                                                        LOG.error(e.getStackTrace().toString());
+                                                                    }
+                                                                }
         );
 
         // The jitter allows the clients to get the data at different times, and avoids thundering herd
@@ -264,18 +265,20 @@ public class Worker implements Shutdownable, DaemonCommon {
         }
 
         workerState.refreshConnectionsTimer.scheduleRecurring(0,
-            (Integer) conf.get(Config.TASK_REFRESH_POLL_SECS), workerState::refreshConnections);
+                                                              (Integer) conf.get(Config.TASK_REFRESH_POLL_SECS),
+                                                              workerState::refreshConnections);
 
         workerState.resetLogLevelsTimer.scheduleRecurring(0,
-            (Integer) conf.get(Config.WORKER_LOG_LEVEL_RESET_POLL_SECS), logConfigManager::resetLogLevels);
+                                                          (Integer) conf.get(Config.WORKER_LOG_LEVEL_RESET_POLL_SECS),
+                                                          logConfigManager::resetLogLevels);
 
         workerState.refreshActiveTimer.scheduleRecurring(0, (Integer) conf.get(Config.TASK_REFRESH_POLL_SECS),
-            workerState::refreshStormActive);
+                                                         workerState::refreshStormActive);
 
         setupFlushTupleTimer(topologyConf, newExecutors);
         setupBackPressureCheckTimer(topologyConf);
 
-        LOG.info("Worker has topology config {}", Utils.redactValue(topologyConf, Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
+        LOG.info("Worker has topology config {}", ConfigUtils.maskPasswords(topologyConf));
         LOG.info("Worker {} for storm {} on {}:{}  has finished loading", workerId, topologyId, assignmentId, port);
         return this;
     }
@@ -286,33 +289,32 @@ public class Worker implements Shutdownable, DaemonCommon {
         final Long flushIntervalMillis = ObjectReader.getLong(topologyConf.get(Config.TOPOLOGY_BATCH_FLUSH_INTERVAL_MILLIS));
         if ((producerBatchSize == 1 && xferBatchSize == 1) || flushIntervalMillis == 0) {
             LOG.info("Flush Tuple generation disabled. producerBatchSize={}, xferBatchSize={}, flushIntervalMillis={}",
-                    producerBatchSize, xferBatchSize, flushIntervalMillis);
+                     producerBatchSize, xferBatchSize, flushIntervalMillis);
             return;
         }
 
         workerState.flushTupleTimer.scheduleRecurringMs(flushIntervalMillis, flushIntervalMillis,
-            () -> {
-                // send flush tuple to all local executors
-                for (int i = 0; i < executors.size(); i++) {
-                    IRunningExecutor exec = executors.get(i);
-                    if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID) {
-                        exec.publishFlushTuple();
-                    }
-                }
-            }
+                                                        () -> {
+                                                            // send flush tuple to all local executors
+                                                            for (int i = 0; i < executors.size(); i++) {
+                                                                IRunningExecutor exec = executors.get(i);
+                                                                if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID) {
+                                                                    exec.publishFlushTuple();
+                                                                }
+                                                            }
+                                                        }
         );
         LOG.info("Flush tuple will be generated every {} millis", flushIntervalMillis);
     }
 
     private void setupBackPressureCheckTimer(final Map<String, Object> topologyConf) {
-        final Integer workerCount = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_WORKERS));
-        if (workerCount <= 1) {
+        if (workerState.isSingleWorker()) {
             LOG.info("BackPressure change checking is disabled as there is only one worker");
             return;
         }
         final Long bpCheckIntervalMs = ObjectReader.getLong(topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_CHECK_MILLIS));
         workerState.backPressureCheckTimer.scheduleRecurringMs(bpCheckIntervalMs,
-                bpCheckIntervalMs, () -> workerState.refreshBackPressureStatus());
+                                                               bpCheckIntervalMs, () -> workerState.refreshBackPressureStatus());
         LOG.info("BackPressure status change checking will be performed every {} millis", bpCheckIntervalMs);
     }
 
@@ -328,9 +330,12 @@ public class Worker implements Shutdownable, DaemonCommon {
     public void doHeartBeat() throws IOException {
         LocalState state = ConfigUtils.workerState(workerState.conf, workerState.workerId);
         LSWorkerHeartbeat lsWorkerHeartbeat = new LSWorkerHeartbeat(Time.currentTimeSecs(), workerState.topologyId,
-            workerState.localExecutors.stream()
-                .map(executor -> new ExecutorInfo(executor.get(0).intValue(), executor.get(1).intValue()))
-                .collect(Collectors.toList()), workerState.port);
+                                                                    workerState.localExecutors.stream()
+                                                                                              .map(executor -> new ExecutorInfo(
+                                                                                                  executor.get(0).intValue(),
+                                                                                                  executor.get(1).intValue()))
+                                                                                              .collect(Collectors.toList()),
+                                                                    workerState.port);
         state.setWorkerHeartBeat(lsWorkerHeartbeat);
         state.cleanup(60); // this is just in case supervisor is down so that disk doesn't fill up.
         // it shouldn't take supervisor 120 seconds between listing dir and reading it
@@ -341,16 +346,17 @@ public class Worker implements Shutdownable, DaemonCommon {
         Map<List<Integer>, ExecutorStats> stats;
         List<IRunningExecutor> executors = this.executorsAtom.get();
         if (null == executors) {
-            stats = StatsUtil.mkEmptyExecutorZkHbs(workerState.localExecutors);
+            stats = ClientStatsUtil.mkEmptyExecutorZkHbs(workerState.localExecutors);
         } else {
-            stats = StatsUtil.convertExecutorZkHbs(executors.stream().collect(Collectors
-                .toMap(IRunningExecutor::getExecutorId, IRunningExecutor::renderStats)));
+            stats = ClientStatsUtil.convertExecutorZkHbs(executors.stream().collect(Collectors
+                                                                                  .toMap(IRunningExecutor::getExecutorId,
+                                                                                         IRunningExecutor::renderStats)));
         }
-        Map<String, Object> zkHB = StatsUtil.mkZkWorkerHb(workerState.topologyId, stats, workerState.uptime.upTime());
+        Map<String, Object> zkHB = ClientStatsUtil.mkZkWorkerHb(workerState.topologyId, stats, workerState.uptime.upTime());
         try {
             workerState.stormClusterState
                 .workerHeartbeat(workerState.topologyId, workerState.assignmentId, (long) workerState.port,
-                    StatsUtil.thriftifyZkWorkerHb(zkHB));
+                                 ClientStatsUtil.thriftifyZkWorkerHb(zkHB));
         } catch (Exception ex) {
             LOG.error("Worker failed to write heartbeats to ZK or Pacemaker...will retry", ex);
         }
@@ -359,7 +365,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     public Map<String, Long> getCurrentBlobVersions() throws IOException {
         Map<String, Long> results = new HashMap<>();
         Map<String, Map<String, Object>> blobstoreMap =
-                (Map<String, Map<String, Object>>) workerState.getTopologyConf().get(Config.TOPOLOGY_BLOBSTORE_MAP);
+            (Map<String, Map<String, Object>>) workerState.getTopologyConf().get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobstoreMap != null) {
             String stormRoot = ConfigUtils.supervisorStormDistRoot(workerState.getTopologyConf(), workerState.getTopologyId());
             for (Map.Entry<String, Map<String, Object>> entry : blobstoreMap.entrySet()) {
@@ -385,12 +391,11 @@ public class Worker implements Shutdownable, DaemonCommon {
         LOG.debug("Latest versions for blobs {}", latestBlobVersions);
     }
 
-
     public void checkCredentialsChanged() {
         Credentials newCreds = workerState.stormClusterState.credentials(topologyId, null);
         if (!ObjectUtils.equals(newCreds, credentialsAtom.get())) {
             // This does not have to be atomic, worst case we update when one is not needed
-            AuthUtils.updateSubject(subject, autoCreds, (null == newCreds) ? null : newCreds.get_creds());
+            ClientAuthUtils.updateSubject(subject, autoCreds, (null == newCreds) ? null : newCreds.get_creds());
             for (IRunningExecutor executor : executorsAtom.get()) {
                 executor.credentialsChanged(newCreds);
             }
@@ -417,7 +422,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         }
         //In distributed mode, send heartbeat directly to master if local supervisor goes down.
         SupervisorWorkerHeartbeat workerHeartbeat = new SupervisorWorkerHeartbeat(lsWorkerHeartbeat.get_topology_id(),
-                lsWorkerHeartbeat.get_executors(), lsWorkerHeartbeat.get_time_secs());
+                                                                                  lsWorkerHeartbeat.get_executors(),
+                                                                                  lsWorkerHeartbeat.get_time_secs());
         try (SupervisorClient client = SupervisorClient.getConfiguredClient(conf, Utils.hostname(), supervisorPort)) {
             client.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
         } catch (Exception tr1) {
@@ -427,7 +433,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                 nimbusClient.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
             } catch (Exception tr2) {
                 //if any error/exception thrown, just ignore.
-                LOG.error("Exception when send heartbeat to master",  tr2.getMessage());
+                LOG.error("Exception when send heartbeat to master", tr2.getMessage());
             }
         }
     }
@@ -449,12 +455,8 @@ public class Worker implements Shutdownable, DaemonCommon {
             }
             LOG.info("Shut down executors");
 
-            // this is fine because the only time this is shared is when it's a local context,
-            // in which case it's a noop
-            workerState.mqContext.term();
             LOG.info("Shutting down transfer thread");
             workerState.haltWorkerTransfer();
-
 
             if (transferThread != null) {
                 transferThread.interrupt();
@@ -473,6 +475,11 @@ public class Worker implements Shutdownable, DaemonCommon {
             workerState.resetLogLevelsTimer.close();
             workerState.flushTupleTimer.close();
             workerState.backPressureCheckTimer.close();
+            
+            // this is fine because the only time this is shared is when it's a local context,
+            // in which case it's a noop
+            workerState.mqContext.term();
+            
             workerState.closeResources();
 
             StormMetricRegistry.stop();
@@ -494,29 +501,13 @@ public class Worker implements Shutdownable, DaemonCommon {
     @Override
     public boolean isWaiting() {
         return workerState.heartbeatTimer.isTimerWaiting()
-            && workerState.refreshConnectionsTimer.isTimerWaiting()
-            && workerState.refreshLoadTimer.isTimerWaiting()
-            && workerState.refreshCredentialsTimer.isTimerWaiting()
-            && workerState.checkForUpdatedBlobsTimer.isTimerWaiting()
-            && workerState.refreshActiveTimer.isTimerWaiting()
-            && workerState.executorHeartbeatTimer.isTimerWaiting()
-            && workerState.userTimer.isTimerWaiting()
-            && workerState.flushTupleTimer.isTimerWaiting();
-    }
-
-    public static void main(String[] args) throws Exception {
-        Preconditions.checkArgument(args.length == 5, "Illegal number of arguments. Expected: 5, Actual: " + args.length);
-        String stormId = args[0];
-        String assignmentId = args[1];
-        String supervisorPort = args[2];
-        String portStr = args[3];
-        String workerId = args[4];
-        Map<String, Object> conf = Utils.readStormConfig();
-        Utils.setupDefaultUncaughtExceptionHandler();
-        StormCommon.validateDistributedMode(conf);
-        Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(supervisorPort),
-                Integer.parseInt(portStr), workerId);
-        worker.start();
-        Utils.addShutdownHookWithForceKillIn1Sec(worker::shutdown);
+               && workerState.refreshConnectionsTimer.isTimerWaiting()
+               && workerState.refreshLoadTimer.isTimerWaiting()
+               && workerState.refreshCredentialsTimer.isTimerWaiting()
+               && workerState.checkForUpdatedBlobsTimer.isTimerWaiting()
+               && workerState.refreshActiveTimer.isTimerWaiting()
+               && workerState.executorHeartbeatTimer.isTimerWaiting()
+               && workerState.userTimer.isTimerWaiting()
+               && workerState.flushTupleTimer.isTimerWaiting();
     }
 }

@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.starter;
 
 import java.util.Arrays;
@@ -23,7 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.coordination.BatchOutputCollector;
@@ -70,6 +64,34 @@ public class ReachTopology {
         put("mike", Arrays.asList("john", "bob"));
         put("john", Arrays.asList("alice", "nathan", "jim", "mike", "bob"));
     }};
+
+    public static LinearDRPCTopologyBuilder construct() {
+        LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder("reach");
+        builder.addBolt(new GetTweeters(), 4);
+        builder.addBolt(new GetFollowers(), 12).shuffleGrouping();
+        builder.addBolt(new PartialUniquer(), 6).fieldsGrouping(new Fields("id", "follower"));
+        builder.addBolt(new CountAggregator(), 3).fieldsGrouping(new Fields("id"));
+        return builder;
+    }
+
+    public static void main(String[] args) throws Exception {
+        LinearDRPCTopologyBuilder builder = construct();
+
+        Config conf = new Config();
+        conf.setNumWorkers(6);
+        String topoName = "reach-drpc";
+        if (args.length > 0) {
+            topoName = args[0];
+        }
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createRemoteTopology());
+
+        try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {
+            String[] urlsToTry = new String[]{ "foo.com/blog/1", "engineering.twitter.com/blog/5", "notaurl.com" };
+            for (String url : urlsToTry) {
+                System.out.println("Reach of " + url + ": " + drpc.execute("reach", url));
+            }
+        }
+    }
 
     public static class GetTweeters extends BaseBasicBolt {
         @Override
@@ -160,34 +182,6 @@ public class ReachTopology {
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
             declarer.declare(new Fields("id", "reach"));
-        }
-    }
-
-    public static LinearDRPCTopologyBuilder construct() {
-        LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder("reach");
-        builder.addBolt(new GetTweeters(), 4);
-        builder.addBolt(new GetFollowers(), 12).shuffleGrouping();
-        builder.addBolt(new PartialUniquer(), 6).fieldsGrouping(new Fields("id", "follower"));
-        builder.addBolt(new CountAggregator(), 3).fieldsGrouping(new Fields("id"));
-        return builder;
-    }
-
-    public static void main(String[] args) throws Exception {
-        LinearDRPCTopologyBuilder builder = construct();
-
-        Config conf = new Config();
-        conf.setNumWorkers(6);
-        String topoName = "reach-drpc";
-        if (args.length > 0) {
-            topoName = args[0];
-        }
-        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createRemoteTopology());
-
-        try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {
-            String[] urlsToTry = new String[]{ "foo.com/blog/1", "engineering.twitter.com/blog/5", "notaurl.com" };
-            for (String url : urlsToTry) {
-                System.out.println("Reach of " + url + ": " + drpc.execute("reach", url));
-            }
         }
     }
 }

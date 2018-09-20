@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.bolt;
 
 import static java.util.Objects.requireNonNull;
@@ -38,7 +39,7 @@ public class EsIndexBolt extends AbstractEsBolt {
     private final EsTupleMapper tupleMapper;
 
     /**
-     * EsIndexBolt constructor
+     * EsIndexBolt constructor.
      * @param esConfig Elasticsearch configuration containing node addresses {@link EsConfig}
      */
     public EsIndexBolt(EsConfig esConfig) {
@@ -46,7 +47,7 @@ public class EsIndexBolt extends AbstractEsBolt {
     }
 
     /**
-     * EsIndexBolt constructor
+     * EsIndexBolt constructor.
      * @param esConfig Elasticsearch configuration containing node addresses {@link EsConfig}
      * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
      */

@@ -1,22 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.executor;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.storm.Constants;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.Task;
@@ -34,9 +31,6 @@ import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
 
@@ -67,7 +61,8 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
     @Override
     public void credentialsChanged(Credentials credentials) {
         TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), new Values(credentials),
-                Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID, Constants.CREDENTIALS_CHANGED_STREAM_ID);
+                                        Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID,
+                                        Constants.CREDENTIALS_CHANGED_STREAM_ID);
         AddressedTuple addressedTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
         try {
             executor.getReceiveQueue().publish(addressedTuple);
@@ -95,7 +90,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
     public void shutdown() {
         try {
             LOG.info("Shutting down executor " + executor.getComponentId() + ":" + executor.getExecutorId());
-            executor.getReceiveQueue().haltWithInterrupt();
+            executor.getReceiveQueue().close();
             for (Utils.SmartThread t : threads) {
                 t.interrupt();
             }
@@ -105,8 +100,9 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
             }
             executor.getStats().cleanupStats();
             for (Task task : taskDatas) {
-                if (task==null)
+                if (task == null) {
                     continue;
+                }
                 TopologyContext userContext = task.getUserContext();
                 for (ITaskHook hook : userContext.getHooks()) {
                     hook.cleanup();
@@ -115,8 +111,9 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
             executor.getStormClusterState().disconnect();
             if (executor.getOpenOrPrepareWasCalled().get()) {
                 for (Task task : taskDatas) {
-                    if (task==null)
+                    if (task == null) {
                         continue;
+                    }
                     Object object = task.getTaskObject();
                     if (object instanceof ISpout) {
                         ((ISpout) object).close();

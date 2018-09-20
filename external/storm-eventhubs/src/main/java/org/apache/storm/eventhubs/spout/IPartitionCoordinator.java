@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import java.util.List;
 
 public interface IPartitionCoordinator {
 
-  List<IPartitionManager> getMyPartitionManagers();
+    List<IPartitionManager> getMyPartitionManagers();
 
-  IPartitionManager getPartitionManager(String partitionId);
+    IPartitionManager getPartitionManager(String partitionId);
 }

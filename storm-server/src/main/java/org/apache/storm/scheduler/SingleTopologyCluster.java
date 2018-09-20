@@ -27,7 +27,7 @@ public class SingleTopologyCluster extends Cluster {
     /**
      * Create a new cluster that only allows modifications to a single topology.
      *
-     * @param other the current cluster to base this off of
+     * @param other      the current cluster to base this off of
      * @param topologyId the topology that is allowed to be modified.
      */
     public SingleTopologyCluster(Cluster other, String topologyId) {

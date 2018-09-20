@@ -24,6 +24,7 @@ import javax.ws.rs.core.Response;
 import org.apache.storm.daemon.logviewer.utils.LogFileDownloader;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.metric.StormMetricsRegistry;
 
 public class LogviewerLogDownloadHandler {
 
@@ -37,10 +38,12 @@ public class LogviewerLogDownloadHandler {
      * @param daemonLogRoot root daemon log directory
      * @param workerLogs {@link WorkerLogs}
      * @param resourceAuthorizer {@link ResourceAuthorizer}
+     * @param metricsRegistry The logviewer metrics registry
      */
-    public LogviewerLogDownloadHandler(String logRoot, String daemonLogRoot, WorkerLogs workerLogs, ResourceAuthorizer resourceAuthorizer) {
+    public LogviewerLogDownloadHandler(String logRoot, String daemonLogRoot, WorkerLogs workerLogs,
+        ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
         this.workerLogs = workerLogs;
-        this.logFileDownloadHelper = new LogFileDownloader(logRoot, daemonLogRoot, resourceAuthorizer);
+        this.logFileDownloadHelper = new LogFileDownloader(logRoot, daemonLogRoot, resourceAuthorizer, metricsRegistry);
     }
 
     /**

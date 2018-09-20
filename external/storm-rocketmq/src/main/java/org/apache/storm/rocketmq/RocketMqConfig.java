@@ -23,28 +23,20 @@ import static org.apache.storm.rocketmq.RocketMqUtils.getInteger;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
-import org.apache.rocketmq.remoting.common.RemotingUtil;
 
 /**
  * RocketMqConfig for Consumer/Producer.
  */
 public class RocketMqConfig {
     // common
-    public static final String NAME_SERVER_ADDR = "nameserver.addr"; // Required
-
-    public static final String CLIENT_NAME = "client.name";
-
-    public static final String CLIENT_IP = "client.ip";
-    public static final String DEFAULT_CLIENT_IP = RemotingUtil.getLocalAddress();
-
-    public static final String CLIENT_CALLBACK_EXECUTOR_THREADS = "client.callback.executor.threads";
-    public static final int DEFAULT_CLIENT_CALLBACK_EXECUTOR_THREADS = Runtime.getRuntime().availableProcessors();
+    public static final String NAME_SERVER_ADDR = "nameserver.address"; // Required
 
     public static final String NAME_SERVER_POLL_INTERVAL = "nameserver.poll.interval";
     public static final int DEFAULT_NAME_SERVER_POLL_INTERVAL = 30000; // 30 seconds
@@ -57,7 +49,7 @@ public class RocketMqConfig {
     public static final String PRODUCER_GROUP = "producer.group";
 
     public static final String PRODUCER_RETRY_TIMES = "producer.retry.times";
-    public static final int DEFAULT_PRODUCER_RETRY_TIMES = 2;
+    public static final int DEFAULT_PRODUCER_RETRY_TIMES = 3;
 
     public static final String PRODUCER_TIMEOUT = "producer.timeout";
     public static final int DEFAULT_PRODUCER_TIMEOUT = 3000; // 3 seconds
@@ -69,12 +61,13 @@ public class RocketMqConfig {
     public static final String CONSUMER_TOPIC = "consumer.topic"; // Required
 
     public static final String CONSUMER_TAG = "consumer.tag";
-    public static final String DEFAULT_TAG = "*";
+    public static final String DEFAULT_CONSUMER_TAG = "*";
 
     public static final String CONSUMER_OFFSET_RESET_TO = "consumer.offset.reset.to";
     public static final String CONSUMER_OFFSET_LATEST = "latest";
     public static final String CONSUMER_OFFSET_EARLIEST = "earliest";
     public static final String CONSUMER_OFFSET_TIMESTAMP = "timestamp";
+    public static final String CONSUMER_OFFSET_FROM_TIMESTAMP = "consumer.offset.from.timestamp";
 
     public static final String CONSUMER_MESSAGES_ORDERLY = "consumer.messages.orderly";
 
@@ -87,6 +80,13 @@ public class RocketMqConfig {
     public static final String CONSUMER_MAX_THREADS = "consumer.max.threads";
     public static final int DEFAULT_CONSUMER_MAX_THREADS = 64;
 
+    public static final String CONSUMER_CALLBACK_EXECUTOR_THREADS = "consumer.callback.executor.threads";
+    public static final int DEFAULT_CONSUMER_CALLBACK_EXECUTOR_THREADS = Runtime.getRuntime().availableProcessors();
+
+    public static final String CONSUMER_BATCH_SIZE = "consumer.batch.size";
+    public static final int DEFAULT_CONSUMER_BATCH_SIZE = 32;
+
+    public static final String CONSUMER_BATCH_PROCESS_TIMEOUT = "consumer.batch.process.timeout";
 
     /**
      * Build Producer Configs.
@@ -96,10 +96,11 @@ public class RocketMqConfig {
     public static void buildProducerConfigs(Properties props, DefaultMQProducer producer) {
         buildCommonConfigs(props, producer);
 
-        // According to the RocketMQ official docs, "only one instance is allowed per producer group"
-        // So, we use UUID as the producer group by default, to allow many producer instances for one topic
-        String defaultGroup = UUID.randomUUID().toString();
-        producer.setProducerGroup(props.getProperty(PRODUCER_GROUP, defaultGroup));
+        String group = props.getProperty(PRODUCER_GROUP);
+        if (StringUtils.isEmpty(group)) {
+            group = UUID.randomUUID().toString();
+        }
+        producer.setProducerGroup(props.getProperty(PRODUCER_GROUP, group));
 
         producer.setRetryTimesWhenSendFailed(getInteger(props,
                 PRODUCER_RETRY_TIMES, DEFAULT_PRODUCER_RETRY_TIMES));
@@ -121,12 +122,18 @@ public class RocketMqConfig {
         Validate.notEmpty(group);
         consumer.setConsumerGroup(group);
 
+        consumer.setPullBatchSize(getInteger(props,
+            CONSUMER_BATCH_SIZE, DEFAULT_CONSUMER_BATCH_SIZE));
+
         consumer.setPersistConsumerOffsetInterval(getInteger(props,
                 CONSUMER_OFFSET_PERSIST_INTERVAL, DEFAULT_CONSUMER_OFFSET_PERSIST_INTERVAL));
         consumer.setConsumeThreadMin(getInteger(props,
                 CONSUMER_MIN_THREADS, DEFAULT_CONSUMER_MIN_THREADS));
         consumer.setConsumeThreadMax(getInteger(props,
                 CONSUMER_MAX_THREADS, DEFAULT_CONSUMER_MAX_THREADS));
+
+        consumer.setClientCallbackExecutorThreads(getInteger(props,
+            CONSUMER_CALLBACK_EXECUTOR_THREADS, DEFAULT_CONSUMER_CALLBACK_EXECUTOR_THREADS));
 
         String initOffset = props.getProperty(CONSUMER_OFFSET_RESET_TO, CONSUMER_OFFSET_LATEST);
         switch (initOffset) {
@@ -137,7 +144,8 @@ public class RocketMqConfig {
                 consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
                 break;
             case CONSUMER_OFFSET_TIMESTAMP:
-                consumer.setConsumeTimestamp(initOffset);
+                String timestamp = props.getProperty(CONSUMER_OFFSET_FROM_TIMESTAMP);
+                consumer.setConsumeTimestamp(timestamp);
                 break;
             default:
                 consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
@@ -146,7 +154,7 @@ public class RocketMqConfig {
         String topic = props.getProperty(CONSUMER_TOPIC);
         Validate.notEmpty(topic);
         try {
-            consumer.subscribe(topic, props.getProperty(CONSUMER_TAG, DEFAULT_TAG));
+            consumer.subscribe(topic, props.getProperty(CONSUMER_TAG, DEFAULT_CONSUMER_TAG));
         } catch (MQClientException e) {
             throw new IllegalArgumentException(e);
         }
@@ -158,19 +166,11 @@ public class RocketMqConfig {
      * @param client ClientConfig
      */
     public static void buildCommonConfigs(Properties props, ClientConfig client) {
-        String namesvr = props.getProperty(NAME_SERVER_ADDR);
-        Validate.notEmpty(namesvr);
-        client.setNamesrvAddr(namesvr);
+        String nameServers = props.getProperty(NAME_SERVER_ADDR);
+        Validate.notEmpty(nameServers);
+        client.setNamesrvAddr(nameServers);
 
-        client.setClientIP(props.getProperty(CLIENT_IP, DEFAULT_CLIENT_IP));
-        // According to the RocketMQ official docs, "only one instance is allowed per machine"
-        // So, we use UUID as the client name by default, to allow RocketMQ spout/bolt instances in one machine.
-        String defaultClientName = UUID.randomUUID().toString();
-        client.setInstanceName(props.getProperty(CLIENT_NAME, defaultClientName));
-
-        client.setClientCallbackExecutorThreads(getInteger(props,
-                CLIENT_CALLBACK_EXECUTOR_THREADS, DEFAULT_CLIENT_CALLBACK_EXECUTOR_THREADS));
-        client.setPollNameServerInteval(getInteger(props,
+        client.setPollNameServerInterval(getInteger(props,
                 NAME_SERVER_POLL_INTERVAL, DEFAULT_NAME_SERVER_POLL_INTERVAL));
         client.setHeartbeatBrokerInterval(getInteger(props,
                 BROKER_HEART_BEAT_INTERVAL, DEFAULT_BROKER_HEART_BEAT_INTERVAL));

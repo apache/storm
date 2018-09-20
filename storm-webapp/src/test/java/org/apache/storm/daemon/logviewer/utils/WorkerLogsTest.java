@@ -32,6 +32,7 @@ import java.util.Optional;
 import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
 import org.apache.storm.daemon.logviewer.testsupport.MockFileBuilder;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Utils;
 import org.junit.Test;
 
@@ -53,7 +54,7 @@ public class WorkerLogsTest {
             SupervisorUtils.setInstance(mockedSupervisorUtils);
 
             Map<String, Object> stormConf = Utils.readStormConfig();
-            WorkerLogs workerLogs = new WorkerLogs(stormConf, port1Dir) {
+            WorkerLogs workerLogs = new WorkerLogs(stormConf, port1Dir, new StormMetricsRegistry()) {
                 @Override
                 public Optional<File> getMetadataFileForWorkerLogDir(File logDir) throws IOException {
                     return Optional.of(mockMetaFile);

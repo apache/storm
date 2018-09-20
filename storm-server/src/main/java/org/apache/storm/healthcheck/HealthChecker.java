@@ -18,12 +18,6 @@
 
 package org.apache.storm.healthcheck;
 
-import org.apache.storm.DaemonConfig;
-import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.ServerConfigUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -32,6 +26,11 @@ import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerConfigUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HealthChecker {
 
@@ -50,8 +49,9 @@ public class HealthChecker {
             if (parentFile.exists()) {
                 File[] list = parentFile.listFiles();
                 for (File f : list) {
-                    if (!f.isDirectory() && f.canExecute())
+                    if (!f.isDirectory() && f.canExecute()) {
                         healthScripts.add(f.getAbsolutePath());
+                    }
                 }
             }
             for (String script : healthScripts) {
@@ -66,7 +66,7 @@ public class HealthChecker {
         // to execute properly, not that the system is unhealthy, in which case
         // we don't want to start killing things.
 
-        if (results.contains(FAILED)|| results.contains(FAILED_WITH_EXIT_CODE)
+        if (results.contains(FAILED) || results.contains(FAILED_WITH_EXIT_CODE)
             || results.contains(TIMEOUT)) {
             LOG.warn("The supervisor healthchecks failed!!!");
             return 1;
@@ -120,8 +120,9 @@ public class HealthChecker {
             LOG.warn("Script failed with exception: ", e);
             return FAILED_WITH_EXIT_CODE;
         } finally {
-            if (interruptThread != null)
+            if (interruptThread != null) {
                 interruptThread.interrupt();
+            }
         }
     }
 
