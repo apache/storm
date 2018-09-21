@@ -600,7 +600,7 @@
                             <execution>
                                 <id>attach-javadocs</id>
                                 <goals>
-                                    <goal>jar-no-fork</goal>
+                                    <goal>javadoc-no-fork</goal>
                                 </goals>
                             </execution>
                             <execution>
