@@ -231,10 +231,10 @@ public class UtilsTest {
         versions.put(key, System.getProperty("java.class.path"));
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, versions);
-        NavigableMap<String, String> alternativeVersions = Utils.getAlternativeVersionsMap(conf);
+        NavigableMap<String, IVersionInfo> alternativeVersions = Utils.getAlternativeVersionsMap(conf);
         assertEquals(1, alternativeVersions.size());
-        String found = alternativeVersions.get(key);
+        IVersionInfo found = alternativeVersions.get(key);
         assertNotNull(found);
-        assertEquals(key, found);
+        assertEquals(key, found.getVersion());
     }
 }

@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import org.slf4j.Logger;
@@ -39,8 +38,8 @@ import org.slf4j.LoggerFactory;
 public final class VersionInfo {
     private static final Logger LOG = LoggerFactory.getLogger(VersionInfo.class);
     private static final String STORM_CORE_PROPERTIES_NAME = "storm-core-version-info.properties";
-    private static final VersionInfoImpl COMMON_VERSION_INFO = new VersionInfoImpl("storm-core");
-    public static final SimpleVersion OUR_VERSION = new SimpleVersion(COMMON_VERSION_INFO.getVersion());
+    public static final IVersionInfo OUR_FULL_VERSION = new VersionInfoImpl("storm-core");
+    public static final SimpleVersion OUR_VERSION = new SimpleVersion(OUR_FULL_VERSION.getVersion());
 
     private static class VersionInfoImpl implements IVersionInfo {
         private Properties info;
@@ -169,7 +168,7 @@ public final class VersionInfo {
      * @return the version number of the build.
      */
     public static String getVersion() {
-        return COMMON_VERSION_INFO.getVersion();
+        return OUR_FULL_VERSION.getVersion();
     }
 
     /**
@@ -177,7 +176,7 @@ public final class VersionInfo {
      * @return the SCM revision number of the build.
      */
     public static String getRevision() {
-        return COMMON_VERSION_INFO.getRevision();
+        return OUR_FULL_VERSION.getRevision();
     }
 
     /**
@@ -185,7 +184,7 @@ public final class VersionInfo {
      * @return the SCM branch of the build.
      */
     public static String getBranch() {
-        return COMMON_VERSION_INFO.getBranch();
+        return OUR_FULL_VERSION.getBranch();
     }
 
     /**
@@ -193,7 +192,7 @@ public final class VersionInfo {
      * @return the date/time of the build.
      */
     public static String getDate() {
-        return COMMON_VERSION_INFO.getDate();
+        return OUR_FULL_VERSION.getDate();
     }
 
     /**
@@ -201,7 +200,7 @@ public final class VersionInfo {
      * @return the name of the user that did the build.
      */
     public static String getUser() {
-        return COMMON_VERSION_INFO.getUser();
+        return OUR_FULL_VERSION.getUser();
     }
 
     /**
@@ -209,7 +208,7 @@ public final class VersionInfo {
      * @return the SCM URL of the build.
      */
     public static String getUrl() {
-        return COMMON_VERSION_INFO.getUrl();
+        return OUR_FULL_VERSION.getUrl();
     }
 
     /**
@@ -217,7 +216,7 @@ public final class VersionInfo {
      * @return the checksum of the source.
      */
     public static String getSrcChecksum() {
-        return COMMON_VERSION_INFO.getSrcChecksum();
+        return OUR_FULL_VERSION.getSrcChecksum();
     }
 
     /**
@@ -225,7 +224,7 @@ public final class VersionInfo {
      * @return a descriptive representation of the build.
      */
     public static String getBuildVersion() {
-        return COMMON_VERSION_INFO.getBuildVersion();
+        return OUR_FULL_VERSION.getBuildVersion();
     }
 
     public static void main(String[] args) {

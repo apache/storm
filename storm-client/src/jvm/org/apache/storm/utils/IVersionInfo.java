@@ -21,7 +21,7 @@ package org.apache.storm.utils;
 /**
  * Implementation of VersionInfo that uses a properties file to get the VersionInfo.
  */
-interface IVersionInfo {
+public interface IVersionInfo {
     /**
      * Get the version number of the build.
      * @return the version number of the build.

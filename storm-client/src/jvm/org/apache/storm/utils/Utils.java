@@ -1462,17 +1462,57 @@ public class Utils {
      * @param conf what to read the configuration out of.
      * @return the map.
      */
-    public static NavigableMap<String, String> getAlternativeVersionsMap(Map<String, Object> conf) {
-        TreeMap<String, String> ret = new TreeMap<>();
+    public static NavigableMap<String, IVersionInfo> getAlternativeVersionsMap(Map<String, Object> conf) {
+        TreeMap<String, IVersionInfo> ret = new TreeMap<>();
         Map<String, String> fromConf =
             (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections.emptyMap());
         for (Map.Entry<String, String> entry : fromConf.entrySet()) {
             IVersionInfo version = VersionInfo.getFromClasspath(entry.getValue());
             if (version != null) {
-                ret.put(entry.getKey(), version.getVersion());
+                ret.put(entry.getKey(), version);
             } else {
                 LOG.error("Could not find the real version of {} from CP {}", entry.getKey(), entry.getValue());
-                ret.put(entry.getKey(), "Unknown");
+                ret.put(entry.getKey(), new IVersionInfo() {
+                    @Override
+                    public String getVersion() {
+                        return "Unknown";
+                    }
+
+                    @Override
+                    public String getRevision() {
+                        return "Unknown";
+                    }
+
+                    @Override
+                    public String getBranch() {
+                        return "Unknown";
+                    }
+
+                    @Override
+                    public String getDate() {
+                        return "Unknown";
+                    }
+
+                    @Override
+                    public String getUser() {
+                        return "Unknown";
+                    }
+
+                    @Override
+                    public String getUrl() {
+                        return "Unknown";
+                    }
+
+                    @Override
+                    public String getSrcChecksum() {
+                        return "Unknown";
+                    }
+
+                    @Override
+                    public String getBuildVersion() {
+                        return "Unknown";
+                    }
+                });
             }
         }
         return ret;

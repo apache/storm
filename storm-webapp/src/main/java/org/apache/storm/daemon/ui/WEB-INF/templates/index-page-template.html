@@ -57,9 +57,26 @@
   </thead>
   <tbody>
     <tr>
-      <td>{{stormVersion}}
+      <td>
+          <div data-toggle="toggle">
+            {{#stormVersionInfo}}
+            <a toggle="link">{{version}}</a>
+            <div toggle="details">
+              URL: {{url}}
+              </br>Revision: {{revision}}
+              </br>Compiled from branch {{branch}} by {{user}} on {{date}}
+            </div>
+          </div>
+          {{/stormVersionInfo}}
           {{#alternativeWorkerVersions}}
-          </br>Topologies matching {{versionMatch}} will run under {{installedVersion}}.
+          <div data-toggle="toggle">
+              Topologies matching {{versionMatch}} will run under <a toggle="link">{{version}}</a>.
+              <div toggle="details">
+                  URL: {{url}}
+                  </br>Revision: {{revision}}
+                  </br>Compiled from branch {{branch}} by {{user}} on {{date}}
+              </div>
+          </div>
           {{/alternativeWorkerVersions}}
       </td>
       <td>{{supervisors}}</td>

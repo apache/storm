@@ -87,6 +87,7 @@ import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.thrift.TException;
+import org.apache.storm.utils.IVersionInfo;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.TopologySpoutLag;
 import org.apache.storm.utils.Utils;
@@ -520,7 +521,21 @@ public class UIHelpers {
         return responseBuilder.build();
     }
 
-    private static final AtomicReference<List<Map<String, String>>> MEMORIZED_VERSIONS = new AtomicReference<List<Map<String, String>>>();
+    private static final AtomicReference<List<Map<String, String>>> MEMORIZED_VERSIONS = new AtomicReference<>();
+    private static final AtomicReference<Map<String, String>> MEMORIZED_FULL_VERSION = new AtomicReference<>();
+
+
+    private static Map<String, String> toJsonStruct(IVersionInfo info) {
+        Map<String, String> ret = new HashMap<>();
+        ret.put("version", info.getVersion());
+        ret.put("revision", info.getRevision());
+        ret.put("branch", info.getBranch());
+        ret.put("date", info.getDate());
+        ret.put("user", info.getUser());
+        ret.put("url", info.getUrl());
+        ret.put("srcChecksum", info.getSrcChecksum());
+        return ret;
+    }
 
     /**
      * Converts thrift call result into map fit for UI/api.
@@ -565,12 +580,11 @@ public class UIHelpers {
 
         if (MEMORIZED_VERSIONS.get() == null) {
             //Races are okay this is just to avoid extra work for each page load.
-            NavigableMap<String, String> versionsMap = Utils.getAlternativeVersionsMap(conf);
+            NavigableMap<String, IVersionInfo> versionsMap = Utils.getAlternativeVersionsMap(conf);
             List<Map<String, String>> versionList = new ArrayList<>();
-            for (Map.Entry<String, String> entry : versionsMap.entrySet()) {
-                Map<String, String> single = new HashMap<>();
+            for (Map.Entry<String, IVersionInfo> entry : versionsMap.entrySet()) {
+                Map<String, String> single = new HashMap<>(toJsonStruct(entry.getValue()));
                 single.put("versionMatch", entry.getKey());
-                single.put("installedVersion", entry.getValue());
                 versionList.add(single);
             }
             MEMORIZED_VERSIONS.set(versionList);
@@ -580,8 +594,13 @@ public class UIHelpers {
             result.put("alternativeWorkerVersions", versions);
         }
 
+        if (MEMORIZED_FULL_VERSION.get() == null) {
+            MEMORIZED_FULL_VERSION.set(toJsonStruct(VersionInfo.OUR_FULL_VERSION));
+        }
+
         result.put("user", user);
         result.put("stormVersion", VersionInfo.getVersion());
+        result.put("stormVersionInfo", MEMORIZED_FULL_VERSION.get());
         result.put("supervisors", supervisorSummaries.size());
         result.put("topologies", clusterSummary.get_topologies_size());
         result.put("slotsUsed", usedSlots);
