@@ -248,7 +248,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Meter beginFileUploadCalls;
     private final Meter uploadChunkCalls;
     private final Meter finishFileUploadCalls;
-    private final Meter beginFileDownloadCalls;
     private final Meter downloadChunkCalls;
     private final Meter getNimbusConfCalls;
     private final Meter getLogConfigCalls;
@@ -263,7 +262,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Meter getTopologyPageInfoCalls;
     private final Meter getSupervisorPageInfoCalls;
     private final Meter getComponentPageInfoCalls;
-    private final Histogram scheduleTopologyTimeMs;
     private final Meter getOwnerResourceSummariesCalls;
     private final Meter shutdownCalls;
     private final Meter processWorkerMetricsCalls;
@@ -494,7 +492,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.beginFileUploadCalls = metricsRegistry.registerMeter("nimbus:num-beginFileUpload-calls");
         this.uploadChunkCalls = metricsRegistry.registerMeter("nimbus:num-uploadChunk-calls");
         this.finishFileUploadCalls = metricsRegistry.registerMeter("nimbus:num-finishFileUpload-calls");
-        this.beginFileDownloadCalls = metricsRegistry.registerMeter("nimbus:num-beginFileDownload-calls");
         this.downloadChunkCalls = metricsRegistry.registerMeter("nimbus:num-downloadChunk-calls");
         this.getNimbusConfCalls = metricsRegistry.registerMeter("nimbus:num-getNimbusConf-calls");
         this.getLogConfigCalls = metricsRegistry.registerMeter("nimbus:num-getLogConfig-calls");
@@ -510,7 +507,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.getTopologyPageInfoCalls = metricsRegistry.registerMeter("nimbus:num-getTopologyPageInfo-calls");
         this.getSupervisorPageInfoCalls = metricsRegistry.registerMeter("nimbus:num-getSupervisorPageInfo-calls");
         this.getComponentPageInfoCalls = metricsRegistry.registerMeter("nimbus:num-getComponentPageInfo-calls");
-        this.scheduleTopologyTimeMs = metricsRegistry.registerHistogram("nimbus:time-scheduleTopology-ms");
         this.getOwnerResourceSummariesCalls = metricsRegistry.registerMeter(
             "nimbus:num-getOwnerResourceSummaries-calls");
         this.shutdownCalls = metricsRegistry.registerMeter("nimbus:num-shutdown-calls");

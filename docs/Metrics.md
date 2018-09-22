@@ -6,6 +6,8 @@ documentation: true
 Storm exposes a metrics interface to report summary statistics across the full topology.
 The numbers you see on the UI come from some of these built in metrics, but are reported through the worker heartbeats instead of through the IMetricsConsumer described below.
 
+If you are looking for cluster wide monitoring please see [Cluster Metrics](ClusterMetrics.html).
+
 ### Metric Types
 
 Metrics have to implement [`IMetric`]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/metric/api/IMetric.java) which contains just one method, `getValueAndReset` -- do any remaining work to find the summary value, and reset back to an initial state. For example, the MeanReducer divides the running total by its running count to find the mean, then initializes both values back to zero.
