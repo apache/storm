@@ -32,8 +32,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -85,6 +87,7 @@ import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.thrift.TException;
+import org.apache.storm.utils.IVersionInfo;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.TopologySpoutLag;
 import org.apache.storm.utils.Utils;
@@ -104,9 +107,11 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.json.simple.JSONValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UIHelpers {
-
+    private static final Logger LOG = LoggerFactory.getLogger(UIHelpers.class);
     private static final Object[][] PRETTY_SEC_DIVIDERS = {
         new Object[]{ "s", 60 },
         new Object[]{ "m", 60 },
@@ -516,6 +521,22 @@ public class UIHelpers {
         return responseBuilder.build();
     }
 
+    private static final AtomicReference<List<Map<String, String>>> MEMORIZED_VERSIONS = new AtomicReference<>();
+    private static final AtomicReference<Map<String, String>> MEMORIZED_FULL_VERSION = new AtomicReference<>();
+
+
+    private static Map<String, String> toJsonStruct(IVersionInfo info) {
+        Map<String, String> ret = new HashMap<>();
+        ret.put("version", info.getVersion());
+        ret.put("revision", info.getRevision());
+        ret.put("branch", info.getBranch());
+        ret.put("date", info.getDate());
+        ret.put("user", info.getUser());
+        ret.put("url", info.getUrl());
+        ret.put("srcChecksum", info.getSrcChecksum());
+        return ret;
+    }
+
     /**
      * Converts thrift call result into map fit for UI/api.
      * @param clusterSummary Obtained from Nimbus.
@@ -530,47 +551,56 @@ public class UIHelpers {
         List<TopologySummary> topologySummaries = clusterSummary.get_topologies();
 
         int usedSlots =
-                supervisorSummaries.stream().mapToInt(
+            supervisorSummaries.stream().mapToInt(
                 SupervisorSummary::get_num_used_workers).sum();
         int totalSlots =
-                supervisorSummaries.stream().mapToInt(
-                        SupervisorSummary::get_num_workers).sum();
+            supervisorSummaries.stream().mapToInt(
+                SupervisorSummary::get_num_workers).sum();
 
         int totalTasks =
-                topologySummaries.stream().mapToInt(
-                        TopologySummary::get_num_tasks).sum();
+            topologySummaries.stream().mapToInt(
+                TopologySummary::get_num_tasks).sum();
         int totalExecutors =
-                topologySummaries.stream().mapToInt(
-                        TopologySummary::get_num_executors).sum();
+            topologySummaries.stream().mapToInt(
+                TopologySummary::get_num_executors).sum();
 
         double supervisorTotalMemory =
-                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
-                        Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
-                        x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
-                        )
-                ).sum();
+            supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
+                x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
+                )
+            ).sum();
 
         double supervisorTotalCpu =
-                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
-                        Constants.COMMON_CPU_RESOURCE_NAME,
-                        x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
-                        )
-                ).sum();
+            supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                Constants.COMMON_CPU_RESOURCE_NAME,
+                x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
+                )
+            ).sum();
 
-        double supervisorUsedMemory =
-                supervisorSummaries.stream().mapToDouble(SupervisorSummary::get_used_mem).sum();
-        double supervisorUsedCpu =
-                supervisorSummaries.stream().mapToDouble(SupervisorSummary::get_used_cpu).sum();
-        double supervisorFragementedCpu =
-                supervisorSummaries.stream().mapToDouble(
-                        SupervisorSummary::get_fragmented_cpu).sum();
-        double supervisorFragmentedMem =
-                supervisorSummaries.stream().mapToDouble(
-                        SupervisorSummary::get_fragmented_mem).sum();
+        if (MEMORIZED_VERSIONS.get() == null) {
+            //Races are okay this is just to avoid extra work for each page load.
+            NavigableMap<String, IVersionInfo> versionsMap = Utils.getAlternativeVersionsMap(conf);
+            List<Map<String, String>> versionList = new ArrayList<>();
+            for (Map.Entry<String, IVersionInfo> entry : versionsMap.entrySet()) {
+                Map<String, String> single = new HashMap<>(toJsonStruct(entry.getValue()));
+                single.put("versionMatch", entry.getKey());
+                versionList.add(single);
+            }
+            MEMORIZED_VERSIONS.set(versionList);
+        }
+        List<Map<String, String>> versions = MEMORIZED_VERSIONS.get();
+        if (!versions.isEmpty()) {
+            result.put("alternativeWorkerVersions", versions);
+        }
 
+        if (MEMORIZED_FULL_VERSION.get() == null) {
+            MEMORIZED_FULL_VERSION.set(toJsonStruct(VersionInfo.OUR_FULL_VERSION));
+        }
 
         result.put("user", user);
         result.put("stormVersion", VersionInfo.getVersion());
+        result.put("stormVersionInfo", MEMORIZED_FULL_VERSION.get());
         result.put("supervisors", supervisorSummaries.size());
         result.put("topologies", clusterSummary.get_topologies_size());
         result.put("slotsUsed", usedSlots);
@@ -581,10 +611,16 @@ public class UIHelpers {
 
         result.put("totalMem", supervisorTotalMemory);
         result.put("totalCpu", supervisorTotalCpu);
+
+        double supervisorUsedMemory =
+            supervisorSummaries.stream().mapToDouble(SupervisorSummary::get_used_mem).sum();
         result.put("availMem", supervisorTotalMemory - supervisorUsedMemory);
+
+        double supervisorUsedCpu =
+            supervisorSummaries.stream().mapToDouble(SupervisorSummary::get_used_cpu).sum();
         result.put("availCpu", supervisorTotalCpu - supervisorUsedCpu);
-        result.put("fragmentedMem", supervisorFragmentedMem);
-        result.put("fragmentedCpu", supervisorFragementedCpu);
+        result.put("fragmentedMem", supervisorSummaries.stream().mapToDouble(SupervisorSummary::get_fragmented_mem).sum());
+        result.put("fragmentedCpu", supervisorSummaries.stream().mapToDouble(SupervisorSummary::get_fragmented_cpu).sum());
         result.put("schedulerDisplayResource",
                 conf.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
         result.put("memAssignedPercentUtil", supervisorTotalMemory > 0
@@ -1866,31 +1902,31 @@ public class UIHelpers {
     public static Map<String, Object> unpackBoltPageInfo(ComponentPageInfo componentPageInfo,
                                                          String topologyId, String window, boolean sys,
                                                          Map config) {
-        Map<String, Object> result = new HashMap();
+        Map<String, Object> result = new HashMap<>();
 
         result.put(
-                "boltStats",
-                componentPageInfo.get_window_to_stats().entrySet().stream().map(
-                        e -> getBoltAggStatsMap(e.getValue(), e.getKey())
-                ).collect(Collectors.toList())
+            "boltStats",
+            componentPageInfo.get_window_to_stats().entrySet().stream().map(
+                e -> getBoltAggStatsMap(e.getValue(), e.getKey())
+            ).collect(Collectors.toList())
         );
         result.put(
-                "inputStats",
-                componentPageInfo.get_gsid_to_input_stats().entrySet().stream().map(
-                        e -> getBoltInputStats(e.getKey(), e.getValue())
-                ).collect(Collectors.toList())
+            "inputStats",
+            componentPageInfo.get_gsid_to_input_stats().entrySet().stream().map(
+                e -> getBoltInputStats(e.getKey(), e.getValue())
+            ).collect(Collectors.toList())
         );
         result.put(
-                "outputStats",
-                componentPageInfo.get_sid_to_output_stats().entrySet().stream().map(
-                    e -> getBoltOutputStats(e.getKey(), e.getValue())
-                ).collect(Collectors.toList())
+            "outputStats",
+            componentPageInfo.get_sid_to_output_stats().entrySet().stream().map(
+                e -> getBoltOutputStats(e.getKey(), e.getValue())
+            ).collect(Collectors.toList())
         );
         result.put(
-                "executorStats",
-                componentPageInfo.get_exec_stats().stream().map(
-                        e -> getBoltExecutorStats(topologyId, config, e)
-                ).collect(Collectors.toList())
+            "executorStats",
+            componentPageInfo.get_exec_stats().stream().map(
+                e -> getBoltExecutorStats(topologyId, config, e)
+            ).collect(Collectors.toList())
         );
         result.putAll(getComponentErrors(componentPageInfo.get_errors(), topologyId, config));
         return result;
@@ -1908,24 +1944,24 @@ public class UIHelpers {
     public static Map<String, Object> unpackSpoutPageInfo(ComponentPageInfo componentPageInfo,
                                                           String topologyId, String window, boolean sys,
                                                           Map config) {
-        Map<String, Object> result = new HashMap();
+        Map<String, Object> result = new HashMap<>();
         result.put(
-                "spoutSummary",
-                componentPageInfo.get_window_to_stats().entrySet().stream().map(
-                        e -> getSpoutAggStatsMap(e.getValue(), e.getKey())
-                ).collect(Collectors.toList())
+            "spoutSummary",
+            componentPageInfo.get_window_to_stats().entrySet().stream().map(
+                e -> getSpoutAggStatsMap(e.getValue(), e.getKey())
+            ).collect(Collectors.toList())
         );
         result.put(
-                "outputStats",
-                componentPageInfo.get_sid_to_output_stats().entrySet().stream().map(
-                        e -> getSpoutOutputStats(e.getKey(), e.getValue())
-                ).collect(Collectors.toList())
+            "outputStats",
+            componentPageInfo.get_sid_to_output_stats().entrySet().stream().map(
+                e -> getSpoutOutputStats(e.getKey(), e.getValue())
+            ).collect(Collectors.toList())
         );
         result.put(
-                "executorStats",
-                componentPageInfo.get_exec_stats().stream().map(
-                        e -> getSpoutExecutorStats(topologyId, config, e)
-                ).collect(Collectors.toList())
+            "executorStats",
+            componentPageInfo.get_exec_stats().stream().map(
+                e -> getSpoutExecutorStats(topologyId, config, e)
+            ).collect(Collectors.toList())
         );
         result.putAll(getComponentErrors(componentPageInfo.get_errors(), topologyId, config));
         return result;

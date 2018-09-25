@@ -148,6 +148,13 @@ $(document).ready(function() {
                 jsError(function() {
                     clusterSummary.append(Mustache.render($(indexTemplate).filter("#cluster-summary-template").html(),response));
                     $('#cluster-summary [data-toggle="tooltip"]').tooltip();
+                    $('#cluster-summary [data-toggle="toggle"]').each(function(index) {
+                        var details = $(this).find('[toggle="details"]')
+                        details.hide()
+                        $(this).find('[toggle="link"]').on("click", function() {
+                            details.toggle(500);
+                        });
+                    });
                 });
 
                 jsError(function() {

@@ -18,69 +18,213 @@
 
 package org.apache.storm.utils;
 
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class VersionInfo {
-    private static final VersionInfo COMMON_VERSION_INFO = new VersionInfo("storm-core");
-    public static final SimpleVersion OUR_VERSION = new SimpleVersion(COMMON_VERSION_INFO._getVersion());
-    private Properties info;
+public final class VersionInfo {
+    private static final Logger LOG = LoggerFactory.getLogger(VersionInfo.class);
+    private static final String STORM_CORE_PROPERTIES_NAME = "storm-core-version-info.properties";
+    public static final IVersionInfo OUR_FULL_VERSION = new VersionInfoImpl("storm-core");
+    public static final SimpleVersion OUR_VERSION = new SimpleVersion(OUR_FULL_VERSION.getVersion());
 
-    protected VersionInfo(String component) {
-        info = new Properties();
-        String versionInfoFile = component + "-version-info.properties";
-        InputStream is = null;
-        try {
-            is = Thread.currentThread().getContextClassLoader()
-                       .getResourceAsStream(versionInfoFile);
-            if (is == null) {
-                throw new IOException("Resource not found");
-            }
-            info.load(is);
-        } catch (IOException ex) {
-        } finally {
-            if (is != null) {
-                try {
+    private static class VersionInfoImpl implements IVersionInfo {
+        private Properties info;
 
-                    is.close();
-                } catch (IOException ioex) {
+        protected VersionInfoImpl(String component) {
+            info = new Properties();
+            String versionInfoFile = component + "-version-info.properties";
+            try (InputStream is = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(versionInfoFile)) {
+                if (is == null) {
+                    throw new IOException("Resource not found");
                 }
-
+                info.load(is);
+            } catch (IOException e) {
+                LOG.error("Could not load {}", versionInfoFile, e);
             }
+        }
+
+        protected VersionInfoImpl(Properties info) {
+            this.info = info;
+        }
+
+        @Override
+        public String getVersion() {
+            return info.getProperty("version", "Unknown");
+        }
+
+        @Override
+        public String getRevision() {
+            return info.getProperty("revision", "Unknown");
+        }
+
+        @Override
+        public String getBranch() {
+            return info.getProperty("branch", "Unknown");
+        }
+
+        @Override
+        public String getDate() {
+            return info.getProperty("date", "Unknown");
+        }
+
+        @Override
+        public String getUser() {
+            return info.getProperty("user", "Unknown");
+        }
+
+        @Override
+        public String getUrl() {
+            return info.getProperty("url", "Unknown");
+        }
+
+        @Override
+        public String getSrcChecksum() {
+            return info.getProperty("srcChecksum", "Unknown");
+        }
+
+        @Override
+        public String getBuildVersion() {
+            return this.getVersion() +
+                " from " + getRevision() +
+                " by " + getUser() +
+                " source checksum " + getSrcChecksum();
         }
     }
 
+    /**
+     * Look for the version of storm defined by the given classpath.
+     * @param cp the classpath as a string to be parsed.
+     * @return the IVersionInfo or null.
+     */
+    public static IVersionInfo getFromClasspath(String cp) {
+        List<String> classpath = Arrays.asList(cp.split(File.pathSeparator));
+        return getFromClasspath(classpath);
+    }
+
+    /**
+     * Look for the version of storm defined by the given classpath.
+     * @param classpath the classpath as list of files/directories.
+     * @return the IVersionInfo or null.
+     */
+    public static IVersionInfo getFromClasspath(List<String> classpath) {
+        IVersionInfo ret = null;
+        for (String part: classpath) {
+            Path p = Paths.get(part);
+            if (Files.isDirectory(p)) {
+                Path child = p.resolve(STORM_CORE_PROPERTIES_NAME);
+                if (Files.exists(child) && !Files.isDirectory(child)) {
+                    try (FileReader reader = new FileReader(child.toFile())) {
+                        Properties info = new Properties();
+                        info.load(reader);
+                        ret = new VersionInfoImpl(info);
+                        break;
+                    } catch (IOException e) {
+                        LOG.error("Skipping {} get an error while trying to parse the file.", part, e);
+                    }
+                }
+            } else if (part.toLowerCase().endsWith(".jar")
+                || part.toLowerCase().endsWith(".zip")) {
+                //Treat it like a jar
+                try (JarFile jf = new JarFile(p.toFile())) {
+                    Enumeration<? extends ZipEntry> zipEnums = jf.entries();
+                    while (zipEnums.hasMoreElements()) {
+                        ZipEntry entry = zipEnums.nextElement();
+                        if (!entry.isDirectory() && entry.getName().equals(STORM_CORE_PROPERTIES_NAME)) {
+                            try (InputStreamReader reader = new InputStreamReader(jf.getInputStream(entry))) {
+                                Properties info = new Properties();
+                                info.load(reader);
+                                ret = new VersionInfoImpl(info);
+                                break;
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    LOG.error("Skipping {} get an error while trying to parse the jar file.", part, e);
+                }
+            } else {
+                LOG.warn("Skipping {} don't know what to do with it.", part);
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Get the version number of the build.
+     * @return the version number of the build.
+     */
     public static String getVersion() {
-        return COMMON_VERSION_INFO._getVersion();
+        return OUR_FULL_VERSION.getVersion();
     }
 
+    /**
+     * Get the SCM revision number of the build.
+     * @return the SCM revision number of the build.
+     */
     public static String getRevision() {
-        return COMMON_VERSION_INFO._getRevision();
+        return OUR_FULL_VERSION.getRevision();
     }
 
+    /**
+     * Get the SCM branch of the build.
+     * @return the SCM branch of the build.
+     */
     public static String getBranch() {
-        return COMMON_VERSION_INFO._getBranch();
+        return OUR_FULL_VERSION.getBranch();
     }
 
+    /**
+     * Get the date/time the build happened.
+     * @return the date/time of the build.
+     */
     public static String getDate() {
-        return COMMON_VERSION_INFO._getDate();
+        return OUR_FULL_VERSION.getDate();
     }
 
+    /**
+     * Get the name of the user that did the build.
+     * @return the name of the user that did the build.
+     */
     public static String getUser() {
-        return COMMON_VERSION_INFO._getUser();
+        return OUR_FULL_VERSION.getUser();
     }
 
+    /**
+     * Get the full SCM URL for the build.
+     * @return the SCM URL of the build.
+     */
     public static String getUrl() {
-        return COMMON_VERSION_INFO._getUrl();
+        return OUR_FULL_VERSION.getUrl();
     }
 
+    /**
+     * Get the checksum of the source.
+     * @return the checksum of the source.
+     */
     public static String getSrcChecksum() {
-        return COMMON_VERSION_INFO._getSrcChecksum();
+        return OUR_FULL_VERSION.getSrcChecksum();
     }
 
+    /**
+     * Get a descriptive representation of the build meant for human consumption.
+     * @return a descriptive representation of the build.
+     */
     public static String getBuildVersion() {
-        return COMMON_VERSION_INFO._getBuildVersion();
+        return OUR_FULL_VERSION.getBuildVersion();
     }
 
     public static void main(String[] args) {
@@ -89,40 +233,5 @@ public class VersionInfo {
         System.out.println("Branch " + getBranch());
         System.out.println("Compiled by " + getUser() + " on " + getDate());
         System.out.println("From source with checksum " + getSrcChecksum());
-    }
-
-    protected String _getVersion() {
-        return info.getProperty("version", "Unknown");
-    }
-
-    protected String _getRevision() {
-        return info.getProperty("revision", "Unknown");
-    }
-
-    protected String _getBranch() {
-        return info.getProperty("branch", "Unknown");
-    }
-
-    protected String _getDate() {
-        return info.getProperty("date", "Unknown");
-    }
-
-    protected String _getUser() {
-        return info.getProperty("user", "Unknown");
-    }
-
-    protected String _getUrl() {
-        return info.getProperty("url", "Unknown");
-    }
-
-    protected String _getSrcChecksum() {
-        return info.getProperty("srcChecksum", "Unknown");
-    }
-
-    protected String _getBuildVersion() {
-        return getVersion() +
-               " from " + _getRevision() +
-               " by " + _getUser() +
-               " source checksum " + _getSrcChecksum();
     }
 }

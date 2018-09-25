@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import org.apache.storm.Config;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
@@ -29,6 +30,8 @@ import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class UtilsTest {
 
@@ -218,5 +221,20 @@ public class UtilsTest {
         Map<String, Object> map0 = ImmutableMap.of();
         Map<String, Object> map5 = ImmutableMap.of("k0", 3L);
         Assert.assertFalse(Utils.isValidConf(map0, map5));
+    }
+
+    @Test
+    public void checkVersionInfo() {
+        Map<String, String> versions = new HashMap<>();
+        String key = VersionInfo.getVersion();
+        assertNotEquals("Unknown", key, "Looks like we don't know what version of storm we are");
+        versions.put(key, System.getProperty("java.class.path"));
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, versions);
+        NavigableMap<String, IVersionInfo> alternativeVersions = Utils.getAlternativeVersionsMap(conf);
+        assertEquals(1, alternativeVersions.size());
+        IVersionInfo found = alternativeVersions.get(key);
+        assertNotNull(found);
+        assertEquals(key, found.getVersion());
     }
 }
