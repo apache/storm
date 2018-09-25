@@ -1753,13 +1753,17 @@ public class UIHelpers {
                 Map<String, Object> spoutData = new HashMap();
                 spoutData.put(":type", "spout");
                 spoutData.put(":capacity", 0);
-                Map<String, Map> spoutStreamsStats = StatsUtil.spoutStreamsStats(spoutSummaries.get(spoutComponentId), true);
+                Map<String, Map> spoutStreamsStats =
+                    StatsUtil.spoutStreamsStats(spoutSummaries.get(spoutComponentId), sys);
                 spoutData.put(":latency", spoutStreamsStats.get("complete-latencies").get(window));
                 spoutData.put(":transferred", spoutStreamsStats.get("transferred").get(window));
                 spoutData.put(":stats", spoutSummaries.get(
                         spoutComponentId).stream().map(
                                 UIHelpers::getStatMapFromExecutorSummary).collect(Collectors.toList()));
-                spoutData.put(":link", UIHelpers.urlFormat("/component.html?id=%s&topology_id=%s", spoutComponentId, topoId));
+                spoutData.put(
+                        ":link",
+                        UIHelpers.urlFormat("/component.html?id=%s&topology_id=%s", spoutComponentId, topoId)
+                );
 
                 spoutData.put(":inputs",
                     spoutSpecMapEntry.getValue().get_common().get_inputs().entrySet().stream().map(
@@ -1775,13 +1779,17 @@ public class UIHelpers {
                 Map<String, Object> boltMap = new HashMap();
                 boltMap.put(":type", "bolt");
                 boltMap.put(":capacity", StatsUtil.computeBoltCapacity(boltSummaries.get(boltComponentId)));
-                Map<String, Map> boltStreamsStats = StatsUtil.boltStreamsStats(boltSummaries.get(boltComponentId), true);
+                Map<String, Map> boltStreamsStats =
+                        StatsUtil.boltStreamsStats(boltSummaries.get(boltComponentId), sys);
                 boltMap.put(":latency", boltStreamsStats.get("process-latencies").get(window));
                 boltMap.put(":transferred", boltStreamsStats.get("transferred").get(window));
                 boltMap.put(":stats", boltSummaries.get(
                         boltComponentId).stream().map(
                         UIHelpers::getStatMapFromExecutorSummary).collect(Collectors.toList()));
-                boltMap.put(":link", UIHelpers.urlFormat("/component.html?id=%s&topology_id=%s", boltComponentId, topoId));
+                boltMap.put(
+                        ":link",
+                        UIHelpers.urlFormat("/component.html?id=%s&topology_id=%s", boltComponentId, topoId)
+                );
 
                 boltMap.put(":inputs",
                         boltEntry.getValue().get_common().get_inputs().entrySet().stream().map(
