@@ -20,7 +20,7 @@ These are metrics that come from the active nimbus instance and report the state
 
 | Metric Name | Type | Description |
 |-------------|------|-------------|
-| cluster:num-nimbus-leaders | gauge | Number of nimbuses marked as a leader. This should really only ever be 1 in a health cluster, or 0 for a short period of time while a failover happens. |
+| cluster:num-nimbus-leaders | gauge | Number of nimbuses marked as a leader. This should really only ever be 1 in a healthy cluster, or 0 for a short period of time while a failover happens. |
 | cluster:num-nimbuses | gauge | Number of nimbuses, leader or standby. |
 | cluster:num-supervisors | gauge | Number of supervisors. |
 | cluster:num-topologies | gauge | Number of topologies. |
@@ -87,7 +87,7 @@ These are metrics that are specific to a nimbus instance.  In many instances onl
 | nimbus:num-killTopologyWithOpts-calls | meter | calls to killTopologyWithOpts thrift method includes calls to killTopology. |
 | nimbus:num-launched | meter | number of times a nimbus was launched |
 | nimbus:num-lost-leadership | meter | number of times this nimbus lost leadership |
-| nimbus:num-negative-resource-events | meter | any time a resource goes negative (either CPU or Memory)  Not consistent as it is used for internal calculations that may go negative and does not represent over scheduling of resources. |
+| nimbus:num-negative-resource-events | meter | Any time a resource goes negative (either CPU or Memory).  This metric is not ideal as it is measured in a data structure that is used for internal calculations that may go negative and not actually represent over scheduling of a resource. |
 | nimbus:num-net-executors-increase-per-scheduling | histogram | added executors minus removed executors after a scheduling run |
 | nimbus:num-net-slots-increase-per-scheduling | histogram | added slots minus removed slots after a scheduling run |
 | nimbus:num-rebalance-calls | meter | calls to rebalance thrift method. |
