@@ -21,7 +21,7 @@
   (:import [org.apache.storm.trident.state StateSpec])
   (:import [org.apache.storm.trident TridentTopology]
            [org.apache.storm.trident.operation.impl CombinerAggStateUpdater]
-           [org.apache.storm.trident.operation BaseFunction]
+           [org.apache.storm.trident.operation Function]
            [org.apache.storm.trident.operation.builtin Count Sum Equals MapGet Debug FilterNull FirstN TupleCollectionGet]
            [org.apache.storm.tuple Fields]
            [org.json.simple.parser JSONParser]
@@ -297,8 +297,8 @@
       (letlocals
         (bind topo (TridentTopology.))
         (bind feeder (FeederBatchSpout. ["sentence"]))
-        (bind add-bang (proxy [BaseFunction] []
-                         (execute [tuple collector]
+        (bind add-bang (reify Function
+                         (execute [_ tuple collector]
                            (. collector emit (str (. tuple getString 0) "!")))))
         (bind word-counts
           (.. topo

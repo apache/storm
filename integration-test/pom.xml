@@ -74,10 +74,12 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-server</artifactId>
-            <version>${project.version}</version>
-            <scope>${provided.scope}</scope>
+          <groupId>commons-lang</groupId>
+          <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
