@@ -143,17 +143,11 @@ public class WorkerTokenTest {
             } catch (IllegalArgumentException ia) {
                 //What we want...
             }
-        }
-    }
 
-    @Test
-    public void testRenewalTimeDefault() {
-        try (Time.SimulatedTime sim = new Time.SimulatedTime()) {
-            IStormClusterState mockState = mock(IStormClusterState.class);
-            Map<String, Object> conf = new HashMap<>();
-            WorkerTokenManager wtm = new WorkerTokenManager(conf, mockState);
-
-            assertEquals(ONE_DAY_MILLIS/2, wtm.getMaxExpirationTimeForRenewal());
+            //Verify if WorkerTokenManager recognizes the expired WorkerToken.
+            Map<String, String> creds = new HashMap<>();
+            ClientAuthUtils.setWorkerToken(creds, wt);
+            assertTrue("Expired WorkerToken should be eligible for renewal", wtm.shouldRenewWorkerToken(creds, type));
         }
     }
 }

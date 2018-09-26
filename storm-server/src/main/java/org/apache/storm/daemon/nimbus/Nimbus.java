@@ -2949,30 +2949,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private void upsertWorkerTokensInCreds(Map<String, String> creds, String user, String topologyId) {
         if (workerTokenManager != null) {
-            final long renewIfExpirationBefore = workerTokenManager.getMaxExpirationTimeForRenewal();
-            for (WorkerTokenServiceType type : WorkerTokenServiceType.values()) {
-                boolean shouldAdd = true;
-                WorkerToken oldToken = ClientAuthUtils.readWorkerToken(creds, type);
-                if (oldToken != null) {
-                    try {
-                        WorkerTokenInfo info = ClientAuthUtils.getWorkerTokenInfo(oldToken);
-                        if (info.is_set_expirationTimeMillis() || info.get_expirationTimeMillis() > renewIfExpirationBefore) {
-                            //Found an existing token and it is not going to expire any time soon, so don't bother adding in a new
-                            // token.
-                            shouldAdd = false;
-                        }
-                    } catch (Exception e) {
-                        //The old token could not be deserialized.  This is bad, but we are going to replace it anyways so just keep going.
-                        LOG.error("Could not deserialize token info", e);
-                    }
-                }
-                if (shouldAdd) {
-                    ClientAuthUtils.setWorkerToken(creds, workerTokenManager.createOrUpdateTokenFor(type, user, topologyId));
-                }
-            }
-            //Remove any expired keys after possibly inserting new ones.
-            stormClusterState.removeExpiredPrivateWorkerKeys(topologyId);
+            workerTokenManager.upsertWorkerTokensInCredsForTopo(creds, user, topologyId);
         }
+        //Remove any expired keys after possibly inserting new ones.
+        stormClusterState.removeExpiredPrivateWorkerKeys(topologyId);
     }
 
     @Override
