@@ -265,6 +265,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Meter getOwnerResourceSummariesCalls;
     private final Meter shutdownCalls;
     private final Meter processWorkerMetricsCalls;
+    private final Meter mkAssignmentsErrors;
+
     //Timer
     private final Timer fileUploadDuration;
     private final Timer schedulingDuration;
@@ -511,6 +513,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             "nimbus:num-getOwnerResourceSummaries-calls");
         this.shutdownCalls = metricsRegistry.registerMeter("nimbus:num-shutdown-calls");
         this.processWorkerMetricsCalls = metricsRegistry.registerMeter("nimbus:process-worker-metric-calls");
+        this.mkAssignmentsErrors = metricsRegistry.registerMeter("nimbus:mkAssignments-Errors");
         this.fileUploadDuration = metricsRegistry.registerTimer("nimbus:files-upload-duration-ms");
         this.schedulingDuration = metricsRegistry.registerTimer("nimbus:topology-scheduling-duration-ms");
         this.numAddedExecPerScheduling = metricsRegistry.registerHistogram("nimbus:num-added-executors-per-scheduling");
@@ -2166,64 +2169,77 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private void mkAssignments(String scratchTopoId) throws Exception {
-        if (!isReadyForMKAssignments()) {
-            return;
-        }
-        // get existing assignment (just the topologyToExecutorToNodePort map) -> default to {}
-        // filter out ones which have a executor timeout
-        // figure out available slots on cluster. add to that the used valid slots to get total slots. figure out how many executors
-        // should be in each slot (e.g., 4, 4, 4, 5)
-        // only keep existing slots that satisfy one of those slots. for rest, reassign them across remaining slots
-        // edge case for slots with no executor timeout but with supervisor timeout... just treat these as valid slots that can be
-        // reassigned to. worst comes to worse the executor will timeout and won't assign here next time around
-
-        IStormClusterState state = stormClusterState;
-        //read all the topologies
-        Map<String, StormBase> bases;
-        Map<String, TopologyDetails> tds = new HashMap<>();
-        synchronized (submitLock) {
-            // should promote: only fetch storm bases of topologies that need scheduling.
-            bases = state.topologyBases();
-
-            for (Iterator<Entry<String, StormBase>> it = bases.entrySet().iterator(); it.hasNext(); ) {
-                Entry<String, StormBase> entry = it.next();
-                String id = entry.getKey();
-                try {
-                    tds.put(id, readTopologyDetails(id, entry.getValue()));
-                } catch (KeyNotFoundException e) {
-                    //A race happened and it is probably not running
-                    it.remove();
-                }
+        try {
+            if (!isReadyForMKAssignments()) {
+                return;
             }
-        }
-        Topologies topologies = new Topologies(tds);
-        List<String> assignedTopologyIds = state.assignments(null);
-        Map<String, Assignment> existingAssignments = new HashMap<>();
-        for (String id : assignedTopologyIds) {
-            //for the topology which wants rebalance (specified by the scratchTopoId)
-            // we exclude its assignment, meaning that all the slots occupied by its assignment
-            // will be treated as free slot in the scheduler code.
-            if (!id.equals(scratchTopoId)) {
-                Assignment currentAssignment = state.assignmentInfo(id, null);
-                if (!currentAssignment.is_set_owner()) {
-                    TopologyDetails td = tds.get(id);
-                    if (td != null) {
-                        currentAssignment.set_owner(td.getTopologySubmitter());
-                        state.setAssignment(id, currentAssignment, td.getConf());
+            // get existing assignment (just the topologyToExecutorToNodePort map) -> default to {}
+            // filter out ones which have a executor timeout
+            // figure out available slots on cluster. add to that the used valid slots to get total slots. figure out how many executors
+            // should be in each slot (e.g., 4, 4, 4, 5)
+            // only keep existing slots that satisfy one of those slots. for rest, reassign them across remaining slots
+            // edge case for slots with no executor timeout but with supervisor timeout... just treat these as valid slots that can be
+            // reassigned to. worst comes to worse the executor will timeout and won't assign here next time around
+
+            IStormClusterState state = stormClusterState;
+            //read all the topologies
+            Map<String, StormBase> bases;
+            Map<String, TopologyDetails> tds = new HashMap<>();
+            synchronized (submitLock) {
+                // should promote: only fetch storm bases of topologies that need scheduling.
+                bases = state.topologyBases();
+
+                for (Iterator<Entry<String, StormBase>> it = bases.entrySet().iterator(); it.hasNext(); ) {
+                    Entry<String, StormBase> entry = it.next();
+                    String id = entry.getKey();
+                    try {
+                        tds.put(id, readTopologyDetails(id, entry.getValue()));
+                    } catch (KeyNotFoundException e) {
+                        //A race happened and it is probably not running
+                        it.remove();
                     }
                 }
-                existingAssignments.put(id, currentAssignment);
             }
+            List<String> assignedTopologyIds = state.assignments(null);
+            Map<String, Assignment> existingAssignments = new HashMap<>();
+            for (String id : assignedTopologyIds) {
+                //for the topology which wants rebalance (specified by the scratchTopoId)
+                // we exclude its assignment, meaning that all the slots occupied by its assignment
+                // will be treated as free slot in the scheduler code.
+                if (!id.equals(scratchTopoId)) {
+                    Assignment currentAssignment = state.assignmentInfo(id, null);
+                    if (!currentAssignment.is_set_owner()) {
+                        TopologyDetails td = tds.get(id);
+                        if (td != null) {
+                            currentAssignment.set_owner(td.getTopologySubmitter());
+                            state.setAssignment(id, currentAssignment, td.getConf());
+                        }
+                    }
+                    existingAssignments.put(id, currentAssignment);
+                }
+            }
+
+            // make the new assignments for topologies
+            lockingMkAssignments(existingAssignments, bases, scratchTopoId, assignedTopologyIds, state, tds);
+        } catch (Exception e) {
+            this.mkAssignmentsErrors.mark();
+            throw e;
         }
-        // make the new assignments for topologies
+    }
+
+    private void lockingMkAssignments(Map<String, Assignment> existingAssignments, Map<String, StormBase> bases,
+                                      String scratchTopoId, List<String> assignedTopologyIds, IStormClusterState state,
+                                      Map<String, TopologyDetails> tds) throws Exception {
+        Topologies topologies = new Topologies(tds);
+
         synchronized (schedLock) {
             Map<String, SchedulerAssignment> newSchedulerAssignments =
-                computeNewSchedulerAssignments(existingAssignments, topologies, bases, scratchTopoId);
+                    computeNewSchedulerAssignments(existingAssignments, topologies, bases, scratchTopoId);
 
             Map<String, Map<List<Long>, List<Object>>> topologyToExecutorToNodePort =
-                computeTopoToExecToNodePort(newSchedulerAssignments, assignedTopologyIds);
+                    computeTopoToExecToNodePort(newSchedulerAssignments, assignedTopologyIds);
             Map<String, Map<WorkerSlot, WorkerResources>> newAssignedWorkerToResources =
-                computeTopoToNodePortToResources(newSchedulerAssignments);
+                    computeTopoToNodePortToResources(newSchedulerAssignments);
             int nowSecs = Time.currentTimeSecs();
             Map<String, SupervisorDetails> basicSupervisorDetailsMap = basicSupervisorDetailsMap(state);
             //construct the final Assignments by adding start-times etc into it
@@ -2330,7 +2346,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 totalAssignmentsChangedNodes.putAll(assignmentChangedNodes(existingAssignment, assignment));
             }
             notifySupervisorsAssignments(newAssignments, assignmentsDistributer, totalAssignmentsChangedNodes,
-                                         basicSupervisorDetailsMap);
+                    basicSupervisorDetailsMap);
 
             Map<String, Collection<WorkerSlot>> addedSlots = new HashMap<>();
             for (Entry<String, Assignment> entry : newAssignments.entrySet()) {

@@ -101,6 +101,7 @@ These are metrics that are specific to a nimbus instance.  In many instances onl
 | nimbus:num-uploadChunk-calls | meter | calls to uploadChunk thrift method. |
 | nimbus:num-uploadNewCredentials-calls | meter | calls to uploadNewCredentials thrift method. |
 | nimbus:process-worker-metric-calls | meter | calls to processWorkerMetrics thrift method. |
+| nimbus:mkAssignments-Errors | meter | tracks exceptions from mkAssignments |
 | nimbus:topology-scheduling-duration-ms | timer | time it takes to do a scheduling run. |
 | nimbus:total-available-memory-non-negative | gauge | available memory on the cluster MB |
 | nimbuses:uptime-secs | histogram | uptime of nimbuses |
