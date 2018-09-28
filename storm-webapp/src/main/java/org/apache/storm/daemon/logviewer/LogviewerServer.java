@@ -145,9 +145,6 @@ public class LogviewerServer implements AutoCloseable {
     @Override
     public synchronized void close() {
         if (!closed) {
-            //This is kind of useless...
-            meterShutdownCalls.mark();
-
             //TODO this is causing issues...
             //if (httpServer != null) {
             //    httpServer.destroy();
@@ -175,6 +172,7 @@ public class LogviewerServer implements AutoCloseable {
              LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir, metricsRegistry)) {
             metricsRegistry.startMetricsReporters(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(() -> {
+                server.meterShutdownCalls.mark();
                 metricsRegistry.stopMetricsReporters();
                 server.close();
             });

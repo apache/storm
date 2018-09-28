@@ -172,9 +172,6 @@ public class DRPCServer implements AutoCloseable {
     @Override
     public synchronized void close() {
         if (!closed) {
-            //This is kind of useless...
-            meterShutdownCalls.mark();
-
             if (handlerServer != null) {
                 handlerServer.stop();
             }
@@ -229,6 +226,7 @@ public class DRPCServer implements AutoCloseable {
         try (DRPCServer server = new DRPCServer(conf, metricsRegistry)) {
             metricsRegistry.startMetricsReporters(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(() -> {
+                server.meterShutdownCalls.mark();
                 metricsRegistry.stopMetricsReporters();
                 server.close();
             });
