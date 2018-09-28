@@ -18,8 +18,10 @@
 
 package org.apache.storm.security.auth.workertoken;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.crypto.KeyGenerator;
@@ -52,6 +54,7 @@ public class WorkerTokenManager {
     private final KeyGenerator keyGen;
     private final IStormClusterState state;
     private final long tokenLifetimeMillis;
+
     /**
      * Constructor.  This assumes that state can store the tokens securely, and that they should be enabled at all. Please use
      * ClientAuthUtils.areWorkerTokensEnabledServer to validate this first.
@@ -118,11 +121,37 @@ public class WorkerTokenManager {
     }
 
     /**
-     * Get the maximum expiration token time that should be renewed.
+     * Create or renew WorkerToken credentials for a topology.
      *
-     * @return any token with an expiration less than the returned value should be renewed.
+     * @param creds      the map of credentials for.
+     * @param user       the user the credentials are for
+     * @param topologyId the topology the credentials are for
      */
-    public long getMaxExpirationTimeForRenewal() {
-        return Time.currentTimeMillis() + (tokenLifetimeMillis / 2);
+    public void upsertWorkerTokensInCredsForTopo(Map<String, String> creds, String user, String topologyId) {
+        Arrays.stream(WorkerTokenServiceType.values()).filter(type -> shouldRenewWorkerToken(creds, type))
+              .forEach(type -> {ClientAuthUtils.setWorkerToken(creds, createOrUpdateTokenFor(type, user, topologyId));
+              });
     }
+
+    @VisibleForTesting
+    public boolean shouldRenewWorkerToken(Map<String, String> creds, WorkerTokenServiceType type) {
+        boolean shouldAdd = true;
+        WorkerToken oldToken = ClientAuthUtils.readWorkerToken(creds, type);
+        if (oldToken != null) {
+            try {
+                WorkerTokenInfo info = ClientAuthUtils.getWorkerTokenInfo(oldToken);
+                if (!info.is_set_expirationTimeMillis() || info.get_expirationTimeMillis() - Time.currentTimeMillis() > (tokenLifetimeMillis
+                                                                                                                         / 2)) {
+                    //Found an existing token and it is not going to expire any time soon, so don't bother adding in a new
+                    // token.
+                    shouldAdd = false;
+                }
+            } catch (Exception e) {
+                //The old token could not be deserialized.  This is bad, but we are going to replace it anyways so just keep going.
+                LOG.error("Could not deserialize token info", e);
+            }
+        }
+        return shouldAdd;
+    }
+
 }
