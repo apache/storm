@@ -163,3 +163,17 @@ Executors that are not expected to be busy can be allocated a smaller fraction o
 core for executors that are not likely to saturate the CPU.
 
 The *system bolt* generally processes very few messages per second, and so requires very little cpu (typically less than 10% of a physical core).
+
+
+## 9. Garbage Collection
+Choice of GC is an important concern for topologies that are latency or throughput sensitive. It is recommended to try the both the CMS and G1 collectors. Performance characteristics
+of the collectors can change between single and multiworker modes and is dependent on hardware characteristics such as number of CPUs and memory localities. Number of GC threads can
+also affect performance. Sometimes fewer GC threads can yield better performance. It is advisable to select a collector and tune it by mimicking anticipated peak data rates on hardware
+similar to what is used in production.
+
+
+## 10. Scaling out with Single Worker mode
+Communication between executors within a worker process is very fast as there is neither a need to serialize and deserialize messages nor does it involve communicating over the network
+stack. In multiworker mode, messages often cross worker process boundaries. For performance sensitive cases, if it is possible to configure a topology to run as many single-worker
+instances (for ex. one worker per input partition) rather than one multiworker instance, it may yield significantly better throughput and latency on the same hardware.
+The downside to this approach is that it adds the overhead of monitoring and managing many instances rather than one multiworker instance.
