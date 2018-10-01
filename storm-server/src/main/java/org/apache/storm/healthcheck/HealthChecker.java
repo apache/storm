@@ -106,13 +106,13 @@ public class HealthChecker {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(stdin));
                 while ((str = reader.readLine()) != null) {
                     if (str.startsWith("ERROR")) {
+                        LOG.warn("The healthcheck process {} exited with code {}", script, process.exitValue());
                         return FAILED;
                     }
                 }
                 return SUCCESS;
             }
-            LOG.warn("The healthcheck process {} exited with code {}", script, process.exitValue());
-            return FAILED_WITH_EXIT_CODE;
+            return SUCCESS;
         } catch (InterruptedException | ClosedByInterruptException e) {
             LOG.warn("Script:  {} timed out.", script);
             return TIMEOUT;
