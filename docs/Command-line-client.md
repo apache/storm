@@ -299,7 +299,7 @@ e.g.
 
   ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123 topology-name
 
-  Set the com.myapp logger's level to WARN indifinitely, and com.myOtherLogger to ERROR for 123 seconds
+  Set the com.myapp logger's level to WARN indefinitely, and com.myOtherLogger to ERROR for 123 seconds
 
   ./bin/storm set_log_level -r com.myOtherLogger topology-name
 
