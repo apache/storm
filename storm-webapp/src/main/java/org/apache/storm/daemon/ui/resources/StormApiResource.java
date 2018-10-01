@@ -405,7 +405,7 @@ public class StormApiResource {
     }
 
     /**
-     * /api/v1//topology/:id/component/:component -> component.
+     * /api/v1/topology/:id/component/:component -> component.
      */
     @GET
     @Path("/topology/{id}/component/{component}")
@@ -596,7 +596,7 @@ public class StormApiResource {
     }
 
     /**
-     * /api/v1/topology/:id/profiling/start/:host-port/:timeout -> profiling tart.
+     * /api/v1/topology/:id/profiling/start/:host-port/:timeout -> profiling start.
      */
     @GET
     @Path("/topology/{id}/profiling/start/{host-port}/{timeout}")
@@ -615,58 +615,55 @@ public class StormApiResource {
     }
 
     /**
-     * /api/v1/topology/:id/profiling/stop/:host-port/:timeout -> profiling stop.
+     * /api/v1/topology/:id/profiling/stop/:host-port -> profiling stop.
      */
     @GET
-    @Path("/topology/{id}/profiling/stop/{host-port}/{timeout}")
+    @Path("/topology/{id}/profiling/stop/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
     public Response getTopologyProfilingStop(@PathParam("id") String id,
                                              @PathParam("host-port") String hostPort,
-                                             @PathParam("timeout") String timeout,
                                              @QueryParam(callbackParameterName) String callback) throws TException {
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
-                    UIHelpers.getTopologyProfilingStop(nimbusClient.getClient(), id, hostPort, timeout, config),
+                    UIHelpers.getTopologyProfilingStop(nimbusClient.getClient(), id, hostPort, config),
                     callback
             );
         }
     }
 
     /**
-     * /api/v1/topology/:id/profiling/dumpprofile/:host-port/:timeout -> dump profile.
+     * /api/v1/topology/:id/profiling/dumpprofile/:host-port -> dump profile.
      */
     @GET
-    @Path("/topology/{id}/profiling/dumpprofile/{host-port}/{timeout}")
+    @Path("/topology/{id}/profiling/dumpprofile/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
     public Response getTopologyProfilingDumpProfile(@PathParam("id") String id,
                                                     @PathParam("host-port") String hostPort,
-                                                    @PathParam("timeout") String timeout,
                                                     @QueryParam(callbackParameterName) String callback) throws TException {
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
-                    UIHelpers.getTopologyProfilingDump(nimbusClient.getClient(), id, hostPort, timeout, config),
+                    UIHelpers.getTopologyProfilingDump(nimbusClient.getClient(), id, hostPort, config),
                     callback
             );
         }
     }
 
     /**
-     * /api/v1/topology/:id/profiling/restartworker/:host-port/:timeout -> restart worker.
+     * /api/v1/topology/:id/profiling/dumpjstack/:host-port -> dump jstack.
      */
     @GET
-    @Path("/topology/{id}/profiling/restartworker/{host-port}/{timeout}")
+    @Path("/topology/{id}/profiling/dumpjstack/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
-    public Response getTopologyProfilingRestartWorker(@PathParam("id") String id,
-                                                      @PathParam("host-port") String hostPort,
-                                                      @PathParam("timeout") String timeout,
-                                                      @QueryParam(callbackParameterName) String callback) throws TException {
+    public Response getTopologyProfilingDumpJstack(@PathParam("id") String id,
+                                                   @PathParam("host-port") String hostPort,
+                                                   @QueryParam(callbackParameterName) String callback) throws TException {
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
-                    UIHelpers.getTopologyProfilingRestartWorker(
-                            nimbusClient.getClient(), id, hostPort, timeout, config
+                    UIHelpers.getTopologyProfilingDumpJstack(
+                            nimbusClient.getClient(), id, hostPort, config
                     ),
                     callback
             );
@@ -674,20 +671,39 @@ public class StormApiResource {
     }
 
     /**
-     * /api/v1/topology/:id/profiling/dumpheap/:host-port/:timeout -> dump heap.
+     * /api/v1/topology/:id/profiling/restartworker/:host-port -> restart worker.
      */
     @GET
-    @Path("/topology/{id}/profiling/dumpheap/{host-port}/{timeout}")
+    @Path("/topology/{id}/profiling/restartworker/{host-port}")
+    @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
+    @Produces("application/json")
+    public Response getTopologyProfilingRestartWorker(@PathParam("id") String id,
+                                                      @PathParam("host-port") String hostPort,
+                                                      @QueryParam(callbackParameterName) String callback) throws TException {
+        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+            return UIHelpers.makeStandardResponse(
+                    UIHelpers.getTopologyProfilingRestartWorker(
+                            nimbusClient.getClient(), id, hostPort, config
+                    ),
+                    callback
+            );
+        }
+    }
+
+    /**
+     * /api/v1/topology/:id/profiling/dumpheap/:host-port -> dump heap.
+     */
+    @GET
+    @Path("/topology/{id}/profiling/dumpheap/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
     public Response getTopologyProfilingDumpheap(@PathParam("id") String id,
                                                  @PathParam("host-port") String hostPort,
-                                                 @PathParam("timeout") String timeout,
                                                  @QueryParam(callbackParameterName) String callback) throws TException {
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyProfilingDumpHeap(
-                            nimbusClient.getClient(), id, hostPort, timeout, config
+                            nimbusClient.getClient(), id, hostPort, config
                     ),
                     callback
             );
