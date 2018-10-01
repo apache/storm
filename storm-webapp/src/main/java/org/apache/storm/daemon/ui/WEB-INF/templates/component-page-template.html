@@ -56,11 +56,13 @@
           </span>
         </th>
         {{/schedulerDisplayResource}}
+        {{#eventLogLink}}
         <th>
           <span data-toggle="tooltip" data-placement="top" title="Click on the link below to open the logviewer and view the events emitted by this component.">
             Debug
           </span>
         </th>
+        {{/eventLogLink}}
       </tr>
     </thead>
     <tbody>
@@ -74,7 +76,9 @@
         <td>{{requestedMemOffHeap}}</td>
         <td>{{requestedCpu}}</td>
         {{/schedulerDisplayResource}}
+        {{#eventLogLink}}
         <td><a href="{{eventLogLink}}">events</a></td>
+        {{/eventLogLink}}
     </tbody>
   </table>
 </script>
