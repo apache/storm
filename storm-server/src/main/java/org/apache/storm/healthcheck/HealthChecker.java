@@ -107,7 +107,7 @@ public class HealthChecker {
                 while ((str = reader.readLine()) != null) {
                     if (str.startsWith("ERROR")) {
                         LOG.warn("The healthcheck process {} exited with code {}", script, process.exitValue());
-                        return FAILED;
+                        return FAILED_WITH_EXIT_CODE;
                     }
                 }
                 return SUCCESS;
@@ -118,7 +118,7 @@ public class HealthChecker {
             return TIMEOUT;
         } catch (Exception e) {
             LOG.warn("Script failed with exception: ", e);
-            return FAILED_WITH_EXIT_CODE;
+            return FAILED;
         } finally {
             if (interruptThread != null) {
                 interruptThread.interrupt();
