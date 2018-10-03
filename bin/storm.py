@@ -687,7 +687,7 @@ def shell(resourcesdir, command, *args):
     runnerargs = [tmpjarpath, command]
     runnerargs.extend(args)
     exec_storm_class(
-        "org.apache.storm.command.shell_submission",
+        "org.apache.storm.command.ShellSubmission",
         args=runnerargs,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR],
