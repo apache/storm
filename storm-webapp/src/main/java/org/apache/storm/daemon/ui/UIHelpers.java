@@ -2027,9 +2027,12 @@ public class UIHelpers {
             samplingPct = componentPageInfo.get_debug_options().get_samplingpct();
         }
         result.put("samplingPct", samplingPct);
-        result.put("eventLogLink", getLogviewerLink(componentPageInfo.get_eventlog_host(),
-                WebAppUtils.eventLogsFilename(id, String.valueOf(componentPageInfo.get_eventlog_port())),
-                config, componentPageInfo.get_eventlog_port()));
+        String eventlogHost = componentPageInfo.get_eventlog_host();
+        if (null != eventlogHost && !eventlogHost.isEmpty()) {
+            result.put("eventLogLink", getLogviewerLink(eventlogHost,
+                    WebAppUtils.eventLogsFilename(id, String.valueOf(componentPageInfo.get_eventlog_port())),
+                    config, componentPageInfo.get_eventlog_port()));
+        }
         result.put("profilingAndDebuggingCapable", !Utils.isOnWindows());
         result.put("profileActionEnabled", config.get(DaemonConfig.WORKER_PROFILER_ENABLED));
 
