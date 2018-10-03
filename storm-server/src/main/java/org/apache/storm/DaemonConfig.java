@@ -461,6 +461,18 @@ public class DaemonConfig implements Validated {
     public static final String LOGVIEWER_APPENDER_NAME = "logviewer.appender.name";
 
     /**
+     * A class implementing javax.servlet.Filter for authenticating/filtering Logviewer requests.
+     */
+    @isString
+    public static final String LOGVIEWER_FILTER = "logviewer.filter";
+
+    /**
+     * Initialization parameters for the javax.servlet.Filter for Logviewer.
+     */
+    @isMapEntryType(keyType = String.class, valueType = String.class)
+    public static final String LOGVIEWER_FILTER_PARAMS = "logviewer.filter.params";
+
+    /**
      * Childopts for Storm UI Java process.
      */
     @isStringOrStringList
@@ -473,7 +485,7 @@ public class DaemonConfig implements Validated {
     public static final String UI_FILTER = "ui.filter";
 
     /**
-     * Initialization parameters for the javax.servlet.Filter.
+     * Initialization parameters for the javax.servlet.Filter for UI.
      */
     @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String UI_FILTER_PARAMS = "ui.filter.params";
