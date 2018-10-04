@@ -210,7 +210,7 @@ public class LogCleaner implements Runnable, Closeable {
     @VisibleForTesting
     DeletionMeta globalLogCleanup(long size) throws Exception {
         List<File> workerDirs = new ArrayList<>(workerLogs.getAllWorkerDirs());
-        Set<String> aliveWorkerDirs = new HashSet<>(workerLogs.getAliveWorkerDirs());
+        Set<File> aliveWorkerDirs = workerLogs.getAliveWorkerDirs();
 
         return directoryCleaner.deleteOldestWhileTooLarge(workerDirs, size, false, aliveWorkerDirs);
     }
@@ -235,12 +235,7 @@ public class LogCleaner implements Runnable, Closeable {
             return new TreeSet<>();
         } else {
             Set<String> aliveIds = workerLogs.getAliveIds(nowSecs);
-            Map<String, File> idToDir = workerLogs.identifyWorkerLogDirs(logDirs);
-
-            return idToDir.entrySet().stream()
-                    .filter(entry -> !aliveIds.contains(entry.getKey()))
-                    .map(Map.Entry::getValue)
-                    .collect(toCollection(TreeSet::new));
+            return workerLogs.getLogDirs(logDirs, (wid) -> !aliveIds.contains(wid));
         }
     }
 

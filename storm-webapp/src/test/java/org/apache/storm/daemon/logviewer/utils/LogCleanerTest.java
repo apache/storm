@@ -51,6 +51,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import java.util.function.Predicate;
 import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
 import org.apache.storm.daemon.logviewer.testsupport.MockRemovableFileBuilder;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
@@ -187,7 +188,7 @@ public class LogCleanerTest {
                 List<Path> paths = Arrays.stream(file.listFiles()).map(f -> mkMockPath(f)).collect(toList());
                 return mkDirectoryStream(paths);
             });
-            when(mockDirectoryCleaner.deleteOldestWhileTooLarge(anyListOf(File.class), anyLong(), anyBoolean(), anySetOf(String.class)))
+            when(mockDirectoryCleaner.deleteOldestWhileTooLarge(anyListOf(File.class), anyLong(), anyBoolean(), anySetOf(File.class)))
                     .thenCallRealMethod();
 
             long nowMillis = Time.currentTimeMillis();
@@ -225,8 +226,8 @@ public class LogCleanerTest {
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
             WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, rootDir, metricRegistry) {
                 @Override
-                public SortedSet<String> getAliveWorkerDirs() {
-                    return new TreeSet<>(Collections.singletonList("/workers-artifacts/topo1/port1"));
+                public SortedSet<File> getAliveWorkerDirs() {
+                    return new TreeSet<>(Collections.singletonList(new File("/workers-artifacts/topo1/port1")));
                 }
             };
 
@@ -264,12 +265,17 @@ public class LogCleanerTest {
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
             WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null, metricRegistry) {
                 @Override
-                public Map<String, File> identifyWorkerLogDirs(Set<File> logDirs) {
-                    Map<String, File> ret = new HashMap<>();
-                    ret.put("42", unexpectedDir1);
-                    ret.put("007", expectedDir2);
-                    // this tests a directory with no yaml file thus no worker id
-                    ret.put("", expectedDir3);
+                public SortedSet<File> getLogDirs(Set<File> logDirs, Predicate<String> predicate) {
+                    TreeSet<File> ret = new TreeSet<>();
+                    if (predicate.test("42")) {
+                        ret.add(unexpectedDir1);
+                    }
+                    if (predicate.test("007")) {
+                        ret.add(expectedDir2);
+                    }
+                    if(predicate.test("")) {
+                        ret.add(expectedDir3);
+                    }
 
                     return ret;
                 }

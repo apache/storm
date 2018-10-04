@@ -86,7 +86,7 @@ public class DirectoryCleaner {
      * @return number of files deleted
      */
     public DeletionMeta deleteOldestWhileTooLarge(List<File> dirs,
-                                                  long quota, boolean forPerDir, Set<String> activeDirs) throws IOException {
+                                                  long quota, boolean forPerDir, Set<File> activeDirs) throws IOException {
         long totalSize = 0;
         for (File dir : dirs) {
             try (DirectoryStream<Path> stream = getStreamForDirectory(dir)) {
@@ -171,12 +171,12 @@ public class DirectoryCleaner {
         return new DeletionMeta(deletedSize, deletedFiles);
     }
 
-    private boolean isFileEligibleToSkipDelete(boolean forPerDir, Set<String> activeDirs, File dir, File file) throws IOException {
+    private boolean isFileEligibleToSkipDelete(boolean forPerDir, Set<File> activeDirs, File dir, File file) throws IOException {
         if (forPerDir) {
             return ACTIVE_LOG_PATTERN.matcher(file.getName()).matches();
         } else { // for global cleanup
             // for an active worker's dir, make sure for the last "/"
-            return activeDirs.contains(dir.getCanonicalPath()) ? ACTIVE_LOG_PATTERN.matcher(file.getName()).matches() :
+            return activeDirs.contains(dir) ? ACTIVE_LOG_PATTERN.matcher(file.getName()).matches() :
                 META_LOG_PATTERN.matcher(file.getName()).matches();
         }
     }
