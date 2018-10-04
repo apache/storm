@@ -262,6 +262,8 @@ The following commands must be run from the top-level directory.
 
 If you wish to skip the unit tests you can do this by adding `-DskipTests` to the command line. 
 
+If you wish to skip the examples and external modules, you can do this by adding `-P '!examples,!externals'` to the command line.
+
 In case you modified `storm.thrift`, you have to regenerate thrift code as java and python code before compiling whole project.
 
 ```sh
