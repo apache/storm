@@ -355,53 +355,6 @@
         <module>storm-clojure</module>
         <module>storm-clojure-test</module>
         <module>storm-submit-tools</module>
-        <module>flux</module>
-        <module>sql</module>
-
-        <!-- externals -->
-        <module>external/storm-autocreds</module>
-        <module>external/storm-hdfs</module>
-        <module>external/storm-hdfs-blobstore</module>
-        <module>external/storm-hbase</module>
-        <module>external/storm-hive</module>
-        <module>external/storm-jdbc</module>
-        <module>external/storm-redis</module>
-        <module>external/storm-eventhubs</module>
-        <module>external/storm-elasticsearch</module>
-        <module>external/storm-solr</module>
-        <module>external/storm-metrics</module>
-        <module>external/storm-cassandra</module>
-        <module>external/storm-mqtt</module>
-        <module>external/storm-mongodb</module>
-        <module>external/storm-kafka-client</module>
-        <module>external/storm-kafka-migration</module>
-        <module>external/storm-opentsdb</module>
-        <module>external/storm-kafka-monitor</module>
-        <module>external/storm-kinesis</module>
-        <module>external/storm-jms</module>
-        <module>external/storm-pmml</module>
-        <module>external/storm-rocketmq</module>
-        <module>external/storm-blobstore-migration</module>
-        <module>integration-test</module>
-
-        <!-- examples -->
-        <module>examples/storm-starter</module>
-        <module>examples/storm-loadgen</module>
-        <module>examples/storm-mongodb-examples</module>
-        <module>examples/storm-redis-examples</module>
-        <module>examples/storm-opentsdb-examples</module>
-        <module>examples/storm-solr-examples</module>
-        <module>examples/storm-kafka-client-examples</module>
-        <module>examples/storm-jdbc-examples</module>
-        <module>examples/storm-hdfs-examples</module>
-        <module>examples/storm-hbase-examples</module>
-        <module>examples/storm-hive-examples</module>
-        <module>examples/storm-elasticsearch-examples</module>
-        <module>examples/storm-mqtt-examples</module>
-        <module>examples/storm-pmml-examples</module>
-        <module>examples/storm-jms-examples</module>
-        <module>examples/storm-rocketmq-examples</module>
-        <module>examples/storm-perf</module>
     </modules>
 
     <dependencies>
@@ -653,6 +606,67 @@
                 <clojure.test.set>integration.*</clojure.test.set>
                 <clojure.test.declared.namespace.only>true</clojure.test.declared.namespace.only>
             </properties>
+        </profile>
+        <profile>
+            <id>externals</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>external/storm-autocreds</module>
+                <module>external/storm-hdfs</module>
+                <module>external/storm-hdfs-blobstore</module>
+                <module>external/storm-hbase</module>
+                <module>external/storm-hive</module>
+                <module>external/storm-jdbc</module>
+                <module>external/storm-redis</module>
+                <module>external/storm-eventhubs</module>
+                <module>external/storm-elasticsearch</module>
+                <module>external/storm-solr</module>
+                <module>external/storm-metrics</module>
+                <module>external/storm-cassandra</module>
+                <module>external/storm-mqtt</module>
+                <module>external/storm-mongodb</module>
+                <module>external/storm-kafka-client</module>
+                <module>external/storm-kafka-migration</module>
+                <module>external/storm-opentsdb</module>
+                <module>external/storm-kafka-monitor</module>
+                <module>external/storm-kinesis</module>
+                <module>external/storm-jms</module>
+                <module>external/storm-pmml</module>
+                <module>external/storm-rocketmq</module>
+                <module>external/storm-blobstore-migration</module>
+                <module>integration-test</module>
+
+                <!-- The following modules have dependencies on external modules. -->
+                <module>flux</module>
+                <module>sql</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>examples</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>examples/storm-starter</module>
+                <module>examples/storm-loadgen</module>
+                <module>examples/storm-mongodb-examples</module>
+                <module>examples/storm-redis-examples</module>
+                <module>examples/storm-opentsdb-examples</module>
+                <module>examples/storm-solr-examples</module>
+                <module>examples/storm-kafka-client-examples</module>
+                <module>examples/storm-jdbc-examples</module>
+                <module>examples/storm-hdfs-examples</module>
+                <module>examples/storm-hbase-examples</module>
+                <module>examples/storm-hive-examples</module>
+                <module>examples/storm-elasticsearch-examples</module>
+                <module>examples/storm-mqtt-examples</module>
+                <module>examples/storm-pmml-examples</module>
+                <module>examples/storm-jms-examples</module>
+                <module>examples/storm-rocketmq-examples</module>
+                <module>examples/storm-perf</module>
+            </modules>
         </profile>
     </profiles>
 

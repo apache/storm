@@ -28,7 +28,7 @@ then
 fi
 
 cd ${STORM_SRC_ROOT_DIR}
-python ${TRAVIS_SCRIPT_DIR}/save-logs.py "install.txt" mvn clean install -DskipTests -Pnative '-P!include-shaded-deps' --batch-mode
+python ${TRAVIS_SCRIPT_DIR}/save-logs.py "install.txt" mvn clean install -DskipTests -Pnative,examples,externals '-P!include-shaded-deps' --batch-mode
 BUILD_RET_VAL=$?
 
 if [[ "$BUILD_RET_VAL" != "0" ]];
