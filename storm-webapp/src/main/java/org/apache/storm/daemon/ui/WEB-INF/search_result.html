@@ -109,19 +109,19 @@ $(document).ready(function() {
                    },
                    success: $.proxy(
                        function(data,status,jqXHR) {
+                           data.file = this.file;
+                           data.host = this.host;
+                           data.port = this.port;
+                           data.id = id;
+                           data.logviewerPort = logviewerPort;
+                           data.logviewerScheme = logviewerScheme;
                            jsError(function() {
-                               data.file = this.file;
-                               data.host = this.host;
-                               data.port = this.port;
-                               data.id = id;
-                               data.logviewerPort = logviewerPort;
-                               data.logviewerScheme = logviewerScheme;
                                var searchTemp = $(template).filter("#search-result-identified-template").html();
                                if (searchArchived != "") {
                                    searchTemp = $(template).filter("#deepsearch-result-identified-template").html();
                                }
                                var rendered = Mustache.render(searchTemp, data);
-                               $("#"+this.elemId).replaceWith(rendered);
+                               $("#"+elemId).replaceWith(rendered);
                            });
                        },
                        {host: host, port: port, file: file, elemId: elemId})
