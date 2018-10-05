@@ -1083,11 +1083,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isString
     public static final String CLIENT_BLOBSTORE = "client.blobstore.class";
-    /**
-     * The blobstore super user has all read/write/admin permissions to all blobs - user running the blobstore.
-     */
-    @isString
-    public static final String BLOBSTORE_SUPERUSER = "blobstore.superuser";
+
     /**
      * What directory to use for the blobstore. The directory is expected to be an absolute path when using HDFS blobstore, for
      * LocalFsBlobStore it could be either absolute or relative. If the setting is a relative directory, it is relative to root directory of

@@ -208,7 +208,6 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             conf.put(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS, false);
             conf.put(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS, 50);
             conf.put(Config.STORM_CLUSTER_MODE, "local");
-            conf.put(Config.BLOBSTORE_SUPERUSER, System.getProperty("user.name"));
             conf.put(Config.BLOBSTORE_DIR, nimbusTmp.getPath());
             conf.put(Config.TOPOLOGY_MIN_REPLICATION_COUNT, 1);
 
