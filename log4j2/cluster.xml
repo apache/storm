@@ -24,7 +24,7 @@
     <RollingFile name="A1" 
                  fileName="${sys:storm.log.dir}/${sys:logfile.name}"
                  filePattern="${sys:storm.log.dir}/${sys:logfile.name}.%i.gz">
-        <PatternLayout>
+        <PatternLayout charset="UTF-8">
             <pattern>${pattern}</pattern>
         </PatternLayout>
         <Policies>
