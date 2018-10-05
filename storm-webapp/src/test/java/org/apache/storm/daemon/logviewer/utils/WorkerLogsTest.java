@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.SortedSet;
+import java.util.TreeSet;
 import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
 import org.apache.storm.daemon.logviewer.testsupport.MockFileBuilder;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
@@ -47,7 +49,8 @@ public class WorkerLogsTest {
         File mockMetaFile = new MockFileBuilder().setFileName("worker.yaml").build();
 
         String expId = "id12345";
-        Map<String, File> expected = Collections.singletonMap(expId, port1Dir);
+        SortedSet<File> expected = new TreeSet<>();
+        expected.add(port1Dir);
 
         try {
             SupervisorUtils mockedSupervisorUtils = mock(SupervisorUtils.class);
@@ -67,7 +70,7 @@ public class WorkerLogsTest {
             };
 
             when(mockedSupervisorUtils.readWorkerHeartbeatsImpl(anyMapOf(String.class, Object.class))).thenReturn(null);
-            assertEquals(expected, workerLogs.identifyWorkerLogDirs(Collections.singleton(port1Dir)));
+            assertEquals(expected, workerLogs.getLogDirs(Collections.singleton(port1Dir), (wid) -> true));
         } finally {
             SupervisorUtils.resetInstance();
         }
