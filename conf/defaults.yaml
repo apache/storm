@@ -106,6 +106,8 @@ logviewer.appender.name: "A1"
 logviewer.max.sum.worker.logs.size.mb: 4096
 logviewer.max.per.worker.logs.size.mb: 2048
 logviewer.disable.http.binding: true
+logviewer.filter: null
+logviewer.filter.params: null
 
 logs.users: null
 

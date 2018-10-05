@@ -55,6 +55,8 @@ Some form of Authentication is typically required, with using java servlet filte
 ```yaml
 ui.filter: "filter.class"
 ui.filter.params: "param1":"value1"
+logviewer.filter: "filter.class"
+logviewer.filter.params: "param1":"value1"
 ```
 or by restricting the UI/log viewers ports to only accept connections from local
 hosts, and then front them with another web server, like Apache httpd, that can
@@ -67,7 +69,7 @@ The servlet filters are preferred because it allows individual topologies to
 specificy who is and who is not allowed to access the pages associated with
 them.  
 
-Storm UI can be configured to use AuthenticationFilter from hadoop-auth.
+Storm UI (or logviewer) can be configured to use AuthenticationFilter from hadoop-auth.
 ```yaml
 ui.filter: "org.apache.hadoop.security.authentication.server.AuthenticationFilter"
 ui.filter.params:

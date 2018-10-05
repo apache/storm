@@ -18,11 +18,7 @@
 
 package org.apache.storm.daemon.logviewer;
 
-import static org.apache.storm.DaemonConfig.UI_HEADER_BUFFER_BYTES;
-
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.File;
@@ -31,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
@@ -66,10 +63,14 @@ public class LogviewerServer implements AutoCloseable {
         Server ret = null;
         if (logviewerHttpPort != null && logviewerHttpPort >= 0) {
             LOG.info("Starting Logviewer HTTP servers...");
-            Integer headerBufferSize = ObjectReader.getInt(conf.get(UI_HEADER_BUFFER_BYTES));
-            String filterClass = (String) (conf.get(DaemonConfig.UI_FILTER));
+            String filterParamKey = DaemonConfig.LOGVIEWER_FILTER_PARAMS;
+            String filterClass = (String) (conf.get(DaemonConfig.LOGVIEWER_FILTER));
+            if (StringUtils.isBlank(filterClass)) {
+                filterClass = (String) (conf.get(DaemonConfig.UI_FILTER));
+                filterParamKey = DaemonConfig.UI_FILTER_PARAMS;
+            }
             @SuppressWarnings("unchecked")
-            Map<String, String> filterParams = (Map<String, String>) (conf.get(DaemonConfig.UI_FILTER_PARAMS));
+            Map<String, String> filterParams = (Map<String, String>) (conf.get(filterParamKey));
             FilterConfiguration filterConfiguration = new FilterConfiguration(filterClass, filterParams);
             final List<FilterConfiguration> filterConfigurations = Arrays.asList(filterConfiguration);
 
