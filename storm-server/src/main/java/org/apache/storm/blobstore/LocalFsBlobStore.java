@@ -108,7 +108,7 @@ public class LocalFsBlobStore extends BlobStore {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        timer = new Timer();
+        timer = new Timer("BLOB-STORE-TIMER", true);
         this.leaderElector = leaderElector;
     }
 
@@ -410,6 +410,9 @@ public class LocalFsBlobStore extends BlobStore {
     public void shutdown() {
         if (zkClient != null) {
             zkClient.close();
+        }
+        if (timer != null) {
+            timer.cancel();;
         }
     }
 

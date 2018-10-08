@@ -390,7 +390,7 @@ public class HdfsSpout extends BaseRichSpout {
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         LOG.info("Opening HDFS Spout");
         this.conf = conf;
-        this.commitTimer = new Timer();
+        this.commitTimer = new Timer(context.getThisTaskId() + "-commit-timer", true);
         this.tracker = new ProgressTracker();
         this.hdfsConfig = new Configuration();
         this.collector = collector;
