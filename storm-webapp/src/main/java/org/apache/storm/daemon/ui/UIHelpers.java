@@ -1226,7 +1226,7 @@ public class UIHelpers {
      * @return nullToZero
      */
     private static Long nullToZero(Long value) {
-        return Objects.isNull(value) ? value : 0;
+        return !Objects.isNull(value) ? value : 0;
     }
 
     /**
@@ -1235,7 +1235,7 @@ public class UIHelpers {
      * @return nullToZero
      */
     private static Double nullToZero(Double value) {
-        return Objects.isNull(value) ? value : 0;
+        return !Objects.isNull(value) ? value : 0;
     }
 
     /**
