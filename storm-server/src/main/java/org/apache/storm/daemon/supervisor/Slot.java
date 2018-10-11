@@ -430,9 +430,6 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 dynamicState = informChangedBlobs(dynamicState, dynamicState.pendingLocalization);
             }
 
-            // Wait until time out
-            dynamicState.pendingDownload.get(1000, TimeUnit.MILLISECONDS);
-            //Downloading of all blobs finished. This is the precondition for all codes below.
             if (!equivalent(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
                 //Scheduling changed
                 staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
@@ -442,6 +439,9 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                                                                staticState);
             }
 
+            // Wait until time out
+            dynamicState.pendingDownload.get(1000, TimeUnit.MILLISECONDS);
+            //Downloading of all blobs finished. This is the precondition for all codes below.
             if (!dynamicState.pendingChangingBlobs.isEmpty()) {
                 LOG.info("There are pending changes, waiting for them to finish before launching container...");
                 //We cannot launch the container yet the resources may still be updating
