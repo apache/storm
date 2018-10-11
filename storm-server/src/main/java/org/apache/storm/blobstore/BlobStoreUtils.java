@@ -193,7 +193,7 @@ public class BlobStoreUtils {
                 }
                 isSuccess = true;
             } catch(FileNotFoundException fnf) {
-                LOG.warn("FileNotFoundException", fnf);
+                LOG.warn("Blobstore file for key '{}' does not exist or got deleted before it could be downloaded.", key, fnf);
             } catch (IOException | AuthorizationException exception) {
                 throw new RuntimeException(exception);
             } catch (KeyNotFoundException knf) {
