@@ -695,7 +695,8 @@ def shell(resourcesdir, command, *args):
     os.system("rm " + tmpjarpath)
 
 def repl():
-    """Syntax: [storm repl]
+    """DEPRECATED: This subcommand may be removed in a future release.
+    Syntax: [storm repl]
 
     Opens up a Clojure REPL with the storm jars and configuration
     on the classpath. Useful for debugging.
