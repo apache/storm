@@ -12,6 +12,7 @@
 
 package org.apache.storm.blobstore;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -191,6 +192,8 @@ public class BlobStoreUtils {
                     out.close();
                 }
                 isSuccess = true;
+            } catch(FileNotFoundException fnf) {
+                LOG.warn("Blobstore file for key '{}' does not exist or got deleted before it could be downloaded.", key, fnf);
             } catch (IOException | AuthorizationException exception) {
                 throw new RuntimeException(exception);
             } catch (KeyNotFoundException knf) {
