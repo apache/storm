@@ -1129,6 +1129,46 @@ public class DaemonConfig implements Validated {
     @isPositiveNumber
     public static String STORM_WORKER_TOKEN_LIFE_TIME_HOURS = "storm.worker.token.life.time.hours";
 
+    /**
+     * The root of cgroup for docker to use. On RHEL7, it should bd "/sys/fs/cgroup"
+     */
+    @isString
+    @NotNull
+    public static String STORM_DOCKER_CGROUP_ROOT = "storm.docker.cgroup.root";
+
+    /**
+     * Executable of docker command, e.g. /usr/bin/docker, /usr/bin/podman, etc.
+     */
+    @isString
+    @NotNull
+    public static String STORM_DOCKER_EXECUTABLE = "storm.docker.executable";
+
+    /**
+     * Default docker image to use if the topology doesn't specify which docker image to use.
+     */
+    @isString
+    public static String STORM_DOCKER_IMAGE = "storm.docker.image";
+
+    /**
+     * The default network type for the docker container.
+     */
+    @isString
+    @NotNull
+    public static String STORM_DOCKER_CONTAINER_NETWORK = "storm.docker.container.network";
+
+    /**
+     * --cgroup-parent config for docker command. Must follow the constraints of the docker command.
+     */
+    @isString
+    @NotNull
+    public static String STORM_DOCKER_CGROUP_PARENT = "storm.docker.cgroup.parent";
+
+    /**
+     * White listed syscalls seccomp Json file to be used as a seccomp filter.
+     */
+    @isString
+    public static String STORM_DOCKER_SECCOMP_PROFILE = "storm.docker.seccomp.profile";
+
     public static String getCgroupRootDir(Map<String, Object> conf) {
         return (String) conf.get(STORM_SUPERVISOR_CGROUP_ROOTDIR);
     }

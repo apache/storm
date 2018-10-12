@@ -388,6 +388,11 @@ storm.supervisor.low.memory.threshold.mb: 1024
 storm.supervisor.medium.memory.threshold.mb: 1536
 storm.supervisor.medium.memory.grace.period.ms: 30000
 
+storm.docker.cgroup.root: "/sys/fs/cgroup"
+storm.docker.cgroup.parent: "storm.slice"
+storm.docker.executable: "/usr/bin/docker"
+storm.docker.container.network: "host"
+
 storm.topology.classpath.beginning.enabled: false
 worker.metrics:
     "CGroupMemory": "org.apache.storm.metric.cgroup.CGroupMemoryUsage"

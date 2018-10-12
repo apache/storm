@@ -58,6 +58,7 @@ enum errorcodes {
 #define MIN_USERID_KEY "min.user.id"
 #define BANNED_USERS_KEY "banned.users"
 #define TMP_DIR "tmp"
+#define AS_ROOT 0
 
 extern struct passwd *user_detail;
 
@@ -68,7 +69,7 @@ extern FILE *ERRORFILE;
 
 int setup_dir_permissions(const char* local_dir, int for_blob_permission);
 
-int exec_as_user(const char * working_dir, const char * args);
+int exec_as_user(const char * working_dir, const char * args, int as_root);
 
 int fork_as_user(const char * working_dir, const char * args);
 
