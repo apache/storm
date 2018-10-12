@@ -61,14 +61,12 @@ if [[ "${USER}" == "vagrant" ]]; then # install oracle jdk8 or jdk10
     java -version
     mvn --version
     export MAVEN_OPTS="-Xmx3000m"
-    zookeeper_version=3.4.8*
 else
     ( while true; do echo "heartbeat"; sleep 300; done ) & #heartbeat needed by travis ci
     if [[ "${USER}" == "travis" ]]; then
         ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
     fi
     (( $(find "${STORM_SRC_DIR}/storm-dist/binary" -iname 'apache-storm*.zip' | wc -l) == 1 )) || die "expected exactly one zip file, did you run: cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"
-    zookeeper_version=3.4.5*
 fi
 
 storm_binary_zip=$(find "${STORM_SRC_DIR}/storm-dist" -iname '*.zip')
@@ -90,11 +88,7 @@ function start_storm_process() {
     echo starting: storm $1
     sudo su storm -c "export JAVA_HOME=\"${JAVA_HOME}\" && cd /usr/share/storm && storm $1" &
 }
-if [[ "${USER}" == 'travis' ]]; then
-    start_storm_process dev-zookeeper
-else
-    sudo bash "${SCRIPT_DIR}/config/install-zookeeper.sh" "$zookeeper_version"
-fi
+start_storm_process dev-zookeeper
 start_storm_process nimbus
 start_storm_process ui
 start_storm_process supervisor
