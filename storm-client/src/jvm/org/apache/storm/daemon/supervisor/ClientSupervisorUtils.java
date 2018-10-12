@@ -77,9 +77,9 @@ public class ClientSupervisorUtils {
         return ret;
     }
 
-    static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args,
-                                   Map<String, String> environment, final String logPreFix,
-                                   final ExitCodeCallback exitCodeCallback, File dir) throws IOException {
+    public static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args,
+                                          Map<String, String> environment, final String logPreFix,
+                                          final ExitCodeCallback exitCodeCallback, File dir) throws IOException {
         if (StringUtils.isBlank(user)) {
             throw new IllegalArgumentException("User cannot be blank when calling processLauncher.");
         }
@@ -111,7 +111,6 @@ public class ClientSupervisorUtils {
      * @param exitCodeCallback code to be called passing the exit code value when the process completes
      * @param dir              the working directory of the new process
      * @return the new process
-     *
      * @throws IOException
      * @see ProcessBuilder
      */
@@ -142,7 +141,7 @@ public class ClientSupervisorUtils {
                 public Long call() {
                     if (logPrefix != null) {
                         Utils.readAndLogStream(logPrefix,
-                                               process.getInputStream());
+                            process.getInputStream());
                     }
                     if (exitCodeCallback != null) {
                         try {

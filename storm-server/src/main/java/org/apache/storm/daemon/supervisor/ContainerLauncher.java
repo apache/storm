@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.container.DefaultResourceIsolationManager;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.messaging.IContext;
@@ -56,18 +57,17 @@ public abstract class ContainerLauncher {
             return new LocalContainerLauncher(conf, supervisorId, supervisorPort, sharedContext, metricsRegistry, containerMemoryTracker);
         }
 
-        ResourceIsolationInterface resourceIsolationManager = null;
+        ResourceIsolationInterface resourceIsolationManager;
         if (ObjectReader.getBoolean(conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN_ENABLE), false)) {
             resourceIsolationManager = ReflectionUtils.newInstance((String) conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN));
-            resourceIsolationManager.prepare(conf);
-            LOG.info("Using resource isolation plugin {} {}", conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN),
-                     resourceIsolationManager);
+        } else {
+            resourceIsolationManager = new DefaultResourceIsolationManager();
         }
 
-        if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
-            return new RunAsUserContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager, metricsRegistry, 
-                containerMemoryTracker);
-        }
+        LOG.info("Using resource isolation plugin {} {}", conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN),
+            resourceIsolationManager);
+        resourceIsolationManager.prepare(conf);
+
         return new BasicContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager, metricsRegistry, 
             containerMemoryTracker);
     }
