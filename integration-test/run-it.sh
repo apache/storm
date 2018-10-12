@@ -79,7 +79,6 @@ echo "Using storm version:" ${STORM_VERSION}
 # setup storm cluster
 list_storm_processes || true
 sudo bash "${SCRIPT_DIR}/config/common.sh"
-sudo bash "${SCRIPT_DIR}/config/install-zookeeper.sh" "$zookeeper_version"
 sudo bash "${SCRIPT_DIR}/config/install-storm.sh" "$storm_binary_zip"
 if [[ "$TRAVIS_JDK_VERSION" == "oraclejdk10" ]] || [[ "${JDK_VERSION}" == "10" ]]
 then
@@ -91,6 +90,11 @@ function start_storm_process() {
     echo starting: storm $1
     sudo su storm -c "export JAVA_HOME=\"${JAVA_HOME}\" && cd /usr/share/storm && storm $1" &
 }
+if [[ "${USER}" == 'travis' ]]; then
+    start_storm_process dev-zookeeper
+else
+    sudo bash "${SCRIPT_DIR}/config/install-zookeeper.sh" "$zookeeper_version"
+fi
 start_storm_process nimbus
 start_storm_process ui
 start_storm_process supervisor
