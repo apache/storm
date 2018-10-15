@@ -283,17 +283,17 @@ Integration tests require that you activate the profile `integration-test` and t
  
 To run all Java and Clojure integration tests but no unit tests execute one of the commands
  
-    mvn -P  integration-tests-only verify
-    mvn -P  integration-tests-only integration-test
+    mvn -P integration-tests-only,examples,externals verify
+    mvn -P integration-tests-only,examples,externals integration-test
 
 To run all unit tests plus Clojure integration tests but no Java integration tests execute the command
  
-    mvn -P all-tests test
+    mvn -P all-tests,examples,externals test
 
 To run all unit tests and all integration tests execute one of the commands
  
-    mvn -P all-tests verify
-    mvn -P all-tests integration-test
+    mvn -P all-tests,examples,externals verify
+    mvn -P all-tests,examples,externals integration-test
  
  
 You can also run tests selectively via the Clojure REPL.  The following example runs the tests in
