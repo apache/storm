@@ -25,21 +25,49 @@ public class KillTopology {
 
     public static void main(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("w", "wait", null, CLI.AS_INT)
+                                    .boolOpt("c", "continue-on-error")
                                     .arg("TOPO", CLI.INTO_LIST)
                                     .parse(args);
+
+        @SuppressWarnings("unchecked")
         final List<String> names = (List<String>) cl.get("TOPO");
+
+        // wait seconds for topology to shut down
         Integer wait = (Integer) cl.get("w");
+
+        // if '-c' set, we'll try to kill every topology listed, even if an error occurs
+        Boolean continueOnError = (Boolean) cl.get("c");
 
         final KillOptions opts = new KillOptions();
         if (wait != null) {
             opts.set_wait_secs(wait);
         }
+
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
             @Override
             public void run(Nimbus.Iface nimbus) throws Exception {
+                int errorCount = 0;
                 for (String name : names) {
-                    nimbus.killTopologyWithOpts(name, opts);
-                    LOG.info("Killed topology: {}", name);
+                    try {
+                        nimbus.killTopologyWithOpts(name, opts);
+                        LOG.info("Killed topology: {}", name);
+                    } catch (Exception e) {
+                        errorCount += 1;
+                        if (!continueOnError) {
+                            throw e;
+                        } else {
+                            LOG.info(
+                                    "Caught error killing topology '{}'; continuing as -c was passed. Exception: {}",
+                                    name,
+                                    e.getClass().getName()
+                            );
+                        }
+                    }
+                }
+
+                // If we failed to kill any topology, still exit with failure status
+                if (errorCount > 0) {
+                    throw new RuntimeException("Failed to successfully kill " + errorCount + " topologies.");
                 }
             }
         });
