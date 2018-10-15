@@ -20,10 +20,10 @@ import org.apache.storm.container.cgroup.core.MemoryCore;
 import org.apache.storm.daemon.supervisor.ClientSupervisorUtils;
 import org.apache.storm.daemon.supervisor.ExitCodeCallback;
 import org.apache.storm.shade.com.google.common.io.Files;
-import org.apache.storm.shade.org.apache.zookeeper.Shell;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
+import org.apache.storm.utils.ShellCommandRunnerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +41,7 @@ public class DockerManager implements ResourceIsolationInterface {
     private String cgroupParent;
     private String memoryCgroupRootPath;
     private String cgroupRootPath;
+    private String nscdPath;
     private Map<String, Object> conf;
     private Map<String, Integer> workerToCpu = new HashMap<>();
     private Map<String, Integer> workerToMemoryMb = new HashMap<>();
@@ -61,7 +62,8 @@ public class DockerManager implements ResourceIsolationInterface {
         defaultNetworkType = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CONTAINER_NETWORK));
         cgroupParent = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_PARENT));
         cgroupRootPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_ROOT));
-        memoryCgroupRootPath = cgroupRootPath + File.separator + "/memory" + File.separator + cgroupParent;
+        nscdPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_NSCD_DIR));
+        memoryCgroupRootPath = cgroupRootPath + File.separator + "memory" + File.separator + cgroupParent;
         memoryCoreAtRoot = new MemoryCore(memoryCgroupRootPath);
     }
 
@@ -86,18 +88,28 @@ public class DockerManager implements ResourceIsolationInterface {
         workerToCid.remove(workerId);
     }
 
-    private String getUserId(String userName, String parameter) throws IOException {
-        String id = "";
-        Shell.ShellCommandExecutor shexec = new Shell.ShellCommandExecutor(
-            new String[] {"id", parameter, userName});
+    private String[] getGroupIdInfo(String userName)
+        throws IOException {
+        String[] groupIds;
         try {
-            shexec.execute();
-            id = shexec.getOutput().replaceAll("[^0-9]", "");
-        } catch (Exception e) {
+            String output = new ShellCommandRunnerImpl().execCommand("id", "--groups", userName);
+            groupIds = output.trim().split(" ");
+        } catch (IOException e) {
+            LOG.error("Can't get group IDs of the user {}", userName);
+            throw new IOException(e);
+        }
+        return groupIds;
+    }
+
+    private String getUserIdInfo(String userName) throws IOException {
+        String uid = "";
+        try {
+            uid = new ShellCommandRunnerImpl().execCommand("id", "--user", userName).trim();
+        } catch (IOException e) {
             LOG.error("Can't get uid of the user {}", userName);
             throw e;
         }
-        return id;
+        return uid;
     }
 
     @Override
@@ -116,7 +128,12 @@ public class DockerManager implements ResourceIsolationInterface {
         String workerDir = targetDir.getAbsolutePath();
         String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
 
-        DockerRunCommand dockerRunCommand = new DockerRunCommand(dockerExecutable, workerId, getUserId(user, "-u"), dockerImage);
+        String uid = getUserIdInfo(user);
+        String[] groups = getGroupIdInfo(user);
+        String gid = groups[0];
+        String dockerUser = uid + ":" + gid;
+
+        DockerRunCommand dockerRunCommand = new DockerRunCommand(dockerExecutable, workerId, dockerUser, dockerImage);
 
         //set of locations to be bind mounted
         String workerRootDir = ConfigUtils.workerRoot(conf, workerId);
@@ -138,12 +155,15 @@ public class DockerManager implements ResourceIsolationInterface {
         dockerRunCommand.detachOnRun()
             .setNetworkType(network)
             .setReadonly()
+            .addReadOnlyMountLocation(cgroupRootPath, cgroupRootPath, false)
+            .addMountLocation(nscdPath, nscdPath, false)
             .addReadOnlyMountLocation(stormHome, stormHome, false)
             .addReadOnlyMountLocation(supervisorLocalDir, supervisorLocalDir, false)
             .addMountLocation(workerRootDir, workerRootDir, true)
             .addMountLocation(workerArtifactsRoot, workerArtifactsRoot, true)
             .addMountLocation(workerUserFile, workerUserFile, true)
             .setCGroupParent(cgroupParent)
+            .groupAdd(groups)
             .setContainerWorkDir(workerDir)
             .setCidFile(dockerCidFilePath(workerDir))
             .setCapabilities(Collections.EMPTY_SET)

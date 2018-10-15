@@ -1130,6 +1130,14 @@ public class DaemonConfig implements Validated {
     public static String STORM_WORKER_TOKEN_LIFE_TIME_HOURS = "storm.worker.token.life.time.hours";
 
     /**
+     * The directory of nscd - name service cache daemon, e.g. "/var/run/nscd/".
+     * nscd should be pre-installed.
+     */
+    @isString
+    @NotNull
+    public static String STORM_DOCKER_NSCD_DIR = "storm.docker.nscd.dir";
+
+    /**
      * The root of cgroup for docker to use. On RHEL7, it should bd "/sys/fs/cgroup"
      */
     @isString
