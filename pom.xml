@@ -275,7 +275,7 @@
         <slf4j.version>1.7.21</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
         <mockito.version>2.19.0</mockito.version>
-        <zookeeper.version>3.4.13</zookeeper.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
         <jline.version>0.9.94</jline.version>
         <hive.version>2.3.3</hive.version>
         <hadoop.version>2.6.1</hadoop.version>
