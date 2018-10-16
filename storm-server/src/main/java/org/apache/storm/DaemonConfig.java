@@ -1131,14 +1131,13 @@ public class DaemonConfig implements Validated {
 
     /**
      * The directory of nscd - name service cache daemon, e.g. "/var/run/nscd/".
-     * nscd should be pre-installed.
+     * To use it, nscd should be pre-installed.
      */
     @isString
-    @NotNull
     public static String STORM_DOCKER_NSCD_DIR = "storm.docker.nscd.dir";
 
     /**
-     * The root of cgroup for docker to use. On RHEL7, it should bd "/sys/fs/cgroup"
+     * The root of cgroup for docker to use. On RHEL7, it should be "/sys/fs/cgroup".
      */
     @isString
     @NotNull
@@ -1149,7 +1148,7 @@ public class DaemonConfig implements Validated {
      */
     @isString
     @NotNull
-    public static String STORM_DOCKER_EXECUTABLE = "storm.docker.executable";
+    public static String STORM_DOCKER_EXECUTABLE_PATH = "storm.docker.executable.path";
 
     /**
      * Default docker image to use if the topology doesn't specify which docker image to use.

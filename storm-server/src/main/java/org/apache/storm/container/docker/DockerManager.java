@@ -52,7 +52,7 @@ public class DockerManager implements ResourceIsolationInterface {
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {
         this.conf = conf;
-        dockerExecutable = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_EXECUTABLE));
+        dockerExecutable = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_EXECUTABLE_PATH));
         //default configs can't be null
         defaultDockerImage = (String) conf.get(DaemonConfig.STORM_DOCKER_IMAGE);
         if (defaultDockerImage == null || !dockerImagePattern.matcher(defaultDockerImage).matches()) {
@@ -62,7 +62,7 @@ public class DockerManager implements ResourceIsolationInterface {
         defaultNetworkType = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CONTAINER_NETWORK));
         cgroupParent = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_PARENT));
         cgroupRootPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_ROOT));
-        nscdPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_NSCD_DIR));
+        nscdPath = (String) conf.get(DaemonConfig.STORM_DOCKER_NSCD_DIR);
         memoryCgroupRootPath = cgroupRootPath + File.separator + "memory" + File.separator + cgroupParent;
         memoryCoreAtRoot = new MemoryCore(memoryCgroupRootPath);
     }
@@ -156,17 +156,21 @@ public class DockerManager implements ResourceIsolationInterface {
             .setNetworkType(network)
             .setReadonly()
             .addReadOnlyMountLocation(cgroupRootPath, cgroupRootPath, false)
-            .addMountLocation(nscdPath, nscdPath, false)
             .addReadOnlyMountLocation(stormHome, stormHome, false)
             .addReadOnlyMountLocation(supervisorLocalDir, supervisorLocalDir, false)
             .addMountLocation(workerRootDir, workerRootDir, true)
             .addMountLocation(workerArtifactsRoot, workerArtifactsRoot, true)
-            .addMountLocation(workerUserFile, workerUserFile, true)
-            .setCGroupParent(cgroupParent)
+            .addMountLocation(workerUserFile, workerUserFile, true);
+
+        if (nscdPath != null) {
+            dockerRunCommand.addMountLocation(nscdPath, nscdPath, false);
+        }
+
+        dockerRunCommand.setCGroupParent(cgroupParent)
             .groupAdd(groups)
             .setContainerWorkDir(workerDir)
             .setCidFile(dockerCidFilePath(workerDir))
-            .setCapabilities(Collections.EMPTY_SET)
+            .setCapabilities(Collections.emptySet())
             .setNoNewPrivileges();
 
         if (seccompJsonFile != null) {

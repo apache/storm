@@ -650,7 +650,7 @@ int recursive_delete(const char *path, int supervisor_owns_dir) {
   return 0;
 }
 
-int exec_as_user(const char * working_dir, const char * script_file, int as_root) {
+int exec_as_user(const char * working_dir, const char * script_file, boolean as_root) {
   char *script_file_dest = NULL;
   script_file_dest = get_container_launcher_file(working_dir);
   if (script_file_dest == NULL) {
@@ -665,7 +665,7 @@ int exec_as_user(const char * working_dir, const char * script_file, int as_root
 
   setsid();
 
-  if (as_root != AS_ROOT) {
+  if (!as_root) {
     // give up root privs
     if (change_user(user_detail->pw_uid, user_detail->pw_gid) != 0) {
       return SETUID_OPER_FAILED;
