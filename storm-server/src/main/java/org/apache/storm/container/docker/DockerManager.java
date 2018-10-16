@@ -189,8 +189,8 @@ public class DockerManager implements ResourceIsolationInterface {
 
         //didn't find a good way to use processExitCallback,
         //because the command to launch the docker container will return immediately.
-        runDockerCommandWaitFor(conf, dockerRunCommand.getCommandWithArguments(),
-            null, logPrefix, null, targetDir);
+        runDockerCommandWaitFor(conf, user, CmdType.LAUNCH_DOCKER_CONTAINER,
+            dockerRunCommand.getCommandWithArguments(), null, logPrefix, null, targetDir);
 
         String cid = Files.readLines(new File(dockerCidFilePath(workerDir)), Charset.defaultCharset()).get(0);
 
@@ -232,12 +232,12 @@ public class DockerManager implements ResourceIsolationInterface {
     public void kill(String user, String workerId) throws IOException {
         String workerDir = ConfigUtils.workerRoot(conf, workerId);
         DockerStopCommand dockerStopCommand = new DockerStopCommand(dockerExecutable, workerId);
-        runDockerCommandWaitFor(conf, dockerStopCommand.getCommandWithArguments(), null,
-            null, null, new File(workerDir));
+        runDockerCommandWaitFor(conf, user, CmdType.EXEC_DOCKER_COMMAND, dockerStopCommand.getCommandWithArguments(),
+            null, null, null, new File(workerDir));
 
         DockerRmCommand dockerRmCommand = new DockerRmCommand(dockerExecutable, workerId);
-        runDockerCommandWaitFor(conf, dockerRmCommand.getCommandWithArguments(), null,
-            null, null, new File(workerDir));
+        runDockerCommandWaitFor(conf, user, CmdType.EXEC_DOCKER_COMMAND, dockerRmCommand.getCommandWithArguments(),
+            null, null, null, new File(workerDir));
     }
 
     @Override
@@ -245,8 +245,8 @@ public class DockerManager implements ResourceIsolationInterface {
         String workerDir = ConfigUtils.workerRoot(conf, workerId);
         DockerRmCommand dockerRmCommand = new DockerRmCommand(dockerExecutable, workerId);
         dockerRmCommand.withForce();
-        runDockerCommandWaitFor(conf, dockerRmCommand.getCommandWithArguments(), null,
-            null, null, new File(workerDir));
+        runDockerCommandWaitFor(conf, user, CmdType.EXEC_DOCKER_COMMAND, dockerRmCommand.getCommandWithArguments(),
+            null, null, null, new File(workerDir));
     }
 
     /**
@@ -265,7 +265,7 @@ public class DockerManager implements ResourceIsolationInterface {
         DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(dockerExecutable, workerId);
         dockerInspectCommand.withContainerStatus();
 
-        int exitCode = runDockerCommandWaitFor(conf, dockerInspectCommand.getCommandWithArguments(),
+        int exitCode = runDockerCommandWaitFor(conf, user, CmdType.EXEC_DOCKER_COMMAND, dockerInspectCommand.getCommandWithArguments(),
             null, null, null, new File(workerDir));
         return exitCode != 0;
     }
@@ -281,7 +281,7 @@ public class DockerManager implements ResourceIsolationInterface {
         String workerDir = targetDir.getAbsolutePath();
         DockerExecCommand dockerExecCommand = new DockerExecCommand(dockerExecutable, workerId);
         dockerExecCommand.addExecCommand(command);
-        int exitCode = runDockerCommandWaitFor(conf, dockerExecCommand.getCommandWithArguments(), null,
+        int exitCode = runDockerCommandWaitFor(conf, user, CmdType.EXEC_DOCKER_COMMAND, dockerExecCommand.getCommandWithArguments(), null,
             null, null, new File(workerDir));
         return exitCode == 0;
     }
@@ -310,7 +310,7 @@ public class DockerManager implements ResourceIsolationInterface {
      * @return the Process
      * @throws IOException on I/O exception
      */
-    private Process runDockerCommand(Map<String, Object> conf, String dockerCommand,
+    private Process runDockerCommand(Map<String, Object> conf, String user, CmdType cmdType, String dockerCommand,
                                      Map<String, String> environment, final String logPrefix,
                                      final ExitCodeCallback exitCodeCallback, File targetDir) throws IOException {
         String workerDir = targetDir.getAbsolutePath();
@@ -318,21 +318,10 @@ public class DockerManager implements ResourceIsolationInterface {
         try (BufferedWriter out = new BufferedWriter(new FileWriter(dockerScriptPath))) {
             out.write(dockerCommand);
         }
-        String wlinitial = (String) (conf.get(Config.SUPERVISOR_WORKER_LAUNCHER));
-        String stormHome = ConfigUtils.concatIfNotNull(System.getProperty(ConfigUtils.STORM_HOME));
-        String wl;
-        if (org.apache.storm.shade.org.apache.commons.lang.StringUtils.isNotBlank(wlinitial)) {
-            wl = wlinitial;
-        } else {
-            wl = stormHome + "/bin/worker-launcher";
-        }
-        List<String> commands = new ArrayList<>();
-        commands.add(wl);
-        commands.add("--run-docker");
-        commands.add(workerDir);
-        commands.add(dockerScriptPath);
-        LOG.info("Running command: {}", commands);
-        return ClientSupervisorUtils.launchProcess(commands, environment, logPrefix, exitCodeCallback, targetDir);
+        List<String> args = Arrays.asList(cmdType.toString(), workerDir, dockerScriptPath);
+
+        return ClientSupervisorUtils.processLauncher(conf, user, null, args, null,
+            logPrefix, exitCodeCallback, targetDir);
     }
 
     /**
@@ -347,15 +336,31 @@ public class DockerManager implements ResourceIsolationInterface {
      * @return the Process
      * @throws IOException on I/O exception
      */
-    private int runDockerCommandWaitFor(Map<String, Object> conf, String dockerCommand,
+    private int runDockerCommandWaitFor(Map<String, Object> conf, String user, CmdType cmdType, String dockerCommand,
                                         Map<String, String> environment, final String logPrefix,
                                         final ExitCodeCallback exitCodeCallback, File targetDir) throws IOException {
-        Process p = runDockerCommand(conf, dockerCommand, environment, logPrefix, exitCodeCallback, targetDir);
+        Process p = runDockerCommand(conf, user, cmdType, dockerCommand, environment, logPrefix, exitCodeCallback, targetDir);
         try {
             p.waitFor();
         } catch (InterruptedException e) {
             LOG.error("running docker command is interrupted", e);
         }
         return p.exitValue();
+    }
+
+    enum CmdType {
+        LAUNCH_DOCKER_CONTAINER("launch-docker-container"),
+        EXEC_DOCKER_COMMAND("exec-docker-cmd");
+
+        private final String name;
+
+        CmdType(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return this.name;
+        }
     }
 }

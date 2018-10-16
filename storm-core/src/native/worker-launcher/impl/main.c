@@ -40,7 +40,6 @@
 
 void display_usage(FILE *stream) {
   fprintf(stream, "Usage: worker-launcher --checksetup\n");
-  fprintf(stream, "Usage: worker-launcher --run-docker <working-directory>  <script-to-run>\n");
   fprintf(stream, "Usage: worker-launcher user command command-args\n");
   fprintf(stream, "Commands:\n");
   fprintf(stream, "   initialize stormdist dir: code-dir <code-directory>\n");
@@ -48,6 +47,8 @@ void display_usage(FILE *stream) {
   fprintf(stream, "   launch a worker: worker <working-directory> <script-to-run>\n");
   fprintf(stream, "   launch a profiler: profiler <working-directory> <script-to-run>\n");
   fprintf(stream, "   signal a worker: signal <pid> <signal>\n");
+  fprintf(stream, "   launch a docker container: launch-docker-container <working-directory> <script-to-run>\n");
+  fprintf(stream, "   execute a docker command: exec-docker-cmd <working-directory> <script-to-run>\n");
 }
 
 int main(int argc, char **argv) {
@@ -136,16 +137,6 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  //run the docker command
-  if (strcmp("--run-docker", argv[1]) == 0) {
-    if (argc != 4) {
-      display_usage(stdout);
-      return INVALID_ARGUMENT_NUMBER;
-    }
-    int exit_code = exec_as_user(argv[2], argv[3], TRUE);
-    return exit_code;
-  }
-
   //checks done for user name
   if (argv[optind] == NULL) {
     fprintf(ERRORFILE, "Invalid user name.\n");
@@ -208,7 +199,26 @@ int main(int argc, char **argv) {
     if (exit_code == 0) {
       exit_code = exec_as_user(working_dir, argv[optind], FALSE);
     }
-   } else if (strcasecmp("profiler", command) == 0) {
+  } else if (strcasecmp("launch-docker-container", command) == 0) {
+    if (argc != 5) {
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for launch-docker-container\n", argc);
+      fflush(ERRORFILE);
+      return INVALID_ARGUMENT_NUMBER;
+    }
+    working_dir = argv[optind++];
+    exit_code = setup_dir_permissions(working_dir, 1);
+    if (exit_code == 0) {
+      exit_code = exec_as_user(working_dir, argv[optind], TRUE);
+    }
+  } else if (strcasecmp("exec-docker-cmd", command) == 0) {
+    if (argc != 5) {
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for exec-docker-cmd\n", argc);
+      fflush(ERRORFILE);
+      return INVALID_ARGUMENT_NUMBER;
+    }
+    working_dir = argv[optind++];
+    exit_code = exec_as_user(working_dir, argv[optind], TRUE);
+  } else if (strcasecmp("profiler", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for profiler\n",
 	      argc);
