@@ -34,6 +34,7 @@
         <worker-launcher.build.dir>${project.build.directory}/native/worker-launcher</worker-launcher.build.dir>
         <worker-launcher.additional_cflags />
         <argLine />
+        <conjure.version>2.1.3</conjure.version>
     </properties>
 
     <dependencies>
@@ -64,76 +65,17 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>clj-time</groupId>
-            <artifactId>clj-time</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>compojure</groupId>
-            <artifactId>compojure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>hiccup</groupId>
-            <artifactId>hiccup</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ring</groupId>
-            <artifactId>ring-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ring</groupId>
-            <artifactId>ring-devel</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ring</groupId>
-            <artifactId>ring-jetty-adapter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.mortbay.jetty</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>ring</groupId>
-            <artifactId>ring-json</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>tools.logging</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>math.numeric-tower</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>tools.cli</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>tools.nrepl</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>clojure-complete</groupId>
-            <artifactId>clojure-complete</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.clojars.runa</groupId>
             <artifactId>conjure</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>clojure-contrib</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>data.codec</artifactId>
+            <version>${conjure.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -305,9 +247,6 @@
                 <artifactId>clojure-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <sourceDirectories>
-                        <sourceDirectory>src/clj</sourceDirectory>
-                    </sourceDirectories>
                     <testSourceDirectories>
                         <testSourceDirectory>test/clj</testSourceDirectory>
                     </testSourceDirectories>
@@ -318,13 +257,6 @@
                     </copiedNamespaces>
                 </configuration>
                 <executions>
-                    <execution>
-                        <id>compile-clojure</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
                     <execution>
                         <id>test-clojure</id>
                         <phase>test</phase>
@@ -341,6 +273,9 @@
                                 <testNamespace>${clojure.test.set}</testNamespace>
                             </testNamespaces>
                             <testDeclaredNamespaceOnly>${clojure.test.declared.namespace.only}</testDeclaredNamespaceOnly>
+                            <configuration>
+                                <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
+                            </configuration>
                         </configuration>
                     </execution>
                 </executions>
@@ -385,7 +320,6 @@
                                 <directory>${basedir}/src/</directory>
                                 <includes>
                                     <include>jvm/**/*.java</include>
-                                    <include>clj/**/*.clj</include>
                                 </includes>
                             </source>
                         </configuration>
@@ -477,25 +411,6 @@
             </activation>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>build-helper-maven-plugin</artifactId>
-                        <version>1.7</version>
-                        <executions>
-                            <execution>
-                                <id>add-source</id>
-                                <phase>generate-sources</phase>
-                                <goals>
-                                    <goal>add-source</goal>
-                                </goals>
-                                <configuration>
-                                    <sources><!-- Allows JaCoCo to find the clojure source code -->
-                                        <source>src/clj</source>
-                                    </sources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>

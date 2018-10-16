@@ -71,7 +71,7 @@ public class DRPC implements AutoCloseable {
     //Waiting to be returned
     private final ConcurrentHashMap<String, OutstandingRequest> _requests =
         new ConcurrentHashMap<>();
-    private final Timer _timer = new Timer();
+    private final Timer timer = new Timer("DRPC-CLEANUP-TIMER", true);
     private final AtomicLong _ctr = new AtomicLong(0);
     private final IAuthorizer _auth;
 
@@ -87,7 +87,7 @@ public class DRPC implements AutoCloseable {
         this.meterResultCalls = metricsRegistry.registerMeter("drpc:num-result-calls");
         this.meterFailRequestCalls = metricsRegistry.registerMeter("drpc:num-failRequest-calls");
         this.meterFetchRequestCalls = metricsRegistry.registerMeter("drpc:num-fetchRequest-calls");
-        _timer.scheduleAtFixedRate(new TimerTask() {
+        timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 cleanupAll(timeoutMs, TIMED_OUT);
@@ -241,7 +241,7 @@ public class DRPC implements AutoCloseable {
 
     @Override
     public void close() {
-        _timer.cancel();
+        timer.cancel();
         cleanupAll(0, SHUT_DOWN);
     }
 }

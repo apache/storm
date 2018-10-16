@@ -18,8 +18,6 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
-import static org.apache.storm.DaemonConfig.UI_FILTER;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 
@@ -59,13 +57,13 @@ public class ResourceAuthorizer {
     }
 
     /**
-     * Checks whether user is allowed to access file via UI. Always true when UI filter is not set.
+     * Checks whether user is allowed to access a Logviewer file via UI. Always true when the Logviewer filter is not configured.
      *
      * @param fileName file name to access
      * @param user username
      */
     public boolean isUserAllowedToAccessFile(String user, String fileName) {
-        return isUiFilterNotSet() || isAuthorizedLogUser(user, fileName);
+        return !isLogviewerFilterConfigured() || isAuthorizedLogUser(user, fileName);
     }
 
     /**
@@ -133,8 +131,9 @@ public class ResourceAuthorizer {
         }
     }
 
-    private boolean isUiFilterNotSet() {
-        return StringUtils.isBlank(ObjectReader.getString(stormConf.get(UI_FILTER), null));
+    private boolean isLogviewerFilterConfigured() {
+        return StringUtils.isNotBlank(ObjectReader.getString(stormConf.get(DaemonConfig.LOGVIEWER_FILTER), null))
+                || StringUtils.isNotBlank(ObjectReader.getString(stormConf.get(DaemonConfig.UI_FILTER), null));
     }
 
     public static class LogUserGroupWhitelist {

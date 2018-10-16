@@ -79,7 +79,7 @@ public class HiveBolt extends BaseRichBolt {
                                                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
 
             sendHeartBeat.set(true);
-            heartBeatTimer = new Timer();
+            heartBeatTimer = new Timer(topologyContext.getThisTaskId() + "-hb-timer", true);
             setupHeartBeatTimer();
 
         } catch (Exception e) {
@@ -151,6 +151,9 @@ public class HiveBolt extends BaseRichBolt {
         }
 
         callTimeoutPool = null;
+        if (heartBeatTimer != null) {
+            heartBeatTimer.cancel();
+        }
         super.cleanup();
         LOG.info("Hive Bolt stopped");
     }

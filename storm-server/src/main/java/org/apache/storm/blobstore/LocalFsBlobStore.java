@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.NoSuchFileException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -108,7 +109,7 @@ public class LocalFsBlobStore extends BlobStore {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        timer = new Timer();
+        timer = new Timer("BLOB-STORE-TIMER", true);
         this.leaderElector = leaderElector;
     }
 
@@ -197,7 +198,7 @@ public class LocalFsBlobStore extends BlobStore {
                     throw new RuntimeException(e);
                 }
             }
-        }, 0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS)));
+        }, 0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS))*1000);
 
     }
 
@@ -374,7 +375,7 @@ public class LocalFsBlobStore extends BlobStore {
         try {
             fbs.deleteKey(key);
         } catch (IOException e) {
-            if (e instanceof FileNotFoundException) {
+            if (e instanceof FileNotFoundException || e instanceof NoSuchFileException) {
                 LOG.debug("Ignoring FileNotFoundException since we're about to delete such key... key: {}", key);
             } else {
                 throw e;
@@ -410,6 +411,9 @@ public class LocalFsBlobStore extends BlobStore {
     public void shutdown() {
         if (zkClient != null) {
             zkClient.close();
+        }
+        if (timer != null) {
+            timer.cancel();;
         }
     }
 

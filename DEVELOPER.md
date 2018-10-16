@@ -283,28 +283,20 @@ Integration tests require that you activate the profile `integration-test` and t
  
 To run all Java and Clojure integration tests but no unit tests execute one of the commands
  
-    mvn -P  integration-tests-only verify
-    mvn -P  integration-tests-only integration-test
+    mvn -P integration-tests-only,examples,externals verify
+    mvn -P integration-tests-only,examples,externals integration-test
 
 To run all unit tests plus Clojure integration tests but no Java integration tests execute the command
  
-    mvn -P all-tests test
+    mvn -P all-tests,examples,externals test
 
 To run all unit tests and all integration tests execute one of the commands
  
-    mvn -P all-tests verify
-    mvn -P all-tests integration-test
+    mvn -P all-tests,examples,externals verify
+    mvn -P all-tests,examples,externals integration-test
  
  
-You can also run tests selectively via the Clojure REPL.  The following example runs the tests in
-[auth_test.clj](storm-core/test/clj/org/apache/storm/security/auth/auth_test.clj), which has the namespace
-`org.apache.storm.security.auth.auth-test`.
-
 You can also run tests selectively with `-Dtest=<test_name>`.  This works for both clojure and junit tests.
-
-> Tip: IDEs such as IntelliJ IDEA support a built-in Clojure REPL, which you can also use to run tests selectively.
-> Sometimes you may find that tests pass/fail depending on which REPL you use, which -- although frustrating --
-> can be helpful to narrow down errors.
 
 Unfortunately you might experience failures in clojure tests which are wrapped in the `maven-clojure-plugin` and thus doesn't provide too much useful output at first sight - you might end up with a maven test failure with an error message as unhelpful as `Clojure failed.`. In this case it's recommended to look into `target/test-reports` of the failed project to see what actual tests have failed or scroll through the maven output looking for obvious issues like missing binaries.
 

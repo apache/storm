@@ -248,8 +248,6 @@
 
         <!-- dependency versions -->
         <clojure.version>1.7.0</clojure.version>
-        <compojure.version>1.1.9</compojure.version>
-        <hiccup.version>0.3.6</hiccup.version>
         <commons-compress.version>1.16.1</commons-compress.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
@@ -258,19 +256,14 @@
         <commons-fileupload.version>1.3.3</commons-fileupload.version>
         <commons-codec.version>1.11</commons-codec.version>
         <commons-cli.version>1.4</commons-cli.version>
-        <clj-time.version>0.8.0</clj-time.version>
         <curator.version>4.0.1</curator.version>
         <curator-test.version>2.12.0</curator-test.version>
         <json-simple.version>1.1</json-simple.version>
-        <ring.version>1.6.2</ring.version>
-        <ring-json.version>0.4.0</ring-json.version>
         <jetty.version>9.4.7.v20170914</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
-        <clojure.math.numeric-tower.version>0.0.1</clojure.math.numeric-tower.version>
         <carbonite.version>1.5.0</carbonite.version>
         <snakeyaml.version>1.11</snakeyaml.version>
         <httpclient.version>4.3.3</httpclient.version>
-        <clojure.tools.cli.version>0.2.4</clojure.tools.cli.version>
         <jctools.version>2.0.1</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
@@ -281,14 +274,9 @@
         <log4j.version>2.11.1</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
-        <clojure.tools.nrepl.version>0.2.3</clojure.tools.nrepl.version>
-        <clojure-complete.version>0.2.3</clojure-complete.version>
         <mockito.version>2.19.0</mockito.version>
-        <conjure.version>2.1.3</conjure.version>
-        <zookeeper.version>3.4.13</zookeeper.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
         <jline.version>0.9.94</jline.version>
-        <clojure-data-codec.version>0.1.0</clojure-data-codec.version>
-        <clojure-contrib.version>1.2.0</clojure-contrib.version>
         <hive.version>2.3.3</hive.version>
         <hadoop.version>2.6.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
@@ -300,7 +288,6 @@
         <junit.jupiter.version>5.2.0</junit.jupiter.version>
         <surefire.version>2.22.0</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
-        <metrics-clojure.version>2.5.1</metrics-clojure.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
         <hamcrest.version>2.0.0.0</hamcrest.version>
         <cassandra.version>2.1.7</cassandra.version>
@@ -741,11 +728,6 @@
                 <version>${commons-lang.version}</version>
             </dependency>
             <dependency>
-                <groupId>clj-time</groupId>
-                <artifactId>clj-time</artifactId>
-                <version>${clj-time.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>jline</groupId>
                 <artifactId>jline</artifactId>
                 <version>${jline.version}</version>
@@ -856,36 +838,6 @@
                 <version>${json-simple.version}</version>
             </dependency>
             <dependency>
-                <groupId>compojure</groupId>
-                <artifactId>compojure</artifactId>
-                <version>${compojure.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>hiccup</groupId>
-                <artifactId>hiccup</artifactId>
-                <version>${hiccup.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ring</groupId>
-                <artifactId>ring-core</artifactId>
-                <version>${ring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ring</groupId>
-                <artifactId>ring-devel</artifactId>
-                <version>${ring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ring</groupId>
-                <artifactId>ring-jetty-adapter</artifactId>
-                <version>${ring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ring</groupId>
-                <artifactId>ring-json</artifactId>
-                <version>${ring-json.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlet</artifactId>
                 <version>${jetty.version}</version>
@@ -912,11 +864,6 @@
                 <version>${clojure.tools.logging.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>math.numeric-tower</artifactId>
-                <version>${clojure.math.numeric-tower.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.twitter</groupId>
                 <artifactId>carbonite</artifactId>
                 <version>${carbonite.version}</version>
@@ -930,11 +877,6 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${httpclient.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>tools.cli</artifactId>
-                <version>${clojure.tools.cli.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jctools</groupId>
@@ -998,46 +940,6 @@
                 <version>${metrics.version}</version>
             </dependency>
             <dependency>
-                <groupId>metrics-clojure</groupId>
-                <artifactId>metrics-clojure</artifactId>
-                <version>${metrics-clojure.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>clojure-contrib</artifactId>
-                <version>${clojure-contrib.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>data.codec</artifactId>
-                <version>${clojure-data-codec.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>tools.nrepl</artifactId>
-                <version>${clojure.tools.nrepl.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>clojure</artifactId>
-                        <groupId>org.clojure</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>clojure-complete</groupId>
-                <artifactId>clojure-complete</artifactId>
-                <version>${clojure-complete.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>clojure</artifactId>
-                        <groupId>org.clojure</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
@@ -1059,12 +961,6 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>java-hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.clojars.runa</groupId>
-                <artifactId>conjure</artifactId>
-                <version>${conjure.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1294,9 +1190,6 @@
                     <artifactId>clojure-maven-plugin</artifactId>
                     <version>1.7.1</version>
                     <extensions>true</extensions>
-                    <configuration>
-                        <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

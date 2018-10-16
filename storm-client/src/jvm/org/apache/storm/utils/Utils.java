@@ -33,6 +33,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.URL;
@@ -300,21 +301,25 @@ public class Utils {
      * runtime to avoid any zombie process in case cleanup function hangs.
      */
     public static void addShutdownHookWithDelayedForceKill(Runnable func, int numSecs) {
-        Runnable sleepKill = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    LOG.info("Halting after {} seconds", numSecs);
-                    Time.sleepSecs(numSecs);
-                    LOG.warn("Forcing Halt...");
-                    Runtime.getRuntime().halt(20);
-                } catch (Exception e) {
-                    LOG.warn("Exception in the ShutDownHook", e);
-                }
+        final Thread sleepKill = new Thread(() -> {
+            try {
+                LOG.info("Halting after {} seconds", numSecs);
+                Time.sleepSecs(numSecs);
+                LOG.warn("Forcing Halt... {}", Utils.threadDump());
+                Runtime.getRuntime().halt(20);
+            } catch (InterruptedException ie) {
+                //Ignored/expected...
+            } catch (Exception e) {
+                LOG.warn("Exception in the ShutDownHook", e);
             }
-        };
-        Runtime.getRuntime().addShutdownHook(new Thread(func));
-        Runtime.getRuntime().addShutdownHook(new Thread(sleepKill));
+        });
+        sleepKill.setDaemon(true);
+        Thread wrappedFunc = new Thread(() -> {
+            func.run();
+            sleepKill.interrupt();
+        });
+        Runtime.getRuntime().addShutdownHook(wrappedFunc);
+        Runtime.getRuntime().addShutdownHook(sleepKill);
     }
 
     public static boolean isSystemId(String id) {
@@ -1190,7 +1195,9 @@ public class Utils {
         final StringBuilder dump = new StringBuilder();
         final java.lang.management.ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         final java.lang.management.ThreadInfo[] threadInfos = threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds(), 100);
-        for (java.lang.management.ThreadInfo threadInfo : threadInfos) {
+        for (Entry<Thread, StackTraceElement[]> entry: Thread.getAllStackTraces().entrySet()) {
+            Thread t = entry.getKey();
+            ThreadInfo threadInfo = threadMXBean.getThreadInfo(t.getId());
             if (threadInfo == null) {
                 //Thread died before we could get the info, skip
                 continue;
@@ -1198,6 +1205,9 @@ public class Utils {
             dump.append('"');
             dump.append(threadInfo.getThreadName());
             dump.append("\" ");
+            if (t.isDaemon()) {
+                dump.append("(DAEMON)");
+            }
             dump.append("\n   lock: ");
             dump.append(threadInfo.getLockName());
             dump.append(" owner: ");
@@ -1205,8 +1215,7 @@ public class Utils {
             final Thread.State state = threadInfo.getThreadState();
             dump.append("\n   java.lang.Thread.State: ");
             dump.append(state);
-            final StackTraceElement[] stackTraceElements = threadInfo.getStackTrace();
-            for (final StackTraceElement stackTraceElement : stackTraceElements) {
+            for (final StackTraceElement stackTraceElement : entry.getValue()) {
                 dump.append("\n        at ");
                 dump.append(stackTraceElement);
             }

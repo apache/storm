@@ -18,7 +18,6 @@
   (:use [org.apache.storm daemon-config config util])
   (:use [org.apache.storm clojure])
   (:require [integration.org.apache.storm.integration-test :as it])
-  (:require [org.apache.storm.internal.thrift :as thrift])
   (:import [org.apache.storm Testing Config]
            [org.apache.storm.generated GlobalStreamId])
   (:import [org.apache.storm.tuple Values])

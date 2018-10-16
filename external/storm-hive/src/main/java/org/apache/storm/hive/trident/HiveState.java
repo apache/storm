@@ -80,7 +80,7 @@ public class HiveState implements State {
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
-            heartBeatTimer = new Timer();
+            heartBeatTimer = new Timer("hive-hb-timer", true);
             setupHeartBeatTimer();
         } catch (Exception e) {
             LOG.warn("unable to make connection to hive ", e);
@@ -289,6 +289,7 @@ public class HiveState implements State {
                 LOG.warn("shutdown interrupted on " + execService, ex);
             }
         }
+        heartBeatTimer.cancel();
         callTimeoutPool = null;
     }
 
