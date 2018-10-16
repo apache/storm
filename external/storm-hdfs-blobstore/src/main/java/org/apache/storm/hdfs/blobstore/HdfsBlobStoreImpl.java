@@ -15,8 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.blobstore;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Timer;
+import java.util.TimerTask;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -28,14 +37,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * HDFS blob store impl.
@@ -43,7 +44,7 @@ import java.util.TimerTask;
 public class HdfsBlobStoreImpl {
     private static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStoreImpl.class);
 
-    private static final long FULL_CLEANUP_FREQ = 60 * 60 * 1000l;
+    private static final long FULL_CLEANUP_FREQ = 60 * 60 * 1000L;
     private static final int BUCKETS = 1024;
     private static final String BLOBSTORE_DATA = "data";
     
@@ -125,7 +126,7 @@ public class HdfsBlobStoreImpl {
 
     public HdfsBlobStoreImpl(Path path, Map<String, Object> conf,
                              Configuration hconf) throws IOException {
-        LOG.info("Blob store based in {}", path);
+        LOG.debug("Blob store based in {}", path);
         _fullPath = path;
         _hadoopConf = hconf;
         _fs = path.getFileSystem(_hadoopConf);
@@ -206,7 +207,7 @@ public class HdfsBlobStoreImpl {
     }
 
     /**
-     * Delete a key from the blob store
+     * Delete a key from the blob store.
      *
      * @param key the key to delete
      * @throws IOException on any error
