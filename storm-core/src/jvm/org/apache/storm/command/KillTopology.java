@@ -25,7 +25,7 @@ public class KillTopology {
 
     public static void main(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("w", "wait", null, CLI.AS_INT)
-                                    .boolOpt("c", "continue-on-error")
+                                    .boolOpt("i", "ignore-errors")
                                     .arg("TOPO", CLI.INTO_LIST)
                                     .parse(args);
 
@@ -35,8 +35,8 @@ public class KillTopology {
         // wait seconds for topology to shut down
         Integer wait = (Integer) cl.get("w");
 
-        // if '-c' set, we'll try to kill every topology listed, even if an error occurs
-        Boolean continueOnError = (Boolean) cl.get("c");
+        // if '-i' set, we'll try to kill every topology listed, even if an error occurs
+        Boolean continueOnError = (Boolean) cl.get("i");
 
         final KillOptions opts = new KillOptions();
         if (wait != null) {
@@ -57,7 +57,7 @@ public class KillTopology {
                             throw e;
                         } else {
                             LOG.info(
-                                    "Caught error killing topology '{}'; continuing as -c was passed. Exception: {}",
+                                    "Caught error killing topology '{}'; continuing as -i was passed. Exception: {}",
                                     name,
                                     e.getClass().getName()
                             );
