@@ -33,17 +33,22 @@ public class ValuesTest {
     public void testNullArgsToValues() {
         Values vals = new Values(null);
         Assert.assertTrue("Failed to add null to Values", vals.size() == 1);
+        Assert.assertNull(vals.get(0));
     }
 
     @Test
     public void testNonNullArgsToValues() {
         Values vals = new Values("A", "B");
         Assert.assertTrue("Failed to Add values to Values", vals.size() == 2);
+        Assert.assertEquals(vals.get(0), "A");
+        Assert.assertEquals(vals.get(1), "B");
     }
 
     @Test
     public void testNullAsArgsToValues() {
         Values vals = new Values(null, "A");
         Assert.assertTrue("Failed to Add values to Values", vals.size() == 2);
+        Assert.assertNull(vals.get(0));
+        Assert.assertEquals(vals.get(1), "A");
     }
 }
