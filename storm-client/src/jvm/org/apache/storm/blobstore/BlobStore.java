@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * Modifying the replication factor only works for HdfsBlobStore as for the LocalFsBlobStore the replication is dependent on the number of
  * Nimbodes available.
  */
-public abstract class BlobStore implements Shutdownable {
+public abstract class BlobStore implements Shutdownable, AutoCloseable {
     protected static final String BASE_BLOBS_DIR_NAME = "blobs";
     private static final Logger LOG = LoggerFactory.getLogger(BlobStore.class);
     private static final KeyFilter<String> TO_TOPO_ID = (key) -> ConfigUtils.getIdFromBlobKey(key);
@@ -191,6 +191,11 @@ public abstract class BlobStore implements Shutdownable {
      */
     public abstract int updateBlobReplication(String key, int replication, Subject who) throws AuthorizationException, KeyNotFoundException,
         IOException;
+
+    @Override
+    public void close() {
+        shutdown();
+    }
 
     /**
      * Filters keys based on the KeyFilter passed as the argument.
