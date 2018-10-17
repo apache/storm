@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -152,8 +151,7 @@ public class DockerManager implements ResourceIsolationInterface {
                 + " must not be under " + ConfigUtils.STORM_HOME + " directory");
         }
 
-        dockerRunCommand.detachOnRun()
-            .setNetworkType(network)
+        dockerRunCommand.setNetworkType(network)
             .setReadonly()
             .addReadOnlyMountLocation(cgroupRootPath, cgroupRootPath, false)
             .addReadOnlyMountLocation(stormHome, stormHome, false)
@@ -187,12 +185,33 @@ public class DockerManager implements ResourceIsolationInterface {
 
         dockerRunCommand.setOverrideCommandWithArgs(Arrays.asList("bash", ServerUtils.writeScript(workerDir, command, env)));
 
-        //didn't find a good way to use processExitCallback,
-        //because the command to launch the docker container will return immediately.
-        runDockerCommandWaitFor(conf, user, CmdType.LAUNCH_DOCKER_CONTAINER,
-            dockerRunCommand.getCommandWithArguments(), null, logPrefix, null, targetDir);
+        runDockerCommand(conf, user, CmdType.LAUNCH_DOCKER_CONTAINER,
+            dockerRunCommand.getCommandWithArguments(), null, logPrefix, processExitCallback, targetDir);
 
-        String cid = Files.readLines(new File(dockerCidFilePath(workerDir)), Charset.defaultCharset()).get(0);
+        //waiting for container id file to be written
+        File cidFile = new File(dockerCidFilePath(workerDir));
+        String cid = null;
+        int retryCount = 1;
+        do {
+            try {
+                Thread.sleep(100 * retryCount);
+            } catch (InterruptedException e) {
+                LOG.error("reading cid file got interrupted");
+                throw new RuntimeException("Failed to read cid file: " + cidFile);
+            }
+
+            if (cidFile.exists()) {
+                List<String> lines = Files.readLines(cidFile, Charset.defaultCharset());
+                if (lines.isEmpty()) {
+                    LOG.debug("cid file {} is empty. Retrying {}", cidFile, retryCount);
+                } else {
+                    cid = lines.get(0);
+                }
+            } else {
+                LOG.debug("cid file {} doesn't exist. Retrying {}", cidFile, retryCount);
+            }
+            retryCount++;
+        } while (cid == null);
 
         LOG.info("workerId: {}, cid={}", workerId, cid);
         workerToCid.put(workerId, cid);
