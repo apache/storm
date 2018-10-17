@@ -190,7 +190,7 @@ public class CgroupManager extends DefaultResourceIsolationManager {
     }
 
     @Override
-    public void launchWorkerProcess(String user, String workerId, List<String> command, Map<String, String> env, String logPrefix,
+    public void launchWorkerProcess(String user, String topologyId, int port, String workerId, List<String> command, Map<String, String> env, String logPrefix,
                                     ExitCodeCallback processExitCallback, File targetDir) throws IOException {
         if (runAsUser) {
             String workerDir = targetDir.getAbsolutePath();

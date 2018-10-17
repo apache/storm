@@ -47,6 +47,7 @@ public class DockerManager implements ResourceIsolationInterface {
     private Map<String, String> workerToCid = new HashMap<>();
     private MemoryCore memoryCoreAtRoot;
     private String seccompJsonFile;
+    private String stormHome;
 
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {
@@ -64,6 +65,16 @@ public class DockerManager implements ResourceIsolationInterface {
         nscdPath = (String) conf.get(DaemonConfig.STORM_DOCKER_NSCD_DIR);
         memoryCgroupRootPath = cgroupRootPath + File.separator + "memory" + File.separator + cgroupParent;
         memoryCoreAtRoot = new MemoryCore(memoryCgroupRootPath);
+
+        stormHome = System.getProperty(ConfigUtils.STORM_HOME);
+        // Since we are bind mounting STORM_HOME as readonly, read-write bind mounts can't be under STORM_HOME
+        if (ConfigUtils.workerRoot(conf).startsWith(stormHome)
+            || ConfigUtils.workerArtifactsRoot(conf).startsWith(stormHome)
+            || ConfigUtils.workerUserRoot(conf).startsWith(stormHome)) {
+            throw new IllegalArgumentException(Config.STORM_LOCAL_DIR
+                + " or " + Config.STORM_WORKERS_ARTIFACTS_DIR
+                + " must not be under " + ConfigUtils.STORM_HOME + " directory");
+        }
     }
 
     @Override
@@ -112,7 +123,7 @@ public class DockerManager implements ResourceIsolationInterface {
     }
 
     @Override
-    public void launchWorkerProcess(String user, String workerId, List<String> command, Map<String, String> env,
+    public void launchWorkerProcess(String user, String topologyId, int port, String workerId, List<String> command, Map<String, String> env,
                                     String logPrefix, ExitCodeCallback processExitCallback, File targetDir) throws IOException {
         String dockerImage = env.get(TOPOLOGY_ENV_DOCKER_IMAGE);
         if (dockerImage == null || dockerImage.isEmpty()) {
@@ -125,7 +136,6 @@ public class DockerManager implements ResourceIsolationInterface {
         }
 
         String workerDir = targetDir.getAbsolutePath();
-        String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
 
         String uid = getUserIdInfo(user);
         String[] groups = getGroupIdInfo(user);
@@ -136,20 +146,12 @@ public class DockerManager implements ResourceIsolationInterface {
 
         //set of locations to be bind mounted
         String workerRootDir = ConfigUtils.workerRoot(conf, workerId);
-        String workerArtifactsRoot = ConfigUtils.workerArtifactsRoot(conf);
+        String workerArtifactsRoot = ConfigUtils.workerArtifactsRoot(conf, topologyId, port);
         String workerUserFile = ConfigUtils.workerUserFile(conf, workerId);
 
         // Theoretically we only need to mount ConfigUtils.supervisorStormDistRoot directory.
         // But if supervisorLocalDir is not mounted, the worker will try to create it and fail.
         String supervisorLocalDir = ConfigUtils.supervisorLocalDir(conf);
-
-        if (workerRootDir.startsWith(stormHome)
-            || workerArtifactsRoot.startsWith(stormHome)
-            || workerUserFile.startsWith(stormHome)) {
-            throw new IllegalArgumentException(Config.STORM_LOCAL_DIR
-                + " or " + Config.STORM_WORKERS_ARTIFACTS_DIR
-                + " must not be under " + ConfigUtils.STORM_HOME + " directory");
-        }
 
         dockerRunCommand.setNetworkType(network)
             .setReadonly()

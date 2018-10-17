@@ -50,6 +50,8 @@ public interface ResourceIsolationInterface {
      * After reserving resources for the worker (i.e. calling reserveResourcesForWorker),
      * this function can be used to launch worker process.
      * @param user                the user who runs the command as
+     * @param topologyId          the Id of the topology
+     * @param port                the port where the worker is on
      * @param workerId            the Id of the worker
      * @param command             the command to run
      * @param env                 the environment to run the command
@@ -58,7 +60,7 @@ public interface ResourceIsolationInterface {
      * @param targetDir           the working directory to run the command in
      * @throws IOException on I/O exception
      */
-    void launchWorkerProcess(String user, String workerId, List<String> command, Map<String, String> env,
+    void launchWorkerProcess(String user, String topologyId, int port, String workerId, List<String> command, Map<String, String> env,
                              String logPrefix, ExitCodeCallback processExitCallback, File targetDir) throws IOException;
 
     /**
