@@ -95,7 +95,7 @@ public class JdbcClient {
 
     private String constructInsertQuery(String tableName, List<List<Column>> columnLists) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Insert into ").append(tableName).append(" (");
+        sb.append("UPSERT INTO ").append(tableName).append(" (");
         Collection<String> columnNames = Collections2.transform(columnLists.get(0), new Function<Column, String>() {
             @Override
             public String apply(Column input) {
