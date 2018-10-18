@@ -58,6 +58,7 @@ At first, we need to have a program that can add items to a Kestrel queue. The f
 ## Remove items from Kestrel
 
 This method dequeues items from a queue without removing them.
+
 ```
     private static void dequeueItems(KestrelClient kestrelClient, String queueName) throws IOException, ParseError
 			 {
@@ -80,6 +81,7 @@ This method dequeues items from a queue without removing them.
 ```
 
 This method dequeues items from a queue and then removes them.
+
 ```
     private static void dequeueAndRemoveItems(KestrelClient kestrelClient, String queueName)
     throws IOException, ParseError
