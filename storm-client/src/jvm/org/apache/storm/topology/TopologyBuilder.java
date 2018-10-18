@@ -134,7 +134,7 @@ public class TopologyBuilder {
                     throw new IllegalStateException(
                         "Spout '" + spoutId + "' contains a non-serializable field of type " + wrapperCause.getCause().getMessage() + ", " +
                         "which was instantiated prior to topology creation. " + wrapperCause.getCause().getMessage() + " " +
-                        "should be instantiated within the prepare method of '" + spoutId + " at the earliest.", wrapperCause);
+                        "should be instantiated within the open method of '" + spoutId + " at the earliest.", wrapperCause);
                 }
                 throw wrapperCause;
             }
