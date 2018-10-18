@@ -50,7 +50,7 @@ The UI and logviewer processes provide a way to not only see what a cluster is
 doing, but also manipulate running topologies.  In general these processes should
 not be exposed except to users of the cluster.
 
-Some form of Authentication is typically required, with using java servlet filters 
+Some form of Authentication is typically required, and can be done using a java servlet filter
 
 ```yaml
 ui.filter: "filter.class"
@@ -58,9 +58,25 @@ ui.filter.params: "param1":"value1"
 logviewer.filter: "filter.class"
 logviewer.filter.params: "param1":"value1"
 ```
-or by restricting the UI/log viewers ports to only accept connections from local
-hosts, and then front them with another web server, like Apache httpd, that can
-authenticate/authorize incoming connections and
+
+The `ui.filter` is an instance of `javax.servlet.Filter` that is intended to 
+filter all incomming requests to the UI and authenticate the request mapping 
+it to a "user".  Typically this is done by modifying or wrapping the 
+`HttpServletRequest` to return the user principal through the 
+`getUserPrincipal()` method or returning the user name through the 
+`getRemoteUser()` method.  If your filter authenticates in a differnt way you
+can look at setting `ui.http.creds.plugin` to point to an instance of `IHttpCredentialsPlugin`
+that can take the `HttpServletRequest` and return a user name and populate the needed fields
+in the current `ReqContext`.  These are advanced features and you may want to look at the 
+`DefaultHttpCredentialsPlugin` as an example of how to do this.
+
+These same settings apply to the logviewer too.  If you want to have separate controle
+over how authentication works in the logviewer you may optionally set `logviewer.filter`
+instead and it will override any `ui.filter` settings for the logviewer process.
+
+If the cluster is single tenant you might want to just restrict access to the UI/log
+viewers ports to only accept connections from local hosts, and then front them with
+another web server, like Apache httpd, that can authenticate/authorize incoming connections and
 proxy the connection to the storm process.  To make this work the ui process must have
 logviewer.port set to the port of the proxy in its storm.yaml, while the logviewers
 must have it set to the actual port that they are going to bind to.
@@ -92,6 +108,17 @@ curl  -i --negotiate -u:anyUser  -b ~/cookiejar.txt -c ~/cookiejar.txt  http://s
 **Note**: For viewing any logs via `logviewer` in secure mode, all the hosts that runs `logviewer` should also be added to the above white list. For big clusters you could white list the host's domain (for e.g. set `network.negotiate-auth.trusted-uris` to `.yourdomain.com`).
 
 **Caution**: In AD MIT Keberos setup the key size is bigger than the default UI jetty server request header size. Make sure you set ui.header.buffer.bytes to 65536 in storm.yaml. More details are on [STORM-633](https://issues.apache.org/jira/browse/STORM-633)
+
+
+## DRPC HTTP
+
+The DRPC server optionally supports a REST endpoint as well, and you can configure authentication
+on that endpoint similar to the ui/logviewer.
+
+The `drpc.http.filter` and `drpc.http.filter.params` configs can be used to setup a `Filter` for the DRPC server.  Unlike the logviewer
+it does not fall back to the UI configs as the DRPC server is intended to be REST only and often will be hit by headless users.
+
+The `drpc.http.creds.plugin` confg can be used in cases where the default plugin is not good enough because of how authentication happens.
 
 
 ## UI / DRPC / LOGVIEWER SSL 
