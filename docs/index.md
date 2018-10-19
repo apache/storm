@@ -82,7 +82,7 @@ But small change will not affect the user experience. We will notify the user wh
 * [State Checkpointing](State-checkpointing.html)
 * [Windowing](Windowing.html)
 * [Joining Streams](Joins.html)
-* [Blobstore(Distcahce)](distcache-blobstore.html)
+* [Blobstore(Distcache)](distcache-blobstore.html)
 
 ### Debugging
 * [Dynamic Log Level Settings](dynamic-log-level-settings.html)
