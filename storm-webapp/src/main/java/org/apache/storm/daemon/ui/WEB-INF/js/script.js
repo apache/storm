@@ -21,6 +21,21 @@ $(function () {
 
 //Add in custom sorting for some data types
 $.extend( $.fn.dataTableExt.oSort, {
+  // The 'resource-num' type is for sorting resource guarantees 
+  // that have 'N/A' in the type. It's just the same as 'num', but
+  // we preprocess to sort N/A below 0. Otherwise, if we just use
+  // type 'num', DataTables always puts N/A at the *end* of the list 
+  // (for both asc and desc sort), which is confusing.
+  "resource-num-pre": function(raw) {
+    if (raw == 'N/A') {
+      return Number.NEGATIVE_INFINITY;
+    } else {
+      return $.fn.dataTableExt.oSort['num-pre'](raw);
+    }
+  },
+  "resource-num-asc": $.fn.dataTableExt.oSort['num-asc'],
+  "resource-num-desc": $.fn.dataTableExt.oSort['num-desc'],
+
   "time-str-pre": function (raw) {
     var s = $(raw).text();
     if (s == "") {
@@ -549,10 +564,12 @@ var makeOwnerSummaryTable = function(response, elId, parentId) {
 
     if (showCpu) {
         columns.push({
-            data: 'memoryGuarantee'
+            data: 'memoryGuarantee',
+            type: 'resource-num'
         });
         columns.push({
             data: 'memoryGuaranteeRemaining',
+            type: 'resource-num',
             render: function(data, type, row) {
                 return getResourceGuaranteeRemainingFormat(type, data);
             }
@@ -561,10 +578,12 @@ var makeOwnerSummaryTable = function(response, elId, parentId) {
             data: 'totalCpuUsage'
         });
         columns.push({
-            data: 'cpuGuarantee'
+            data: 'cpuGuarantee',
+            type: 'resource-num'
         });
         columns.push({
             data: 'cpuGuaranteeRemaining',
+            type: 'resource-num',
             render: function(data, type, row) {
                 return getResourceGuaranteeRemainingFormat(type, data);
             }
