@@ -50,7 +50,7 @@ The UI and logviewer processes provide a way to not only see what a cluster is
 doing, but also manipulate running topologies.  In general these processes should
 not be exposed except to users of the cluster.
 
-Some form of Authentication is typically required, with using java servlet filters 
+Some form of Authentication is typically required, and can be done using a java servlet filter
 
 ```yaml
 ui.filter: "filter.class"
@@ -58,15 +58,31 @@ ui.filter.params: "param1":"value1"
 logviewer.filter: "filter.class"
 logviewer.filter.params: "param1":"value1"
 ```
-or by restricting the UI/log viewers ports to only accept connections from local
-hosts, and then front them with another web server, like Apache httpd, that can
-authenticate/authorize incoming connections and
+
+The `ui.filter` is an instance of `javax.servlet.Filter` that is intended to 
+filter all incoming requests to the UI and authenticate the request mapping 
+it to a "user".  Typically this is done by modifying or wrapping the 
+`HttpServletRequest` to return the user principal through the 
+`getUserPrincipal()` method or returning the user name through the 
+`getRemoteUser()` method.  If your filter authenticates in a different way you
+can look at setting `ui.http.creds.plugin` to point to an instance of `IHttpCredentialsPlugin`
+that can take the `HttpServletRequest` and return a user name and populate the needed fields
+in the current `ReqContext`.  These are advanced features and you may want to look at the 
+`DefaultHttpCredentialsPlugin` as an example of how to do this.
+
+These same settings apply to the logviewer too.  If you want to have separate control
+over how authentication works in the logviewer you may optionally set `logviewer.filter`
+instead and it will override any `ui.filter` settings for the logviewer process.
+
+If the cluster is single tenant you might want to just restrict access to the UI/log
+viewers ports to only accept connections from local hosts, and then front them with
+another web server, like Apache httpd, that can authenticate/authorize incoming connections and
 proxy the connection to the storm process.  To make this work the ui process must have
 logviewer.port set to the port of the proxy in its storm.yaml, while the logviewers
 must have it set to the actual port that they are going to bind to.
 
 The servlet filters are preferred because it allows individual topologies to
-specificy who is and who is not allowed to access the pages associated with
+specify who is and who is not allowed to access the pages associated with
 them.  
 
 Storm UI (or logviewer) can be configured to use AuthenticationFilter from hadoop-auth.
@@ -94,6 +110,17 @@ curl  -i --negotiate -u:anyUser  -b ~/cookiejar.txt -c ~/cookiejar.txt  http://s
 **Caution**: In AD MIT Keberos setup the key size is bigger than the default UI jetty server request header size. Make sure you set ui.header.buffer.bytes to 65536 in storm.yaml. More details are on [STORM-633](https://issues.apache.org/jira/browse/STORM-633)
 
 
+## DRPC HTTP
+
+The DRPC server optionally supports a REST endpoint as well, and you can configure authentication
+on that endpoint similar to the ui/logviewer.
+
+The `drpc.http.filter` and `drpc.http.filter.params` configs can be used to setup a `Filter` for the DRPC server.  Unlike the logviewer
+it does not fall back to the UI configs as the DRPC server is intended to be REST only and often will be hit by headless users.
+
+The `drpc.http.creds.plugin` config can be used in cases where the default plugin is not good enough because of how authentication happens.
+
+
 ## UI / DRPC / LOGVIEWER SSL 
 
 UI,DRPC and LOGVIEWER allows users to configure ssl .
@@ -114,7 +141,7 @@ optional config
 8. ui.https.truststore.type (example "jks")
 
 If users want to setup 2-way auth
-9. ui.https.want.client.auth (If this set to true server requests for client certifcate authentication, but keeps the connection if no authentication provided)
+9. ui.https.want.client.auth (If this set to true server requests for client certificate authentication, but keeps the connection if no authentication provided)
 10. ui.https.need.client.auth (If this set to true server requires client to provide authentication)
 
 
@@ -135,7 +162,7 @@ optional config
 8. drpc.https.truststore.type (example "jks")
 
 If users want to setup 2-way auth
-9. drpc.https.want.client.auth (If this set to true server requests for client certifcate authentication, but keeps the connection if no authentication provided)
+9. drpc.https.want.client.auth (If this set to true server requests for client certificate authentication, but keeps the connection if no authentication provided)
 10. drpc.https.need.client.auth (If this set to true server requires client to provide authentication)
 
 
@@ -156,7 +183,7 @@ optional config
 8. logviewer.https.truststore.type (example "jks")
 
 If users want to setup 2-way auth
-9. logviewer.https.want.client.auth (If this set to true server requests for client certifcate authentication, but keeps the connection if no authentication provided)
+9. logviewer.https.want.client.auth (If this set to true server requests for client certificate authentication, but keeps the connection if no authentication provided)
 10. logviewer.https.need.client.auth (If this set to true server requires client to provide authentication)
 
 
@@ -180,7 +207,7 @@ details may vary depending on your KDC and OS.
 
 
 ```bash
-# Zookeeper (Will need one of these for each box in teh Zk ensamble)
+# Zookeeper (Will need one of these for each box in the Zk ensemble)
 sudo kadmin.local -q 'addprinc zookeeper/zk1.example.com@STORM.EXAMPLE.COM'
 sudo kadmin.local -q "ktadd -k /tmp/zk.keytab  zookeeper/zk1.example.com@STORM.EXAMPLE.COM"
 # Nimbus and DRPC
@@ -403,7 +430,7 @@ supervisor.run.worker.as.user: true
 
 There are several files that go along with this that are needed to be configured properly to make storm secure.
 
-The worker-launcher executable is a special program that allows the supervisor to launch workers as different users.  For this to work it needs to be owned by root, but with the group set to be a group that only teh supervisor headless user is a part of.
+The worker-launcher executable is a special program that allows the supervisor to launch workers as different users.  For this to work it needs to be owned by root, but with the group set to be a group that only the supervisor headless user is a part of.
 It also needs to have 6550 permissions.
 There is also a worker-launcher.cfg file, usually located under /etc/ that should look something like the following
 
