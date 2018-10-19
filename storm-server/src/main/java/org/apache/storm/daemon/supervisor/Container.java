@@ -90,7 +90,7 @@ public abstract class Container implements Killable {
     protected ContainerMemoryTracker containerMemoryTracker;
     private long lastMetricProcessTime = 0L;
     private Timer.Context shutdownTimer = null;
-    protected String user;
+    protected String cachedUser;
     protected boolean runAsUser;
 
     /**
@@ -190,7 +190,7 @@ public abstract class Container implements Killable {
         }
         try {
             if (resourceIsolationManager != null) {
-                resourceIsolationManager.kill(user, _workerId);
+                resourceIsolationManager.kill(getWorkerUser(), _workerId);
             }
         } catch (IOException e) {
             numKillExceptions.mark();
@@ -204,7 +204,7 @@ public abstract class Container implements Killable {
         numForceKill.mark();
         try {
             if (resourceIsolationManager != null) {
-                resourceIsolationManager.forceKill(user, _workerId);
+                resourceIsolationManager.forceKill(getWorkerUser(), _workerId);
             }
         } catch (IOException e) {
             numForceKillExceptions.mark();
@@ -230,7 +230,7 @@ public abstract class Container implements Killable {
     public boolean areAllProcessesDead() throws IOException {
         boolean allDead = true;
         if (resourceIsolationManager != null) {
-            allDead = resourceIsolationManager.areAllProcessesDead(user, _workerId);
+            allDead = resourceIsolationManager.areAllProcessesDead(getWorkerUser(), _workerId);
         }
 
         if (allDead && shutdownTimer != null) {
@@ -279,9 +279,9 @@ public abstract class Container implements Killable {
             _ops.setupWorkerArtifactsDir(_assignment.get_owner(), workerArtifacts, true);
         }
 
-        this.user = getWorkerUser();
-        writeLogMetadata(user);
-        saveWorkerUser(user);
+        this.cachedUser = getWorkerUser();
+        writeLogMetadata(cachedUser);
+        saveWorkerUser(cachedUser);
         createArtifactsLink();
         createBlobstoreLinks();
     }
@@ -409,7 +409,12 @@ public abstract class Container implements Killable {
      * @throws IOException on any error
      */
     protected String getWorkerUser() throws IOException {
+        if (cachedUser != null) {
+            return cachedUser;
+        }
+
         LOG.info("GET worker-user for {}", _workerId);
+
         File file = new File(ConfigUtils.workerUserFile(_conf, _workerId));
 
         if (_ops.fileExists(file)) {

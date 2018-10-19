@@ -272,7 +272,7 @@ public class BasicContainer extends Container {
         File targetFile = new File(targetDir);
         if (command.size() > 0) {
             _type.assertFull();
-            return resourceIsolationManager.runProfilingCommand(user, _workerId, command, env, logPrefix, targetFile);
+            return resourceIsolationManager.runProfilingCommand(getWorkerUser(), _workerId, command, env, logPrefix, targetFile);
         }
         LOG.warn("PROFILING REQUEST NOT SUPPORTED {} IGNORED...", request);
         return true;
@@ -747,7 +747,7 @@ public class BasicContainer extends Container {
         try {
             long ret = 0;
             if (resourceIsolationManager.isResourceManaged()) {
-                long usageBytes = resourceIsolationManager.getMemoryUsage(user, _workerId);
+                long usageBytes = resourceIsolationManager.getMemoryUsage(getWorkerUser(), _workerId);
                 if (usageBytes >= 0) {
                     ret = usageBytes / 1024 / 1024;
                 }
@@ -820,7 +820,7 @@ public class BasicContainer extends Container {
 
         String workerDir = ConfigUtils.workerRoot(_conf, _workerId);
 
-        resourceIsolationManager.launchWorkerProcess(user, _topologyId, _port, _workerId, commandList, topEnvironment,
+        resourceIsolationManager.launchWorkerProcess(getWorkerUser(), _topologyId, _port, _workerId, commandList, topEnvironment,
             logPrefix, processExitCallback, new File(workerDir));
     }
 
