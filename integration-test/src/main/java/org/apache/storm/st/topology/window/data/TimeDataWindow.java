@@ -20,32 +20,30 @@ package org.apache.storm.st.topology.window.data;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.TreeSet;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 public class TimeDataWindow {
     private static final Type LIST_TYPE = new TypeToken<List<TimeData>>() {}.getType(); 
     
-    private final List<TimeData> data;
+    private final TreeSet<TimeData> data;
 
     public TimeDataWindow(List<TimeData> data) {
-        this.data = data.stream()
-            .sorted()
-            .collect(Collectors.toList());
+        this.data = new TreeSet<>(data);
     }
 
     public String getDescription() {
         final int size = data.size();
         if (size > 0) {
-            final TimeData first = data.get(0);
-            final TimeData last = data.get(data.size() - 1);
+            final TimeData first = data.first();
+            final TimeData last = data.last();
             return "Total " + size + " items: " + first + " to " + last;
         }
         return "Total " + size + " items.";
     }
     
-    public List<TimeData> getTimeData() {
+    public TreeSet<TimeData> getTimeData() {
         return data;
     }
 

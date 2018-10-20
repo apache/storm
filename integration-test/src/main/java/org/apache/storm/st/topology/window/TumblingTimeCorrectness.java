@@ -37,7 +37,9 @@ public class TumblingTimeCorrectness implements TestableTopology {
     private static final Logger LOG = LoggerFactory.getLogger(TumblingTimeCorrectness.class);
     private final int tumbleSec;
     private final String spoutName;
+    private final int spoutExecutors = 2;
     private final String boltName;
+    private final int boltExecutors = 1;
 
     public TumblingTimeCorrectness(int tumbleSec) {
         this.tumbleSec = tumbleSec;
@@ -55,17 +57,27 @@ public class TumblingTimeCorrectness implements TestableTopology {
     public String getSpoutName() {
         return spoutName;
     }
+    
+    @Override
+    public int getBoltExecutors() {
+        return boltExecutors;
+    }
+
+    @Override
+    public int getSpoutExecutors() {
+        return spoutExecutors;
+    }
 
     @Override
     public StormTopology newTopology() {
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout(getSpoutName(), new TimeDataIncrementingSpout(), 2);
+        builder.setSpout(getSpoutName(), new TimeDataIncrementingSpout(), spoutExecutors);
         builder.setBolt(getBoltName(),
                 new TimeDataVerificationBolt()
                         .withTumblingWindow(new BaseWindowedBolt.Duration(tumbleSec, TimeUnit.SECONDS))
                         .withLag(new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS))
                         .withTimestampField(TimeData.getTimestampFieldName()),
-                1)
+                boltExecutors)
                 .globalGrouping(getSpoutName());
         return builder.createTopology();
     }

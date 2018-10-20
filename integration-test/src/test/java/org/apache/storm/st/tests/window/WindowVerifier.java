@@ -30,6 +30,7 @@ import org.apache.storm.st.wrapper.TopoWrap;
 import org.apache.storm.thrift.TException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -53,8 +54,8 @@ public class WindowVerifier {
         String boltName = testable.getBoltName();
         String spoutName = testable.getSpoutName();
         //Waiting for spout tuples isn't strictly necessary since we also wait for bolt emits, but do it anyway
-        topo.assertProgress(minSpoutEmits, spoutName, 180);
-        topo.assertProgress(minBoltEmits, boltName, 180);
+        topo.assertProgress(minSpoutEmits, testable.getSpoutExecutors(), spoutName, 180);
+        topo.assertProgress(minBoltEmits, testable.getBoltExecutors(), boltName, 180);
         
         final List<DecoratedLogLine> allDecoratedBoltLogs = topo.getDecoratedLogLines(boltName);
         final List<DecoratedLogLine> allDecoratedSpoutLogs = topo.getDecoratedLogLines(spoutName);
@@ -72,8 +73,8 @@ public class WindowVerifier {
             final String actualString = allDecoratedBoltLogs.get(i).toString();
             for (DecoratedLogLine windowData : expectedWindowContents) {
                 final String logStr = windowData.getData();
-                Assert.assertTrue(actualString.contains(logStr),
-                        String.format("Missing: '%s' \nActual: '%s' \nCalculated window: '%s'", logStr, actualString, expectedWindowContents));
+                Assertions.assertTrue(actualString.contains(logStr),
+                        () -> String.format("Missing: '%s' \nActual: '%s' \nCalculated window: '%s'", logStr, actualString, expectedWindowContents));
             }
         }
     }
@@ -92,8 +93,9 @@ public class WindowVerifier {
         String spoutName = testable.getSpoutName();
         
         //Waiting for spout tuples isn't strictly necessary since we also wait for bolt emits, but do it anyway
-        topo.assertProgress(minSpoutEmits, spoutName, 60 + 10 * (windowSec + slideSec));
-        topo.assertProgress(minBoltEmits, boltName, 60 + 10 * (windowSec + slideSec));
+        //Allow two minutes for topology startup, then wait for at most the time it should take to produce 10 windows
+        topo.assertProgress(minSpoutEmits, testable.getSpoutExecutors(), spoutName, 180 + 10 * slideSec);
+        topo.assertProgress(minBoltEmits, testable.getBoltExecutors(), boltName, 180 + 10 * slideSec);
         
         final List<TimeData> allSpoutLogLines = topo.getDeserializedDecoratedLogLines(spoutName, TimeData::fromJson);
         final List<TimeDataWindow> allBoltLogLines = topo.getDeserializedDecoratedLogLines(boltName, TimeDataWindow::fromJson);
@@ -124,12 +126,12 @@ public class WindowVerifier {
             LOG.info("Actual window: " + actualWindow.getDescription());
             LOG.info("Expected window: " + expectedWindow.getDescription());
             for (TimeData oneLog : expectedWindow.getTimeData()) {
-                Assert.assertTrue(actualWindow.getTimeData().contains(oneLog),
-                        String.format("Missing: '%s' \n\tActual: '%s' \n\tComputed window: '%s'", oneLog, actualWindow, expectedWindow));
+                Assertions.assertTrue(actualWindow.getTimeData().contains(oneLog),
+                        () -> String.format("Missing: '%s' \n\tActual: '%s' \n\tComputed window: '%s'", oneLog, actualWindow, expectedWindow));
             }
             for (TimeData oneLog : actualWindow.getTimeData()) {
-                Assert.assertTrue(expectedWindow.getTimeData().contains(oneLog),
-                        String.format("Extra: '%s' \n\tActual: '%s' \n\tComputed window: '%s'", oneLog, actualWindow, expectedWindow));
+                Assertions.assertTrue(expectedWindow.getTimeData().contains(oneLog),
+                        () -> String.format("Extra: '%s' \n\tActual: '%s' \n\tComputed window: '%s'", oneLog, actualWindow, expectedWindow));
             }
         }
     }

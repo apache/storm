@@ -17,8 +17,6 @@
 package org.apache.storm.st.topology.window;
 
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.st.topology.TestableTopology;
 import org.apache.storm.st.utils.StringDecorator;
@@ -34,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class IncrementingSpout extends BaseRichSpout {
 
     public static final String NUMBER_FIELD = "number";
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(IncrementingSpout.class);
     private SpoutOutputCollector collector;
     private int currentNum;
@@ -53,10 +51,12 @@ public class IncrementingSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        //Emitting too quickly can lead to spurious test failures because the worker log may roll right before we read it
-        //Sleep a bit between emits
-        TimeUtil.sleepMilliSec(ThreadLocalRandom.current()
-            .nextInt(TestableTopology.MIN_SLEEP_BETWEEN_EMITS_MS, TestableTopology.MAX_SLEEP_BETWEEN_EMITS_MS));
+        if (currentNum >= TestableTopology.MAX_SPOUT_EMITS) {
+          //Stop emitting at a certain point, because log rolling breaks the tests.
+          return;
+        }
+        //Sleep a bit to avoid hogging the CPU.
+        TimeUtil.sleepMilliSec(1);
         currentNum++;
         final Values tuple = new Values(currentNum);
         LOG.info(StringDecorator.decorate(componentId, tuple.toString()));
