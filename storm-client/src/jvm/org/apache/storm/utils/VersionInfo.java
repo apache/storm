@@ -38,7 +38,8 @@ import org.slf4j.LoggerFactory;
 public final class VersionInfo {
     private static final Logger LOG = LoggerFactory.getLogger(VersionInfo.class);
     private static final String STORM_CORE_PROPERTIES_NAME = "storm-core-version-info.properties";
-    public static final IVersionInfo OUR_FULL_VERSION = new VersionInfoImpl("storm-core");
+    private static final String STORM_CLIENT_PROPERTIES_NAME = "storm-client-version-info.properties";
+    public static final IVersionInfo OUR_FULL_VERSION = new VersionInfoImpl("storm-client");
     public static final SimpleVersion OUR_VERSION = new SimpleVersion(OUR_FULL_VERSION.getVersion());
 
     private static class VersionInfoImpl implements IVersionInfo {
@@ -122,11 +123,20 @@ public final class VersionInfo {
      * @return the IVersionInfo or null.
      */
     public static IVersionInfo getFromClasspath(List<String> classpath) {
+        IVersionInfo ret = getFromClasspath(classpath, STORM_CLIENT_PROPERTIES_NAME);
+        if (ret == null) {
+            //storm-core is needed here for backwards compatibility.
+            ret = getFromClasspath(classpath, STORM_CORE_PROPERTIES_NAME);
+        }
+        return ret;
+    }
+
+    private static IVersionInfo getFromClasspath(List<String> classpath, final String propFileName) {
         IVersionInfo ret = null;
         for (String part: classpath) {
             Path p = Paths.get(part);
             if (Files.isDirectory(p)) {
-                Path child = p.resolve(STORM_CORE_PROPERTIES_NAME);
+                Path child = p.resolve(propFileName);
                 if (Files.exists(child) && !Files.isDirectory(child)) {
                     try (FileReader reader = new FileReader(child.toFile())) {
                         Properties info = new Properties();
@@ -144,7 +154,7 @@ public final class VersionInfo {
                     Enumeration<? extends ZipEntry> zipEnums = jf.entries();
                     while (zipEnums.hasMoreElements()) {
                         ZipEntry entry = zipEnums.nextElement();
-                        if (!entry.isDirectory() && entry.getName().equals(STORM_CORE_PROPERTIES_NAME)) {
+                        if (!entry.isDirectory() && entry.getName().equals(propFileName)) {
                             try (InputStreamReader reader = new InputStreamReader(jf.getInputStream(entry))) {
                                 Properties info = new Properties();
                                 info.load(reader);

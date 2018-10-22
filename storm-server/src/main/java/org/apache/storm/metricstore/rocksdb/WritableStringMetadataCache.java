@@ -13,13 +13,12 @@ package org.apache.storm.metricstore.rocksdb;
 
 import java.util.Map;
 import java.util.Set;
-import org.apache.http.annotation.NotThreadSafe;
 import org.apache.storm.metricstore.MetricException;
 
 /**
  * The writable interface to a StringMetadataCache intended to be used by a single RocksDBMetricwWriter instance.
+ * This class is not thread safe.
  */
-@NotThreadSafe
 public interface WritableStringMetadataCache extends ReadOnlyStringMetadataCache {
 
     /**

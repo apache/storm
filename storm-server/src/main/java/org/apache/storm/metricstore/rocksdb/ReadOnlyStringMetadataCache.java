@@ -11,12 +11,9 @@
 
 package org.apache.storm.metricstore.rocksdb;
 
-import org.apache.http.annotation.ThreadSafe;
-
 /**
  * The read-only interface to a StringMetadataCache allowed to be used by any thread.
  */
-@ThreadSafe
 public interface ReadOnlyStringMetadataCache {
 
     /**
