@@ -38,7 +38,9 @@ public class SlidingTimeCorrectness implements TestableTopology {
     private final int windowSec;
     private final int slideSec;
     private final String spoutName;
+    private final int spoutExecutors = 2;
     private final String boltName;
+    private final int boltExecutors = 1;
 
     public SlidingTimeCorrectness(int windowSec, int slideSec) {
         this.windowSec = windowSec;
@@ -59,16 +61,26 @@ public class SlidingTimeCorrectness implements TestableTopology {
     }
 
     @Override
+    public int getBoltExecutors() {
+        return boltExecutors;
+    }
+
+    @Override
+    public int getSpoutExecutors() {
+        return spoutExecutors;
+    }
+
+    @Override
     public StormTopology newTopology() {
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout(getSpoutName(), new TimeDataIncrementingSpout(), 2);
+        builder.setSpout(getSpoutName(), new TimeDataIncrementingSpout(), spoutExecutors);
         builder.setBolt(getBoltName(),
                 new TimeDataVerificationBolt()
                         .withWindow(new BaseWindowedBolt.Duration(windowSec, TimeUnit.SECONDS),
                                 new BaseWindowedBolt.Duration(slideSec, TimeUnit.SECONDS))
                         .withTimestampField(TimeData.getTimestampFieldName())
                         .withLag(new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS)),
-                1)
+                boltExecutors)
                 .globalGrouping(getSpoutName());
         return builder.createTopology();
     }

@@ -17,11 +17,10 @@
 
 package org.apache.storm.st.wrapper;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -31,7 +30,6 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,8 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -50,7 +46,6 @@ import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.ComponentAggregateStats;
 import org.apache.storm.generated.ComponentPageInfo;
 import org.apache.storm.generated.ExecutorAggregateStats;
 import org.apache.storm.generated.ExecutorStats;
@@ -156,6 +151,14 @@ public class TopoWrap {
         return cluster.getNimbusClient().getTopologyInfo(id);
     }
 
+    public long getComponentExecutorCount(final String componentId) throws TException {
+        TopologyInfo info = getInfo();
+        List<ExecutorSummary> executors = info.get_executors();
+        return executors.stream()
+            .filter(summary -> summary != null && summary.get_component_id().equals(componentId))
+            .count();
+    }
+    
     public long getAllTimeEmittedCount(final String componentId) throws TException {
         TopologyInfo info = getInfo();
         final List<ExecutorSummary> executors = info.get_executors();
@@ -178,11 +181,11 @@ public class TopoWrap {
                 return allTime.get(Utils.DEFAULT_STREAM_ID);
             }).sum();
     }
-
+    
     /**
      * Get the Logviewer worker log URLs for the specified component.
      */
-    public List<ExecutorURL> getLogUrls(final String componentId) throws TException, MalformedURLException {
+    public Set<ExecutorURL> getLogUrls(final String componentId) throws TException, MalformedURLException {
         ComponentPageInfo componentPageInfo = cluster.getNimbusClient().getComponentPageInfo(id, componentId, null, false);
         List<ExecutorAggregateStats> executorStats = componentPageInfo.get_exec_stats();
         Set<ExecutorURL> urls = new HashSet<>();
@@ -196,25 +199,29 @@ public class TopoWrap {
             ExecutorURL executorURL = new ExecutorURL(componentId, host, logViewerPort, executorPort, id);
             urls.add(executorURL);
         }
-        return new ArrayList<>(urls);
+        return urls;
     }
 
-    public void waitForProgress(int minEmits, String componentName, int maxWaitSec) throws TException {
-        for(int i = 0; i < (maxWaitSec+9)/10; ++i) {
+    public void waitForProgress(int minEmits, int expectedExecutors, String componentName, int maxWaitSec) throws TException {
+        for (int i = 0; i < (maxWaitSec + 1) / 2; ++i) {
             LOG.info(getInfo().toString());
             long emitCount = getAllTimeEmittedCount(componentName);
             LOG.info("Count for component " + componentName + " is " + emitCount);
-            if (emitCount >= minEmits) {
+            long executorCount = getComponentExecutorCount(componentName);
+            LOG.info("Component " + componentName + " has " + executorCount + " started executors");
+            if (emitCount >= minEmits && executorCount == expectedExecutors) {
                 break;
             }
-            TimeUtil.sleepSec(10);
+            TimeUtil.sleepSec(2);
         }
     }
 
-    public void assertProgress(int minEmits, String componentName, int maxWaitSec) throws TException {
-        waitForProgress(minEmits, componentName, maxWaitSec);
+    public void assertProgress(int minEmits, int expectedExecutors, String componentName, int maxWaitSec) throws TException {
+        waitForProgress(minEmits, expectedExecutors, componentName, maxWaitSec);
         long emitCount = getAllTimeEmittedCount(componentName);
         Assert.assertTrue(emitCount >= minEmits, "Emit count for component '" + componentName + "' is " + emitCount + ", min is " + minEmits);
+        long executorCount = getComponentExecutorCount(componentName);
+        assertThat(executorCount, is((long)expectedExecutors));
     }
 
     public static class ExecutorURL {
@@ -291,7 +298,7 @@ public class TopoWrap {
     }
 
     /**
-     * Get the log lines that contain the unique {@link StringDecorator} string.
+     * Get the log lines that contain the unique {@link StringDecorator} string for the given component.
      * Test spouts and bolts can write logs containing the StringDecorator string, which can be fetched using this method.
      */
     public List<DecoratedLogLine> getDecoratedLogLines(final String componentId) throws IOException, TException, MalformedURLException {
@@ -300,7 +307,7 @@ public class TopoWrap {
         Pattern pattern = Pattern.compile("(?=\\n" + dateRegex + ")");
         final String[] logLines = pattern.split(logs);
         List<DecoratedLogLine> sortedLogs = Arrays.asList(logLines).stream()
-            .filter(log -> log != null && StringDecorator.isDecorated(log))
+            .filter(log -> log != null && StringDecorator.isDecorated(componentId, log))
             .map(DecoratedLogLine::new)
             .sorted()
             .collect(Collectors.toList());
@@ -313,7 +320,7 @@ public class TopoWrap {
      */
     public String getLogs(final String componentId) throws IOException, TException, MalformedURLException {
         LOG.info("Fetching logs for componentId = " + componentId);
-        List<ExecutorURL> componentLogUrls = getLogUrls(componentId);
+        Set<ExecutorURL> componentLogUrls = getLogUrls(componentId);
         LOG.info("Found " + componentLogUrls.size() + " urls: " + componentLogUrls.toString());
         List<String> urlContents = new ArrayList<>();
         for(ExecutorURL executorUrl : componentLogUrls) {

@@ -20,6 +20,7 @@ import static org.apache.storm.st.topology.TestableTopology.DUMMY_FIELD;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.storm.st.utils.StringDecorator;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -52,7 +53,9 @@ public class VerificationBolt extends BaseWindowedBolt {
         LOG.info("tuplesInWindow.size() = " + tuplesInWindow.size());
         LOG.info("newTuples.size() = " + newTuples.size());
         LOG.info("expiredTuples.size() = " + expiredTuples.size());
-        LOG.info(StringDecorator.decorate(componentId, "tuplesInWindow = " + tuplesInWindow.toString()));
+        LOG.info(StringDecorator.decorate(componentId, "tuplesInWindow = " + tuplesInWindow.stream()
+            .map(t -> t.getValues())
+            .collect(Collectors.toList())));
         collector.emit(new Values("dummyValue"));
     }
 

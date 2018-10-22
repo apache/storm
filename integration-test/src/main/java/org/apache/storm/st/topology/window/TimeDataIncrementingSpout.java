@@ -50,10 +50,12 @@ public class TimeDataIncrementingSpout extends BaseRichSpout {
 
         @Override
         public void nextTuple() {
-            //Emitting too quickly can lead to spurious test failures because the worker log may roll right before we read it
-            //Sleep a bit between emits
-            TimeUtil.sleepMilliSec(ThreadLocalRandom.current()
-            .nextInt(TestableTopology.MIN_SLEEP_BETWEEN_EMITS_MS, TestableTopology.MAX_SLEEP_BETWEEN_EMITS_MS));
+            if (currentNum >= TestableTopology.MAX_SPOUT_EMITS) {
+                //Stop emitting at a certain point, because log rolling breaks the tests.
+                return;
+            }
+            //Sleep a bit between emits to ensure that we don't reach the cap too quickly, since this spout is used to test time based windows
+            TimeUtil.sleepMilliSec(TestableTopology.TIMEDATA_SLEEP_BETWEEN_EMITS_MS);
             currentNum++;
             TimeData data = TimeData.newData(currentNum);
             final Values tuple = data.getValues();

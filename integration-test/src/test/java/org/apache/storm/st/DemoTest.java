@@ -17,9 +17,6 @@
 
 package org.apache.storm.st;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 import org.apache.storm.st.helper.AbstractTest;
 import org.apache.storm.st.wrapper.TopoWrap;
 import org.apache.storm.ExclamationTopology;
@@ -31,20 +28,15 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 import org.apache.storm.st.utils.TimeUtil;
 
-import javax.annotation.Nullable;
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class DemoTest extends AbstractTest {
-    private static Logger log = LoggerFactory.getLogger(DemoTest.class);
-    private static Collection<String> words = Lists.newArrayList("nathan", "mike", "jackson", "golda", "bertels");
-    private static Collection<String> exclaim2Oputput = Collections2.transform(words, new Function<String, String>() {
-        @Nullable
-        @Override
-        public String apply(@Nullable String input) {
-            return input +  "!!!!!!";
-        }
-    });
+    private static final Logger log = LoggerFactory.getLogger(DemoTest.class);
+    private static final List<String> exclaim2Output = ExclamationTopology.FixedOrderWordSpout.WORDS.stream()
+        .map(word -> word + "!!!!!!")
+        .collect(Collectors.toList());
     protected final String topologyName = this.getClass().getSimpleName();
     private TopoWrap topo;
 
@@ -54,25 +46,12 @@ public final class DemoTest extends AbstractTest {
         topo.submitSuccessfully();
         final int minExclaim2Emits = 500;
         final int minSpountEmits = 10000;
-        //Keep the check time to be gt Config.EXECUTOR_METRICS_FREQUENCY_SECS.
-        for(int i = 0; i < 10; ++i) {
-            TopologyInfo topologyInfo = topo.getInfo();
-            log.info(topologyInfo.toString());
-            long wordSpoutEmittedCount = topo.getAllTimeEmittedCount(ExclamationTopology.WORD);
-            long exclaim1EmittedCount = topo.getAllTimeEmittedCount(ExclamationTopology.EXCLAIM_1);
-            long exclaim2EmittedCount = topo.getAllTimeEmittedCount(ExclamationTopology.EXCLAIM_2);
-            log.info("wordSpoutEmittedCount for spout 'word' = " + wordSpoutEmittedCount);
-            log.info("exclaim1EmittedCount = " + exclaim1EmittedCount);
-            log.info("exclaim2EmittedCount = " + exclaim2EmittedCount);
-            if (exclaim2EmittedCount > minExclaim2Emits || wordSpoutEmittedCount > minSpountEmits) {
-                break;
-            }
-            TimeUtil.sleepSec(6);
-        }
-        List<TopoWrap.ExecutorURL> boltUrls = topo.getLogUrls(ExclamationTopology.WORD);
+        topo.assertProgress(minSpountEmits, ExclamationTopology.SPOUT_EXECUTORS, ExclamationTopology.WORD, 180);
+        topo.assertProgress(minExclaim2Emits, ExclamationTopology.EXCLAIM_2_EXECUTORS, ExclamationTopology.EXCLAIM_2, 180);
+        Set<TopoWrap.ExecutorURL> boltUrls = topo.getLogUrls(ExclamationTopology.WORD);
         log.info(boltUrls.toString());
         final String actualOutput = topo.getLogs(ExclamationTopology.EXCLAIM_2);
-        for (String oneExpectedOutput : exclaim2Oputput) {
+        for (String oneExpectedOutput : exclaim2Output) {
             Assert.assertTrue(actualOutput.contains(oneExpectedOutput), "Couldn't find " + oneExpectedOutput + " in urls");
         }
     }
