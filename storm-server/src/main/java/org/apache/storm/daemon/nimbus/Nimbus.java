@@ -2720,8 +2720,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         NimbusInfo leader = leaderElector.getLeader();
         for (NimbusSummary nimbusSummary : nimbuses) {
             nimbusSummary.set_uptime_secs(Time.deltaSecs(nimbusSummary.get_uptime_secs()));
-            nimbusSummary.set_isLeader(leader.getHost().equals(nimbusSummary.get_host())
-                                       && leader.getPort() == nimbusSummary.get_port());
+            // sometimes Leader election indicates the current nimbus is leader, but the host was recently restarted,
+            // and is currently not a leader.
+            boolean isLeader = leader.getHost().equals(nimbusSummary.get_host()) && leader.getPort() == nimbusSummary.get_port();
+            if (isLeader && this.nimbusHostPortInfo.getHost().equals(leader.getHost()) && !this.isLeader()) {
+                isLeader = false;
+            }
+            nimbusSummary.set_isLeader(isLeader);
         }
 
         List<TopologySummary> topologySummaries = new ArrayList<>();
@@ -3787,6 +3792,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public String beginFileUpload() throws AuthorizationException, TException {
         try {
             beginFileUploadCalls.mark();
+            assertIsLeader();
             checkAuthorization(null, null, "fileUpload");
             String fileloc = getInbox() + "/stormjar-" + Utils.uuid() + ".jar";
             uploaders.put(fileloc, new TimedWritableByteChannel(Channels.newChannel(new FileOutputStream(fileloc)), fileUploadDuration));
