@@ -7,7 +7,9 @@ Local mode simulates a Storm cluster in process and is useful for developing and
 
 To run a topology in local mode you have two options.  The most common option is to run your topology with `storm local` instead of `storm jar`
 
-This will bring up a local simulated cluster and force all interactions with nimbus to go through the simulated cluster instead of going to a separate process.
+This will bring up a local simulated cluster and force all interactions with nimbus to go through the simulated cluster instead of going to a separate process. By default this will run the process for 20 seconds before tearing down the entire cluster.  You can override this by including a `--local-ttl` command line option which sets the number of seconds it should run for.
+
+### Programatic
 
 If you want to do some automated testing but without actually launching a storm cluster you can use the same classes internally that `storm local` does.
 
