@@ -1165,13 +1165,6 @@ public class DaemonConfig implements Validated {
     public static String STORM_DOCKER_IMAGE = "storm.docker.image";
 
     /**
-     * The default network type for the docker container.
-     */
-    @isString
-    @NotNull
-    public static String STORM_DOCKER_CONTAINER_NETWORK = "storm.docker.container.network";
-
-    /**
      * --cgroup-parent config for docker command. Must follow the constraints of the docker command.
      */
     @isString

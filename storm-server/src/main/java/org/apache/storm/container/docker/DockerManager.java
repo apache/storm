@@ -42,7 +42,7 @@ public class DockerManager implements ResourceIsolationInterface {
         Pattern.compile(DOCKER_IMAGE_PATTERN);
     private String dockerExecutable;
     private String defaultDockerImage;
-    private String defaultNetworkType;
+    private final String networkType = "host";
     private String cgroupParent;
     private String memoryCgroupRootPath;
     private String cgroupRootPath;
@@ -67,7 +67,6 @@ public class DockerManager implements ResourceIsolationInterface {
             throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_IMAGE + " is not set or it doesn't match " + DOCKER_IMAGE_PATTERN);
         }
         seccompJsonFile = (String) conf.get(DaemonConfig.STORM_DOCKER_SECCOMP_PROFILE);
-        defaultNetworkType = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CONTAINER_NETWORK));
         cgroupParent = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_PARENT));
         cgroupRootPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_ROOT));
         nsenterExecutablePath = ObjectReader.getString(conf.get(DaemonConfig.STORM_NSENTER_EXECUTABLE_PATH));
@@ -144,11 +143,6 @@ public class DockerManager implements ResourceIsolationInterface {
             dockerImage = defaultDockerImage;
         }
 
-        String network = env.get(TOPOLOGY_ENV_DOCKER_CONTAINER_NETWORK);
-        if (network == null || network.isEmpty()) {
-            network = defaultNetworkType;
-        }
-
         String workerDir = targetDir.getAbsolutePath();
 
         String uid = getUserIdInfo(user);
@@ -168,7 +162,7 @@ public class DockerManager implements ResourceIsolationInterface {
         // But if supervisorLocalDir is not mounted, the worker will try to create it and fail.
         String supervisorLocalDir = ConfigUtils.supervisorLocalDir(conf);
 
-        dockerRunCommand.setNetworkType(network)
+        dockerRunCommand.setNetworkType(networkType)
             //The whole file system of the container will be read-only except specific read-write bind mounts
             .setReadonly()
             .addReadOnlyMountLocation(cgroupRootPath, cgroupRootPath, false)
