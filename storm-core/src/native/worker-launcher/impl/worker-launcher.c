@@ -597,8 +597,12 @@ int recursive_delete(const char *path, int supervisor_owns_dir) {
 
   if(access(path, F_OK) != 0) {
     if(errno == ENOENT) {
+       if(lstat(path, &file_stat) != 0) {
+         fprintf(LOGFILE, "Failed to stat %s: %s", path, strerror(errno));
+         return 0;
+       }
        // we need to handle symlinks that target missing files.
-       if((lstat(path, &file_stat) != 0) || ((file_stat.st_mode & S_IFMT) != S_IFLNK)) {
+       if((file_stat.st_mode & S_IFMT) != S_IFLNK) {
          return 0;
        }
      }
