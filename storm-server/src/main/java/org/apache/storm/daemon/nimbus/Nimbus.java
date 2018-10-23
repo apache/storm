@@ -1620,9 +1620,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         IStormClusterState clusterState = stormClusterState;
         BlobStore store = blobStore;
         String jarKey = ConfigUtils.masterStormJarKey(topoId);
-        String codeKey = ConfigUtils.masterStormCodeKey(topoId);
-        String confKey = ConfigUtils.masterStormConfKey(topoId);
-        NimbusInfo hostPortInfo = nimbusHostPortInfo;
         if (tmpJarLocation != null) {
             //in local mode there is no jar
             try (FileInputStream fin = new FileInputStream(tmpJarLocation)) {
