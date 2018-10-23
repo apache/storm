@@ -49,6 +49,7 @@ void display_usage(FILE *stream) {
   fprintf(stream, "   launch a profiler: profiler <working-directory> <script-to-run>\n");
   fprintf(stream, "   signal a worker: signal <pid> <signal>\n");
   fprintf(stream, "   launch a docker container: launch-docker-container <working-directory> <script-to-run>\n");
+  fprintf(stream, "   run a docker command: run-docker-cmd <working-directory> <script-to-run>\n");
   fprintf(stream, "   execute a command as root: exec-cmd-as-root <working-directory> <script-to-run>\n");
 }
 
@@ -213,8 +214,16 @@ int main(int argc, char **argv) {
     working_dir = argv[optind++];
     exit_code = setup_dir_permissions(working_dir, 1, TRUE);
     if (exit_code == 0) {
-      exit_code = exec_as_user(working_dir, argv[optind], TRUE);
+      exit_code = run_docker_cmd(working_dir, argv[optind]);
     }
+  } else if (strcasecmp("run-docker-cmd", command) == 0) {
+    if (argc != 5) {
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for run-docker-cmd\n", argc);
+      fflush(ERRORFILE);
+      return INVALID_ARGUMENT_NUMBER;
+    }
+    working_dir = argv[optind++];
+    exit_code = run_docker_cmd(working_dir, argv[optind]);
   } else if (strcasecmp("exec-cmd-as-root", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for exec-cmd-as-root\n", argc);

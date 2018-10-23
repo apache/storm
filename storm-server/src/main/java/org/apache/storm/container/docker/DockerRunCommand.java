@@ -16,13 +16,12 @@ public class DockerRunCommand extends DockerCommand {
 
     /**
      * The Construction function.
-     * @param executable the docker executable
      * @param containerName the container name
      * @param userInfo the info of the user, e.g. "uid:gid"
      * @param image the container image
      */
-    public DockerRunCommand(String executable, String containerName, String userInfo, String image) {
-        super(executable, RUN_COMMAND);
+    public DockerRunCommand(String containerName, String userInfo, String image) {
+        super(RUN_COMMAND);
         super.addCommandArguments("--name=" + containerName, "--user=" + userInfo);
         this.image = image;
     }

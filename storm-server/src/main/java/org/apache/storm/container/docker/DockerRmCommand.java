@@ -12,8 +12,8 @@ public class DockerRmCommand extends DockerCommand {
     private static final String RM_COMMAND = "rm";
     private String containerName;
 
-    public DockerRmCommand(String executable, String containerName) {
-        super(executable, RM_COMMAND);
+    public DockerRmCommand(String containerName) {
+        super(RM_COMMAND);
         this.containerName = containerName;
     }
 

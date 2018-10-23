@@ -295,13 +295,13 @@ char * get_value(const char* key) {
  */
 char ** get_values(const char * key) {
   char *value = get_value(key);
-  return extract_values(value);
+  return extract_values_delim(value, ",");
 }
 
 /**
- * Extracts array of values from the comma separated list of values.
+ * Extracts array of values from the delim separated list of values.
  */
-char ** extract_values(char *value) {
+char ** extract_values_delim(char *value, const char *delim) {
   char ** toPass = NULL;
   char *tempTok = NULL;
   char *tempstr = NULL;
@@ -311,14 +311,14 @@ char ** extract_values(char *value) {
   //first allocate any array of 10
   if(value != NULL) {
     toPass = (char **) malloc(sizeof(char *) * toPassSize);
-    tempTok = strtok_r((char *)value, ",", &tempstr);
+    tempTok = strtok_r((char *)value, delim, &tempstr);
     while (tempTok != NULL) {
       toPass[size++] = tempTok;
       if(size == toPassSize) {
         toPassSize += MAX_SIZE;
         toPass = (char **) realloc(toPass,(sizeof(char *) * toPassSize));
       }
-      tempTok = strtok_r(NULL, ",", &tempstr);
+      tempTok = strtok_r(NULL, delim, &tempstr);
     }
   }
   if (size > 0) {

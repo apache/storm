@@ -7,8 +7,8 @@ package org.apache.storm.container.docker;
 public class DockerStopCommand extends DockerCommand {
     private static final String STOP_COMMAND = "stop";
 
-    public DockerStopCommand(String executable, String containerName) {
-        super(executable, STOP_COMMAND);
+    public DockerStopCommand(String containerName) {
+        super(STOP_COMMAND);
         super.addCommandArguments(containerName);
     }
 

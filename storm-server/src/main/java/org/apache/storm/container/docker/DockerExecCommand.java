@@ -13,8 +13,8 @@ public class DockerExecCommand extends DockerCommand {
     private String containerName;
     private List<String> commandInContainer;
 
-    public DockerExecCommand(String executable, String containerName) {
-        super(executable, EXEC_COMMAND);
+    public DockerExecCommand(String containerName) {
+        super(EXEC_COMMAND);
         this.containerName = containerName;
     }
 

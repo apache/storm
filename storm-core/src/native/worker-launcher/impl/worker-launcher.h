@@ -47,7 +47,15 @@ enum errorcodes {
   // PREPARE_JOB_LOGS_FAILED (NOT USED) 23
   INVALID_CONFIG_FILE =  24,
   SETSID_OPER_FAILED = 25,
-  WRITE_PIDFILE_FAILED = 26
+  WRITE_PIDFILE_FAILED = 26,
+  DOCKER_RUN_FAILED=29,
+  ERROR_OPENING_FILE = 30,
+  ERROR_READING_FILE = 31,
+  ERROR_SANITIZING_DOCKER_COMMAND = 39,
+  DOCKER_IMAGE_INVALID = 40,
+  DOCKER_CONTAINER_NAME_INVALID = 41,
+  ERROR_COMPILING_REGEX = 42,
+  ERROR_CHANGING_USER = 43
 };
 
 #define LAUNCHER_GROUP_KEY "storm.worker-launcher.group"
@@ -59,7 +67,16 @@ enum errorcodes {
 #define CREDENTIALS_FILENAME "container_tokens"
 #define MIN_USERID_KEY "min.user.id"
 #define BANNED_USERS_KEY "banned.users"
+#define DOCKER_BINARY_KEY "docker.binary"
 #define TMP_DIR "tmp"
+
+/* Macros for min/max. */
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif /* MIN */
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif  /* MAX */
 
 extern struct passwd *user_detail;
 
@@ -129,3 +146,13 @@ int set_user(const char *user);
 char *get_container_launcher_file(const char* work_dir);
 
 int change_user(uid_t user, gid_t group);
+
+/**
+ * Get the docker binary path.
+ */
+char *get_docker_binary();
+
+/**
+ * Run a docker command passing the command file as an argument
+ */
+int run_docker_cmd(const char * working_dir, const char * command_file);

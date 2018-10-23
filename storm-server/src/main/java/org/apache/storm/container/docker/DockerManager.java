@@ -35,12 +35,10 @@ import org.slf4j.LoggerFactory;
 public class DockerManager implements ResourceIsolationInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DockerManager.class);
     private static final String TOPOLOGY_ENV_DOCKER_IMAGE = "DOCKER_IMAGE";
-    private static final String TOPOLOGY_ENV_DOCKER_CONTAINER_NETWORK = "DOCKER_CONTAINER_NETWORK";
     private static final String DOCKER_IMAGE_PATTERN =
         "^(([a-zA-Z0-9.-]+)(:\\d+)?/)?([a-z0-9_./-]+)(:[\\w.-]+)?$";
     private static final Pattern dockerImagePattern =
         Pattern.compile(DOCKER_IMAGE_PATTERN);
-    private String dockerExecutable;
     private String defaultDockerImage;
     private final String networkType = "host";
     private String cgroupParent;
@@ -60,7 +58,6 @@ public class DockerManager implements ResourceIsolationInterface {
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {
         this.conf = conf;
-        dockerExecutable = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_EXECUTABLE_PATH));
         //default configs can't be null
         defaultDockerImage = (String) conf.get(DaemonConfig.STORM_DOCKER_IMAGE);
         if (defaultDockerImage == null || !dockerImagePattern.matcher(defaultDockerImage).matches()) {
@@ -150,7 +147,7 @@ public class DockerManager implements ResourceIsolationInterface {
         String gid = groups[0];
         String dockerUser = uid + ":" + gid;
 
-        DockerRunCommand dockerRunCommand = new DockerRunCommand(dockerExecutable, workerId, dockerUser, dockerImage);
+        DockerRunCommand dockerRunCommand = new DockerRunCommand(workerId, dockerUser, dockerImage);
 
         //set of locations to be bind mounted
         String workerRootDir = ConfigUtils.workerRoot(conf, workerId);
@@ -238,10 +235,10 @@ public class DockerManager implements ResourceIsolationInterface {
         String cid = workerToCid.get(workerId);
         if (cid == null) {
             //Get the worker PID outside of the container.
-            DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(dockerExecutable, workerId);
+            DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(workerId);
             dockerInspectCommand.withGettingCID();
 
-            List<String> outputFromInspect = getOutputFromRunningDockerCommand(conf, user, CmdType.EXEC_CMD_AS_ROOT,
+            List<String> outputFromInspect = getOutputFromRunningDockerCommand(conf, user, CmdType.RUN_DOCKER_CMD,
                 dockerInspectCommand.getCommandWithArguments(), null, new File(ConfigUtils.workerRoot(conf, workerId)));
 
             if (!outputFromInspect.isEmpty()) {
@@ -279,21 +276,21 @@ public class DockerManager implements ResourceIsolationInterface {
     @Override
     public void kill(String user, String workerId) throws IOException {
         String workerDir = ConfigUtils.workerRoot(conf, workerId);
-        DockerStopCommand dockerStopCommand = new DockerStopCommand(dockerExecutable, workerId);
-        runDockerCommandWaitFor(conf, user, CmdType.EXEC_CMD_AS_ROOT, dockerStopCommand.getCommandWithArguments(),
+        DockerStopCommand dockerStopCommand = new DockerStopCommand(workerId);
+        runDockerCommandWaitFor(conf, user, CmdType.RUN_DOCKER_CMD, dockerStopCommand.getCommandWithArguments(),
             null, null, null, new File(workerDir));
 
-        DockerRmCommand dockerRmCommand = new DockerRmCommand(dockerExecutable, workerId);
-        runDockerCommandWaitFor(conf, user, CmdType.EXEC_CMD_AS_ROOT, dockerRmCommand.getCommandWithArguments(),
+        DockerRmCommand dockerRmCommand = new DockerRmCommand(workerId);
+        runDockerCommandWaitFor(conf, user, CmdType.RUN_DOCKER_CMD, dockerRmCommand.getCommandWithArguments(),
             null, null, null, new File(workerDir));
     }
 
     @Override
     public void forceKill(String user, String workerId) throws IOException {
         String workerDir = ConfigUtils.workerRoot(conf, workerId);
-        DockerRmCommand dockerRmCommand = new DockerRmCommand(dockerExecutable, workerId);
+        DockerRmCommand dockerRmCommand = new DockerRmCommand(workerId);
         dockerRmCommand.withForce();
-        runDockerCommandWaitFor(conf, user, CmdType.EXEC_CMD_AS_ROOT, dockerRmCommand.getCommandWithArguments(),
+        runDockerCommandWaitFor(conf, user, CmdType.RUN_DOCKER_CMD, dockerRmCommand.getCommandWithArguments(),
             null, null, null, new File(workerDir));
     }
 
@@ -310,10 +307,10 @@ public class DockerManager implements ResourceIsolationInterface {
     @Override
     public boolean areAllProcessesDead(String user, String workerId) throws IOException {
         String workerDir = ConfigUtils.workerRoot(conf, workerId);
-        DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(dockerExecutable, workerId);
+        DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(workerId);
         dockerInspectCommand.withGettingContainerStatus();
 
-        int exitCode = runDockerCommandWaitFor(conf, user, CmdType.EXEC_CMD_AS_ROOT, dockerInspectCommand.getCommandWithArguments(),
+        int exitCode = runDockerCommandWaitFor(conf, user, CmdType.RUN_DOCKER_CMD, dockerInspectCommand.getCommandWithArguments(),
             null, null, null, new File(workerDir));
         return exitCode != 0;
     }
@@ -329,10 +326,10 @@ public class DockerManager implements ResourceIsolationInterface {
         String workerDir = targetDir.getAbsolutePath();
 
         //Get the worker PID outside of the container.
-        DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(dockerExecutable, workerId);
+        DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(workerId);
         dockerInspectCommand.withGettingContainerPID();
 
-        List<String> outputFromInspect = getOutputFromRunningDockerCommand(conf, user, CmdType.EXEC_CMD_AS_ROOT,
+        List<String> outputFromInspect = getOutputFromRunningDockerCommand(conf, user, CmdType.RUN_DOCKER_CMD,
             dockerInspectCommand.getCommandWithArguments(), env, targetDir);
 
         if (outputFromInspect.isEmpty()) {
@@ -459,6 +456,7 @@ public class DockerManager implements ResourceIsolationInterface {
 
     enum CmdType {
         LAUNCH_DOCKER_CONTAINER("launch-docker-container"),
+        RUN_DOCKER_CMD("run-docker-cmd"),
         EXEC_CMD_AS_ROOT("exec-cmd-as-root");
 
         private final String name;

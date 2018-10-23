@@ -30,14 +30,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/stat.h>
+#include <getopt.h>
+#include <regex.h>
 
 static const int DEFAULT_MIN_USERID = 1000;
 
 static const char* DEFAULT_BANNED_USERS[] = {"bin", 0};
 
+static const char* DEFAULT_DOCKER_BINARY_PATH = "/usr/bin/docker";
+
 //struct to store the user details
 struct passwd *user_detail = NULL;
+
+//Docker container related constants.
+static const char* DOCKER_CLIENT_CONFIG_ARG = "--config=";
+static const char* DOCKER_PULL_COMMAND = "pull";
 
 FILE* LOGFILE = NULL;
 FILE* ERRORFILE = NULL;
@@ -741,6 +750,331 @@ int fork_as_user(const char * working_dir, const char * script_file) {
     return 0;
   }
 
+  //Unreachable
+  return -1;
+}
+
+//functions below are docker related stuff.
+
+char *get_docker_binary() {
+  char *docker_binary = get_value(DOCKER_BINARY_KEY);
+  if (docker_binary == NULL) {
+    docker_binary = strdup(DEFAULT_DOCKER_BINARY_PATH);
+  }
+  return docker_binary;
+}
+
+char** tokenize_docker_command(const char *input, int *split_counter) {
+  char *line = (char *)calloc(strlen(input) + 1, sizeof(char));
+  char **linesplit = (char **) malloc(sizeof(char *));
+  char *p = NULL;
+  *split_counter = 0;
+  strncpy(line, input, strlen(input));
+
+  p = strtok(line, " ");
+  while(p != NULL) {
+    linesplit[*split_counter] = p;
+    (*split_counter)++;
+    linesplit = realloc(linesplit, (sizeof(char *) * (*split_counter + 1)));
+    if(linesplit == NULL) {
+      fprintf(ERRORFILE, "Cannot allocate memory to parse docker command %s",
+                 strerror(errno));
+      fflush(ERRORFILE);
+      exit(OUT_OF_MEMORY);
+    }
+    p = strtok(NULL, " ");
+  }
+  linesplit[*split_counter] = NULL;
+  return linesplit;
+}
+
+int execute_regex_match(const char *regex_str, const char *input) {
+  regex_t regex;
+  int regex_match;
+  if (0 != regcomp(&regex, regex_str, REG_EXTENDED|REG_NOSUB)) {
+    fprintf(LOGFILE, "Unable to compile regex.");
+    fflush(LOGFILE);
+    exit(ERROR_COMPILING_REGEX);
+  }
+  regex_match = regexec(&regex, input, (size_t) 0, NULL, 0);
+  regfree(&regex);
+  if(0 == regex_match) {
+    return 0;
+  }
+  return 1;
+}
+
+int validate_docker_image_name(const char *image_name) {
+  char *regex_str = "^(([a-zA-Z0-9.-]+)(:[0-9]+)?/)?([a-z0-9_./-]+)(:[a-zA-Z0-9_.-]+)?$";
+  return execute_regex_match(regex_str, image_name);
+}
+
+/**
+ * Only allow certain options for any docker commands.
+ * Since most options are from docker-run command, we don't have
+ * separate checks for other docker-xx (e.g docker-inspect) commands.
+ */
+char* sanitize_docker_command(const char *line) {
+  static struct option long_options[] = {
+    {"name", required_argument, 0, 'n' },
+    {"user", required_argument, 0, 'u' },
+    {"rm", no_argument, 0, 'r' },
+    {"workdir", required_argument, 0, 'w' },
+    {"net", required_argument, 0, 'e' },
+    {"cgroup-parent", required_argument, 0, 'g' },
+    {"cap-add", required_argument, 0, 'a' },
+    {"cap-drop", required_argument, 0, 'o' },
+    {"device", required_argument, 0, 'i' },
+    {"detach", required_argument, 0, 't' },
+    {"group-add", required_argument, 0, 'x' },
+    {"read-only", no_argument, 0, 'R' },
+    {"security-opt", required_argument, 0, 'S' },
+    {"cpu-shares", required_argument, 0, 'c' },
+    {"cpus", required_argument, 0, 'C' },
+    {"cidfile", required_argument, 0, 'I' },
+    {"format", required_argument, 0, 'f' }, //belongs to docker-inspect command
+    {"force", no_argument, 0, 'F' }, //belongs to docker-rm command
+    {"time", required_argument, 0, 'T' }, //belongs to docker-stop command
+    {0, 0, 0, 0}
+  };
+
+  int c = 0;
+  int option_index = 0;
+  char *output = NULL;
+  size_t output_size = 0;
+  char **linesplit;
+  int split_counter = 0;
+  int len = strlen(line);
+
+  linesplit = tokenize_docker_command(line, &split_counter);
+
+  output_size = len * 2;
+  output = (char *) calloc(output_size, sizeof(char));
+  if(output == NULL) {
+    exit(OUT_OF_MEMORY);
+  }
+
+  // Handle docker client config option.
+  if(0 == strncmp(linesplit[0], DOCKER_CLIENT_CONFIG_ARG, strlen(DOCKER_CLIENT_CONFIG_ARG))) {
+    strcat(output, linesplit[0]);
+    strcat(output, " ");
+    long index = 0;
+    while(index < split_counter) {
+      linesplit[index] = linesplit[index + 1];
+      if (linesplit[index] == NULL) {
+        split_counter--;
+        break;
+      }
+      index++;
+    }
+  }
+
+  // Handle docker pull and image name validation.
+  if (0 == strncmp(linesplit[0], DOCKER_PULL_COMMAND, strlen(DOCKER_PULL_COMMAND))) {
+    if (0 != validate_docker_image_name(linesplit[1])) {
+      fprintf(ERRORFILE, "Invalid Docker image name, exiting.");
+      fflush(ERRORFILE);
+      exit(DOCKER_IMAGE_INVALID);
+    }
+    strcat(output, linesplit[0]);
+    strcat(output, " ");
+    strcat(output, linesplit[1]);
+    return output;
+  }
+
+  strcat(output, linesplit[0]);
+  strcat(output, " ");
+  optind = 1;
+  while((c=getopt_long(split_counter, linesplit, "dv:", long_options, &option_index)) != -1) {
+    switch(c) {
+      case 'n':
+        strcat(output, "--name=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'w':
+        strcat(output, "--workdir=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'u':
+        strcat(output, "--user=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'e':
+        strcat(output, "--net=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'v':
+        strcat(output, "-v ");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'a':
+        strcat(output, "--cap-add=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'o':
+        strcat(output, "--cap-drop=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'd':
+        strcat(output, "-d ");
+        break;
+      case 'r':
+        strcat(output, "--rm ");
+        break;
+      case 'R':
+        strcat(output, "--read-only ");
+        break;
+      case 'S':
+        strcat(output, "--security-opt ");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'g':
+        strcat(output, "--cgroup-parent=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'c':
+        strcat(output, "--cpu-shares=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'C':
+        strcat(output, "--cpus=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'i':
+        strcat(output, "--device=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 't':
+        strcat(output, "--detach=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'x':
+        strcat(output, "--group-add ");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'I':
+        strcat(output, "--cidfile=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'f':
+        strcat(output, "--format=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      case 'F':
+        strcat(output, "--force ");
+        break;
+      case 'T':
+        strcat(output, "--time=");
+        strcat(output, optarg);
+        strcat(output, " ");
+        break;
+      default:
+        fprintf(LOGFILE, "Unknown option in docker command, character %d %c, optionindex = %d\n", c, c, optind);
+        fflush(LOGFILE);
+        return NULL;
+        break;
+    }
+  }
+
+  while(optind < split_counter) {
+    strcat(output, linesplit[optind++]);
+    strcat(output, " ");
+  }
+
+  return output;
+}
+
+char* parse_docker_command_file(const char* command_file) {
+
+  size_t len = 0;
+  char *line = NULL;
+  ssize_t read;
+  FILE *stream;
+
+  uid_t user = geteuid();
+  gid_t group = getegid();
+  if (change_effective_user(launcher_uid, launcher_gid) != 0) {
+   fprintf(ERRORFILE, "Cannot change effective user to supervisor user");
+   fflush(ERRORFILE);
+   exit(ERROR_CHANGING_USER);
+  }
+
+  stream = fopen(command_file, "r");
+  if (stream == NULL) {
+   fprintf(ERRORFILE, "Cannot open file %s - %s",
+                 command_file, strerror(errno));
+   fflush(ERRORFILE);
+   exit(ERROR_OPENING_FILE);
+  }
+  if ((read = getline(&line, &len, stream)) == -1) {
+     fprintf(ERRORFILE, "Error reading command_file %s\n", command_file);
+     fflush(ERRORFILE);
+     exit(ERROR_READING_FILE);
+  }
+  fclose(stream);
+  if (change_effective_user(user, group)) {
+   fprintf(ERRORFILE, "Cannot change effective user from supervisor user back to original");
+   fflush(ERRORFILE);
+   exit(ERROR_CHANGING_USER);
+  }
+
+  char* ret = sanitize_docker_command(line);
+  if(ret == NULL) {
+    exit(ERROR_SANITIZING_DOCKER_COMMAND);
+  }
+
+  return ret;
+}
+
+int run_docker_cmd(const char * working_dir, const char * command_file) {
+  char* docker_command = parse_docker_command_file(command_file);
+  char* docker_binary = get_docker_binary();
+  size_t command_size = MIN(sysconf(_SC_ARG_MAX), 128*1024);
+
+  char* docker_command_with_binary = calloc(sizeof(char), command_size);
+  snprintf(docker_command_with_binary, command_size, "%s %s", docker_binary, docker_command);
+
+  fprintf(LOGFILE, "Using command: %s\n", docker_command_with_binary);
+  fflush(LOGFILE);
+
+  setsid();
+
+  char **args = extract_values_delim(docker_command_with_binary, " ");
+
+  //debug
+  int i = 0;
+  for (i = 0; args[i] != NULL; i++) {
+    fprintf(LOGFILE, "%s\n", args[i]);
+    fflush(LOGFILE);
+  }
+
+  if (execvp(docker_binary, args) != 0) {
+    fprintf(ERRORFILE, "Couldn't execute the container launch with args %s - %s",
+              docker_binary, strerror(errno));
+    fflush(LOGFILE);
+    fflush(ERRORFILE);
+    free(docker_binary);
+    free(args);
+    free(docker_command_with_binary);
+    free(docker_command);
+    return DOCKER_RUN_FAILED;
+  }
   //Unreachable
   return -1;
 }

@@ -12,8 +12,8 @@ public class DockerInspectCommand extends DockerCommand {
     private static final String INSPECT_COMMAND = "inspect";
     private String containerName;
 
-    public DockerInspectCommand(String executable, String containerName) {
-        super(executable, INSPECT_COMMAND);
+    public DockerInspectCommand(String containerName) {
+        super(INSPECT_COMMAND);
         this.containerName = containerName;
     }
 

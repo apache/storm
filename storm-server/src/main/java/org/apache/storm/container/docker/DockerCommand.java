@@ -8,13 +8,10 @@ import org.apache.commons.lang.StringUtils;
 public abstract class DockerCommand  {
     private final String command;
     private final List<String> commandWithArguments;
-    protected String executable;
 
-    protected DockerCommand(String executable, String command) {
-        this.executable = executable;
+    protected DockerCommand(String command) {
         this.command = command;
         this.commandWithArguments = new ArrayList<>();
-        commandWithArguments.add(executable);
         commandWithArguments.add(command);
     }
 

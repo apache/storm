@@ -1152,13 +1152,6 @@ public class DaemonConfig implements Validated {
     public static String STORM_DOCKER_CGROUP_ROOT = "storm.docker.cgroup.root";
 
     /**
-     * Executable of docker command, e.g. /usr/bin/docker, /usr/bin/podman, etc.
-     */
-    @isString
-    @NotNull
-    public static String STORM_DOCKER_EXECUTABLE_PATH = "storm.docker.executable.path";
-
-    /**
      * Default docker image to use if the topology doesn't specify which docker image to use.
      */
     @isString
