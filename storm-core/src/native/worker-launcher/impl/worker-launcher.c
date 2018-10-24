@@ -593,14 +593,21 @@ int recursive_delete(const char *path, int supervisor_owns_dir) {
     return UNABLE_TO_BUILD_PATH;
   }
 
+  struct stat file_stat;
+
   if(access(path, F_OK) != 0) {
     if(errno == ENOENT) {
-      return 0;
-    }
-    // Can probably return here, but we'll try to lstat anyway.
-  }
+       if(lstat(path, &file_stat) != 0) {
+         fprintf(LOGFILE, "Failed to stat %s: %s", path, strerror(errno));
+         return 0;
+       }
+       // we need to handle symlinks that target missing files.
+       if((file_stat.st_mode & S_IFMT) != S_IFLNK) {
+         return 0;
+       }
+     }
+   }
 
-  struct stat file_stat;
   if(lstat(path, &file_stat) != 0) {
     fprintf(LOGFILE, "Failed to delete %s: %s", path, strerror(errno));
     return UNABLE_TO_STAT_FILE;
