@@ -3051,6 +3051,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Map<String, Object> otherConf = Utils.getConfigFromClasspath(cp, conf);
             Map<String, Object> totalConfToSave = Utils.merge(otherConf, topoConf);
             Map<String, Object> totalConf = Utils.merge(conf, totalConfToSave);
+
+
             //When reading the conf in nimbus we want to fall back to our own settings
             // if the other config does not have it set.
             topology = normalizeTopology(totalConf, topology);
@@ -3068,6 +3070,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 LOG.debug("{} set to: {}", Config.TOPOLOGY_ACKER_EXECUTORS, numAckerExecs);
                 LOG.debug("{} set to: {}", Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numEventLoggerExecs);
             }
+
+            //Remove any configs that are specific to a host that might mess with the running topology.
+            totalConfToSave.remove(Config.STORM_LOCAL_HOSTNAME); //Don't override the host name, or everything looks like it is on nimbus
 
             IStormClusterState state = stormClusterState;
 
@@ -3235,6 +3240,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 if ((boolean) conf.getOrDefault(DaemonConfig.STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED, false)) {
                     topoConfigOverrides.remove(Config.TOPOLOGY_CLASSPATH_BEGINNING);
                 }
+                topoConfigOverrides.remove(Config.STORM_LOCAL_HOSTNAME);
                 options.set_topology_conf_overrides(JSONValue.toJSONString(topoConfigOverrides));
             }
             Subject subject = getSubject();
