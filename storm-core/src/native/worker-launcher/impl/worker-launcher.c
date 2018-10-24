@@ -1098,6 +1098,12 @@ char *get_nsenter_binary() {
 }
 
 int run_nsenter(const char * user, const char * worker_id, const char * working_dir, const char * command_file) {
+  char *profiler_path = get_value(WORKER_PROFILER_SCRIPT_PATH);
+  if (profiler_path == NULL) {
+      fprintf(ERRORFILE, "ATTENTION: %s is not set. worker profiling won't work!\n", WORKER_PROFILER_SCRIPT_PATH);
+      fflush(ERRORFILE);
+      return -1;
+  }
 
   size_t command_size = MIN(sysconf(_SC_ARG_MAX), 128*1024);
 
@@ -1158,8 +1164,7 @@ int run_nsenter(const char * user, const char * worker_id, const char * working_
     }
 
     FILE *fp = popen(nsenter_command_with_binary, "w");
-    //TODO need to add some sanity checks for the command for security
-    fprintf(fp, "sudo -u %s %s\nexit\n", user, line);
+    fprintf(fp, "sudo -u %s %s %s\nexit\n", user, profiler_path, line);
     pclose(fp);
 
     free(docker_inspect_command);

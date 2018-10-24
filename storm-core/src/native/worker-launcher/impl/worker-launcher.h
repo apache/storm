@@ -69,6 +69,7 @@ enum errorcodes {
 #define BANNED_USERS_KEY "banned.users"
 #define DOCKER_BINARY_KEY "docker.binary"
 #define NSENTER_BINARY_KEY "nsenter.binary"
+#define WORKER_PROFILER_SCRIPT_PATH "worker.profiler.script.path"
 #define TMP_DIR "tmp"
 
 /* Macros for min/max. */

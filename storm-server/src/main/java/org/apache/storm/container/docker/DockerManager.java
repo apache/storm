@@ -338,15 +338,28 @@ public class DockerManager implements ResourceIsolationInterface {
         return true;
     }
 
+    /**
+     * Run profiling command in the container.
+     * @param user the user that the worker is running as
+     * @param workerId the id of the worker
+     * @param command the command to run.
+     *                The profiler to be used is configured in worker-launcher.cfg.
+     * @param env the environment to run the command
+     * @param logPrefix the prefix to include in the logs
+     * @param targetDir the working directory to run the command in
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Override
     public boolean runProfilingCommand(String user, String workerId, List<String> command, Map<String, String> env,
                                        String logPrefix, File targetDir) throws IOException, InterruptedException {
         String workerDir = targetDir.getAbsolutePath();
 
-        String profilingCmd = StringUtils.join(command, " ");
+        String profilingArgs = StringUtils.join(command, " ");
 
         //run nsenter
-        String nsenterScriptPath = writeToCommandFile(workerDir, profilingCmd);
+        String nsenterScriptPath = writeToCommandFile(workerDir, profilingArgs);
 
         List<String> args = Arrays.asList(CmdType.RUN_NSENTER.toString(), workerId, workerDir, nsenterScriptPath);
 
