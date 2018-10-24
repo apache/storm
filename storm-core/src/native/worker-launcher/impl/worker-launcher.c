@@ -40,6 +40,7 @@ static const int DEFAULT_MIN_USERID = 1000;
 static const char* DEFAULT_BANNED_USERS[] = {"bin", 0};
 
 static const char* DEFAULT_DOCKER_BINARY_PATH = "/usr/bin/docker";
+static const char* DEFAULT_NSENTER_BINARY_PATH = "/usr/bin/nsenter";
 
 //struct to store the user details
 struct passwd *user_detail = NULL;
@@ -663,7 +664,7 @@ int recursive_delete(const char *path, int supervisor_owns_dir) {
   return 0;
 }
 
-int exec_as_user(const char * working_dir, const char * script_file, boolean as_root) {
+int exec_as_user(const char * working_dir, const char * script_file) {
   char *script_file_dest = NULL;
   script_file_dest = get_container_launcher_file(working_dir);
   if (script_file_dest == NULL) {
@@ -678,11 +679,9 @@ int exec_as_user(const char * working_dir, const char * script_file, boolean as_
 
   setsid();
 
-  if (!as_root) {
-    // give up root privs
-    if (change_user(user_detail->pw_uid, user_detail->pw_gid) != 0) {
-      return SETUID_OPER_FAILED;
-    }
+  // give up root privs
+  if (change_user(user_detail->pw_uid, user_detail->pw_gid) != 0) {
+    return SETUID_OPER_FAILED;
   }
 
   if (copy_file(script_file_source, script_file, script_file_dest, S_IRWXU) != 0) {
@@ -754,7 +753,7 @@ int fork_as_user(const char * working_dir, const char * script_file) {
   return -1;
 }
 
-//functions below are docker related stuff.
+//functions below are docker related.
 
 char *get_docker_binary() {
   char *docker_binary = get_value(DOCKER_BINARY_KEY);
@@ -1077,4 +1076,93 @@ int run_docker_cmd(const char * working_dir, const char * command_file) {
   }
   //Unreachable
   return -1;
+}
+
+//functions below are nsenter related.
+//Used for running profiling inside docker container through nsenter.
+
+char *get_nsenter_binary() {
+  char *nsenter_binary = get_value(NSENTER_BINARY_KEY);
+  if (nsenter_binary == NULL) {
+    nsenter_binary = strdup(DEFAULT_NSENTER_BINARY_PATH);
+  }
+  return nsenter_binary;
+}
+
+int run_nsenter(const char * user, const char * worker_id, const char * working_dir, const char * command_file) {
+
+  size_t command_size = MIN(sysconf(_SC_ARG_MAX), 128*1024);
+
+  //get pid
+  char *docker_inspect_command = calloc(sizeof(char), command_size);
+  char* docker_binary = get_docker_binary();
+  snprintf(docker_inspect_command, command_size, "%s inspect --format {{.State.Pid}} %s", docker_binary, worker_id);
+
+  fprintf(LOGFILE, "Inspecting docker container...\n");
+  fflush(LOGFILE);
+  FILE* inspect_docker = popen(docker_inspect_command, "r");
+  int pid = 0;
+  int res = fscanf (inspect_docker, "%d", &pid);
+  if (pclose (inspect_docker) != 0 || res <= 0)
+  {
+    fprintf (ERRORFILE,
+     "Could not inspect docker to get pid %s.\n", docker_inspect_command);
+    fflush(ERRORFILE);
+    free(docker_inspect_command);
+    free(docker_binary);
+    return UNABLE_TO_EXECUTE_CONTAINER_SCRIPT;
+  }
+
+  fprintf(LOGFILE, "The pid is %d.\n", pid);
+  fflush(LOGFILE);
+
+  if (pid != 0) {
+
+    size_t len = 0;
+    char *line = NULL;
+    ssize_t read;
+    FILE *stream  = fopen(command_file, "r");
+    if (stream == NULL) {
+     fprintf(ERRORFILE, "Cannot open file %s - %s",
+                   command_file, strerror(errno));
+     fflush(ERRORFILE);
+     exit(ERROR_OPENING_FILE);
+    }
+    if ((read = getline(&line, &len, stream)) == -1) {
+       fprintf(ERRORFILE, "Error reading command_file %s\n", command_file);
+       fflush(ERRORFILE);
+       exit(ERROR_READING_FILE);
+    }
+    fclose(stream);
+
+    //run profiling command
+    char* nsenter_binary = get_nsenter_binary();
+    char *nsenter_command_with_binary = calloc(sizeof(char), command_size);
+    snprintf(nsenter_command_with_binary, command_size, "%s --target %d --mount --pid", nsenter_binary, pid);
+
+    fprintf (LOGFILE, "command is %s\n", nsenter_command_with_binary);
+    fflush(LOGFILE);
+
+    if (seteuid(0) != 0) {
+      fprintf(ERRORFILE, "Could not become root\n");
+      fflush(LOGFILE);
+      return -1;
+    }
+
+    FILE *fp = popen(nsenter_command_with_binary, "w");
+    //TODO need to add some sanity checks for the command for security
+    fprintf(fp, "sudo -u %s %s\nexit\n", user, line);
+    pclose(fp);
+
+    free(docker_inspect_command);
+    free(docker_binary);
+    free(nsenter_binary);
+    free(nsenter_command_with_binary);
+    return 0;
+
+  } else {
+     fprintf(ERRORFILE, "docker inspect failed. Got pid=0");
+     fflush(ERRORFILE);
+  }
+  return UNABLE_TO_EXECUTE_CONTAINER_SCRIPT;
 }

@@ -44,7 +44,6 @@ public class DockerManager implements ResourceIsolationInterface {
     private String cgroupParent;
     private String memoryCgroupRootPath;
     private String cgroupRootPath;
-    private String nsenterExecutablePath;
     private String nscdPath;
     private Map<String, Object> conf;
     private Map<String, Integer> workerToCpu = new HashMap<>();
@@ -66,7 +65,6 @@ public class DockerManager implements ResourceIsolationInterface {
         seccompJsonFile = (String) conf.get(DaemonConfig.STORM_DOCKER_SECCOMP_PROFILE);
         cgroupParent = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_PARENT));
         cgroupRootPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_ROOT));
-        nsenterExecutablePath = ObjectReader.getString(conf.get(DaemonConfig.STORM_NSENTER_EXECUTABLE_PATH));
         nscdPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_NSCD_DIR));
         memoryCgroupRootPath = cgroupRootPath + File.separator + "memory" + File.separator + cgroupParent;
         memoryCoreAtRoot = new MemoryCore(memoryCgroupRootPath);
@@ -325,43 +323,15 @@ public class DockerManager implements ResourceIsolationInterface {
                                        String logPrefix, File targetDir) throws IOException, InterruptedException {
         String workerDir = targetDir.getAbsolutePath();
 
-        //Get the worker PID outside of the container.
-        DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(workerId);
-        dockerInspectCommand.withGettingContainerPID();
-
-        List<String> outputFromInspect = getOutputFromRunningDockerCommand(conf, user, CmdType.RUN_DOCKER_CMD,
-            dockerInspectCommand.getCommandWithArguments(), env, targetDir);
-
-        if (outputFromInspect.isEmpty()) {
-            LOG.error("Can't find the container PID");
-            return false;
-        }
-        String workerPidOutSideOfContainer = outputFromInspect.get(outputFromInspect.size() - 1);
-        LOG.info("The container PID is {}", workerPidOutSideOfContainer);
+        String profilingCmd = StringUtils.join(command, " ");
 
         //run nsenter
-        String nsenterCmd = nsenterExecutablePath + " --target " + workerPidOutSideOfContainer + " --mount --pid";
+        String nsenterScriptPath = writeToCommandFile(workerDir, profilingCmd);
 
-        String nsenterScriptPath = dockerCommandFilePath(workerDir);
-        try (BufferedWriter out = new BufferedWriter(new FileWriter(nsenterScriptPath))) {
-            out.write(nsenterCmd);
-        }
-
-        List<String> args = Arrays.asList(CmdType.EXEC_CMD_AS_ROOT.toString(), workerDir, nsenterScriptPath);
+        List<String> args = Arrays.asList(CmdType.RUN_NSENTER.toString(), workerId, workerDir, nsenterScriptPath);
 
         Process process = ClientSupervisorUtils.processLauncher(conf, user, null, args,
             env, logPrefix, null, targetDir);
-
-        PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(process.getOutputStream())), true);
-
-        //from nsenter, run profiling
-        String profilingCmd = StringUtils.join(command, " ");
-        profilingCmd = "sudo -u " + user + " " + profilingCmd;
-        LOG.debug("executing profiling command: {}", profilingCmd);
-        writer.println(profilingCmd);
-
-        LOG.debug("executing exit command from nsenter");
-        writer.println("exit");
 
         process.waitFor();
 
@@ -375,8 +345,16 @@ public class DockerManager implements ResourceIsolationInterface {
         return dir + File.separator + "container.cid";
     }
 
-    private String dockerCommandFilePath(String dir) {
-        return dir + File.separator + "docker-command.sh";
+    private String commandFilePath(String dir) {
+        return dir + File.separator + "command-to-run.sh";
+    }
+
+    private String writeToCommandFile(String workerDir, String command) throws IOException {
+        String scriptPath = commandFilePath(workerDir);
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(scriptPath))) {
+            out.write(command);
+        }
+        return scriptPath;
     }
 
     private String containerCgroupPath(String dir, String cid) {
@@ -399,10 +377,7 @@ public class DockerManager implements ResourceIsolationInterface {
                                      Map<String, String> environment, final String logPrefix,
                                      final ExitCodeCallback exitCodeCallback, File targetDir) throws IOException {
         String workerDir = targetDir.getAbsolutePath();
-        String dockerScriptPath = dockerCommandFilePath(workerDir);
-        try (BufferedWriter out = new BufferedWriter(new FileWriter(dockerScriptPath))) {
-            out.write(dockerCommand);
-        }
+        String dockerScriptPath = writeToCommandFile(workerDir, dockerCommand);
 
         List<String> args = Arrays.asList(cmdType.toString(), workerDir, dockerScriptPath);
 
@@ -457,7 +432,7 @@ public class DockerManager implements ResourceIsolationInterface {
     enum CmdType {
         LAUNCH_DOCKER_CONTAINER("launch-docker-container"),
         RUN_DOCKER_CMD("run-docker-cmd"),
-        EXEC_CMD_AS_ROOT("exec-cmd-as-root");
+        RUN_NSENTER("run-nsenter");
 
         private final String name;
 

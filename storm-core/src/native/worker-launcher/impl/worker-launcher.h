@@ -68,6 +68,7 @@ enum errorcodes {
 #define MIN_USERID_KEY "min.user.id"
 #define BANNED_USERS_KEY "banned.users"
 #define DOCKER_BINARY_KEY "docker.binary"
+#define NSENTER_BINARY_KEY "nsenter.binary"
 #define TMP_DIR "tmp"
 
 /* Macros for min/max. */
@@ -87,7 +88,7 @@ extern FILE *ERRORFILE;
 
 int setup_dir_permissions(const char* local_dir, int for_blob_permission, boolean setgid_on_dir);
 
-int exec_as_user(const char * working_dir, const char * args, boolean as_root);
+int exec_as_user(const char * working_dir, const char * args);
 
 int fork_as_user(const char * working_dir, const char * args);
 
@@ -156,3 +157,8 @@ char *get_docker_binary();
  * Run a docker command passing the command file as an argument
  */
 int run_docker_cmd(const char * working_dir, const char * command_file);
+
+/**
+ * Run commands inside nsenter
+ */
+int run_nsenter(const char * user, const char * worker_id, const char * working_dir, const char * command_file);

@@ -50,7 +50,7 @@ void display_usage(FILE *stream) {
   fprintf(stream, "   signal a worker: signal <pid> <signal>\n");
   fprintf(stream, "   launch a docker container: launch-docker-container <working-directory> <script-to-run>\n");
   fprintf(stream, "   run a docker command: run-docker-cmd <working-directory> <script-to-run>\n");
-  fprintf(stream, "   execute a command as root: exec-cmd-as-root <working-directory> <script-to-run>\n");
+  fprintf(stream, "   run nsenter: run-nsenter <worker-id> <working-directory> <script-to-run>\n");
 }
 
 int main(int argc, char **argv) {
@@ -145,7 +145,8 @@ int main(int argc, char **argv) {
     return INVALID_USER_NAME;
   }
 
-  int ret = set_user(argv[optind]);
+  const char *user_name = argv[optind];
+  int ret = set_user(user_name);
   if (ret != 0) {
     return ret;
   }
@@ -203,7 +204,7 @@ int main(int argc, char **argv) {
     working_dir = argv[optind++];
     exit_code = setup_dir_permissions(working_dir, 1, TRUE);
     if (exit_code == 0) {
-      exit_code = exec_as_user(working_dir, argv[optind], FALSE);
+      exit_code = exec_as_user(working_dir, argv[optind]);
     }
   } else if (strcasecmp("launch-docker-container", command) == 0) {
     if (argc != 5) {
@@ -224,14 +225,15 @@ int main(int argc, char **argv) {
     }
     working_dir = argv[optind++];
     exit_code = run_docker_cmd(working_dir, argv[optind]);
-  } else if (strcasecmp("exec-cmd-as-root", command) == 0) {
-    if (argc != 5) {
-      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for exec-cmd-as-root\n", argc);
+  } else if (strcasecmp("run-nsenter", command) == 0) {
+    if (argc != 6) {
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 6) for run-nsenter\n", argc);
       fflush(ERRORFILE);
       return INVALID_ARGUMENT_NUMBER;
     }
+    const char * worker_id = argv[optind++];
     working_dir = argv[optind++];
-    exit_code = exec_as_user(working_dir, argv[optind], TRUE);
+    exit_code = run_nsenter(user_name, worker_id, working_dir, argv[optind]);
   } else if (strcasecmp("profiler", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for profiler\n",
@@ -240,7 +242,7 @@ int main(int argc, char **argv) {
       return INVALID_ARGUMENT_NUMBER;
     }
     working_dir = argv[optind++];
-    exit_code = exec_as_user(working_dir, argv[optind], FALSE);
+    exit_code = exec_as_user(working_dir, argv[optind]);
   } else if (strcasecmp("signal", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for signal\n",

@@ -1138,13 +1138,6 @@ public class DaemonConfig implements Validated {
     public static String STORM_DOCKER_NSCD_DIR = "storm.docker.nscd.dir";
 
     /**
-     * nsenter executable path.
-     */
-    @isString
-    @NotNull
-    public static String STORM_NSENTER_EXECUTABLE_PATH = "storm.nsenter.executable.path";
-
-    /**
      * The root of cgroup for docker to use. On RHEL7, it should be "/sys/fs/cgroup".
      */
     @isString
