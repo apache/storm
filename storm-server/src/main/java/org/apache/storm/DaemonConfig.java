@@ -1138,6 +1138,12 @@ public class DaemonConfig implements Validated {
     public static String STORM_DOCKER_NSCD_DIR = "storm.docker.nscd.dir";
 
     /**
+     * A list of read only bind mounted directories.
+     */
+    @isStringList
+    public static String STORM_DOCKER_READONLY_BINDMOUNTS = "storm.docker.readonly.bindmounts";
+
+    /**
      * The root of cgroup for docker to use. On RHEL7, it should be "/sys/fs/cgroup".
      */
     @isString

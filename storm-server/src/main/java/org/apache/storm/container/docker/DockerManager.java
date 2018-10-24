@@ -1,3 +1,15 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
+
 package org.apache.storm.container.docker;
 
 import java.io.BufferedReader;
@@ -32,6 +44,10 @@ import org.apache.storm.utils.ShellCommandRunnerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * For security, we can launch worker processes inside the docker container.
+ * This class manages the interaction with docker containers including launching, stopping, profiling and etc.
+ */
 public class DockerManager implements ResourceIsolationInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DockerManager.class);
     private static final String TOPOLOGY_ENV_DOCKER_IMAGE = "DOCKER_IMAGE";
@@ -53,6 +69,7 @@ public class DockerManager implements ResourceIsolationInterface {
     private String seccompJsonFile;
     private String stormHome;
     private final String TMP_DIR = File.separator + "tmp";
+    private List<String> readonlyBindmounts;
 
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {
@@ -68,6 +85,7 @@ public class DockerManager implements ResourceIsolationInterface {
         nscdPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_NSCD_DIR));
         memoryCgroupRootPath = cgroupRootPath + File.separator + "memory" + File.separator + cgroupParent;
         memoryCoreAtRoot = new MemoryCore(memoryCgroupRootPath);
+        readonlyBindmounts = ObjectReader.getStrings(conf.get(DaemonConfig.STORM_DOCKER_READONLY_BINDMOUNTS));
 
         stormHome = System.getProperty(ConfigUtils.STORM_HOME);
         // Since we are bind mounting STORM_HOME as readonly, read-write bind mounts can't be under STORM_HOME
@@ -173,7 +191,9 @@ public class DockerManager implements ResourceIsolationInterface {
             // 1. jvm needs to write to /tmp/hsperfdata_<user> directory so that jps can work
             // 2. jstack needs to create a socket under /tmp directory.
             //Otherwise profiling will not work properly.
-            .addMountLocation(sharedByTopologyTmpDir, TMP_DIR, false);
+            .addMountLocation(sharedByTopologyTmpDir, TMP_DIR, false)
+            //a list of read-only bind mount locations
+            .addAllReadOnlyMountLocations(readonlyBindmounts, false);
 
         dockerRunCommand.setCGroupParent(cgroupParent)
             .groupAdd(groups)
