@@ -1157,6 +1157,12 @@ public class DaemonConfig implements Validated {
     public static String STORM_DOCKER_IMAGE = "storm.docker.image";
 
     /**
+     * A list of docker image names that are allowed.
+     */
+    @isStringList
+    public static String STORM_DOCKER_ALLOWED_IMAGES = "storm.docker.allowed.images";
+
+    /**
      * --cgroup-parent config for docker command. Must follow the constraints of the docker command.
      */
     @isString

@@ -56,6 +56,7 @@ public class DockerManager implements ResourceIsolationInterface {
     private static final Pattern dockerImagePattern =
         Pattern.compile(DOCKER_IMAGE_PATTERN);
     private String defaultDockerImage;
+    private List<String> allowedDockerImages;
     private final String networkType = "host";
     private String cgroupParent;
     private String memoryCgroupRootPath;
@@ -76,6 +77,15 @@ public class DockerManager implements ResourceIsolationInterface {
         this.conf = conf;
         //default configs can't be null
         defaultDockerImage = (String) conf.get(DaemonConfig.STORM_DOCKER_IMAGE);
+        allowedDockerImages = ObjectReader.getStrings(conf.get(DaemonConfig.STORM_DOCKER_ALLOWED_IMAGES));
+        if (!allowedDockerImages.contains(defaultDockerImage)) {
+            throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_IMAGE
+                + ": " + defaultDockerImage
+                + " is not in the list of " + DaemonConfig.STORM_DOCKER_ALLOWED_IMAGES
+                + ": " + allowedDockerImages
+                + ". Please check the configuration.");
+        }
+
         if (defaultDockerImage == null || !dockerImagePattern.matcher(defaultDockerImage).matches()) {
             throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_IMAGE + " is not set or it doesn't match " + DOCKER_IMAGE_PATTERN);
         }
@@ -154,6 +164,15 @@ public class DockerManager implements ResourceIsolationInterface {
         String dockerImage = env.get(TOPOLOGY_ENV_DOCKER_IMAGE);
         if (dockerImage == null || dockerImage.isEmpty()) {
             dockerImage = defaultDockerImage;
+        } else {
+            if (!allowedDockerImages.contains(dockerImage)) {
+                throw new IllegalArgumentException(TOPOLOGY_ENV_DOCKER_IMAGE
+                    + ": " + dockerImage
+                    + " specified in " + Config.TOPOLOGY_ENVIRONMENT
+                    + " is not in the list of " + DaemonConfig.STORM_DOCKER_ALLOWED_IMAGES
+                    + ": " + allowedDockerImages
+                    + ". Please check your configuration.");
+            }
         }
 
         String workerDir = targetDir.getAbsolutePath();
