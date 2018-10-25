@@ -35,7 +35,7 @@ public class KillTopology {
         // Wait this many seconds after deactivating topology before killing
         Integer wait = (Integer) cl.get("w");
 
-        // if '-i' set, we'll try to kill every topology listed, even if an error occurs
+        // if '-i' is set, we'll try to kill every topology listed, even if an error occurs
         Boolean continueOnError = (Boolean) cl.get("i");
 
         final KillOptions opts = new KillOptions();
