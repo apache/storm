@@ -17,8 +17,7 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Encapsulates the docker exec command and its command
- * line arguments.
+ * Encapsulates the docker exec command and its command line arguments.
  */
 public class DockerExecCommand extends DockerCommand {
     private static final String EXEC_COMMAND = "exec";

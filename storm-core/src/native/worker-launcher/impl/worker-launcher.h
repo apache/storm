@@ -160,6 +160,11 @@ char *get_docker_binary();
 int run_docker_cmd(const char * working_dir, const char * command_file);
 
 /**
+ * Get the nsenter binary path.
+ */
+char *get_nsenter_binary();
+
+/**
  * Run commands inside nsenter
  */
 int run_nsenter(const char * user, const char * worker_id, const char * working_dir, const char * command_file);

@@ -196,8 +196,7 @@ public class CgroupManager extends DefaultResourceIsolationManager {
             String workerDir = targetDir.getAbsolutePath();
             List<String> args = Arrays.asList("worker", workerDir, ServerUtils.writeScript(workerDir, command, env));
             List<String> commandPrefix = getLaunchCommandPrefix(workerId);
-            ClientSupervisorUtils.processLauncher(conf, user, commandPrefix, args, null,
-                logPrefix, processExitCallback, targetDir);
+            ClientSupervisorUtils.processLauncher(conf, user, commandPrefix, args, null, logPrefix, processExitCallback, targetDir);
         } else {
             command = getLaunchCommand(workerId, command);
             ClientSupervisorUtils.launchProcess(command, env, logPrefix, processExitCallback, targetDir);

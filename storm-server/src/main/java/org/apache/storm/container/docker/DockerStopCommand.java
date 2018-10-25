@@ -13,8 +13,7 @@
 package org.apache.storm.container.docker;
 
 /**
- * Encapsulates the docker stop command and its command
- * line arguments.
+ * Encapsulates the docker stop command and its command line arguments.
  */
 public class DockerStopCommand extends DockerCommand {
     private static final String STOP_COMMAND = "stop";

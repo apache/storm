@@ -17,8 +17,7 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Encapsulates the docker inspect command and its command
- * line arguments.
+ * Encapsulates the docker inspect command and its command line arguments.
  */
 public class DockerInspectCommand extends DockerCommand {
     private static final String INSPECT_COMMAND = "inspect";

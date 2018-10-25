@@ -20,6 +20,9 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Encapsulates the docker run command and its command line arguments.
+ */
 public class DockerRunCommand extends DockerCommand {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRunCommand.class);
     private static final String RUN_COMMAND = "run";

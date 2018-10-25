@@ -19,8 +19,6 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,10 +73,25 @@ public class DockerManager implements ResourceIsolationInterface {
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {
         this.conf = conf;
-        //default configs can't be null
-        defaultDockerImage = (String) conf.get(DaemonConfig.STORM_DOCKER_IMAGE);
+        //allowed docker images can't be null or empty
         allowedDockerImages = ObjectReader.getStrings(conf.get(DaemonConfig.STORM_DOCKER_ALLOWED_IMAGES));
-        if (!allowedDockerImages.contains(defaultDockerImage)) {
+        if (allowedDockerImages == null || allowedDockerImages.isEmpty()) {
+            throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_ALLOWED_IMAGES
+                + " is empty or not configured. No docker images are allowed. Please check the configuration.");
+        }
+
+        //every image in the whitelist must be valid
+        for (String image: allowedDockerImages) {
+            if (!dockerImagePattern.matcher(image).matches()) {
+                throw new IllegalArgumentException(image + " in the list of "
+                    + DaemonConfig.STORM_DOCKER_ALLOWED_IMAGES
+                    + " doesn't match " + DOCKER_IMAGE_PATTERN);
+            }
+        }
+
+        //default docker image must be in the whitelist.
+        defaultDockerImage = (String) conf.get(DaemonConfig.STORM_DOCKER_IMAGE);
+        if (defaultDockerImage == null || !allowedDockerImages.contains(defaultDockerImage)) {
             throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_IMAGE
                 + ": " + defaultDockerImage
                 + " is not in the list of " + DaemonConfig.STORM_DOCKER_ALLOWED_IMAGES
@@ -86,9 +99,6 @@ public class DockerManager implements ResourceIsolationInterface {
                 + ". Please check the configuration.");
         }
 
-        if (defaultDockerImage == null || !dockerImagePattern.matcher(defaultDockerImage).matches()) {
-            throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_IMAGE + " is not set or it doesn't match " + DOCKER_IMAGE_PATTERN);
-        }
         seccompJsonFile = (String) conf.get(DaemonConfig.STORM_DOCKER_SECCOMP_PROFILE);
         cgroupParent = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_PARENT));
         cgroupRootPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_ROOT));
@@ -305,9 +315,7 @@ public class DockerManager implements ResourceIsolationInterface {
             //Ignored if cgroups is not setup don't do anything with it
         }
 
-        long res = Long.min(rootCgroupLimitFree, ServerUtils.getMemInfoFreeMb());
-
-        return res;
+        return Long.min(rootCgroupLimitFree, ServerUtils.getMemInfoFreeMb());
     }
 
     @Override

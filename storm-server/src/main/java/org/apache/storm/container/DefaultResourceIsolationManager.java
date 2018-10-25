@@ -34,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This is the default class to manage worker processes, including launching, killing, profiling and etcs.
+ * This is the default class to manage worker processes, including launching, killing, profiling and etc.
  */
 public class DefaultResourceIsolationManager implements ResourceIsolationInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultResourceIsolationManager.class);
@@ -63,8 +63,7 @@ public class DefaultResourceIsolationManager implements ResourceIsolationInterfa
         if (runAsUser) {
             String workerDir = targetDir.getAbsolutePath();
             List<String> args = Arrays.asList("worker", workerDir, ServerUtils.writeScript(workerDir, command, env));
-            ClientSupervisorUtils.processLauncher(conf, user, null, args, null,
-                logPrefix, processExitCallback, targetDir);
+            ClientSupervisorUtils.processLauncher(conf, user, null, args, null,logPrefix, processExitCallback, targetDir);
         } else {
             ClientSupervisorUtils.launchProcess(command, env, logPrefix, processExitCallback, targetDir);
         }

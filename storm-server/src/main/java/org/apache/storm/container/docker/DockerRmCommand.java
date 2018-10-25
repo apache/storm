@@ -17,8 +17,7 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Encapsulates the docker rm command and its command
- * line arguments.
+ * Encapsulates the docker rm command and its command line arguments.
  */
 public class DockerRmCommand extends DockerCommand {
     private static final String RM_COMMAND = "rm";

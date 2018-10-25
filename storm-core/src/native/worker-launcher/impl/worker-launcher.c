@@ -1064,13 +1064,6 @@ int run_docker_cmd(const char * working_dir, const char * command_file) {
 
   char **args = extract_values_delim(docker_command_with_binary, " ");
 
-  //debug
-  int i = 0;
-  for (i = 0; args[i] != NULL; i++) {
-    fprintf(LOGFILE, "%s\n", args[i]);
-    fflush(LOGFILE);
-  }
-
   if (execvp(docker_binary, args) != 0) {
     fprintf(ERRORFILE, "Couldn't execute the container launch with args %s - %s",
               docker_binary, strerror(errno));
@@ -1127,9 +1120,10 @@ int run_nsenter(const char * user, const char * worker_id, const char * working_
     return UNABLE_TO_EXECUTE_CONTAINER_SCRIPT;
   }
 
-  fprintf(LOGFILE, "The pid is %d.\n", pid);
+  fprintf(LOGFILE, "The pid of the container is %d.\n", pid);
   fflush(LOGFILE);
 
+  int exit_code = 0;
   if (pid != 0) {
 
     size_t len = 0;
@@ -1137,8 +1131,7 @@ int run_nsenter(const char * user, const char * worker_id, const char * working_
     ssize_t read;
     FILE *stream  = fopen(command_file, "r");
     if (stream == NULL) {
-     fprintf(ERRORFILE, "Cannot open file %s - %s",
-                   command_file, strerror(errno));
+     fprintf(ERRORFILE, "Cannot open file %s - %s", command_file, strerror(errno));
      fflush(ERRORFILE);
      exit(ERROR_OPENING_FILE);
     }
@@ -1149,6 +1142,12 @@ int run_nsenter(const char * user, const char * worker_id, const char * working_
     }
     fclose(stream);
 
+    if (seteuid(0) != 0) {
+      fprintf(ERRORFILE, "Could not become root\n");
+      fflush(LOGFILE);
+      return -1;
+    }
+
     //run profiling command
     char* nsenter_binary = get_nsenter_binary();
     char *nsenter_command_with_binary = calloc(sizeof(char), command_size);
@@ -1157,25 +1156,20 @@ int run_nsenter(const char * user, const char * worker_id, const char * working_
     fprintf (LOGFILE, "command is %s\n", nsenter_command_with_binary);
     fflush(LOGFILE);
 
-    if (seteuid(0) != 0) {
-      fprintf(ERRORFILE, "Could not become root\n");
-      fflush(LOGFILE);
-      return -1;
-    }
-
     FILE *fp = popen(nsenter_command_with_binary, "w");
     fprintf(fp, "sudo -u %s %s %s\nexit\n", user, profiler_path, line);
     pclose(fp);
 
-    free(docker_inspect_command);
-    free(docker_binary);
     free(nsenter_binary);
     free(nsenter_command_with_binary);
-    return 0;
 
   } else {
      fprintf(ERRORFILE, "docker inspect failed. Got pid=0");
      fflush(ERRORFILE);
+     exit_code = UNABLE_TO_EXECUTE_CONTAINER_SCRIPT;
   }
-  return UNABLE_TO_EXECUTE_CONTAINER_SCRIPT;
+
+  free(docker_inspect_command);
+  free(docker_binary);
+  return exit_code;
 }
