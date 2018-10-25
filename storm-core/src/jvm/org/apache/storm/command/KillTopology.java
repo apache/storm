@@ -32,7 +32,7 @@ public class KillTopology {
         @SuppressWarnings("unchecked")
         final List<String> names = (List<String>) cl.get("TOPO");
 
-        // wait seconds for topology to shut down
+        // Wait this many seconds after deactivating topology before killing
         Integer wait = (Integer) cl.get("w");
 
         // if '-i' set, we'll try to kill every topology listed, even if an error occurs
