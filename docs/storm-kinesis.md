@@ -1,3 +1,9 @@
+---
+title: Storm Kinesis
+layout: documentation
+documentation: true
+---
+
 #Storm Kinesis Spout
 Provides core storm spout for consuming data from a stream in Amazon Kinesis Streams. It stores the sequence numbers that can be committed in zookeeper and 
 starts consuming records after that sequence number on restart by default. Below is the code sample to create a sample topology that uses the spout. Each 
