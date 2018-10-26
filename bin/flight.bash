@@ -69,6 +69,7 @@ function jstack_record {
 function jmap_record {
     FILENAME=recording-$1-${NOW}.bin
     $BINPATH/jmap -dump:format=b,file="$2/${FILENAME}" $1
+    /bin/chmod g+r "$2/${FILENAME}"
 }
 
 function stop_record {
