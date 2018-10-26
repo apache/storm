@@ -330,7 +330,7 @@ conf.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyV
 
 ```
 Currently storm supports Redis and HBase as state backends and uses the underlying state-checkpointing
-framework for saving the window state. For more details on state checkpointing see [State-checkpointing.md](State-checkpointing.md)
+framework for saving the window state. For more details on state checkpointing see [State-checkpointing](State-checkpointing.html).
 
 Here is an example of a persistent windowed bolt that uses the window checkpointing to save its state. The `initState`
 is invoked with the last saved state (user state) at initialization time. The execute method is invoked based on the configured

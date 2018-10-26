@@ -189,7 +189,7 @@ may refer to tables in the FROM clause of an enclosing query.
 
 *selectWithoutFrom* is equivalent to VALUES,
 but is not standard SQL and is only allowed in certain
-[conformance levels]({{ site.apiRoot }}/org/apache/calcite/sql/validate/SqlConformance.html#isFromRequired--).
+[conformance levels](https://calcite.apache.org/apidocs/org/apache/calcite/sql/validate/SqlConformance.html#isFromRequired--).
 
 ## Keywords
 
@@ -827,7 +827,7 @@ The operator precedence and associativity, highest to lowest.
 | Operator                                          | Associativity
 |:------------------------------------------------- |:-------------
 | .                                                 | left
-| [ ] (array element)                               | left
+| \[ \] (array element)                             | left
 | + - (unary plus, minus)                           | right
 | * /                                               | left
 | + -                                               | left

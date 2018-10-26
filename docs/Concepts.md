@@ -116,5 +116,5 @@ Topologies execute across one or more worker processes. Each worker process is a
 
 ### Performance Tuning
 
-Refer to [performance tuning guide](Performance.md)
+Refer to [performance tuning guide](Performance.html).
 

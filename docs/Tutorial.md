@@ -218,7 +218,7 @@ A stream grouping tells a topology how to send tuples between two components. Re
 
 When a task for Bolt A emits a tuple to Bolt B, which task should it send the tuple to?
 
-A "stream grouping" answers this question by telling Storm how to send tuples between sets of tasks. Before we dig into the different kinds of stream groupings, let's take a look at another topology from [storm-starter](http://github.com/apache/storm/blob/{{page.version}}/examples/storm-starter). This [WordCountTopology]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/WordCountTopology.java) reads sentences off of a spout and streams out of `WordCountBolt` the total number of times it has seen that word before:
+A "stream grouping" answers this question by telling Storm how to send tuples between sets of tasks. Before we dig into the different kinds of stream groupings, let's take a look at another topology from [storm-starter]({{page.git-blob-base}}/examples/storm-starter). This [WordCountTopology]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/WordCountTopology.java) reads sentences off of a spout and streams out of `WordCountBolt` the total number of times it has seen that word before:
 
 ```java
 TopologyBuilder builder = new TopologyBuilder();
