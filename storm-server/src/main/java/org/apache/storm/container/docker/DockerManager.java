@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
@@ -39,6 +40,7 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.ShellCommandRunnerImpl;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -204,7 +206,8 @@ public class DockerManager implements ResourceIsolationInterface {
         // But if supervisorLocalDir is not mounted, the worker will try to create it and fail.
         String supervisorLocalDir = ConfigUtils.supervisorLocalDir(conf);
 
-        dockerRunCommand.setNetworkType(networkType)
+        dockerRunCommand.detachOnRun()
+            .setNetworkType(networkType)
             //The whole file system of the container will be read-only except specific read-write bind mounts
             .setReadonly()
             .addReadOnlyMountLocation(cgroupRootPath, cgroupRootPath, false)
@@ -227,7 +230,7 @@ public class DockerManager implements ResourceIsolationInterface {
         dockerRunCommand.setCGroupParent(cgroupParent)
             .groupAdd(groups)
             .setContainerWorkDir(workerDir)
-            .setCidFile(dockerCidFilePath(workerDir))
+            .setCidFile(dockerCidFilePath(workerId))
             .setCapabilities(Collections.emptySet())
             .setNoNewPrivileges();
 
@@ -245,59 +248,56 @@ public class DockerManager implements ResourceIsolationInterface {
 
         dockerRunCommand.setOverrideCommandWithArgs(Arrays.asList("bash", ServerUtils.writeScript(workerDir, command, env)));
 
-        runDockerCommand(conf, user, CmdType.LAUNCH_DOCKER_CONTAINER,
-            dockerRunCommand.getCommandWithArguments(), null, logPrefix, processExitCallback, targetDir);
+        //run docker-run command and launch container in background (-d option).
+        runDockerCommandWaitFor(conf, user, CmdType.LAUNCH_DOCKER_CONTAINER,
+            dockerRunCommand.getCommandWithArguments(), null, logPrefix, null, targetDir);
 
-        //waiting for container id file to be written
-        File cidFile = new File(dockerCidFilePath(workerDir));
-        String cid = null;
-        int retryCount = 1;
-        do {
-            try {
-                Thread.sleep(100 * retryCount);
-            } catch (InterruptedException e) {
-                LOG.error("reading cid file got interrupted");
-                throw new RuntimeException("Failed to read cid file: " + cidFile);
+        //docker-wait for the container in another thread. processExitCallback will get the container's exit code.
+        Utils.asyncLoop(new Callable<Long>() {
+            public Long call() throws IOException {
+                DockerWaitCommand dockerWaitCommand = new DockerWaitCommand(workerId);
+                try {
+                    runDockerCommandWaitFor(conf, user, CmdType.RUN_DOCKER_CMD,
+                        dockerWaitCommand.getCommandWithArguments(), null, logPrefix, processExitCallback, targetDir);
+                } catch (IOException e) {
+                    LOG.error("IOException on running docker wait command:", e);
+                    throw e;
+                }
+                return null; // Run only once.
             }
+        });
 
+    }
+
+    //Get the container ID of the worker
+    private String getCID(String workerId) throws IOException {
+        String cid = workerToCid.get(workerId);
+        if (cid == null) {
+            File cidFile = new File(dockerCidFilePath(workerId));
             if (cidFile.exists()) {
                 List<String> lines = Files.readLines(cidFile, Charset.defaultCharset());
                 if (lines.isEmpty()) {
-                    LOG.debug("cid file {} is empty. Retrying {}", cidFile, retryCount);
+                    LOG.error("cid file {} is empty.", cidFile);
                 } else {
                     cid = lines.get(0);
                 }
             } else {
-                LOG.debug("cid file {} doesn't exist. Retrying {}", cidFile, retryCount);
+                LOG.error("cid file {} doesn't exist.", cidFile);
             }
-            retryCount++;
-        } while (cid == null);
 
-        LOG.info("workerId: {}, cid={}", workerId, cid);
-        workerToCid.put(workerId, cid);
+            if (cid == null) {
+                LOG.error("Couldn't get container id of the worker {}", workerId);
+                throw new IllegalStateException("Couldn't get container id of the worker " + workerId);
+            } else {
+                workerToCid.put(workerId, cid);
+            }
+        }
+        return cid;
     }
 
     @Override
     public long getMemoryUsage(String user, String workerId) throws IOException {
-        String cid = workerToCid.get(workerId);
-        if (cid == null) {
-            //Get the worker PID outside of the container.
-            DockerInspectCommand dockerInspectCommand = new DockerInspectCommand(workerId);
-            dockerInspectCommand.withGettingCID();
-
-            List<String> outputFromInspect = getOutputFromRunningDockerCommand(conf, user, CmdType.RUN_DOCKER_CMD,
-                dockerInspectCommand.getCommandWithArguments(), null, new File(ConfigUtils.workerRoot(conf, workerId)));
-
-            if (!outputFromInspect.isEmpty()) {
-                cid = outputFromInspect.get(outputFromInspect.size() - 1);
-                workerToCid.put(workerId, cid);
-            } else {
-                LOG.error("Couldn't get container id of worker " + workerId);
-                throw new IllegalStateException("Couldn't get container id of worker " + workerId);
-            }
-        }
-
-        String memoryCgroupPath = containerCgroupPath(memoryCgroupRootPath, cid);
+        String memoryCgroupPath = containerCgroupPath(memoryCgroupRootPath, getCID(workerId));
         MemoryCore memoryCore = new MemoryCore(memoryCgroupPath);
         return memoryCore.getPhysicalUsage();
     }
@@ -401,8 +401,8 @@ public class DockerManager implements ResourceIsolationInterface {
         return exitCode == 0;
     }
 
-    private String dockerCidFilePath(String dir) {
-        return dir + File.separator + "container.cid";
+    private String dockerCidFilePath(String workerId) {
+        return ConfigUtils.workerRoot(conf, workerId) + File.separator + "container.cid";
     }
 
     private String commandFilePath(String dir) {
@@ -443,26 +443,6 @@ public class DockerManager implements ResourceIsolationInterface {
 
         return ClientSupervisorUtils.processLauncher(conf, user, null, args, environment,
             logPrefix, exitCodeCallback, targetDir);
-    }
-
-    private List<String> getOutputFromRunningDockerCommand(Map<String, Object> conf, String user, CmdType cmdType, String dockerCommand,
-                                                           Map<String, String> environment, File targetDir) throws IOException {
-        List<String> outputs = new ArrayList<>();
-        Process p = runDockerCommand(conf, user, cmdType, dockerCommand, environment, null, null, targetDir);
-        try {
-            p.waitFor();
-            BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String line;
-            while ((line = r.readLine()) != null) {
-                outputs.add(line);
-            }
-        } catch (InterruptedException e) {
-            LOG.error("running docker command is interrupted", e);
-        } catch (IOException e) {
-            LOG.warn("Error while trying to log stream", e);
-        }
-        LOG.info("output from command is {}", StringUtils.join(outputs, " "));
-        return outputs;
     }
 
     /**

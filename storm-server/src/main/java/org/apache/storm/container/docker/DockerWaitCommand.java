@@ -17,20 +17,15 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Encapsulates the docker stop command and its command line arguments.
+ * Encapsulates the docker wait command and its command line arguments.
  */
-public class DockerStopCommand extends DockerCommand {
-    private static final String STOP_COMMAND = "stop";
+public class DockerWaitCommand extends DockerCommand {
+    private static final String WAIT_COMMAND = "wait";
     private String containerName;
 
-    public DockerStopCommand(String containerName) {
-        super(STOP_COMMAND);
+    public DockerWaitCommand(String containerName) {
+        super(WAIT_COMMAND);
         this.containerName = containerName;
-    }
-
-    public DockerStopCommand setGracePeriod(int value) {
-        super.addCommandArguments("--time=" + Integer.toString(value));
-        return this;
     }
 
     /**
