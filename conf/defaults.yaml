@@ -390,6 +390,7 @@ storm.supervisor.medium.memory.grace.period.ms: 30000
 
 storm.docker.cgroup.root: "/sys/fs/cgroup"
 storm.docker.cgroup.parent: "storm.slice"
+storm.docker.cgroup.sub.path.template: "/%CG-PARENT%/docker-%CONTAINER-ID%.scope"
 storm.docker.nscd.dir: "/var/run/nscd"
 
 storm.topology.classpath.beginning.enabled: false

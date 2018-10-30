@@ -1151,6 +1151,33 @@ public class DaemonConfig implements Validated {
     public static String STORM_DOCKER_CGROUP_ROOT = "storm.docker.cgroup.root";
 
     /**
+     * --cgroup-parent config for docker command. Must follow the constraints of the docker command.
+     * Additionally, we disallow any '-' in the name because the cgroup hierarchy could be unnecessarily complicated.
+     */
+    @isString
+    @NotNull
+    public static String STORM_DOCKER_CGROUP_PARENT = "storm.docker.cgroup.parent";
+
+    /**
+     * The cgroup path will be different depending on
+     *   whether "docker" or "podman" is being used as the binary,
+     *   whether "systemd" or "cgroupfs" is being used as the cgroupdriver/cgroup_manager
+     *   whether "--cgroup-parent" is an absolute path or not.
+     * To be more flexible, we leave it up to the storm admins to supply correct template of cgroup sub path.
+     * Here are some possible cases:
+     *   when docker+systemd+relativeCgroupParent:  "/%CG-PARENT%/docker-%CONTAINER-ID%.scope"
+     *   when docker+cgroupfs+absoluteCgroupParent:  "/%CG-PARENT%/%CONTAINER-ID%"
+     *   when docker+cgroupfs+relativeCgroupParent:  "/system.slice/%CG-PARENT%/%CONTAINER-ID%"
+     *   when podman+systemd:   "/%CG-PARENT%/libpod-%CONTAINER-ID%.scope"
+     *   when podman+cgroupfs:  "/%CG-PARENT%/libpod-%CONTAINER-ID%"
+     * "%CG-PARENT% in the string will be replaced with the value of {@link #STORM_DOCKER_CGROUP_PARENT}
+     * "%CONTAINER-ID%" will be replaced with the container id; it must be in and only in the deepest level of this sub-path.
+     */
+    @isString
+    @NotNull
+    public static String STORM_DOCKER_CGROUP_SUB_PATH_TEMPLATE = "storm.docker.cgroup.sub.path.template";
+
+    /**
      * Default docker image to use if the topology doesn't specify which docker image to use.
      */
     @isString
@@ -1161,13 +1188,6 @@ public class DaemonConfig implements Validated {
      */
     @isStringList
     public static String STORM_DOCKER_ALLOWED_IMAGES = "storm.docker.allowed.images";
-
-    /**
-     * --cgroup-parent config for docker command. Must follow the constraints of the docker command.
-     */
-    @isString
-    @NotNull
-    public static String STORM_DOCKER_CGROUP_PARENT = "storm.docker.cgroup.parent";
 
     /**
      * White listed syscalls seccomp Json file to be used as a seccomp filter.

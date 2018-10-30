@@ -20,6 +20,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,6 +62,8 @@ public class DockerManager implements ResourceIsolationInterface {
     private String cgroupParent;
     private String memoryCgroupRootPath;
     private String cgroupRootPath;
+    private String cgroupSubPathTemplate;
+    private String cgroupChildDirTemplate;
     private String nscdPath;
     private Map<String, Object> conf;
     private Map<String, Integer> workerToCpu = new HashMap<>();
@@ -71,6 +74,9 @@ public class DockerManager implements ResourceIsolationInterface {
     private String stormHome;
     private final String TMP_DIR = File.separator + "tmp";
     private List<String> readonlyBindmounts;
+
+    private final String CONTAINER_ID_TEMPLATE = "%CONTAINER-ID%";
+    private final String CG_PARENT_TEMPLATE = "%CG-PARENT%";
 
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {
@@ -103,10 +109,27 @@ public class DockerManager implements ResourceIsolationInterface {
 
         seccompJsonFile = (String) conf.get(DaemonConfig.STORM_DOCKER_SECCOMP_PROFILE);
         cgroupParent = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_PARENT));
+        if (cgroupParent.contains("-")) {
+            throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_CGROUP_PARENT + " cannot contain any '-' symbol");
+        }
+
         cgroupRootPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_ROOT));
-        nscdPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_NSCD_DIR));
-        memoryCgroupRootPath = cgroupRootPath + File.separator + "memory" + File.separator + cgroupParent;
+        cgroupSubPathTemplate = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_CGROUP_SUB_PATH_TEMPLATE));
+
+        int lastIndex = cgroupSubPathTemplate.lastIndexOf(File.separator);
+        if (lastIndex <= 0) {
+            throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_CGROUP_SUB_PATH_TEMPLATE + " is not configured properly");
+        }
+        memoryCgroupRootPath = cgroupRootPath + File.separator + "memory" + File.separator
+            + cgroupSubPathTemplate.substring(0, lastIndex).replace(CG_PARENT_TEMPLATE, cgroupParent);
+        cgroupChildDirTemplate = cgroupSubPathTemplate.substring(lastIndex);
+        if (!cgroupChildDirTemplate.contains(CONTAINER_ID_TEMPLATE)) {
+            throw new IllegalArgumentException(DaemonConfig.STORM_DOCKER_CGROUP_SUB_PATH_TEMPLATE + " is not configured properly");
+        }
+
         memoryCoreAtRoot = new MemoryCore(memoryCgroupRootPath);
+
+        nscdPath = ObjectReader.getString(conf.get(DaemonConfig.STORM_DOCKER_NSCD_DIR));
         readonlyBindmounts = ObjectReader.getStrings(conf.get(DaemonConfig.STORM_DOCKER_READONLY_BINDMOUNTS));
 
         stormHome = System.getProperty(ConfigUtils.STORM_HOME);
@@ -417,8 +440,12 @@ public class DockerManager implements ResourceIsolationInterface {
         return scriptPath;
     }
 
+    private Map<String, String> cidToChidDir = new HashMap<>();
     private String containerCgroupPath(String dir, String cid) {
-        return dir + File.separator + "docker-" + cid + ".scope";
+        if (!cidToChidDir.containsKey(cid)) {
+            cidToChidDir.put(cid, cgroupChildDirTemplate.replace(CONTAINER_ID_TEMPLATE, cid));
+        }
+        return dir + cidToChidDir.get(cid);
     }
 
     /**
