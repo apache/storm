@@ -12,16 +12,12 @@
 
 package org.apache.storm.container.docker;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,11 +68,11 @@ public class DockerManager implements ResourceIsolationInterface {
     private MemoryCore memoryCoreAtRoot;
     private String seccompJsonFile;
     private String stormHome;
-    private final String TMP_DIR = File.separator + "tmp";
+    private static final String TMP_DIR = File.separator + "tmp";
     private List<String> readonlyBindmounts;
 
-    private final String CONTAINER_ID_TEMPLATE = "%CONTAINER-ID%";
-    private final String CG_PARENT_TEMPLATE = "%CG-PARENT%";
+    private static final String CONTAINER_ID_TEMPLATE = "%CONTAINER-ID%";
+    private static final String CG_PARENT_TEMPLATE = "%CG-PARENT%";
 
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {

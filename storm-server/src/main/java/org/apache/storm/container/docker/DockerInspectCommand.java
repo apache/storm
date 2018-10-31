@@ -33,11 +33,6 @@ public class DockerInspectCommand extends DockerCommand {
         return this;
     }
 
-    public DockerInspectCommand withGettingCID() {
-        super.addCommandArguments("--format='{{.Id}}'");
-        return this;
-    }
-
     /**
      * Get the full command.
      * @return the full command.
