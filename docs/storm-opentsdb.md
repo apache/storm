@@ -1,5 +1,9 @@
-# Storm OpenTSDB Bolt and TridentState
-  
+---
+title: Storm OpenTSDB Bolt and TridentState
+layout: documentation
+documentation: true
+---
+
 OpenTSDB offers a scalable and highly available storage for time series data. It consists of a
 Time Series Daemon (TSD) servers along with command line utilities. Each TSD connects to the 
 configured HBase cluster to push/query the data.

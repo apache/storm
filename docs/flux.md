@@ -479,7 +479,7 @@ well.
 ### Using Java `enum`s in Contructor Arguments, References, Properties and Configuration Methods
 You can easily use Java `enum` values as arguments in a Flux YAML file, simply by referencing the name of the `enum`.
 
-For example, [Storm's HDFS module]() includes the following `enum` definition (simplified for brevity):
+For example, [Storm's HDFS module](storm-hdfs.html) includes the following `enum` definition (simplified for brevity):
 
 ```java
 public static enum Units {

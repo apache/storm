@@ -1,4 +1,9 @@
-# Storm PMML Bolt
+---
+title: Storm PMML Bolt
+layout: documentation
+documentation: true
+---
+
  Storm integration to load PMML models and compute predictive scores for running tuples. The PMML model represents
  the machine learning (predictive) model used to do prediction on raw input data. The model is typically loaded into a 
  runtime environment, which will score the raw data that comes in the tuples. 
