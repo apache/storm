@@ -140,6 +140,7 @@ def get_jars_full(adir):
 
 # If given path is a dir, make it a wildcard so the JVM will include all JARs in the directory.
 def get_wildcard_dir(path):
+    ret = []
     if os.path.isdir(path):
         ret = [(os.path.join(path, "*"))]
     elif os.path.exists(path):
