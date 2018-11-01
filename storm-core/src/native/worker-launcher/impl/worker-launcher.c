@@ -344,17 +344,12 @@ static int open_file_as_wl(const char* filename) {
 
 /**
  * Copy a file from a fd to a given filename.
+ * The new file must not exist and it is created with permissions perm.
  * The input stream is closed.
- * The destination file will be deleted if exists.
  * Return 0 if everything is ok.
  */
 static int copy_file(int input, const char* in_filename, 
 		     const char* out_filename, mode_t perm) {
-  if (remove(out_filename) == -1) {
-      fprintf(ERRORFILE, "Can't delete file %s - %s\n", out_filename, strerror(errno));
-      return -1;
-  }
-
   const int buffer_size = 128*1024;
   char buffer[buffer_size];
   int out_fd = open(out_filename, O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW, perm);
