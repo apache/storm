@@ -747,7 +747,7 @@ public class BasicContainer extends Container {
         try {
             long ret = 0;
             if (resourceIsolationManager.isResourceManaged()) {
-                long usageBytes = resourceIsolationManager.getMemoryUsage(_workerId);
+                long usageBytes = resourceIsolationManager.getMemoryUsage(user, _workerId);
                 if (usageBytes >= 0) {
                     ret = usageBytes / 1024 / 1024;
                 }

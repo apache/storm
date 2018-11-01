@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DockerRunCommand extends DockerCommand {
+    private static final Logger LOG = LoggerFactory.getLogger(DockerRunCommand.class);
     private static final String RUN_COMMAND = "run";
     private final String image;
     private List<String> overrrideCommandWithArgs;
@@ -73,6 +76,7 @@ public class DockerRunCommand extends DockerCommand {
         destinationPath, boolean createSource) {
         boolean sourceExists = new File(sourcePath).exists();
         if (!sourceExists && !createSource) {
+            LOG.warn("Path {} doesn't exit. Skip bind mounting it", sourcePath);
             return this;
         }
         super.addCommandArguments("-v", sourcePath + ":" + destinationPath);
@@ -108,6 +112,7 @@ public class DockerRunCommand extends DockerCommand {
         destinationPath, boolean createSource) {
         boolean sourceExists = new File(sourcePath).exists();
         if (!sourceExists && !createSource) {
+            LOG.warn("Path {} doesn't exit. Skip bind mounting it", sourcePath);
             return this;
         }
         super.addCommandArguments("-v", sourcePath + ":" + destinationPath + ":ro");

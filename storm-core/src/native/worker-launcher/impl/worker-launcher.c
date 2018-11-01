@@ -382,8 +382,9 @@ static int copy_file(int input, const char* in_filename,
  * is able to read and execute, and in certain directories, write. The setGID bit is set
  * to make sure any files created under the directory will be accessible to storm's user for
  * cleanup purposes.
+ * If setgid_on_dir is FALSE, don't set sticky bit on group permission on the directory.
  */
-static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
+static int setup_permissions(FTSENT* entry, uid_t euser, int user_write, boolean setgid_on_dir) {
   if (lchown(entry->fts_path, euser, launcher_gid) != 0) {
     fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
             strerror(errno), entry->fts_path);
@@ -397,7 +398,10 @@ static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
   }
   // If the entry is a directory, Add group execute and setGID bits.
   if ((mode & S_IFDIR) == S_IFDIR) {
-    new_mode = new_mode | S_IXGRP | S_ISGID;
+    new_mode = new_mode | S_IXGRP;
+    if (setgid_on_dir) {
+      new_mode = new_mode | S_ISGID;
+    }
   }
   if (chmod(entry->fts_path, new_mode) != 0) {
     fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
@@ -408,7 +412,7 @@ static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
 }
 
 
-int setup_dir_permissions(const char* local_dir, int user_writable) {
+int setup_dir_permissions(const char* local_dir, int user_writable, boolean setgid_on_dir) {
   //This is the same as
   //> chmod g+rwX -R $local_dir
   //> chmod g+s -R $local_dir
@@ -464,7 +468,7 @@ int setup_dir_permissions(const char* local_dir, int user_writable) {
         fprintf(LOGFILE, "NOOP: %s\n", entry->fts_path); break;
       case FTS_D:         // A directory in pre-order
       case FTS_F:         // A regular file
-        if (setup_permissions(entry, euser, user_writable) != 0) {
+        if (setup_permissions(entry, euser, user_writable, setgid_on_dir) != 0) {
             exit_code = -1;
         }
         break;

@@ -392,6 +392,8 @@ storm.docker.cgroup.root: "/sys/fs/cgroup"
 storm.docker.cgroup.parent: "storm.slice"
 storm.docker.executable.path: "/usr/bin/docker"
 storm.docker.container.network: "host"
+storm.docker.nscd.dir: "/var/run/nscd"
+storm.nsenter.executable.path: "/usr/bin/nsenter"
 
 storm.topology.classpath.beginning.enabled: false
 worker.metrics:

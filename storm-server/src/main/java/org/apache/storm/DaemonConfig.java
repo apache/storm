@@ -1131,10 +1131,18 @@ public class DaemonConfig implements Validated {
 
     /**
      * The directory of nscd - name service cache daemon, e.g. "/var/run/nscd/".
-     * To use it, nscd should be pre-installed.
+     * nscd must be running so that profiling can work properly.
      */
     @isString
+    @NotNull
     public static String STORM_DOCKER_NSCD_DIR = "storm.docker.nscd.dir";
+
+    /**
+     * nsenter executable path.
+     */
+    @isString
+    @NotNull
+    public static String STORM_NSENTER_EXECUTABLE_PATH = "storm.nsenter.executable.path";
 
     /**
      * The root of cgroup for docker to use. On RHEL7, it should be "/sys/fs/cgroup".

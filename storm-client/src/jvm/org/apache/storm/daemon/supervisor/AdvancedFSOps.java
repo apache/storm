@@ -168,9 +168,10 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      *
      * @param user the user that owns the topology
      * @param path the directory to set the permissions on
+     * @param setgidOnDir whether or not to setgid on the directory
      * @throws IOException on any error
      */
-    public void setupWorkerArtifactsDir(String user, File path) throws IOException {
+    public void setupWorkerArtifactsDir(String user, File path, boolean setgidOnDir) throws IOException {
         //By default this is a NOOP
     }
 
@@ -384,8 +385,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
         }
 
         @Override
-        public void setupWorkerArtifactsDir(String user, File path) throws IOException {
-            ClientSupervisorUtils.setupWorkerArtifactsDir(_conf, user, path.getCanonicalPath());
+        public void setupWorkerArtifactsDir(String user, File path, boolean setgidOnDir) throws IOException {
+            ClientSupervisorUtils.setupWorkerArtifactsDir(_conf, user, path.getCanonicalPath(), setgidOnDir);
         }
     }
 

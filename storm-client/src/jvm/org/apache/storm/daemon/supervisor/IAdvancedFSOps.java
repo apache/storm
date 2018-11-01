@@ -101,9 +101,10 @@ public interface IAdvancedFSOps {
      *
      * @param user the owner of the topology
      * @param path the directory to set the permissions on
+     * @param setgidOnDir whether or not to setgid on the directory
      * @throws IOException on any error
      */
-    void setupWorkerArtifactsDir(String user, File path) throws IOException;
+    void setupWorkerArtifactsDir(String user, File path, boolean setgidOnDir) throws IOException;
 
     /**
      * Sanity check if everything the topology needs is there for it to run.

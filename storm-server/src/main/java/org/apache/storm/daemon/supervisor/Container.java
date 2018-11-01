@@ -276,7 +276,7 @@ public abstract class Container implements Killable {
         File workerArtifacts = new File(ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port));
         if (!_ops.fileExists(workerArtifacts)) {
             _ops.forceMkdir(workerArtifacts);
-            _ops.setupWorkerArtifactsDir(_assignment.get_owner(), workerArtifacts);
+            _ops.setupWorkerArtifactsDir(_assignment.get_owner(), workerArtifacts, true);
         }
 
         this.user = getWorkerUser();

@@ -9,12 +9,12 @@ import org.apache.commons.lang.StringUtils;
  * line arguments.
  */
 public class DockerExecCommand extends DockerCommand {
-    private static final String INSPECT_COMMAND = "exec";
+    private static final String EXEC_COMMAND = "exec";
     private String containerName;
     private List<String> commandInContainer;
 
     public DockerExecCommand(String executable, String containerName) {
-        super(executable, INSPECT_COMMAND);
+        super(executable, EXEC_COMMAND);
         this.containerName = containerName;
     }
 

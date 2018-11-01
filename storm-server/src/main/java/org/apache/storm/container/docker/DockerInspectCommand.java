@@ -17,8 +17,18 @@ public class DockerInspectCommand extends DockerCommand {
         this.containerName = containerName;
     }
 
-    public DockerInspectCommand withContainerStatus() {
+    public DockerInspectCommand withGettingContainerStatus() {
         super.addCommandArguments("--format='{{.State.Status}}'");
+        return this;
+    }
+
+    public DockerInspectCommand withGettingContainerPID() {
+        super.addCommandArguments("--format='{{.State.Pid}}'");
+        return this;
+    }
+
+    public DockerInspectCommand withGettingCID() {
+        super.addCommandArguments("--format='{{.Id}}'");
         return this;
     }
 

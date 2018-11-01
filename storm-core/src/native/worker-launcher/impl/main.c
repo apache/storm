@@ -43,12 +43,13 @@ void display_usage(FILE *stream) {
   fprintf(stream, "Usage: worker-launcher user command command-args\n");
   fprintf(stream, "Commands:\n");
   fprintf(stream, "   initialize stormdist dir: code-dir <code-directory>\n");
+  fprintf(stream, "   initialize artifacts dir: artifacts-dir <setgid_on_dir(true/false)> <directory>\n");
   fprintf(stream, "   remove a file/directory: rmr <directory>\n");
   fprintf(stream, "   launch a worker: worker <working-directory> <script-to-run>\n");
   fprintf(stream, "   launch a profiler: profiler <working-directory> <script-to-run>\n");
   fprintf(stream, "   signal a worker: signal <pid> <signal>\n");
   fprintf(stream, "   launch a docker container: launch-docker-container <working-directory> <script-to-run>\n");
-  fprintf(stream, "   execute a docker command: exec-docker-cmd <working-directory> <script-to-run>\n");
+  fprintf(stream, "   execute a command as root: exec-cmd-as-root <working-directory> <script-to-run>\n");
 }
 
 int main(int argc, char **argv) {
@@ -162,15 +163,19 @@ int main(int argc, char **argv) {
       fflush(ERRORFILE);
       return INVALID_ARGUMENT_NUMBER;
     }
-    exit_code = setup_dir_permissions(argv[optind], 0);
+    exit_code = setup_dir_permissions(argv[optind], 0, TRUE);
   } else if (strcasecmp("artifacts-dir", command) == 0) {
-    if (argc != 4) {
-      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for artifacts-dir\n",
+    if (argc != 5) {
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for artifacts-dir\n",
 	      argc);
       fflush(ERRORFILE);
       return INVALID_ARGUMENT_NUMBER;
     }
-    exit_code = setup_dir_permissions(argv[optind], 1);
+    boolean setgid_on_dir = TRUE;
+    if (strcasecmp("false", argv[optind++]) == 0) {
+      setgid_on_dir = FALSE;
+    }
+    exit_code = setup_dir_permissions(argv[optind], 1, setgid_on_dir);
   } else if (strcasecmp("blob", command) == 0) {
       if (argc != 4) {
           fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for blob\n",
@@ -178,7 +183,7 @@ int main(int argc, char **argv) {
           fflush(ERRORFILE);
           return INVALID_ARGUMENT_NUMBER;
       }
-      exit_code = setup_dir_permissions(argv[optind], 0);
+      exit_code = setup_dir_permissions(argv[optind], 0, TRUE);
   } else if (strcasecmp("rmr", command) == 0) {
     if (argc != 4) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for rmr\n",
@@ -195,7 +200,7 @@ int main(int argc, char **argv) {
       return INVALID_ARGUMENT_NUMBER;
     }
     working_dir = argv[optind++];
-    exit_code = setup_dir_permissions(working_dir, 1);
+    exit_code = setup_dir_permissions(working_dir, 1, TRUE);
     if (exit_code == 0) {
       exit_code = exec_as_user(working_dir, argv[optind], FALSE);
     }
@@ -206,13 +211,13 @@ int main(int argc, char **argv) {
       return INVALID_ARGUMENT_NUMBER;
     }
     working_dir = argv[optind++];
-    exit_code = setup_dir_permissions(working_dir, 1);
+    exit_code = setup_dir_permissions(working_dir, 1, TRUE);
     if (exit_code == 0) {
       exit_code = exec_as_user(working_dir, argv[optind], TRUE);
     }
-  } else if (strcasecmp("exec-docker-cmd", command) == 0) {
+  } else if (strcasecmp("exec-cmd-as-root", command) == 0) {
     if (argc != 5) {
-      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for exec-docker-cmd\n", argc);
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for exec-cmd-as-root\n", argc);
       fflush(ERRORFILE);
       return INVALID_ARGUMENT_NUMBER;
     }

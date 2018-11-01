@@ -277,7 +277,7 @@ public class ContainerTest {
         }
 
         @Override
-        public long getMemoryUsage(String workerId) throws IOException {
+        public long getMemoryUsage(String user, String workerId) throws IOException {
             fail("THIS IS NOT UNDER TEST");
             return 0;
         }

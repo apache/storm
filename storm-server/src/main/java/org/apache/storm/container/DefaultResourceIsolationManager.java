@@ -56,7 +56,7 @@ public class DefaultResourceIsolationManager implements ResourceIsolationInterfa
     }
 
     @Override
-    public long getMemoryUsage(String workerId) throws IOException {
+    public long getMemoryUsage(String user, String workerId) throws IOException {
         return 0;
     }
 

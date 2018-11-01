@@ -68,7 +68,7 @@ extern FILE *LOGFILE;
 // the log file for error messages
 extern FILE *ERRORFILE;
 
-int setup_dir_permissions(const char* local_dir, int for_blob_permission);
+int setup_dir_permissions(const char* local_dir, int for_blob_permission, boolean setgid_on_dir);
 
 int exec_as_user(const char * working_dir, const char * args, boolean as_root);
 
