@@ -60,12 +60,14 @@ public abstract class ContainerLauncher {
         ResourceIsolationInterface resourceIsolationManager;
         if (ObjectReader.getBoolean(conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN_ENABLE), false)) {
             resourceIsolationManager = ReflectionUtils.newInstance((String) conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN));
+            LOG.info("Using resource isolation plugin {}: {}", conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN),
+                resourceIsolationManager);
         } else {
             resourceIsolationManager = new DefaultResourceIsolationManager();
+            LOG.info("{} is false. Using default resource isolation plugin: {}", DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN_ENABLE,
+                resourceIsolationManager);
         }
 
-        LOG.info("Using resource isolation plugin {} {}", conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN),
-            resourceIsolationManager);
         resourceIsolationManager.prepare(conf);
 
         return new BasicContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager, metricsRegistry, 
