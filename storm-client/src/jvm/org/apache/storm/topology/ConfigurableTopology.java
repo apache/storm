@@ -86,7 +86,7 @@ public abstract class ConfigurableTopology {
             if (ret.size() == 1) {
                 Object confNode = ret.get("config");
                 if (confNode != null && confNode instanceof Map) {
-                    ret = (Map<String, Object>) ret;
+                    ret = (Map<String, Object>) confNode;
                 }
             }
         }
