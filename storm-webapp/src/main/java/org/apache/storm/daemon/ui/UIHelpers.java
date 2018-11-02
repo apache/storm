@@ -2164,7 +2164,7 @@ public class UIHelpers {
     }
 
     /**
-     * getTopologyProfilingAction.
+     * setTopologyProfilingAction.
      * @param client client
      * @param id id
      * @param hostPort hostPort
@@ -2173,7 +2173,7 @@ public class UIHelpers {
      * @param profileAction profileAction
      * @throws TException TException
      */
-    public static void getTopologyProfilingAction(
+    public static void setTopologyProfilingAction(
             Nimbus.Iface client, String id,
             String hostPort, Long timestamp, Map<String,
             Object> config, ProfileAction profileAction) throws TException {
@@ -2200,9 +2200,9 @@ public class UIHelpers {
     public static Map<String, Object> getTopologyProfilingStart(Nimbus.Iface client, String id,
                                                                 String hostPort, String timeout,
                                                                 Map<String, Object> config) throws TException {
-        getTopologyProfilingAction(
-                client, id , hostPort, System.currentTimeMillis() + Long.valueOf(timeout),
-                config, ProfileAction.JPROFILE_START);
+        setTopologyProfilingAction(
+                client, id , hostPort, System.currentTimeMillis() + (Long.valueOf(timeout) * 60_000),
+                config, ProfileAction.JPROFILE_STOP);
         Map<String, Object> result = new HashMap();
         String host = hostPort.split(":")[0];
         String port = hostPort.split(":")[1];
@@ -2225,7 +2225,7 @@ public class UIHelpers {
     public static Map<String, Object> getTopologyProfilingStop(Nimbus.Iface client, String id,
                                                                String hostPort,
                                                                Map<String, Object> config) throws TException {
-        getTopologyProfilingAction(client, id , hostPort, 0L, config, ProfileAction.JPROFILE_STOP);
+        setTopologyProfilingAction(client, id , hostPort, 0L, config, ProfileAction.JPROFILE_STOP);
         Map<String, Object> result = new HashMap();
         result.put("status", "ok");
         result.put("id", hostPort);
@@ -2254,7 +2254,7 @@ public class UIHelpers {
      */
     public static Map<String, Object> getTopologyProfilingDump(Nimbus.Iface client, String id, String hostPort,
                                                                Map<String,Object> config) throws TException {
-        getTopologyProfilingAction(
+        setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(),
                 config, ProfileAction.JPROFILE_DUMP
         );
@@ -2267,7 +2267,7 @@ public class UIHelpers {
     public static Map<String, Object> getTopologyProfilingDumpJstack(Nimbus.Iface client, String id,
                                                                      String hostPort, Map<String,
                                                                      Object> config) throws TException {
-        getTopologyProfilingAction(
+        setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JSTACK_DUMP
         );
         Map<String, Object> result = new HashMap();
@@ -2288,7 +2288,7 @@ public class UIHelpers {
     public static Map<String, Object> getTopologyProfilingRestartWorker(Nimbus.Iface client,
                                                                         String id, String hostPort,
                                                                         Map<String,Object> config) throws TException {
-        getTopologyProfilingAction(
+        setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JVM_RESTART
         );
         Map<String, Object> result = new HashMap();
@@ -2308,7 +2308,7 @@ public class UIHelpers {
      */
     public static Map<String, Object> getTopologyProfilingDumpHeap(Nimbus.Iface client, String id, String hostPort,
                                                                    Map<String,Object> config) throws TException {
-        getTopologyProfilingAction(client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JMAP_DUMP);
+        setTopologyProfilingAction(client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JMAP_DUMP);
         Map<String, Object> result = new HashMap();
         result.put("status", "ok");
         result.put("id", hostPort);
