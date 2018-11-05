@@ -1152,7 +1152,7 @@ public class DaemonConfig implements Validated {
 
     /**
      * --cgroup-parent config for docker command. Must follow the constraints of the docker command.
-     * Additionally, we disallow any '-' in the name because the cgroup hierarchy could be unnecessarily complicated.
+     * Additionally, '-' is not allowed in the name since it makes the cgroup hierarchy unnecessarily complicated.
      */
     @isString
     @NotNull
@@ -1170,8 +1170,8 @@ public class DaemonConfig implements Validated {
      *   when docker+cgroupfs+relativeCgroupParent:  "/system.slice/%CG-PARENT%/%CONTAINER-ID%"
      *   when podman+systemd:   "/%CG-PARENT%/libpod-%CONTAINER-ID%.scope"
      *   when podman+cgroupfs:  "/%CG-PARENT%/libpod-%CONTAINER-ID%"
-     * "%CG-PARENT% in the string will be replaced with the value of {@link #STORM_DOCKER_CGROUP_PARENT}
-     * "%CONTAINER-ID%" will be replaced with the container id; it must be in and only in the deepest level of this sub-path.
+     * %CG-PARENT% in the string will be replaced with the value of {@link #STORM_DOCKER_CGROUP_PARENT}
+     * %CONTAINER-ID% will be replaced with the container id; it must be in and only in the deepest level of this sub-path.
      */
     @isString
     @NotNull
