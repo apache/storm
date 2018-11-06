@@ -35,7 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.storm.Config;
 import org.apache.storm.generated.ComponentType;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.Grouping;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.Component;
@@ -511,6 +514,18 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         return sortedComponents;
     }
 
+    protected List<ExecutorDetails> orderExecutors(
+        TopologyDetails td, Collection<ExecutorDetails> unassignedExecutors) {
+        Boolean orderByProximity = (Boolean) td.getConf()
+            .getOrDefault(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, false);
+        if (!orderByProximity) {
+            return orderExecutorsDefault(td, unassignedExecutors);
+        } else {
+            LOG.info("{} is set to true", Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS);
+            return orderExecutorsByProximityNeeds(td, unassignedExecutors);
+        }
+    }
+
     /**
      * Order executors based on how many in and out connections it will potentially need to make, in descending order. First order
      * components by the number of in and out connections it will have.  Then iterate through the sorted list of components. For each
@@ -522,7 +537,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      *                            this list
      * @return a list of executors in sorted order
      */
-    protected List<ExecutorDetails> orderExecutors(
+    private List<ExecutorDetails> orderExecutorsDefault(
         TopologyDetails td, Collection<ExecutorDetails> unassignedExecutors) {
         Map<String, Component> componentMap = td.getComponents();
         List<ExecutorDetails> execsScheduled = new LinkedList<>();
@@ -567,6 +582,157 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             } while (flag);
         }
         return execsScheduled;
+    }
+
+    /**
+     * Order executors by network proximity needs.
+     * @param td The topology the executors belong to
+     * @param unassignedExecutors a collection of unassigned executors that need to be unassigned. Should only try to
+     *     assign executors from this list
+     * @return a list of executors in sorted order
+     */
+    private List<ExecutorDetails> orderExecutorsByProximityNeeds(
+        TopologyDetails td, Collection<ExecutorDetails> unassignedExecutors) {
+        Map<String, Component> componentMap = td.getComponents();
+        List<ExecutorDetails> execsScheduled = new LinkedList<>();
+
+        Map<String, Queue<ExecutorDetails>> compToExecsToSchedule = new HashMap<>();
+        for (Component component : componentMap.values()) {
+            compToExecsToSchedule.put(component.getId(), new LinkedList<>());
+            for (ExecutorDetails exec : component.getExecs()) {
+                if (unassignedExecutors.contains(exec)) {
+                    compToExecsToSchedule.get(component.getId()).add(exec);
+                }
+            }
+        }
+
+        List<Component> sortedComponents = topologicalSortComponents(componentMap);
+
+        for (Component currComp: sortedComponents) {
+            int numExecs = compToExecsToSchedule.get(currComp.getId()).size();
+            for (int i = 0; i < numExecs; i++) {
+                execsScheduled.addAll(takeExecutors(currComp, componentMap, compToExecsToSchedule));
+            }
+        }
+
+        return execsScheduled;
+    }
+
+    /**
+     * Sort components topologically.
+     * @param componentMap The map of component Id to Component Object.
+     * @return The sorted components
+     */
+    private List<Component> topologicalSortComponents(final Map<String, Component> componentMap) {
+        List<Component> sortedComponents = new ArrayList<>();
+        boolean[] visited = new boolean[componentMap.size()];
+        int[] inDegree = new int[componentMap.size()];
+        List<String> componentIds = new ArrayList<>(componentMap.keySet());
+        Map<String, Integer> compIdToIndex = new HashMap<>();
+        for (int i = 0; i < componentIds.size(); i++) {
+            compIdToIndex.put(componentIds.get(i), i);
+        }
+        //initialize the in-degree array
+        for (int i = 0; i < inDegree.length; i++) {
+            String compId = componentIds.get(i);
+            Component comp = componentMap.get(compId);
+            for (String childId : comp.getChildren()) {
+                inDegree[compIdToIndex.get(childId)] += 1;
+            }
+        }
+        //sorting components topologically
+        for (int t = 0; t < inDegree.length; t++) {
+            for (int i = 0; i < inDegree.length; i++) {
+                if (inDegree[i] == 0 && !visited[i]) {
+                    String compId = componentIds.get(i);
+                    Component comp = componentMap.get(compId);
+                    sortedComponents.add(comp);
+                    visited[i] = true;
+                    for (String childId : comp.getChildren()) {
+                        inDegree[compIdToIndex.get(childId)]--;
+                    }
+                    break;
+                }
+            }
+        }
+        return sortedComponents;
+    }
+
+    /**
+     * Take unscheduled executors from current and all its downstream components in a particular order.
+     * First, take one executor from the current component;
+     * then for every child (direct downstream component) of this component,
+     *     if it's shuffle grouping from the current component to this child,
+     *         the number of executors to take from this child is the max of
+     *         1 and (the number of unscheduled executors this child has / the number of unscheduled executors the current component has);
+     *     otherwise, the number of executors to take is 1;
+     *     for every executor to take from this child, call takeExecutors(...).
+     * @param currComp The current component.
+     * @param componentMap The map from component Id to component object.
+     * @param compToExecsToSchedule The map from component Id to unscheduled executors.
+     * @return The executors to schedule in order.
+     */
+    private List<ExecutorDetails> takeExecutors(Component currComp,
+                                                final Map<String, Component> componentMap,
+                                                final Map<String, Queue<ExecutorDetails>> compToExecsToSchedule) {
+        List<ExecutorDetails> execsScheduled = new ArrayList<>();
+        Queue<ExecutorDetails> currQueue = compToExecsToSchedule.get(currComp.getId());
+        int currUnscheduledNumExecs = currQueue.size();
+        //Just for defensive programming as this won't actually happen.
+        if (currUnscheduledNumExecs == 0) {
+            return execsScheduled;
+        }
+        execsScheduled.add(currQueue.poll());
+        Set<String> sortedChildren = getSortedChildren(currComp, componentMap);
+        for (String childId: sortedChildren) {
+            Component childComponent = componentMap.get(childId);
+            Queue<ExecutorDetails> childQueue = compToExecsToSchedule.get(childId);
+            int childUnscheduledNumExecs = childQueue.size();
+            if (childUnscheduledNumExecs == 0) {
+                continue;
+            }
+            int numExecsToTake = 1;
+            if (hasShuffleGroupingFromParentToChild(currComp, childComponent)) {
+                // if it's shuffle grouping, truncate
+                numExecsToTake = Math.max(1, childUnscheduledNumExecs / currUnscheduledNumExecs);
+            } // otherwise, one-by-one
+            for (int i = 0; i < numExecsToTake; i++) {
+                execsScheduled.addAll(takeExecutors(childComponent, componentMap, compToExecsToSchedule));
+            }
+        }
+        return execsScheduled;
+    }
+
+    private Set<String> getSortedChildren(Component component, final Map<String, Component> componentMap) {
+        Set<String> children = component.getChildren();
+        Set<String> sortedChildren =
+            new TreeSet<>((o1, o2) -> {
+                Component child1 = componentMap.get(o1);
+                Component child2 = componentMap.get(o2);
+                boolean child1IsShuffle = hasShuffleGroupingFromParentToChild(component, child1);
+                boolean child2IsShuffle = hasShuffleGroupingFromParentToChild(component, child2);
+                if (child1IsShuffle && child2IsShuffle) {
+                    return o1.compareTo(o2);
+                } else if (child1IsShuffle) {
+                    return 1;
+                } else {
+                    return -1;
+                }
+            });
+        sortedChildren.addAll(children);
+        return sortedChildren;
+    }
+
+    private boolean hasShuffleGroupingFromParentToChild(Component parent, Component child) {
+        for (Map.Entry<GlobalStreamId, Grouping> inputEntry: child.getInputs().entrySet()) {
+            GlobalStreamId globalStreamId = inputEntry.getKey();
+            Grouping grouping = inputEntry.getValue();
+            if (globalStreamId.get_componentId().equals(parent.getId())
+                && (inputEntry.getValue().is_set_local_or_shuffle() || grouping.is_set_shuffle())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
