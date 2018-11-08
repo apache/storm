@@ -32,6 +32,7 @@ import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.container.cgroup.core.CpuCore;
+import org.apache.storm.container.cgroup.core.CpusetCore;
 import org.apache.storm.container.cgroup.core.MemoryCore;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
@@ -198,6 +199,23 @@ public class CgroupManager implements ResourceIsolationInterface {
                     memCore.setWithSwapUsageLimit(memLimit);
                 } catch (IOException e) {
                     throw new RuntimeException("Cannot set memory.memsw.limit_in_bytes! Exception: ", e);
+                }
+            }
+        }
+
+        if ((boolean) this.conf.get(DaemonConfig.STORM_CGROUP_INHERIT_CPUSET_CONFIGS)) {
+            if (workerGroup.getParent().getCores().containsKey(SubSystemType.cpuset)) {
+                CpusetCore parentCpusetCore = (CpusetCore) workerGroup.getParent().getCores().get(SubSystemType.cpuset);
+                CpusetCore cpusetCore = (CpusetCore) workerGroup.getCores().get(SubSystemType.cpuset);
+                try {
+                    cpusetCore.setCpus(parentCpusetCore.getCpus());
+                } catch (IOException e) {
+                    throw new RuntimeException("Cannot set cpuset.cpus! Exception: ", e);
+                }
+                try {
+                    cpusetCore.setMems(parentCpusetCore.getMems());
+                } catch (IOException e) {
+                    throw new RuntimeException("Cannot set cpuset.mems! Exception: ", e);
                 }
             }
         }

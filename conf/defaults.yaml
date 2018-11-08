@@ -371,6 +371,7 @@ storm.resource.isolation.plugin: "org.apache.storm.container.cgroup.CgroupManage
 # If storm.resource.isolation.plugin.enable is set to false the unit tests for cgroups will not run
 storm.resource.isolation.plugin.enable: false
 storm.cgroup.memory.enforcement.enable: false
+storm.cgroup.inherit.cpuset.configs: false
 
 # Configs for CGroup support
 storm.cgroup.hierarchy.dir: "/cgroup/storm_resources"

@@ -1068,6 +1068,14 @@ public class DaemonConfig implements Validated {
     public static String STORM_CGROUP_MEMORY_LIMIT_TOLERANCE_MARGIN_MB =
         "storm.cgroup.memory.limit.tolerance.margin.mb";
     /**
+     * To determine whether or not to cgroups should inherit cpuset.cpus and cpuset.mems config values form parent cgroup
+     * Note that cpuset.cpus and cpuset.mems configs in a cgroup must be initialized (i.e. contain a valid value) prior to
+     * being able to launch processes in that cgroup.  The common use case for this config is when the linux distribution
+     * that is used does not support the cgroup.clone_children config.
+     */
+    @isBoolean
+    public static String STORM_CGROUP_INHERIT_CPUSET_CONFIGS = "storm.cgroup.inherit.cpuset.configs";
+    /**
      * Java does not always play nicely with cgroups. It is coming but not fully implemented and not for the way storm uses cgroups. In the
      * short term you can disable the hard memory enforcement by cgroups and let the supervisor handle shooting workers going over their
      * limit in a kinder way.
