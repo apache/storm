@@ -691,8 +691,9 @@ public class ServerUtils {
 
     public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology)
         throws InvalidTopologyException {
-        return (int) Math.ceil(getEstimatedTotalHeapMemoryRequiredByTopo(topoConf, topology) /
-                               ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB)));
+        Double defaultWorkerMaxHeap = ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB), 768d);
+        Double topologyWorkerMaxHeap = ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeap);
+        return (int) Math.ceil(getEstimatedTotalHeapMemoryRequiredByTopo(topoConf, topology) / topologyWorkerMaxHeap);
     }
 
     public static double getEstimatedTotalHeapMemoryRequiredByTopo(Map<String, Object> topoConf, StormTopology topology)
