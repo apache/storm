@@ -198,8 +198,8 @@ public class KafkaOffsetLagUtil {
         options.addOption(OPTION_ZK_BROKERS_ROOT_SHORT, OPTION_ZK_BROKERS_ROOT_LONG, true, "Zk node prefix where kafka stores broker information e.g. " +
                 "/brokers (applicable only for old kafka spout) ");
         options.addOption(OPTION_SECURITY_PROTOCOL_SHORT, OPTION_SECURITY_PROTOCOL_LONG, true, "Security protocol to connect to kafka");
-        options.addOption(OPTION_CONSUMER_CONFIG_SHORT, OPTION_CONSUMER_CONFIG_LONG, true, "Security configuration file useful "
-                          + "when connecting to secure kafka");
+        options.addOption(OPTION_CONSUMER_CONFIG_SHORT, OPTION_CONSUMER_CONFIG_LONG, true, "Properties file with additional " +
+                "Kafka consumer properties");
         return options;
     }
 
@@ -221,10 +221,10 @@ public class KafkaOffsetLagUtil {
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             if (newKafkaSpoutOffsetQuery.getSecurityProtocol() != null) {
                 props.put("security.protocol", newKafkaSpoutOffsetQuery.getSecurityProtocol());
-                // Read Kafka property file for extra security options
-                if (newKafkaSpoutOffsetQuery.getConsumerConfig() != null) {
-                    props.putAll(Utils.loadProps(newKafkaSpoutOffsetQuery.getConsumerConfig()));
-                }
+            }
+            // Read property file for extra consumer properties
+            if (newKafkaSpoutOffsetQuery.getConsumerConfig() != null) {
+                props.putAll(Utils.loadProps(newKafkaSpoutOffsetQuery.getConsumerConfig()));
             }
             List<TopicPartition> topicPartitionList = new ArrayList<>();
             consumer = new KafkaConsumer<>(props);

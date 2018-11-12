@@ -708,9 +708,25 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         configuration.put(configKeyPrefix + "topics", getTopicsString());
 
         configuration.put(configKeyPrefix + "groupid", kafkaSpoutConfig.getConsumerGroupId());
-        configuration.put(configKeyPrefix + "bootstrap.servers", kafkaSpoutConfig.getKafkaProps().get("bootstrap.servers"));
-        configuration.put(configKeyPrefix + "security.protocol", kafkaSpoutConfig.getKafkaProps().get("security.protocol"));
+        for (Entry<String, Object> conf: kafkaSpoutConfig.getKafkaProps().entrySet()) {
+            if (conf.getValue() != null && isPrimitiveOrWrapper(conf.getValue().getClass())) {
+                configuration.put(configKeyPrefix + conf.getKey(), conf.getValue());
+            }
+        }
         return configuration;
+    }
+
+    private boolean isPrimitiveOrWrapper(Class<?> type) {
+        if (type == null) {
+            return false;
+        }
+        return type.isPrimitive() || isWrapper(type);
+    }
+
+    private boolean isWrapper(Class<?> type) {
+        return type == Double.class || type == Float.class || type == Long.class ||
+                type == Integer.class || type == Short.class || type == Character.class ||
+                type == Byte.class || type == Boolean.class || type == String.class;
     }
 
     private String getTopicsString() {
