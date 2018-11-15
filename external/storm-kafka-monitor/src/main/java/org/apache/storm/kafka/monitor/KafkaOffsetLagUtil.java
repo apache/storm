@@ -138,8 +138,8 @@ public class KafkaOffsetLagUtil {
                 props.put("security.protocol", newKafkaSpoutOffsetQuery.getSecurityProtocol());
             }
             // Read property file for extra consumer properties
-            if (newKafkaSpoutOffsetQuery.getConsumerConfig() != null) {
-                props.putAll(Utils.loadProps(newKafkaSpoutOffsetQuery.getConsumerConfig()));
+            if (newKafkaSpoutOffsetQuery.getConsumerPropertiesFileName() != null) {
+                props.putAll(Utils.loadProps(newKafkaSpoutOffsetQuery.getConsumerPropertiesFileName()));
             }
             List<TopicPartition> topicPartitionList = new ArrayList<>();
             consumer = new KafkaConsumer<>(props);
