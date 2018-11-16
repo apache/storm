@@ -711,6 +711,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         for (Entry<String, Object> conf: kafkaSpoutConfig.getKafkaProps().entrySet()) {
             if (conf.getValue() != null && isPrimitiveOrWrapper(conf.getValue().getClass())) {
                 configuration.put(configKeyPrefix + conf.getKey(), conf.getValue());
+            } else {
+                LOG.debug("Dropping Kafka prop '{}' from component configuration", conf.getKey());
             }
         }
         return configuration;
