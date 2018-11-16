@@ -189,7 +189,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
                 JarEntry entry = jarEnums.nextElement();
                 String name = entry.getName();
                 if (!entry.isDirectory() && name.startsWith(toRemove)) {
-                    String shortenedName = name.replace(toRemove, "");
+                    String shortenedName = name.substring(toRemove.length());
                     Path targetFile = dest.resolve(shortenedName);
                     LOG.debug("EXTRACTING {} SHORTENED to {} into {}", name, shortenedName, targetFile);
                     fsOps.forceMkdir(targetFile.getParent());
@@ -197,6 +197,8 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
                          InputStream in = jarFile.getInputStream(entry)) {
                         IOUtils.copy(in, out);
                     }
+                } else {
+                    LOG.debug("Skipping {}", entry);
                 }
             }
         }
