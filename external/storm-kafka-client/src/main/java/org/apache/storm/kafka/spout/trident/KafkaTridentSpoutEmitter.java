@@ -20,6 +20,7 @@ package org.apache.storm.kafka.spout.trident;
 
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.TIMESTAMP;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
 
@@ -39,6 +40,7 @@ import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.UnsupportedVersionException;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.RecordTranslator;
 import org.apache.storm.kafka.spout.TopicPartitionComparator;
@@ -69,6 +71,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
     private final RecordTranslator<K, V> translator;
     private final TopicPartitionSerializer tpSerializer = new TopicPartitionSerializer();
     private final TopologyContext topologyContext;
+    private final long startTimeStamp;
 
     /**
      * Create a new Kafka spout emitter.
@@ -90,6 +93,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
         this.topicAssigner = topicAssigner;
         this.pollTimeoutMs = kafkaSpoutConfig.getPollTimeoutMs();
         this.firstPollOffsetStrategy = kafkaSpoutConfig.getFirstPollOffsetStrategy();
+        this.startTimeStamp = kafkaSpoutConfig.getStartTimeStamp();
         LOG.debug("Created {}", this.toString());
     }
 
@@ -225,7 +229,23 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
      */
     private long seek(TopicPartition tp, KafkaTridentSpoutBatchMetadata lastBatchMeta) {
         if (isFirstPoll(tp)) {
-            if (firstPollOffsetStrategy == EARLIEST) {
+            if(firstPollOffsetStrategy.equals(TIMESTAMP)) {
+                Long startTimeStampOffset = null;
+                try {
+                    startTimeStampOffset =
+                            consumer.offsetsForTimes(Collections.singletonMap(tp, startTimeStamp)).get(tp).offset();
+                } catch (IllegalArgumentException e) {
+                    LOG.error("Illegal timestamp {} provided for tp {} ",startTimeStamp,tp.toString());
+                } catch (UnsupportedVersionException e) {
+                    LOG.error("Kafka Server do not support offsetsForTimes(), probably < 0.10.1",e);
+                }
+                if(startTimeStampOffset != null) {
+                    LOG.debug("First poll for topic partition [{}], seeking to partition from startTimeStamp [{}]", tp , startTimeStamp);
+                    consumer.seek(tp, startTimeStampOffset);
+                } else {
+                    LOG.info("Kafka consumer offset reset by timestamp failed for TopicPartition {}, TimeStamp {}, Offset {}. Restart with a different Strategy ", tp, startTimeStamp, startTimeStampOffset);
+                }
+            } else if (firstPollOffsetStrategy == EARLIEST) {
                 LOG.debug("First poll for topic partition [{}], seeking to partition beginning", tp);
                 consumer.seekToBeginning(Collections.singleton(tp));
             } else if (firstPollOffsetStrategy == LATEST) {
