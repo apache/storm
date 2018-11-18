@@ -57,6 +57,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;
     // 2s
     public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000;
+    // Earliest start
+    public static final long DEFAULT_START_TS = 0L;
 
     public static final FirstPollOffsetStrategy DEFAULT_FIRST_POLL_OFFSET_STRATEGY = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
 
@@ -77,6 +79,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final TopicFilter topicFilter;
     private final ManualPartitioner topicPartitioner;
     private final long pollTimeoutMs;
+    private final long startTimeStamp;
 
     // Kafka spout configuration
     private final RecordTranslator<K, V> translator;
@@ -113,6 +116,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.processingGuarantee = builder.processingGuarantee;
         this.tupleTrackingEnforced = builder.tupleTrackingEnforced;
         this.metricsTimeBucketSizeInSecs = builder.metricsTimeBucketSizeInSecs;
+        this.startTimeStamp = builder.startTimeStamp;
     }
 
     /**
@@ -120,6 +124,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      * By default this parameter is set to UNCOMMITTED_EARLIEST. 
      */
     public enum FirstPollOffsetStrategy {
+
         /**
          * The kafka spout polls records starting in the first offset of the partition, regardless of previous commits. This setting only
          * takes effect on topology deployment
@@ -137,7 +142,11 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         /**
          * The kafka spout polls records from the last committed offset, if any. If no offset has been committed it behaves as LATEST
          */
-        UNCOMMITTED_LATEST;
+        UNCOMMITTED_LATEST,
+        /**
+         * Start at the earliest offset whose timestamp is greater than or equal to the given startTimestamp
+         */
+        TIMESTAMP;
 
         @Override
         public String toString() {
@@ -190,6 +199,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private ProcessingGuarantee processingGuarantee = DEFAULT_PROCESSING_GUARANTEE;
         private boolean tupleTrackingEnforced = false;
         private int metricsTimeBucketSizeInSecs = DEFAULT_METRICS_TIME_BUCKET_SIZE_SECONDS;
+        private long startTimeStamp = DEFAULT_START_TS;
 
         public Builder(String bootstrapServers, String... topics) {
             this(bootstrapServers, new NamedTopicFilter(topics), new RoundRobinManualPartitioner());
@@ -418,6 +428,15 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             return this;
         }
 
+        /**
+         * Specifies the startTimeStamp if the first poll strategy is TIMESTAMP
+         * @param startTimeStamp time in ms
+         */
+        public Builder<K,V> setStartTimeStamp(long startTimeStamp) {
+            this.startTimeStamp = startTimeStamp;
+            return this;
+        }
+
         public KafkaSpoutConfig<K, V> build() {
             return new KafkaSpoutConfig<>(this);
         }
@@ -564,6 +583,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return metricsTimeBucketSizeInSecs;
     }
 
+    public long getStartTimeStamp() { return startTimeStamp; }
+
     @Override
     public String toString() {
         return "KafkaSpoutConfig{"
@@ -579,6 +600,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             + ", tupleListener=" + tupleListener
             + ", processingGuarantee=" + processingGuarantee
             + ", metricsTimeBucketSizeInSecs=" + metricsTimeBucketSizeInSecs
+            + ", startTimeStamp=" + startTimeStamp
             + '}';
     }
 }
