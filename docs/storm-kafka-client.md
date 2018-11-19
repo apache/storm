@@ -8,7 +8,7 @@ This includes the new Apache Kafka consumer API.
 
 ## Compatibility
 
-Apache Kafka versions 0.10 onwards
+Apache Kafka versions 0.10.1.0 onwards. Please be aware that [KAFKA-7044](https://issues.apache.org/jira/browse/KAFKA-7044) can cause crashes in the spout, so you should upgrade Kafka if you are using an affected version (1.1.0, 1.1.1 or 2.0.0).
 
 ## Writing to Kafka as part of your topology
 You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you
