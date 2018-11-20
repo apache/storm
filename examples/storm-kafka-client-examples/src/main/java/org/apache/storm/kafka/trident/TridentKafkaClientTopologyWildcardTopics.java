@@ -18,11 +18,11 @@
 
 package org.apache.storm.kafka.trident;
 
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.EARLIEST;
 
 import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
+import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutConfig;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
@@ -33,15 +33,11 @@ public class TridentKafkaClientTopologyWildcardTopics extends TridentKafkaClient
     private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("test-trident(-1)?");
 
     @Override
-    protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig(String bootstrapServers) {
-        return KafkaSpoutConfig.builder(bootstrapServers, TOPIC_WILDCARD_PATTERN)
-                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
+    protected KafkaTridentSpoutConfig<String,String> newKafkaSpoutConfig(String bootstrapServers) {
+        return KafkaTridentSpoutConfig.builder(bootstrapServers, TOPIC_WILDCARD_PATTERN)
                 .setProp(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 200)
                 .setRecordTranslator((r) -> new Values(r.value()), new Fields("str"))
-                .setRetry(newRetryService())
-                .setOffsetCommitPeriodMs(10_000)
                 .setFirstPollOffsetStrategy(EARLIEST)
-                .setMaxUncommittedOffsets(250)
                 .build();
     }
 

@@ -44,7 +44,7 @@ public class KafkaTridentSpoutCoordinator<K,V> implements
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutCoordinator.class);
 
     private final TopicPartitionSerializer tpSerializer = new TopicPartitionSerializer();
-    private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
+    private final KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig;
     private final Timer refreshAssignmentTimer;
     private final Consumer<K, V> consumer;
     
@@ -54,14 +54,14 @@ public class KafkaTridentSpoutCoordinator<K,V> implements
      * Creates a new coordinator based on the given spout config.
      * @param kafkaSpoutConfig The spout config to use
      */
-    public KafkaTridentSpoutCoordinator(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
+    public KafkaTridentSpoutCoordinator(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig) {
         this(kafkaSpoutConfig, new ConsumerFactoryDefault<>());
     }
     
-    KafkaTridentSpoutCoordinator(KafkaSpoutConfig<K, V> kafkaSpoutConfig, ConsumerFactory<K, V> consumerFactory) {
+    KafkaTridentSpoutCoordinator(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig, ConsumerFactory<K, V> consumerFactory) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
         this.refreshAssignmentTimer = new Timer(TIMER_DELAY_MS, kafkaSpoutConfig.getPartitionRefreshPeriodMs(), TimeUnit.MILLISECONDS);
-        this.consumer = consumerFactory.createConsumer(kafkaSpoutConfig);
+        this.consumer = consumerFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
         LOG.debug("Created {}", this.toString());
     }
 

@@ -45,14 +45,14 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
+import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.SpoutWithMockedConsumerSetupHelper;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.kafka.spout.internal.ConsumerFactory;
 import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.kafka.spout.subscription.TopicFilter;
+import org.apache.storm.kafka.spout.trident.config.builder.SingleTopicKafkaTridentSpoutConfiguration;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
@@ -91,7 +91,7 @@ public class KafkaTridentSpoutEmitterTest {
     @Test
     public void testGetOrderedPartitionsIsConsistent() {
         KafkaTridentSpoutEmitter<String, String> emitter = new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
+            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
                 .build(),
             topologyContextMock,
             config -> consumer, new TopicAssigner());
@@ -129,7 +129,7 @@ public class KafkaTridentSpoutEmitterTest {
             });
         
         KafkaTridentSpoutEmitter<String, String> emitter = new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(mock(TopicFilter.class), partitionerMock, -1)
+            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(mock(TopicFilter.class), partitionerMock, -1)
                 .build(),
             topologyContextMock,
             config -> consumer, new TopicAssigner());
@@ -154,7 +154,7 @@ public class KafkaTridentSpoutEmitterTest {
         TopicAssigner assignerMock = mock(TopicAssigner.class);
         
         KafkaTridentSpoutEmitter<String, String> emitter = new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
+            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
                 .build(),
             topologyContextMock,
             config -> consumer, assignerMock);
@@ -179,7 +179,7 @@ public class KafkaTridentSpoutEmitterTest {
         List<ConsumerRecord<String, String>> records = SpoutWithMockedConsumerSetupHelper.createRecords(tp, firstOffset, numRecords);
         records.forEach(record -> consumer.addRecord(record));
         return new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
+            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
                 .setRecordTranslator(r -> new Values(r.offset()), new Fields("offset"))
                 .setFirstPollOffsetStrategy(firstPollOffsetStrategy)
                 .build(),
@@ -242,8 +242,8 @@ public class KafkaTridentSpoutEmitterTest {
         when(consumerMock.assignment()).thenReturn(Collections.singleton(tp));
         ConsumerFactory<String, String> consumerFactory = spoutConfig -> consumerMock;
         KafkaTridentSpoutEmitter<String, String> emitter = new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
-                .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST)
+            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
+                .setFirstPollOffsetStrategy(FirstPollOffsetStrategy.LATEST)
                 .build(),
             mock(TopologyContext.class),
             consumerFactory, new TopicAssigner());
