@@ -1337,6 +1337,14 @@ public class Config extends HashMap<String, Object> {
     @isBoolean
     public static final String SUPERVISOR_RUN_WORKER_AS_USER = "supervisor.run.worker.as.user";
     /**
+     * If true nimbus will honor the config user.name from the topology conf, and set it as the
+     * owner of the topology.  This only has an impact when authentication is disabled.  Be
+     * very careful when using this when supervisor.run.worker.as.user is enabled as any user
+     *  can become nearly any user on the box.
+     */
+    @isBoolean
+    public static final String NIMBUS_USE_UNSAFE_USER_CONFIG = "nimbus.use.unsafe.user.config";
+    /**
      * max timeout for supervisor reported heartbeats when master gains leadership
      */
     @isInteger
