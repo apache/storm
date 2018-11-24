@@ -459,10 +459,6 @@ public class StormApiResource {
     public Response putTopologyLogconfig(@PathParam("id") String id, String body,
                                          @QueryParam(callbackParameterName) String callback) throws TException {
         topologyOpResponseMeter.mark();
-        LOG.info("HELLISh");
-        LOG.info(body);
-        LOG.info(id);
-        LOG.info(callback);
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.putTopologyLogLevel(nimbusClient.getClient(),
