@@ -34,7 +34,14 @@ public class HiveStateFactory implements StateFactory {
 
     public HiveStateFactory(){}
 
-    public HiveStateFactory withOptions(HiveOptions options){
+    /**
+     * The options for connecting to Hive.
+     */
+    public HiveStateFactory withOptions(HiveOptions options) {
+        if (options.getTickTupleInterval() != HiveOptions.DEFAULT_TICK_TUPLE_INTERVAL_SECS) {
+            LOG.error("Tick tuple interval will be ignored for trident."
+                    + " The Hive writers are flushed after each batch.");
+        }
         this.options = options;
         return this;
     }
