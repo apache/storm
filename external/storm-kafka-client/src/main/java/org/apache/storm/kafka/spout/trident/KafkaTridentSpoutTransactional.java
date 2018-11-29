@@ -30,13 +30,13 @@ public class KafkaTridentSpoutTransactional<K,V> implements IPartitionedTridentS
         Serializable {
     private static final long serialVersionUID = 1L;
     
-    private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
+    private final KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig;
     private final OutputFieldsExtractor outputFieldsExtractor;
 
     /**
      * Creates a new non-opaque transactional Trident Kafka spout.
      */
-    public KafkaTridentSpoutTransactional(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
+    public KafkaTridentSpoutTransactional(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
         this.outputFieldsExtractor = new OutputFieldsExtractor();
     }

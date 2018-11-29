@@ -95,7 +95,7 @@ public abstract class KafkaSpoutAbstractTest {
 
         return new ConsumerFactory<String, String>() {
             @Override
-            public KafkaConsumer<String, String> createConsumer(KafkaSpoutConfig<String, String> kafkaSpoutConfig) {
+            public KafkaConsumer<String, String> createConsumer(Map<String, Object> consumerProps) {
                 return consumerSpy;
             }
 
@@ -103,7 +103,7 @@ public abstract class KafkaSpoutAbstractTest {
     }
 
     KafkaConsumer<String, String> createConsumerSpy() {
-        return spy(new ConsumerFactoryDefault<String, String>().createConsumer(spoutConfig));
+        return spy(new ConsumerFactoryDefault<String, String>().createConsumer(spoutConfig.getKafkaProps()));
     }
 
     @AfterEach

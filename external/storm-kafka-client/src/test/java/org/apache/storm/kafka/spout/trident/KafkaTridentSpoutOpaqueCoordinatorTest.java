@@ -33,10 +33,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
-import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.TopicFilter;
+import org.apache.storm.kafka.spout.trident.config.builder.SingleTopicKafkaTridentSpoutConfiguration;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
 import org.junit.Test;
@@ -52,8 +51,8 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
         TopicFilter mockFilter = mock(TopicFilter.class);
         when(mockFilter.getAllSubscribedPartitions(any())).thenReturn(Collections.singleton(expectedPartition));
 
-        KafkaSpoutConfig<String, String> spoutConfig = 
-            SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(mockFilter, mock(ManualPartitioner.class), -1)
+        KafkaTridentSpoutConfig<String, String> spoutConfig = 
+            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(mockFilter, mock(ManualPartitioner.class), -1)
                 .build();
         KafkaTridentSpoutCoordinator<String, String> coordinator = new KafkaTridentSpoutCoordinator<>(spoutConfig, ignored -> mockConsumer);
 
@@ -80,8 +79,8 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
                 .thenReturn(Collections.singleton(expectedPartition))
                 .thenReturn(allPartitions);
 
-            KafkaSpoutConfig<String, String> spoutConfig = 
-                SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder(mockFilter, mock(ManualPartitioner.class), -1)
+            KafkaTridentSpoutConfig<String, String> spoutConfig = 
+                SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(mockFilter, mock(ManualPartitioner.class), -1)
                     .build();
             KafkaTridentSpoutCoordinator<String, String> coordinator = new KafkaTridentSpoutCoordinator<>(spoutConfig, ignored -> mockConsumer);
 

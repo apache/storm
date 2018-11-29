@@ -16,14 +16,14 @@
 
 package org.apache.storm.kafka.spout.internal;
 
+import java.util.Map;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 
 public class ConsumerFactoryDefault<K, V> implements ConsumerFactory<K, V> {
 
     @Override
-    public KafkaConsumer<K, V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
-        return new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps());
+    public KafkaConsumer<K, V> createConsumer(Map<String, Object> consumerProps) {
+        return new KafkaConsumer<>(consumerProps);
     }
     
 }

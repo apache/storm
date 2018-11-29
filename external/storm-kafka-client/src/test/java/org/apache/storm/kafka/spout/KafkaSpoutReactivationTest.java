@@ -36,7 +36,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.KafkaUnitExtension;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.kafka.spout.internal.ConsumerFactory;
 import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
@@ -44,7 +43,6 @@ import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -78,7 +76,7 @@ public class KafkaSpoutReactivationTest {
                 .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords)
                 .build();
         ConsumerFactory<String, String> consumerFactory = new ConsumerFactoryDefault<>();
-        this.consumerSpy = spy(consumerFactory.createConsumer(spoutConfig));
+        this.consumerSpy = spy(consumerFactory.createConsumer(spoutConfig.getKafkaProps()));
         ConsumerFactory<String, String> consumerFactoryMock = mock(ConsumerFactory.class);
         when(consumerFactoryMock.createConsumer(any()))
             .thenReturn(consumerSpy);

@@ -208,7 +208,7 @@ public class KafkaSpoutRebalanceTest {
 
         TopicAssigner assignerMock = mock(TopicAssigner.class);
         KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(topicFilterMock, partitionerMock, -1)
-            .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST)
+            .setFirstPollOffsetStrategy(FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST)
             .build(), consumerFactory, assignerMock);
         String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
         TopicPartition assignedPartition = new TopicPartition(topic, 1);

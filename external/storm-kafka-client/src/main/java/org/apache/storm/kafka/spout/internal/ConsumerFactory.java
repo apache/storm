@@ -17,12 +17,12 @@
 package org.apache.storm.kafka.spout.internal;
 
 import java.io.Serializable;
+import java.util.Map;
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 
 /**
  * This is here to enable testing.
  */
 public interface ConsumerFactory<K, V> extends Serializable {
-    public Consumer<K,V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig);
+    public Consumer<K,V> createConsumer(Map<String, Object> consumerProps);
 }

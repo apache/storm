@@ -16,8 +16,6 @@
 
 package org.apache.storm.kafka.spout.trident;
 
-import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutBatchMetadata;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 

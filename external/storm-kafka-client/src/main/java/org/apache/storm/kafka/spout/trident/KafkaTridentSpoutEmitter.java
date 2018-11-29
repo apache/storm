@@ -18,10 +18,10 @@
 
 package org.apache.storm.kafka.spout.trident;
 
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.EARLIEST;
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.LATEST;
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
@@ -39,7 +39,7 @@ import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
+import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.RecordTranslator;
 import org.apache.storm.kafka.spout.TopicPartitionComparator;
 import org.apache.storm.kafka.spout.internal.ConsumerFactory;
@@ -58,14 +58,14 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
 
     // Kafka
     private final Consumer<K, V> consumer;
-    private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
+    private final KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig;
     private final TopicAssigner topicAssigner;
 
     // The first seek offset for each topic partition, i.e. the offset this spout instance started processing at.
     private final Map<TopicPartition, Long> tpToFirstSeekOffset = new HashMap<>();
 
     private final long pollTimeoutMs;
-    private final KafkaSpoutConfig.FirstPollOffsetStrategy firstPollOffsetStrategy;
+    private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final RecordTranslator<K, V> translator;
     private final TopicPartitionSerializer tpSerializer = new TopicPartitionSerializer();
     private final TopologyContext topologyContext;
@@ -76,15 +76,15 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
      * @param kafkaSpoutConfig The kafka spout config
      * @param topologyContext The topology context
      */
-    public KafkaTridentSpoutEmitter(KafkaSpoutConfig<K, V> kafkaSpoutConfig, TopologyContext topologyContext) {
+    public KafkaTridentSpoutEmitter(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig, TopologyContext topologyContext) {
         this(kafkaSpoutConfig, topologyContext, new ConsumerFactoryDefault<>(), new TopicAssigner());
     }
 
     @VisibleForTesting
-    KafkaTridentSpoutEmitter(KafkaSpoutConfig<K, V> kafkaSpoutConfig, TopologyContext topologyContext,
+    KafkaTridentSpoutEmitter(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig, TopologyContext topologyContext,
         ConsumerFactory<K, V> consumerFactory, TopicAssigner topicAssigner) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
-        this.consumer = consumerFactory.createConsumer(kafkaSpoutConfig);
+        this.consumer = consumerFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
         this.topologyContext = topologyContext;
         this.translator = kafkaSpoutConfig.getTranslator();
         this.topicAssigner = topicAssigner;
@@ -191,8 +191,8 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
     }
 
     private boolean isFirstPollOffsetStrategyIgnoringCommittedOffsets() {
-        return firstPollOffsetStrategy == KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST
-            || firstPollOffsetStrategy == KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
+        return firstPollOffsetStrategy == FirstPollOffsetStrategy.EARLIEST
+            || firstPollOffsetStrategy == FirstPollOffsetStrategy.LATEST;
     }
 
     private void throwIfEmittingForUnassignedPartition(TopicPartition currBatchTp) {
@@ -347,14 +347,14 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
 
         @Override
         public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-            LOG.info("Partitions revoked. [consumer-group={}, consumer={}, topic-partitions={}]",
-                kafkaSpoutConfig.getConsumerGroupId(), consumer, partitions);
+            LOG.info("Partitions revoked. [consumer={}, topic-partitions={}]",
+                consumer, partitions);
         }
 
         @Override
         public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-            LOG.info("Partitions reassignment. [consumer-group={}, consumer={}, topic-partitions={}]",
-                kafkaSpoutConfig.getConsumerGroupId(), consumer, partitions);
+            LOG.info("Partitions reassignment. [consumer={}, topic-partitions={}]",
+                consumer, partitions);
         }
     }
 }

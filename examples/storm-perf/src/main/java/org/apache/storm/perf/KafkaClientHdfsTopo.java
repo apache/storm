@@ -29,6 +29,7 @@ import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.perf.utils.Helper;
@@ -80,7 +81,7 @@ public class KafkaClientHdfsTopo {
 
         KafkaSpoutConfig<String, String> spoutConfig = KafkaSpoutConfig.builder(bootstrapHosts, topicName)
                                                                        .setFirstPollOffsetStrategy(
-                                                                           KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST)
+                                                                           FirstPollOffsetStrategy.EARLIEST)
                                                                        .build();
 
         KafkaSpout<String, String> spout = new KafkaSpout<>(spoutConfig);

@@ -18,7 +18,7 @@
 
 package org.apache.storm.kafka.spout;
 
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.EARLIEST;
 
 import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

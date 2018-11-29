@@ -36,7 +36,7 @@ public class KafkaSpoutTopologyDeployActivateDeactivateTest extends KafkaSpoutAb
             KafkaSpoutConfig.builder("127.0.0.1:" + kafkaUnitExtension.getKafkaUnit().getKafkaPort(),
                 Pattern.compile(SingleTopicKafkaSpoutConfiguration.TOPIC)))
             .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
-            .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST)
+            .setFirstPollOffsetStrategy(FirstPollOffsetStrategy.EARLIEST)
             .build();
     }
 

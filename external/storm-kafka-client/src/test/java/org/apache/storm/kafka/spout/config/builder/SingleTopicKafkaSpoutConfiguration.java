@@ -17,8 +17,8 @@
  */
 package org.apache.storm.kafka.spout.config.builder;
 
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.EARLIEST;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.DEFAULT_MAX_RETRIES;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;

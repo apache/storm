@@ -35,13 +35,13 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaque.class);
 
-    private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
+    private final KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig;
     private final OutputFieldsExtractor outputFieldsExtractor;
     
     /**
      * Creates a new opaque transactional Trident Kafka spout.
      */
-    public KafkaTridentSpoutOpaque(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
+    public KafkaTridentSpoutOpaque(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
         this.outputFieldsExtractor = new OutputFieldsExtractor();
         LOG.debug("Created {}", this.toString());
