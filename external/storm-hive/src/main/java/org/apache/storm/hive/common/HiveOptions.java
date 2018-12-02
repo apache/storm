@@ -19,7 +19,7 @@ public class HiveOptions implements Serializable {
     /**
      * Half of the default Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS
      */
-    private static final int DEFAULT_TICK_TUPLE_INTERVAL_SECS = 15;
+    public static final int DEFAULT_TICK_TUPLE_INTERVAL_SECS = 15;
 
     protected HiveMapper mapper;
     protected String databaseName;
