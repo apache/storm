@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.SupervisorDetails;
@@ -79,25 +81,46 @@ public class RasBlacklistStrategy extends DefaultBlacklistStrategy {
 
             if (shortage.areAnyOverZero() || shortageSlots > 0) {
                 LOG.info("Need {} and {} slots more. Releasing some blacklisted nodes to cover it.", shortage, shortageSlots);
-                //release earliest blacklist
-                for (String supervisor : blacklistedNodeIds) {
-                    SupervisorDetails sd = availableSupervisors.get(supervisor);
-                    if (sd != null) {
-                        NormalizedResourcesWithMemory sdAvailable = cluster.getAvailableResources(sd);
-                        int sdAvailableSlots = cluster.getAvailablePorts(sd).size();
-                        readyToRemove.add(supervisor);
-                        shortage.remove(sdAvailable, cluster.getResourceMetrics());
-                        shortageSlots -= sdAvailableSlots;
-                        LOG.debug("Releasing {} with {} and {} slots leaving {} and {} slots to go", supervisor,
-                            sdAvailable, sdAvailableSlots, shortage, shortageSlots);
-                        if (!shortage.areAnyOverZero() && shortageSlots <= 0) {
-                            // we have enough resources now...
-                            break;
+
+                //release earliest blacklist - but release all supervisors on a given blacklisted host.
+                Map<String, Set<String>> hostToSupervisorIds = createHostToSupervisorMap(blacklistedNodeIds, cluster);
+                for (Set<String> supervisorIds : hostToSupervisorIds.values()) {
+                    for (String supervisorId : supervisorIds) {
+                        SupervisorDetails sd = availableSupervisors.get(supervisorId);
+                        if (sd != null) {
+                            NormalizedResourcesWithMemory sdAvailable = cluster.getAvailableResources(sd);
+                            int sdAvailableSlots = cluster.getAvailablePorts(sd).size();
+                            readyToRemove.add(supervisorId);
+                            shortage.remove(sdAvailable, cluster.getResourceMetrics());
+                            shortageSlots -= sdAvailableSlots;
+                            LOG.info("Releasing {} with {} and {} slots leaving {} and {} slots to go", supervisorId,
+                                    sdAvailable, sdAvailableSlots, shortage, shortageSlots);
                         }
+                    }
+                    // make sure we've handled all supervisors on the host before we break
+                    if (!shortage.areAnyOverZero() && shortageSlots <= 0) {
+                        // we have enough resources now...
+                        break;
                     }
                 }
             }
         }
         return readyToRemove;
+    }
+
+    private Map<String, Set<String>> createHostToSupervisorMap(final List<String> blacklistedNodeIds, Cluster cluster) {
+        Map<String, Set<String>> hostToSupervisorMap = new TreeMap<>();
+        for (String supervisorId : blacklistedNodeIds) {
+            String hostname = cluster.getHost(supervisorId);
+            if (hostname != null) {
+                Set<String> supervisorIds = hostToSupervisorMap.get(hostname);
+                if (supervisorIds == null) {
+                    supervisorIds = new HashSet<>();
+                    hostToSupervisorMap.put(hostname, supervisorIds);
+                }
+                supervisorIds.add(supervisorId);
+            }
+        }
+        return hostToSupervisorMap;
     }
 }
