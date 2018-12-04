@@ -622,12 +622,14 @@ public class WorkerState {
         return this.autoCredentials;
     }
 
-    private List<List<Long>> readWorkerExecutors(IStormClusterState stormClusterState, String topologyId, String assignmentId,
+    private List<List<Long>> readWorkerExecutors(IStormClusterState stormClusterState,
+                                                 String topologyId, String assignmentId,
                                                  int port) {
         LOG.info("Reading assignments");
         List<List<Long>> executorsAssignedToThisWorker = new ArrayList<>();
         executorsAssignedToThisWorker.add(Constants.SYSTEM_EXECUTOR_ID);
-        Map<List<Long>, NodeInfo> executorToNodePort = getLocalAssignment(conf, stormClusterState, topologyId).get_executor_node_port();
+        Map<List<Long>, NodeInfo> executorToNodePort =
+                getLocalAssignment(conf, stormClusterState, topologyId).get_executor_node_port();
         for (Map.Entry<List<Long>, NodeInfo> entry : executorToNodePort.entrySet()) {
             NodeInfo nodeInfo = entry.getValue();
             if (nodeInfo.get_node().equals(assignmentId) && nodeInfo.get_port().iterator().next() == port) {
@@ -637,7 +639,9 @@ public class WorkerState {
         return executorsAssignedToThisWorker;
     }
 
-    private Assignment getLocalAssignment(Map<String, Object> conf, IStormClusterState stormClusterState, String topologyId) {
+    private Assignment getLocalAssignment(Map<String, Object> conf,
+                                          IStormClusterState stormClusterState,
+                                          String topologyId) {
         if (!ConfigUtils.isLocalMode(conf)) {
             try (SupervisorClient supervisorClient = SupervisorClient.getConfiguredClient(conf, Utils.hostname(),
                                                                                           supervisorPort)) {

@@ -247,4 +247,12 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
     public boolean areAnyOverZero() {
         return onHeap > 0 || offHeap > 0 || normalizedResources.areAnyOverZero();
     }
+
+    /**
+     * Return true if any of the resources are <= 0.
+     */
+    @Override
+    public boolean areAnyZeroOrLess() {
+        return onHeap <= 0 || offHeap <= 0 || normalizedResources.areAnyOverZero();
+    }
 }

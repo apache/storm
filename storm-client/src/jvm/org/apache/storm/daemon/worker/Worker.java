@@ -348,11 +348,20 @@ public class Worker implements Shutdownable, DaemonCommon {
         if (null == executors) {
             stats = ClientStatsUtil.mkEmptyExecutorZkHbs(workerState.localExecutors);
         } else {
-            stats = ClientStatsUtil.convertExecutorZkHbs(executors.stream().collect(Collectors
-                                                                                  .toMap(IRunningExecutor::getExecutorId,
-                                                                                         IRunningExecutor::renderStats)));
+            stats = ClientStatsUtil.convertExecutorZkHbs(
+                    executors.stream().collect(
+                            Collectors.toMap(
+                                    IRunningExecutor::getExecutorId,
+                                    IRunningExecutor::renderStats
+                            )
+                    )
+            );
         }
-        Map<String, Object> zkHB = ClientStatsUtil.mkZkWorkerHb(workerState.topologyId, stats, workerState.uptime.upTime());
+
+        Map<String, Object> zkHB = ClientStatsUtil.mkZkWorkerHb(
+                workerState.topologyId, stats, workerState.uptime.upTime()
+        );
+
         try {
             workerState.stormClusterState
                 .workerHeartbeat(workerState.topologyId, workerState.assignmentId, (long) workerState.port,

@@ -1041,6 +1041,24 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     @NotNull
     public static final String SUPERVISOR_WORKER_TIMEOUT_SECS = "supervisor.worker.timeout.secs";
+
+    /**
+     * A map with keys mapped to each NUMA Node on the supervisor that will be used
+     * by scheduler. CPUs, memory and ports available on each NUMA node will be provided.
+     * Each supervisor will have different map of NUMAs.
+     * Example: "supervisor.numa.meta": {
+     *  "0": { "numa.memory.mb": 122880, "numa.cores": [ 0, 12, 1, 13, 2, 14, 3, 15, 4, 16, 5, 17],
+     *      "numa.ports": [6700, 6701]},
+     *  "1" : {"numa.memory.mb": 122880, "numa.cores": [ 6, 18, 7, 19, 8, 20, 9, 21, 10, 22, 11, 23],
+     *      "numa.ports": [6702, 6703]}
+     *  }
+     */
+    @isMapEntryCustom(
+            keyValidatorClasses = { ConfigValidation.StringValidator.class },
+            valueValidatorClasses = { ConfigValidation.NumaEntryValidator.class}
+            )
+    public static final String SUPERVISOR_NUMA_META = "supervisor.numa.meta";
+
     /**
      * A list of hosts of ZooKeeper servers used to manage the cluster.
      */

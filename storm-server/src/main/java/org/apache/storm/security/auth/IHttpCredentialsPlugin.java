@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface IHttpCredentialsPlugin {
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param topoConf Storm configuration
      */

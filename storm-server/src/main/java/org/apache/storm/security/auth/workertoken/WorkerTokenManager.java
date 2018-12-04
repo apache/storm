@@ -133,6 +133,12 @@ public class WorkerTokenManager {
               });
     }
 
+    /**
+     * Check if worker token needs to be renewed.
+     * @param creds the map of credentials for
+     * @param type WorkerTokenServiceType
+     * @return true if needs to be renewed false otherwise.
+     */
     @VisibleForTesting
     public boolean shouldRenewWorkerToken(Map<String, String> creds, WorkerTokenServiceType type) {
         boolean shouldAdd = true;

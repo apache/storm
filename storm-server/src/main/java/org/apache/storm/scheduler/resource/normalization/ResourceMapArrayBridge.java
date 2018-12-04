@@ -46,9 +46,9 @@ public class ResourceMapArrayBridge {
         for (String key : normalizedResources.keySet()) {
             //We are going to skip over CPU and Memory, because they are captured elsewhere
             if (!Constants.COMMON_CPU_RESOURCE_NAME.equals(key)
-                && !Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME.equals(key)
-                && !Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME.equals(key)
-                && !Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME.equals(key)) {
+                    && !Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME.equals(key)
+                    && !Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME.equals(key)
+                    && !Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME.equals(key)) {
                 resourceNamesToArrayIndex.computeIfAbsent(key, (k) -> counter.getAndIncrement());
             }
         }

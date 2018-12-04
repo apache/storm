@@ -323,6 +323,11 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         }
     }
 
+    /**
+     * Main.
+     * @param args args
+     * @throws Exception
+     */
     public static void main(final String[] args) throws Exception {
         if (args.length < 1) {
             throw new IllegalArgumentException("No class was specified to run");
@@ -412,6 +417,15 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         return new LocalTopology(topologyName, topology);
     }
 
+    /**
+     * submitTopologyWithOpts.
+     * @param topologyName the name of the topology to use
+     * @param conf         the config for the topology
+     * @param topology     the topology itself.
+     * @param submitOpts   options for topology
+     * @return LocalTopology localTopology.
+     * @throws TException
+     */
     @Override
     public LocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf, StormTopology topology,
                                                 SubmitOptions submitOpts)
@@ -423,6 +437,14 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         return new LocalTopology(topologyName, topology);
     }
 
+    /**
+     * submitTopology.
+     * @param topologyName the name of the topology to use
+     * @param conf         the config for the topology
+     * @param topology     the topology itself.
+     * @return LocalTopology localTopology.
+     * @throws TException
+     */
     @Override
     public LocalTopology submitTopology(String topologyName, Map<String, Object> conf, TrackedTopology topology)
         throws TException {

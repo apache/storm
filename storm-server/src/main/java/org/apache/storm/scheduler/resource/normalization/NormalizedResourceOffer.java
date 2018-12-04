@@ -84,6 +84,20 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     /**
      * Remove the resources in other from this.
      * @param other the resources to be removed.
+     * @return true if one or more resources in other were larger than available resources in this, else false.
+     */
+    public boolean remove(NormalizedResourcesWithMemory other) {
+        boolean negativeResources = normalizedResources.remove(other.getNormalizedResources(), null);
+        totalMemoryMb -= other.getTotalMemoryMb();
+        if (totalMemoryMb < 0.0) {
+            negativeResources = true;
+            totalMemoryMb = 0.0;
+        }
+        return negativeResources;
+    }
+    /**
+     * Remove the resources in other from this.
+     * @param other the resources to be removed.
      * @param resourceMetrics The resource related metrics
      * @return true if one or more resources in other were larger than available resources in this, else false.
      */
@@ -176,5 +190,10 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     @Override
     public boolean areAnyOverZero() {
         return totalMemoryMb > 0 || normalizedResources.areAnyOverZero();
+    }
+
+    @Override
+    public boolean areAnyZeroOrLess() {
+        return totalMemoryMb <= 0 || normalizedResources.areAnyZeroOrLess();
     }
 }

@@ -33,7 +33,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LocalAssignment;
@@ -608,6 +610,28 @@ public class BasicContainer extends Container {
     }
 
     /**
+     * Extracting out to mock it for tests.
+     * @return true if on Linux.
+     */
+    protected boolean isOnLinux() {
+        return SystemUtils.IS_OS_LINUX;
+    }
+
+    private void prefixNumaPinningIfApplicable(String numaId, List<String> commandList) {
+        if (numaId != null) {
+            if (isOnLinux()) {
+                commandList.add(0, "numactl");
+                commandList.add(1, "--cpunodebind=" + numaId);
+                commandList.add(2, "--membind=" + numaId);
+                return;
+            } else {
+                // TODO : Add support for pinning on Windows host
+                throw new RuntimeException("numactl pinning currently not supported on non-Linux hosts");
+            }
+        }
+    }
+
+    /**
      * Create the command to launch the worker process.
      *
      * @param memOnheap the on heap memory for the worker
@@ -618,7 +642,7 @@ public class BasicContainer extends Container {
      * @throws IOException on any error.
      */
     private List<String> mkLaunchCommand(final int memOnheap, final String stormRoot,
-                                         final String jlp) throws IOException {
+                                         final String jlp, final String numaId) throws IOException {
         final String javaCmd = javaCmd("java");
         final String stormOptions = ConfigUtils.concatIfNotNull(System.getProperty("storm.options"));
         final String topoConfFile = ConfigUtils.concatIfNotNull(System.getProperty("storm.conf.file"));
@@ -639,6 +663,7 @@ public class BasicContainer extends Container {
         }
 
         List<String> commandList = new ArrayList<>();
+        prefixNumaPinningIfApplicable(numaId, commandList);
         String logWriter = getWorkerLogWriter(topoVersion);
         if (logWriter != null) {
             //Log Writer Command...
@@ -668,7 +693,11 @@ public class BasicContainer extends Container {
         commandList.addAll(classPathParams);
         commandList.add(getWorkerMain(topoVersion));
         commandList.add(_topologyId);
-        commandList.add(_supervisorId);
+        String supervisorId = _supervisorId;
+        if (numaId != null) {
+            supervisorId += Constants.NUMA_ID_SEPARATOR + numaId;
+        }
+        commandList.add(supervisorId);
 
         // supervisor port should be only presented to worker which supports RPC heartbeat
         // unknown version should be treated as "current version", which supports RPC heartbeat
@@ -820,8 +849,15 @@ public class BasicContainer extends Container {
     @Override
     public void launch() throws IOException {
         _type.assertFull();
-        LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}", _assignment,
-                 _supervisorId, _port, _workerId);
+        String numaId = Utils.getNumaIdForPort(_port, _conf);
+        if (numaId == null) {
+            LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}", _assignment,
+                    _supervisorId, _port, _workerId);
+        } else {
+            LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}" +
+                            " bound to numa zone {}", _assignment,
+                    _supervisorId, _port, _workerId, numaId);
+        }
         String logPrefix = "Worker Process " + _workerId;
         ProcessExitCallback processExitCallback = new ProcessExitCallback(logPrefix);
         _exitedEarly = false;
@@ -852,7 +888,7 @@ public class BasicContainer extends Container {
             _resourceIsolationManager.reserveResourcesForWorker(_workerId, (int) memoryLimitMB, cpu);
         }
 
-        List<String> commandList = mkLaunchCommand(memOnHeap, stormRoot, jlp);
+        List<String> commandList = mkLaunchCommand(memOnHeap, stormRoot, jlp, numaId);
 
         LOG.info("Launching worker with command: {}. ", ServerUtils.shellCmd(commandList));
 

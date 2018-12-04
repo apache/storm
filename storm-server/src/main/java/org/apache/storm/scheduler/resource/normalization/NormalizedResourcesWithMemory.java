@@ -34,4 +34,9 @@ public interface NormalizedResourcesWithMemory {
      * Return true if any of the resources are > 0.
      */
     boolean areAnyOverZero();
+
+    /**
+     * Return true if any of the resources are <= 0.
+     */
+    boolean areAnyZeroOrLess();
 }

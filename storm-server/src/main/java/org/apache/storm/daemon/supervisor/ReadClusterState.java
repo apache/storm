@@ -37,6 +37,7 @@ import org.apache.storm.metricstore.MetricStoreConfig;
 import org.apache.storm.metricstore.WorkerMetricsProcessor;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -123,8 +124,11 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     }
 
     private Slot mkSlot(int port) throws Exception {
-        return new Slot(localizer, superConf, launcher, host, port,
-                        localState, stormClusterState, iSuper, cachedAssignments, metricsExec, metricsProcessor, slotMetrics);
+        return new Slot(
+                localizer, superConf, launcher, host, port,
+                localState, stormClusterState, iSuper, cachedAssignments,
+                metricsExec, metricsProcessor, slotMetrics
+        );
     }
 
     @Override
@@ -245,7 +249,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         Map<NodeInfo, WorkerResources> nodeInfoWorkerResourcesMap = assignment.get_worker_resources();
         if (nodeInfoWorkerResourcesMap != null) {
             for (Map.Entry<NodeInfo, WorkerResources> entry : nodeInfoWorkerResourcesMap.entrySet()) {
-                if (entry.getKey().get_node().equals(assignmentId)) {
+                if (entry.getKey().get_node().startsWith(assignmentId)) {
                     Set<Long> ports = entry.getKey().get_port();
                     for (Long port : ports) {
                         slotsResources.put(port, entry.getValue());
@@ -265,7 +269,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         Map<List<Long>, NodeInfo> executorNodePort = assignment.get_executor_node_port();
         if (executorNodePort != null) {
             for (Map.Entry<List<Long>, NodeInfo> entry : executorNodePort.entrySet()) {
-                if (entry.getValue().get_node().equals(assignmentId)) {
+                if (entry.getValue().get_node().startsWith(assignmentId)) {
                     for (Long port : entry.getValue().get_port()) {
                         LocalAssignment localAssignment = portTasks.get(port.intValue());
                         if (localAssignment == null) {

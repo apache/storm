@@ -82,7 +82,6 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.security.auth.ReqContext;
-import org.apache.storm.serialization.GzipThriftSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
@@ -109,7 +108,8 @@ public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
     private static final Set<Class> defaultAllowedExceptions = new HashSet<>();
-    private static final List<String> LOCALHOST_ADDRESSES = Lists.newArrayList("localhost", "127.0.0.1", "0:0:0:0:0:0:0:1");
+    private static final List<String> LOCALHOST_ADDRESSES =
+            Lists.newArrayList("localhost", "127.0.0.1", "0:0:0:0:0:0:0:1");
     static SerializationDelegate serializationDelegate;
     private static ThreadLocal<TSerializer> threadSer = new ThreadLocal<TSerializer>();
     private static ThreadLocal<TDeserializer> threadDes = new ThreadLocal<TDeserializer>();
@@ -119,7 +119,12 @@ public class Utils {
     // tests by subclassing.
     private static Utils _instance = new Utils();
     private static String memoizedLocalHostnameString = null;
-    public static final Pattern TOPOLOGY_KEY_PATTERN = Pattern.compile("^[\\w \\t\\._-]+$", Pattern.UNICODE_CHARACTER_CLASS);
+    public static final Pattern TOPOLOGY_KEY_PATTERN =
+            Pattern.compile("^[\\w \\t\\._-]+$", Pattern.UNICODE_CHARACTER_CLASS);
+
+    public static final String NUMA_MEMORY_IN_MB = "numa.memory.mb";
+    public static final String NUMA_CORES = "numa.cores";
+    public static final String NUMA_PORTS = "numa.ports";
 
     static {
         localConf = readStormConfig();
@@ -127,7 +132,39 @@ public class Utils {
     }
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * Return supervisor numa configuration.
+     * @param stormConf stormConf
+     * @return getNumaMap
+     */
+    public static Map<String, Object> getNumaMap(Map<String, Object> stormConf) {
+        Object numa = stormConf.get(Config.SUPERVISOR_NUMA_META);
+        if (numa == null) {
+            return Collections.emptyMap();
+        }
+        return (Map<String, Object>) numa;
+    }
+
+    /**
+     * getNumaIdForPort.
+     * @param port port
+     * @param stormConf stormConf
+     * @return getNumaIdForPort
+     */
+    public static String getNumaIdForPort(Number port, Map<String, Object> stormConf) {
+        Map<String, Object> validatedNumaMap = getNumaMap(stormConf);
+        for (Entry<String, Object> numaEntry : validatedNumaMap.entrySet()) {
+            Map numaMap  = (Map<String, Object>) numaEntry.getValue();
+            List<Integer> portList = (List<Integer>) numaMap.get(NUMA_PORTS);
+            if (portList.contains(port)) {
+                return numaEntry.getKey();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Provide an instance of this class for delegates to use.
+     * To mock out delegated methods, provide an instance of a subclass that
      * overrides the implementation of the delegated method.
      *
      * @param u a Utils instance
@@ -289,7 +326,8 @@ public class Utils {
     }
 
     /**
-     * Adds the user supplied function as a shutdown hook for cleanup. Also adds a function that sleeps for a second and then halts the
+     * Adds the user supplied function as a shutdown hook for cleanup.
+     * Also adds a function that sleeps for a second and then halts the
      * runtime to avoid any zombie process in case cleanup function hangs.
      */
     public static void addShutdownHookWithForceKillIn1Sec(Runnable func) {
@@ -297,7 +335,8 @@ public class Utils {
     }
 
     /**
-     * Adds the user supplied function as a shutdown hook for cleanup. Also adds a function that sleeps for numSecs and then halts the
+     * Adds the user supplied function as a shutdown hook for cleanup.
+     * Also adds a function that sleeps for numSecs and then halts the
      * runtime to avoid any zombie process in case cleanup function hangs.
      */
     public static void addShutdownHookWithDelayedForceKill(Runnable func, int numSecs) {
@@ -327,10 +366,12 @@ public class Utils {
     }
 
     /**
-     * Creates a thread that calls the given code repeatedly, sleeping for an interval of seconds equal to the return value of the previous
+     * Creates a thread that calls the given code repeatedly, sleeping for an interval of seconds
+     * equal to the return value of the previous
      * call.
      *
-     * The given afn may be a callable that returns the number of seconds to sleep, or it may be a Callable that returns another Callable
+     * The given afn may be a callable that returns the number of seconds to sleep,
+     * or it may be a Callable that returns another Callable
      * that in turn returns the number of seconds to sleep. In the latter case isFactory.
      *
      * @param afn              the code to call on each iteration

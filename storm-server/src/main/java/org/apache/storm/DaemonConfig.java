@@ -29,6 +29,7 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.ConfigValidationAnnotations;
 import org.apache.storm.validation.Validated;
 
 import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;

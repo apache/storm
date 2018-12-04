@@ -319,7 +319,14 @@ public class BasicContainerTest {
         superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
         superConf.put(DaemonConfig.STORM_LOG4J2_CONF_DIR, log4jdir);
         superConf.put(Config.WORKER_CHILDOPTS, " -Dtesting=true");
+        Map numaNode = new HashMap();
+        numaNode.put(Utils.NUMA_CORES, Collections.singletonList("0"));
+        numaNode.put(Utils.NUMA_PORTS, Collections.singletonList(8081));
+        numaNode.put(Utils.NUMA_MEMORY_IN_MB, 2048);
+        Map numaMap = new HashMap();
+        numaMap.put("0", numaNode);
 
+        superConf.put(Config.SUPERVISOR_NUMA_META, numaMap);
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
 
@@ -388,6 +395,116 @@ public class BasicContainerTest {
                    },
                    ConfigUtils.STORM_HOME, stormHome,
                    "storm.log.dir", stormLogDir);
+    }
+
+    @Test
+    public void testNumaPinnedLaunch() throws Exception {
+        final String topoId = "test_topology_numa_pinned";
+        final int supervisorPort = 6628;
+        final int port = 8080;
+        final String stormHome = ContainerTest.asAbsPath("tmp", "storm-home");
+        final String stormLogDir = ContainerTest.asFile(".", "target").getCanonicalPath();
+        final String workerId = "worker-id";
+        final String stormLocal = ContainerTest.asAbsPath("tmp", "storm-local");
+        final String distRoot = ContainerTest.asAbsPath(stormLocal, "supervisor", "stormdist", topoId);
+        final File stormcode = new File(distRoot, "stormcode.ser");
+        final File stormjar = new File(distRoot, "stormjar.jar");
+        final String log4jdir = ContainerTest.asAbsPath(stormHome, "conf");
+        final String workerConf = ContainerTest.asAbsPath(log4jdir, "worker.xml");
+        final String workerRoot = ContainerTest.asAbsPath(stormLocal, "workers", workerId);
+        final String workerTmpDir = ContainerTest.asAbsPath(workerRoot, "tmp");
+
+        final StormTopology st = new StormTopology();
+        st.set_spouts(new HashMap<>());
+        st.set_bolts(new HashMap<>());
+        st.set_state_spouts(new HashMap<>());
+        byte[] serializedState = Utils.gzip(Utils.thriftSerialize(st));
+
+        final Map<String, Object> superConf = new HashMap<>();
+        superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
+        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
+        superConf.put(DaemonConfig.STORM_LOG4J2_CONF_DIR, log4jdir);
+        superConf.put(Config.WORKER_CHILDOPTS, " -Dtesting=true");
+        Map numaNode = new HashMap();
+        numaNode.put(Utils.NUMA_CORES, Collections.singletonList("0"));
+        numaNode.put(Utils.NUMA_PORTS, Collections.singletonList(8080));
+        numaNode.put(Utils.NUMA_MEMORY_IN_MB, 2048);
+        Map numaMap = new HashMap();
+        numaMap.put("0", numaNode);
+
+        superConf.put(Config.SUPERVISOR_NUMA_META, numaMap);
+
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+        when(ops.slurp(stormcode)).thenReturn(serializedState);
+
+        LocalState ls = mock(LocalState.class);
+
+        checkpoint(() -> {
+                    MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf,
+                            "SUPERVISOR", supervisorPort, port, la, null, ls, workerId, new StormMetricsRegistry(),
+                            new HashMap<>(), ops, "profile");
+
+                    mc.launch();
+
+                    assertEquals(1, mc.workerCmds.size());
+                    CommandRun cmd = mc.workerCmds.get(0);
+                    mc.workerCmds.clear();
+                    assertListEquals(Arrays.asList(
+                            "numactl",
+                            "--cpunodebind=0",
+                            "--membind=0",
+                            "java",
+                            "-cp",
+                            "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
+                            "-Dlogging.sensitivity=S3",
+                            "-Dlogfile.name=worker.log",
+                            "-Dstorm.home=" + stormHome,
+                            "-Dworkers.artifacts=" + stormLocal,
+                            "-Dstorm.id=" + topoId,
+                            "-Dworker.id=" + workerId,
+                            "-Dworker.port=" + port,
+                            "-Dstorm.log.dir=" + stormLogDir,
+                            "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
+                            "-Dstorm.local.dir=" + stormLocal,
+                            "-Dworker.memory_limit_mb=768",
+                            "-Dlog4j.configurationFile=" + workerConf,
+                            "org.apache.storm.LogWriter",
+                            "java",
+                            "-server",
+                            "-Dlogging.sensitivity=S3",
+                            "-Dlogfile.name=worker.log",
+                            "-Dstorm.home=" + stormHome,
+                            "-Dworkers.artifacts=" + stormLocal,
+                            "-Dstorm.id=" + topoId,
+                            "-Dworker.id=" + workerId,
+                            "-Dworker.port=" + port,
+                            "-Dstorm.log.dir=" + stormLogDir,
+                            "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
+                            "-Dstorm.local.dir=" + stormLocal,
+                            "-Dworker.memory_limit_mb=768",
+                            "-Dlog4j.configurationFile=" + workerConf,
+                            "-Dtesting=true",
+                            "-Djava.library.path=JLP",
+                            "-Dstorm.conf.file=",
+                            "-Dstorm.options=",
+                            "-Djava.io.tmpdir=" + workerTmpDir,
+                            "-cp",
+                            "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
+                            "org.apache.storm.daemon.worker.Worker",
+                            topoId,
+                            "SUPERVISOR-numa-0",
+                            String.valueOf(supervisorPort),
+                            String.valueOf(port),
+                            workerId
+                    ), cmd.cmd);
+                    assertEquals(new File(workerRoot), cmd.pwd);
+                },
+                ConfigUtils.STORM_HOME, stormHome,
+                "storm.log.dir", stormLogDir);
     }
 
     @Test
@@ -706,5 +823,8 @@ public class BasicContainerTest {
         protected String javaLibraryPath(String stormRoot, Map<String, Object> conf) {
             return "JLP";
         }
+
+        @Override
+        protected boolean isOnLinux() {return true;}
     }
 }

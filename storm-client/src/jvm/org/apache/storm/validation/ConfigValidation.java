@@ -33,6 +33,10 @@ import org.apache.storm.validation.ConfigValidationAnnotations.ValidatorParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.storm.utils.Utils.NUMA_PORTS;
+import static org.apache.storm.utils.Utils.NUMA_CORES;
+import static org.apache.storm.utils.Utils.NUMA_MEMORY_IN_MB;
+
 /**
  * Provides functionality for validating configuration fields.
  */
@@ -411,6 +415,34 @@ public class ConfigValidation {
                 }
             }
             throw new IllegalArgumentException("Field " + name + " must be an Integer within type range.");
+        }
+    }
+
+    public static class NumaEntryValidator extends Validator {
+
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            Map numa = (Map<String, Object>) o;
+            for (String key : new String[]{NUMA_CORES, NUMA_MEMORY_IN_MB, NUMA_PORTS}) {
+                if (!numa.containsKey(key)) {
+                    throw new IllegalArgumentException(
+                            "The numa configuration key [" + key + "] is missing!"
+                    );
+                }
+            }
+
+            List<Integer> cores = (List<Integer>) numa.get(NUMA_CORES);
+            Set coreSet = new HashSet();
+            coreSet.addAll(cores);
+            if (coreSet.size() != cores.size()) {
+                throw new IllegalArgumentException(
+                        "Duplicate cores in NUMA config"
+                );
+            }
+
         }
     }
 
