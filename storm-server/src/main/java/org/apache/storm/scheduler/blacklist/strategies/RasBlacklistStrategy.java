@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.scheduler.Cluster;
@@ -106,21 +105,5 @@ public class RasBlacklistStrategy extends DefaultBlacklistStrategy {
             }
         }
         return readyToRemove;
-    }
-
-    private Map<String, Set<String>> createHostToSupervisorMap(final List<String> blacklistedNodeIds, Cluster cluster) {
-        Map<String, Set<String>> hostToSupervisorMap = new TreeMap<>();
-        for (String supervisorId : blacklistedNodeIds) {
-            String hostname = cluster.getHost(supervisorId);
-            if (hostname != null) {
-                Set<String> supervisorIds = hostToSupervisorMap.get(hostname);
-                if (supervisorIds == null) {
-                    supervisorIds = new HashSet<>();
-                    hostToSupervisorMap.put(hostname, supervisorIds);
-                }
-                supervisorIds.add(supervisorId);
-            }
-        }
-        return hostToSupervisorMap;
     }
 }
