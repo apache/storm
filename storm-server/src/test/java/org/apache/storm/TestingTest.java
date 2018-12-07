@@ -12,6 +12,8 @@
 
 package org.apache.storm;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +30,7 @@ import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
-import static org.junit.Assert.assertTrue;
-
+import org.junit.jupiter.api.Test;
 /**
  * Test that the testing class does what it should do.
  */
@@ -89,7 +87,7 @@ public class TestingTest {
     };
 
     @Test
-    @Category(IntegrationTest.class)
+    @IntegrationTest
     public void testCompleteTopologyNettySimulated() throws Exception {
         Config daemonConf = new Config();
         daemonConf.put(Config.STORM_LOCAL_MODE_ZMQ, true);
@@ -101,7 +99,7 @@ public class TestingTest {
     }
 
     @Test
-    @Category(IntegrationTest.class)
+    @IntegrationTest
     public void testCompleteTopologyNetty() throws Exception {
         Config daemonConf = new Config();
         daemonConf.put(Config.STORM_LOCAL_MODE_ZMQ, true);
@@ -113,7 +111,7 @@ public class TestingTest {
     }
 
     @Test
-    @Category(IntegrationTest.class)
+    @IntegrationTest
     public void testCompleteTopologyLocalSimulated() throws Exception {
         MkClusterParam param = new MkClusterParam();
         param.setSupervisors(4);
@@ -122,7 +120,7 @@ public class TestingTest {
     }
 
     @Test
-    @Category(IntegrationTest.class)
+    @IntegrationTest
     public void testCompleteTopologyLocal() throws Exception {
         MkClusterParam param = new MkClusterParam();
         param.setSupervisors(4);

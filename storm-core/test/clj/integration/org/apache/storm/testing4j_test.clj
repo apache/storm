@@ -17,17 +17,76 @@
   (:use [clojure.test])
   (:use [org.apache.storm daemon-config config util])
   (:use [org.apache.storm clojure])
-  (:require [integration.org.apache.storm.integration-test :as it])
   (:import [org.apache.storm Testing Config]
-           [org.apache.storm.generated GlobalStreamId])
+           [org.apache.storm.generated GlobalStreamId])           
   (:import [org.apache.storm.tuple Values])
   (:import [org.apache.storm.utils Time])
   (:import [org.apache.storm.testing MkClusterParam TestJob MockedSources TestWordSpout FeederSpout
             TestWordCounter TestGlobalCount TestAggregatesCounter CompleteTopologyParam
-            AckFailMapTracker MkTupleParam])
+            AckFailMapTracker AckTracker MkTupleParam])
   (:import [org.apache.storm.utils Utils])
   (:import [org.apache.storm Thrift ILocalCluster]))
 
+; If you are working on porting this test to Java, be aware that there are ports of these methods/bolts in TopologyIntegrationTest.java.
+(defn assert-loop 
+([afn ids] (assert-loop afn ids 10))
+([afn ids timeout-secs]
+  (loop [remaining-time (* timeout-secs 1000)]
+    (let [start-time (System/currentTimeMillis)
+          assertion-is-true (every? afn ids)]
+      (if (or assertion-is-true (neg? remaining-time))
+        (is assertion-is-true)
+        (do
+          (Thread/sleep 1)
+          (recur (- remaining-time (- (System/currentTimeMillis) start-time)))
+        ))))))
+
+(defn assert-acked [tracker & ids]
+  (assert-loop #(.isAcked tracker %) ids))
+
+(defn assert-failed [tracker & ids]
+  (assert-loop #(.isFailed tracker %) ids))
+  
+(defbolt agg-bolt ["num"] {:prepare true :params [amt]}
+  [conf context collector]
+  (let [seen (atom [])]
+    (bolt
+      (execute [tuple]
+        (swap! seen conj tuple)
+        (when (= (count @seen) amt)
+          (emit-bolt! collector [1] :anchor @seen)
+          (doseq [s @seen]
+            (ack! collector s))
+          (reset! seen [])
+          )))
+      ))
+      
+(defbolt identity-bolt ["num"]
+  [tuple collector]
+  (emit-bolt! collector (.getValues tuple) :anchor tuple)
+  (ack! collector tuple))
+      
+(defbolt ack-every-other {} {:prepare true}
+  [conf context collector]
+  (let [state (atom -1)]
+    (bolt
+      (execute [tuple]
+        (let [val (swap! state -)]
+          (when (pos? val)
+            (ack! collector tuple)
+            ))))))
+
+(defn ack-tracking-feeder [fields]
+  (let [tracker (AckTracker.)]
+    [(doto (FeederSpout. fields)
+       (.setAckFailDelegate tracker))
+     (fn [val]
+       (is (= (.getNumAcks tracker) val))
+       (.resetNumAcks tracker)
+       )]
+    ))
+; End section with methods/bolts that also exist in Java.
+  
 (deftest test-with-simulated-time
   (is (= false (Time/isSimulating)))
   (Testing/withSimulatedTime (fn []
@@ -64,7 +123,7 @@
   (Testing/withTrackedCluster
    (reify TestJob
      (^void run [this ^ILocalCluster cluster]
-       (let [[feeder checker] (it/ack-tracking-feeder ["num"])
+       (let [[feeder checker] (ack-tracking-feeder ["num"])
              tracked (Testing/mkTrackedTopology
                       cluster
                       (Thrift/buildTopology
@@ -72,17 +131,17 @@
                        {"2" (Thrift/prepareBoltDetails
                               {(GlobalStreamId. "1" Utils/DEFAULT_STREAM_ID)
                                (Thrift/prepareShuffleGrouping)}
-                              it/identity-bolt)
+                              identity-bolt)
                         "3" (Thrift/prepareBoltDetails
                               {(GlobalStreamId. "1" Utils/DEFAULT_STREAM_ID)
                                (Thrift/prepareShuffleGrouping)}
-                              it/identity-bolt)
+                              identity-bolt)
                         "4" (Thrift/prepareBoltDetails
                              {(GlobalStreamId. "2" Utils/DEFAULT_STREAM_ID)
                               (Thrift/prepareShuffleGrouping)
                               (GlobalStreamId. "3" Utils/DEFAULT_STREAM_ID)
                               (Thrift/prepareShuffleGrouping)}
-                             (it/agg-bolt 4))}))]
+                             (agg-bolt 4))}))]
          (.submitTopology cluster
                           "test-acking2"
                           (Config.)
@@ -113,7 +172,7 @@
                          {"2" (Thrift/prepareBoltDetails
                                 {(GlobalStreamId. "1" Utils/DEFAULT_STREAM_ID)
                                  (Thrift/prepareGlobalGrouping)}
-                                it/ack-every-other)})
+                                ack-every-other)})
                storm-conf (doto (Config.)
                             (.put TOPOLOGY-MESSAGE-TIMEOUT-SECS 10))]
            (.submitTopology cluster
@@ -124,10 +183,10 @@
            (.feed feeder ["b"] 2)
            (.feed feeder ["c"] 3)
            (Testing/advanceClusterTime cluster (int 9))
-           (it/assert-acked tracker 1 3)
+           (assert-acked tracker 1 3)
            (is (not (.isFailed tracker 2)))
            (Testing/advanceClusterTime cluster (int 12))
-           (it/assert-failed tracker 2)
+           (assert-failed tracker 2)
            ))))))
 
 (deftest test-disable-tuple-timeout
@@ -147,7 +206,7 @@
                            {"2" (Thrift/prepareBoltDetails
                                   {(GlobalStreamId. "1" Utils/DEFAULT_STREAM_ID)
                                    (Thrift/prepareGlobalGrouping)}
-                                  it/ack-every-other)})
+                                  ack-every-other)})
                 storm-conf (doto (Config.)
                              (.put TOPOLOGY-MESSAGE-TIMEOUT-SECS 10)
                              (.put TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false))]
@@ -159,7 +218,7 @@
             (.feed feeder ["b"] 2)
             (.feed feeder ["c"] 3)
             (Testing/advanceClusterTime cluster (int 9))
-            (it/assert-acked tracker 1 3)
+            (assert-acked tracker 1 3)
             (is (not (.isFailed tracker 2)))
             (Testing/advanceClusterTime cluster (int 12))
             (is (not (.isFailed tracker 2)))
