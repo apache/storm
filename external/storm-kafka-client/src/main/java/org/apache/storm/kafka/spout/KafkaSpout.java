@@ -215,13 +215,14 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             waitingToEmit.keySet().retainAll(partitions);
 
             Set<TopicPartition> newPartitions = new HashSet<>(partitions);
+            // If this partition was previously assigned to this spout,
+            // leave the acked offsets and consumer position as they were to resume where it left off
             newPartitions.removeAll(previousAssignment);
             for (TopicPartition newTp : newPartitions) {
                 final OffsetAndMetadata committedOffset = consumer.committed(newTp);
                 final long fetchOffset = doSeek(newTp, committedOffset);
                 LOG.debug("Set consumer position to [{}] for topic-partition [{}] with [{}] and committed offset [{}]",
                     fetchOffset, newTp, firstPollOffsetStrategy, committedOffset);
-                // If this partition was previously assigned to this spout, leave the acked offsets as they were to resume where it left off
                 if (isAtLeastOnceProcessing() && !offsetManagers.containsKey(newTp)) {
                     offsetManagers.put(newTp, new OffsetManager(newTp, fetchOffset));
                 }
@@ -526,18 +527,21 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                      * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed, lots of (more
                      * than max.poll.records) later messages were acked, and the failed message then gets acked. The consumer may only be
                      * part way through "catching up" to where it was when it went back to retry the failed tuple. Skip the consumer forward
-                     * to the committed offset and drop the current waiting to emit list, since it'll likely contain committed offsets.
+                     * to the committed offset.
                      */
                     LOG.debug("Consumer fell behind committed offset. Catching up. Position was [{}], skipping to [{}]",
                         position, committedOffset);
                     consumer.seek(tp, committedOffset);
-                    List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);
-                    if (waitingToEmitForTp != null) {
-                        //Discard the pending records that are already committed
-                        waitingToEmit.put(tp, waitingToEmitForTp.stream()
-                            .filter(record -> record.offset() >= committedOffset)
-                            .collect(Collectors.toCollection(LinkedList::new)));
-                    }
+                }
+                /**
+                 * In some cases the waitingToEmit list may contain tuples that have just been committed. Drop these.
+                 */
+                List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);
+                if (waitingToEmitForTp != null) {
+                    //Discard the pending records that are already committed
+                    waitingToEmit.put(tp, waitingToEmitForTp.stream()
+                        .filter(record -> record.offset() >= committedOffset)
+                        .collect(Collectors.toCollection(LinkedList::new)));
                 }
 
                 final OffsetManager offsetManager = offsetManagers.get(tp);
@@ -570,11 +574,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         if (!emitted.contains(msgId)) {
             LOG.debug("Received ack for message [{}], associated with tuple emitted for a ConsumerRecord that "
-                        + "came from a topic-partition that this consumer group instance is no longer tracking "
-                        + "due to rebalance/partition reassignment. No action taken.", msgId);
+                + "came from a topic-partition that this consumer group instance is no longer tracking "
+                + "due to rebalance/partition reassignment. No action taken.", msgId);
         } else {
             Validate.isTrue(!retryService.isScheduled(msgId), "The message id " + msgId + " is queued for retry while being acked."
-                        + " This should never occur barring errors in the RetryService implementation or the spout code.");
+                + " This should never occur barring errors in the RetryService implementation or the spout code.");
             offsetManagers.get(msgId.getTopicPartition()).addToAckMsgs(msgId);
             emitted.remove(msgId);
         }
@@ -691,7 +695,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         configuration.put(configKeyPrefix + "topics", getTopicsString());
 
         configuration.put(configKeyPrefix + "groupid", kafkaSpoutConfig.getConsumerGroupId());
-        for (Entry<String, Object> conf: kafkaSpoutConfig.getKafkaProps().entrySet()) {
+        for (Entry<String, Object> conf : kafkaSpoutConfig.getKafkaProps().entrySet()) {
             if (conf.getValue() != null && isPrimitiveOrWrapper(conf.getValue().getClass())) {
                 configuration.put(configKeyPrefix + conf.getKey(), conf.getValue());
             } else {
@@ -710,10 +714,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     private boolean isWrapper(Class<?> type) {
         return type == Double.class || type == Float.class || type == Long.class
-                || type == Integer.class || type == Short.class || type == Character.class
-                || type == Byte.class || type == Boolean.class || type == String.class;
+            || type == Integer.class || type == Short.class || type == Character.class
+            || type == Byte.class || type == Boolean.class || type == String.class;
     }
-
 
     private String getTopicsString() {
         return kafkaSpoutConfig.getTopicFilter().getTopicsString();

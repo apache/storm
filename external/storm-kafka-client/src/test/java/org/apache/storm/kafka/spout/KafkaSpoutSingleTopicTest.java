@@ -118,6 +118,62 @@ public class KafkaSpoutSingleTopicTest extends KafkaSpoutAbstractTest {
         }
         verify(collectorMock, never()).emit(anyString(), anyList(), anyObject());
     }
+    
+    @Test
+    public void testClearingWaitingToEmitIfConsumerPositionIsNotBehindWhenCommitting() throws Exception {
+        final int messageCountExcludingLast = maxPollRecords;
+        int messagesInKafka = messageCountExcludingLast + 1;
+        prepareSpout(messagesInKafka);
+
+        //Emit all messages and fail the first one while acking the rest
+        for (int i = 0; i < messageCountExcludingLast; i++) {
+            spout.nextTuple();
+        }
+        ArgumentCaptor<KafkaSpoutMessageId> messageIdCaptor = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+        verify(collectorMock, times(messageCountExcludingLast)).emit(anyString(), anyList(), messageIdCaptor.capture());
+        List<KafkaSpoutMessageId> messageIds = messageIdCaptor.getAllValues();
+        for (int i = 1; i < messageIds.size(); i++) {
+            spout.ack(messageIds.get(i));
+        }
+        KafkaSpoutMessageId failedTuple = messageIds.get(0);
+        spout.fail(failedTuple);
+
+        //Advance the time and replay the failed tuple. 
+        //Since the last tuple on the partition is more than maxPollRecords ahead of the failed tuple, it shouldn't be emitted here
+        reset(collectorMock);
+        spout.nextTuple();
+        ArgumentCaptor<KafkaSpoutMessageId> failedIdReplayCaptor = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+        verify(collectorMock).emit(anyString(), anyList(), failedIdReplayCaptor.capture());
+
+        assertThat("Expected replay of failed tuple", failedIdReplayCaptor.getValue(), is(failedTuple));
+
+        /* Ack the tuple, and commit.
+         * 
+         * The waiting to emit list should now be cleared, and the next emitted tuple should be the last tuple on the partition,
+         * which hasn't been emitted yet
+         */
+        reset(collectorMock);
+        Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + commitOffsetPeriodMs);
+        spout.ack(failedIdReplayCaptor.getValue());
+        spout.nextTuple();
+        verify(getKafkaConsumer()).commitSync(commitCapture.capture());
+
+        Map<TopicPartition, OffsetAndMetadata> capturedCommit = commitCapture.getValue();
+        TopicPartition expectedTp = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0);
+        assertThat("Should have committed to the right topic", capturedCommit, Matchers.hasKey(expectedTp));
+        assertThat("Should have committed all the acked messages", capturedCommit.get(expectedTp).offset(), is((long)messageCountExcludingLast));
+        
+        ArgumentCaptor<KafkaSpoutMessageId> lastOffsetMessageCaptor = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+        verify(collectorMock).emit(anyString(), anyList(), lastOffsetMessageCaptor.capture());
+        assertThat("Expected emit of the final tuple in the partition", lastOffsetMessageCaptor.getValue().offset(), is(messagesInKafka - 1L));
+        reset(collectorMock);
+
+        //Nothing else should be emitted, all tuples are acked except for the final tuple, which is pending.
+        for(int i = 0; i < 3; i++) {
+            spout.nextTuple();
+        }
+        verify(collectorMock, never()).emit(anyString(), anyList(), anyObject());
+    }
 
     @Test
     public void testShouldContinueWithSlowDoubleAcks() throws Exception {
