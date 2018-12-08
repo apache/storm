@@ -219,5 +219,42 @@ public class KafkaSpoutLogCompactionSupportTest {
             assertThat("The first partition should have committed all offsets", committed.get(partition).offset(), is(3L));
         }
     }
+    
+    @Test
+    public void testCommitTupleAfterCompactionGap() {
+        //If there is an acked tupled after a compaction gap, the spout should commit it immediately
+        try (SimulatedTime simulatedTime = new SimulatedTime()) {
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
+            
+            List<KafkaSpoutMessageId> firstMessage = SpoutWithMockedConsumerSetupHelper
+                .pollAndEmit(spout, consumerMock, 1, collectorMock, partition, 0);
+            reset(collectorMock);
+            
+            List<KafkaSpoutMessageId> messageAfterGap = SpoutWithMockedConsumerSetupHelper.pollAndEmit(spout, consumerMock, 1, collectorMock, partition, 2);
+            reset(collectorMock);
+            
+            spout.ack(firstMessage.get(0));
+            
+            Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + offsetCommitPeriodMs);
+            spout.nextTuple();
+            verify(consumerMock).commitSync(commitCapture.capture());
+            Map<TopicPartition, OffsetAndMetadata> committed = commitCapture.getValue();
+            assertThat(committed.keySet(), is(Collections.singleton(partition)));
+            assertThat("The consumer should have committed the offset before the gap",
+                committed.get(partition).offset(), is(1L));
+            reset(consumerMock);
+            
+            spout.ack(messageAfterGap.get(0));
+            
+            Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + offsetCommitPeriodMs);
+            spout.nextTuple();
+            
+            verify(consumerMock).commitSync(commitCapture.capture());
+            committed = commitCapture.getValue();
+            assertThat(committed.keySet(), is(Collections.singleton(partition)));
+            assertThat("The consumer should have committed the offset after the gap, since offset 1 wasn't emitted and both 0 and 2 are acked",
+                committed.get(partition).offset(), is(3L));
+        }
+    }
 
 }
