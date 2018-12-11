@@ -1682,9 +1682,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                    && codeCount < minReplicationCount
                    && confCount < minReplicationCount) {
                 if (maxWaitTime > 0 && totalWaitTime > maxWaitTime) {
-                    LOG.info("desired replication count of {} not achieved but we have hit the max wait time {}"
+                    LOG.info("desired replication count of {} not achieved for {} but we have hit the max wait time {}"
                              + " so moving on with replication count for conf key = {} for code key = {} for jar key = ",
-                             minReplicationCount, maxWaitTime, confCount, codeCount, jarCount);
+                             minReplicationCount, topoId, maxWaitTime, confCount, codeCount, jarCount);
                     return;
                 }
                 LOG.debug("Checking if I am still the leader");
@@ -1700,9 +1700,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 confCount = getBlobReplicationCount(ConfigUtils.masterStormConfKey(topoId));
             }
         }
-        LOG.info("desired replication count {} achieved, current-replication-count for conf key = {},"
+        LOG.info("desired replication count {} achieved for topology {}, current-replication-count for conf key = {},"
                  + " current-replication-count for code key = {}, current-replication-count for jar key = {}",
-                 minReplicationCount, confCount, codeCount, jarCount);
+                 minReplicationCount, topoId, confCount, codeCount, jarCount);
     }
 
     private TopologyDetails readTopologyDetails(String topoId, StormBase base) throws KeyNotFoundException,
@@ -2446,7 +2446,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
 
         if (context.isImpersonating()) {
-            LOG.warn("principal: {} is trying to impersonate principal: {}", context.realPrincipal(), context.principal());
+            LOG.info("principal: {} is trying to impersonate principal: {}", context.realPrincipal(), context.principal());
             if (impersonationAuthorizer == null) {
                 LOG.warn("impersonation attempt but {} has no authorizer configured. potential security risk, "
                          + "please see SECURITY.MD to learn how to configure impersonation authorizer.",
@@ -3109,7 +3109,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 if (creds != null) {
                     state.setCredentials(topoId, new Credentials(creds), topoConf);
                 }
-                LOG.info("uploadedJar {}", uploadedJarLocation);
+                LOG.info("uploadedJar {} for {}", uploadedJarLocation, topoName);
                 setupStormCode(conf, topoId, uploadedJarLocation, totalConfToSave, topology);
                 waitForDesiredCodeReplication(totalConf, topoId);
                 state.setupHeatbeats(topoId, topoConf);

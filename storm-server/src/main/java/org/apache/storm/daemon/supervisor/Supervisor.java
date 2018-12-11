@@ -374,7 +374,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
 
         if (context.isImpersonating()) {
-            LOG.warn("principal: {} is trying to impersonate principal: {}", context.realPrincipal(),
+            LOG.info("principal: {} is trying to impersonate principal: {}", context.realPrincipal(),
                      context.principal());
             throw new WrappedAuthorizationException("Supervisor does not support impersonation");
         }
