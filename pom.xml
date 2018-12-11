@@ -259,7 +259,7 @@
         <curator.version>4.0.1</curator.version>
         <curator-test.version>2.13.0</curator-test.version>
         <json-simple.version>1.1</json-simple.version>
-        <jetty.version>9.4.7.v20170914</jetty.version>
+        <jetty.version>9.4.14.v20181114</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.5.0</carbonite.version>
         <snakeyaml.version>1.11</snakeyaml.version>
