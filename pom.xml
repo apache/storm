@@ -257,7 +257,7 @@
         <commons-codec.version>1.11</commons-codec.version>
         <commons-cli.version>1.4</commons-cli.version>
         <curator.version>4.0.1</curator.version>
-        <curator-test.version>2.12.0</curator-test.version>
+        <curator-test.version>2.13.0</curator-test.version>
         <json-simple.version>1.1</json-simple.version>
         <jetty.version>9.4.7.v20170914</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
