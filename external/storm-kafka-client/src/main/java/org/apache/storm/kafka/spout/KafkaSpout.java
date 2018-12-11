@@ -228,13 +228,14 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             waitingToEmit.keySet().retainAll(partitions);
 
             Set<TopicPartition> newPartitions = new HashSet<>(partitions);
+            // If this partition was previously assigned to this spout,
+            // leave the acked offsets and consumer position as they were to resume where it left off
             newPartitions.removeAll(previousAssignment);
             for (TopicPartition newTp : newPartitions) {
                 final OffsetAndMetadata committedOffset = kafkaConsumer.committed(newTp);
                 final long fetchOffset = doSeek(newTp, committedOffset);
                 LOG.debug("Set consumer position to [{}] for topic-partition [{}] with [{}] and committed offset [{}]",
                     fetchOffset, newTp, firstPollOffsetStrategy, committedOffset);
-                // If this partition was previously assigned to this spout, leave the acked offsets as they were to resume where it left off
                 if (isAtLeastOnceProcessing() && !offsetManagers.containsKey(newTp)) {
                     offsetManagers.put(newTp, new OffsetManager(newTp, fetchOffset));
                 }
@@ -544,22 +545,25 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                      * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed, lots of (more
                      * than max.poll.records) later messages were acked, and the failed message then gets acked. The consumer may only be
                      * part way through "catching up" to where it was when it went back to retry the failed tuple. Skip the consumer forward
-                     * to the committed offset and drop the current waiting to emit list, since it'll likely contain committed offsets.
+                     * to the committed offset.
                      */
                     LOG.debug("Consumer fell behind committed offset. Catching up. Position was [{}], skipping to [{}]",
                         position, committedOffset);
                     kafkaConsumer.seek(tp, committedOffset);
-                    List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);
-                    if (waitingToEmitForTp != null) {
-                        //Discard the pending records that are already committed
-                        List<ConsumerRecord<K, V>> filteredRecords = new LinkedList<>();
-                        for (ConsumerRecord<K, V> record : waitingToEmitForTp) {
-                            if (record.offset() >= committedOffset) {
-                                filteredRecords.add(record);
-                            }
+                }
+                /**
+                 * In some cases the waitingToEmit list may contain tuples that have just been committed. Drop these.
+                 */
+                List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);
+                if (waitingToEmitForTp != null) {
+                    //Discard the pending records that are already committed
+                    List<ConsumerRecord<K, V>> filteredRecords = new LinkedList<>();
+                    for (ConsumerRecord<K, V> record : waitingToEmitForTp) {
+                        if (record.offset() >= committedOffset) {
+                            filteredRecords.add(record);
                         }
-                        waitingToEmit.put(tp, filteredRecords);
                     }
+                    waitingToEmit.put(tp, filteredRecords);
                 }
 
                 final OffsetManager offsetManager = offsetManagers.get(tp);
