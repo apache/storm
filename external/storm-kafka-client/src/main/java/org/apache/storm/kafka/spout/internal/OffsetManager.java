@@ -129,6 +129,7 @@ public class OffsetManager {
                     if (nextEmittedOffset != null && currOffset == nextEmittedOffset) {
                         LOG.debug("Found committable offset: [{}] after missing offset: [{}], skipping to the committable offset",
                             currOffset, nextCommitOffset);
+                        found = true;
                         nextCommitOffset = currOffset + 1;
                     } else {
                         LOG.debug("Topic-partition [{}] has non-sequential offset [{}]."
