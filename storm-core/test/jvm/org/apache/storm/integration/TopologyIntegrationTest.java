@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.apache.storm;
+package org.apache.storm.integration;
 
-import static org.apache.storm.utils.PredicateMatcher.matchesPredicate;
-import static org.hamcrest.CoreMatchers.everyItem;
+import static org.apache.storm.integration.AssertLoop.assertAcked;
+import static org.apache.storm.integration.AssertLoop.assertFailed;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -29,11 +29,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.storm.Config;
+import org.apache.storm.LocalCluster;
+import org.apache.storm.Testing;
+import org.apache.storm.Thrift;
 import org.apache.storm.Thrift.BoltDetails;
 import org.apache.storm.Thrift.SpoutDetails;
 import org.apache.storm.generated.GlobalStreamId;
@@ -51,7 +53,6 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.testing.AckFailMapTracker;
-import org.apache.storm.testing.AckTracker;
 import org.apache.storm.testing.CompleteTopologyParam;
 import org.apache.storm.testing.FeederSpout;
 import org.apache.storm.testing.FixedTuple;
@@ -72,8 +73,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
-import org.awaitility.Awaitility;
-import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -209,49 +208,6 @@ public class TopologyIntegrationTest {
                 new Values(5)
             ));
         }
-    }
-
-    private static class AckEveryOtherBolt extends BaseRichBolt {
-
-        private boolean state = true;
-        private OutputCollector collector;
-
-        @Override
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        }
-
-        @Override
-        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-            this.collector = collector;
-        }
-
-        @Override
-        public void execute(Tuple input) {
-            if (state) {
-                collector.ack(input);
-            }
-            state = !state;
-        }
-
-    }
-
-    private void assertLoop(Predicate<Object> condition, Object... conditionParams) {
-        try {
-            Awaitility.with()
-                .pollInterval(1, TimeUnit.MILLISECONDS)
-                .atMost(10, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertThat(Arrays.asList(conditionParams), everyItem(matchesPredicate(condition))));
-        } catch (ConditionTimeoutException e) {
-            throw new AssertionError(e.getMessage());
-        }
-    }
-
-    private void assertAcked(AckFailMapTracker tracker, Object... ids) {
-        assertLoop(tracker::isAcked, ids);
-    }
-
-    private void assertFailed(AckFailMapTracker tracker, Object... ids) {
-        assertLoop(tracker::isFailed, ids);
     }
 
     @Test
@@ -439,28 +395,6 @@ public class TopologyIntegrationTest {
         }
     }
 
-    private static class IdentityBolt extends BaseRichBolt {
-
-        private OutputCollector collector;
-
-        @Override
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("num"));
-        }
-
-        @Override
-        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-            this.collector = collector;
-        }
-
-        @Override
-        public void execute(Tuple input) {
-            collector.emit(input, input.getValues());
-            collector.ack(input);
-        }
-
-    }
-
     @Test
     public void testSystemStream() throws Exception {
         //this test works because mocking a spout splits up the tuples evenly among the tasks
@@ -512,16 +446,6 @@ public class TopologyIntegrationTest {
         }
     }
 
-    private SpoutAndChecker ackTrackingFeeder(String... fields) {
-        AckTracker tracker = new AckTracker();
-        FeederSpout spout = new FeederSpout(new Fields(fields));
-        spout.setAckFailDelegate(tracker);
-        return new SpoutAndChecker(spout, expectedNumAcks -> {
-            assertThat(tracker.getNumAcks(), is(expectedNumAcks));
-            tracker.resetNumAcks();
-        });
-    }
-
     private static class BranchingBolt extends BaseRichBolt {
 
         private final int branches;
@@ -546,37 +470,6 @@ public class TopologyIntegrationTest {
             IntStream.range(0, branches)
                 .forEach(i -> collector.emit(input, new Values(i)));
             collector.ack(input);
-        }
-    }
-
-    private static class AggBolt extends BaseRichBolt {
-
-        private final int branches;
-        private final List<Tuple> seen = new ArrayList<>();
-        private OutputCollector collector;
-
-        public AggBolt(int branches) {
-            this.branches = branches;
-        }
-
-        @Override
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("num"));
-        }
-
-        @Override
-        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-            this.collector = collector;
-        }
-
-        @Override
-        public void execute(Tuple input) {
-            seen.add(input);
-            if (seen.size() == branches) {
-                collector.emit(seen, new Values(1));
-                seen.forEach(t -> collector.ack(t));
-                seen.clear();
-            }
         }
     }
 
@@ -605,14 +498,14 @@ public class TopologyIntegrationTest {
             .withSimulatedTime()
             .withTracked()
             .build()) {
-            SpoutAndChecker feeder1 = ackTrackingFeeder("num");
-            SpoutAndChecker feeder2 = ackTrackingFeeder("num");
-            SpoutAndChecker feeder3 = ackTrackingFeeder("num");
+            AckTrackingFeeder feeder1 = new AckTrackingFeeder("num");
+            AckTrackingFeeder feeder2 = new AckTrackingFeeder("num");
+            AckTrackingFeeder feeder3 = new AckTrackingFeeder("num");
 
             Map<String, SpoutDetails> spoutMap = new HashMap<>();
-            spoutMap.put("1", Thrift.prepareSpoutDetails(feeder1.spout));
-            spoutMap.put("2", Thrift.prepareSpoutDetails(feeder2.spout));
-            spoutMap.put("3", Thrift.prepareSpoutDetails(feeder3.spout));
+            spoutMap.put("1", Thrift.prepareSpoutDetails(feeder1.getSpout()));
+            spoutMap.put("2", Thrift.prepareSpoutDetails(feeder2.getSpout()));
+            spoutMap.put("3", Thrift.prepareSpoutDetails(feeder3.getSpout()));
 
             Map<String, BoltDetails> boltMap = new HashMap<>();
             boltMap.put("4", Thrift.prepareBoltDetails(Collections.singletonMap(Utils.getGlobalStreamId("1", null), Thrift.prepareShuffleGrouping()), new BranchingBolt(2)));
@@ -633,28 +526,28 @@ public class TopologyIntegrationTest {
             cluster.submitTopology("acking-test1", Collections.emptyMap(), tracked);
 
             cluster.advanceClusterTime(11);
-            feeder1.spout.feed(new Values(1));
+            feeder1.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder1.checker.accept(0);
-            feeder2.spout.feed(new Values(1));
+            feeder1.assertNumAcks(0);
+            feeder2.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder1.checker.accept(1);
-            feeder2.checker.accept(1);
-            feeder1.spout.feed(new Values(1));
+            feeder1.assertNumAcks(1);
+            feeder2.assertNumAcks(1);
+            feeder1.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder1.checker.accept(0);
-            feeder1.spout.feed(new Values(1));
+            feeder1.assertNumAcks(0);
+            feeder1.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder1.checker.accept(1);
-            feeder3.spout.feed(new Values(1));
+            feeder1.assertNumAcks(1);
+            feeder3.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder1.checker.accept(0);
-            feeder3.checker.accept(0);
-            feeder2.spout.feed(new Values(1));
+            feeder1.assertNumAcks(0);
+            feeder3.assertNumAcks(0);
+            feeder2.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder1.spout.feed(new Values(1));
-            feeder2.spout.feed(new Values(1));
-            feeder3.spout.feed(new Values(1));
+            feeder1.feed(new Values(1));
+            feeder2.feed(new Values(1));
+            feeder3.feed(new Values(1));
         }
     }
 
@@ -664,10 +557,10 @@ public class TopologyIntegrationTest {
             .withSimulatedTime()
             .withTracked()
             .build()) {
-            SpoutAndChecker feeder = ackTrackingFeeder("num");
+            AckTrackingFeeder feeder = new AckTrackingFeeder("num");
 
             Map<String, SpoutDetails> spoutMap = new HashMap<>();
-            spoutMap.put("1", Thrift.prepareSpoutDetails(feeder.spout));
+            spoutMap.put("1", Thrift.prepareSpoutDetails(feeder.getSpout()));
 
             Map<String, BoltDetails> boltMap = new HashMap<>();
             boltMap.put("2", Thrift.prepareBoltDetails(Collections.singletonMap(Utils.getGlobalStreamId("1", null), Thrift.prepareShuffleGrouping()), new IdentityBolt()));
@@ -683,12 +576,12 @@ public class TopologyIntegrationTest {
             cluster.submitTopology("test-acking2", Collections.emptyMap(), tracked);
 
             cluster.advanceClusterTime(11);
-            feeder.spout.feed(new Values(1));
+            feeder.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder.checker.accept(0);
-            feeder.spout.feed(new Values(1));
+            feeder.assertNumAcks(0);
+            feeder.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder.checker.accept(2);
+            feeder.assertNumAcks(2);
         }
     }
 
@@ -802,10 +695,10 @@ public class TopologyIntegrationTest {
             .withSimulatedTime()
             .withTracked()
             .build()) {
-            SpoutAndChecker feeder = ackTrackingFeeder("num");
+            AckTrackingFeeder feeder = new AckTrackingFeeder("num");
 
             Map<String, SpoutDetails> spoutMap = new HashMap<>();
-            spoutMap.put("1", Thrift.prepareSpoutDetails(feeder.spout));
+            spoutMap.put("1", Thrift.prepareSpoutDetails(feeder.getSpout()));
 
             Map<String, BoltDetails> boltMap = new HashMap<>();
             boltMap.put("2", Thrift.prepareBoltDetails(Collections.singletonMap(Utils.getGlobalStreamId("1", null), Thrift.prepareShuffleGrouping()), new DupAnchorBolt()));
@@ -816,14 +709,14 @@ public class TopologyIntegrationTest {
             cluster.submitTopology("test", Collections.emptyMap(), tracked);
 
             cluster.advanceClusterTime(11);
-            feeder.spout.feed(new Values(1));
+            feeder.feed(new Values(1));
             Testing.trackedWait(tracked, 1);
-            feeder.checker.accept(1);
-            feeder.spout.feed(new Values(1));
-            feeder.spout.feed(new Values(1));
-            feeder.spout.feed(new Values(1));
+            feeder.assertNumAcks(1);
+            feeder.feed(new Values(1));
+            feeder.feed(new Values(1));
+            feeder.feed(new Values(1));
             Testing.trackedWait(tracked, 3);
-            feeder.checker.accept(3);
+            feeder.assertNumAcks(3);
         }
     }
 
