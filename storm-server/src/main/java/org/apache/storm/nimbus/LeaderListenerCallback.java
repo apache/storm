@@ -196,8 +196,7 @@ public class LeaderListenerCallback {
         Subject subject = ReqContext.context().subject();
 
         for (String activeTopologyCodeKey : activeTopologyCodeKeys) {
-            try {
-                InputStreamWithMeta blob = blobStore.getBlob(activeTopologyCodeKey, subject);
+            try (InputStreamWithMeta blob = blobStore.getBlob(activeTopologyCodeKey, subject)) {
                 byte[] blobContent = IOUtils.readFully(blob, new Long(blob.getFileLength()).intValue());
                 StormTopology stormCode = Utils.deserialize(blobContent, StormTopology.class);
                 if (stormCode.is_set_dependency_jars()) {
