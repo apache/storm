@@ -991,7 +991,7 @@ public class TestResourceAwareScheduler {
     }
     
     @Category(PerformanceTest.class)
-    @Test(timeout=60_000)
+    @Test(timeout=75_000)
     public void testLargeTopologiesOnLargeClustersGras() {
         testLargeTopologiesCommon(GenericResourceAwareStrategy.class.getName(), true, 1);
     }

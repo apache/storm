@@ -1018,7 +1018,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         long topologyDeletionDelay = ObjectReader.getInt(
                 conf.get(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS), 5 * 60 * 1000);
         for (String topologyId : toposToClean) {
-            if (Time.currentTimeMillis() - getTopologyCleanupDetectedTime(topologyId) >= topologyDeletionDelay) {
+            if (Math.max(0, Time.currentTimeMillis() - getTopologyCleanupDetectedTime(topologyId)) >= topologyDeletionDelay) {
                 idleTopologies.add(topologyId);
             }
         }
