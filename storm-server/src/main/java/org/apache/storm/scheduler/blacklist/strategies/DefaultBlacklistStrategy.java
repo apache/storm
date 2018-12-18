@@ -24,7 +24,6 @@ import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.reporters.LogReporter;
 import org.apache.storm.utils.ObjectReader;
@@ -142,19 +141,22 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
             if (shortageSlots > 0) {
                 LOG.info("Need {} slots more. Releasing some blacklisted nodes to cover it.", shortageSlots);
 
-                //release earliest blacklist
-                for (String supervisor : blacklistedNodeIds) {
-                    SupervisorDetails sd = availableSupervisors.get(supervisor);
-                    if (sd != null) {
-                        int sdAvailableSlots = cluster.getAvailablePorts(sd).size();
-                        readyToRemove.add(supervisor);
-                        shortageSlots -= sdAvailableSlots;
-                        LOG.debug("Releasing {} with {} slots leaving {} slots to go", supervisor,
-                            sdAvailableSlots, shortageSlots);
-                        if (shortageSlots <= 0) {
-                            // we have enough resources now...
-                            break;
+                //release earliest blacklist - but release all supervisors on a given blacklisted host.
+                Map<String, Set<String>> hostToSupervisorIds = createHostToSupervisorMap(blacklistedNodeIds, cluster);
+                for (Set<String> supervisorIds : hostToSupervisorIds.values()) {
+                    for (String supervisorId : supervisorIds) {
+                        SupervisorDetails sd = availableSupervisors.get(supervisorId);
+                        if (sd != null) {
+                            int sdAvailableSlots = cluster.getAvailablePorts(sd).size();
+                            readyToRemove.add(supervisorId);
+                            shortageSlots -= sdAvailableSlots;
+                            LOG.debug("Releasing {} with {} slots leaving {} slots to go", supervisorId,
+                                    sdAvailableSlots, shortageSlots);
                         }
+                    }
+                    if (shortageSlots <= 0) {
+                        // we have enough resources now...
+                        break;
                     }
                 }
             }
@@ -175,5 +177,21 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
             LOG.error("Throw IllegalAccessException {} for name {}", representation, className);
             throw new RuntimeException(e);
         }
+    }
+
+    protected Map<String, Set<String>> createHostToSupervisorMap(final List<String> blacklistedNodeIds, Cluster cluster) {
+        Map<String, Set<String>> hostToSupervisorMap = new TreeMap<>();
+        for (String supervisorId : blacklistedNodeIds) {
+            String hostname = cluster.getHost(supervisorId);
+            if (hostname != null) {
+                Set<String> supervisorIds = hostToSupervisorMap.get(hostname);
+                if (supervisorIds == null) {
+                    supervisorIds = new HashSet<>();
+                    hostToSupervisorMap.put(hostname, supervisorIds);
+                }
+                supervisorIds.add(supervisorId);
+            }
+        }
+        return hostToSupervisorMap;
     }
 }
