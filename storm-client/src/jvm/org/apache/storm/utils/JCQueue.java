@@ -51,7 +51,7 @@ public class JCQueue implements IStatefulObject, Closeable {
     private final MpscArrayQueue<Object> recvQueue;
     // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
     private final MpscUnboundedArrayQueue<Object> overflowQ;
-    private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow.
+    private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow limiting.
     private final int producerBatchSz;
     private final DirectInserter directInserter = new DirectInserter(this);
     private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
