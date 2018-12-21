@@ -338,12 +338,16 @@ def local(jarfile, klass, *args):
     local also adds in the option --local-ttl which sets the number of seconds the
     local cluster will run for before it shuts down.
 
+    --local-zookeeper if using an external zookeeper sets the connection string to use for it.
+
     --java-debug lets you turn on java debugging and set the parameters passed to -agentlib:jdwp on the JDK
     --java-debug transport=dt_socket,address=localhost:8000
     will open up a debugging server on port 8000.
     """
-    [ttl, debug_args, args] = parse_local_opts(args)
+    [ttl, lzk, debug_args, args] = parse_local_opts(args)
     extrajvmopts = ["-Dstorm.local.sleeptime=" + ttl]
+    if lzk != None:
+        extrajvmopts = extrajvmopts + ["-Dstorm.local.zookeeper=" + lzk]
     if debug_args != None:
         extrajvmopts = extrajvmopts + ["-agentlib:jdwp=" + debug_args]
     run_client_jar(jarfile, "org.apache.storm.LocalCluster", [klass] + list(args), client=False, daemon=False, extrajvmopts=extrajvmopts)
@@ -980,19 +984,22 @@ def parse_local_opts(args):
     curr = list(args[:])
     curr.reverse()
     ttl = "20"
+    lzk = None
     debug_args = None
     args_list = []
 
     while len(curr) > 0:
         token = curr.pop()
-        if token == "--local-ttl":
+        if token == "--local-zookeeper":
+            lzk = curr.pop()
+        elif token == "--local-ttl":
             ttl = curr.pop()
         elif token == "--java-debug":
             debug_args = curr.pop()
         else:
             args_list.append(token)
 
-    return ttl, debug_args, args_list
+    return ttl, lzk, debug_args, args_list
 
 
 def parse_jar_opts(args):
