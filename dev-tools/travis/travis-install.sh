@@ -41,4 +41,6 @@ then
   done
 fi
 
+pip install --user -r ${TRAVIS_SCRIPT_DIR}/requirements.txt
+
 exit ${BUILD_RET_VAL}
