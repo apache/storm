@@ -89,6 +89,7 @@ import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.IVersionInfo;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.TopologySpoutLag;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.VersionInfo;
@@ -1380,13 +1381,14 @@ public class UIHelpers {
     private static Map<String, Object> getComponentErrorInfo(ErrorInfo errorInfo, Map config,
                                                              String topologyId) {
         Map<String, Object> result = new HashMap();
-        result.put("time", 1000 * (long) errorInfo.get_error_time_secs());
+        result.put("errorTime",
+                errorInfo.get_error_time_secs());
         String host = errorInfo.get_host();
         result.put("errorHost", host);
         int port = errorInfo.get_port();
         result.put("errorPort", port);
         result.put("errorWorkerLogLink", getWorkerLogLink(host, port, config, topologyId));
-        result.put("errorLapsedSecs", System.currentTimeMillis() / 1000 - errorInfo.get_error_time_secs());
+        result.put("errorLapsedSecs", Time.deltaSecs(errorInfo.get_error_time_secs()));
         result.put("error", errorInfo.get_error());
         return result;
     }
