@@ -25,20 +25,17 @@ import static org.mockito.Mockito.verify;
 
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
-import org.apache.storm.testing.IntegrationTest;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.elasticsearch.client.ResponseException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@Category(IntegrationTest.class)
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<EsLookupBolt> {
 
     @Captor
@@ -54,7 +51,7 @@ public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<E
         return new EsLookupBolt(esConfig);
     }
 
-    @Before
+    @BeforeEach
     public void populateIndexWithTestData() throws Exception {
         node.client().prepareIndex(index, type, documentId).setSource(source).execute().actionGet();
     }

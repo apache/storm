@@ -123,7 +123,7 @@ GitHub.
 
 Unit tests and Integration tests are an essential part of code contributions.
 
-To mark a Java test as a Java integration test, add the annotation `@Category(IntegrationTest.class)` to the test class definition as well as to its hierarchy of superclasses. Java integration tests can be in the same package as Java unit tests.
+To mark a Java test as a Java integration test, add the annotation `@IntegrationTest` to the test class definition or test method. Make sure the test is a JUnit 5 test. Java integration tests can be in the same package as Java unit tests.
  
 ```java
     @Category(IntegrationTest.class)

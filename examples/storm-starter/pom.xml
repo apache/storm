@@ -217,6 +217,14 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+              <!-- TestNG provider does not understand the JUnit 5 groups syntax used in the rest of the project, make sure to override it -->
+              <excludedGroups>none</excludedGroups>
+          </configuration>
+      </plugin>
         <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>

@@ -25,14 +25,14 @@ import java.util.UUID;
 import org.apache.storm.Config;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.elasticsearch.common.EsConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public abstract class AbstractEsBoltTest<Bolt extends AbstractEsBolt> {
 
     protected static Config config = new Config();
@@ -46,7 +46,7 @@ public abstract class AbstractEsBoltTest<Bolt extends AbstractEsBolt> {
 
     protected Bolt bolt;
 
-    @Before
+    @BeforeEach
     public void createBolt() throws Exception {
         bolt = createBolt(esConfig());
         bolt.prepare(config, null, outputCollector);
@@ -58,7 +58,7 @@ public abstract class AbstractEsBoltTest<Bolt extends AbstractEsBolt> {
         return new EsConfig();
     }
 
-    @After
+    @AfterEach
     public void cleanupBolt() throws Exception {
         bolt.cleanup();
     }

@@ -50,30 +50,26 @@ import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
 import static org.junit.Assert.*;
 
+import java.time.Duration;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class TestResourceAwareScheduler {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestResourceAwareScheduler.class);
     private static final Config defaultTopologyConf = createClusterConfig(10, 128, 0, null);
     private static int currentTime = 1450418597;
-    @Rule
-    public final ExpectedException schedulerException = ExpectedException.none();
 
-    @BeforeClass
+    @BeforeAll
     public static void initConf() {
         defaultTopologyConf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 8192.0);
         defaultTopologyConf.put(Config.TOPOLOGY_PRIORITY, 0);
@@ -971,8 +967,7 @@ public class TestResourceAwareScheduler {
         String notAllowed = DefaultResourceAwareStrategy.class.getName();
         config.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, Arrays.asList(allowed));
 
-        schedulerException.expect(DisallowedStrategyException.class);
-        ReflectionUtils.newSchedulerStrategyInstance(notAllowed, config);
+        Assertions.assertThrows(DisallowedStrategyException.class, () -> ReflectionUtils.newSchedulerStrategyInstance(notAllowed, config));        
     }
 
     @Test
@@ -984,16 +979,19 @@ public class TestResourceAwareScheduler {
         assertEquals(sched.getClass().getName(), allowed);
     }
 
-    @Category(PerformanceTest.class)
-    @Test(timeout=30_000)
+    @PerformanceTest
+    @Test
     public void testLargeTopologiesOnLargeClusters() {
-        testLargeTopologiesCommon(DefaultResourceAwareStrategy.class.getName(), false, 1);
+        Assertions.assertTimeoutPreemptively(Duration.ofSeconds(30), 
+            () -> testLargeTopologiesCommon(DefaultResourceAwareStrategy.class.getName(), false, 1));
+        
     }
     
-    @Category(PerformanceTest.class)
-    @Test(timeout=75_000)
+    @PerformanceTest
+    @Test
     public void testLargeTopologiesOnLargeClustersGras() {
-        testLargeTopologiesCommon(GenericResourceAwareStrategy.class.getName(), true, 1);
+        Assertions.assertTimeoutPreemptively(Duration.ofSeconds(75),
+            () -> testLargeTopologiesCommon(GenericResourceAwareStrategy.class.getName(), true, 1));
     }
 
     public void testLargeTopologiesCommon(final String strategy, final boolean includeGpu, final int multiplier) {
