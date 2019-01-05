@@ -66,7 +66,7 @@ public class InprocMessaging {
         long start = Time.currentTimeMillis();
         while (!ab.get()) {
             if (Time.isSimulating()) {
-                Time.advanceTime(100);
+                Time.advanceTime(10);
             }
             try {
                 Thread.sleep(10);

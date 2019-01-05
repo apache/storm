@@ -314,7 +314,7 @@ public class ClientZookeeper {
                 watcher.execute(event.getState(), event.getType(), event.getPath());
             }
         });
-        LOG.info("Staring ZK Curator");
+        LOG.info("Starting ZK Curator");
         fk.start();
         return fk;
     }

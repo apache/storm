@@ -16,11 +16,8 @@
 
 package org.apache.storm.integration;
 
-import static org.apache.storm.integration.AssertLoop.assertAcked;
-import static org.apache.storm.integration.AssertLoop.assertFailed;
-
-import org.apache.storm.LocalCluster;
-
+import static org.apache.storm.AssertLoop.assertAcked;
+import static org.apache.storm.AssertLoop.assertFailed;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -30,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
+import org.apache.storm.LocalCluster;
 import org.apache.storm.Testing;
 import org.apache.storm.Thrift;
 import org.apache.storm.generated.GlobalStreamId;
