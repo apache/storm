@@ -98,7 +98,7 @@ public class SpoutExecutor extends Executor {
         this.threadId = Thread.currentThread().getId();
         executorTransfer.initLocalRecvQueues();
         while (!stormActive.get()) {
-            Utils.sleep(100);
+            Utils.sleepNoSimulation(100);
         }
 
         LOG.info("Opening spout {}:{}", componentId, taskIds);

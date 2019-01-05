@@ -100,7 +100,7 @@ public class BoltExecutor extends Executor {
     public void init(ArrayList<Task> idToTask, int idToTaskBase) {
         executorTransfer.initLocalRecvQueues();
         while (!stormActive.get()) {
-            Utils.sleep(100);
+            Utils.sleepNoSimulation(100);
         }
 
         if (!componentId.equals(StormCommon.SYSTEM_STREAM_ID)) { // System bolt doesn't call reportError()
