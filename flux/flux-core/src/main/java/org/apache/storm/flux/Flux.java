@@ -19,10 +19,10 @@
 package org.apache.storm.flux;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.apache.commons.cli.BasicParser;
@@ -162,7 +162,7 @@ public class Flux {
             properties = FluxParser.parseProperties(filterProps, true);
             topologyDef = FluxParser.parseResource(filePath, dumpYaml, true, properties, envFilter);
         } else {
-            printf("Parsing file: %s", new File(filePath).getAbsolutePath());
+            printf("Parsing file: %s", Paths.get(filePath).toAbsolutePath());
             properties = FluxParser.parseProperties(filterProps, false);
             topologyDef = FluxParser.parseFile(filePath, dumpYaml, true, properties, envFilter);
         }

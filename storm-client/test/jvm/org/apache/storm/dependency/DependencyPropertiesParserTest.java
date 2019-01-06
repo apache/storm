@@ -12,7 +12,6 @@
 
 package org.apache.storm.dependency;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,20 +20,22 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+import java.nio.file.Path;
+
 public class DependencyPropertiesParserTest {
     private DependencyPropertiesParser sut = new DependencyPropertiesParser();
 
     @Test
     public void parseJarsProperties() throws Exception {
-        List<File> parsed = sut.parseJarsProperties("storm-core-1.0.0.jar,json-simple-1.1.jar");
+        List<Path> parsed = sut.parseJarsProperties("storm-core-1.0.0.jar,json-simple-1.1.jar");
         assertEquals(2, parsed.size());
-        assertEquals("storm-core-1.0.0.jar", parsed.get(0).getName());
-        assertEquals("json-simple-1.1.jar", parsed.get(1).getName());
+        assertEquals("storm-core-1.0.0.jar", parsed.get(0).getFileName().toString());
+        assertEquals("json-simple-1.1.jar", parsed.get(1).getFileName().toString());
     }
 
     @Test
     public void parseEmptyJarsProperties() throws Exception {
-        List<File> parsed = sut.parseJarsProperties("");
+        List<Path> parsed = sut.parseJarsProperties("");
         assertEquals(0, parsed.size());
     }
 
@@ -46,15 +47,15 @@ public class DependencyPropertiesParserTest {
 
         String testJson = JSONValue.toJSONString(testInputMap);
 
-        Map<String, File> parsed = sut.parseArtifactsProperties(testJson);
+        Map<String, Path> parsed = sut.parseArtifactsProperties(testJson);
         assertEquals(2, parsed.size());
-        assertEquals("storm-core-1.0.0.jar", parsed.get("org.apache.storm:storm-core:1.0.0").getName());
-        assertEquals("json-simple-1.1.jar", parsed.get("com.googlecode.json-simple:json-simple:1.1").getName());
+        assertEquals("storm-core-1.0.0.jar", parsed.get("org.apache.storm:storm-core:1.0.0").getFileName().toString());
+        assertEquals("json-simple-1.1.jar", parsed.get("com.googlecode.json-simple:json-simple:1.1").getFileName().toString());
     }
 
     @Test
     public void parseEmptyPackagesProperties() throws Exception {
-        Map<String, File> parsed = sut.parseArtifactsProperties("{}");
+        Map<String, Path> parsed = sut.parseArtifactsProperties("{}");
         assertEquals(0, parsed.size());
     }
 

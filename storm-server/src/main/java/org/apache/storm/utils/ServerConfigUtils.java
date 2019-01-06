@@ -20,22 +20,21 @@ package org.apache.storm.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
-import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 
-
 public class ServerConfigUtils {
-    public static final String FILE_SEPARATOR = File.separator;
     public static final String NIMBUS_DO_NOT_REASSIGN = "NIMBUS-DO-NOT-REASSIGN";
-    public static final String RESOURCES_SUBDIR = "resources";
+    public static final Path RESOURCES_SUBDIR = Paths.get("resources");
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
@@ -54,14 +53,14 @@ public class ServerConfigUtils {
         return oldInstance;
     }
 
-    public static String masterLocalDir(Map<String, Object> conf) throws IOException {
-        String ret = ConfigUtils.absoluteStormLocalDir(conf) + FILE_SEPARATOR + "nimbus";
-        FileUtils.forceMkdir(new File(ret));
+    public static Path masterLocalDir(Map<String, Object> conf) throws IOException {
+        Path ret = ConfigUtils.absoluteStormLocalDir(conf).resolve("nimbus");
+        Files.createDirectories(ret);
         return ret;
     }
 
-    public static String masterInimbusDir(Map<String, Object> conf) throws IOException {
-        return (masterLocalDir(conf) + FILE_SEPARATOR + "inimbus");
+    public static Path masterInimbusDir(Map<String, Object> conf) throws IOException {
+        return masterLocalDir(conf).resolve("inimbus");
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
@@ -69,15 +68,15 @@ public class ServerConfigUtils {
         return _instance.nimbusTopoHistoryStateImpl(conf);
     }
 
-    public static String masterInbox(Map<String, Object> conf) throws IOException {
-        String ret = masterLocalDir(conf) + FILE_SEPARATOR + "inbox";
-        FileUtils.forceMkdir(new File(ret));
+    public static Path masterInbox(Map<String, Object> conf) throws IOException {
+        Path ret = masterLocalDir(conf).resolve("inbox");
+        Files.createDirectories(ret);
         return ret;
     }
 
-    public static String masterStormDistRoot(Map<String, Object> conf) throws IOException {
-        String ret = ConfigUtils.stormDistPath(masterLocalDir(conf));
-        FileUtils.forceMkdir(new File(ret));
+    public static Path masterStormDistRoot(Map<String, Object> conf) throws IOException {
+        Path ret = ConfigUtils.stormDistPath(masterLocalDir(conf));
+        Files.createDirectories(ret);
         return ret;
     }
 
@@ -128,18 +127,18 @@ public class ServerConfigUtils {
         return ret;
     }
 
-    public static String masterStormDistRoot(Map<String, Object> conf, String stormId) throws IOException {
-        return (masterStormDistRoot(conf) + FILE_SEPARATOR + stormId);
+    public static Path masterStormDistRoot(Map<String, Object> conf, String stormId) throws IOException {
+        return masterStormDistRoot(conf).resolve(stormId);
     }
 
-    public static String supervisorTmpDir(Map<String, Object> conf) throws IOException {
-        String ret = ConfigUtils.supervisorLocalDir(conf) + FILE_SEPARATOR + "tmp";
-        FileUtils.forceMkdir(new File(ret));
+    public static Path supervisorTmpDir(Map<String, Object> conf) throws IOException {
+        Path ret = ConfigUtils.supervisorLocalDir(conf).resolve("tmp");
+        Files.createDirectories(ret);
         return ret;
     }
 
-    public static String supervisorIsupervisorDir(Map<String, Object> conf) throws IOException {
-        return (ConfigUtils.supervisorLocalDir(conf) + FILE_SEPARATOR + "isupervisor");
+    public static Path supervisorIsupervisorDir(Map<String, Object> conf) throws IOException {
+        return ConfigUtils.supervisorLocalDir(conf).resolve("isupervisor");
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
@@ -147,41 +146,42 @@ public class ServerConfigUtils {
         return _instance.supervisorStateImpl(conf);
     }
 
-    public static String absoluteHealthCheckDir(Map<String, Object> conf) {
-        String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
+    public static Path absoluteHealthCheckDir(Map<String, Object> conf) {
+        Path stormHome = Paths.get(System.getProperty(ConfigUtils.STORM_HOME));
         String healthCheckDir = (String) conf.get(DaemonConfig.STORM_HEALTH_CHECK_DIR);
         if (healthCheckDir == null) {
-            return (stormHome + FILE_SEPARATOR + "healthchecks");
+            return stormHome.resolve("healthchecks");
         } else {
-            if (new File(healthCheckDir).isAbsolute()) {
-                return healthCheckDir;
+            Path healthCheckDirPath = Paths.get(healthCheckDir);
+            if (healthCheckDirPath.isAbsolute()) {
+                return healthCheckDirPath;
             } else {
-                return (stormHome + FILE_SEPARATOR + healthCheckDir);
+                return stormHome.resolve(healthCheckDir);
             }
         }
     }
 
-    public static File getLogMetaDataFile(String fname) {
-        String[] subStrings = fname.split(Pattern.quote(FILE_SEPARATOR)); // TODO: does this work well on windows?
-        String id = subStrings[0];
-        Integer port = Integer.parseInt(subStrings[1]);
+    public static Path getLogMetaDataFile(String fname) {
+        Path filePath = Paths.get(fname);
+        String id = filePath.getName(0).toString();
+        Integer port = Integer.parseInt(filePath.getName(1).toString());
         return getLogMetaDataFile(Utils.readStormConfig(), id, port);
     }
 
-    public static File getLogMetaDataFile(Map<String, Object> conf, String id, Integer port) {
-        String fname = ConfigUtils.workerArtifactsRoot(conf, id, port) + FILE_SEPARATOR + "worker.yaml";
-        return new File(fname);
+    public static Path getLogMetaDataFile(Map<String, Object> conf, String id, Integer port) {
+        Path fname = ConfigUtils.workerArtifactsRoot(conf, id, port).resolve("worker.yaml");
+        return fname;
     }
 
-    public static String masterStormJarPath(String stormRoot) {
-        return (stormRoot + FILE_SEPARATOR + "stormjar.jar");
+    public static Path masterStormJarPath(Path stormRoot) {
+        return stormRoot.resolve("stormjar.jar");
     }
 
     public LocalState supervisorStateImpl(Map<String, Object> conf) throws IOException {
-        return new LocalState((ConfigUtils.supervisorLocalDir(conf) + FILE_SEPARATOR + "localstate"),  true);
+        return new LocalState(ConfigUtils.supervisorLocalDir(conf).resolve("localstate"),  true);
     }
 
     public LocalState nimbusTopoHistoryStateImpl(Map<String, Object> conf) throws IOException {
-        return new LocalState((masterLocalDir(conf) + FILE_SEPARATOR + "history"), true);
+        return new LocalState(masterLocalDir(conf).resolve("history"), true);
     }
 }

@@ -18,15 +18,13 @@
 
 package org.apache.storm.dependency;
 
-import java.io.BufferedWriter;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -35,28 +33,30 @@ import org.apache.storm.generated.AccessControlType;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.shade.com.google.common.collect.Lists;
-import org.apache.storm.shade.com.google.common.io.Files;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.contains;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.storm.shade.com.google.common.io.MoreFiles;
+import org.apache.storm.testing.TmpPath;
 
 public class DependencyUploaderTest {
 
@@ -78,236 +78,212 @@ public class DependencyUploaderTest {
 
     @Test(expected = FileNotAvailableException.class)
     public void uploadFilesWhichOneOfThemIsNotFoundInLocal() throws Exception {
-        File mockFile = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(true);
+        try (TmpPath existingFile = new TmpPath()) {
+            writeDummyContent(existingFile.getPath());
+            Path missingFile = Paths.get(TmpPath.localTempPath());
 
-        File mockFile2 = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(false);
-
-        List<File> dependencies = new ArrayList<>();
-        dependencies.add(mockFile);
-        dependencies.add(mockFile2);
-
-        sut.uploadFiles(dependencies, false);
-        fail("Should throw FileNotAvailableException");
+            sut.uploadFiles(Arrays.asList(existingFile.getPath(), missingFile), false);
+            fail("Should throw FileNotAvailableException");
+        }
     }
 
     @Test(expected = FileNotAvailableException.class)
     public void uploadFilesWhichOneOfThemIsNotFile() throws Exception {
-        File mockFile = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(true);
+        try (TmpPath existingFile = new TmpPath()) {
+            writeDummyContent(existingFile.getPath());
+            Path dir = Paths.get(TmpPath.localTempPath());
+            Files.createDirectory(dir);
 
-        File mockFile2 = mock(File.class);
-        when(mockFile.isFile()).thenReturn(false);
-        when(mockFile.exists()).thenReturn(true);
-
-        List<File> dependencies = Lists.newArrayList(mockFile, mockFile2);
-
-        sut.uploadFiles(dependencies, false);
-        fail("Should throw FileNotAvailableException");
+            sut.uploadFiles(Arrays.asList(existingFile.getPath(), dir), false);
+            fail("Should throw FileNotAvailableException");
+        }
     }
 
     @Test
     public void uploadFilesWhichOneOfThemIsFailedToBeUploaded() throws Exception {
-        File mockFile = createTemporaryDummyFile();
+        try (TmpPath existingFile = new TmpPath(); TmpPath existingFile2 = new TmpPath()) {
+            Path path1 = existingFile.getPath();
+            Path path2 = existingFile2.getPath().resolve("dummy.jar");
+            writeDummyContent(path1);
+            writeDummyContent(path2);
 
-        File mockFile2 = mock(File.class);
-        when(mockFile2.getName()).thenReturn("dummy.jar");
-        when(mockFile2.isFile()).thenReturn(true);
-        when(mockFile2.exists()).thenReturn(true);
-        when(mockFile2.getPath()).thenThrow(new RuntimeException("just for test!"));
-        when(mockFile2.toPath()).thenThrow(new RuntimeException("just for test!"));
+            String path1NameWithoutExtension = MoreFiles.getNameWithoutExtension(path1);
+            String path2NameWithoutExtension = MoreFiles.getNameWithoutExtension(path2);
 
-        String mockFileFileNameWithoutExtension = Files.getNameWithoutExtension(mockFile.getName());
-        String mockFile2FileNameWithoutExtension = Files.getNameWithoutExtension(mockFile2.getName());
+            // we skip uploading first one since we want to test rollback, not upload
+            when(mockBlobStore.getBlobMeta(contains(path1NameWithoutExtension))).thenReturn(new ReadableBlobMeta());
+            // we try uploading second one and it should be failed throwing RuntimeException
+            when(mockBlobStore.getBlobMeta(contains(path2NameWithoutExtension))).thenThrow(new KeyNotFoundException());
 
-        // we skip uploading first one since we want to test rollback, not upload
-        when(mockBlobStore.getBlobMeta(contains(mockFileFileNameWithoutExtension))).thenReturn(new ReadableBlobMeta());
-        // we try uploading second one and it should be failed throwing RuntimeException
-        when(mockBlobStore.getBlobMeta(contains(mockFile2FileNameWithoutExtension))).thenThrow(new KeyNotFoundException());
+            try {
+                sut.uploadFiles(Arrays.asList(path1, path2), true);
+                fail("Should pass RuntimeException");
+            } catch (RuntimeException e) {
+                // intended behavior
+            }
 
-        List<File> dependencies = Lists.newArrayList(mockFile, mockFile2);
+            verify(mockBlobStore).getBlobMeta(contains(path1NameWithoutExtension));
+            verify(mockBlobStore).getBlobMeta(contains(path2NameWithoutExtension));
 
-        try {
-            sut.uploadFiles(dependencies, true);
-            fail("Should pass RuntimeException");
-        } catch (RuntimeException e) {
-            // intended behavior
+            verify(mockBlobStore).deleteBlob(contains(path1NameWithoutExtension));
+            verify(mockBlobStore, never()).deleteBlob(contains(path2NameWithoutExtension));
         }
-
-        verify(mockBlobStore).getBlobMeta(contains(mockFileFileNameWithoutExtension));
-        verify(mockBlobStore).getBlobMeta(contains(mockFile2FileNameWithoutExtension));
-
-        verify(mockBlobStore).deleteBlob(contains(mockFileFileNameWithoutExtension));
-        verify(mockBlobStore, never()).deleteBlob(contains(mockFile2FileNameWithoutExtension));
     }
 
     @Test
     public void uploadFiles() throws Exception {
-        AtomicOutputStream mockOutputStream = mock(AtomicOutputStream.class);
-        doNothing().when(mockOutputStream).cancel();
+        try (TmpPath existingFile = new TmpPath()) {
+            Path path = existingFile.getPath();
+            writeDummyContent(path);
+            AtomicBoolean hasWritten = new AtomicBoolean(false);
+            AtomicBoolean isClosed = new AtomicBoolean(false);
+            AtomicOutputStream mockOutputStream = new AtomicOutputStream() {
+                @Override
+                public void cancel() throws IOException {
+                }
 
-        final AtomicInteger counter = new AtomicInteger();
-        final Answer incrementCounter = new Answer() {
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                counter.addAndGet(1);
-                return null;
-            }
-        };
+                @Override
+                public void write(int b) throws IOException {
+                    hasWritten.set(true);
+                }
 
-        doAnswer(incrementCounter).when(mockOutputStream).write(anyInt());
-        doAnswer(incrementCounter).when(mockOutputStream).write(any(byte[].class));
-        doAnswer(incrementCounter).when(mockOutputStream).write(any(byte[].class), anyInt(), anyInt());
-        doNothing().when(mockOutputStream).close();
+                @Override
+                public void close() throws IOException {
+                    isClosed.set(true);
+                }
+            };
+            when(mockBlobStore.getBlobMeta(anyString())).thenThrow(new KeyNotFoundException());
+            when(mockBlobStore.createBlob(anyString(), any(SettableBlobMeta.class))).thenReturn(mockOutputStream);
 
-        when(mockBlobStore.getBlobMeta(anyString())).thenThrow(new KeyNotFoundException());
-        when(mockBlobStore.createBlob(anyString(), any(SettableBlobMeta.class))).thenReturn(mockOutputStream);
+            List<String> keys = sut.uploadFiles(Arrays.asList(path), false);
 
-        File mockFile = createTemporaryDummyFile();
-        String mockFileFileNameWithoutExtension = Files.getNameWithoutExtension(mockFile.getName());
+            assertEquals(1, keys.size());
+            assertTrue(keys.get(0).contains(MoreFiles.getNameWithoutExtension(path)));
 
-        List<String> keys = sut.uploadFiles(Lists.newArrayList(mockFile), false);
+            assertTrue(hasWritten.get());
+            assertTrue(isClosed.get());
 
-        assertEquals(1, keys.size());
-        assertTrue(keys.get(0).contains(mockFileFileNameWithoutExtension));
+            ArgumentCaptor<SettableBlobMeta> blobMetaArgumentCaptor = ArgumentCaptor.forClass(SettableBlobMeta.class);
+            verify(mockBlobStore).createBlob(anyString(), blobMetaArgumentCaptor.capture());
 
-        assertTrue(counter.get() > 0);
-        verify(mockOutputStream).close();
-
-        ArgumentCaptor<SettableBlobMeta> blobMetaArgumentCaptor = ArgumentCaptor.forClass(SettableBlobMeta.class);
-        verify(mockBlobStore).createBlob(anyString(), blobMetaArgumentCaptor.capture());
-
-        SettableBlobMeta actualBlobMeta = blobMetaArgumentCaptor.getValue();
-        List<AccessControl> actualAcls = actualBlobMeta.get_acl();
-        assertTrue(actualAcls.contains(new AccessControl(AccessControlType.USER,
-                                                         BlobStoreAclHandler.READ | BlobStoreAclHandler.WRITE |
-                                                         BlobStoreAclHandler.ADMIN)));
-        assertTrue(actualAcls.contains(new AccessControl(AccessControlType.OTHER,
-                                                         BlobStoreAclHandler.READ)));
+            SettableBlobMeta actualBlobMeta = blobMetaArgumentCaptor.getValue();
+            List<AccessControl> actualAcls = actualBlobMeta.get_acl();
+            assertTrue(actualAcls.contains(new AccessControl(AccessControlType.USER,
+                BlobStoreAclHandler.READ
+                | BlobStoreAclHandler.WRITE
+                | BlobStoreAclHandler.ADMIN)));
+            assertTrue(actualAcls.contains(new AccessControl(AccessControlType.OTHER,
+                BlobStoreAclHandler.READ)));
+        }
     }
 
     @Test(expected = FileNotAvailableException.class)
     public void uploadArtifactsWhichOneOfThemIsNotFoundInLocal() throws Exception {
-        File mockFile = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(true);
+        try (TmpPath existingFile = new TmpPath()) {
+            writeDummyContent(existingFile.getPath());
+            Path missingFile = Paths.get(TmpPath.localTempPath());
 
-        File mockFile2 = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(false);
+            Map<String, Path> artifacts = new LinkedHashMap<>();
+            artifacts.put("group:artifact:1.0.0", existingFile.getPath());
+            artifacts.put("group:artifact:1.1.0", missingFile);
 
-        Map<String, File> artifacts = new LinkedHashMap<>();
-        artifacts.put("group:artifact:1.0.0", mockFile);
-        artifacts.put("group:artifact:1.1.0", mockFile2);
-
-        sut.uploadArtifacts(artifacts);
-        fail("Should throw FileNotAvailableException");
+            sut.uploadArtifacts(artifacts);
+            fail("Should throw FileNotAvailableException");
+        }
     }
 
     @Test(expected = FileNotAvailableException.class)
     public void uploadArtifactsWhichOneOfThemIsNotFile() throws Exception {
-        File mockFile = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(true);
+        try (TmpPath existingFile = new TmpPath()) {
+            writeDummyContent(existingFile.getPath());
+            Path dir = Paths.get(TmpPath.localTempPath());
+            Files.createDirectory(dir);
+            Map<String, Path> artifacts = new LinkedHashMap<>();
+            artifacts.put("group:artifact:1.0.0", existingFile.getPath());
+            artifacts.put("group:artifact:1.1.0", dir);
 
-        File mockFile2 = mock(File.class);
-        when(mockFile.isFile()).thenReturn(false);
-        when(mockFile.exists()).thenReturn(true);
-
-        Map<String, File> artifacts = new LinkedHashMap<>();
-        artifacts.put("group:artifact:1.0.0", mockFile);
-        artifacts.put("group:artifact:1.1.0", mockFile2);
-
-        sut.uploadArtifacts(artifacts);
-        fail("Should throw FileNotAvailableException");
+            sut.uploadArtifacts(artifacts);
+            fail("Should throw FileNotAvailableException");
+        }
     }
 
     @Test
     public void uploadArtifactsWhichOneOfThemIsFailedToBeUploaded() throws Exception {
-        String artifact = "group:artifact:1.0.0";
-        String expectedBlobKeyForArtifact = "group-artifact-1.0.0.jar";
-        File mockFile = createTemporaryDummyFile();
+        try (TmpPath existingFile = new TmpPath(); TmpPath existingFile2 = new TmpPath()) {
+            Path path1 = existingFile.getPath();
+            String artifact = "group:artifact:1.0.0";
+            String expectedBlobKeyForArtifact = "group-artifact-1.0.0.jar";
+            Path path2 = existingFile2.getPath().resolve("dummy.jar");
+            String artifact2 = "group:artifact2:2.0.0";
+            String expectedBlobKeyForArtifact2 = "group-artifact2-2.0.0.jar";
+            writeDummyContent(path1);
+            writeDummyContent(path2);
 
-        String artifact2 = "group:artifact2:2.0.0";
-        String expectedBlobKeyForArtifact2 = "group-artifact2-2.0.0.jar";
-        File mockFile2 = mock(File.class);
-        when(mockFile2.getName()).thenReturn("dummy.jar");
-        when(mockFile2.isFile()).thenReturn(true);
-        when(mockFile2.exists()).thenReturn(true);
-        when(mockFile2.getPath()).thenThrow(new RuntimeException("just for test!"));
-        when(mockFile2.toPath()).thenThrow(new RuntimeException("just for test!"));
+            // we skip uploading first one since we want to test rollback, not upload
+            when(mockBlobStore.getBlobMeta(contains(expectedBlobKeyForArtifact))).thenReturn(new ReadableBlobMeta());
+            // we try uploading second one and it should be failed throwing RuntimeException
+            when(mockBlobStore.getBlobMeta(contains(expectedBlobKeyForArtifact2))).thenThrow(new KeyNotFoundException());
 
-        // we skip uploading first one since we don't test upload for now
-        when(mockBlobStore.getBlobMeta(contains(expectedBlobKeyForArtifact))).thenReturn(new ReadableBlobMeta());
-        // we try uploading second one and it should be failed throwing RuntimeException
-        when(mockBlobStore.getBlobMeta(contains(expectedBlobKeyForArtifact2))).thenThrow(new KeyNotFoundException());
+            Map<String, Path> artifacts = new LinkedHashMap<>();
+            artifacts.put(artifact, path2);
+            artifacts.put(artifact2, path2);
 
-        Map<String, File> artifacts = new LinkedHashMap<>();
-        artifacts.put(artifact, mockFile);
-        artifacts.put(artifact2, mockFile2);
+            try {
+                sut.uploadArtifacts(artifacts);
+                fail("Should pass RuntimeException");
+            } catch (RuntimeException e) {
+                // intended behavior
+            }
 
-        try {
-            sut.uploadArtifacts(artifacts);
-            fail("Should pass RuntimeException");
-        } catch (RuntimeException e) {
-            // intended behavior
+            verify(mockBlobStore).getBlobMeta(contains(expectedBlobKeyForArtifact));
+            verify(mockBlobStore).getBlobMeta(contains(expectedBlobKeyForArtifact2));
+
+            // never rollback
+            verify(mockBlobStore, never()).deleteBlob(contains(expectedBlobKeyForArtifact));
+            verify(mockBlobStore, never()).deleteBlob(contains(expectedBlobKeyForArtifact2));
         }
-
-        verify(mockBlobStore).getBlobMeta(contains(expectedBlobKeyForArtifact));
-        verify(mockBlobStore).getBlobMeta(contains(expectedBlobKeyForArtifact2));
-
-        // never rollback
-        verify(mockBlobStore, never()).deleteBlob(contains(expectedBlobKeyForArtifact));
-        verify(mockBlobStore, never()).deleteBlob(contains(expectedBlobKeyForArtifact2));
     }
 
     @Test
     public void uploadArtifacts() throws Exception {
-        AtomicOutputStream mockOutputStream = mock(AtomicOutputStream.class);
-        doNothing().when(mockOutputStream).cancel();
+        try (TmpPath existingFile = new TmpPath()) {
+            Path path = existingFile.getPath();
+            String artifact = "group:artifact:1.0.0";
+            String expectedBlobKeyForArtifact = "group-artifact-1.0.0.jar";
+            writeDummyContent(path);
+            AtomicBoolean hasWritten = new AtomicBoolean(false);
+            AtomicBoolean isClosed = new AtomicBoolean(false);
+            AtomicOutputStream mockOutputStream = new AtomicOutputStream() {
+                @Override
+                public void cancel() throws IOException {
+                }
 
-        final AtomicInteger counter = new AtomicInteger();
-        final Answer incrementCounter = new Answer() {
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                counter.addAndGet(1);
-                return null;
-            }
-        };
+                @Override
+                public void write(int b) throws IOException {
+                    hasWritten.set(true);
+                }
 
-        doAnswer(incrementCounter).when(mockOutputStream).write(anyInt());
-        doAnswer(incrementCounter).when(mockOutputStream).write(any(byte[].class));
-        doAnswer(incrementCounter).when(mockOutputStream).write(any(byte[].class), anyInt(), anyInt());
-        doNothing().when(mockOutputStream).close();
+                @Override
+                public void close() throws IOException {
+                    isClosed.set(true);
+                }
+            };
+            when(mockBlobStore.getBlobMeta(anyString())).thenThrow(new KeyNotFoundException());
+            when(mockBlobStore.createBlob(anyString(), any(SettableBlobMeta.class))).thenReturn(mockOutputStream);
 
-        when(mockBlobStore.getBlobMeta(anyString())).thenThrow(new KeyNotFoundException());
-        when(mockBlobStore.createBlob(anyString(), any(SettableBlobMeta.class))).thenReturn(mockOutputStream);
+            List<String> keys = sut.uploadArtifacts(Collections.singletonMap(artifact, path));
 
-        String artifact = "group:artifact:1.0.0";
-        String expectedBlobKeyForArtifact = "group-artifact-1.0.0.jar";
-        File mockFile = createTemporaryDummyFile();
+            assertEquals(1, keys.size());
+            assertTrue(keys.get(0).contains(expectedBlobKeyForArtifact));
 
-        Map<String, File> artifacts = new LinkedHashMap<>();
-        artifacts.put(artifact, mockFile);
-        List<String> keys = sut.uploadArtifacts(artifacts);
-
-        assertEquals(1, keys.size());
-        assertTrue(keys.get(0).contains(expectedBlobKeyForArtifact));
-
-        assertTrue(counter.get() > 0);
-        verify(mockOutputStream).close();
+            assertTrue(hasWritten.get());
+            assertTrue(isClosed.get());
+        }
     }
 
-    private File createTemporaryDummyFile() throws IOException {
-        File tempFile = File.createTempFile("tempfile", ".tmp");
-
-        BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile));
-        bw.write("This is the temporary file content");
-        bw.close();
-
-        return tempFile;
+    private void writeDummyContent(Path path) throws IOException {
+        Files.createDirectories(path.getParent());
+        Files.write(path, ("This is test content from " + getClass().getSimpleName()).getBytes());
     }
 
 }

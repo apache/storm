@@ -88,13 +88,13 @@ public class AsyncLocalizerTest {
     private final String user2 = "user2";
     private final String user3 = "user3";
     //From LocalizerTest
-    private File baseDir;
+    private Path baseDir;
     private ClientBlobStore mockblobstore = mock(ClientBlobStore.class);
 
-    private static String getTestLocalizerRoot() {
+    private static Path getTestLocalizerRoot() {
         File f = new File("./target/" + Thread.currentThread().getStackTrace()[2].getMethodName() + "/localizer/");
         f.deleteOnExit();
-        return f.getPath();
+        return f.toPath();
     }
 
     @Test
@@ -182,11 +182,11 @@ public class AsyncLocalizerTest {
         final String simpleLocalName = "simple.txt";
         final String simpleKey = "simple";
 
-        final String stormLocal = "/tmp/storm-local/";
-        final File userDir = new File(stormLocal, user);
-        final String stormRoot = stormLocal + topoId + "/";
+        final Path stormLocal = Paths.get("/tmp/storm-local/");
+        final Path userDir = stormLocal.resolve(user);
+        final Path stormRoot = stormLocal.resolve(topoId);
 
-        final String localizerRoot = getTestLocalizerRoot();
+        final Path localizerRoot = getTestLocalizerRoot();
         final String simpleCurrentLocalFile = localizerRoot + "/usercache/" + user + "/filecache/files/simple.current";
 
         final StormTopology st = new StormTopology();
@@ -211,7 +211,7 @@ public class AsyncLocalizerTest {
 
         List<LocalizedResource> localizedList = new ArrayList<>();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        LocalizedResource simpleLocal = new LocalizedResource(simpleKey, Paths.get(localizerRoot), false, ops, conf, user, metricsRegistry);
+        LocalizedResource simpleLocal = new LocalizedResource(simpleKey, localizerRoot, false, ops, conf, user, metricsRegistry);
         localizedList.add(simpleLocal);
 
         AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, localizerRoot, metricsRegistry));
@@ -238,7 +238,7 @@ public class AsyncLocalizerTest {
 
             verify(bl).getBlobs(any(List.class), any(), any());
 
-            verify(ops).createSymlink(new File(stormRoot, simpleLocalName), new File(simpleCurrentLocalFile));
+            verify(ops).createSymlink(stormRoot.resolve(simpleLocalName), Paths.get(simpleCurrentLocalFile));
         } finally {
             try {
                 ConfigUtils.setInstance(orig);
@@ -251,8 +251,8 @@ public class AsyncLocalizerTest {
 
     @Before
     public void setUp() throws Exception {
-        baseDir = new File(System.getProperty("java.io.tmpdir") + "/blob-store-localizer-test-" + UUID.randomUUID());
-        if (!baseDir.mkdir()) {
+        baseDir = Paths.get(System.getProperty("java.io.tmpdir") + "/blob-store-localizer-test-" + UUID.randomUUID());
+        if (!baseDir.toFile().mkdir()) {
             throw new IOException("failed to create base directory");
         }
     }
@@ -260,12 +260,10 @@ public class AsyncLocalizerTest {
     @After
     public void tearDown() throws Exception {
         try {
-            FileUtils.deleteDirectory(baseDir);
+            FileUtils.deleteDirectory(baseDir.toFile());
         } catch (IOException ignore) {
         }
     }
-
-    ;
 
     protected String joinPath(String... pathList) {
         return Joiner.on(File.separator).join(pathList);
@@ -286,7 +284,7 @@ public class AsyncLocalizerTest {
     @Test
     public void testDirPaths() throws Exception {
         Map<String, Object> conf = new HashMap();
-        AsyncLocalizer localizer = new TestLocalizer(conf, baseDir.toString());
+        AsyncLocalizer localizer = new TestLocalizer(conf, baseDir);
 
         String expectedDir = constructUserCacheDir(baseDir.toString(), user1);
         assertEquals("get local user dir doesn't return right value",
@@ -336,7 +334,7 @@ public class AsyncLocalizerTest {
         assertTrue("Failed setup file in archivedir1", user1archive1file.createNewFile());
         assertTrue("Failed setup file in archivedir2", user2archive2file.createNewFile());
 
-        TestLocalizer localizer = new TestLocalizer(conf, baseDir.toString());
+        TestLocalizer localizer = new TestLocalizer(conf, baseDir);
 
         ArrayList<LocalResource> arrUser1Keys = new ArrayList<>();
         arrUser1Keys.add(new LocalResource(key1, false, false));
@@ -380,27 +378,27 @@ public class AsyncLocalizerTest {
 
     @Test
     public void testArchivesTgz() throws Exception {
-        testArchives(getFileFromResource(joinPath("localizer", "localtestwithsymlink.tgz")), true, 21344);
+        testArchives(getFileFromResource("localizer/localtestwithsymlink.tgz"), true, 21344);
     }
 
     @Test
     public void testArchivesZip() throws Exception {
-        testArchives(getFileFromResource(joinPath("localizer", "localtest.zip")), false, 21348);
+        testArchives(getFileFromResource("localizer/localtest.zip"), false, 21348);
     }
 
     @Test
     public void testArchivesTarGz() throws Exception {
-        testArchives(getFileFromResource(joinPath("localizer", "localtestwithsymlink.tar.gz")), true, 21344);
+        testArchives(getFileFromResource("localizer/localtestwithsymlink.tar.gz"), true, 21344);
     }
 
     @Test
     public void testArchivesTar() throws Exception {
-        testArchives(getFileFromResource(joinPath("localizer", "localtestwithsymlink.tar")), true, 21344);
+        testArchives(getFileFromResource("localizer/localtestwithsymlink.tar"), true, 21344);
     }
 
     @Test
     public void testArchivesJar() throws Exception {
-        testArchives(getFileFromResource(joinPath("localizer", "localtestwithsymlink.jar")), false, 21416);
+        testArchives(getFileFromResource("localizer/localtestwithsymlink.jar"), false, 21416);
     }
 
     private File getFileFromResource(String archivePath) {
@@ -410,10 +408,6 @@ public class AsyncLocalizerTest {
 
     // archive passed in must contain symlink named tmptestsymlink if not a zip file
     public void testArchives(File archiveFile, boolean supportSymlinks, int size) throws Exception {
-        if (Utils.isOnWindows()) {
-            // Windows should set this to false cause symlink in compressed file doesn't work properly.
-            supportSymlinks = false;
-        }
         try (Time.SimulatedTime st = new Time.SimulatedTime()) {
 
             Map<String, Object> conf = new HashMap<>();
@@ -423,7 +417,7 @@ public class AsyncLocalizerTest {
             String key1 = archiveFile.getName();
             String topo1 = "topo1";
             LOG.info("About to create new AsyncLocalizer...");
-            TestLocalizer localizer = new TestLocalizer(conf, baseDir.toString());
+            TestLocalizer localizer = new TestLocalizer(conf, baseDir);
             // set really small so will do cleanup
             localizer.setTargetCacheSize(1);
             LOG.info("created AsyncLocalizer...");
@@ -438,8 +432,8 @@ public class AsyncLocalizerTest {
 
             long timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
-            File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
+            Path user1Dir = localizer.getLocalUserFileCacheDir(user1);
+            Files.createDirectories(user1Dir);
             LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
             topo1Assignment.set_owner(user1);
             PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
@@ -510,7 +504,7 @@ public class AsyncLocalizerTest {
 
             String key1 = "key1";
             String topo1 = "topo1";
-            TestLocalizer localizer = new TestLocalizer(conf, baseDir.toString());
+            TestLocalizer localizer = new TestLocalizer(conf, baseDir);
             // set really small so will do cleanup
             localizer.setTargetCacheSize(1);
 
@@ -522,8 +516,8 @@ public class AsyncLocalizerTest {
 
             long timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
-            File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
+            Path user1Dir = localizer.getLocalUserFileCacheDir(user1);
+            Files.createDirectories(user1Dir);
             Time.advanceTime(10);
             LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
             topo1Assignment.set_owner(user1);
@@ -588,7 +582,7 @@ public class AsyncLocalizerTest {
             String topo1 = "topo1";
             String key2 = "key2";
             String key3 = "key3";
-            TestLocalizer localizer = new TestLocalizer(conf, baseDir.toString());
+            TestLocalizer localizer = new TestLocalizer(conf, baseDir);
             // set to keep 2 blobs (each of size 34)
             localizer.setTargetCacheSize(68);
 
@@ -602,8 +596,8 @@ public class AsyncLocalizerTest {
 
             List<LocalResource> keys = Arrays.asList(new LocalResource(key1, false, false),
                     new LocalResource(key2, false, false), new LocalResource(key3, false, false));
-            File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
+            Path user1Dir = localizer.getLocalUserFileCacheDir(user1);
+            Files.createDirectories(user1Dir);
 
             LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
             topo1Assignment.set_owner(user1);
@@ -691,7 +685,7 @@ public class AsyncLocalizerTest {
 
         String topo1 = "topo1";
         String key1 = "key1";
-        TestLocalizer localizer = new TestLocalizer(conf, baseDir.toString());
+        TestLocalizer localizer = new TestLocalizer(conf, baseDir);
 
         ReadableBlobMeta rbm = new ReadableBlobMeta();
         // set acl so user doesn't have read access
@@ -700,8 +694,8 @@ public class AsyncLocalizerTest {
         rbm.set_settable(new SettableBlobMeta(Arrays.asList(acl)));
         when(mockblobstore.getBlobMeta(anyString())).thenReturn(rbm);
         when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(1));
-        File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-        assertTrue("failed to create user dir", user1Dir.mkdirs());
+        Path user1Dir = localizer.getLocalUserFileCacheDir(user1);
+        Files.createDirectories(user1Dir);
 
         LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
         topo1Assignment.set_owner(user1);
@@ -735,7 +729,7 @@ public class AsyncLocalizerTest {
         String key1 = "key1";
         String key2 = "key2";
         String key3 = "key3";
-        TestLocalizer localizer = new TestLocalizer(conf, baseDir.toString());
+        TestLocalizer localizer = new TestLocalizer(conf, baseDir);
         // set to keep 2 blobs (each of size 34)
         localizer.setTargetCacheSize(68);
 
@@ -747,12 +741,12 @@ public class AsyncLocalizerTest {
         when(mockblobstore.getBlob(key2)).thenReturn(new TestInputStreamWithMeta(1));
         when(mockblobstore.getBlob(key3)).thenReturn(new TestInputStreamWithMeta(1));
 
-        File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-        assertTrue("failed to create user dir", user1Dir.mkdirs());
-        File user2Dir = localizer.getLocalUserFileCacheDir(user2);
-        assertTrue("failed to create user dir", user2Dir.mkdirs());
-        File user3Dir = localizer.getLocalUserFileCacheDir(user3);
-        assertTrue("failed to create user dir", user3Dir.mkdirs());
+        Path user1Dir = localizer.getLocalUserFileCacheDir(user1);
+        Files.createDirectories(user1Dir);
+        Path user2Dir = localizer.getLocalUserFileCacheDir(user2);
+        Files.createDirectories(user2Dir);
+        Path user3Dir = localizer.getLocalUserFileCacheDir(user3);
+        Files.createDirectories(user3Dir);
 
         LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
         topo1Assignment.set_owner(user1);
@@ -832,7 +826,7 @@ public class AsyncLocalizerTest {
         String key1 = "key1";
         String topo1 = "topo1";
         String topo2 = "topo2";
-        TestLocalizer localizer = new TestLocalizer(conf, baseDir.toString());
+        TestLocalizer localizer = new TestLocalizer(conf, baseDir);
 
         ReadableBlobMeta rbm = new ReadableBlobMeta();
         rbm.set_version(1);
@@ -840,8 +834,8 @@ public class AsyncLocalizerTest {
         when(mockblobstore.getBlobMeta(key1)).thenReturn(rbm);
         when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(1));
 
-        File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-        assertTrue("failed to create user dir", user1Dir.mkdirs());
+        Path user1Dir = localizer.getLocalUserFileCacheDir(user1);
+        Files.createDirectories(user1Dir);
         LocalAssignment topo1Assignment = new LocalAssignment(topo1, Collections.emptyList());
         topo1Assignment.set_owner(user1);
         PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
@@ -897,7 +891,7 @@ public class AsyncLocalizerTest {
 
     class TestLocalizer extends AsyncLocalizer {
 
-        TestLocalizer(Map<String, Object> conf, String baseDir) throws IOException {
+        TestLocalizer(Map<String, Object> conf, Path baseDir) throws IOException {
             super(conf, AdvancedFSOps.make(conf), baseDir, new StormMetricsRegistry());
         }
 

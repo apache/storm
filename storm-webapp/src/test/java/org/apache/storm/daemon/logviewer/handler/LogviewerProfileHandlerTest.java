@@ -26,13 +26,11 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import javax.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
@@ -45,12 +43,12 @@ public class LogviewerProfileHandlerTest {
     public void testListDumpFiles() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response topoAResponse = handler.listDumpFiles("topoA", "localhost:1111", "user");
             Response topoBResponse = handler.listDumpFiles("topoB", "localhost:1111", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
             String contentA = (String) topoAResponse.getEntity();
@@ -68,11 +66,11 @@ public class LogviewerProfileHandlerTest {
     public void testListDumpFilesTraversalInTopoId() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response response = handler.listDumpFiles("../../", "localhost:logs", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
@@ -82,11 +80,11 @@ public class LogviewerProfileHandlerTest {
     public void testListDumpFilesTraversalInPort() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response response = handler.listDumpFiles("../", "localhost:../logs", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
@@ -96,12 +94,12 @@ public class LogviewerProfileHandlerTest {
     public void testDownloadDumpFile() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response topoAResponse = handler.downloadDumpFile("topoA", "localhost:1111", "worker.jfr", "user");
             Response topoBResponse = handler.downloadDumpFile("topoB", "localhost:1111", "worker.txt", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(topoAResponse.getEntity(), not(nullValue()));
@@ -114,11 +112,11 @@ public class LogviewerProfileHandlerTest {
     public void testDownloadDumpFileTraversalInTopoId() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response topoAResponse = handler.downloadDumpFile("../../", "localhost:logs", "daemon-dump.bin", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
@@ -128,11 +126,11 @@ public class LogviewerProfileHandlerTest {
     public void testDownloadDumpFileTraversalInPort() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response topoAResponse = handler.downloadDumpFile("../", "localhost:../logs", "daemon-dump.bin", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
@@ -159,7 +157,7 @@ public class LogviewerProfileHandlerTest {
 
         Map<String, Object> stormConf = Utils.readStormConfig();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        return new LogviewerProfileHandler(workerLogRoot.toString(), new ResourceAuthorizer(stormConf), metricsRegistry);
+        return new LogviewerProfileHandler(workerLogRoot, new ResourceAuthorizer(stormConf), metricsRegistry);
     }
 
 }

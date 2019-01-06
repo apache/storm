@@ -12,11 +12,15 @@
 
 package org.apache.storm.scheduler.utils;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
@@ -59,7 +63,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     private int artifactoryPollTimeSecs = DEFAULT_POLLTIME_SECS;
     private boolean cacheInitialized = false;
     // Location of the file in the artifactory archive.  Also used to name file in cache.
-    private String localCacheDir;
+    private Path localCacheDir;
     private String baseDirectory = DEFAULT_ARTIFACTORY_BASE_DIRECTORY;
     private int lastReturnedTime = 0;
     private int timeoutSeconds = DEFAULT_TIMEOUT_SECS;
@@ -234,21 +238,11 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         lastReturnedValue = ret;
     }
 
-    private Map<String, Object> loadFromFile(File file) {
-        Map<String, Object> ret = null;
-
-        try {
-            ret = (Map<String, Object>) Utils.readYamlFile(file.getCanonicalPath());
-        } catch (IOException e) {
-            LOG.error("Filed to load from file. Exception: {}", e.getMessage());
-        }
+    private Map<String, Object> loadFromFile(Path file) {
+        Map<String, Object> ret = (Map<String, Object>) Utils.readYamlFile(file);
 
         if (ret != null) {
-            try {
-                LOG.debug("returning a new map from file {}", file.getCanonicalPath());
-            } catch (java.io.IOException e) {
-                LOG.debug("Could not get PATH from file object in debug print. Ignoring");
-            }
+            LOG.debug("returning a new map from file {}", file.toAbsolutePath().normalize());
             return ret;
         }
 
@@ -256,8 +250,8 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     }
 
     private Map<String, Object> getLatestFromCache() {
-        String localFileName = localCacheDir + File.separator + cacheFilename;
-        return loadFromFile(new File(localFileName));
+        Path localFileName = localCacheDir.resolve(cacheFilename);
+        return loadFromFile(localFileName);
     }
 
     private void saveInArtifactoryCache(String yamlData) {
@@ -266,34 +260,30 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             return;
         }
 
-        String localFileName = localCacheDir + File.separator + cacheFilename;
-
-        File cacheFile = new File(localFileName);
-        try (FileOutputStream fos = new FileOutputStream(cacheFile)) {
-            fos.write(yamlData.getBytes());
-            fos.flush();
+        Path cacheFile = localCacheDir.resolve(cacheFilename);
+        try (OutputStream os = Files.newOutputStream(cacheFile)) {
+            os.write(yamlData.getBytes(Charset.defaultCharset()));
+            os.flush();
         } catch (IOException e) {
-            LOG.error("Received exception when writing file {}.  Attempting delete", localFileName, e);
+            LOG.error("Received exception when writing file {}.  Attempting delete", cacheFile, e);
             try {
-                cacheFile.delete();
+                Files.deleteIfExists(cacheFile);
             } catch (Exception deleteException) {
-                LOG.error("Received exception when deleting file {}.", localFileName, deleteException);
+                LOG.error("Received exception when deleting file {}.", cacheFile, deleteException);
             }
         }
     }
 
     private void makeArtifactoryCache(String location) throws IOException {
         // First make the cache dir
-        String localDirName = ServerConfigUtils.masterLocalDir(conf) + File.separator + LOCAL_ARTIFACT_DIR;
-        File dir = new File(localDirName);
-        if (!dir.exists()) {
-            dir.mkdirs();
+        Path localDir = ServerConfigUtils.masterLocalDir(conf).resolve(LOCAL_ARTIFACT_DIR);
+        if (!localDir.toFile().exists()) {
+            Files.createDirectories(localDir);
         }
 
-        localCacheDir = localDirName + File.separator + location.replaceAll(File.separator, "_");
-        dir = new File(localCacheDir);
-        if (!dir.exists()) {
-            dir.mkdir();
+        localCacheDir = localDir.resolve(location.replaceAll(FileSystems.getDefault().getSeparator(), "_"));
+        if (!localCacheDir.toFile().exists()) {
+            Files.createDirectory(localCacheDir);
         }
         cacheInitialized = true;
     }

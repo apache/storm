@@ -12,24 +12,26 @@
 
 package org.apache.storm.testing;
 
-import java.io.File;
-import org.apache.storm.shade.org.apache.commons.io.FileUtils;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import org.apache.storm.daemon.supervisor.DirectoryDeleteVisitor;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TmpPath implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(TmpPath.class);
-    private final File path;
+    private final Path path;
 
     public TmpPath() {
         this(localTempPath());
     }
-
+    
     public TmpPath(String path) {
-        this.path = new File(path);
+        this.path = Paths.get(path);
     }
-
+    
     public static String localTempPath() {
         StringBuilder ret = new StringBuilder().append(System.getProperty("java.io.tmpdir"));
         if (!Utils.isOnWindows()) {
@@ -39,19 +41,19 @@ public class TmpPath implements AutoCloseable {
         return ret.toString();
     }
 
-    public String getPath() {
-        return path.getAbsolutePath();
+    public String getAbsolutePath() {
+        return path.toAbsolutePath().toString();
     }
-
-    public File getFile() {
+    
+    public Path getPath() {
         return path;
     }
 
     @Override
     public void close() {
-        if (path.exists()) {
+        if (path.toFile().exists()) {
             try {
-                FileUtils.forceDelete(path);
+                Files.walkFileTree(path, new DirectoryDeleteVisitor());
             } catch (Exception e) {
                 //on windows, the host process still holds lock on the logfile
                 LOG.info(e.getMessage());

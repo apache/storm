@@ -14,7 +14,10 @@ package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +25,7 @@ import org.apache.storm.daemon.metrics.ClientMetricsUtils;
 import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,26 +33,31 @@ public class CsvStormReporter extends ScheduledStormReporter {
     public static final String CSV_LOG_DIR = "csv.log.dir";
     private static final Logger LOG = LoggerFactory.getLogger(CsvStormReporter.class);
 
-    private static File getCsvLogDir(Map stormConf, Map reporterConf) {
+    private static Path getCsvLogDir(Map stormConf, Map reporterConf) {
         String csvMetricsLogDirectory = ObjectReader.getString(reporterConf.get(CSV_LOG_DIR), null);
+        Path csvMetricsDir = null;
         if (csvMetricsLogDirectory == null) {
-            csvMetricsLogDirectory = ConfigUtils.absoluteStormLocalDir(stormConf);
-            csvMetricsLogDirectory = csvMetricsLogDirectory + ConfigUtils.FILE_SEPARATOR + "csvmetrics";
+            csvMetricsDir = ConfigUtils.absoluteStormLocalDir(stormConf).resolve("csvmetrics");
+        } else {
+            csvMetricsDir = Paths.get(csvMetricsLogDirectory);
         }
-        File csvMetricsDir = new File(csvMetricsLogDirectory);
         validateCreateOutputDir(csvMetricsDir);
         return csvMetricsDir;
     }
 
-    private static void validateCreateOutputDir(File dir) {
-        if (!dir.exists()) {
-            dir.mkdirs();
+    private static void validateCreateOutputDir(Path dir){
+        if (!dir.toFile().exists()) {
+            try {
+                Files.createDirectories(dir);
+            } catch (IOException e) {
+                throw Utils.wrapInRuntime(e);
+            }
         }
-        if (!dir.canWrite()) {
-            throw new IllegalStateException(dir.getName() + " does not have write permissions.");
+        if (!Files.isWritable(dir)) {
+            throw new IllegalStateException(dir.getFileName() + " does not have write permissions.");
         }
-        if (!dir.isDirectory()) {
-            throw new IllegalStateException(dir.getName() + " is not a directory.");
+        if (!Files.isDirectory(dir)) {
+            throw new IllegalStateException(dir.getFileName() + " is not a directory.");
         }
     }
 
@@ -83,7 +92,7 @@ public class CsvStormReporter extends ScheduledStormReporter {
         //defaults to seconds
         reportingPeriodUnit = getReportPeriodUnit(reporterConf);
 
-        File csvMetricsDir = getCsvLogDir(stormConf, reporterConf);
-        reporter = builder.build(csvMetricsDir);
+        Path csvMetricsDir = getCsvLogDir(stormConf, reporterConf);
+        reporter = builder.build(csvMetricsDir.toFile());
     }
 }

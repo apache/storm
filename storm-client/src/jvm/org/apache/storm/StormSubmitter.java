@@ -18,8 +18,10 @@
 
 package org.apache.storm;
 
-import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -283,7 +285,7 @@ public class StormSubmitter {
         DependencyPropertiesParser propertiesParser = new DependencyPropertiesParser();
 
         String depJarsProp = System.getProperty("storm.dependency.jars", "");
-        List<File> depJars = propertiesParser.parseJarsProperties(depJarsProp);
+        List<Path> depJars = propertiesParser.parseJarsProperties(depJarsProp);
 
         try {
             return uploader.uploadFiles(depJars, true);
@@ -298,7 +300,7 @@ public class StormSubmitter {
         DependencyPropertiesParser propertiesParser = new DependencyPropertiesParser();
 
         String depArtifactsProp = System.getProperty("storm.dependency.artifacts", "{}");
-        Map<String, File> depArtifacts = propertiesParser.parseArtifactsProperties(depArtifactsProp);
+        Map<String, Path> depArtifacts = propertiesParser.parseArtifactsProperties(depArtifactsProp);
 
         try {
             return uploader.uploadArtifacts(depArtifacts);
@@ -471,12 +473,12 @@ public class StormSubmitter {
                 "Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
         }
 
-        try {
+        Path jarPath = Paths.get(localJar);
+        try (BufferFileInputStream is = new BufferFileInputStream(jarPath, THRIFT_CHUNK_SIZE_BYTES)) {
             String uploadLocation = client.getClient().beginFileUpload();
-            LOG.info("Uploading topology jar " + localJar + " to assigned location: " + uploadLocation);
-            BufferFileInputStream is = new BufferFileInputStream(localJar, THRIFT_CHUNK_SIZE_BYTES);
+            LOG.info("Uploading topology jar " + jarPath + " to assigned location: " + uploadLocation);
 
-            long totalSize = new File(localJar).length();
+            long totalSize = Files.size(jarPath);
             if (listener != null) {
                 listener.onStart(localJar, uploadLocation, totalSize);
             }

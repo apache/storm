@@ -18,13 +18,11 @@
 
 package org.apache.storm.perf.spout;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -37,7 +35,7 @@ import org.apache.storm.tuple.Values;
 public class FileReadSpout extends BaseRichSpout {
     public static final String FIELDS = "sentence";
     private static final long serialVersionUID = -2582705611472467172L;
-    private transient FileReader reader;
+    private transient BufferOnInitFileReader reader;
     private String file;
     private boolean ackEnabled = true;
     private SpoutOutputCollector collector;
@@ -50,28 +48,8 @@ public class FileReadSpout extends BaseRichSpout {
     }
 
     // For testing
-    FileReadSpout(FileReader reader) {
+    FileReadSpout(BufferOnInitFileReader reader) {
         this.reader = reader;
-    }
-
-    public static List<String> readLines(InputStream input) {
-        List<String> lines = new ArrayList<>();
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            try {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    lines.add(line);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Reading file failed", e);
-            } finally {
-                reader.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error closing reader", e);
-        }
-        return lines;
     }
 
     @Override
@@ -84,7 +62,7 @@ public class FileReadSpout extends BaseRichSpout {
         }
         // for tests, reader will not be null
         if (this.reader == null) {
-            this.reader = new FileReader(this.file);
+            this.reader = new BufferOnInitFileReader(this.file);
         }
     }
 
@@ -103,7 +81,7 @@ public class FileReadSpout extends BaseRichSpout {
         declarer.declare(new Fields(FIELDS));
     }
 
-    public static class FileReader implements Serializable {
+    public static class BufferOnInitFileReader implements Serializable {
 
         private static final long serialVersionUID = -7012334600647556267L;
 
@@ -112,11 +90,11 @@ public class FileReadSpout extends BaseRichSpout {
         private int index = 0;
         private int limit = 0;
 
-        public FileReader(String file) {
+        public BufferOnInitFileReader(String file) {
             this.file = file;
             if (this.file != null) {
                 try {
-                    this.contents = readLines(new FileInputStream(this.file));
+                    this.contents = Files.readAllLines(Paths.get(this.file), Charset.defaultCharset());
                 } catch (IOException e) {
                     e.printStackTrace();
                     throw new IllegalArgumentException("Cannot open file " + file, e);

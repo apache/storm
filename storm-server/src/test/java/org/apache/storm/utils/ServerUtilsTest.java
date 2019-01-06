@@ -25,7 +25,7 @@ import static org.junit.Assert.assertThat;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import org.apache.storm.testing.TmpPath;
 import org.junit.jupiter.api.Test;
 
@@ -34,15 +34,15 @@ public class ServerUtilsTest {
     @Test
     public void testExtractZipFileDisallowsPathTraversal() throws Exception {
         try (TmpPath path = new TmpPath()) {
-            Path testRoot = Paths.get(path.getPath());
+            Path testRoot = path.getPath();
             Path extractionDest = testRoot.resolve("dest");
             Files.createDirectories(extractionDest);
 
             /**
              * Contains good.txt and ../evil.txt. Evil.txt will path outside the target dir, and should not be extracted.
              */
-            try (ZipFile zip = new ZipFile(Paths.get("src/test/resources/evil-path-traversal.jar").toFile())) {
-                ServerUtils.extractZipFile(zip, extractionDest.toFile(), null);
+            try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(Paths.get("src/test/resources/evil-path-traversal.jar")))) {
+                ServerUtils.extractZipFile(zip, extractionDest, null);
             }
             
             assertThat(Files.exists(extractionDest.resolve("good.txt")), is(true));
@@ -53,7 +53,7 @@ public class ServerUtilsTest {
     @Test
     public void testExtractZipFileDisallowsPathTraversalWhenUsingPrefix() throws Exception {
         try (TmpPath path = new TmpPath()) {
-            Path testRoot = Paths.get(path.getPath());
+            Path testRoot = path.getPath();
             Path destParent = testRoot.resolve("outer");
             Path extractionDest = destParent.resolve("resources");
             Files.createDirectories(extractionDest);
@@ -62,8 +62,8 @@ public class ServerUtilsTest {
              * Contains resources/good.txt and resources/../evil.txt. Evil.txt should not be extracted as it would end
              * up outside the extraction dest.
              */
-            try (ZipFile zip = new ZipFile(Paths.get("src/test/resources/evil-path-traversal-resources.jar").toFile())) {
-                ServerUtils.extractZipFile(zip, extractionDest.toFile(), "resources");
+            try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(Paths.get("src/test/resources/evil-path-traversal-resources.jar")))) {
+                ServerUtils.extractZipFile(zip, extractionDest, Paths.get("resources"));
             }
             
             assertThat(Files.exists(extractionDest.resolve("good.txt")), is(true));

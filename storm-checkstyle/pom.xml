@@ -28,7 +28,7 @@
 
     <artifactId>storm-checkstyle</artifactId>
     <name>Apache Storm - Checkstyle</name>
-    <description>Module to hold Checkstyle properties for Storm.</description>
+    <description>Module to hold Checkstyle properties and checks for Storm.</description>
 
     <build>
         <plugins>
@@ -48,5 +48,13 @@
             </plugin>
         </plugins>
     </build>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${checkstyle.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

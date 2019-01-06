@@ -24,7 +24,7 @@ import static org.apache.storm.Config.TOPOLOGY_USERS;
 import static org.apache.storm.DaemonConfig.LOGS_USERS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -33,7 +33,6 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.testsupport.ArgumentsVerifier;
 import org.apache.storm.utils.Utils;

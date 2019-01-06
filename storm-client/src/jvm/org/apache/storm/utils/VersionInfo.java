@@ -18,20 +18,20 @@
 
 package org.apache.storm.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,8 +137,8 @@ public final class VersionInfo {
             Path p = Paths.get(part);
             if (Files.isDirectory(p)) {
                 Path child = p.resolve(propFileName);
-                if (Files.exists(child) && !Files.isDirectory(child)) {
-                    try (FileReader reader = new FileReader(child.toFile())) {
+                if (child.toFile().exists() && !Files.isDirectory(child)) {
+                    try (BufferedReader reader = Files.newBufferedReader(child, Charset.defaultCharset())) {
                         Properties info = new Properties();
                         info.load(reader);
                         ret = new VersionInfoImpl(info);
@@ -150,12 +150,11 @@ public final class VersionInfo {
             } else if (part.toLowerCase().endsWith(".jar")
                 || part.toLowerCase().endsWith(".zip")) {
                 //Treat it like a jar
-                try (JarFile jf = new JarFile(p.toFile())) {
-                    Enumeration<? extends ZipEntry> zipEnums = jf.entries();
-                    while (zipEnums.hasMoreElements()) {
-                        ZipEntry entry = zipEnums.nextElement();
+                try (JarInputStream jarStream = new JarInputStream(Files.newInputStream(p))) {
+                    JarEntry entry;
+                    while ((entry = jarStream.getNextJarEntry()) != null) {
                         if (!entry.isDirectory() && entry.getName().equals(propFileName)) {
-                            try (InputStreamReader reader = new InputStreamReader(jf.getInputStream(entry))) {
+                            try (InputStreamReader reader = new InputStreamReader(jarStream, Charset.defaultCharset())) {
                                 Properties info = new Properties();
                                 info.load(reader);
                                 ret = new VersionInfoImpl(info);

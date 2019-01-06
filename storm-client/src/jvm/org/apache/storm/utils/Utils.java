@@ -22,9 +22,6 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,8 +40,13 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -62,18 +64,19 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import javax.security.auth.Subject;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.NimbusBlobStore;
+import org.apache.storm.daemon.supervisor.DirectoryDeleteVisitor;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
@@ -91,7 +94,7 @@ import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.com.google.common.collect.MapDifference;
 import org.apache.storm.shade.com.google.common.collect.Maps;
-import org.apache.storm.shade.org.apache.commons.io.FileUtils;
+import org.apache.storm.shade.com.google.common.io.MoreFiles;
 import org.apache.storm.shade.org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
@@ -166,10 +169,8 @@ public class Utils {
     }
 
     public static Map<String, Object> findAndReadConfigFile(String name, boolean mustExist) {
-        InputStream in = null;
         boolean confFileEmpty = false;
-        try {
-            in = getConfigFileInputStream(name);
+        try (InputStream in = getConfigFileInputStream(name)) {
             if (null != in) {
                 Yaml yaml = new Yaml(new SafeConstructor());
                 @SuppressWarnings("unchecked")
@@ -192,14 +193,6 @@ public class Utils {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            if (null != in) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
         }
     }
 
@@ -212,9 +205,9 @@ public class Utils {
 
         HashSet<URL> resources = new HashSet<URL>(findResources(configFilePath));
         if (resources.isEmpty()) {
-            File configFile = new File(configFilePath);
-            if (configFile.exists()) {
-                return new FileInputStream(configFile);
+            Path configFile = Paths.get(configFilePath);
+            if (configFile.toFile().exists()) {
+                return Files.newInputStream(configFile);
             }
         } else if (resources.size() > 1) {
             throw new IOException(
@@ -747,8 +740,8 @@ public class Utils {
         return false;
     }
 
-    public static boolean checkFileExists(String path) {
-        return Files.exists(new File(path).toPath());
+    public static boolean checkFileExists(Path path) {
+        return path.toFile().exists();
     }
 
     /**
@@ -756,7 +749,7 @@ public class Utils {
      *
      * @param path the path to the file or directory
      */
-    public static void forceDelete(String path) throws IOException {
+    public static void forceDelete(Path path) throws IOException {
         _instance.forceDeleteImpl(path);
     }
 
@@ -1265,9 +1258,8 @@ public class Utils {
         return dump.toString();
     }
 
-    public static boolean checkDirExists(String dir) {
-        File file = new File(dir);
-        return file.isDirectory();
+    public static boolean checkDirExists(Path dir) {
+        return Files.isDirectory(dir);
     }
 
     /**
@@ -1385,8 +1377,8 @@ public class Utils {
         return ret;
     }
 
-    public static Object readYamlFile(String yamlFile) {
-        try (FileReader reader = new FileReader(yamlFile)) {
+    public static Object readYamlFile(Path yamlFile) {
+        try (BufferedReader reader = Files.newBufferedReader(yamlFile, Charset.defaultCharset())) {
             return new Yaml(new SafeConstructor()).load(reader);
         } catch (Exception ex) {
             LOG.error("Failed to read yaml file.", ex);
@@ -1622,10 +1614,10 @@ public class Utils {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> readConfIgnoreNotFound(Yaml yaml, File f) throws IOException {
+    private static Map<String, Object> readConfIgnoreNotFound(Yaml yaml, Path p) throws IOException {
         Map<String, Object> ret = null;
-        if (f.exists()) {
-            try (FileReader fr = new FileReader(f)) {
+        if (Files.exists(p)) {
+            try (BufferedReader fr = Files.newBufferedReader(p, Charset.defaultCharset())) {
                 ret = (Map<String, Object>) yaml.load(fr);
             }
         }
@@ -1643,54 +1635,50 @@ public class Utils {
         // Based on how Java handles the classpath
         // https://docs.oracle.com/javase/8/docs/technotes/tools/unix/classpath.html
         for (String part : cp) {
-            File f = new File(part);
-
-            if (f.getName().equals("*")) {
+            if (part.endsWith("*")) {
                 // wildcard is given in file
                 // in java classpath, '*' is expanded to all jar/JAR files in the directory
-                File dir = f.getParentFile();
-                if (dir == null) {
+                Path dir;
+                if (part.equals("*")) {
                     // it happens when part is just '*' rather than denoting some directory
-                    dir = new File(".");
+                    dir = Paths.get(".");
+                } else {
+                    dir = Paths.get(part.substring(0, part.length() - 1));
                 }
 
-                File[] jarFiles = dir.listFiles((dir1, name) -> name.endsWith(".jar") || name.endsWith(".JAR"));
+                try (DirectoryStream<Path> jarFiles = Files.newDirectoryStream(dir,
+                    dirEntry -> MoreFiles.getFileExtension(dirEntry).equalsIgnoreCase("jar"))) {
+                    for (Path jarFile : jarFiles) {
+                        JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, jarFile).readJar();
+                        defaultsConf = jarConfigReader.getDefaultsConf();
+                        stormConf = jarConfigReader.getStormConf();
+                    }
+                }
+            } else {
+                Path p = Paths.get(part);
+                if (Files.isDirectory(p)) {
+                    // no wildcard, directory
+                    if (defaultsConf == null) {
+                        defaultsConf = readConfIgnoreNotFound(yaml, p.resolve("defaults.yaml"));
+                    }
 
-                // Quoting Javadoc in File.listFiles(FilenameFilter filter):
-                // Returns {@code null} if this abstract pathname does not denote a directory, or if an I/O error occurs.
-                // Both things are not expected and should not happen.
-                if (jarFiles == null) {
-                    throw new IOException("Fail to list jar files in directory: " + dir);
+                    if (stormConf == null) {
+                        stormConf = readConfIgnoreNotFound(yaml, p.resolve("storm.yaml"));
+                    }
+                } else if (Files.isRegularFile(p)) {
+                    // no wildcard, file
+                    if (MoreFiles.getFileExtension(p).equalsIgnoreCase("zip")) {
+                        JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, p).readZip();
+                        defaultsConf = jarConfigReader.getDefaultsConf();
+                        stormConf = jarConfigReader.getStormConf();
+                    } else if (MoreFiles.getFileExtension(p).equalsIgnoreCase("jar")) {
+                        JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, p).readJar();
+                        defaultsConf = jarConfigReader.getDefaultsConf();
+                        stormConf = jarConfigReader.getStormConf();
+                    }
+                    // Class path entries that are neither directories nor archives (.zip or JAR files)
+                    // nor the asterisk (*) wildcard character are ignored.
                 }
-
-                for (File jarFile : jarFiles) {
-                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, jarFile).readJar();
-                    defaultsConf = jarConfigReader.getDefaultsConf();
-                    stormConf = jarConfigReader.getStormConf();
-                }
-            } else if (f.isDirectory()) {
-                // no wildcard, directory
-                if (defaultsConf == null) {
-                    defaultsConf = readConfIgnoreNotFound(yaml, new File(f, "defaults.yaml"));
-                }
-
-                if (stormConf == null) {
-                    stormConf = readConfIgnoreNotFound(yaml, new File(f, "storm.yaml"));
-                }
-            } else if (f.isFile()) {
-                // no wildcard, file
-                String fileName = f.getName();
-                if (fileName.endsWith(".zip") || fileName.endsWith(".ZIP")) {
-                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, f).readZip();
-                    defaultsConf = jarConfigReader.getDefaultsConf();
-                    stormConf = jarConfigReader.getStormConf();
-                } else if (fileName.endsWith(".jar") || fileName.endsWith(".JAR")) {
-                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, f).readJar();
-                    defaultsConf = jarConfigReader.getDefaultsConf();
-                    stormConf = jarConfigReader.getStormConf();
-                }
-                // Class path entries that are neither directories nor archives (.zip or JAR files)
-                // nor the asterisk (*) wildcard character are ignored.
             }
         }
         if (stormConf != null) {
@@ -1728,12 +1716,15 @@ public class Utils {
     }
 
     // Non-static impl methods exist for mocking purposes.
-    protected void forceDeleteImpl(String path) throws IOException {
+    protected void forceDeleteImpl(Path path) throws IOException {
         LOG.debug("Deleting path {}", path);
+        if (path == null) {
+            return;
+        }
         if (checkFileExists(path)) {
             try {
-                FileUtils.forceDelete(new File(path));
-            } catch (FileNotFoundException ignored) {
+                Files.walkFileTree(path, new DirectoryDeleteVisitor());
+            } catch (NoSuchFileException ignored) {
             }
         }
     }
@@ -1804,13 +1795,13 @@ public class Utils {
         private Yaml yaml;
         private Map<String, Object> defaultsConf;
         private Map<String, Object> stormConf;
-        private File f;
+        private Path path;
 
-        public JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, File f) {
+        public JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, Path path) {
             this.yaml = yaml;
             this.defaultsConf = defaultsConf;
             this.stormConf = stormConf;
-            this.f = f;
+            this.path = path;
         }
 
         public Map<String, Object> getDefaultsConf() {
@@ -1822,35 +1813,28 @@ public class Utils {
         }
 
         public JarConfigReader readZip() throws IOException {
-            try (ZipFile zipFile = new ZipFile(f)) {
-                readArchive(zipFile);
+            try (ZipInputStream zipStream = new ZipInputStream(Files.newInputStream(path))) {
+                readArchive(zipStream);
             }
             return this;
         }
 
         public JarConfigReader readJar() throws IOException {
-            try (JarFile jarFile = new JarFile(f)) {
-                readArchive(jarFile);
+            try (JarInputStream jarStream = new JarInputStream(Files.newInputStream(path))) {
+                readArchive(jarStream);
             }
             return this;
         }
 
-        private void readArchive(ZipFile zipFile) throws IOException {
-            Enumeration<? extends ZipEntry> zipEnums = zipFile.entries();
-            while (zipEnums.hasMoreElements()) {
-                ZipEntry entry = zipEnums.nextElement();
-                if (!entry.isDirectory()) {
-                    if (defaultsConf == null && entry.getName().equals("defaults.yaml")) {
-                        try (InputStreamReader isr = new InputStreamReader(zipFile.getInputStream(entry))) {
-                            defaultsConf = (Map<String, Object>) yaml.load(isr);
-                        }
-                    }
-
-                    if (stormConf == null && entry.getName().equals("storm.yaml")) {
-                        try (InputStreamReader isr = new InputStreamReader(zipFile.getInputStream(entry))) {
-                            stormConf = (Map<String, Object>) yaml.load(isr);
-                        }
-                    }
+        private void readArchive(ZipInputStream zipStream) throws IOException {
+            ZipEntry entry;
+            while ((entry = zipStream.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    //Skip
+                } else if (defaultsConf == null && entry.getName().equals("defaults.yaml")) {
+                    defaultsConf = (Map<String, Object>) yaml.load(zipStream);
+                } else if (stormConf == null && entry.getName().equals("storm.yaml")) {
+                    stormConf = (Map<String, Object>) yaml.load(zipStream);
                 }
             }
         }

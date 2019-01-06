@@ -12,12 +12,16 @@
 
 package org.apache.storm.container.cgroup;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.storm.container.cgroup.core.CgroupCore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,21 +161,18 @@ public class CgroupCommon implements CgroupCommonOperation {
         return parent;
     }
 
-    public Set<CgroupCommon> getChildren() {
+    public Set<CgroupCommon> getChildren() throws IOException {
 
-        File file = new File(this.dir);
-        File[] files = file.listFiles();
-        if (files == null) {
+        Path path = Paths.get(this.dir);
+        if (!Files.isDirectory(path)) {
             LOG.info("{} is not a directory", this.dir);
             return null;
         }
-        Set<CgroupCommon> children = new HashSet<CgroupCommon>();
-        for (File child : files) {
-            if (child.isDirectory()) {
-                children.add(new CgroupCommon(child.getName(), this.hierarchy, this));
-            }
+        try (Stream<Path> filesList = Files.list(path)) {
+            return filesList.filter(Files::isDirectory)
+                .map(child -> new CgroupCommon(child.getFileName().toString(), hierarchy, this))
+                .collect(Collectors.toSet());
         }
-        return children;
     }
 
     public boolean isRoot() {

@@ -12,6 +12,7 @@
 
 package org.apache.storm.command;
 
+import java.nio.file.Paths;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -27,7 +28,7 @@ public class DevZookeeper {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         String localPath = (String) conf.get(DaemonConfig.DEV_ZOOKEEPER_PATH);
-        Utils.forceDelete(localPath);
+        Utils.forceDelete(Paths.get(localPath));
         Zookeeper.mkInprocessZookeeper(localPath, ObjectReader.getInt(port));
     }
 }

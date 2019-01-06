@@ -42,26 +42,18 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.storm.metric.StormMetricsRegistry;
 
 public class ContainerTest {
-    private static final Joiner PATH_JOIN = Joiner.on(File.separator).skipNulls();
-    private static final String DOUBLE_SEP = File.separator + File.separator;
 
-    static String asAbsPath(String... parts) {
-        return (File.separator + PATH_JOIN.join(parts)).replace(DOUBLE_SEP, File.separator);
+    static Path asAbsPath(String firstPart, String... rest) {
+        return Paths.get(firstPart, rest).toAbsolutePath().normalize();
     }
 
-    static File asAbsFile(String... parts) {
-        return new File(asAbsPath(parts));
-    }
-
-    static String asPath(String... parts) {
-        return PATH_JOIN.join(parts);
-    }
-
-    public static File asFile(String... parts) {
-        return new File(asPath(parts));
+    public static Path asPath(String firstPart, String... rest) {
+        return Paths.get(firstPart, rest);
     }
 
     @Test
@@ -101,12 +93,12 @@ public class ContainerTest {
         final String topoId = "test_topology";
         final String workerId = "worker_id";
         final String user = "me";
-        final String stormLocal = asAbsPath("tmp", "testing");
-        final File workerArtifacts = asAbsFile(stormLocal, topoId, String.valueOf(port));
-        final File logMetadataFile = new File(workerArtifacts, "worker.yaml");
-        final File workerUserFile = asAbsFile(stormLocal, "workers-users", workerId);
-        final File workerRoot = asAbsFile(stormLocal, "workers", workerId);
-        final File distRoot = asAbsFile(stormLocal, "supervisor", "stormdist", topoId);
+        final Path stormLocal = asAbsPath("tmp", "testing");
+        final Path workerArtifacts = stormLocal.resolve(topoId).resolve(String.valueOf(port));
+        final Path logMetadataFile = workerArtifacts.resolve("worker.yaml");
+        final Path workerUserFile = stormLocal.resolve("workers-users").resolve(workerId);
+        final Path workerRoot = stormLocal.resolve("workers").resolve(workerId);
+        final Path distRoot = stormLocal.resolve("supervisor").resolve("stormdist").resolve(topoId);
 
         final Map<String, Object> topoConf = new HashMap<>();
         final List<String> topoUsers = Arrays.asList("t-user-a", "t-user-b");
@@ -121,8 +113,8 @@ public class ContainerTest {
         topoConf.put(Config.TOPOLOGY_USERS, topoUsers);
 
         final Map<String, Object> superConf = new HashMap<>();
-        superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
-        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
+        superConf.put(Config.STORM_LOCAL_DIR, stormLocal.toString());
+        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal.toString());
 
         final StringWriter yamlDump = new StringWriter();
 
@@ -141,9 +133,9 @@ public class ContainerTest {
         mc.setup();
 
         //Initial Setup
-        verify(ops).forceMkdir(new File(workerRoot, "pids"));
-        verify(ops).forceMkdir(new File(workerRoot, "tmp"));
-        verify(ops).forceMkdir(new File(workerRoot, "heartbeats"));
+        verify(ops).forceMkdir(workerRoot.resolve("pids"));
+        verify(ops).forceMkdir(workerRoot.resolve("tmp"));
+        verify(ops).forceMkdir(workerRoot.resolve("heartbeats"));
         verify(ops).fileExists(workerArtifacts);
 
         //Log file permissions
@@ -166,10 +158,10 @@ public class ContainerTest {
         verify(ops).dump(workerUserFile, user);
 
         //Create links to artifacts dir
-        verify(ops).createSymlink(new File(workerRoot, "artifacts"), workerArtifacts);
+        verify(ops).createSymlink(workerRoot.resolve("artifacts"), workerArtifacts);
 
         //Create links to blobs
-        verify(ops, never()).createSymlink(new File(workerRoot, "resources"), new File(distRoot, "resources"));
+        verify(ops, never()).createSymlink(workerRoot.resolve("resources"), distRoot.resolve("resources"));
     }
 
     @Test
@@ -180,18 +172,18 @@ public class ContainerTest {
         final String topoId = "test_topology";
         final String workerId = "worker_id";
         final String user = "me";
-        final String stormLocal = asAbsPath("tmp", "testing");
-        final File workerArtifacts = asAbsFile(stormLocal, topoId, String.valueOf(port));
-        final File logMetadataFile = new File(workerArtifacts, "worker.yaml");
-        final File workerUserFile = asAbsFile(stormLocal, "workers-users", workerId);
-        final File workerRoot = asAbsFile(stormLocal, "workers", workerId);
-        final File workerPidsRoot = new File(workerRoot, "pids");
+        final Path stormLocal = asAbsPath("tmp", "testing");
+        final Path workerArtifacts = stormLocal.resolve(topoId).resolve(String.valueOf(port));
+        final Path logMetadataFile = workerArtifacts.resolve("worker.yaml");
+        final Path workerUserFile = stormLocal.resolve("workers-users").resolve(workerId);
+        final Path workerRoot = stormLocal.resolve("workers").resolve(workerId);
+        final Path workerPidsRoot = workerRoot.resolve("pids");
 
         final Map<String, Object> topoConf = new HashMap<>();
 
         final Map<String, Object> superConf = new HashMap<>();
-        superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
-        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
+        superConf.put(Config.STORM_LOCAL_DIR, stormLocal.toString());
+        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal.toString());
 
         final StringWriter yamlDump = new StringWriter();
 
@@ -211,12 +203,12 @@ public class ContainerTest {
         mc.allPids.add(pid);
 
         mc.cleanUp();
-        verify(ops).deleteIfExists(eq(new File(workerPidsRoot, String.valueOf(pid))), eq(user), any(String.class));
+        verify(ops).deleteIfExists(eq(workerPidsRoot.resolve(String.valueOf(pid))), eq(user), any(String.class));
         verify(iso).releaseResourcesForWorker(workerId);
 
-        verify(ops).deleteIfExists(eq(new File(workerRoot, "pids")), eq(user), any(String.class));
-        verify(ops).deleteIfExists(eq(new File(workerRoot, "tmp")), eq(user), any(String.class));
-        verify(ops).deleteIfExists(eq(new File(workerRoot, "heartbeats")), eq(user), any(String.class));
+        verify(ops).deleteIfExists(eq(workerRoot.resolve("pids")), eq(user), any(String.class));
+        verify(ops).deleteIfExists(eq(workerRoot.resolve("tmp")), eq(user), any(String.class));
+        verify(ops).deleteIfExists(eq(workerRoot.resolve("heartbeats")), eq(user), any(String.class));
         verify(ops).deleteIfExists(eq(workerRoot), eq(user), any(String.class));
         verify(ops).deleteIfExists(workerUserFile);
     }

@@ -14,6 +14,7 @@ package org.apache.storm.daemon.worker;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -575,8 +576,8 @@ public class WorkerState {
 
     public final WorkerTopologyContext getWorkerTopologyContext() {
         try {
-            String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
-            String pidDir = ConfigUtils.workerPidsRoot(conf, topologyId);
+            Path codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
+            Path pidDir = ConfigUtils.workerPidsRoot(conf, topologyId);
             return new WorkerTopologyContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
                                              componentToStreamToFields, topologyId, codeDir, pidDir, port, localTaskIds,
                                              defaultSharedResources,

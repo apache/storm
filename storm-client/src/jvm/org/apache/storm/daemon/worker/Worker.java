@@ -12,10 +12,13 @@
 
 package org.apache.storm.daemon.worker;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,7 +58,6 @@ import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.shade.com.google.common.base.Preconditions;
-import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.shade.org.apache.commons.lang.ObjectUtils;
 import org.apache.storm.shade.uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 import org.apache.storm.stats.ClientStatsUtil;
@@ -157,9 +159,17 @@ public class Worker implements Shutdownable, DaemonCommon {
             // Distributed mode
             SysOutOverSLF4J.sendSystemOutAndErrToSLF4J();
             String pid = Utils.processPid();
-            FileUtils.touch(new File(ConfigUtils.workerPidPath(conf, workerId, pid)));
-            FileUtils.writeStringToFile(new File(ConfigUtils.workerArtifactsPidPath(conf, topologyId, port)), pid,
-                                        Charset.forName("UTF-8"));
+            Path workerPidPath = ConfigUtils.workerPidPath(conf, workerId, pid);
+            Files.createDirectories(workerPidPath.getParent());
+            try {
+                Files.createFile(workerPidPath);
+            } catch (FileAlreadyExistsException e) {
+                //This is ok
+            }
+            Path workerArtifactsPidPath = ConfigUtils.workerArtifactsPidPath(conf, topologyId, port);
+            Files.createDirectories(workerArtifactsPidPath.getParent());
+            Files.write(workerArtifactsPidPath,
+                pid.getBytes(StandardCharsets.UTF_8));
         }
         final Map<String, Object> topologyConf =
             ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
@@ -382,7 +392,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         Map<String, Map<String, Object>> blobstoreMap =
             (Map<String, Map<String, Object>>) workerState.getTopologyConf().get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobstoreMap != null) {
-            String stormRoot = ConfigUtils.supervisorStormDistRoot(workerState.getTopologyConf(), workerState.getTopologyId());
+            Path stormRoot = ConfigUtils.supervisorStormDistRoot(workerState.getTopologyConf(), workerState.getTopologyId());
             for (Map.Entry<String, Map<String, Object>> entry : blobstoreMap.entrySet()) {
                 String localFileName = entry.getKey();
                 Map<String, Object> blobInfo = entry.getValue();
@@ -390,7 +400,8 @@ public class Worker implements Shutdownable, DaemonCommon {
                     localFileName = (String) blobInfo.get("localname");
                 }
 
-                String blobWithVersion = new File(stormRoot, localFileName).getCanonicalFile().getName();
+                Path filePath = stormRoot.resolve(localFileName).toAbsolutePath().normalize();
+                String blobWithVersion = filePath.getFileName().toString();
                 Matcher m = BLOB_VERSION_EXTRACTION.matcher(blobWithVersion);
                 if (m.matches()) {
                     results.put(localFileName, Long.valueOf(m.group(1)));

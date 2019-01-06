@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.versioned-store-test
   (:use [clojure test])
-  (:import [java.io File])
+  (:import [java.nio.file Path])
   (:import [org.apache.storm.testing TmpPath])
   (:import [org.apache.commons.io FileUtils])
   (:import [org.apache.storm.utils VersionedStore]))
@@ -27,8 +27,8 @@
         ~@body
         ))))
 
-(defn writeToFile [^String file]
-  (FileUtils/writeStringToFile (File. file) (str "time:" (System/currentTimeMillis))))
+(defn writeToFile [^Path file]
+  (FileUtils/writeStringToFile (.toFile file) (str "time:" (System/currentTimeMillis))))
 
 (defvstest test-empty-version [vs]
   (let [v (.createVersion vs)]

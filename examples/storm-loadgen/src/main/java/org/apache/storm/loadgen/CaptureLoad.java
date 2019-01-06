@@ -18,7 +18,9 @@
 
 package org.apache.storm.loadgen;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -342,9 +344,9 @@ public class CaptureLoad {
         if (cmd.hasOption('o')) {
             outputDir = cmd.getOptionValue('o');
         }
-        File baseOut = new File(outputDir);
+        Path baseOut = Paths.get(outputDir);
         LOG.info("Will save captured topologies to {}", baseOut);
-        baseOut.mkdirs();
+        Files.createDirectories(baseOut);
 
         try (NimbusClient nc = NimbusClient.getConfiguredClient(conf)) {
             Nimbus.Iface client = nc.getClient();
@@ -357,7 +359,7 @@ public class CaptureLoad {
                     if (cmd.hasOption('a')) {
                         capturedConf = capturedConf.anonymize();
                     }
-                    capturedConf.writeTo(new File(baseOut, capturedConf.name + ".yaml"));
+                    capturedConf.writeTo(baseOut.resolve(capturedConf.name + ".yaml").toFile());
                 }
             }
 

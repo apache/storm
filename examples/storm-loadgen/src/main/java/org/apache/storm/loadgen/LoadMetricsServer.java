@@ -19,12 +19,15 @@
 package org.apache.storm.loadgen;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -328,12 +331,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         protected final Map<String, MetricExtractor> allExtractors;
         public final boolean includesSysOutOrError;
 
-        public FileReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        public FileReporter(Map<String, MetricExtractor> allExtractors) throws IOException {
             this(null, Collections.emptyMap(), allExtractors);
         }
 
         public FileReporter(String path, Map<String, String> query,  Map<String, MetricExtractor> allExtractors)
-            throws FileNotFoundException {
+            throws IOException {
             boolean append = Boolean.parseBoolean(query.getOrDefault("append", "false"));
             boolean tee = Boolean.parseBoolean(query.getOrDefault("tee", "false"));
             boolean includesSysOutOrError = false;
@@ -348,7 +351,15 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                 includesSysOutOrError = true;
                 tee = false;
             } else {
-                out = new FileOutputStream(path, append);
+                List<OpenOption> options = new ArrayList<>();
+                options.add(StandardOpenOption.CREATE);
+                options.add(StandardOpenOption.WRITE);
+                if (append) {
+                    options.add(StandardOpenOption.APPEND);
+                } else {
+                    options.add(StandardOpenOption.TRUNCATE_EXISTING);
+                }
+                out = Files.newOutputStream(Paths.get(path), options.toArray(new OpenOption[0]));
             }
 
             if (tee) {
@@ -505,12 +516,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         protected String doubleFormat;
 
         public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
-            throws FileNotFoundException {
+            throws IOException {
             this(path, query, extractorsMap, null);
         }
 
         public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap,
-                                   String defaultPreceision) throws FileNotFoundException {
+                                   String defaultPreceision) throws IOException {
             super(path, query, extractorsMap);
             targetUnit = UNIT_MAP.get(query.getOrDefault("time", "MILLISECONDS").toUpperCase());
             if (targetUnit == null) {
@@ -591,7 +602,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         public final String stringFormat;
 
         public FixedWidthReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
-            throws FileNotFoundException {
+            throws IOException {
             super(path, query, extractorsMap, "3");
             int columnWidth = Integer.parseInt(query.getOrDefault("columnWidth", "15")) - 1;//Always have a space in between
             doubleFormat = "%," + columnWidth + "." + precision + "f";
@@ -599,7 +610,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             stringFormat = "%" + columnWidth + "s";
         }
 
-        public FixedWidthReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        public FixedWidthReporter(Map<String, MetricExtractor> allExtractors) throws IOException {
             this(null, Collections.emptyMap(), allExtractors);
         }
 
@@ -653,7 +664,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         private final String separator;
 
         public SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
-            throws FileNotFoundException {
+            throws IOException {
             super(path, query, extractorsMap);
             this.separator = separator;
         }
@@ -702,13 +713,13 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     static class LegacyReporter extends FileReporter {
         private final TimeUnit targetUnitOverride;
 
-        public LegacyReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        public LegacyReporter(Map<String, MetricExtractor> allExtractors) throws IOException {
             super(allExtractors);
             targetUnitOverride = null;
         }
 
         public LegacyReporter(String path, Map<String, String> query, Map<String, MetricExtractor> allExtractors)
-            throws FileNotFoundException {
+            throws IOException {
             super(path, query, allExtractors);
             if (query.containsKey("time")) {
                 targetUnitOverride = UNIT_MAP.get(query.get("time").toUpperCase());
@@ -809,7 +820,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     private final LinkedList<Measurements> allCombined = new LinkedList<>();
 
     LoadMetricsServer(Map<String, Object> conf, CommandLine commandLine, Map<String, Object> parameterMetrics) throws URISyntaxException,
-        FileNotFoundException {
+        IOException {
         super(conf);
         Map<String, MetricExtractor> allExtractors = new LinkedHashMap<>(NAMED_EXTRACTORS);
         for (Map.Entry<String, Object> entry: parameterMetrics.entrySet()) {

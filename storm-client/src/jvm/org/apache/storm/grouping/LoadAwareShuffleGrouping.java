@@ -277,7 +277,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
             if (taskToNodePort.containsKey(task)) {
                 hosts.add(taskToNodePort.get(task).get_node());
             } else {
-                LOG.error("Could not find task NodeInfo from local cache.");
+                LOG.error("Could not find task NodeInfo from local cache for task" + task);
             }
         }
         hosts.add(sourceNodeInfo.get_node());

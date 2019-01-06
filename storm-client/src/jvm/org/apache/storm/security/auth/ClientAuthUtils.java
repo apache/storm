@@ -20,11 +20,13 @@ package org.apache.storm.security.auth;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.URIParameter;
 import java.util.Collection;
@@ -72,13 +74,13 @@ public class ClientAuthUtils {
         //find login file configuration from Storm configuration
         String loginConfigurationFile = (String) topoConf.get("java.security.auth.login.config");
         if ((loginConfigurationFile != null) && (loginConfigurationFile.length() > 0)) {
-            File config_file = new File(loginConfigurationFile);
-            if (!config_file.canRead()) {
+            Path config_file = Paths.get(loginConfigurationFile);
+            if (!Files.isReadable(config_file)) {
                 throw new RuntimeException("File " + loginConfigurationFile +
                                            " cannot be read.");
             }
             try {
-                URI config_uri = config_file.toURI();
+                URI config_uri = config_file.toUri();
                 login_conf = Configuration.getInstance("JavaLoginConfig", new URIParameter(config_uri));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);

@@ -19,7 +19,6 @@
 package org.apache.storm.metric;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.storm.shade.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,12 +95,16 @@ public class FileBasedEventLogger implements IEventLogger {
          * Include the topology name & worker port in the file name so that
          * multiple event loggers can log independently.
          */
-        String workersArtifactRoot = ConfigUtils.workerArtifactsRoot(conf, stormId, port);
+        Path workersArtifactRoot = ConfigUtils.workerArtifactsRoot(conf, stormId, port);
 
-        Path path = Paths.get(workersArtifactRoot, "events.log");
-        File dir = path.toFile().getParentFile();
-        if (!dir.exists()) {
-            dir.mkdirs();
+        Path path = workersArtifactRoot.resolve("events.log");
+        Path dir = path.getParent();
+        if (!dir.toFile().exists()) {
+            try {
+                Files.createDirectories(dir);
+            } catch (IOException e) {
+                throw Utils.wrapInRuntime(e);
+            }
         }
         initLogWriter(path);
         setUpFlushTask();

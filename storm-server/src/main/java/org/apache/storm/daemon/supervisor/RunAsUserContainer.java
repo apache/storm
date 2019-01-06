@@ -20,6 +20,7 @@ package org.apache.storm.daemon.supervisor;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -74,31 +75,31 @@ public class RunAsUserContainer extends BasicContainer {
     }
 
     @Override
-    protected boolean runProfilingCommand(List<String> command, Map<String, String> env, String logPrefix, File targetDir) throws
+    protected boolean runProfilingCommand(List<String> command, Map<String, String> env, String logPrefix, Path targetDir) throws
         IOException, InterruptedException {
         String user = this.getWorkerUser();
-        String td = targetDir.getAbsolutePath();
+        String absTargetPath = targetDir.toAbsolutePath().toString();
         LOG.info("Running as user: {} command: {}", user, command);
-        String containerFile = ServerUtils.containerFilePath(td);
-        if (Utils.checkFileExists(containerFile)) {
-            SupervisorUtils.rmrAsUser(_conf, containerFile, containerFile);
+        Path containerFile = ServerUtils.containerFilePath(absTargetPath);
+        if (containerFile.toFile().exists()) {
+            SupervisorUtils.rmrAsUser(_conf, containerFile.toString(), containerFile.toString());
         }
-        String scriptFile = ServerUtils.scriptFilePath(td);
-        if (Utils.checkFileExists(scriptFile)) {
-            SupervisorUtils.rmrAsUser(_conf, scriptFile, scriptFile);
+        Path scriptFile = ServerUtils.scriptFilePath(absTargetPath);
+        if (scriptFile.toFile().exists()) {
+            SupervisorUtils.rmrAsUser(_conf, scriptFile.toString(), scriptFile.toString());
         }
-        String script = ServerUtils.writeScript(td, command, env);
-        List<String> args = Arrays.asList("profiler", td, script);
+        Path script = ServerUtils.writeScript(absTargetPath, command, env);
+        List<String> args = Arrays.asList("profiler", absTargetPath, script.toString());
         int ret = ClientSupervisorUtils.processLauncherAndWait(_conf, user, args, env, logPrefix);
         return ret == 0;
     }
 
     @Override
     protected void launchWorkerProcess(List<String> command, Map<String, String> env,
-                                       String logPrefix, ExitCodeCallback processExitCallback, File targetDir) throws IOException {
-        String workerDir = targetDir.getAbsolutePath();
+                                       String logPrefix, ExitCodeCallback processExitCallback, Path targetDir) throws IOException {
+        String workerDir = targetDir.toAbsolutePath().toString();
         String user = this.getWorkerUser();
-        List<String> args = Arrays.asList("worker", workerDir, ServerUtils.writeScript(workerDir, command, env));
+        List<String> args = Arrays.asList("worker", workerDir, ServerUtils.writeScript(workerDir, command, env).toString());
         List<String> commandPrefix = null;
         if (_resourceIsolationManager != null) {
             commandPrefix = _resourceIsolationManager.getLaunchCommandPrefix(_workerId);

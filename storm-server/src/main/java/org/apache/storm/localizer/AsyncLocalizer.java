@@ -20,7 +20,6 @@ package org.apache.storm.localizer;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -61,6 +60,7 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
+import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +102,7 @@ public class AsyncLocalizer implements AutoCloseable {
     protected long cacheTargetSize;
 
     @VisibleForTesting
-    AsyncLocalizer(Map<String, Object> conf, AdvancedFSOps ops, String baseDir, StormMetricsRegistry metricsRegistry) throws IOException {
+    AsyncLocalizer(Map<String, Object> conf, AdvancedFSOps ops, Path baseDir, StormMetricsRegistry metricsRegistry) throws IOException {
         this.conf = conf;
         this.singleBlobLocalizationDuration = metricsRegistry.registerTimer("supervisor:single-blob-localization-duration");
         this.blobCacheUpdateDuration = metricsRegistry.registerTimer("supervisor:blob-cache-update-duration");
@@ -111,7 +111,7 @@ public class AsyncLocalizer implements AutoCloseable {
         this.metricsRegistry = metricsRegistry;
         isLocalMode = ConfigUtils.isLocalMode(conf);
         fsOps = ops;
-        localBaseDir = Paths.get(baseDir);
+        localBaseDir = baseDir;
         // default cache size 10GB, converted to Bytes
         cacheTargetSize = ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_TARGET_SIZE_MB),
                                               10 * 1024).longValue() << 20;
@@ -182,14 +182,14 @@ public class AsyncLocalizer implements AutoCloseable {
         assert user != null : "All user archives require a user present";
         ConcurrentMap<String, LocalizedResource> keyToResource = userArchives.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
         return keyToResource.computeIfAbsent(key, 
-            (k) -> new LocalizedResource(key, localBaseDir, true, fsOps, conf, user, metricsRegistry));
+            Unchecked.function((k) -> new LocalizedResource(key, localBaseDir, true, fsOps, conf, user, metricsRegistry)));
     }
 
     private LocalizedResource getUserFile(String user, String key) {
         assert user != null : "All user archives require a user present";
         ConcurrentMap<String, LocalizedResource> keyToResource = userFiles.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
         return keyToResource.computeIfAbsent(key, 
-            (k) -> new LocalizedResource(key, localBaseDir, false, fsOps, conf, user, metricsRegistry));
+            Unchecked.function((k) -> new LocalizedResource(key, localBaseDir, false, fsOps, conf, user, metricsRegistry)));
     }
 
     /**
@@ -460,14 +460,14 @@ public class AsyncLocalizer implements AutoCloseable {
 
     // baseDir/supervisor/usercache/user1/
     @VisibleForTesting
-    File getLocalUserDir(String userName) {
-        return LocalizedResource.getLocalUserDir(localBaseDir, userName).toFile();
+    Path getLocalUserDir(String userName) {
+        return LocalizedResource.getLocalUserDir(localBaseDir, userName);
     }
 
     // baseDir/supervisor/usercache/user1/filecache
     @VisibleForTesting
-    File getLocalUserFileCacheDir(String userName) {
-        return LocalizedResource.getLocalUserFileCacheDir(localBaseDir, userName).toFile();
+    Path getLocalUserFileCacheDir(String userName) {
+        return LocalizedResource.getLocalUserFileCacheDir(localBaseDir, userName);
     }
 
     private void recoverLocalizedArchivesForUser(String user) throws IOException {
@@ -569,8 +569,8 @@ public class AsyncLocalizer implements AutoCloseable {
     }
 
     private void forEachTopologyDistDir(ConsumePathAndId consumer) throws IOException {
-        Path stormCodeRoot = Paths.get(ConfigUtils.supervisorStormDistRoot(conf));
-        if (Files.exists(stormCodeRoot) && Files.isDirectory(stormCodeRoot)) {
+        Path stormCodeRoot = ConfigUtils.supervisorStormDistRoot(conf);
+        if (stormCodeRoot.toFile().exists() && Files.isDirectory(stormCodeRoot)) {
             try (DirectoryStream<Path> children = Files.newDirectoryStream(stormCodeRoot)) {
                 for (Path child : children) {
                     if (Files.isDirectory(child)) {
@@ -614,7 +614,7 @@ public class AsyncLocalizer implements AutoCloseable {
             try {
                 forEachTopologyDistDir((p, topologyId) -> {
                     if (!safeTopologyIds.contains(topologyId)) {
-                        fsOps.deleteIfExists(p.toFile());
+                        fsOps.deleteIfExists(p);
                     }
                 });
             } catch (Exception e) {
@@ -627,8 +627,8 @@ public class AsyncLocalizer implements AutoCloseable {
             for (String user : allUsers) {
                 ConcurrentMap<String, LocalizedResource> filesForUser = userFiles.get(user);
                 ConcurrentMap<String, LocalizedResource> archivesForUser = userArchives.get(user);
-                if ((filesForUser == null || filesForUser.size() == 0)
-                        && (archivesForUser == null || archivesForUser.size() == 0)) {
+                if ((filesForUser == null || filesForUser.isEmpty())
+                        && (archivesForUser == null || archivesForUser.isEmpty())) {
 
                     LOG.debug("removing empty set: {}", user);
                     try {
@@ -666,7 +666,7 @@ public class AsyncLocalizer implements AutoCloseable {
             try {
                 String topologyId = pna.getToplogyId();
                 String topoOwner = pna.getOwner();
-                String stormroot = ConfigUtils.supervisorStormDistRoot(conf, topologyId);
+                Path stormroot = ConfigUtils.supervisorStormDistRoot(conf, topologyId);
                 Map<String, Object> topoConf = ConfigUtils.readSupervisorStormConf(conf, topologyId);
 
                 @SuppressWarnings("unchecked")
@@ -675,7 +675,7 @@ public class AsyncLocalizer implements AutoCloseable {
 
                 List<LocalResource> localResourceList = getLocalResources(pna);
                 if (!localResourceList.isEmpty()) {
-                    File userDir = getLocalUserFileCacheDir(topoOwner);
+                    Path userDir = getLocalUserFileCacheDir(topoOwner);
                     if (!fsOps.fileExists(userDir)) {
                         fsOps.forceMkdir(userDir);
                     }
@@ -685,7 +685,7 @@ public class AsyncLocalizer implements AutoCloseable {
                         for (LocalizedResource localizedResource : localizedResources) {
                             String keyName = localizedResource.getKey();
                             //The sym link we are pointing to
-                            File rsrcFilePath = localizedResource.getCurrentSymlinkPath().toFile();
+                            Path rsrcFilePath = localizedResource.getCurrentSymlinkPath();
 
                             String symlinkName = null;
                             if (blobstoreMap != null) {
@@ -699,7 +699,7 @@ public class AsyncLocalizer implements AutoCloseable {
                                 // all things are from dependencies
                                 symlinkName = keyName;
                             }
-                            fsOps.createSymlink(new File(stormroot, symlinkName), rsrcFilePath);
+                            fsOps.createSymlink(stormroot.resolve(symlinkName), rsrcFilePath);
                         }
                     }
                 }

@@ -18,10 +18,10 @@
 
 package org.apache.storm.dependency;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -77,19 +77,19 @@ public class DependencyUploader {
         this.blobStore = blobStore;
     }
 
-    public List<String> uploadFiles(List<File> dependencies, boolean cleanupIfFails) throws IOException, AuthorizationException {
+    public List<String> uploadFiles(List<Path> dependencies, boolean cleanupIfFails) throws IOException, AuthorizationException {
         checkFilesExist(dependencies);
 
         List<String> keys = new ArrayList<>(dependencies.size());
         try {
-            for (File dependency : dependencies) {
-                String fileName = dependency.getName();
+            for (Path dependency : dependencies) {
+                String fileName = dependency.getFileName().toString();
                 String key = DependencyBlobStoreUtils.generateDependencyBlobKey(DependencyBlobStoreUtils.applyUUIDToFileName(fileName));
 
                 try {
                     uploadDependencyToBlobStore(key, dependency);
                 } catch (KeyAlreadyExistsException e) {
-                    // it should never happened since we apply UUID
+                    // it should never happen since we apply UUID
                     throw new RuntimeException(e);
                 }
 
@@ -105,14 +105,14 @@ public class DependencyUploader {
         return keys;
     }
 
-    public List<String> uploadArtifacts(Map<String, File> artifacts) {
+    public List<String> uploadArtifacts(Map<String, Path> artifacts) {
         checkFilesExist(artifacts.values());
 
         List<String> keys = new ArrayList<>(artifacts.size());
         try {
-            for (Map.Entry<String, File> artifactToFile : artifacts.entrySet()) {
+            for (Map.Entry<String, Path> artifactToFile : artifacts.entrySet()) {
                 String artifact = artifactToFile.getKey();
-                File dependency = artifactToFile.getValue();
+                Path dependency = artifactToFile.getValue();
 
                 String key = DependencyBlobStoreUtils.generateDependencyBlobKey(convertArtifactToJarFileName(artifact));
                 try {
@@ -144,7 +144,7 @@ public class DependencyUploader {
         return artifact.replace(":", "-") + ".jar";
     }
 
-    private boolean uploadDependencyToBlobStore(String key, File dependency)
+    private boolean uploadDependencyToBlobStore(String key, Path dependency)
         throws KeyAlreadyExistsException, AuthorizationException, IOException {
 
         boolean uploadNew = false;
@@ -163,7 +163,7 @@ public class DependencyUploader {
             AtomicOutputStream blob = null;
             try {
                 blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
-                try(InputStream in = Files.newInputStream(dependency.toPath())) {
+                try(InputStream in = Files.newInputStream(dependency)) {
                     IOUtils.copy(in, blob, this.uploadChuckSize);
                 }
                 blob.close();
@@ -184,10 +184,10 @@ public class DependencyUploader {
         return uploadNew;
     }
 
-    private void checkFilesExist(Collection<File> dependencies) {
-        for (File dependency : dependencies) {
-            if (!dependency.isFile() || !dependency.exists()) {
-                throw new FileNotAvailableException(dependency.getAbsolutePath());
+    private void checkFilesExist(Collection<Path> dependencies) {
+        for (Path dependency : dependencies) {
+            if (!Files.isRegularFile(dependency) || !dependency.toFile().exists()) {
+                throw new FileNotAvailableException(dependency.toAbsolutePath().toString());
             }
         }
     }

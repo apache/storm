@@ -58,6 +58,8 @@ import org.slf4j.LoggerFactory;
 import static org.apache.storm.daemon.nimbus.Nimbus.MIN_VERSION_SUPPORT_RPC_HEARTBEAT;
 import static org.apache.storm.utils.Utils.OR;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.storm.metric.StormMetricsRegistry;
 
 /**
@@ -154,8 +156,7 @@ public class BasicContainer extends Container {
         }
 
         if (profileCmd == null) {
-            profileCmd = _stormHome + File.separator + "bin" + File.separator
-                         + conf.get(DaemonConfig.WORKER_PROFILER_COMMAND);
+            profileCmd = Paths.get(_stormHome, "bin", ObjectReader.getString(conf.get(DaemonConfig.WORKER_PROFILER_COMMAND))).toString();
         }
         _profileCmd = profileCmd;
 
@@ -186,12 +187,12 @@ public class BasicContainer extends Container {
     }
 
     public static List<String> getDependencyLocationsFor(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops,
-                                                         String stormRoot) throws IOException {
+                                                         Path stormRoot) throws IOException {
         return TOPO_META_CACHE.get(conf, topologyId, ops, stormRoot).getDepLocs();
     }
 
     public static String getStormVersionFor(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops,
-                                            String stormRoot) throws IOException {
+                                            Path stormRoot) throws IOException {
         return TOPO_META_CACHE.get(conf, topologyId, ops, stormRoot).getStormVersion();
     }
 
@@ -260,7 +261,7 @@ public class BasicContainer extends Container {
      * @throws InterruptedException if interrupted wile waiting for the process to exit.
      */
     protected boolean runProfilingCommand(List<String> command, Map<String, String> env, String logPrefix,
-                                          File targetDir) throws IOException, InterruptedException {
+                                          Path targetDir) throws IOException, InterruptedException {
         _type.assertFull();
         Process p = ClientSupervisorUtils.launchProcess(command, env, logPrefix, null, targetDir);
         int ret = p.waitFor();
@@ -270,7 +271,7 @@ public class BasicContainer extends Container {
     @Override
     public boolean runProfiling(ProfileRequest request, boolean stop) throws IOException, InterruptedException {
         _type.assertFull();
-        String targetDir = ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port);
+        Path targetDir = ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port);
 
         @SuppressWarnings("unchecked")
         Map<String, String> env = (Map<String, String>) _topoConf.get(Config.TOPOLOGY_ENVIRONMENT);
@@ -278,19 +279,18 @@ public class BasicContainer extends Container {
             env = new HashMap<>();
         }
 
-        String str = ConfigUtils.workerArtifactsPidPath(_conf, _topologyId, _port);
+        Path str = ConfigUtils.workerArtifactsPidPath(_conf, _topologyId, _port);
 
-        String workerPid = _ops.slurpString(new File(str)).trim();
+        String workerPid = _ops.slurpString(str).trim();
 
         ProfileAction profileAction = request.get_action();
         String logPrefix = "ProfilerAction process " + _topologyId + ":" + _port + " PROFILER_ACTION: " + profileAction
                            + " ";
 
-        List<String> command = mkProfileCommand(profileAction, stop, workerPid, targetDir);
+        List<String> command = mkProfileCommand(profileAction, stop, workerPid, targetDir.toString());
 
-        File targetFile = new File(targetDir);
         if (command.size() > 0) {
-            return runProfilingCommand(command, env, logPrefix, targetFile);
+            return runProfilingCommand(command, env, logPrefix, targetDir);
         }
         LOG.warn("PROFILING REQUEST NOT SUPPORTED {} IGNORED...", request);
         return true;
@@ -357,13 +357,13 @@ public class BasicContainer extends Container {
      * @param conf      the config for the supervisor.
      * @return the java.library.path/LD_LIBRARY_PATH to use so native libraries load correctly.
      */
-    protected String javaLibraryPath(String stormRoot, Map<String, Object> conf) {
-        String resourceRoot = stormRoot + File.separator + ServerConfigUtils.RESOURCES_SUBDIR;
+    protected String javaLibraryPath(Path stormRoot, Map<String, Object> conf) {
+        Path resourceRoot = stormRoot.resolve(ServerConfigUtils.RESOURCES_SUBDIR);
         String os = System.getProperty("os.name").replaceAll("\\s+", "_");
         String arch = System.getProperty("os.arch");
-        String archResourceRoot = resourceRoot + File.separator + os + "-" + arch;
+        Path archResourceRoot = resourceRoot.resolve(os + "-" + arch);
         String ret = CPJ.join(archResourceRoot, resourceRoot,
-                              conf.get(DaemonConfig.JAVA_LIBRARY_PATH));
+            conf.get(DaemonConfig.JAVA_LIBRARY_PATH));
         return ret;
     }
 
@@ -373,17 +373,17 @@ public class BasicContainer extends Container {
      * @param dir the directory to which a wildcard will be appended
      * @return the path with wildcard ("*") suffix
      */
-    protected String getWildcardDir(File dir) {
+    protected String getWildcardDir(Path dir) {
         return dir.toString() + File.separator + "*";
     }
 
     protected List<String> frameworkClasspath(SimpleVersion topoVersion) {
-        File stormWorkerLibDir = new File(_stormHome, "lib-worker");
+        Path stormWorkerLibDir = Paths.get(_stormHome, "lib-worker");
         String topoConfDir =
             System.getenv("STORM_CONF_DIR") != null ?
                 System.getenv("STORM_CONF_DIR") :
-                new File(_stormHome, "conf").getAbsolutePath();
-        File stormExtlibDir = new File(_stormHome, "extlib");
+                Paths.get(_stormHome, "conf").toAbsolutePath().toString();
+        Path stormExtlibDir = Paths.get(_stormHome, "extlib");
         String extcp = System.getenv("STORM_EXT_CLASSPATH");
         List<String> pathElements = new LinkedList<>();
         pathElements.add(getWildcardDir(stormWorkerLibDir));
@@ -506,7 +506,7 @@ public class BasicContainer extends Container {
      * @throws IOException on any error
      */
     protected void launchWorkerProcess(List<String> command, Map<String, String> env, String logPrefix,
-                                       ExitCodeCallback processExitCallback, File targetDir) throws IOException {
+                                       ExitCodeCallback processExitCallback, Path targetDir) throws IOException {
         if (_resourceIsolationManager != null) {
             command = _resourceIsolationManager.getLaunchCommand(_workerId, command);
         }
@@ -538,10 +538,10 @@ public class BasicContainer extends Container {
      *
      * @throws IOException on any error.
      */
-    private List<String> getClassPathParams(final String stormRoot, final SimpleVersion topoVersion) throws IOException {
-        final String stormJar = ConfigUtils.supervisorStormJarPath(stormRoot);
+    private List<String> getClassPathParams(final Path stormRoot, final SimpleVersion topoVersion) throws IOException {
+        final Path stormJar = ConfigUtils.supervisorStormJarPath(stormRoot);
         final List<String> dependencyLocations = getDependencyLocationsFor(_conf, _topologyId, _ops, stormRoot);
-        final String workerClassPath = getWorkerClassPath(stormJar, dependencyLocations, topoVersion);
+        final String workerClassPath = getWorkerClassPath(stormJar.toString(), dependencyLocations, topoVersion);
 
         List<String> classPathParams = new ArrayList<>();
         classPathParams.add("-cp");
@@ -556,8 +556,8 @@ public class BasicContainer extends Container {
      * @return a list of command line options
      */
     private List<String> getCommonParams() {
-        final String workersArtifacts = ConfigUtils.workerArtifactsRoot(_conf);
-        String stormLogDir = ConfigUtils.getLogDir();
+        final Path workersArtifacts = ConfigUtils.workerArtifactsRoot(_conf);
+        Path stormLogDir = ConfigUtils.getLogDir();
         
         List<String> commonParams = new ArrayList<>();
         commonParams.add("-Dlogging.sensitivity=" + OR((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
@@ -617,12 +617,12 @@ public class BasicContainer extends Container {
      *
      * @throws IOException on any error.
      */
-    private List<String> mkLaunchCommand(final int memOnheap, final String stormRoot,
+    private List<String> mkLaunchCommand(final int memOnheap, final Path stormRoot,
                                          final String jlp) throws IOException {
         final String javaCmd = javaCmd("java");
         final String stormOptions = ConfigUtils.concatIfNotNull(System.getProperty("storm.options"));
         final String topoConfFile = ConfigUtils.concatIfNotNull(System.getProperty("storm.conf.file"));
-        final String workerTmpDir = ConfigUtils.workerTmpRoot(_conf, _workerId);
+        final Path workerTmpDir = ConfigUtils.workerTmpRoot(_conf, _workerId);
         String topoVersionString = getStormVersionFor(_conf, _topologyId, _ops, stormRoot);
         if (topoVersionString == null) {
             topoVersionString = (String) _conf.getOrDefault(Config.SUPERVISOR_WORKER_DEFAULT_VERSION, VersionInfo.getVersion());
@@ -829,7 +829,7 @@ public class BasicContainer extends Container {
         final WorkerResources resources = _assignment.get_resources();
         final int memOnHeap = getMemOnHeap(resources);
         memoryLimitMB = calculateMemoryLimit(resources, memOnHeap);
-        final String stormRoot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
+        final Path stormRoot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
         String jlp = javaLibraryPath(stormRoot, _conf);
 
         Map<String, String> topEnvironment = new HashMap<String, String>();
@@ -856,21 +856,21 @@ public class BasicContainer extends Container {
 
         LOG.info("Launching worker with command: {}. ", ServerUtils.shellCmd(commandList));
 
-        String workerDir = ConfigUtils.workerRoot(_conf, _workerId);
+        Path workerDir = ConfigUtils.workerRoot(_conf, _workerId);
 
-        launchWorkerProcess(commandList, topEnvironment, logPrefix, processExitCallback, new File(workerDir));
+        launchWorkerProcess(commandList, topEnvironment, logPrefix, processExitCallback, workerDir);
     }
 
     private static class TopologyMetaData {
         private final Map<String, Object> _conf;
         private final String _topologyId;
         private final AdvancedFSOps _ops;
-        private final String _stormRoot;
+        private final Path _stormRoot;
         private boolean _dataCached = false;
         private List<String> _depLocs = null;
         private String _stormVersion = null;
 
-        public TopologyMetaData(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, final String stormRoot) {
+        public TopologyMetaData(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, final Path stormRoot) {
             _conf = conf;
             _topologyId = topologyId;
             _ops = ops;
@@ -892,13 +892,13 @@ public class BasicContainer extends Container {
             final List<String> dependencyLocations = new ArrayList<>();
             if (stormTopology.get_dependency_jars() != null) {
                 for (String dependency : stormTopology.get_dependency_jars()) {
-                    dependencyLocations.add(new File(_stormRoot, dependency).getAbsolutePath());
+                    dependencyLocations.add(_stormRoot.resolve(dependency).toAbsolutePath().toString());
                 }
             }
 
             if (stormTopology.get_dependency_artifacts() != null) {
                 for (String dependency : stormTopology.get_dependency_artifacts()) {
-                    dependencyLocations.add(new File(_stormRoot, dependency).getAbsolutePath());
+                    dependencyLocations.add(_stormRoot.resolve(dependency).toAbsolutePath().toString());
                 }
             }
             _depLocs = dependencyLocations;
@@ -933,7 +933,7 @@ public class BasicContainer extends Container {
         };
 
         public synchronized TopologyMetaData get(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops,
-                                                 String stormRoot) {
+                                                 Path stormRoot) {
             //Only go off of the topology id for now.
             TopologyMetaData dl = _cache.get(topologyId);
             if (dl == null) {

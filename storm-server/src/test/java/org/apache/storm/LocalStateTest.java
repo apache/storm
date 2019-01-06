@@ -12,9 +12,9 @@
 
 package org.apache.storm;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
@@ -58,11 +58,11 @@ public class LocalStateTest {
     @Test
     public void testEmptyState() throws IOException {
         TmpPath tmp_dir = new TmpPath();
-        String dir = tmp_dir.getPath();
+        Path dir = tmp_dir.getPath();
         LocalState ls = new LocalState(dir, true);
         GlobalStreamId gs_a = new GlobalStreamId("a", "a");
-        FileOutputStream data = FileUtils.openOutputStream(new File(dir, "12345"));
-        FileOutputStream version = FileUtils.openOutputStream(new File(dir, "12345.version"));
+        FileOutputStream data = FileUtils.openOutputStream(dir.resolve("12345").toFile());
+        FileOutputStream version = FileUtils.openOutputStream(dir.resolve("12345.version").toFile());
         Assert.assertNull(ls.get("c"));
         ls.put("a", gs_a);
         Assert.assertEquals(gs_a, ls.get("a"));

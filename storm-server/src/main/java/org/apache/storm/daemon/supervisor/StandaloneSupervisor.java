@@ -15,6 +15,7 @@ package org.apache.storm.daemon.supervisor;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Map;
 import org.apache.storm.DaemonConfig;
@@ -29,7 +30,7 @@ public class StandaloneSupervisor implements ISupervisor {
     @Override
     public void prepare(Map<String, Object> topoConf, String schedulerLocalDir) {
         try {
-            LocalState localState = new LocalState(schedulerLocalDir, true);
+            LocalState localState = new LocalState(Paths.get(schedulerLocalDir), true);
             String supervisorId = localState.getSupervisorId();
             if (supervisorId == null) {
                 supervisorId = generateSupervisorId();

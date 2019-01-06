@@ -14,6 +14,8 @@ package org.apache.storm.scheduler.utils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.Utils;
@@ -27,7 +29,7 @@ public class FileConfigLoader implements IConfigLoader {
     private static final Logger LOG = LoggerFactory.getLogger(FileConfigLoader.class);
 
     private Map<String, Object> conf;
-    private String targetFilePath = null;
+    private Path targetFilePath = null;
 
     public FileConfigLoader(Map<String, Object> conf) {
         this.conf = conf;
@@ -36,7 +38,7 @@ public class FileConfigLoader implements IConfigLoader {
             LOG.error("No URI defined in {} configuration.", DaemonConfig.SCHEDULER_CONFIG_LOADER_URI);
         } else {
             try {
-                targetFilePath = new URI(uriString).getPath();
+                targetFilePath = Paths.get(new URI(uriString));
             } catch (URISyntaxException e) {
                 LOG.error("Failed to parse uri={}", uriString);
             }

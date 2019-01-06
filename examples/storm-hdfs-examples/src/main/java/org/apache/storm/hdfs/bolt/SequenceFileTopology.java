@@ -14,6 +14,8 @@ package org.apache.storm.hdfs.bolt;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -67,10 +69,10 @@ public class SequenceFileTopology {
         DefaultSequenceFormat format = new DefaultSequenceFormat("timestamp", "sentence");
 
         Yaml yaml = new Yaml();
-        InputStream in = new FileInputStream(args[1]);
-        Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(in);
-        in.close();
-        config.put("hdfs.config", yamlConf);
+        try (InputStream in = Files.newInputStream(Paths.get(args[1]))) {
+            Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(in);
+            config.put("hdfs.config", yamlConf);
+        }
 
         SequenceFileBolt bolt = new SequenceFileBolt()
             .withFsUrl(args[0])

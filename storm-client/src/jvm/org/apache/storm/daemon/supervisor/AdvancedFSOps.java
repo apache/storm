@@ -18,15 +18,15 @@
 
 package org.apache.storm.daemon.supervisor;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.Config;
-import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -73,12 +72,13 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param dir the directory to change permissions on
      * @throws IOException on any error
      */
-    public void restrictDirectoryPermissions(File dir) throws IOException {
+    @Override
+    public void restrictDirectoryPermissions(Path dir) throws IOException {
         Set<PosixFilePermission> perms = new HashSet<>(
             Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
                           PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_READ,
                           PosixFilePermission.GROUP_EXECUTE));
-        Files.setPosixFilePermissions(dir.toPath(), perms);
+        Files.setPosixFilePermissions(dir, perms);
     }
 
     /**
@@ -88,16 +88,15 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param toDir   where to move it from
      * @throws IOException on any error
      */
-    public void moveDirectoryPreferAtomic(File fromDir, File toDir) throws IOException {
-        FileUtils.forceMkdir(toDir);
-        Files.move(fromDir.toPath(), toDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
-    }
-
-    /**
-     * @return true if an atomic directory move works, else false.
-     */
-    public boolean supportsAtomicDirectoryMove() {
-        return true;
+    @Override
+    public void moveDirectoryPreferAtomic(Path fromDir, Path toDir) throws IOException {
+        Files.createDirectories(toDir.getParent());
+        try {
+            Files.move(fromDir, toDir, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            //Do copy-and-delete instead
+            Files.walkFileTree(fromDir, new DirectoryMoveVisitor(fromDir, toDir));
+        }
     }
 
     /**
@@ -107,8 +106,10 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param toDir   to where
      * @throws IOException on any error
      */
-    public void copyDirectory(File fromDir, File toDir) throws IOException {
-        FileUtils.copyDirectory(fromDir, toDir);
+    @Override
+    public void copyDirectory(Path fromDir, Path toDir) throws IOException {
+        Files.createDirectories(toDir.getParent());
+        Files.walkFileTree(fromDir, new DirectoryCopyVisitor(fromDir, toDir));
     }
 
     /**
@@ -118,7 +119,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param user the user to change the permissions for
      * @throws IOException on any error
      */
-    public void setupBlobPermissions(File path, String user) throws IOException {
+    @Override
+    public void setupBlobPermissions(Path path, String user) throws IOException {
         //Normally this is a NOOP
     }
 
@@ -130,7 +132,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param logPrefix if an external process needs to be launched to delete the object what prefix to include in the logs
      * @throws IOException on any error.
      */
-    public void deleteIfExists(File path, String user, String logPrefix) throws IOException {
+    @Override
+    public void deleteIfExists(Path path, String user, String logPrefix) throws IOException {
         //by default no need to do this as a different user
         deleteIfExists(path);
     }
@@ -141,13 +144,13 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param path what to delete
      * @throws IOException on any error.
      */
-    public void deleteIfExists(File path) throws IOException {
+    @Override
+    public void deleteIfExists(Path path) throws IOException {
         LOG.info("Deleting path {}", path);
-        Path p = path.toPath();
-        if (Files.exists(p)) {
+        if (path.toFile().exists()) {
             try {
-                FileUtils.forceDelete(path);
-            } catch (FileNotFoundException ignored) {
+                Files.walkFileTree(path, new DirectoryDeleteVisitor());
+            } catch (NoSuchFileException ignored) {
             }
         }
     }
@@ -159,7 +162,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param path the directory to set the permissions on
      * @throws IOException on any error
      */
-    public void setupStormCodeDir(String user, File path) throws IOException {
+    @Override
+    public void setupStormCodeDir(String user, Path path) throws IOException {
         //By default this is a NOOP
     }
 
@@ -170,7 +174,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param path the directory to set the permissions on
      * @throws IOException on any error
      */
-    public void setupWorkerArtifactsDir(String user, File path) throws IOException {
+    @Override
+    public void setupWorkerArtifactsDir(String user, Path path) throws IOException {
         //By default this is a NOOP
     }
 
@@ -183,6 +188,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      *
      * @throws IOException on any error
      */
+    @Override
     public boolean doRequiredTopoFilesExist(Map<String, Object> conf, String topologyId) throws IOException {
         return ClientSupervisorUtils.doRequiredTopoFilesExist(conf, topologyId);
     }
@@ -193,24 +199,17 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param path the directory to create
      * @throws IOException on any error
      */
-    public void forceMkdir(File path) throws IOException {
-        FileUtils.forceMkdir(path);
-    }
-
-    /**
-     * Makes a directory, including any necessary but nonexistent parent directories.
-     *
-     * @param path the directory to create
-     * @throws IOException on any error
-     */
+    @Override
     public void forceMkdir(Path path) throws IOException {
         Files.createDirectories(path);
     }
 
+    @Override
     public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
         return Files.newDirectoryStream(dir, filter);
     }
 
+    @Override
     public DirectoryStream<Path> newDirectoryStream(Path dir) throws IOException {
         return Files.newDirectoryStream(dir);
     }
@@ -223,20 +222,9 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      *
      * @throws IOException on any error.
      */
-    public boolean fileExists(File path) throws IOException {
-        return path.exists();
-    }
-
-    /**
-     * Check if a file exists or not
-     *
-     * @param path the path to check
-     * @return true if it exists else false
-     *
-     * @throws IOException on any error.
-     */
+    @Override
     public boolean fileExists(Path path) throws IOException {
-        return Files.exists(path);
+        return path.toFile().exists();
     }
 
     /**
@@ -247,20 +235,14 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      *
      * @throws IOException on any error
      */
-    public Writer getWriter(File file) throws IOException {
-        return new FileWriter(file);
+    @Override
+    public Writer getWriter(Path file) throws IOException {
+        return Files.newBufferedWriter(file, Charset.defaultCharset());
     }
 
-    /**
-     * Get an output stream to write to a given file
-     *
-     * @param file the file to write to
-     * @return an OutputStream for that file
-     *
-     * @throws IOException on any error
-     */
-    public OutputStream getOutputStream(File file) throws IOException {
-        return new FileOutputStream(file);
+    @Override
+    public OutputStream getOutputStream(Path path) throws IOException {
+        return Files.newOutputStream(path);
     }
 
     /**
@@ -270,9 +252,10 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @param data     the data to write
      * @throws IOException on any error
      */
-    public void dump(File location, String data) throws IOException {
-        File parent = location.getParentFile();
-        if (!parent.exists()) {
+    @Override
+    public void dump(Path location, String data) throws IOException {
+        Path parent = location.getParent();
+        if (!parent.toFile().exists()) {
             forceMkdir(parent);
         }
         try (Writer w = getWriter(location)) {
@@ -289,8 +272,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @throws IOException on any error
      */
     @Override
-    public String slurpString(File location) throws IOException {
-        return FileUtils.readFileToString(location, "UTF-8");
+    public String slurpString(Path location) throws IOException {
+        return new String(slurp(location), StandardCharsets.UTF_8);
     }
 
     /**
@@ -302,8 +285,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @throws IOException on any error
      */
     @Override
-    public byte[] slurp(File location) throws IOException {
-        return FileUtils.readFileToByteArray(location);
+    public byte[] slurp(Path location) throws IOException {
+        return Files.readAllBytes(location);
     }
 
     /**
@@ -314,19 +297,19 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @throws IOException on any error.
      */
     @Override
-    public void createSymlink(File link, File target) throws IOException {
+    public void createSymlink(Path link, Path target) throws IOException {
         if (_symlinksDisabled) {
             throw new IOException("Symlinks have been disabled, this should not be called");
         }
-        Path plink = link.toPath().toAbsolutePath();
-        Path ptarget = target.toPath().toAbsolutePath();
+        Path plink = link.toAbsolutePath();
+        Path ptarget = target.toAbsolutePath();
         LOG.debug("Creating symlink [{}] to [{}]", plink, ptarget);
-        if (Files.exists(plink)) {
+        if (plink.toFile().exists()) {
             if (Files.isSameFile(plink, ptarget)) {
                 //It already points where we want it to
                 return;
             }
-            FileUtils.forceDelete(link);
+            Files.delete(link);
         }
         Files.createSymbolicLink(plink, ptarget);
     }
@@ -343,30 +326,30 @@ public class AdvancedFSOps implements IAdvancedFSOps {
         }
 
         @Override
-        public void setupBlobPermissions(File path, String user) throws IOException {
+        public void setupBlobPermissions(Path path, String user) throws IOException {
             String logPrefix = "setup blob permissions for " + path;
             ClientSupervisorUtils.processLauncherAndWait(_conf, user, Arrays.asList("blob", path.toString()), null, logPrefix);
         }
 
         @Override
-        public void deleteIfExists(File path, String user, String logPrefix) throws IOException {
-            String absolutePath = path.getAbsolutePath();
-            if (Utils.checkFileExists(absolutePath)) {
+        public void deleteIfExists(Path path, String user, String logPrefix) throws IOException {
+            Path absolutePath = path.toAbsolutePath();
+            if (absolutePath.toFile().exists()) {
                 LOG.info("Deleting path (runAsUser) {}", absolutePath);
                 if (user == null) {
-                    user = Files.getOwner(path.toPath()).getName();
+                    user = Files.getOwner(path).getName();
                 }
                 List<String> commands = new ArrayList<>();
                 commands.add("rmr");
-                commands.add(absolutePath);
+                commands.add(absolutePath.toString());
                 ClientSupervisorUtils.processLauncherAndWait(_conf, user, commands, null, logPrefix);
 
-                if (Utils.checkFileExists(absolutePath)) {
+                if (absolutePath.toFile().exists()) {
                     // It's possible that permissions were not set properly on the directory, and
                     // the user who is *supposed* to own the dir does not. In this case, try the
                     // delete as the supervisor user.
                     Utils.forceDelete(absolutePath);
-                    if (Utils.checkFileExists(absolutePath)) {
+                    if (absolutePath.toFile().exists()) {
                         throw new RuntimeException(path + " was not deleted.");
                     }
                 }
@@ -374,18 +357,18 @@ public class AdvancedFSOps implements IAdvancedFSOps {
         }
 
         @Override
-        public void deleteIfExists(File path) throws IOException {
+        public void deleteIfExists(Path path) throws IOException {
             deleteIfExists(path, null, "UNNAMED");
         }
 
         @Override
-        public void setupStormCodeDir(String user, File path) throws IOException {
-            ClientSupervisorUtils.setupStormCodeDir(_conf, user, path.getCanonicalPath());
+        public void setupStormCodeDir(String user, Path path) throws IOException {
+            ClientSupervisorUtils.setupStormCodeDir(_conf, user, path.toAbsolutePath().normalize().toString());
         }
 
         @Override
-        public void setupWorkerArtifactsDir(String user, File path) throws IOException {
-            ClientSupervisorUtils.setupWorkerArtifactsDir(_conf, user, path.getCanonicalPath());
+        public void setupWorkerArtifactsDir(String user, Path path) throws IOException {
+            ClientSupervisorUtils.setupWorkerArtifactsDir(_conf, user, path.toAbsolutePath().normalize().toString());
         }
     }
 
@@ -402,22 +385,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
         }
 
         @Override
-        public void restrictDirectoryPermissions(File dir) throws IOException {
+        public void restrictDirectoryPermissions(Path dir) throws IOException {
             //NOOP, if windows gets support for run as user we will need to find a way to support this
-        }
-
-        @Override
-        public void moveDirectoryPreferAtomic(File fromDir, File toDir) throws IOException {
-            // Files/move with non-empty directory doesn't work well on Windows
-            // This is not atomic but it does work
-            FileUtils.moveDirectory(fromDir, toDir);
-        }
-
-        @Override
-        public boolean supportsAtomicDirectoryMove() {
-            // Files/move with non-empty directory doesn't work well on Windows
-            // FileUtils.moveDirectory is not atomic
-            return false;
         }
     }
 

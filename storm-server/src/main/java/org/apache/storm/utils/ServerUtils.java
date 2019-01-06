@@ -21,32 +21,33 @@ package org.apache.storm.utils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import javax.security.auth.Subject;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -82,6 +83,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ServerUtils {
+
     public static final Logger LOG = LoggerFactory.getLogger(ServerUtils.class);
 
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
@@ -94,8 +96,7 @@ public class ServerUtils {
     private static ServerUtils _instance = new ServerUtils();
 
     /**
-     * Provide an instance of this class for delegates to use.
-     * To mock out delegated methods, provide an instance of a subclass that
+     * Provide an instance of this class for delegates to use. To mock out delegated methods, provide an instance of a subclass that
      * overrides the implementation of the delegated method.
      *
      * @param u a ServerUtils instance
@@ -131,7 +132,7 @@ public class ServerUtils {
     }
 
     public static BlobStore getNimbusBlobStore(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
-        String type = (String)conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
+        String type = (String) conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
         if (type == null) {
             type = LocalFsBlobStore.class.getName();
         }
@@ -174,27 +175,22 @@ public class ServerUtils {
      * @param dir The input dir to get the disk space of this local dir
      * @return The total disk space of the input local directory
      */
-    public static long getDU(File dir) {
+    public static long getDU(Path dir) throws IOException {
         long size = 0;
-        if (!dir.exists()) {
+        if (!dir.toFile().exists()) {
             return 0;
         }
-        if (!dir.isDirectory()) {
-            return dir.length();
+        if (!Files.isDirectory(dir)) {
+            return Files.size(dir);
         } else {
-            File[] allFiles = dir.listFiles();
-            if (allFiles != null) {
-                for (int i = 0; i < allFiles.length; i++) {
-                    boolean isSymLink;
-                    try {
-                        isSymLink = org.apache.commons.io.FileUtils.isSymlink(allFiles[i]);
-                    } catch (IOException ioe) {
-                        isSymLink = true;
-                    }
-                    if (!isSymLink) {
-                        size += getDU(allFiles[i]);
+            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir)) {
+                for (Path p : dirStream) {
+                    if (!Files.readAttributes(p, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS).isSymbolicLink()) {
+                        size += getDU(p);
                     }
                 }
+            } catch (IOException e) {
+                LOG.warn("Failed to find disk usage for directory {}, skipping for disk usage calculation", dir, e);
             }
             return size;
         }
@@ -223,7 +219,7 @@ public class ServerUtils {
      * @throws IOException
      */
     public static void downloadResourcesAsSupervisor(String key, String localFile,
-                                                     ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
+        ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
         _instance.downloadResourcesAsSupervisorImpl(key, localFile, cb);
     }
 
@@ -239,18 +235,18 @@ public class ServerUtils {
     /**
      * Determines if a zip archive contains a particular directory.
      *
-     * @param zipfile path to the zipped file
-     * @param target  directory being looked for in the zip.
+     * @param zipPath path to the zipped file
+     * @param target directory being looked for in the zip.
      * @return boolean whether or not the directory exists in the zip.
      */
-    public static boolean zipDoesContainDir(String zipfile, String target) throws IOException {
-        List<ZipEntry> entries = (List<ZipEntry>) Collections.list(new ZipFile(zipfile).entries());
-
-        String targetDir = target + "/";
-        for (ZipEntry entry : entries) {
-            String name = entry.getName();
-            if (name.startsWith(targetDir)) {
-                return true;
+    public static boolean zipDoesContainDir(Path zipPath, Path target) throws IOException {
+        try (ZipInputStream zipStream = new ZipInputStream(Files.newInputStream(zipPath))) {
+            ZipEntry entry;
+            while ((entry = zipStream.getNextEntry()) != null) {
+                Path entryPath = Paths.get(entry.getName());
+                if (entryPath.startsWith(target)) {
+                    return true;
+                }
             }
         }
 
@@ -261,26 +257,26 @@ public class ServerUtils {
         return Files.getOwner(FileSystems.getDefault().getPath(path)).getName();
     }
 
-    public static String containerFilePath(String dir) {
-        return dir + File.separator + "launch_container.sh";
+    public static Path containerFilePath(String dir) {
+        return Paths.get(dir, "launch_container.sh");
     }
 
-    public static String scriptFilePath(String dir) {
-        return dir + File.separator + "storm-worker-script.sh";
+    public static Path scriptFilePath(String dir) {
+        return Paths.get(dir, "storm-worker-script.sh");
     }
 
     /**
      * Writes a posix shell script file to be executed in its own process.
      *
-     * @param dir         the directory under which the script is to be written
-     * @param command     the command the script is to execute
-     * @param environment optional environment variables to set before running the script's command. May be  null.
+     * @param dir the directory under which the script is to be written
+     * @param command the command the script is to execute
+     * @param environment optional environment variables to set before running the script's command. May be null.
      * @return the path to the script that has been written
      */
-    public static String writeScript(String dir, List<String> command,
-                                     Map<String, String> environment) throws IOException {
-        String path = scriptFilePath(dir);
-        try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
+    public static Path writeScript(String dir, List<String> command,
+        Map<String, String> environment) throws IOException {
+        Path path = scriptFilePath(dir);
+        try (BufferedWriter out = Files.newBufferedWriter(path, Charset.defaultCharset())) {
             out.write("#!/bin/bash");
             out.newLine();
             if (environment != null) {
@@ -369,23 +365,16 @@ public class ServerUtils {
      * Unpack matching files from a jar. Entries inside the jar that do not match the given pattern will be skipped.
      *
      * @param jarFile the .jar file to unpack
-     * @param toDir   the destination directory into which to unpack the jar
+     * @param toDir the destination directory into which to unpack the jar
      */
-    public static void unJar(File jarFile, File toDir) throws IOException {
-        try (JarFile jar = new JarFile(jarFile)) {
-            extractZipFile(jar, toDir, null);
-        }
-    }
-
-    /**
-     * Ensure the existence of a given directory.
-     *
-     * @throws IOException if it cannot be created and does not already exist
-     */
-    private static void ensureDirectory(File dir) throws IOException {
-        if (!dir.mkdirs() && !dir.isDirectory()) {
-            throw new IOException("Mkdirs failed to create " +
-                                  dir.toString());
+    public static void unJar(Path jarFile, Path toDir) throws IOException {
+        try (JarInputStream jarStream = new JarInputStream(Files.newInputStream(jarFile))) {
+            extractZipFile(jarStream, toDir, null);
+            Path manifestTarget = toDir.resolve("META-INF/MANIFEST.MF");
+            Files.createDirectories(manifestTarget.getParent());
+            try (OutputStream out = Files.newOutputStream(manifestTarget)) {
+                jarStream.getManifest().write(out);
+            }
         }
     }
 
@@ -394,13 +383,13 @@ public class ServerUtils {
      * <p/>
      * This utility will untar ".tar" files and ".tar.gz","tgz" files.
      *
-     * @param inFile   The tar file as input.
+     * @param inFile The tar file as input.
      * @param untarDir The untar directory where to untar the tar file.
      * @param symlinksDisabled true if symlinks should be disabled, else false.
      * @throws IOException
      */
-    public static void unTar(File inFile, File untarDir, boolean symlinksDisabled) throws IOException {
-        ensureDirectory(untarDir);
+    public static void unTar(Path inFile, Path untarDir, boolean symlinksDisabled) throws IOException {
+        Files.createDirectories(untarDir);
 
         boolean gzipped = inFile.toString().endsWith("gz");
         if (Utils.isOnWindows() || symlinksDisabled) {
@@ -414,8 +403,8 @@ public class ServerUtils {
         }
     }
 
-    private static void unTarUsingTar(File inFile, File untarDir,
-                                      boolean gzipped) throws IOException {
+    private static void unTarUsingTar(Path inFile, Path untarDir,
+        boolean gzipped) throws IOException {
         StringBuffer untarCommand = new StringBuffer();
         if (gzipped) {
             untarCommand.append(" gzip -dc '");
@@ -432,53 +421,44 @@ public class ServerUtils {
         } else {
             untarCommand.append(inFile.toString());
         }
-        String[] shellCmd = { "bash", "-c", untarCommand.toString() };
+        String[] shellCmd = {"bash", "-c", untarCommand.toString()};
         ShellUtils.ShellCommandExecutor shexec = new ShellUtils.ShellCommandExecutor(shellCmd);
         shexec.execute();
         int exitcode = shexec.getExitCode();
         if (exitcode != 0) {
-            throw new IOException("Error untarring file " + inFile +
-                                  ". Tar process exited with exit code " + exitcode);
+            throw new IOException("Error untarring file " + inFile
+                + ". Tar process exited with exit code " + exitcode);
         }
     }
 
-    private static void unTarUsingJava(File inFile, File untarDir,
-                                       boolean gzipped, boolean symlinksDisabled) throws IOException {
-        final String base = untarDir.getCanonicalPath();
+    private static void unTarUsingJava(Path inFile, Path untarDir,
+        boolean gzipped, boolean symlinksDisabled) throws IOException {
+        final Path base = untarDir.toAbsolutePath().normalize();
         LOG.trace("java untar {} to {}", inFile, base);
-        InputStream inputStream = null;
-        try {
-            if (gzipped) {
-                inputStream = new BufferedInputStream(new GZIPInputStream(
-                    new FileInputStream(inFile)));
-            } else {
-                inputStream = new BufferedInputStream(new FileInputStream(inFile));
-            }
+        try (InputStream inputStream = gzipped
+            ? new BufferedInputStream(new GZIPInputStream(Files.newInputStream(inFile)))
+            : new BufferedInputStream(Files.newInputStream(inFile))) {
             try (TarArchiveInputStream tis = new TarArchiveInputStream(inputStream)) {
-                for (TarArchiveEntry entry = tis.getNextTarEntry(); entry != null; ) {
+                for (TarArchiveEntry entry = tis.getNextTarEntry(); entry != null;) {
                     unpackEntries(tis, entry, untarDir, base, symlinksDisabled);
                     entry = tis.getNextTarEntry();
                 }
-            }
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
             }
         }
     }
 
     private static void unpackEntries(TarArchiveInputStream tis,
-                                      TarArchiveEntry entry, File outputDir, final String base,
-                                      boolean symlinksDisabled) throws IOException {
-        File target = new File(outputDir, entry.getName());
-        String found = target.getCanonicalPath();
+        TarArchiveEntry entry, Path outputDir, final Path base,
+        boolean symlinksDisabled) throws IOException {
+        Path target = outputDir.resolve(entry.getName());
+        Path found = target.toAbsolutePath().normalize();
         if (!found.startsWith(base)) {
             LOG.error("Invalid location {} is outside of {}", found, base);
             return;
         }
         if (entry.isDirectory()) {
             LOG.trace("Extracting dir {}", target);
-            ensureDirectory(target);
+            Files.createDirectories(target);
             for (TarArchiveEntry e : entry.getDirectoryEntries()) {
                 unpackEntries(tis, e, target, base, symlinksDisabled);
             }
@@ -486,28 +466,26 @@ public class ServerUtils {
             if (symlinksDisabled) {
                 LOG.info("Symlinks disabled skipping {}", target);
             } else {
-                Path src = target.toPath();
                 Path dest = Paths.get(entry.getLinkName());
                 LOG.trace("Extracting sym link {} to {}", target, dest);
                 // Create symbolic link relative to tar parent dir
-                Files.createSymbolicLink(src, dest);
+                Files.createSymbolicLink(target, dest);
             }
         } else if (entry.isFile()) {
             LOG.trace("Extracting file {}", target);
-            ensureDirectory(target.getParentFile());
-            try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(target))) {
+            Files.createDirectories(target.getParent());
+            try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(target))) {
                 IOUtils.copy(tis, outputStream);
             }
         } else {
             LOG.error("{} is not a currently supported tar entry type.", entry);
         }
 
-        Path p = target.toPath();
-        if (Files.exists(p)) {
+        if (target.toFile().exists()) {
             try {
                 //We created it so lets chmod it properly
                 int mode = entry.getMode();
-                Files.setPosixFilePermissions(p, parsePerms(mode));
+                Files.setPosixFilePermissions(target, parsePerms(mode));
             } catch (UnsupportedOperationException e) {
                 //Ignored the file system we are on does not support this, so don't do it.
             }
@@ -546,73 +524,64 @@ public class ServerUtils {
         return ret;
     }
 
-    public static void unpack(File localrsrc, File dst, boolean symLinksDisabled) throws IOException {
-        String lowerDst = localrsrc.getName().toLowerCase();
-        if (lowerDst.endsWith(".jar") ||
-            lowerDst.endsWith("_jar")) {
+    public static void unpack(Path localrsrc, Path dst, boolean symLinksDisabled) throws IOException {
+        String lowerDst = localrsrc.getFileName().toString().toLowerCase();
+        if (lowerDst.endsWith(".jar")
+            || lowerDst.endsWith("_jar")) {
             unJar(localrsrc, dst);
-        } else if (lowerDst.endsWith(".zip") ||
-            lowerDst.endsWith("_zip")) {
+        } else if (lowerDst.endsWith(".zip")
+            || lowerDst.endsWith("_zip")) {
             unZip(localrsrc, dst);
-        } else if (lowerDst.endsWith(".tar.gz") ||
-            lowerDst.endsWith("_tar_gz") ||
-            lowerDst.endsWith(".tgz") ||
-            lowerDst.endsWith("_tgz") ||
-            lowerDst.endsWith(".tar") ||
-            lowerDst.endsWith("_tar")) {
+        } else if (lowerDst.endsWith(".tar.gz")
+            || lowerDst.endsWith("_tar_gz")
+            || lowerDst.endsWith(".tgz")
+            || lowerDst.endsWith("_tgz")
+            || lowerDst.endsWith(".tar")
+            || lowerDst.endsWith("_tar")) {
             unTar(localrsrc, dst, symLinksDisabled);
         } else {
             LOG.warn("Cannot unpack " + localrsrc);
-            if (!localrsrc.renameTo(dst)) {
-                throw new IOException("Unable to rename file: [" + localrsrc
-                                      + "] to [" + dst + "]");
-            }
+            Files.move(localrsrc, dst);
         }
-        if (localrsrc.isFile()) {
-            localrsrc.delete();
+        if (Files.isRegularFile(localrsrc)) {
+            Files.delete(localrsrc);
         }
     }
-    
-    /**
-     * Extracts the given file to the given directory. Only zip entries starting with the given prefix are extracted.
-     * The prefix is stripped off entry names before extraction.
-     *
-     * @param zipFile The zip file to extract.
-     * @param toDir The directory to extract to.
-     * @param prefix The prefix to look for in the zip file. If not null only paths starting with the prefix will be
-     * extracted.
-     */
-    public static void extractZipFile(ZipFile zipFile, File toDir, String prefix) throws IOException {
-        ensureDirectory(toDir);
-        final String base = toDir.getCanonicalPath();
 
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
+    /**
+     * Extracts the given file to the given directory. Only zip entries starting with the given prefix are extracted. The prefix is stripped
+     * off entry names before extraction.
+     *
+     * @param zipStream The zip file to extract.
+     * @param toDir The directory to extract to.
+     * @param prefix The prefix to look for in the zip file. If not null only paths starting with the prefix will be extracted.
+     */
+    public static void extractZipFile(ZipInputStream zipStream, Path toDir, Path prefix) throws IOException {
+        Files.createDirectories(toDir);
+        final Path base = toDir.toAbsolutePath().normalize();
+
+        ZipEntry entry;
+        while ((entry = zipStream.getNextEntry()) != null) {
             if (!entry.isDirectory()) {
-                if (prefix != null && !entry.getName().startsWith(prefix)) {
+                Path entryPath = Paths.get(entry.getName());
+                if (prefix != null && !entryPath.startsWith(prefix)) {
                     //No need to extract it, it is not what we are looking for.
                     continue;
                 }
-                String entryName;
                 if (prefix != null) {
-                    entryName = entry.getName().substring(prefix.length());
-                    LOG.debug("Extracting {} shortened to {} into {}", entry.getName(), entryName, toDir);
-                } else {
-                    entryName = entry.getName();
+                    entryPath = prefix.relativize(entryPath);
+                    LOG.debug("Extracting {} shortened to {} into {}", entry.getName(), entryPath, toDir);
                 }
-                File file = new File(toDir, entryName);
-                String found = file.getCanonicalPath();
+                Path path = toDir.resolve(entryPath);
+                Path found = path.toAbsolutePath().normalize();
                 if (!found.startsWith(base)) {
                     LOG.error("Invalid location {} is outside of {}", found, base);
                     continue;
                 }
 
-                try (InputStream in = zipFile.getInputStream(entry)) {
-                    ensureDirectory(file.getParentFile());
-                    try (OutputStream out = new FileOutputStream(file)) {
-                        IOUtils.copy(in, out);
-                    }
+                Files.createDirectories(path.getParent());
+                try (OutputStream out = Files.newOutputStream(path)) {
+                    IOUtils.copy(zipStream, out);
                 }
             }
         }
@@ -621,13 +590,13 @@ public class ServerUtils {
     /**
      * Given a File input it will unzip the file in a the unzip directory passed as the second parameter.
      *
-     * @param inFile   The zip file as input
+     * @param inFile The zip file as input
      * @param toDir The unzip directory where to unzip the zip file.
      * @throws IOException
      */
-    public static void unZip(File inFile, File toDir) throws IOException {
-        try (ZipFile zipFile = new ZipFile(inFile)) {
-            extractZipFile(zipFile, toDir, null);
+    public static void unZip(Path inFile, Path toDir) throws IOException {
+        try (ZipInputStream zipStream = new ZipInputStream(Files.newInputStream(inFile), Charset.defaultCharset())) {
+            extractZipFile(zipStream, toDir, null);
         }
     }
 
@@ -636,25 +605,25 @@ public class ServerUtils {
      * the size module 2^32, per gzip specifications
      *
      * @param myFile The zip file as input
-     * @return zip file size as a long
+     * @return zip file size in bytes
      *
      * @throws IOException
      */
-    public static long zipFileSize(File myFile) throws IOException {
-        try (RandomAccessFile raf = new RandomAccessFile(myFile, "r")) {
-            raf.seek(raf.length() - 4);
-            long b4 = raf.read();
-            long b3 = raf.read();
-            long b2 = raf.read();
-            long b1 = raf.read();
-            return (b1 << 24) | (b2 << 16) + (b3 << 8) + b4;
+    public static int zipFileSize(Path myFile) throws IOException {
+        try (SeekableByteChannel ch = FileChannel.open(myFile)) {
+            ch.position(ch.size() - 4);
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+            ch.read(buf);
+            buf.flip();
+            return buf.getInt();
         }
     }
 
     private static boolean downloadResourcesAsSupervisorAttempt(ClientBlobStore cb, String key, String localFile) {
         boolean isSuccess = false;
-        try (FileOutputStream out = new FileOutputStream(localFile);
-             InputStreamWithMeta in = cb.getBlob(key);) {
+        try (OutputStream out = Files.newOutputStream(Paths.get(localFile));
+            InputStreamWithMeta in = cb.getBlob(key);) {
             long fileSize = in.getFileLength();
 
             byte[] buffer = new byte[1024];
@@ -754,7 +723,7 @@ public class ServerUtils {
     }
 
     public void downloadResourcesAsSupervisorImpl(String key, String localFile,
-                                                  ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
+        ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
         final int MAX_RETRY_ATTEMPTS = 2;
         final int ATTEMPTS_INTERVAL_TIME = 100;
         for (int retryAttempts = 0; retryAttempts < MAX_RETRY_ATTEMPTS; retryAttempts++) {

@@ -20,16 +20,14 @@ package org.apache.storm.daemon.logviewer.utils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.storm.Config;
@@ -111,8 +109,8 @@ public class ResourceAuthorizer {
      * @param fileName file name to get the whitelist
      */
     public LogUserGroupWhitelist getLogUserGroupWhitelist(String fileName) {
-        File wlFile = ServerConfigUtils.getLogMetaDataFile(fileName);
-        Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(wlFile.getAbsolutePath());
+        Path wlFile = ServerConfigUtils.getLogMetaDataFile(fileName);
+        Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(wlFile.toAbsolutePath());
 
         if (map == null) {
             return null;

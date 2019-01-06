@@ -13,22 +13,25 @@
 package org.apache.storm.localizer;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.JarURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Enumeration;
+import java.util.Collections;
 import java.util.Map;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
@@ -73,12 +76,12 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         this.isLocalMode = isLocalMode;
         this.fsOps = fsOps;
         this.owner = owner;
-        topologyBasicBlobsRootDir = Paths.get(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
+        topologyBasicBlobsRootDir = ConfigUtils.supervisorStormDistRoot(conf, topologyId);
         readVersion();
         updateSizeOnDisk();
     }
 
-    private static String resourcesJar() throws IOException {
+    private static Path resourcesJar() throws IOException {
         String path = ServerUtils.currentClasspath();
         if (path == null) {
             return null;
@@ -86,8 +89,9 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
 
         for (String jpath : path.split(File.pathSeparator)) {
             if (jpath.endsWith(".jar")) {
-                if (ServerUtils.zipDoesContainDir(jpath, ServerConfigUtils.RESOURCES_SUBDIR)) {
-                    return jpath;
+                Path jarPath = Paths.get(jpath);
+                if (ServerUtils.zipDoesContainDir(jarPath, ServerConfigUtils.RESOURCES_SUBDIR)) {
+                    return jarPath;
                 }
             }
         }
@@ -107,7 +111,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         if (!fsOps.fileExists(versionFile)) {
             version = NOT_DOWNLOADED_VERSION;
         } else {
-            String ver = FileUtils.readFileToString(versionFile.toFile(), "UTF8").trim();
+            String ver = new String(Files.readAllBytes(versionFile), StandardCharsets.UTF_8).trim();
             version = Long.parseLong(ver);
         }
     }
@@ -131,17 +135,17 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     public long fetchUnzipToTemp(ClientBlobStore store)
         throws IOException, KeyNotFoundException, AuthorizationException {
         synchronized (LocallyCachedTopologyBlob.class) {
-            if (!Files.exists(topologyBasicBlobsRootDir)) {
+            if (!topologyBasicBlobsRootDir.toFile().exists()) {
                 Files.createDirectories(topologyBasicBlobsRootDir);
-                fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir.toFile());
+                fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir);
             }
         }
         if (isLocalMode && type == TopologyBlobType.TOPO_JAR) {
             LOG.debug("DOWNLOADING LOCAL JAR to TEMP LOCATION... {}", topologyId);
             //This is a special case where the jar was not uploaded so we will not download it (it is already on the classpath)
             ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            String resourcesJar = resourcesJar();
-            URL url = classloader.getResource(ServerConfigUtils.RESOURCES_SUBDIR);
+            Path resourcesJar = resourcesJar();
+            URL url = classloader.getResource(ServerConfigUtils.RESOURCES_SUBDIR.toString());
             Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getTempExtractionDir(LOCAL_MODE_JAR_VERSION));
             if (resourcesJar != null) {
                 LOG.info("Extracting resources from jar at {} to {}", resourcesJar, extractionDest);
@@ -150,9 +154,16 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
                 LOG.info("Copying resources at {} to {}", url, extractionDest);
                 if ("jar".equals(url.getProtocol())) {
                     JarURLConnection urlConnection = (JarURLConnection) url.openConnection();
-                    extractDirFromJar(urlConnection.getJarFileURL().getFile(), ServerConfigUtils.RESOURCES_SUBDIR, extractionDest);
+                    try {
+                        URI jarUri = urlConnection.getJarFileURL().toURI();
+                        try (FileSystem zipFileSystem = FileSystems.newFileSystem(jarUri, Collections.emptyMap())) {
+                            extractDirFromJar(zipFileSystem.getPath(""), ServerConfigUtils.RESOURCES_SUBDIR, extractionDest);
+                        }
+                    } catch (URISyntaxException e) {
+                        throw new RuntimeException(e);
+                    }
                 } else {
-                    fsOps.copyDirectory(new File(url.getFile()), extractionDest.toFile());
+                    fsOps.copyDirectory(Paths.get(url.getFile()), extractionDest);
                 }
             }
             return LOCAL_MODE_JAR_VERSION;
@@ -170,35 +181,34 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
 
         if (type.needsExtraction()) {
             Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getTempExtractionDir(downloadMeta.getVersion()));
-            extractDirFromJar(tmpLocation.toAbsolutePath().toString(), ServerConfigUtils.RESOURCES_SUBDIR,
+            extractDirFromJar(tmpLocation.toAbsolutePath(), ServerConfigUtils.RESOURCES_SUBDIR,
                               extractionDest);
         }
         return downloadMeta.getVersion();
     }
 
-    protected void extractDirFromJar(String jarpath, String dir, Path dest) throws IOException {
-        LOG.debug("EXTRACTING {} from {} and placing it at {}", dir, jarpath, dest);
-        if (!Files.exists(dest)) {
+    protected void extractDirFromJar(Path jarPath, Path dirToExtract, Path dest) throws IOException {
+        LOG.debug("EXTRACTING {} from {} and placing it at {}", dirToExtract, jarPath, dest);
+        if (!dest.toFile().exists()) {
             //Create the directory no matter what. This is so we can check if it was downloaded in the future.
             Files.createDirectories(dest);
         }
-        try (JarFile jarFile = new JarFile(jarpath)) {
-            String prefix = dir + '/';
-            ServerUtils.extractZipFile(jarFile, dest.toFile(), prefix);
+        try (JarInputStream jarStream = new JarInputStream(Files.newInputStream(jarPath))) {
+            ServerUtils.extractZipFile(jarStream, dest, dirToExtract);
         }
     }
 
     @Override
     public boolean isFullyDownloaded() {
         Path versionFile = topologyBasicBlobsRootDir.resolve(type.getVersionFileName());
-        boolean ret = Files.exists(versionFile);
+        boolean ret = versionFile.toFile().exists();
         Path dest = topologyBasicBlobsRootDir.resolve(type.getFileName());
         if (!(isLocalMode && type == TopologyBlobType.TOPO_JAR)) {
-            ret = ret && Files.exists(dest);
+            ret = ret && dest.toFile().exists();
         }
         if (type.needsExtraction()) {
             Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getExtractionDir());
-            ret = ret && Files.exists(extractionDest);
+            ret = ret && extractionDest.toFile().exists();
         }
         return ret;
     }
@@ -211,16 +221,16 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         Path versionFile = topologyBasicBlobsRootDir.resolve(type.getVersionFileName());
 
         LOG.debug("Removing version file {} to force download on failure", versionFile);
-        fsOps.deleteIfExists(versionFile.toFile()); //So if we fail we are forced to try again
+        fsOps.deleteIfExists(versionFile); //So if we fail we are forced to try again
         LOG.debug("Removing destination file {} in preparation for move", dest);
-        fsOps.deleteIfExists(dest.toFile());
+        fsOps.deleteIfExists(dest);
         if (type.needsExtraction()) {
             Path extractionTemp = topologyBasicBlobsRootDir.resolve(type.getTempExtractionDir(newVersion));
             Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getExtractionDir());
             LOG.debug("Removing extraction dest {} in preparation for extraction", extractionDest);
-            fsOps.deleteIfExists(extractionDest.toFile());
+            fsOps.deleteIfExists(extractionDest);
             if (fsOps.fileExists(extractionTemp)) {
-                fsOps.moveDirectoryPreferAtomic(extractionTemp.toFile(), extractionDest.toFile());
+                fsOps.moveDirectoryPreferAtomic(extractionTemp, extractionDest);
             }
         }
         if (!(isLocalMode && type == TopologyBlobType.TOPO_JAR)) {
@@ -235,13 +245,13 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
             // Because the permission modification code runs in a separate process we are doing a global lock to avoid
             // any races between multiple versions running at the same time.  Ideally this would be on a per topology
             // basis, but that is a lot harder and the changes run fairly quickly so it should not be a big deal.
-            fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir.toFile());
-            File sharedMemoryDirFinalLocation = new File(topologyBasicBlobsRootDir.toFile(), "shared_by_topology");
-            sharedMemoryDirFinalLocation.mkdirs();
+            fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir);
+            Path sharedMemoryDirFinalLocation = topologyBasicBlobsRootDir.resolve("shared_by_topology");
+            fsOps.forceMkdir(sharedMemoryDirFinalLocation);
             fsOps.setupWorkerArtifactsDir(owner, sharedMemoryDirFinalLocation);
         }
         LOG.debug("Writing out version file {} with version {}", versionFile, newVersion);
-        FileUtils.write(versionFile.toFile(), Long.toString(newVersion), "UTF8");
+        Files.write(versionFile, Long.toString(newVersion).getBytes(StandardCharsets.UTF_8));
         this.version = newVersion;
         updateSizeOnDisk();
         LOG.debug("New version of {} - {} committed {}", topologyId, type, newVersion);
@@ -268,7 +278,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
             if (children != null) {
                 for (Path p : children) {
                     LOG.debug("Cleaning up {}", p);
-                    fsOps.deleteIfExists(p.toFile());
+                    fsOps.deleteIfExists(p);
                 }
             }
         }
@@ -288,7 +298,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
             for (Path p : children) {
                 String fileName = p.getFileName().toString();
                 if (fileName.startsWith(baseName)) {
-                    fsOps.deleteIfExists(p.toFile());
+                    fsOps.deleteIfExists(p);
                 }
             }
         }

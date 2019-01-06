@@ -26,17 +26,20 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.SlidingTimeWindowReservoir;
 import com.codahale.metrics.Timer;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -143,9 +146,6 @@ import org.apache.storm.generated.WorkerMetricPoint;
 import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.generated.WorkerSummary;
-import org.apache.storm.generated.WorkerToken;
-import org.apache.storm.generated.WorkerTokenInfo;
-import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.logging.ThriftAccessLogger;
 import org.apache.storm.metric.ClusterMetricsConsumerExecutor;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -541,7 +541,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         this.nimbusHostPortInfo = hostPortInfo;
         if (inimbus != null) {
-            inimbus.prepare(conf, ServerConfigUtils.masterInimbusDir(conf));
+            inimbus.prepare(conf, ServerConfigUtils.masterInimbusDir(conf).toString());
         }
 
         this.inimbus = inimbus;
@@ -1138,13 +1138,19 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public static void cleanInbox(String dirLoc, int seconds) {
         final long now = Time.currentTimeMillis();
         final long ms = Time.secsToMillis(seconds);
-        File dir = new File(dirLoc);
-        for (File f : dir.listFiles((file) -> file.isFile() && ((file.lastModified() + ms) <= now))) {
-            if (f.delete()) {
-                LOG.info("Cleaning inbox ... deleted: {}", f.getName());
-            } else {
-                LOG.error("Cleaning inbox ... error deleting: {}", f.getName());
+        Path dir = Paths.get(dirLoc);
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir,
+            path -> Files.isRegularFile(path) && (Files.getLastModifiedTime(path).toMillis() + ms) <= now)) {
+            for (Path p : dirStream) {
+                try {
+                    Files.delete(p);
+                    LOG.info("Cleaning inbox ... deleted: {}", p.getFileName());
+                } catch (IOException e) {
+                    LOG.error("Cleaning inbox ... error deleting: {}", p.getFileName());
+                }
             }
+        } catch (IOException e) {
+            throw Utils.wrapInRuntime(e);
         }
     }
 
@@ -1532,7 +1538,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private String getInbox() throws IOException {
-        return ServerConfigUtils.masterInbox(conf);
+        return ServerConfigUtils.masterInbox(conf).toString();
     }
 
     /**
@@ -1627,7 +1633,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         String jarKey = ConfigUtils.masterStormJarKey(topoId);
         if (tmpJarLocation != null) {
             //in local mode there is no jar
-            try (FileInputStream fin = new FileInputStream(tmpJarLocation)) {
+            try (InputStream fin = Files.newInputStream(Paths.get(tmpJarLocation))) {
                 store.createBlob(jarKey, fin, new SettableBlobMeta(BlobStoreAclHandler.DEFAULT), subject);
             }
         }
@@ -3807,7 +3813,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             assertIsLeader();
             checkAuthorization(null, null, "fileUpload");
             String fileloc = getInbox() + "/stormjar-" + Utils.uuid() + ".jar";
-            uploaders.put(fileloc, new TimedWritableByteChannel(Channels.newChannel(new FileOutputStream(fileloc)), fileUploadDuration));
+            
+            uploaders.put(fileloc,
+                new TimedWritableByteChannel(
+                    FileChannel.open(Paths.get(fileloc), StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW),
+                    fileUploadDuration));
             LOG.info("Uploading file from client to {}", fileloc);
             return fileloc;
         } catch (Exception e) {

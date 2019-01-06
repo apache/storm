@@ -30,7 +30,7 @@ public class InProcessZookeeper implements AutoCloseable {
 
     public InProcessZookeeper() throws Exception {
         zkTmp = new TmpPath();
-        zookeeper = Zookeeper.mkInprocessZookeeper(zkTmp.getPath(), null);
+        zookeeper = Zookeeper.mkInprocessZookeeper(zkTmp.getAbsolutePath(), null);
     }
 
     /**

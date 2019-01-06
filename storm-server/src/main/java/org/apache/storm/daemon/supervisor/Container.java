@@ -21,12 +21,13 @@ package org.apache.storm.daemon.supervisor;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -362,11 +363,11 @@ public abstract class Container implements Killable {
         }
         LOG.info("Setting up {}:{}", _supervisorId, _workerId);
 
-        _ops.forceMkdir(new File(ConfigUtils.workerPidsRoot(_conf, _workerId)));
-        _ops.forceMkdir(new File(ConfigUtils.workerTmpRoot(_conf, _workerId)));
-        _ops.forceMkdir(new File(ConfigUtils.workerHeartbeatsRoot(_conf, _workerId)));
+        _ops.forceMkdir(ConfigUtils.workerPidsRoot(_conf, _workerId));
+        _ops.forceMkdir(ConfigUtils.workerTmpRoot(_conf, _workerId));
+        _ops.forceMkdir(ConfigUtils.workerHeartbeatsRoot(_conf, _workerId));
 
-        File workerArtifacts = new File(ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port));
+        Path workerArtifacts = ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port);
         if (!_ops.fileExists(workerArtifacts)) {
             _ops.forceMkdir(workerArtifacts);
             _ops.setupWorkerArtifactsDir(_assignment.get_owner(), workerArtifacts);
@@ -420,7 +421,7 @@ public abstract class Container implements Killable {
         }
         data.put(DaemonConfig.LOGS_USERS, logsUsers.toArray());
 
-        File file = ServerConfigUtils.getLogMetaDataFile(_conf, _topologyId, _port);
+        Path file = ServerConfigUtils.getLogMetaDataFile(_conf, _topologyId, _port);
 
         Yaml yaml = new Yaml();
         try (Writer writer = _ops.getWriter(file)) {
@@ -436,11 +437,11 @@ public abstract class Container implements Killable {
     protected void createArtifactsLink() throws IOException {
         _type.assertFull();
         if (!_symlinksDisabled) {
-            File workerDir = new File(ConfigUtils.workerRoot(_conf, _workerId));
-            File topoDir = new File(ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port));
+            Path workerDir = ConfigUtils.workerRoot(_conf, _workerId);
+            Path topoDir = ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port);
             if (_ops.fileExists(workerDir)) {
                 LOG.debug("Creating symlinks for worker-id: {} topology-id: {} to its port artifacts directory", _workerId, _topologyId);
-                _ops.createSymlink(new File(workerDir, "artifacts"), topoDir);
+                _ops.createSymlink(workerDir.resolve("artifacts"), topoDir);
             }
         }
     }
@@ -452,8 +453,8 @@ public abstract class Container implements Killable {
      */
     protected void createBlobstoreLinks() throws IOException {
         _type.assertFull();
-        String stormRoot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
-        String workerRoot = ConfigUtils.workerRoot(_conf, _workerId);
+        Path stormRoot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
+        Path workerRoot = ConfigUtils.workerRoot(_conf, _workerId);
 
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) _topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
@@ -471,25 +472,25 @@ public abstract class Container implements Killable {
                 blobFileNames.add(ret);
             }
         }
-        File targetResourcesDir = new File(stormRoot, ServerConfigUtils.RESOURCES_SUBDIR);
+        Path targetResourcesDir = stormRoot.resolve(ServerConfigUtils.RESOURCES_SUBDIR);
         List<String> resourceFileNames = new ArrayList<>();
-        if (targetResourcesDir.exists()) {
-            resourceFileNames.add(ServerConfigUtils.RESOURCES_SUBDIR);
+        if (targetResourcesDir.toFile().exists()) {
+            resourceFileNames.add(ServerConfigUtils.RESOURCES_SUBDIR.toString());
         }
         resourceFileNames.addAll(blobFileNames);
 
         if (!_symlinksDisabled) {
             LOG.info("Creating symlinks for worker-id: {} storm-id: {} for files({}): {}", _workerId, _topologyId, resourceFileNames.size(),
                 resourceFileNames);
-            if (targetResourcesDir.exists()) {
-                _ops.createSymlink(new File(workerRoot, ServerConfigUtils.RESOURCES_SUBDIR), targetResourcesDir);
+            if (targetResourcesDir.toFile().exists()) {
+                _ops.createSymlink(workerRoot.resolve(ServerConfigUtils.RESOURCES_SUBDIR), targetResourcesDir);
             } else {
                 LOG.info("Topology jar for worker-id: {} storm-id: {} does not contain re sources directory {}.", _workerId, _topologyId,
                     targetResourcesDir.toString());
             }
             for (String fileName : blobFileNames) {
-                _ops.createSymlink(new File(workerRoot, fileName),
-                    new File(stormRoot, fileName));
+                _ops.createSymlink(workerRoot.resolve(fileName),
+                    stormRoot.resolve(fileName));
             }
         } else if (blobFileNames.size() > 0) {
             LOG.warn("Symlinks are disabled, no symlinks created for blobs {}", blobFileNames);
@@ -521,7 +522,7 @@ public abstract class Container implements Killable {
      */
     protected String getWorkerUser() throws IOException {
         LOG.info("GET worker-user for {}", _workerId);
-        File file = new File(ConfigUtils.workerUserFile(_conf, _workerId));
+        Path file = ConfigUtils.workerUserFile(_conf, _workerId);
 
         if (_ops.fileExists(file)) {
             return _ops.slurpString(file).trim();
@@ -531,9 +532,9 @@ public abstract class Container implements Killable {
         if (ConfigUtils.isLocalMode(_conf)) {
             return System.getProperty("user.name");
         } else {
-            File f = new File(ConfigUtils.workerArtifactsRoot(_conf));
-            if (f.exists()) {
-                return Files.getOwner(f.toPath()).getName();
+            Path f = ConfigUtils.workerArtifactsRoot(_conf);
+            if (f.toFile().exists()) {
+                return Files.getOwner(f).getName();
             }
             throw new IllegalStateException("Could not recover the user for " + _workerId);
         }
@@ -553,12 +554,12 @@ public abstract class Container implements Killable {
     protected void saveWorkerUser(String user) throws IOException {
         _type.assertFull();
         LOG.info("SET worker-user {} {}", _workerId, user);
-        _ops.dump(new File(ConfigUtils.workerUserFile(_conf, _workerId)), user);
+        _ops.dump(ConfigUtils.workerUserFile(_conf, _workerId), user);
     }
 
     protected void deleteSavedWorkerUser() throws IOException {
         LOG.info("REMOVE worker-user {}", _workerId);
-        _ops.deleteIfExists(new File(ConfigUtils.workerUserFile(_conf, _workerId)));
+        _ops.deleteIfExists(ConfigUtils.workerUserFile(_conf, _workerId));
     }
 
     /**
@@ -573,7 +574,7 @@ public abstract class Container implements Killable {
         String user = getWorkerUser();
 
         for (Long pid : pids) {
-            File path = new File(ConfigUtils.workerPidPath(_conf, _workerId, pid));
+            Path path = ConfigUtils.workerPidPath(_conf, _workerId, pid);
             _ops.deleteIfExists(path, user, _workerId);
         }
 
@@ -584,10 +585,10 @@ public abstract class Container implements Killable {
 
         //Always make sure to clean up everything else before worker directory
         //is removed since that is what is going to trigger the retry for cleanup
-        _ops.deleteIfExists(new File(ConfigUtils.workerHeartbeatsRoot(_conf, _workerId)), user, _workerId);
-        _ops.deleteIfExists(new File(ConfigUtils.workerPidsRoot(_conf, _workerId)), user, _workerId);
-        _ops.deleteIfExists(new File(ConfigUtils.workerTmpRoot(_conf, _workerId)), user, _workerId);
-        _ops.deleteIfExists(new File(ConfigUtils.workerRoot(_conf, _workerId)), user, _workerId);
+        _ops.deleteIfExists(ConfigUtils.workerHeartbeatsRoot(_conf, _workerId), user, _workerId);
+        _ops.deleteIfExists(ConfigUtils.workerPidsRoot(_conf, _workerId), user, _workerId);
+        _ops.deleteIfExists(ConfigUtils.workerTmpRoot(_conf, _workerId), user, _workerId);
+        _ops.deleteIfExists(ConfigUtils.workerRoot(_conf, _workerId), user, _workerId);
         deleteSavedWorkerUser();
         _workerId = null;
     }

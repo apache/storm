@@ -14,7 +14,7 @@ package org.apache.storm.daemon.metrics.reporters;
 
 import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -47,8 +47,8 @@ public class CsvPreparableReporter implements PreparableReporter {
             builder.convertDurationsTo(durationUnit);
         }
 
-        File csvMetricsDir = MetricsUtils.getCsvLogDir(topoConf);
-        reporter = builder.build(csvMetricsDir);
+        Path csvMetricsDir = MetricsUtils.getCsvLogDir(topoConf);
+        reporter = builder.build(csvMetricsDir.toFile());
     }
 
     @Override

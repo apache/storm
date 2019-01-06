@@ -12,8 +12,12 @@
 
 package org.apache.storm.hive.common;
 
-import java.io.File;
+import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
+
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -24,8 +28,6 @@ import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.apache.storm.hive.security.AutoHive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
 
 public class HiveUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveUtils.class);
@@ -62,9 +64,9 @@ public class HiveUtils {
         }
 
         if (kerberosEnabled) {
-            File kfile = new File(keytab);
+            Path kfile = Paths.get(keytab);
 
-            if (!(kfile.isFile() && kfile.canRead())) {
+            if (!(Files.isRegularFile(kfile) && Files.isReadable(kfile))) {
                 throw new IllegalArgumentException("The keyTab file: " + keytab + " is nonexistent or can't read. "
                                                    + "Please specify a readable keytab file for Kerberos auth.");
             }

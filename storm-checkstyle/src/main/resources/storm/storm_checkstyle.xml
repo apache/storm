@@ -27,6 +27,7 @@
     It has been slightly modified for use in Apache Storm, as follows:
       * 4 space indents instead of 2
       * line-length limit is 140 instead of 100
+      * Addition of checks from this module
     Once checkstyle has the ability to override selected configuration elements from within the Maven
     pom.xml file, then we can remove this file in favor of overriding the provided google_checks.xml file.
     See this issue to track that functionality:
@@ -265,5 +266,7 @@
             <property name="exceptionVariableName" value="expected"/>
         </module>
         <module name="CommentsIndentation"/>
+        <module name="org.apache.storm.checkstyle.checks.UseFilesApiCheck"/>
+        <module name="org.apache.storm.checkstyle.checks.AvoidFileUtilsCheck"/>
     </module>
 </module>

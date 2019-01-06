@@ -13,9 +13,11 @@
 package org.apache.storm.security.auth;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -42,8 +44,9 @@ public class AutoSSL implements IAutoCredentials {
     // Adds the serialized and base64 file to the credentials map as a string with the filename as
     // the key.
     public static void serializeSSLFile(String readFile, Map<String, String> credentials) {
-        try (FileInputStream in = new FileInputStream(readFile)) {
-            LOG.debug("serializing ssl file: {}", readFile);
+        Path readFilePath = Paths.get(readFile);
+        try (InputStream in = Files.newInputStream(readFilePath)) {
+            LOG.debug("serializing ssl file: {}", readFilePath);
             ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[4096];
             int length;
@@ -52,9 +55,8 @@ public class AutoSSL implements IAutoCredentials {
             }
             String resultStr = DatatypeConverter.printBase64Binary(result.toByteArray());
 
-            File f = new File(readFile);
-            LOG.debug("ssl read files is name: {}", f.getName());
-            credentials.put(f.getName(), resultStr);
+            LOG.debug("ssl read files is name: {}", readFilePath.getFileName());
+            credentials.put(readFilePath.getFileName().toString(), resultStr);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -73,8 +75,8 @@ public class AutoSSL implements IAutoCredentials {
             }
             if (resultStr != null) {
                 byte[] decodedData = DatatypeConverter.parseBase64Binary(resultStr);
-                File f = new File(directory, credsKey);
-                try (FileOutputStream fout = new FileOutputStream(f)) {
+                Path p = Paths.get(directory, credsKey);
+                try (OutputStream fout = Files.newOutputStream(p)) {
                     fout.write(decodedData);
                 }
             }
@@ -143,7 +145,7 @@ public class AutoSSL implements IAutoCredentials {
             return;
         }
         for (String outputFile : sslFiles) {
-            deserializeSSLFile(new File(outputFile).getName(), writeDir, credentials);
+            deserializeSSLFile(Paths.get(outputFile).getFileName().toString(), writeDir, credentials);
         }
     }
 }

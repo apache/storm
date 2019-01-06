@@ -56,14 +56,15 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
     public static IAuthorizer uiImpersonationHandler;
     public static IAuthorizer uiAclHandler;
 
-    @Context private ResourceInfo resourceInfo;
+    @Context
+    private ResourceInfo resourceInfo;
 
     static {
         try {
             uiImpersonationHandler = StormCommon.mkAuthorizationHandler(
-                        (String) conf.get(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER), conf);
+                (String) conf.get(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER), conf);
             uiAclHandler = StormCommon.mkAuthorizationHandler(
-                    (String) conf.get(DaemonConfig.NIMBUS_AUTHORIZER), conf);
+                (String) conf.get(DaemonConfig.NIMBUS_AUTHORIZER), conf);
         } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             LOG.error("Error initializing AuthorizedUserFilter: ", e);
             throw new RuntimeException(e);
@@ -72,6 +73,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
 
     /**
      * makeResponse.
+     *
      * @param ex ex
      * @param request request
      * @param statusCode statusCode
@@ -83,7 +85,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
         if (request.getMediaType() != null && request.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE)) {
             try {
                 String json = IOUtils.toString(request.getEntityStream(), Charsets.UTF_8);
-                InputStream in = IOUtils.toInputStream(json);
+                InputStream in = IOUtils.toInputStream(json, Charsets.UTF_8);
                 request.setEntityStream(in);
                 Map<String, Object> requestBody = (Map<String, Object>) JSONValue.parse(json);
                 if (requestBody.containsKey(StormApiResource.callbackParameterName)) {
@@ -94,8 +96,8 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
             }
         }
         return new JsonResponseBuilder().setData(
-                        UIHelpers.exceptionToJson(ex, statusCode)).setCallback(callback)
-                        .setStatus(statusCode).build();
+            UIHelpers.exceptionToJson(ex, statusCode)).setCallback(callback)
+            .setStatus(statusCode).build();
     }
 
     @Override
@@ -112,7 +114,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
         Map topoConf = null;
         if (annotation.needsTopoId()) {
             final String topoId = containerRequestContext.getUriInfo().getPathParameters().get("id").get(0);
-            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)){
+            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)) {
                 topoConf = (Map) JSONValue.parse(nimbusClient.getClient().getTopologyConf(topoId));
             } catch (AuthorizationException ae) {
                 LOG.error("Nimbus isn't allowing {} to access the topology conf of {}. {}", ReqContext.context(), topoId, ae.get_msg());
@@ -122,7 +124,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                 LOG.error("Unable to fetch topo conf for {} due to ", topoId, e);
                 containerRequestContext.abortWith(
                     makeResponse(new IOException("Unable to fetch topo conf for topo id " + topoId, e),
-                            containerRequestContext, 500)
+                        containerRequestContext, 500)
                 );
                 return;
             }
@@ -146,18 +148,18 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                     InetAddress remoteAddress = reqContext.remoteAddress();
 
                     containerRequestContext.abortWith(
-                            makeResponse(new AuthorizationException(
-                                    "user '" + realUser +  "' is not authorized to impersonate user '"
-                                            + user + "' from host '" + remoteAddress.toString() + "'. Please"
-                                            + "see SECURITY.MD to learn how to configure impersonation ACL."
-                            ), containerRequestContext, 401)
+                        makeResponse(new AuthorizationException(
+                            "user '" + realUser + "' is not authorized to impersonate user '"
+                            + user + "' from host '" + remoteAddress.toString() + "'. Please"
+                            + "see SECURITY.MD to learn how to configure impersonation ACL."
+                        ), containerRequestContext, 401)
                     );
                     return;
                 }
 
-            LOG.warn(" principal {} is trying to impersonate {} but {} has no authorizer configured. "
-                            + "This is a potential security hole. Please see SECURITY.MD to learn how to "
-                            + "configure an impersonation authorizer.",
+                LOG.warn(" principal {} is trying to impersonate {} but {} has no authorizer configured. "
+                    + "This is a potential security hole. Please see SECURITY.MD to learn how to "
+                    + "configure an impersonation authorizer.",
                     reqContext.realPrincipal().toString(), reqContext.principal().toString(),
                     conf.get(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER));
             }
@@ -171,9 +173,9 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                     user = principal.getName();
                 }
                 containerRequestContext.abortWith(
-                        makeResponse(new AuthorizationException("UI request '" + op + "' for '"
-                                        + user + "' user is not authorized"),
-                                containerRequestContext, 403)
+                    makeResponse(new AuthorizationException("UI request '" + op + "' for '"
+                        + user + "' user is not authorized"),
+                        containerRequestContext, 403)
                 );
                 return;
             }

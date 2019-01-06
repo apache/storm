@@ -25,7 +25,7 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 
-import java.io.File;
+import java.nio.file.Paths;
 
 /**
  * Manage mvn repository.
@@ -40,7 +40,7 @@ public class Booter {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
         LocalRepository localRepo =
-                new LocalRepository(new File(localRepoPath).getAbsolutePath());
+                new LocalRepository(Paths.get(localRepoPath).toAbsolutePath().toFile());
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 
         return session;

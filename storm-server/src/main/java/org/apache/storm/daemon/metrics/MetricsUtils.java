@@ -18,7 +18,10 @@
 
 package org.apache.storm.daemon.metrics;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +31,7 @@ import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,26 +62,31 @@ public class MetricsUtils {
         return reporter;
     }
 
-    public static File getCsvLogDir(Map<String, Object> topoConf) {
+    public static Path getCsvLogDir(Map<String, Object> topoConf) {
         String csvMetricsLogDirectory = ObjectReader.getString(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_CSV_LOG_DIR), null);
+        Path csvMetricsDir = null;
         if (csvMetricsLogDirectory == null) {
-            csvMetricsLogDirectory = ConfigUtils.absoluteStormLocalDir(topoConf);
-            csvMetricsLogDirectory = csvMetricsLogDirectory + ConfigUtils.FILE_SEPARATOR + "csvmetrics";
+            csvMetricsDir = ConfigUtils.absoluteStormLocalDir(topoConf).resolve("csvmetrics");
+        } else {
+            csvMetricsDir = Paths.get(csvMetricsLogDirectory);
         }
-        File csvMetricsDir = new File(csvMetricsLogDirectory);
         validateCreateOutputDir(csvMetricsDir);
         return csvMetricsDir;
     }
 
-    private static void validateCreateOutputDir(File dir) {
-        if (!dir.exists()) {
-            dir.mkdirs();
+    private static void validateCreateOutputDir(Path dir) {
+        if (!dir.toFile().exists()) {
+            try {
+                Files.createDirectories(dir);
+            } catch (IOException e) {
+                throw Utils.wrapInRuntime(e);
+            }
         }
-        if (!dir.canWrite()) {
-            throw new IllegalStateException(dir.getName() + " does not have write permissions.");
+        if (!Files.isWritable(dir)) {
+            throw new IllegalStateException(dir.getFileName() + " does not have write permissions.");
         }
-        if (!dir.isDirectory()) {
-            throw new IllegalStateException(dir.getName() + " is not a directory.");
+        if (!Files.isDirectory(dir)) {
+            throw new IllegalStateException(dir.getFileName() + " is not a directory.");
         }
     }
 }

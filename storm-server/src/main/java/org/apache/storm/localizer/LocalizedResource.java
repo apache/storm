@@ -21,12 +21,9 @@ package org.apache.storm.localizer;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -42,9 +39,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.commons.io.FileUtils;
+import java.util.stream.Stream;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.daemon.supervisor.DirectoryDeleteVisitor;
 import org.apache.storm.daemon.supervisor.IAdvancedFSOps;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
@@ -93,7 +91,7 @@ public class LocalizedResource extends LocallyCachedBlob {
     private long size = -1;
 
     LocalizedResource(String key, Path localBaseDir, boolean shouldUncompress, IAdvancedFSOps fsOps, Map<String, Object> conf,
-                      String user, StormMetricsRegistry metricRegistry) {
+                      String user, StormMetricsRegistry metricRegistry) throws IOException {
         super(key + (shouldUncompress ? " archive" : " file"), key, metricRegistry);
         Path base = getLocalUserFileCacheDir(localBaseDir, user);
         this.baseDir = shouldUncompress ? getCacheDirForArchives(base) : getCacheDirForFiles(base);
@@ -115,8 +113,8 @@ public class LocalizedResource extends LocallyCachedBlob {
     @VisibleForTesting
     static long localVersionOfBlob(Path versionFile) {
         long currentVersion = -1;
-        if (Files.exists(versionFile) && !(Files.isDirectory(versionFile))) {
-            try (BufferedReader br = new BufferedReader(new FileReader(versionFile.toFile()))) {
+        if (versionFile.toFile().exists() && !(Files.isDirectory(versionFile))) {
+            try (BufferedReader br = Files.newBufferedReader(versionFile, Charset.defaultCharset())) {
                 String line = br.readLine();
                 currentVersion = Long.parseLong(line);
             } catch (IOException e) {
@@ -136,10 +134,14 @@ public class LocalizedResource extends LocallyCachedBlob {
 
     static Collection<String> getLocalizedUsers(Path localBaseDir) throws IOException {
         Path userCacheDir = getUserCacheDir(localBaseDir);
-        if (!Files.exists(userCacheDir)) {
+        if (!userCacheDir.toFile().exists()) {
             return Collections.emptyList();
         }
-        return Files.list(userCacheDir).map((p) -> p.getFileName().toString()).collect(Collectors.toList());
+        try (Stream<Path> fileList = Files.list(userCacheDir)) {
+            return fileList
+                .map((p) -> p.getFileName().toString())
+                .collect(Collectors.toList());
+        }
     }
 
     static void completelyRemoveUnusedUser(Path localBaseDir, String user) throws IOException {
@@ -166,20 +168,21 @@ public class LocalizedResource extends LocallyCachedBlob {
 
     // Looks for files in the directory with .current suffix
     private static List<String> readKeysFromDir(Path dir) throws IOException {
-        if (!Files.exists(dir)) {
+        if (!dir.toFile().exists()) {
             return Collections.emptyList();
         }
-        return Files.list(dir)
-                    .map((p) -> p.getFileName().toString())
-                    .filter((name) -> name.toLowerCase().endsWith(CURRENT_BLOB_SUFFIX))
-                    .map((key) -> {
-                        int p = key.lastIndexOf('.');
-                        if (p > 0) {
-                            key = key.substring(0, p);
-                        }
-                        return key;
-                    })
-                    .collect(Collectors.toList());
+        try (Stream<Path> fileList = Files.list(dir)) {
+            return fileList.map((p) -> p.getFileName().toString())
+                .filter((name) -> name.toLowerCase().endsWith(CURRENT_BLOB_SUFFIX))
+                .map((key) -> {
+                    int p = key.lastIndexOf('.');
+                    if (p > 0) {
+                        key = key.substring(0, p);
+                    }
+                    return key;
+                })
+                .collect(Collectors.toList());
+        }    
     }
 
     // baseDir/supervisor/usercache/
@@ -217,10 +220,10 @@ public class LocalizedResource extends LocallyCachedBlob {
         return constructBlobWithVersionFileName(baseDir, getKey(), getLocalVersion());
     }
 
-    private void setSize() {
+    private void setSize() throws IOException {
         // we trust that the file exists
         Path withVersion = getFilePathWithVersion();
-        size = ServerUtils.getDU(withVersion.toFile());
+        size = ServerUtils.getDU(withVersion);
         LOG.debug("size of {} is: {}", withVersion, size);
     }
 
@@ -251,7 +254,7 @@ public class LocalizedResource extends LocallyCachedBlob {
                 Path path = shouldUncompress ? tmpOutputLocation() : constructBlobWithVersionFileName(baseDir, getKey(), v);
                 // we need to download to temp file and then unpack into the one requested
                 Path parent = path.getParent();
-                if (!Files.exists(parent)) {
+                if (!parent.toFile().exists()) {
                     //There is a race here that we can still lose
                     try {
                         Files.createDirectory(parent);
@@ -261,14 +264,14 @@ public class LocalizedResource extends LocallyCachedBlob {
                 }
                 return path;
             },
-            FileOutputStream::new
+            Files::newOutputStream
         );
 
         Path finalLocation = downloadMeta.getDownloadPath();
         if (shouldUncompress) {
             Path downloadFile = finalLocation;
             finalLocation = constructBlobWithVersionFileName(baseDir, getKey(), downloadMeta.getVersion());
-            ServerUtils.unpack(downloadFile.toFile(), finalLocation.toFile(), symLinksDisabled);
+            ServerUtils.unpack(downloadFile, finalLocation, symLinksDisabled);
             LOG.debug("Uncompressed {} to: {}", downloadFile, finalLocation);
         }
         setBlobPermissions(conf, user, finalLocation);
@@ -280,9 +283,8 @@ public class LocalizedResource extends LocallyCachedBlob {
         String key = getKey();
         LOG.info("Blob: {} updated to version {} from version {}", key, version, getLocalVersion());
         Path localVersionFile = versionFilePath;
-        // The false parameter ensures overwriting the version file, not appending
         try (PrintWriter writer = new PrintWriter(
-            new BufferedWriter(new FileWriter(localVersionFile.toFile(), false)))) {
+            Files.newBufferedWriter(localVersionFile, Charset.defaultCharset()))) {
             writer.println(version);
         }
         setBlobPermissions(conf, user, localVersionFile);
@@ -359,7 +361,7 @@ public class LocalizedResource extends LocallyCachedBlob {
 
             //If .current and .version do not match, we roll back the .version file to match
             // what .current is pointing to.
-            if (Files.exists(current) && Files.isSymbolicLink(current)) {
+            if (current.toFile().exists() && Files.isSymbolicLink(current)) {
                 Path versionFile = Files.readSymbolicLink(current);
                 Matcher m = VERSION_FILE_PATTERN.matcher(versionFile.getFileName().toString());
                 if (m.matches()) {
@@ -368,7 +370,7 @@ public class LocalizedResource extends LocallyCachedBlob {
                         LOG.error("{} does not match the version file so fix the version file", current);
                         //The versions are different so roll back to whatever current is
                         try (PrintWriter restoreWriter = new PrintWriter(
-                            new BufferedWriter(new FileWriter(versionFilePath.toFile(), false)))) {
+                            Files.newBufferedWriter(versionFilePath, Charset.defaultCharset()))) {
                             restoreWriter.println(foundVersion);
                         }
                         version = foundVersion;
@@ -390,9 +392,9 @@ public class LocalizedResource extends LocallyCachedBlob {
                 for (Path p : ds) {
                     LOG.info("Cleaning up old localized resource file {}", p);
                     if (Files.isDirectory(p)) {
-                        FileUtils.deleteDirectory(p.toFile());
+                        Files.walkFileTree(p, new DirectoryDeleteVisitor());
                     } else {
-                        fsOps.deleteIfExists(p.toFile());
+                        fsOps.deleteIfExists(p);
                     }
                 }
             }
@@ -407,9 +409,9 @@ public class LocalizedResource extends LocallyCachedBlob {
         Path currentSymLink = getCurrentSymlinkPath();
 
         if (shouldUncompress) {
-            if (Files.exists(fileWithVersion)) {
+            if (fileWithVersion.toFile().exists()) {
                 // this doesn't follow symlinks, which is what we want
-                FileUtils.deleteDirectory(fileWithVersion.toFile());
+                Files.walkFileTree(fileWithVersion, new DirectoryDeleteVisitor());
             }
         } else {
             Files.deleteIfExists(fileWithVersion);
@@ -425,9 +427,9 @@ public class LocalizedResource extends LocallyCachedBlob {
 
     @Override
     public boolean isFullyDownloaded() {
-        return Files.exists(getFilePathWithVersion())
-               && Files.exists(getCurrentSymlinkPath())
-               && Files.exists(versionFilePath);
+        return getFilePathWithVersion().toFile().exists()
+               && getCurrentSymlinkPath().toFile().exists()
+               && versionFilePath.toFile().exists();
     }
 
     @Override

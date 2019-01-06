@@ -12,7 +12,10 @@
 
 package org.apache.storm.command;
 
-import java.io.FileReader;
+import java.io.BufferedReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +59,9 @@ public class UploadCredentials {
         Map<String, String> credentialsMap = new HashMap<>();
         if (null != credentialFile) {
             Properties credentialProps = new Properties();
-            credentialProps.load(new FileReader(credentialFile));
+            try (BufferedReader reader = Files.newBufferedReader(Paths.get(credentialFile), Charset.defaultCharset())) {
+                credentialProps.load(reader);
+            }
             for (Map.Entry<Object, Object> credentialProp : credentialProps.entrySet()) {
                 credentialsMap.put((String) credentialProp.getKey(),
                                    (String) credentialProp.getValue());

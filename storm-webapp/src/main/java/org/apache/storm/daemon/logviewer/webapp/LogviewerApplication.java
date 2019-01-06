@@ -20,15 +20,13 @@ package org.apache.storm.daemon.logviewer.webapp;
 
 import static org.apache.storm.DaemonConfig.LOGVIEWER_APPENDER_NAME;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -56,18 +54,18 @@ public class LogviewerApplication extends Application {
      * Constructor.
      */
     public LogviewerApplication() {
-        String logRoot = ConfigUtils.workerArtifactsRoot(stormConf);
-        String daemonLogRoot = logRootDir(ObjectReader.getString(stormConf.get(LOGVIEWER_APPENDER_NAME)));
+        Path logRoot = ConfigUtils.workerArtifactsRoot(stormConf);
+        Path daemonLogRoot = logRootDir(ObjectReader.getString(stormConf.get(LOGVIEWER_APPENDER_NAME)));
 
         ResourceAuthorizer resourceAuthorizer = new ResourceAuthorizer(stormConf);
-        WorkerLogs workerLogs = new WorkerLogs(stormConf, Paths.get(logRoot), metricsRegistry);
+        WorkerLogs workerLogs = new WorkerLogs(stormConf, logRoot, metricsRegistry);
 
         LogviewerLogPageHandler logviewer = new LogviewerLogPageHandler(logRoot, daemonLogRoot, workerLogs, resourceAuthorizer,
             metricsRegistry);
         LogviewerProfileHandler profileHandler = new LogviewerProfileHandler(logRoot, resourceAuthorizer, metricsRegistry);
         LogviewerLogDownloadHandler logDownloadHandler = new LogviewerLogDownloadHandler(logRoot, daemonLogRoot,
                 workerLogs, resourceAuthorizer, metricsRegistry);
-        LogviewerLogSearchHandler logSearchHandler = new LogviewerLogSearchHandler(stormConf, Paths.get(logRoot), Paths.get(daemonLogRoot),
+        LogviewerLogSearchHandler logSearchHandler = new LogviewerLogSearchHandler(stormConf, logRoot, daemonLogRoot,
                 resourceAuthorizer, metricsRegistry);
         IHttpCredentialsPlugin httpCredsHandler = ServerAuthUtils.getUiHttpCredentialsPlugin(stormConf);
 
@@ -96,10 +94,10 @@ public class LogviewerApplication extends Application {
      * Given an appender name, as configured, get the parent directory of the appender's log file.
      * Note that if anything goes wrong, this will throw an Error and exit.
      */
-    private String logRootDir(String appenderName) {
+    private Path logRootDir(String appenderName) {
         Appender appender = ((LoggerContext) LogManager.getContext()).getConfiguration().getAppender(appenderName);
         if (appenderName != null && appender != null && RollingFileAppender.class.isInstance(appender)) {
-            return new File(((RollingFileAppender) appender).getFileName()).getParent();
+            return Paths.get(((RollingFileAppender) appender).getFileName()).getParent();
         } else {
             throw new RuntimeException("Log viewer could not find configured appender, or the appender is not a FileAppender. "
                     + "Please check that the appender name configured in storm and log4j agree.");

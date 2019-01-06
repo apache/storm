@@ -14,6 +14,7 @@ package org.apache.storm.blobstore;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -191,8 +192,8 @@ public class BlobStoreUtils {
                     out = null;
                 }
                 isSuccess = true;
-            } catch(FileNotFoundException fnf) {
-                LOG.warn("Blobstore file for key '{}' does not exist or got deleted before it could be downloaded.", key, fnf);
+            } catch(FileNotFoundException | NoSuchFileException e) {
+                LOG.warn("Blobstore file for key '{}' does not exist or got deleted before it could be downloaded.", key, e);
             } catch (IOException | AuthorizationException exception) {
                 throw new RuntimeException(exception);
             } catch (KeyNotFoundException knf) {

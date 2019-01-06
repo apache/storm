@@ -20,17 +20,14 @@ package org.apache.storm.daemon.logviewer.webapp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-
 import java.io.IOException;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.daemon.common.JsonResponseBuilder;

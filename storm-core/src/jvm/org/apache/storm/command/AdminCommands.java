@@ -19,15 +19,16 @@
 package org.apache.storm.command;
 
 import com.google.common.collect.Sets;
-import java.io.File;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.io.FileUtils;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
@@ -199,9 +200,9 @@ public class AdminCommands {
             for (String arg: args) {
                 System.out.println(arg + ":");
                 StormTopology topo;
-                File f = new File(arg);
-                if (f.exists()) {
-                    topo = Utils.deserialize(FileUtils.readFileToByteArray(f), StormTopology.class);
+                Path f = Paths.get(arg);
+                if (f.toFile().exists()) {
+                    topo = Utils.deserialize(Files.readAllBytes(f), StormTopology.class);
                 } else { //assume it is a topology id
                     final String key = ConfigUtils.masterStormCodeKey(arg);
                     try (BlobStore store = ServerUtils.getNimbusBlobStore(conf, NimbusInfo.fromConf(conf), null)) {

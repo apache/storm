@@ -26,21 +26,17 @@ import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
 import com.codahale.metrics.Meter;
 import com.google.common.io.ByteStreams;
-
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-
 import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.ui.UIHelpers;
 
@@ -77,14 +73,14 @@ public class LogviewerResponseBuilder {
      *
      * @param file file to download
      */
-    public static Response buildDownloadFile(File file, Meter numFileDownloadExceptions) throws IOException {
+    public static Response buildDownloadFile(Path file, Meter numFileDownloadExceptions) throws IOException {
         try {
             // do not close this InputStream in method: it will be used from jetty server
-            InputStream is = Files.newInputStream(file.toPath());
+            InputStream is = Files.newInputStream(file);
             return Response.status(OK)
                     .entity(wrapWithStreamingOutput(is))
                     .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                    .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                    .header("Content-Disposition", "attachment; filename=\"" + file.getFileName() + "\"")
                     .build();
         } catch (IOException e) {
             numFileDownloadExceptions.mark();

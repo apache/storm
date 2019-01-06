@@ -12,33 +12,36 @@
 
 package org.apache.storm.dependency;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.storm.shade.com.google.common.collect.Lists;
+import java.util.stream.Collectors;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.shade.org.json.simple.parser.ParseException;
 
 public class DependencyPropertiesParser {
-    public List<File> parseJarsProperties(String prop) {
+    public List<Path> parseJarsProperties(String prop) {
         if (prop.trim().isEmpty()) {
             // handle no input
             return Collections.emptyList();
         }
 
         List<String> dependencies = Arrays.asList(prop.split(","));
-        return Lists.transform(dependencies, File::new);
+        return dependencies.stream()
+            .map(Paths::get)
+            .collect(Collectors.toList());
     }
 
-    public Map<String, File> parseArtifactsProperties(String prop) {
+    public Map<String, Path> parseArtifactsProperties(String prop) {
         try {
             Map<String, String> parsed = (Map<String, String>) JSONValue.parseWithException(prop);
-            Map<String, File> packages = new LinkedHashMap<>(parsed.size());
+            Map<String, Path> packages = new LinkedHashMap<>(parsed.size());
             for (Map.Entry<String, String> artifactToFilePath : parsed.entrySet()) {
-                packages.put(artifactToFilePath.getKey(), new File(artifactToFilePath.getValue()));
+                packages.put(artifactToFilePath.getKey(), Paths.get(artifactToFilePath.getValue()));
             }
 
             return packages;

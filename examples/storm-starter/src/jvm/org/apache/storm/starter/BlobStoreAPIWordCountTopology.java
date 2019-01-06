@@ -13,11 +13,13 @@
 package org.apache.storm.starter;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -26,6 +28,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.blobstore.AtomicOutputStream;
@@ -68,7 +71,7 @@ public class BlobStoreAPIWordCountTopology {
 
     // Equivalent create command on command line
     // storm blobstore create --file blacklist.txt --acl o::rwa key
-    private static void createBlobWithContent(String blobKey, ClientBlobStore clientBlobStore, File file)
+    private static void createBlobWithContent(String blobKey, ClientBlobStore clientBlobStore, Path file)
         throws AuthorizationException, KeyAlreadyExistsException, IOException, KeyNotFoundException {
         String stringBlobACL = "o::rwa";
         AccessControl blobACL = BlobStoreAclHandler.parseAccessControl(stringBlobACL);
@@ -76,16 +79,16 @@ public class BlobStoreAPIWordCountTopology {
         acls.add(blobACL); // more ACLs can be added here
         SettableBlobMeta settableBlobMeta = new SettableBlobMeta(acls);
         AtomicOutputStream blobStream = clientBlobStore.createBlob(blobKey, settableBlobMeta);
-        blobStream.write(readFile(file).toString().getBytes());
+        blobStream.write(readFile(file).getBytes(Charset.defaultCharset()));
         blobStream.close();
     }
 
     // Equivalent update command on command line
     // storm blobstore update --file blacklist.txt key
-    private static void updateBlobWithContent(String blobKey, ClientBlobStore clientBlobStore, File file)
+    private static void updateBlobWithContent(String blobKey, ClientBlobStore clientBlobStore, Path file)
         throws KeyNotFoundException, AuthorizationException, IOException {
         AtomicOutputStream blobOutputStream = clientBlobStore.updateBlob(blobKey);
-        blobOutputStream.write(readFile(file).toString().getBytes());
+        blobOutputStream.write(readFile(file).getBytes(Charset.defaultCharset()));
         blobOutputStream.close();
     }
 
@@ -113,12 +116,12 @@ public class BlobStoreAPIWordCountTopology {
     }
 
     private static Set<String> parseFile(String fileName) throws IOException {
-        File file = new File(fileName);
+        Path file = Paths.get(fileName);
         Set<String> wordSet = new HashSet<>();
-        if (!file.exists()) {
+        if (!file.toFile().exists()) {
             return wordSet;
         }
-        StringTokenizer tokens = new StringTokenizer(readFile(file).toString(), "\r\n");
+        StringTokenizer tokens = new StringTokenizer(readFile(file), "\r\n");
         while (tokens.hasMoreElements()) {
             wordSet.add(tokens.nextToken());
         }
@@ -126,54 +129,40 @@ public class BlobStoreAPIWordCountTopology {
         return wordSet;
     }
 
-    private static StringBuilder readFile(File file) throws IOException {
-        String line;
-        StringBuilder fileContent = new StringBuilder();
+    private static String readFile(Path file) throws IOException {
         // Do not use canonical file name here as we are using
         // symbolic links to read file data and performing atomic move
         // while updating files
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        while ((line = br.readLine()) != null) {
-            fileContent.append(line);
-            fileContent.append(System.lineSeparator());
-        }
-        return fileContent;
+        return Files.readAllLines(file, Charset.defaultCharset()).stream()
+            .collect(Collectors.joining(System.lineSeparator()));
     }
 
     // Creating a blacklist file to read from the disk
-    public static File createFile(String fileName) throws IOException {
-        File file = null;
-        file = new File(fileName);
-        if (!file.exists()) {
-            file.createNewFile();
+    public static Path createFile(String fileName) throws IOException {
+        Path file = Paths.get(fileName);
+        if (!file.toFile().exists()) {
+            Files.createFile(file);
         }
         writeToFile(file, getRandomWordSet());
         return file;
     }
 
     // Updating a blacklist file periodically with random words
-    public static File updateFile(File file) throws IOException {
+    public static Path updateFile(Path file) throws IOException {
         writeToFile(file, getRandomWordSet());
         return file;
     }
 
     // Writing random words to be blacklisted
-    public static void writeToFile(File file, Set<String> content) throws IOException {
-        FileWriter fw = new FileWriter(file, false);
-        BufferedWriter bw = new BufferedWriter(fw);
-        Iterator<String> iter = content.iterator();
-        while (iter.hasNext()) {
-            bw.write(iter.next());
-            bw.write(System.lineSeparator());
-        }
-        bw.close();
+    public static void writeToFile(Path file, Set<String> content) throws IOException {
+        Files.write(file, content, Charset.defaultCharset());
     }
 
     public static void main(String[] args) {
         prepare();
         BlobStoreAPIWordCountTopology wc = new BlobStoreAPIWordCountTopology();
         try {
-            File file = createFile(fileName);
+            Path file = createFile(fileName);
             // Creating blob again before launching topology
             createBlobWithContent(key, store, file);
 

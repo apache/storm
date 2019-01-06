@@ -17,6 +17,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,8 +66,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
                            Map<String, Map<String, Fields>> componentToStreamToFields,
                            Map<String, Long> blobToLastKnownVersionShared,
                            String stormId,
-                           String codeDir,
-                           String pidDir,
+                           Path codeDir,
+                           Path pidDir,
                            Integer taskId,
                            Integer workerPort,
                            List<Integer> workerTasks,

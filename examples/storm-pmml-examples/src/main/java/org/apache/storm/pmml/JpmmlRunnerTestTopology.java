@@ -18,14 +18,15 @@
 
 package org.apache.storm.pmml;
 
+import com.google.common.collect.Lists;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
@@ -39,8 +40,6 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
-
-import com.google.common.collect.Lists;
 
 /**
  * Topology that loads a PMML Model and raw input data from a CSV file. The {@link RawInputFromCSVSpout}
@@ -60,8 +59,8 @@ public class JpmmlRunnerTestTopology {
     private static final String PRINT_BOLT_2 = "printBolt2";
     private static final String NON_DEFAULT_STREAM_ID = "NON_DEFAULT_STREAM_ID";
 
-    private File rawInputs;           // Raw input data to be scored (predicted)
-    private File pmml;                // PMML Model read from file - null if using Blobstore
+    private Path rawInputs;           // Raw input data to be scored (predicted)
+    private Path pmml;                // PMML Model read from file - null if using Blobstore
     private String blobKey;           // PMML Model downloaded from Blobstore - null if using File
     private String tplgyName = "test";
 
@@ -88,7 +87,7 @@ public class JpmmlRunnerTestTopology {
                 for (int i = 0; i < args.length; ) {
                     switch (args[i]) {
                         case "-f":
-                            pmml = new File(args[i + 1]);
+                            pmml = Paths.get(args[i + 1]);
                             i += 2;
                             break;
                         case "-b":
@@ -96,7 +95,7 @@ public class JpmmlRunnerTestTopology {
                             i += 2;
                             break;
                         case "-r":
-                            rawInputs = new File(args[i + 1]);
+                            rawInputs = Paths.get(args[i + 1]);
                             i += 2;
                             break;
                         default:
@@ -129,10 +128,9 @@ public class JpmmlRunnerTestTopology {
         }
     }
 
-    private File loadExample(File file, String example) {
+    private Path loadExample(Path file, String example) {
         try (InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(example)) {
-            file = File.createTempFile("pmml-example", ".tmp");
-            IOUtils.copy(stream, new FileOutputStream(file));
+            Files.copy(stream, Files.createTempFile("pmml-example", ".tmp"));
         } catch (IOException e) {
             throw new RuntimeException("Error loading example " + example, e);
         }
@@ -148,13 +146,14 @@ public class JpmmlRunnerTestTopology {
 
     private void run() throws Exception {
         System.out.println(String.format("Running topology using PMML model loaded from [%s] and raw input data loaded from [%s]",
-                blobKey != null ? "Blobstore with blob key [" + blobKey + "]" : pmml.getAbsolutePath(), rawInputs.getAbsolutePath()));
+                blobKey != null ? "Blobstore with blob key [" + blobKey + "]" : pmml.toAbsolutePath().normalize(),
+                rawInputs.toAbsolutePath().normalize()));
         submitTopologyRemoteCluster(newTopology(), newConfig());
     }
 
     private StormTopology newTopology() throws Exception {
         final TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout(RAW_INPUT_FROM_CSV_SPOUT, RawInputFromCSVSpout.newInstance(rawInputs));
+        builder.setSpout(RAW_INPUT_FROM_CSV_SPOUT, RawInputFromCSVSpout.newInstance(rawInputs.toFile()));
         builder.setBolt(PMML_PREDICTOR_BOLT, newBolt()).shuffleGrouping(RAW_INPUT_FROM_CSV_SPOUT);
         builder.setBolt(PRINT_BOLT_1, new PrinterBolt()).shuffleGrouping(PMML_PREDICTOR_BOLT);
         builder.setBolt(PRINT_BOLT_2, new PrinterBolt()).shuffleGrouping(PMML_PREDICTOR_BOLT, NON_DEFAULT_STREAM_ID);
@@ -177,8 +176,8 @@ public class JpmmlRunnerTestTopology {
             final ModelOutputs outFields = JpmmlModelOutputs.toStreams(blobKey, streams);
             return new PMMLPredictorBolt(new JpmmlFactory.ModelRunnerFromBlobStore(blobKey, outFields), outFields);
         } else {                // Load PMML Model from File
-            final ModelOutputs outFields = JpmmlModelOutputs.toStreams(pmml, streams);
-            return new PMMLPredictorBolt(new JpmmlFactory.ModelRunnerFromFile(pmml, outFields), outFields);
+            final ModelOutputs outFields = JpmmlModelOutputs.toStreams(pmml.toFile(), streams);
+            return new PMMLPredictorBolt(new JpmmlFactory.ModelRunnerFromFile(pmml.toFile(), outFields), outFields);
         }
     }
 

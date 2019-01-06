@@ -25,7 +25,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -43,12 +42,12 @@ public class LogviewerLogDownloadHandlerTest {
     public void testDownloadLogFile() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response topoAResponse = handler.downloadLogFile("topoA/1111/worker.log", "user");
             Response topoBResponse = handler.downloadLogFile("topoB/1111/worker.log", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(topoAResponse.getEntity(), not(nullValue()));
@@ -61,11 +60,11 @@ public class LogviewerLogDownloadHandlerTest {
     public void testDownloadLogFileTraversal() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response topoAResponse = handler.downloadLogFile("../nimbus.log", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
@@ -75,11 +74,11 @@ public class LogviewerLogDownloadHandlerTest {
     public void testDownloadDaemonLogFile() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response response = handler.downloadDaemonLogFile("nimbus.log", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(response.getEntity(), not(nullValue()));
@@ -90,11 +89,11 @@ public class LogviewerLogDownloadHandlerTest {
     public void testDownloadDaemonLogFilePathIntoWorkerLogs() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response response = handler.downloadDaemonLogFile("workers-artifacts/topoA/1111/worker.log", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
@@ -104,11 +103,11 @@ public class LogviewerLogDownloadHandlerTest {
     public void testDownloadDaemonLogFilePathOutsideLogRoot() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
 
-            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getPath());
 
             Response response = handler.downloadDaemonLogFile("../evil.sh", "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
@@ -135,7 +134,7 @@ public class LogviewerLogDownloadHandlerTest {
 
         Map<String, Object> stormConf = Utils.readStormConfig();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        return new LogviewerLogDownloadHandler(workerLogRoot.toString(), daemonLogRoot.toString(),
+        return new LogviewerLogDownloadHandler(workerLogRoot, daemonLogRoot,
             new WorkerLogs(stormConf, workerLogRoot, metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
     }
 

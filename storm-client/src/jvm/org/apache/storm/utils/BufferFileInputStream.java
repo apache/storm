@@ -12,22 +12,24 @@
 
 package org.apache.storm.utils;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 
-public class BufferFileInputStream {
+public class BufferFileInputStream implements Closeable {
     byte[] buffer;
-    FileInputStream stream;
+    InputStream stream;
 
-    public BufferFileInputStream(String file, int bufferSize) throws FileNotFoundException {
-        stream = new FileInputStream(file);
+    public BufferFileInputStream(Path file, int bufferSize) throws IOException {
+        stream = Files.newInputStream(file);
         buffer = new byte[bufferSize];
     }
 
-    public BufferFileInputStream(String file) throws FileNotFoundException {
+    public BufferFileInputStream(Path file) throws IOException {
         this(file, 15 * 1024);
     }
 
@@ -43,6 +45,7 @@ public class BufferFileInputStream {
         }
     }
 
+    @Override
     public void close() throws IOException {
         stream.close();
     }

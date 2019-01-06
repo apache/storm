@@ -12,41 +12,48 @@
 
 package org.apache.storm.utils;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import org.apache.storm.shade.org.apache.commons.io.FileUtils;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.storm.daemon.supervisor.DirectoryDeleteVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VersionedStore {
     private static final String FINISHED_VERSION_SUFFIX = ".version";
+    private static final Logger LOG = LoggerFactory.getLogger(VersionedStore.class);
 
-    private String _root;
+    private Path _root;
 
     /**
      * Creates a store at the given path.
      *
-     * @param The path for the store
+     * @param path The path for the store
      * @param createRootDir option to create the path directory
      */
-    public VersionedStore(String path, boolean createRootDir) throws IOException {
+    public VersionedStore(Path path, boolean createRootDir) throws IOException {
         _root = path;
         if (createRootDir) {
-            mkdirs(_root);
+            Files.createDirectories(_root);
         }
     }
 
-    public String getRoot() {
+    public Path getRoot() {
         return _root;
     }
 
-    public String versionPath(long version) {
-        return new File(_root, "" + version).getAbsolutePath();
+    public Path versionPath(long version) {
+        return _root.resolve("" + version).toAbsolutePath();
     }
 
-    public String mostRecentVersionPath() throws IOException {
+    public Path mostRecentVersionPath() throws IOException {
         Long v = mostRecentVersion();
         if (v == null) {
             return null;
@@ -54,7 +61,7 @@ public class VersionedStore {
         return versionPath(v);
     }
 
-    public String mostRecentVersionPath(long maxVersion) throws IOException {
+    public Path mostRecentVersionPath(long maxVersion) throws IOException {
         Long v = mostRecentVersion(maxVersion);
         if (v == null) {
             return null;
@@ -80,7 +87,7 @@ public class VersionedStore {
         return null;
     }
 
-    public String createVersion() throws IOException {
+    public Path createVersion() throws IOException {
         Long mostRecent = mostRecentVersion();
         long version = Time.currentTimeMillis();
         if (mostRecent != null && version <= mostRecent) {
@@ -89,8 +96,8 @@ public class VersionedStore {
         return createVersion(version);
     }
 
-    public String createVersion(long version) throws IOException {
-        String ret = versionPath(version);
+    public Path createVersion(long version) throws IOException {
+        Path ret = versionPath(version);
         if (getAllVersions().contains(version)) {
             throw new RuntimeException("Version already exists or data already exists");
         } else {
@@ -98,27 +105,27 @@ public class VersionedStore {
         }
     }
 
-    public void failVersion(String path) throws IOException {
+    public void failVersion(Path path) throws IOException {
         deleteVersion(validateAndGetVersion(path));
     }
 
     public void deleteVersion(long version) throws IOException {
-        File versionFile = new File(versionPath(version));
-        File tokenFile = new File(tokenPath(version));
+        Path versionFile = versionPath(version);
+        Path tokenFile = tokenPath(version);
 
-        if (tokenFile.exists()) {
-            FileUtils.forceDelete(tokenFile);
+        if (tokenFile.toFile().exists()) {
+            Files.walkFileTree(tokenFile, new DirectoryDeleteVisitor());
         }
 
-        if (versionFile.exists()) {
-            FileUtils.forceDelete(versionFile);
+        if (versionFile.toFile().exists()) {
+            Files.walkFileTree(versionFile, new DirectoryDeleteVisitor());
         }
     }
 
-    public void succeedVersion(String path) throws IOException {
+    public void succeedVersion(Path path) throws IOException {
         long version = validateAndGetVersion(path);
         // should rewrite this to do a file move
-        createNewFile(tokenPath(version));
+        Files.createFile(tokenPath(version));
     }
 
     public void cleanup() throws IOException {
@@ -132,7 +139,7 @@ public class VersionedStore {
         }
         HashSet<Long> keepers = new HashSet<Long>(versions);
 
-        for (String p : listDir(_root)) {
+        for (Path p : listDir(_root)) {
             Long v = parseVersion(p);
             if (v != null && !keepers.contains(v)) {
                 deleteVersion(v);
@@ -145,10 +152,11 @@ public class VersionedStore {
      */
     public List<Long> getAllVersions() throws IOException {
         List<Long> ret = new ArrayList<Long>();
-        for (String s : listDir(_root)) {
-
-            if (s.endsWith(FINISHED_VERSION_SUFFIX) && new File(s.substring(0, s.length() - FINISHED_VERSION_SUFFIX.length())).exists()) {
-                ret.add(validateAndGetVersion(s));
+        for (Path p : listDir(_root)) {
+            String s = p.toString();
+            if (s.endsWith(FINISHED_VERSION_SUFFIX) 
+                && Paths.get(s.substring(0, s.length() - FINISHED_VERSION_SUFFIX.length())).toFile().exists()) {
+                ret.add(validateAndGetVersion(p));
             }
         }
         Collections.sort(ret);
@@ -156,11 +164,11 @@ public class VersionedStore {
         return ret;
     }
 
-    private String tokenPath(long version) {
-        return new File(_root, "" + version + FINISHED_VERSION_SUFFIX).getAbsolutePath();
+    private Path tokenPath(long version) {
+        return _root.resolve("" + version + FINISHED_VERSION_SUFFIX).toAbsolutePath();
     }
 
-    private long validateAndGetVersion(String path) {
+    private long validateAndGetVersion(Path path) {
         Long v = parseVersion(path);
         if (v == null) {
             throw new RuntimeException(path + " is not a valid version");
@@ -168,8 +176,8 @@ public class VersionedStore {
         return v;
     }
 
-    private Long parseVersion(String path) {
-        String name = new File(path).getName();
+    private Long parseVersion(Path path) {
+        String name = path.getFileName().toString();
         if (name.endsWith(FINISHED_VERSION_SUFFIX)) {
             name = name.substring(0, name.length() - FINISHED_VERSION_SUFFIX.length());
         }
@@ -180,22 +188,15 @@ public class VersionedStore {
         }
     }
 
-    private void createNewFile(String path) throws IOException {
-        new File(path).createNewFile();
-    }
-
-    private void mkdirs(String path) throws IOException {
-        new File(path).mkdirs();
-    }
-
-    private List<String> listDir(String dir) throws IOException {
-        List<String> ret = new ArrayList<String>();
-        File[] contents = new File(dir).listFiles();
-        if (contents != null) {
-            for (File f : contents) {
-                ret.add(f.getAbsolutePath());
-            }
+    private List<Path> listDir(Path dir) throws IOException {
+        try (Stream<Path> filesList = Files.list(dir)) {
+            return filesList
+                .map(content -> content.toAbsolutePath())
+                .collect(Collectors.toList());
+        } catch (IOException e) {
+            //Can happen if worker directory is deleted, most likely harmless
+            LOG.debug("IOException when listing versioned store dir, ignoring", e);
+            return Collections.emptyList();
         }
-        return ret;
     }
 }

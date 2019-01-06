@@ -31,7 +31,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,9 +52,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
-
 import javax.ws.rs.core.Response;
-
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -331,7 +328,7 @@ public class LogviewerLogSearchHandler {
                 BufferedInputStream stream = new BufferedInputStream(gzippedInputStream)) {
 
                 //It's more likely to be a file read exception here, so we don't differentiate
-                int fileLength = isZipFile ? (int) ServerUtils.zipFileSize(file.toFile()) : (int) Files.size(file);
+                int fileLength = isZipFile ? (int) ServerUtils.zipFileSize(file) : (int) Files.size(file);
 
                 ByteBuffer buf = ByteBuffer.allocate(GREP_BUF_SIZE);
                 final byte[] bufArray = buf.array();

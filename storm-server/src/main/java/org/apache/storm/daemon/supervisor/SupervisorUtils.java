@@ -19,6 +19,8 @@
 package org.apache.storm.daemon.supervisor;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -57,7 +59,7 @@ public class SupervisorUtils {
         commands.add("rmr");
         commands.add(path);
         ClientSupervisorUtils.processLauncherAndWait(conf, user, commands, null, logPreFix);
-        if (Utils.checkFileExists(path)) {
+        if (Utils.checkFileExists(Paths.get(path))) {
             throw new RuntimeException(path + " was not deleted.");
         }
     }
@@ -103,19 +105,15 @@ public class SupervisorUtils {
         return localResourceList;
     }
 
-    public static Collection<String> supervisorWorkerIds(Map<String, Object> conf) {
-        String workerRoot = ConfigUtils.workerRoot(conf);
+    public static Collection<String> supervisorWorkerIds(Map<String, Object> conf) throws IOException {
+        Path workerRoot = ConfigUtils.workerRoot(conf);
         return ConfigUtils.readDirContents(workerRoot);
     }
 
     /**
      * map from worker id to heartbeat
-     *
-     * @param conf
-     * @return
-     *
      */
-    public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map<String, Object> conf) {
+    public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map<String, Object> conf) throws IOException {
         return _instance.readWorkerHeartbeatsImpl(conf);
     }
 
@@ -134,7 +132,7 @@ public class SupervisorUtils {
         return _instance.isWorkerHbTimedOutImpl(now, whb, conf);
     }
 
-    public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) {
+    public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) throws IOException {
         Map<String, LSWorkerHeartbeat> workerHeartbeats = new HashMap<>();
 
         Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);

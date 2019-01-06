@@ -30,14 +30,11 @@ import static java.util.stream.Collectors.toList;
 
 import com.codahale.metrics.Meter;
 import j2html.tags.DomContent;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import javax.ws.rs.core.Response;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
@@ -48,9 +45,9 @@ import org.apache.storm.metric.StormMetricsRegistry;
 public class LogviewerProfileHandler {
 
     public static final String WORKER_LOG_FILENAME = "worker.log";
-
+    
     private final Meter numFileDownloadExceptions;
-
+    
     private final Path logRoot;
     private final ResourceAuthorizer resourceAuthorizer;
     private final DirectoryCleaner directoryCleaner;
@@ -62,8 +59,8 @@ public class LogviewerProfileHandler {
      * @param resourceAuthorizer {@link ResourceAuthorizer}
      * @param metricsRegistry The logviewer metrisc registry
      */
-    public LogviewerProfileHandler(String logRoot, ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
-        this.logRoot = Paths.get(logRoot).toAbsolutePath().normalize();
+    public LogviewerProfileHandler(Path logRoot, ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
+        this.logRoot = logRoot.toAbsolutePath().normalize();
         this.resourceAuthorizer = resourceAuthorizer;
         this.numFileDownloadExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS);
         this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
@@ -87,9 +84,9 @@ public class LogviewerProfileHandler {
         }
 
         if (absDir.toFile().exists()) {
-            String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
-            if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
-                String content = buildDumpFileListPage(topologyId, hostPort, absDir.toFile());
+            Path workerFileRelativePath = Paths.get(topologyId, portStr, WORKER_LOG_FILENAME);
+            if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath.toString())) {
+                String content = buildDumpFileListPage(topologyId, hostPort, absDir);
                 return LogviewerResponseBuilder.buildSuccessHtmlResponse(content);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
@@ -119,9 +116,9 @@ public class LogviewerProfileHandler {
         }
 
         if (absFile.toFile().exists()) {
-            String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
-            if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
-                return LogviewerResponseBuilder.buildDownloadFile(absFile.toFile(), numFileDownloadExceptions);
+            Path workerFileRelativePath = Paths.get(topologyId, portStr, WORKER_LOG_FILENAME);
+            if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath.toString())) {
+                return LogviewerResponseBuilder.buildDownloadFile(absFile, numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
@@ -130,33 +127,34 @@ public class LogviewerProfileHandler {
         }
     }
 
-    private String buildDumpFileListPage(String topologyId, String hostPort, File dir) throws IOException {
+    private String buildDumpFileListPage(String topologyId, String hostPort, Path dir) throws IOException {
         List<DomContent> liTags = getProfilerDumpFiles(dir).stream()
-            .map(file -> li(a(file).withHref("/api/v1/dumps/" + topologyId + "/" + hostPort + "/" + file)))
-            .collect(toList());
+                .map(file -> li(a(file).withHref("/api/v1/dumps/" + topologyId + "/" + hostPort + "/" + file)))
+                .collect(toList());
 
         return html(
-            head(
-                title("File Dumps - Storm Log Viewer"),
-                link().withRel("stylesheet").withHref("/css/bootstrap-3.3.1.min.css"),
-                link().withRel("stylesheet").withHref("/css/jquery.dataTables.1.10.4.min.css"),
-                link().withRel("stylesheet").withHref("/css/style.css")
-            ),
-            body(
-                ul(liTags.toArray(new DomContent[]{}))
-            )
+                head(
+                        title("File Dumps - Storm Log Viewer"),
+                        link().withRel("stylesheet").withHref("/css/bootstrap-3.3.1.min.css"),
+                        link().withRel("stylesheet").withHref("/css/jquery.dataTables.1.10.4.min.css"),
+                        link().withRel("stylesheet").withHref("/css/style.css")
+                ),
+                body(
+                        ul(liTags.toArray(new DomContent[]{}))
+                )
         ).render();
     }
 
-    private List<String> getProfilerDumpFiles(File dir) throws IOException {
-        List<Path> filesForDir = directoryCleaner.getFilesForDir(dir.toPath());
+    private List<String> getProfilerDumpFiles(Path dir) throws IOException {
+        List<Path> filesForDir = directoryCleaner.getFilesForDir(dir);
         return filesForDir.stream()
-            .map(path -> path.toFile())
             .filter(file -> {
-                String fileName = file.getName();
+                String fileName = file.getFileName().toString();
                 return StringUtils.isNotEmpty(fileName)
                     && (fileName.endsWith(".txt") || fileName.endsWith(".jfr") || fileName.endsWith(".bin"));
-            }).map(File::getName).collect(toList());
+            })
+            .map(p -> p.getFileName().toString())
+            .collect(toList());
     }
 
 }

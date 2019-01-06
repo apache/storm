@@ -13,10 +13,13 @@
 package org.apache.storm.container.cgroup;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,7 +62,7 @@ public class CgroupManager implements ResourceIsolationInterface {
         long memFree = 0;
         long buffers = 0;
         long cached = 0;
-        try (BufferedReader in = new BufferedReader(new FileReader("/proc/meminfo"))) {
+        try (BufferedReader in = Files.newBufferedReader(Paths.get("/proc/meminfo"), Charset.defaultCharset())) {
             String line = null;
             while ((line = in.readLine()) != null) {
                 Matcher match = MEMINFO_PATTERN.matcher(line);
@@ -91,9 +94,9 @@ public class CgroupManager implements ResourceIsolationInterface {
             throw new RuntimeException("Check configuration file. The storm.supervisor.cgroup.rootdir is missing.");
         }
 
-        File file = new File(DaemonConfig.getCgroupStormHierarchyDir(conf), rootDir);
-        if (!file.exists()) {
-            LOG.error("{} does not exist", file.getPath());
+        Path file = Paths.get(DaemonConfig.getCgroupStormHierarchyDir(conf), rootDir);
+        if (!file.toFile().exists()) {
+            LOG.error("{} does not exist", file);
             throw new RuntimeException(
                 "Check if cgconfig service starts or /etc/cgconfig.conf is consistent with configuration file.");
         }
@@ -237,14 +240,14 @@ public class CgroupManager implements ResourceIsolationInterface {
     }
 
     @Override
-    public List<String> getLaunchCommand(String workerId, List<String> existingCommand) {
+    public List<String> getLaunchCommand(String workerId, List<String> existingCommand) throws IOException {
         List<String> newCommand = getLaunchCommandPrefix(workerId);
         newCommand.addAll(existingCommand);
         return newCommand;
     }
 
     @Override
-    public List<String> getLaunchCommandPrefix(String workerId) {
+    public List<String> getLaunchCommandPrefix(String workerId) throws IOException {
         CgroupCommon workerGroup = new CgroupCommon(workerId, this.hierarchy, this.rootCgroup);
 
         if (!this.rootCgroup.getChildren().contains(workerGroup)) {
@@ -299,7 +302,7 @@ public class CgroupManager implements ResourceIsolationInterface {
                 long used = memRoot.getMaxPhysicalUsage();
                 rootCgroupLimitFree = (limit - used) / 1024 / 1024;
             }
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             //Ignored if cgroups is not setup don't do anything with it
         }
 

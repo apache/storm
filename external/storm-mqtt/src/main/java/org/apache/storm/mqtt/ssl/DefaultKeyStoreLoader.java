@@ -12,9 +12,10 @@
 
 package org.apache.storm.mqtt.ssl;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * KeyStoreLoader implementation that uses local files.
@@ -61,17 +62,17 @@ public class DefaultKeyStoreLoader implements KeyStoreLoader {
     }
 
     @Override
-    public InputStream keyStoreInputStream() throws FileNotFoundException {
-        return new FileInputStream(this.ksFile);
+    public InputStream keyStoreInputStream() throws IOException {
+        return Files.newInputStream(Paths.get(this.ksFile));
     }
 
     @Override
-    public InputStream trustStoreInputStream() throws FileNotFoundException {
+    public InputStream trustStoreInputStream() throws IOException {
         // if no truststore file, assume the truststore is the keystore.
         if (this.tsFile == null) {
-            return new FileInputStream(this.ksFile);
+            return Files.newInputStream(Paths.get(this.ksFile));
         } else {
-            return new FileInputStream(this.tsFile);
+            return Files.newInputStream(Paths.get(this.tsFile));
         }
     }
 

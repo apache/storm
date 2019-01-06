@@ -13,15 +13,16 @@
 package org.apache.storm.container.cgroup;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.apache.storm.shade.com.google.common.io.Files;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,15 +35,17 @@ public class CgroupUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CgroupUtils.class);
 
     public static void deleteDir(String dir) {
-        File d = new File(dir);
-        if (!d.exists()) {
+        Path p = Paths.get(dir);
+        if (!p.toFile().exists()) {
             LOG.warn("dir {} does not exist!", dir);
             return;
         }
-        if (!d.isDirectory()) {
+        if (!Files.isDirectory(p)) {
             throw new RuntimeException("dir " + dir + " is not a directory!");
         }
-        if (!d.delete()) {
+        try {
+            Files.delete(p);
+        } catch (IOException e) {
             throw new RuntimeException("Cannot delete dir " + dir);
         }
     }
@@ -78,22 +81,22 @@ public class CgroupUtils {
     }
 
     public static boolean enabled() {
-        return Utils.checkFileExists(CGROUP_STATUS_FILE);
+        return Utils.checkFileExists(Paths.get(CGROUP_STATUS_FILE));
     }
 
     public static List<String> readFileByLine(String filePath) throws IOException {
-        return Files.readLines(new File(filePath), Charset.defaultCharset());
+        return Files.readAllLines(Paths.get(filePath), Charset.defaultCharset());
     }
 
     public static void writeFileByLine(String filePath, List<String> linesToWrite) throws IOException {
         LOG.debug("For CGroups - writing {} to {} ", linesToWrite, filePath);
-        File file = new File(filePath);
-        if (!file.exists()) {
+        Path path = Paths.get(filePath);
+        if (!path.toFile().exists()) {
             LOG.error("{} does not exist", filePath);
             return;
         }
-        try (FileWriter writer = new FileWriter(file, true);
-             BufferedWriter bw = new BufferedWriter(writer)) {
+        try (BufferedWriter bw = Files.newBufferedWriter(path, Charset.defaultCharset(),
+            StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
             for (String string : linesToWrite) {
                 bw.write(string);
                 bw.newLine();

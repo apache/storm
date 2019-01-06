@@ -18,9 +18,10 @@
 
 package org.apache.storm.zookeeper;
 
-import java.io.File;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang.StringUtils;
@@ -65,8 +66,8 @@ public class Zookeeper {
     }
 
     public static NIOServerCnxnFactory mkInprocessZookeeper(String localdir, Integer port) throws Exception {
-        File localfile = new File(localdir);
-        ZooKeeperServer zk = new ZooKeeperServer(localfile, localfile, 2000);
+        Path localfile = Paths.get(localdir);
+        ZooKeeperServer zk = new ZooKeeperServer(localfile.toFile(), localfile.toFile(), 2000);
         NIOServerCnxnFactory factory = null;
         int report = 2000;
         int limitPort = 65535;

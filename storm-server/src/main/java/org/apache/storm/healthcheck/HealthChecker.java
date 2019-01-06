@@ -19,16 +19,21 @@
 package org.apache.storm.healthcheck;
 
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.channels.ClosedByInterruptException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,23 +46,21 @@ public class HealthChecker {
     private static final String FAILED_WITH_EXIT_CODE = "failed_with_exit_code";
 
     public static int healthCheck(Map<String, Object> conf) {
-        String healthDir = ServerConfigUtils.absoluteHealthCheckDir(conf);
+        Path healthDir = ServerConfigUtils.absoluteHealthCheckDir(conf);
         List<String> results = new ArrayList<>();
         if (healthDir != null) {
-            File parentFile = new File(healthDir);
-            List<String> healthScripts = new ArrayList<String>();
-            if (parentFile.exists()) {
-                File[] list = parentFile.listFiles();
-                for (File f : list) {
-                    if (!f.isDirectory() && f.canExecute()) {
-                        healthScripts.add(f.getAbsolutePath());
+            Path parentFile = healthDir;
+            if (parentFile.toFile().exists()) {
+                try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(parentFile,
+                    path -> Files.isRegularFile(path) && Files.isExecutable(path))) {
+                    for (Path script : dirStream) {
+                        String result = processScript(conf, script);
+                        results.add(result);
+                        LOG.info("The healthcheck script [ {} ] exited with status: {}", script, result);
                     }
+                } catch (IOException e) {
+                    throw Utils.wrapInRuntime(e);
                 }
-            }
-            for (String script : healthScripts) {
-                String result = processScript(conf, script);
-                results.add(result);
-                LOG.info("The healthcheck script [ {} ] exited with status: {}", script, result);
             }
         }
 
@@ -77,10 +80,10 @@ public class HealthChecker {
 
     }
 
-    public static String processScript(Map<String, Object> conf, String script) {
+    public static String processScript(Map<String, Object> conf, Path script) {
         Thread interruptThread = null;
         try {
-            Process process = Runtime.getRuntime().exec(script);
+            Process process = Runtime.getRuntime().exec(script.toString());
             final long timeout = ObjectReader.getLong(conf.get(DaemonConfig.STORM_HEALTH_CHECK_TIMEOUT_MS), 5000L);
             final Thread curThread = Thread.currentThread();
             // kill process when timeout

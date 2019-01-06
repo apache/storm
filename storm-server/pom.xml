@@ -125,6 +125,11 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jool</artifactId>
+            <version>${jool.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -181,7 +186,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
                 <configuration>
-                    <maxAllowedViolations>763</maxAllowedViolations>
+                    <maxAllowedViolations>758</maxAllowedViolations>
                 </configuration>
             </plugin>
             <plugin>

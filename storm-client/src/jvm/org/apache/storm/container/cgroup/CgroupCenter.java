@@ -13,9 +13,11 @@
 package org.apache.storm.container.cgroup;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,8 +50,7 @@ public class CgroupCenter implements CgroupOperation {
     @Override
     public List<Hierarchy> getHierarchies() {
         Map<String, Hierarchy> hierarchies = new HashMap<String, Hierarchy>();
-        try (FileReader reader = new FileReader(CgroupUtils.MOUNT_STATUS_FILE);
-             BufferedReader br = new BufferedReader(reader)) {
+        try (BufferedReader br = Files.newBufferedReader(Paths.get(CgroupUtils.MOUNT_STATUS_FILE), Charset.defaultCharset())) {
             String str = null;
             while ((str = br.readLine()) != null) {
                 String[] strSplit = str.split(" ");
@@ -73,8 +74,7 @@ public class CgroupCenter implements CgroupOperation {
     @Override
     public Set<SubSystem> getSubSystems() {
         Set<SubSystem> subSystems = new HashSet<SubSystem>();
-        try (FileReader reader = new FileReader(CgroupUtils.CGROUP_STATUS_FILE);
-             BufferedReader br = new BufferedReader(reader)) {
+        try (BufferedReader br = Files.newBufferedReader(Paths.get(CgroupUtils.CGROUP_STATUS_FILE), Charset.defaultCharset())) {
             String str = null;
             while ((str = br.readLine()) != null) {
                 String[] split = str.split("\t");
@@ -130,7 +130,7 @@ public class CgroupCenter implements CgroupOperation {
 
     @Override
     public boolean isMounted(Hierarchy hierarchy) {
-        if (Utils.checkDirExists(hierarchy.getDir())) {
+        if (Utils.checkDirExists(Paths.get(hierarchy.getDir()))) {
             List<Hierarchy> hierarchies = this.getHierarchies();
             for (Hierarchy h : hierarchies) {
                 if (h.equals(hierarchy)) {
@@ -158,8 +158,9 @@ public class CgroupCenter implements CgroupOperation {
         if (subSystems.size() == 0) {
             return;
         }
-        if (!Utils.checkDirExists(hierarchy.getDir())) {
-            new File(hierarchy.getDir()).mkdirs();
+        Path hierarchyDir = Paths.get(hierarchy.getDir());
+        if (!Utils.checkDirExists(hierarchyDir)) {
+            Files.createDirectories(hierarchyDir);
         }
         String subSystemsName = CgroupUtils.subSystemsToString(subSystems);
         SystemOperation.mount(subSystemsName, hierarchy.getDir(), "cgroup", subSystemsName);
@@ -185,7 +186,7 @@ public class CgroupCenter implements CgroupOperation {
         }
         CgroupCommon parent = cgroup.getParent();
         while (parent != null) {
-            if (!Utils.checkDirExists(parent.getDir())) {
+            if (!Utils.checkDirExists(Paths.get(parent.getDir()))) {
                 throw new RuntimeException("Parent " + parent.getDir() + "does not exist");
             }
             parent = parent.getParent();
@@ -194,11 +195,14 @@ public class CgroupCenter implements CgroupOperation {
         if (!isMounted(h)) {
             throw new RuntimeException("hierarchy " + h.getDir() + " is not mounted");
         }
-        if (Utils.checkDirExists(cgroup.getDir())) {
+        Path cgroupDir = Paths.get(cgroup.getDir());
+        if (Utils.checkDirExists(cgroupDir)) {
             throw new RuntimeException("cgroup {} already exists " + cgroup.getDir());
         }
 
-        if (!(new File(cgroup.getDir())).mkdir()) {
+        try {
+            Files.createDirectory(cgroupDir);
+        } catch (IOException e) {
             throw new RuntimeException("Could not create cgroup dir at " + cgroup.getDir());
         }
     }

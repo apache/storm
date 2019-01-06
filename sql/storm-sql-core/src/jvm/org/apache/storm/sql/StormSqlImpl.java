@@ -108,7 +108,7 @@ class StormSqlImpl extends StormSql {
         attr.put(Attributes.Name.MANIFEST_VERSION, "1.0");
         attr.put(Attributes.Name.MAIN_CLASS, processor.getClass().getCanonicalName());
         try (JarOutputStream out = new JarOutputStream(
-            new BufferedOutputStream(new FileOutputStream(jar.toFile())), manifest)) {
+            new BufferedOutputStream(Files.newOutputStream(jar)), manifest)) {
             List<CompilingClassLoader> classLoaders = processor.getClassLoaders();
             if (classLoaders != null && !classLoaders.isEmpty()) {
                 for (CompilingClassLoader classLoader : classLoaders) {

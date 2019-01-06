@@ -20,13 +20,12 @@ package org.apache.storm.daemon.logviewer;
 
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
-
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
@@ -163,14 +162,13 @@ public class LogviewerServer implements AutoCloseable {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
 
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        String logRoot = ConfigUtils.workerArtifactsRoot(conf);
-        File logRootDir = new File(logRoot);
-        logRootDir.mkdirs();
-        WorkerLogs workerLogs = new WorkerLogs(conf, logRootDir.toPath(), metricsRegistry);
+        Path logRoot = ConfigUtils.workerArtifactsRoot(conf);
+        Files.createDirectories(logRoot);
+        WorkerLogs workerLogs = new WorkerLogs(conf, logRoot, metricsRegistry);
         DirectoryCleaner directoryCleaner = new DirectoryCleaner(metricsRegistry);
 
         try (LogviewerServer server = new LogviewerServer(conf, metricsRegistry);
-             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir.toPath(), metricsRegistry)) {
+            LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRoot, metricsRegistry)) {
             metricsRegistry.startMetricsReporters(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(() -> {
                 server.meterShutdownCalls.mark();

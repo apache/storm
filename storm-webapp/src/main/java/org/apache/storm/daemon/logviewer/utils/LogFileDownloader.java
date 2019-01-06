@@ -20,19 +20,16 @@ package org.apache.storm.daemon.logviewer.utils;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
-
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import javax.ws.rs.core.Response;
-
-import org.apache.commons.io.FileUtils;
 import org.apache.storm.metric.StormMetricsRegistry;
 
 
 public class LogFileDownloader {
+    private static final long ONE_MB_IN_BYTES = 1048576L;
     private final Histogram fileDownloadSizeDistMb;
     private final Meter numFileDownloadExceptions;
     private final Path logRoot;
@@ -47,10 +44,10 @@ public class LogFileDownloader {
      * @param resourceAuthorizer {@link ResourceAuthorizer}
      * @param metricsRegistry The logviewer metrics registry
      */
-    public LogFileDownloader(String logRoot, String daemonLogRoot, ResourceAuthorizer resourceAuthorizer,
+    public LogFileDownloader(Path logRoot, Path daemonLogRoot, ResourceAuthorizer resourceAuthorizer,
         StormMetricsRegistry metricsRegistry) {
-        this.logRoot = Paths.get(logRoot).toAbsolutePath().normalize();
-        this.daemonLogRoot = Paths.get(daemonLogRoot).toAbsolutePath().normalize();
+        this.logRoot = logRoot.toAbsolutePath().normalize();
+        this.daemonLogRoot = daemonLogRoot.toAbsolutePath().normalize();
         this.resourceAuthorizer = resourceAuthorizer;
         this.fileDownloadSizeDistMb = metricsRegistry.registerHistogram("logviewer:download-file-size-rounded-MB");
         this.numFileDownloadExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS);
@@ -79,8 +76,8 @@ public class LogFileDownloader {
         
         if (file.toFile().exists()) {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
-                fileDownloadSizeDistMb.update(Math.round((double) file.toFile().length() / FileUtils.ONE_MB));
-                return LogviewerResponseBuilder.buildDownloadFile(file.toFile(), numFileDownloadExceptions);
+                fileDownloadSizeDistMb.update(Math.round((double) Files.size(file) / ONE_MB_IN_BYTES));
+                return LogviewerResponseBuilder.buildDownloadFile(file, numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }

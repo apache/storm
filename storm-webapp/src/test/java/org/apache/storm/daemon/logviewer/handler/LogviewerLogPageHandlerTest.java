@@ -24,17 +24,13 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-
 import javax.ws.rs.core.Response;
-
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
@@ -51,10 +47,10 @@ public class LogviewerLogPageHandlerTest {
      */
     @Test
     public void testListLogFiles() throws IOException {
-        String rootPath = Files.createTempDirectory("workers-artifacts").toFile().getCanonicalPath();
-        File file1 = new File(String.join(File.separator, rootPath, "topoA", "1111"), "worker.log");
-        File file2 = new File(String.join(File.separator, rootPath, "topoA", "2222"), "worker.log");
-        File file3 = new File(String.join(File.separator, rootPath, "topoB", "1111"), "worker.log");
+        Path rootPath = Files.createTempDirectory("workers-artifacts").toAbsolutePath().normalize();
+        File file1 = new File(String.join(File.separator, rootPath.toString(), "topoA", "1111"), "worker.log");
+        File file2 = new File(String.join(File.separator, rootPath.toString(), "topoA", "2222"), "worker.log");
+        File file3 = new File(String.join(File.separator, rootPath.toString(), "topoB", "1111"), "worker.log");
 
         file1.getParentFile().mkdirs();
         file2.getParentFile().mkdirs();
@@ -67,7 +63,7 @@ public class LogviewerLogPageHandlerTest {
         Map<String, Object> stormConf = Utils.readStormConfig();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         LogviewerLogPageHandler handler = new LogviewerLogPageHandler(rootPath, rootPath,
-                new WorkerLogs(stormConf, Paths.get(rootPath), metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
+                new WorkerLogs(stormConf, rootPath, metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
 
         final Response expectedAll = LogviewerResponseBuilder.buildSuccessJsonResponse(
                 Lists.newArrayList("topoA/port1/worker.log", "topoA/port2/worker.log", "topoB/port1/worker.log"),
@@ -112,7 +108,7 @@ public class LogviewerLogPageHandlerTest {
     public void testListLogFilesOutsideLogRoot() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
             String origin = "www.origin.server.net";
-            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getPath());
 
             //The response should be empty, since you should not be able to list files outside the worker log root.
             final Response expected = LogviewerResponseBuilder.buildSuccessJsonResponse(
@@ -130,11 +126,11 @@ public class LogviewerLogPageHandlerTest {
     @Test
     public void testLogPageOutsideLogRoot() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
-            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getPath());
 
             final Response returned = handler.logPage("../nimbus.log", 0, 100, null, "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             //Should not show files outside worker log root.
             assertThat(returned.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
@@ -144,11 +140,11 @@ public class LogviewerLogPageHandlerTest {
     @Test
     public void testDaemonLogPageOutsideLogRoot() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
-            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getPath());
 
             final Response returned = handler.daemonLogPage("../evil.sh", 0, 100, null, "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             //Should not show files outside daemon log root.
             assertThat(returned.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
@@ -158,11 +154,11 @@ public class LogviewerLogPageHandlerTest {
     @Test
     public void testDaemonLogPagePathIntoWorkerLogs() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
-            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getFile().toPath());
+            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getPath());
 
             final Response returned = handler.daemonLogPage("workers-artifacts/topoA/worker.log", 0, 100, null, "user");
 
-            Utils.forceDelete(rootPath.toString());
+            Utils.forceDelete(rootPath.getPath());
 
             //Should not show files outside log root.
             assertThat(returned.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
@@ -190,7 +186,7 @@ public class LogviewerLogPageHandlerTest {
 
         Map<String, Object> stormConf = Utils.readStormConfig();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        return new LogviewerLogPageHandler(workerLogRoot.toString(), daemonLogRoot.toString(),
+        return new LogviewerLogPageHandler(workerLogRoot, daemonLogRoot,
             new WorkerLogs(stormConf, workerLogRoot, metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
     }
 }

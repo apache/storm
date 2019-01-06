@@ -19,10 +19,12 @@
 package org.apache.storm.loadgen;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -88,8 +90,10 @@ public class TopologyLoadConf {
      */
     public static TopologyLoadConf fromConf(File file) throws IOException {
         Yaml yaml = new Yaml(new SafeConstructor());
-        Map<String, Object> yamlConf = (Map<String, Object>)yaml.load(new FileReader(file));
-        return TopologyLoadConf.fromConf(yamlConf);
+        try (Reader reader = Files.newBufferedReader(file.toPath(), Charset.defaultCharset())) {
+            Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(reader);
+            return TopologyLoadConf.fromConf(yamlConf);
+        }
     }
 
     /**
@@ -134,7 +138,7 @@ public class TopologyLoadConf {
      */
     public void writeTo(File file) throws IOException {
         Yaml yaml = new Yaml(new SafeConstructor());
-        try (FileWriter writer = new FileWriter(file)) {
+        try (Writer writer = Files.newBufferedWriter(file.toPath(), Charset.defaultCharset())) {
             yaml.dump(toConf(), writer);
         }
     }

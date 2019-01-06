@@ -20,12 +20,10 @@ package org.apache.storm.daemon.drpc.webapp;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-
 import org.apache.storm.generated.DRPCExecutionException;
 import org.json.simple.JSONValue;
 

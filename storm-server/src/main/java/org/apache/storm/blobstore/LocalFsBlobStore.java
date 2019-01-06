@@ -15,7 +15,6 @@
 package org.apache.storm.blobstore;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,6 +55,9 @@ import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
 import static org.apache.storm.daemon.nimbus.Nimbus.NIMBUS_SUBJECT;
 import static org.apache.storm.daemon.nimbus.Nimbus.getVersionForKey;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * Provides a local file system backed blob store implementation for Nimbus.
  *
@@ -95,9 +97,9 @@ public class LocalFsBlobStore extends BlobStore {
         this.nimbusInfo = nimbusInfo;
         zkClient = BlobStoreUtils.createZKClient(conf, DaemonType.NIMBUS);
         if (overrideBase == null) {
-            overrideBase = ConfigUtils.absoluteStormBlobStoreDir(conf);
+            overrideBase = ConfigUtils.absoluteStormBlobStoreDir(conf).toString();
         }
-        File baseDir = new File(overrideBase, BASE_BLOBS_DIR_NAME);
+        Path baseDir = Paths.get(overrideBase, BASE_BLOBS_DIR_NAME);
         try {
             fbs = new FileBlobStoreImpl(baseDir, conf);
         } catch (IOException e) {
@@ -248,33 +250,21 @@ public class LocalFsBlobStore extends BlobStore {
     }
 
     private SettableBlobMeta getStoredBlobMeta(String key) throws KeyNotFoundException {
-        InputStream in = null;
         try {
             LocalFsBlobStoreFile pf = fbs.read(META_PREFIX + key);
-            try {
-                in = pf.getInputStream();
-            } catch (FileNotFoundException fnf) {
+            try (InputStream in = pf.getInputStream();
+                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                byte[] buffer = new byte[2048];
+                int len;
+                while ((len = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, len);
+                }
+                return Utils.thriftDeserialize(SettableBlobMeta.class, out.toByteArray());
+            } catch (NoSuchFileException e) {
                 throw new WrappedKeyNotFoundException(key);
             }
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buffer = new byte[2048];
-            int len;
-            while ((len = in.read(buffer)) > 0) {
-                out.write(buffer, 0, len);
-            }
-            in.close();
-            in = null;
-            return Utils.thriftDeserialize(SettableBlobMeta.class, out.toByteArray());
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    //Ignored
-                }
-            }
         }
     }
 
@@ -374,12 +364,8 @@ public class LocalFsBlobStore extends BlobStore {
     private void deleteKeyIgnoringFileNotFound(String key) throws IOException {
         try {
             fbs.deleteKey(key);
-        } catch (IOException e) {
-            if (e instanceof FileNotFoundException || e instanceof NoSuchFileException) {
-                LOG.debug("Ignoring FileNotFoundException since we're about to delete such key... key: {}", key);
-            } else {
-                throw e;
-            }
+        } catch (FileNotFoundException | NoSuchFileException e) {
+            LOG.debug("Ignoring FileNotFoundException since we're about to delete such key... key: {}", key);
         }
     }
 
@@ -475,7 +461,7 @@ public class LocalFsBlobStore extends BlobStore {
     }
 
     @VisibleForTesting
-    File getKeyDataDir(String key) {
+    Path getKeyDataDir(String key) {
         return fbs.getKeyDir(DATA_PREFIX + key);
     }
 }

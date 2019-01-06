@@ -33,21 +33,19 @@ import static j2html.TagCreator.pre;
 import static j2html.TagCreator.select;
 import static j2html.TagCreator.text;
 import static j2html.TagCreator.title;
-import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
 import com.codahale.metrics.Meter;
 import j2html.tags.DomContent;
-
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -60,10 +58,10 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
-
 import javax.ws.rs.core.Response;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
@@ -81,6 +79,7 @@ import org.apache.storm.utils.ServerUtils;
 import org.jooq.lambda.Unchecked;
 
 public class LogviewerLogPageHandler {
+
     private final Meter numPageRead;
     private final Meter numFileOpenExceptions;
     private final Meter numFileReadExceptions;
@@ -99,12 +98,12 @@ public class LogviewerLogPageHandler {
      * @param resourceAuthorizer {@link ResourceAuthorizer}
      * @param metricsRegistry The logviewer metrics registry
      */
-    public LogviewerLogPageHandler(String logRoot, String daemonLogRoot,
-                                   WorkerLogs workerLogs,
-                                   ResourceAuthorizer resourceAuthorizer,
-                                   StormMetricsRegistry metricsRegistry) {
-        this.logRoot = Paths.get(logRoot).toAbsolutePath().normalize();
-        this.daemonLogRoot = Paths.get(daemonLogRoot).toAbsolutePath().normalize();
+    public LogviewerLogPageHandler(Path logRoot, Path daemonLogRoot,
+        WorkerLogs workerLogs,
+        ResourceAuthorizer resourceAuthorizer,
+        StormMetricsRegistry metricsRegistry) {
+        this.logRoot = logRoot.toAbsolutePath().normalize();
+        this.daemonLogRoot = daemonLogRoot.toAbsolutePath().normalize();
         this.workerLogs = workerLogs;
         this.resourceAuthorizer = resourceAuthorizer;
         this.numPageRead = metricsRegistry.registerMeter("logviewer:num-page-read");
@@ -130,18 +129,15 @@ public class LogviewerLogPageHandler {
                 fileResults = workerLogs.getAllLogsForRootDir();
             } else {
                 fileResults = new ArrayList<>();
-
-                File[] logRootFiles = logRoot.toFile().listFiles();
-                if (logRootFiles != null) {
-                    for (File topoDir : logRootFiles) {
-                        File[] topoDirFiles = topoDir.listFiles();
-                        if (topoDirFiles != null) {
-                            for (File portDir : topoDirFiles) {
-                                if (portDir.getName().equals(port.toString())) {
-                                    fileResults.addAll(directoryCleaner.getFilesForDir(portDir.toPath()));
-                                }
-                            }
-                        }
+                try (Stream<Path> topoDirs = Files.list(logRoot)) {
+                    List<Path> portDirs = topoDirs //topo dirs
+                        .filter(Files::isDirectory)
+                        .flatMap(Unchecked.function(Files::list)) //worker dirs
+                        .filter(Files::isDirectory)
+                        .filter(portDir -> portDir.getFileName().toString().equals(port.toString()))
+                        .collect(Collectors.toList());
+                    for (Path portDir : portDirs) {
+                        fileResults.addAll(directoryCleaner.getFilesForDir(portDir));
                     }
                 }
             }
@@ -153,22 +149,21 @@ public class LogviewerLogPageHandler {
                 if (!topoDir.startsWith(logRoot)) {
                     return LogviewerResponseBuilder.buildSuccessJsonResponse(Collections.emptyList(), callback, origin);
                 }
-                if (topoDir.toFile().exists()) {
-                    File[] topoDirFiles = topoDir.toFile().listFiles();
-                    if (topoDirFiles != null) {
-                        for (File portDir : topoDirFiles) {
-                            fileResults.addAll(directoryCleaner.getFilesForDir(portDir.toPath()));
+                if (topoDir.toFile().exists() && Files.isDirectory(topoDir)) {
+                    try (DirectoryStream<Path> topoDirStream = Files.newDirectoryStream(topoDir)) {
+                        for (Path portDir : topoDirStream) {
+                            fileResults.addAll(directoryCleaner.getFilesForDir(portDir));
                         }
                     }
                 }
 
             } else {
-                File portDir = ConfigUtils.getWorkerDirFromRoot(logRoot.toString(), topologyId, port).getCanonicalFile();
-                if (!portDir.getPath().startsWith(logRoot.toString())) {
+                Path portDir = ConfigUtils.getWorkerDirFromRoot(logRoot, topologyId, port).normalize().toAbsolutePath();
+                if (!portDir.startsWith(logRoot.toString())) {
                     return LogviewerResponseBuilder.buildSuccessJsonResponse(Collections.emptyList(), callback, origin);
                 }
-                if (portDir.exists()) {
-                    fileResults = directoryCleaner.getFilesForDir(portDir.toPath());
+                if (portDir.toFile().exists()) {
+                    fileResults = directoryCleaner.getFilesForDir(portDir);
                 }
             }
         }
@@ -176,8 +171,8 @@ public class LogviewerLogPageHandler {
         List<String> files;
         if (fileResults != null) {
             files = fileResults.stream()
-                    .map(WorkerLogs::getTopologyPortWorkerLog)
-                    .sorted().collect(toList());
+                .map(WorkerLogs::getTopologyPortWorkerLog)
+                .sorted().collect(toList());
         } else {
             files = new ArrayList<>();
         }
@@ -186,8 +181,7 @@ public class LogviewerLogPageHandler {
     }
 
     /**
-     * Provides a worker log file to view, starting from the specified position
-     * or default starting position of the most recent page.
+     * Provides a worker log file to view, starting from the specified position or default starting position of the most recent page.
      *
      * @param fileName file to view
      * @param start start offset, or null if the most recent page is desired
@@ -197,49 +191,50 @@ public class LogviewerLogPageHandler {
      * @return HTML view page of worker log
      */
     public Response logPage(String fileName, Integer start, Integer length, String grep, String user)
-            throws IOException, InvalidRequestException {
+        throws IOException, InvalidRequestException {
         Path rawFile = logRoot.resolve(fileName);
         Path absFile = rawFile.toAbsolutePath().normalize();
         if (!absFile.startsWith(logRoot) || !rawFile.normalize().toString().equals(rawFile.toString())) {
             //Ensure filename doesn't contain ../ parts 
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
-        
+
         if (resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
             workerLogs.setLogFilePermission(fileName);
 
             Path topoDir = absFile.getParent().getParent();
             if (absFile.toFile().exists()) {
                 SortedSet<Path> logFiles;
-                try {
-                    logFiles = Arrays.stream(topoDir.toFile().listFiles())
-                        .flatMap(Unchecked.function(portDir -> directoryCleaner.getFilesForDir(portDir.toPath()).stream()))
+                try (Stream<Path> portDirs = Files.list(topoDir)) {
+                    logFiles = portDirs
+                        .filter(Files::isDirectory)
+                        .flatMap(Unchecked.function(portDir -> directoryCleaner.getFilesForDir(portDir).stream()))
                         .filter(Files::isRegularFile)
-                            .collect(toCollection(TreeSet::new));
+                        .collect(Collectors.toCollection(TreeSet::new));
                 } catch (UncheckedIOException e) {
                     throw e.getCause();
                 }
 
                 List<String> reorderedFilesStr = logFiles.stream()
-                        .map(WorkerLogs::getTopologyPortWorkerLog)
-                        .filter(fileStr -> !StringUtils.equals(fileName, fileStr))
-                        .collect(toList());
+                    .map(WorkerLogs::getTopologyPortWorkerLog)
+                    .filter(fileStr -> !StringUtils.equals(fileName, fileStr))
+                    .collect(toList());
                 reorderedFilesStr.add(fileName);
 
                 length = length != null ? Math.min(10485760, length) : LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
                 final boolean isZipFile = absFile.getFileName().toString().endsWith(".gz");
-                long fileLength = getFileLength(absFile.toFile(), isZipFile);
+                long fileLength = getFileLength(absFile, isZipFile);
                 if (start == null) {
                     start = Long.valueOf(fileLength - length).intValue();
                 }
 
-                String logString = isTxtFile(fileName) ? escapeHtml(pageFile(absFile.toString(), isZipFile, fileLength, start, length)) :
-                    escapeHtml("This is a binary file and cannot display! You may download the full file.");
+                String logString = isTxtFile(fileName) ? escapeHtml(pageFile(absFile, isZipFile, fileLength, start, length))
+                    : escapeHtml("This is a binary file and cannot display! You may download the full file.");
 
                 List<DomContent> bodyContents = new ArrayList<>();
                 if (StringUtils.isNotEmpty(grep)) {
                     String matchedString = String.join("\n", Arrays.stream(logString.split("\n"))
-                            .filter(str -> str.contains(grep)).collect(toList()));
+                        .filter(str -> str.contains(grep)).collect(toList()));
                     bodyContents.add(pre(matchedString).withId("logContent"));
                 } else {
                     DomContent pagerData = null;
@@ -285,7 +280,7 @@ public class LogviewerLogPageHandler {
      * @return HTML view page of daemon log
      */
     public Response daemonLogPage(String fileName, Integer start, Integer length, String grep, String user)
-            throws IOException, InvalidRequestException {
+        throws IOException, InvalidRequestException {
         Path file = daemonLogRoot.resolve(fileName).toAbsolutePath().normalize();
         if (!file.startsWith(daemonLogRoot) || Paths.get(fileName).getNameCount() != 1) {
             //Prevent fileName from pathing into worker logs, or outside daemon log root 
@@ -294,61 +289,63 @@ public class LogviewerLogPageHandler {
 
         if (file.toFile().exists()) {
             // all types of files included
-            List<File> logFiles = Arrays.stream(daemonLogRoot.toFile().listFiles())
-                    .filter(File::isFile)
-                    .collect(toList());
+            try (Stream<Path> rootDirPaths = Files.list(daemonLogRoot)) {
+                List<Path> logPaths = rootDirPaths
+                    .filter(Files::isRegularFile)
+                    .collect(Collectors.toList());
 
-            List<String> reorderedFilesStr = logFiles.stream()
-                    .map(File::getName)
+                List<String> reorderedFilesStr = logPaths.stream()
+                    .map(p -> p.getFileName().toString())
                     .filter(fName -> !StringUtils.equals(fileName, fName))
                     .collect(toList());
-            reorderedFilesStr.add(fileName);
+                reorderedFilesStr.add(fileName);
 
-            length = length != null ? Math.min(10485760, length) : LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
-            final boolean isZipFile = file.getFileName().toString().endsWith(".gz");
-            long fileLength = getFileLength(file.toFile(), isZipFile);
-            if (start == null) {
-                start = Long.valueOf(fileLength - length).intValue();
-            }
+                length = length != null ? Math.min(10485760, length) : LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
+                final boolean isZipFile = file.getFileName().toString().endsWith(".gz");
+                long fileLength = getFileLength(file, isZipFile);
+                if (start == null) {
+                    start = Long.valueOf(fileLength - length).intValue();
+                }
 
-            String logString = isTxtFile(fileName) ? escapeHtml(pageFile(file.toString(), isZipFile, fileLength, start, length)) :
-                    escapeHtml("This is a binary file and cannot display! You may download the full file.");
+                String logString = isTxtFile(fileName) ? escapeHtml(pageFile(file, isZipFile, fileLength, start, length))
+                    : escapeHtml("This is a binary file and cannot display! You may download the full file.");
 
-            List<DomContent> bodyContents = new ArrayList<>();
-            if (StringUtils.isNotEmpty(grep)) {
-                String matchedString = String.join("\n", Arrays.stream(logString.split("\n"))
+                List<DomContent> bodyContents = new ArrayList<>();
+                if (StringUtils.isNotEmpty(grep)) {
+                    String matchedString = String.join("\n", Arrays.stream(logString.split("\n"))
                         .filter(str -> str.contains(grep)).collect(toList()));
-                bodyContents.add(pre(matchedString).withId("logContent"));
-            } else {
-                DomContent pagerData = null;
-                if (isTxtFile(fileName)) {
-                    pagerData = pagerLinks(fileName, start, length, Long.valueOf(fileLength).intValue(), "daemonlog");
+                    bodyContents.add(pre(matchedString).withId("logContent"));
+                } else {
+                    DomContent pagerData = null;
+                    if (isTxtFile(fileName)) {
+                        pagerData = pagerLinks(fileName, start, length, Long.valueOf(fileLength).intValue(), "daemonlog");
+                    }
+
+                    bodyContents.add(searchFileForm(fileName, "yes"));
+                    // list all daemon logs
+                    bodyContents.add(logFileSelectionForm(reorderedFilesStr, fileName, "daemonlog"));
+                    if (pagerData != null) {
+                        bodyContents.add(pagerData);
+                    }
+                    bodyContents.add(daemonDownloadLink(fileName));
+                    bodyContents.add(pre(logString).withClass("logContent"));
+                    if (pagerData != null) {
+                        bodyContents.add(pagerData);
+                    }
                 }
 
-                bodyContents.add(searchFileForm(fileName, "yes"));
-                // list all daemon logs
-                bodyContents.add(logFileSelectionForm(reorderedFilesStr, fileName, "daemonlog"));
-                if (pagerData != null) {
-                    bodyContents.add(pagerData);
-                }
-                bodyContents.add(daemonDownloadLink(fileName));
-                bodyContents.add(pre(logString).withClass("logContent"));
-                if (pagerData != null) {
-                    bodyContents.add(pagerData);
-                }
+                String content = logTemplate(bodyContents, fileName, user).render();
+                return LogviewerResponseBuilder.buildSuccessHtmlResponse(content);
             }
-
-            String content = logTemplate(bodyContents, fileName, user).render();
-            return LogviewerResponseBuilder.buildSuccessHtmlResponse(content);
         } else {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
     }
 
-    private long getFileLength(File file, boolean isZipFile) throws IOException {
+    private long getFileLength(Path file, boolean isZipFile) throws IOException {
         try {
-            return isZipFile ? ServerUtils.zipFileSize(file) : file.length();
-        } catch (FileNotFoundException e) {
+            return isZipFile ? ServerUtils.zipFileSize(file) : Files.size(file);
+        } catch (FileNotFoundException | NoSuchFileException e) {
             numFileOpenExceptions.mark();
             throw e;
         } catch (IOException e) {
@@ -369,15 +366,15 @@ public class LogviewerLogPageHandler {
         finalBodyContents.addAll(bodyContents);
 
         return html(
-                head(
-                        title(escapeHtml(fileName) + " - Storm Log Viewer"),
-                        link().withRel("stylesheet").withHref("/css/bootstrap-3.3.1.min.css"),
-                        link().withRel("stylesheet").withHref("/css/jquery.dataTables.1.10.4.min.css"),
-                        link().withRel("stylesheet").withHref("/css/style.css")
-                ),
-                body(
-                        finalBodyContents.toArray(new DomContent[]{})
-                )
+            head(
+                title(escapeHtml(fileName) + " - Storm Log Viewer"),
+                link().withRel("stylesheet").withHref("/css/bootstrap-3.3.1.min.css"),
+                link().withRel("stylesheet").withHref("/css/jquery.dataTables.1.10.4.min.css"),
+                link().withRel("stylesheet").withHref("/css/style.css")
+            ),
+            body(
+                finalBodyContents.toArray(new DomContent[]{})
+            )
         );
     }
 
@@ -395,25 +392,25 @@ public class LogviewerLogPageHandler {
 
     private DomContent logFileSelectionForm(List<String> logFiles, String selectedFile, String type) {
         return form(
-                dropDown("file", logFiles, selectedFile),
-                input().withType("submit").withValue("Switch file")
+            dropDown("file", logFiles, selectedFile),
+            input().withType("submit").withValue("Switch file")
         ).withAction(type).withId("list-of-files");
     }
 
     private DomContent dropDown(String name, List<String> logFiles, String selectedFile) {
         List<DomContent> options = logFiles.stream()
-                .map(file -> option(file).condAttr(file.equals(selectedFile), "selected", "selected"))
-                .collect(toList());
+            .map(file -> option(file).condAttr(file.equals(selectedFile), "selected", "selected"))
+            .collect(toList());
         return select(options.toArray(new DomContent[]{})).withName(name).withId(name).withValue(selectedFile);
     }
 
     private DomContent searchFileForm(String fileName, String isDaemonValue) {
         return form(
-                text("search this file:"),
-                input().withType("text").withName("search"),
-                input().withType("hidden").withName("is-daemon").withValue(isDaemonValue),
-                input().withType("hidden").withName("file").withValue(fileName),
-                input().withType("submit").withValue("Search")
+            text("search this file:"),
+            input().withType("text").withName("search"),
+            input().withType("hidden").withName("is-daemon").withValue(isDaemonValue),
+            input().withType("hidden").withName("file").withValue(fileName),
+            input().withType("submit").withValue("Search")
         ).withAction("/logviewer_search.html").withId("search-box");
     }
 
@@ -460,10 +457,10 @@ public class LogviewerLogPageHandler {
         return a(text).withHref(url).withClass("btn btn-default " + (enabled ? "enabled" : "disabled"));
     }
 
-    private String pageFile(String path, boolean isZipFile, long fileLength, Integer start, Integer readLength)
+    private String pageFile(Path path, boolean isZipFile, long fileLength, Integer start, Integer readLength)
         throws IOException, InvalidRequestException {
-        try (InputStream input = isZipFile ? new GZIPInputStream(new FileInputStream(path)) : new FileInputStream(path);
-             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+        try (InputStream input = isZipFile ? new GZIPInputStream(Files.newInputStream(path)) : Files.newInputStream(path);
+            ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             if (start >= fileLength) {
                 throw new InvalidRequestException("Cannot start past the end of the file");
             }
@@ -483,7 +480,7 @@ public class LogviewerLogPageHandler {
 
             numPageRead.mark();
             return output.toString();
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             numFileOpenExceptions.mark();
             throw e;
         } catch (IOException e) {

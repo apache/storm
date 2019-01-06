@@ -34,7 +34,6 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.storm.metric.StormMetricsRegistry;
-
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,7 +122,7 @@ public class DirectoryCleaner {
                                 if (pq.size() < PQ_SIZE) {
                                     pq.offer(p);
                                 } else if (p.getRight().toMillis() < pq.peek().getRight().toMillis()) {
-                                    pq.poll();
+                                pq.poll();
                                     pq.offer(p);
                                 }
                             }
@@ -145,7 +144,7 @@ public class DirectoryCleaner {
                     final long lastModified = pair.getRight().toMillis();
                     //Original implementation doesn't actually check if delete succeeded or not.
                     try {
-                        Utils.forceDelete(file.toString());
+                        Utils.forceDelete(file);
                         LOG.info("Delete file: {}, size: {}, lastModified: {}", canonicalPath, fileSize, lastModified);
                         toDeleteSize -= fileSize;
                         deletedSize += fileSize;

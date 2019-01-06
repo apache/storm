@@ -19,8 +19,8 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.codahale.metrics.Meter;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +41,10 @@ public class ClientSupervisorUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ClientSupervisorUtils.class);
 
     static boolean doRequiredTopoFilesExist(Map<String, Object> conf, String stormId) throws IOException {
-        String stormroot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
-        String stormjarpath = ConfigUtils.supervisorStormJarPath(stormroot);
-        String stormcodepath = ConfigUtils.supervisorStormCodePath(stormroot);
-        String stormconfpath = ConfigUtils.supervisorStormConfPath(stormroot);
+        Path stormroot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
+        Path stormjarpath = ConfigUtils.supervisorStormJarPath(stormroot);
+        Path stormcodepath = ConfigUtils.supervisorStormCodePath(stormroot);
+        Path stormconfpath = ConfigUtils.supervisorStormConfPath(stormroot);
         if (!Utils.checkFileExists(stormroot)) {
             return false;
         }
@@ -79,7 +79,7 @@ public class ClientSupervisorUtils {
 
     static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args,
                                    Map<String, String> environment, final String logPreFix,
-                                   final ExitCodeCallback exitCodeCallback, File dir) throws IOException {
+                                   final ExitCodeCallback exitCodeCallback, Path dir) throws IOException {
         if (StringUtils.isBlank(user)) {
             throw new IllegalArgumentException("User cannot be blank when calling processLauncher.");
         }
@@ -119,12 +119,12 @@ public class ClientSupervisorUtils {
                                         Map<String, String> environment,
                                         final String logPrefix,
                                         final ExitCodeCallback exitCodeCallback,
-                                        File dir)
+                                        Path dir)
         throws IOException {
         ProcessBuilder builder = new ProcessBuilder(command);
         Map<String, String> procEnv = builder.environment();
         if (dir != null) {
-            builder.directory(dir);
+            builder.directory(dir.toFile());
         }
         builder.redirectErrorStream(true);
         if (environment != null) {

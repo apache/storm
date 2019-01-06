@@ -31,23 +31,19 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
 import java.util.function.Predicate;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
@@ -81,22 +77,22 @@ public class LogCleanerTest {
         final long cutoffMillis = logCleaner.cleanupCutoffAgeMillis(nowMillis);
         final long oldMtimeMillis = cutoffMillis - 500;
         final long newMtimeMillis = cutoffMillis + 500;
-       
+
         try (TmpPath testDir = new TmpPath()) {
-            Files.createDirectories(testDir.getFile().toPath());
+            Files.createDirectories(testDir.getPath());
 
             List<Path> matchingFiles = Arrays.asList(
-                createDir(testDir.getFile().toPath(), "3031", oldMtimeMillis),
-                createDir(testDir.getFile().toPath(), "3032", oldMtimeMillis),
-                createDir(testDir.getFile().toPath(), "7077", oldMtimeMillis)
+                createDir(testDir.getPath(), "3031", oldMtimeMillis),
+                createDir(testDir.getPath(), "3032", oldMtimeMillis),
+                createDir(testDir.getPath(), "7077", oldMtimeMillis)
             );
             List<Path> excludedFiles = Arrays.asList(
-                createFile(testDir.getFile().toPath(), "oldlog-1-2-worker-.log", oldMtimeMillis),
-                createFile(testDir.getFile().toPath(), "newlog-1-2-worker-.log", newMtimeMillis),
-                createFile(testDir.getFile().toPath(), "some-old-file.txt", oldMtimeMillis),
-                createFile(testDir.getFile().toPath(), "olddir-1-2-worker.log", newMtimeMillis),
-                createFile(testDir.getFile().toPath(), "metadata", newMtimeMillis),
-                createFile(testDir.getFile().toPath(), "newdir", newMtimeMillis)
+                createFile(testDir.getPath(), "oldlog-1-2-worker-.log", oldMtimeMillis),
+                createFile(testDir.getPath(), "newlog-1-2-worker-.log", newMtimeMillis),
+                createFile(testDir.getPath(), "some-old-file.txt", oldMtimeMillis),
+                createFile(testDir.getPath(), "olddir-1-2-worker.log", newMtimeMillis),
+                createFile(testDir.getPath(), "metadata", newMtimeMillis),
+                createFile(testDir.getPath(), "newdir", newMtimeMillis)
             );
 
             Predicate<Path> fileFilter = logCleaner.mkFileFilterForLogCleanup(nowMillis);
@@ -144,11 +140,11 @@ public class LogCleanerTest {
      */
     @Test
     public void testPerWorkerDirectoryCleanup() throws IOException {
-        long nowMillis = Time.currentTimeMillis();
+            long nowMillis = Time.currentTimeMillis();
 
         try (TmpPath testDir = new TmpPath()) {
-            Files.createDirectories(testDir.getFile().toPath());
-            Path rootDir = createDir(testDir.getFile().toPath(), "workers-artifacts");
+            Files.createDirectories(testDir.getPath());
+            Path rootDir = createDir(testDir.getPath(), "workers-artifacts");
             Path topo1Dir = createDir(rootDir, "topo1");
             Path topo2Dir = createDir(rootDir, "topo2");
             Path port1Dir = createDir(topo1Dir, "port1");
@@ -179,11 +175,11 @@ public class LogCleanerTest {
 
     @Test
     public void testGlobalLogCleanup() throws Exception {
-        long nowMillis = Time.currentTimeMillis();
+            long nowMillis = Time.currentTimeMillis();
 
         try (TmpPath testDir = new TmpPath()) {
-            Files.createDirectories(testDir.getFile().toPath());
-            Path rootDir = createDir(testDir.getFile().toPath(), "workers-artifacts");
+            Files.createDirectories(testDir.getPath());
+            Path rootDir = createDir(testDir.getPath(), "workers-artifacts");
             Path topo1Dir = createDir(rootDir, "topo1");
             Path topo2Dir = createDir(rootDir, "topo2");
             // note that port1Dir is active worker containing active logs
@@ -227,9 +223,9 @@ public class LogCleanerTest {
         Map<String, LSWorkerHeartbeat> idToHb = Collections.singletonMap("42", hb);
         int nowSecs = 2;
         try (TmpPath testDir = new TmpPath()) {
-            Path unexpectedDir1 = createDir(testDir.getFile().toPath(), "dir1");
-            Path expectedDir2 = createDir(testDir.getFile().toPath(), "dir2");
-            Path expectedDir3 = createDir(testDir.getFile().toPath(), "dir3");
+            Path unexpectedDir1 = createDir(testDir.getPath(), "dir1");
+            Path expectedDir2 = createDir(testDir.getPath(), "dir2");
+            Path expectedDir3 = createDir(testDir.getPath(), "dir3");
             Set<Path> logDirs = Sets.newSet(unexpectedDir1, expectedDir2, expectedDir3);
             SupervisorUtils mockedSupervisorUtils = mock(SupervisorUtils.class);
             SupervisorUtils.setInstance(mockedSupervisorUtils);
@@ -246,7 +242,7 @@ public class LogCleanerTest {
                     if (predicate.test("007")) {
                         ret.add(expectedDir2);
                     }
-                    if (predicate.test("")) {
+                    if(predicate.test("")) {
                         ret.add(expectedDir3);
                     }
 
@@ -269,8 +265,8 @@ public class LogCleanerTest {
     @Test
     public void testCleanupFn() throws IOException {
         try (TmpPath dir1 = new TmpPath(); TmpPath dir2 = new TmpPath()) {
-            Files.createDirectory(dir1.getFile().toPath());
-            Files.createDirectory(dir2.getFile().toPath());
+            Files.createDirectory(dir1.getPath());
+            Files.createDirectory(dir2.getPath());
 
             Map<String, Object> conf = Utils.readStormConfig();
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
@@ -285,8 +281,8 @@ public class LogCleanerTest {
                 @Override
                 SortedSet<Path> getDeadWorkerDirs(int nowSecs, Set<Path> logDirs) throws Exception {
                     SortedSet<Path> dirs = new TreeSet<>();
-                    dirs.add(dir1.getFile().toPath());
-                    dirs.add(dir2.getFile().toPath());
+                    dirs.add(dir1.getPath());
+                    dirs.add(dir2.getPath());
                     return dirs;
                 }
 
@@ -297,8 +293,8 @@ public class LogCleanerTest {
 
             logCleaner.run();
 
-            assertThat(Files.exists(dir1.getFile().toPath()), is(false));
-            assertThat(Files.exists(dir2.getFile().toPath()), is(false));
+            assertThat(Files.exists(dir1.getPath()), is(false));
+            assertThat(Files.exists(dir2.getPath()), is(false));
         }
     }
 }

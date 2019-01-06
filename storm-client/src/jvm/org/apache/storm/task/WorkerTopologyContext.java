@@ -12,10 +12,10 @@
 
 package org.apache.storm.task;
 
-import java.io.File;
-import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.generated.NodeInfo;
@@ -28,8 +28,8 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     Map<String, Object> _defaultResources;
     private Integer _workerPort;
     private List<Integer> _workerTasks;
-    private String _codeDir;
-    private String _pidDir;
+    private Path _codeDir;
+    private Path _pidDir;
     private AtomicReference<Map<Integer, NodeInfo>> taskToNodePort;
     private String assignmentId;
 
@@ -40,8 +40,8 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         Map<String, List<Integer>> componentToSortedTasks,
         Map<String, Map<String, Fields>> componentToStreamToFields,
         String stormId,
-        String codeDir,
-        String pidDir,
+        Path codeDir,
+        Path pidDir,
         Integer workerPort,
         List<Integer> workerTasks,
         Map<String, Object> defaultResources,
@@ -53,14 +53,10 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         _codeDir = codeDir;
         _defaultResources = defaultResources;
         _userResources = userResources;
-        try {
-            if (pidDir != null) {
-                _pidDir = new File(pidDir).getCanonicalPath();
-            } else {
-                _pidDir = null;
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Could not get canonical path for " + _pidDir, e);
+        if (pidDir != null) {
+            _pidDir = pidDir.toAbsolutePath().normalize();
+        } else {
+            _pidDir = null;
         }
         _workerPort = workerPort;
         _workerTasks = workerTasks;
@@ -76,8 +72,8 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         Map<String, List<Integer>> componentToSortedTasks,
         Map<String, Map<String, Fields>> componentToStreamToFields,
         String stormId,
-        String codeDir,
-        String pidDir,
+        Path codeDir,
+        Path pidDir,
         Integer workerPort,
         List<Integer> workerTasks,
         Map<String, Object> defaultResources,
@@ -115,7 +111,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
      * implemented in other languages, such as Ruby or Python.
      */
     public String getCodeDir() {
-        return _codeDir;
+        return Objects.toString(_codeDir);
     }
 
     /**
@@ -123,7 +119,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
      * to ensure that Storm properly destroys that process when the worker is shutdown.
      */
     public String getPIDDir() {
-        return _pidDir;
+        return Objects.toString(_pidDir);
     }
 
     public Object getResource(String name) {

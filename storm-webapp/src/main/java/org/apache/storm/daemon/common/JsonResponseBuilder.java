@@ -21,7 +21,6 @@ package org.apache.storm.daemon.common;
 import java.util.Collections;
 import java.util.Map;
 import javax.ws.rs.core.Response;
-
 import org.apache.storm.daemon.ui.UIHelpers;
 
 /**

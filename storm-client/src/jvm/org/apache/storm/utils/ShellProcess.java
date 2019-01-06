@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public class ShellProcess implements Serializable {
             modifyEnvironment(buildEnv);
         }
         if (changeDirectory) {
-            builder.directory(new File(context.getCodeDir()));
+            builder.directory(Paths.get(context.getCodeDir()).toFile());
         }
 
         ShellLogger = LoggerFactory.getLogger(context.getThisComponentId());

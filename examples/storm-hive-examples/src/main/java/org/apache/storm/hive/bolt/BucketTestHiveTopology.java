@@ -19,9 +19,10 @@
 package org.apache.storm.hive.bolt;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
@@ -128,8 +129,7 @@ public class BucketTestHiveTopology {
             this.collector = collector;
             this.pending = new ConcurrentHashMap<UUID, Values>();
             try {
-                this.br = new BufferedReader(new FileReader(new File(this
-                        .filePath)));
+                this.br = Files.newBufferedReader(Paths.get(this.filePath), Charset.defaultCharset());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }

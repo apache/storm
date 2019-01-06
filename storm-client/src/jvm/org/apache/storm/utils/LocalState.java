@@ -12,9 +12,11 @@
 
 package org.apache.storm.utils;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +30,6 @@ import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.LocalStateData;
 import org.apache.storm.generated.ThriftSerializedObject;
-import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.thrift.TBase;
 import org.apache.storm.thrift.TDeserializer;
 import org.apache.storm.thrift.TSerializer;
@@ -47,7 +48,7 @@ public class LocalState {
     public static final String LS_TOPO_HISTORY = "topo-hist";
     private VersionedStore _vs;
 
-    public LocalState(String backingDir, boolean createBackingDir) throws IOException {
+    public LocalState(Path backingDir, boolean createBackingDir) throws IOException {
         LOG.debug("New Local State for {}", backingDir);
         _vs = new VersionedStore(backingDir, createBackingDir);
     }
@@ -94,10 +95,10 @@ public class LocalState {
 
     private Map<String, ThriftSerializedObject> partialDeserializeLatestVersion(TDeserializer td) {
         try {
-            String latestPath = _vs.mostRecentVersionPath();
+            Path latestPath = _vs.mostRecentVersionPath();
             Map<String, ThriftSerializedObject> result = new HashMap<>();
             if (latestPath != null) {
-                byte[] serialized = FileUtils.readFileToByteArray(new File(latestPath));
+                byte[] serialized = Files.readAllBytes(latestPath);
                 if (serialized.length == 0) {
                     LOG.warn("LocalState file '{}' contained no data, resetting state", latestPath);
                 } else {
@@ -252,15 +253,15 @@ public class LocalState {
             }
             byte[] toWrite = ser.serialize(new LocalStateData(serialized));
 
-            String newPath = _vs.createVersion();
-            File file = new File(newPath);
-            FileUtils.writeByteArrayToFile(file, toWrite);
-            if (toWrite.length != file.length()) {
+            Path path = _vs.createVersion();
+            Files.createDirectories(path.getParent());
+            Files.write(path, toWrite);
+            if (toWrite.length != Files.size(path)) {
                 throw new IOException("Tried to serialize " + toWrite.length
-                                      + " bytes to " + file.getCanonicalPath() + ", but "
-                                      + file.length() + " bytes were written.");
+                                      + " bytes to " + path.toAbsolutePath().normalize() + ", but "
+                                      + Files.size(path) + " bytes were written.");
             }
-            _vs.succeedVersion(newPath);
+            _vs.succeedVersion(path);
             if (cleanup) {
                 _vs.cleanup(4);
             }

@@ -20,14 +20,12 @@ package org.apache.storm.daemon.drpc.webapp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
-
 import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.metric.StormMetricsRegistry;
 

@@ -13,6 +13,7 @@
 package org.apache.storm.daemon;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -499,8 +500,8 @@ public class StormCommon {
             String stormId = (String) workerData.get(Constants.STORM_ID);
             Map<String, Object> conf = (Map) workerData.get(Constants.CONF);
             Integer port = (Integer) workerData.get(Constants.PORT);
-            String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, stormId));
-            String pidDir = ConfigUtils.workerPidsRoot(conf, stormId);
+            Path codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, stormId));
+            Path pidDir = ConfigUtils.workerPidsRoot(conf, stormId);
             List<Integer> workerTasks = (List<Integer>) workerData.get(Constants.TASK_IDS);
             Map<String, Object> defaultResources = (Map<String, Object>) workerData.get(Constants.DEFAULT_SHARED_RESOURCES);
             Map<String, Object> userResources = (Map<String, Object>) workerData.get(Constants.USER_SHARED_RESOURCES);

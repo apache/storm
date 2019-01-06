@@ -18,11 +18,13 @@
 
 package org.apache.storm.daemon.supervisor;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +33,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.StormTimer;
@@ -147,7 +148,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 + "supervisor. ( " + DaemonConfig.SUPERVISOR_AUTHORIZER + " is not set)");
         }
 
-        iSupervisor.prepare(conf, ServerConfigUtils.supervisorIsupervisorDir(conf));
+        iSupervisor.prepare(conf, ServerConfigUtils.supervisorIsupervisorDir(conf).toString());
 
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(conf,
@@ -293,8 +294,12 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
      */
     public void launch() throws Exception {
         LOG.info("Starting Supervisor with conf {}", ConfigUtils.maskPasswords(conf));
-        String path = ServerConfigUtils.supervisorTmpDir(conf);
-        FileUtils.cleanDirectory(new File(path));
+        Path path = ServerConfigUtils.supervisorTmpDir(conf);
+        try (DirectoryStream<Path> tmpDirStream = Files.newDirectoryStream(path)) {
+            for (Path tmpDirContent : tmpDirStream) {
+                Files.walkFileTree(tmpDirContent, new DirectoryDeleteVisitor());
+            }
+        }
 
         SupervisorHeartbeat hb = new SupervisorHeartbeat(conf, this);
         hb.run();
@@ -335,7 +340,13 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             }
             launch();
 
-            metricsRegistry.registerGauge("supervisor:num-slots-used-gauge", () -> SupervisorUtils.supervisorWorkerIds(conf).size());
+            metricsRegistry.registerGauge("supervisor:num-slots-used-gauge", () -> {
+                try {
+                    return SupervisorUtils.supervisorWorkerIds(conf).size();
+                } catch (IOException e) {
+                    throw Utils.wrapInRuntime(e);
+                }
+            });
             //This will only get updated once
             metricsRegistry.registerMeter("supervisor:num-launched").mark();
             metricsRegistry.registerMeter("supervisor:num-shell-exceptions", ShellUtils.numShellExceptions);

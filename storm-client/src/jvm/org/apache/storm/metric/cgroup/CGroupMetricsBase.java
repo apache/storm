@@ -13,9 +13,12 @@
 package org.apache.storm.metric.cgroup;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.container.cgroup.CgroupCenter;
@@ -59,19 +62,19 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
             return;
         }
 
-        if (!new File(hierarchyDir).exists()) {
+        if (!Paths.get(hierarchyDir).toFile().exists()) {
             LOG.warn("{} is disabled {} does not exist", simpleName, hierarchyDir);
             return;
         }
 
         //Good so far, check if we are in a CGroup
-        File cgroupFile = new File("/proc/self/cgroup");
-        if (!cgroupFile.exists()) {
+        Path cgroupFile = Paths.get("/proc/self/cgroup");
+        if (!cgroupFile.toFile().exists()) {
             LOG.warn("{} is disabled we do not appear to be a part of a CGroup", getClass().getSimpleName());
             return;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(cgroupFile))) {
+        try (BufferedReader reader = Files.newBufferedReader(cgroupFile, Charset.defaultCharset())) {
             //There can be more then one line if cgroups are mounted in more then one place, but we assume the first is good enough
             String line = reader.readLine();
             //hierarchy-ID:controller-list:cgroup-path
@@ -79,7 +82,7 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
             //parts[0] == 0 for CGroup V2, else maps to hierarchy in /proc/cgroups
             //parts[1] is empty for CGroups V2 else what is mapped that we are looking for
             String cgroupPath = parts[2];
-            core = CgroupCoreFactory.getInstance(type, new File(hierarchyDir, cgroupPath).getAbsolutePath());
+            core = CgroupCoreFactory.getInstance(type, Paths.get(hierarchyDir, cgroupPath).toAbsolutePath().toString());
         } catch (Exception e) {
             LOG.warn("{} is disabled error trying to read or parse {}", simpleName, cgroupFile);
             return;
@@ -95,7 +98,7 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
         }
         try {
             return getDataFrom(core);
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             LOG.warn("Exception trying to read a file {}", e);
             //Something happened and we couldn't find the file, so ignore it for now.
             return null;

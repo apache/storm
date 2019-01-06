@@ -20,6 +20,8 @@ package org.apache.storm.hdfs.trident;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
@@ -83,10 +85,10 @@ public class TridentFileTopology {
         conf.setMaxSpoutPending(5);
 
         Yaml yaml = new Yaml();
-        InputStream in = new FileInputStream(args[1]);
-        Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(in);
-        in.close();
-        conf.put("hdfs.config", yamlConf);
+        try (InputStream in = Files.newInputStream(Paths.get(args[1]))) {
+            Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(in);
+            conf.put("hdfs.config", yamlConf);
+        }
         String topoName = "wordCounter";
         if (args.length == 3) {
             topoName = args[2];

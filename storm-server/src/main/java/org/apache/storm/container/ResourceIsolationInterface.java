@@ -54,7 +54,7 @@ public interface ResourceIsolationInterface {
      * @param existingCommand the current command to run that may need to be modified.
      * @return new commandline with necessary additions to launch worker with resource isolation
      */
-    List<String> getLaunchCommand(String workerId, List<String> existingCommand);
+    List<String> getLaunchCommand(String workerId, List<String> existingCommand) throws IOException;
 
     /**
      * After reserving resources for the worker (i.e. calling reserveResourcesForWorker). this function can be used
@@ -63,7 +63,7 @@ public interface ResourceIsolationInterface {
      * @param workerId the of the worker
      * @return the command line prefix for launching a worker with resource isolation
      */
-    List<String> getLaunchCommandPrefix(String workerId);
+    List<String> getLaunchCommandPrefix(String workerId) throws IOException;
 
     /**
      * Get the list of PIDs currently in an isolated container.

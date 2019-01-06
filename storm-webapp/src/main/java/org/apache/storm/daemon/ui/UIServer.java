@@ -18,10 +18,10 @@
 
 package org.apache.storm.daemon.ui;
 
-import static org.apache.storm.utils.ConfigUtils.FILE_SEPARATOR;
 import static org.apache.storm.utils.ConfigUtils.STORM_HOME;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -143,10 +143,10 @@ public class UIServer {
         // add special pathspec of static content mapped to the homePath
         ServletHolder holderHome = new ServletHolder("static-home", DefaultServlet.class);
 
-        String packagedStaticFileLocation = System.getProperty(STORM_HOME) + FILE_SEPARATOR + "public/";
+        Path packagedStaticFileLocation = Paths.get(System.getProperty(STORM_HOME), "public/");
 
-        if (Files.exists(Paths.get(packagedStaticFileLocation))) {
-            holderHome.setInitParameter("resourceBase", packagedStaticFileLocation);
+        if (Files.exists(packagedStaticFileLocation)) {
+            holderHome.setInitParameter("resourceBase", packagedStaticFileLocation.toString());
         } else {
             LOG.warn("Cannot find static file directory in " +  packagedStaticFileLocation
                     + " - assuming that UIServer is being launched"

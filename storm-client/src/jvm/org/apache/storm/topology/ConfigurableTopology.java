@@ -18,10 +18,11 @@
 
 package org.apache.storm.topology;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,26 +73,26 @@ public abstract class ConfigurableTopology {
     }
 
     public static Config loadConf(String resource, Config conf)
-        throws FileNotFoundException {
+        throws IOException {
         Yaml yaml = new Yaml(new SafeConstructor());
-        Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(
-            new FileInputStream(resource), Charset.defaultCharset()));
-        if (ret == null) {
-            ret = new HashMap<>();
-        }
-        // If the config consists of a single key 'config', its values are used
-        // instead. This means that the same config files can be used with Flux
-        // and the ConfigurableTopology.
-        else {
-            if (ret.size() == 1) {
-                Object confNode = ret.get("config");
-                if (confNode != null && confNode instanceof Map) {
-                    ret = (Map<String, Object>) confNode;
+        try (Reader reader = Files.newBufferedReader(Paths.get(resource), Charset.defaultCharset())) {
+            Map<String, Object> ret = (Map<String, Object>) yaml.load(reader);
+            if (ret == null) {
+                ret = new HashMap<>();
+            } // If the config consists of a single key 'config', its values are used
+            // instead. This means that the same config files can be used with Flux
+            // and the ConfigurableTopology.
+            else {
+                if (ret.size() == 1) {
+                    Object confNode = ret.get("config");
+                    if (confNode != null && confNode instanceof Map) {
+                        ret = (Map<String, Object>) confNode;
+                    }
                 }
             }
+            conf.putAll(ret);
+            return conf;
         }
-        conf.putAll(ret);
-        return conf;
     }
 
     protected Config getConf() {
@@ -142,8 +143,8 @@ public abstract class ConfigurableTopology {
                 String resource = iter.next();
                 try {
                     loadConf(resource, conf);
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException("File not found : " + resource);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
                 iter.remove();
             }

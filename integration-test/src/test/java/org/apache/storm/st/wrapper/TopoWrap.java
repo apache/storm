@@ -195,8 +195,6 @@ public class TopoWrap {
             ExecutorSummary execSummary = execStat.get_exec_summary();
             String host = execSummary.get_host();
             int executorPort = execSummary.get_port();
-            //http://supervisor2:8000/download/DemoTest-26-1462229009%2F6703%2Fworker.log
-            //http://supervisor2:8000/log?file=SlidingWindowCountTest-9-1462388349%2F6703%2Fworker.log
             int logViewerPort = 8000;
             ExecutorURL executorURL = new ExecutorURL(componentId, host, logViewerPort, executorPort, id);
             urls.add(executorURL);
@@ -254,6 +252,9 @@ public class TopoWrap {
         }
 
         public ExecutorURL(String componentId, String host, int logViewerPort, int executorPort, String topoId) throws MalformedURLException {
+            //Example of generated urls
+            //http://supervisor2:8000/api/v1/download?file=DemoTest-26-1462229009%2F6703%2Fworker.log
+            //http://supervisor2:8000/api/v1/log?file=SlidingWindowCountTest-9-1462388349%2F6703%2Fworker.log
             String viewUrlStr = String.format("http://%s:%s/api/v1/log?file=", host, logViewerPort);
             String downloadUrlStr = String.format("http://%s:%s/api/v1/download?file=", host, logViewerPort);
             try {

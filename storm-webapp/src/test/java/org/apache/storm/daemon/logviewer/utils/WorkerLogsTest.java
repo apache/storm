@@ -23,14 +23,12 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-
 import java.util.SortedSet;
 import java.util.TreeSet;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
@@ -47,12 +45,12 @@ public class WorkerLogsTest {
     @Test
     public void testIdentifyWorkerLogDirs() throws Exception {
         try (TmpPath testDir = new TmpPath()) {
-            Path port1Dir = Files.createDirectories(testDir.getFile().toPath().resolve("workers-artifacts/topo1/port1"));
-            Path metaFile = Files.createFile(testDir.getFile().toPath().resolve("worker.yaml"));
+            Path port1Dir = Files.createDirectories(testDir.getPath().resolve("workers-artifacts/topo1/port1"));
+            Path metaFile = Files.createFile(testDir.getPath().resolve("worker.yaml"));
 
-            String expId = "id12345";
+        String expId = "id12345";
             SortedSet<Path> expected = new TreeSet<>();
-            expected.add(port1Dir);
+        expected.add(port1Dir);
             SupervisorUtils mockedSupervisorUtils = mock(SupervisorUtils.class);
             SupervisorUtils.setInstance(mockedSupervisorUtils);
 

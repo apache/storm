@@ -20,7 +20,6 @@ package org.apache.storm.daemon.logviewer.utils;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_PER_WORKER_LOGS_SIZE_MB;
@@ -30,7 +29,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.google.common.annotations.VisibleForTesting;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -50,7 +48,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import org.apache.storm.StormTimer;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
@@ -64,6 +61,7 @@ import org.slf4j.LoggerFactory;
  * Cleans dead workers logs and directories.
  */
 public class LogCleaner implements Runnable, Closeable {
+
     private static final Logger LOG = LoggerFactory.getLogger(LogCleaner.class);
 
     private final Timer cleanupRoutineDuration;
@@ -71,7 +69,7 @@ public class LogCleaner implements Runnable, Closeable {
     private final Histogram diskSpaceFreed;
     private final Meter numFileRemovalExceptions;
     private final Meter numCleanupExceptions;
-    
+
     private final Map<String, Object> stormConf;
     private final Integer intervalSecs;
     private final Path logRootDir;
@@ -92,7 +90,7 @@ public class LogCleaner implements Runnable, Closeable {
      * @param metricsRegistry The logviewer metrics registry
      */
     public LogCleaner(Map<String, Object> stormConf, WorkerLogs workerLogs, DirectoryCleaner directoryCleaner,
-                      Path logRootDir, StormMetricsRegistry metricsRegistry) {
+        Path logRootDir, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
         this.intervalSecs = ObjectReader.getInt(stormConf.get(LOGVIEWER_CLEANUP_INTERVAL_SECS), null);
         this.logRootDir = logRootDir;
@@ -113,7 +111,7 @@ public class LogCleaner implements Runnable, Closeable {
         this.numFileRemovalExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_REMOVAL_EXCEPTIONS);
         this.numCleanupExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_CLEANUP_EXCEPTIONS);
     }
-    
+
     private long sizeOfDir(Path dir) {
         try {
             return Files.walk(dir)
@@ -171,8 +169,8 @@ public class LogCleaner implements Runnable, Closeable {
             SortedSet<Path> deadWorkerDirs = getDeadWorkerDirs((int) nowSecs, oldLogDirs);
 
             LOG.debug("log cleanup: now={} old log dirs {} dead worker dirs {}", nowSecs,
-                    oldLogDirs.stream().map(p -> p.getFileName().toString()).collect(joining(",")),
-                    deadWorkerDirs.stream().map(p -> p.getFileName().toString()).collect(joining(",")));
+                oldLogDirs.stream().map(p -> p.getFileName().toString()).collect(joining(",")),
+                deadWorkerDirs.stream().map(p -> p.getFileName().toString()).collect(joining(",")));
 
             for (Path dir : deadWorkerDirs) {
                 Path path = dir.toAbsolutePath().normalize();
@@ -180,7 +178,7 @@ public class LogCleaner implements Runnable, Closeable {
                 LOG.info("Cleaning up: Removing {}, {} KB", path, sizeInBytes * 1e-3);
 
                 try {
-                    Utils.forceDelete(path.toString());
+                    Utils.forceDelete(path);
                     cleanupEmptyTopoDirectory(dir);
                     numFilesCleaned++;
                     diskSpaceCleaned += sizeInBytes;
@@ -210,9 +208,9 @@ public class LogCleaner implements Runnable, Closeable {
     @VisibleForTesting
     List<DeletionMeta> perWorkerDirCleanup(long size) {
         return workerLogs.getAllWorkerDirs().stream()
-                .map(Unchecked.function(dir ->
-                        directoryCleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null)))
-                .collect(toList());
+            .map(Unchecked.function(dir
+                -> directoryCleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null)))
+            .collect(toList());
     }
 
     /**
@@ -234,7 +232,7 @@ public class LogCleaner implements Runnable, Closeable {
         Path topoDir = dir.getParent();
         try (Stream<Path> topoDirContent = Files.list(topoDir)) {
             if (!topoDirContent.findAny().isPresent()) {
-                Utils.forceDelete(topoDir.toAbsolutePath().normalize().toString());
+                Utils.forceDelete(topoDir.toAbsolutePath().normalize());
             }
         }
     }
@@ -273,14 +271,13 @@ public class LogCleaner implements Runnable, Closeable {
     }
 
     /**
-     * Return the most recent last modified time for all log files in a worker's log dir.
-     * Using stream rather than File.listFiles is to avoid large mem usage
-     * when a directory has too many files.
+     * Return the most recent last modified time for all log files in a worker's log dir. Using stream rather than File.listFiles is to
+     * avoid large mem usage when a directory has too many files.
      */
     private long lastModifiedTimeWorkerLogdir(Path logDir) {
         try {
             long dirModified = Files.getLastModifiedTime(logDir).toMillis();
-            
+
             try (DirectoryStream<Path> dirStream = directoryCleaner.getStreamForDirectory(logDir)) {
                 return StreamSupport.stream(dirStream.spliterator(), false)
                     .map(Unchecked.function(p -> Files.getLastModifiedTime(p).toMillis()))

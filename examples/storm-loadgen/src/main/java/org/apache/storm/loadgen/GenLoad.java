@@ -18,8 +18,10 @@
 
 package org.apache.storm.loadgen;
 
-import java.io.File;
+import com.google.common.io.MoreFiles;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -241,13 +243,11 @@ public class GenLoad {
     }
 
     private static TopologyLoadConf readTopology(String topoFile) throws IOException {
-        File f = new File(topoFile);
+        Path p = Paths.get(topoFile);
 
-        TopologyLoadConf tlc = TopologyLoadConf.fromConf(f);
+        TopologyLoadConf tlc = TopologyLoadConf.fromConf(p.toFile());
         if (tlc.name == null) {
-            String fileName = f.getName();
-            int dot = fileName.lastIndexOf('.');
-            final String baseName = fileName.substring(0, dot);
+            final String baseName = MoreFiles.getNameWithoutExtension(p);
             tlc = tlc.withName(baseName);
         }
         return tlc;

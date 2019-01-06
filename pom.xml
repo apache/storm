@@ -309,6 +309,9 @@
         <jedis.version>2.9.0</jedis.version>
         <activemq.version>5.15.8</activemq.version>
         <rocketmq.version>4.2.0</rocketmq.version>
+        <!-- If you change this, you should also update the storm_checkstyle.xml file to be
+        based on the google_checks.xml from the version of checkstyle you are choosing. -->
+        <checkstyle.version>8.2</checkstyle.version>
 
         <jackson.version>2.9.8</jackson.version>
         
@@ -1227,9 +1230,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <!-- If you change this, you should also update the storm_checkstyle.xml file to be
-                            based on the google_checks.xml from the version of checkstyle you are choosing. -->
-                            <version>8.2</version>
+                            <version>${checkstyle.version}</version>
                         </dependency>
                     </dependencies>
                     <executions>

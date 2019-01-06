@@ -13,6 +13,7 @@ package org.apache.storm.metricstore.rocksdb;
 
 import com.codahale.metrics.Meter;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -131,7 +132,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
 
         boolean createIfMissing = ObjectReader.getBoolean(config.get(DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING), false);
         if (!createIfMissing) {
-            if (!(new File(storePath).exists())) {
+            if (!(Paths.get(storePath).toFile().exists())) {
                 throw new MetricException("Configuration specifies not to create a store but no store currently exists at " + storePath);
             }
         }
@@ -152,7 +153,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
         if (storePath == null) {
             throw new MetricException("Not a vaild RocksDB configuration - Missing store location " + DaemonConfig.STORM_ROCKSDB_LOCATION);
         } else {
-            if (new File(storePath).isAbsolute()) {
+            if (Paths.get(storePath).isAbsolute()) {
                 return storePath;
             } else {
                 String stormHome = System.getProperty(ConfigUtils.STORM_HOME);

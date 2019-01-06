@@ -14,10 +14,10 @@ package org.apache.storm.utils;
 
 import com.codahale.metrics.Meter;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,7 +53,7 @@ abstract public class ShellUtils {
     private long interval;   // refresh interval in msec
     private long lastTime;   // last time the command was performed
     private Map<String, String> environment; // env for the command execution
-    private File dir;
+    private Path dir;
     private Process process; // sub process used to execute the command
     private int exitCode;
     /**
@@ -178,7 +178,7 @@ abstract public class ShellUtils {
      *
      * @param dir The directory where the command would be executed
      */
-    protected void setWorkingDirectory(File dir) {
+    protected void setWorkingDirectory(Path dir) {
         this.dir = dir;
     }
 
@@ -212,7 +212,7 @@ abstract public class ShellUtils {
             builder.environment().putAll(this.environment);
         }
         if (dir != null) {
-            builder.directory(this.dir);
+            builder.directory(this.dir.toFile());
         }
 
         builder.redirectErrorStream(redirectErrorStream);
@@ -388,11 +388,11 @@ abstract public class ShellUtils {
             this(execString, null);
         }
 
-        public ShellCommandExecutor(String[] execString, File dir) {
+        public ShellCommandExecutor(String[] execString, Path dir) {
             this(execString, dir, null);
         }
 
-        public ShellCommandExecutor(String[] execString, File dir,
+        public ShellCommandExecutor(String[] execString, Path dir,
                                     Map<String, String> env) {
             this(execString, dir, env, 0L);
         }
@@ -408,7 +408,7 @@ abstract public class ShellUtils {
          * @param timeout    Specifies the time in milliseconds, after which the command will be killed and the status marked as timedout.
          *                   If 0, the command will not be timed out.
          */
-        public ShellCommandExecutor(String[] execString, File dir,
+        public ShellCommandExecutor(String[] execString, Path dir,
                                     Map<String, String> env, long timeout) {
             command = execString.clone();
             if (dir != null) {

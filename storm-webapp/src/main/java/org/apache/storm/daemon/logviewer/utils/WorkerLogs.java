@@ -24,7 +24,6 @@ import static org.apache.storm.Config.TOPOLOGY_SUBMITTER_USER;
 
 import com.codahale.metrics.Meter;
 import com.google.common.collect.Lists;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,7 +38,6 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.storm.daemon.supervisor.ClientSupervisorUtils;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.utils.PathUtil;
@@ -168,7 +166,7 @@ public class WorkerLogs {
      * @param metaFile metadata file
      */
     public String getWorkerIdFromMetadataFile(Path metaFile) {
-        Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(metaFile.toString());
+        Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(metaFile);
         return ObjectReader.getString(map == null ? null : map.get("worker-id"), null);
     }
 
@@ -178,7 +176,7 @@ public class WorkerLogs {
      * @param metaFile metadata file
      */
     public String getTopologyOwnerFromMetadataFile(Path metaFile) {
-        Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(metaFile.toString());
+        Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(metaFile);
         return ObjectReader.getString(map.get(TOPOLOGY_SUBMITTER_USER), null);
     }
 

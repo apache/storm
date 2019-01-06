@@ -60,7 +60,7 @@ public class KafkaUnit {
         Properties brokerProps = new Properties();
         brokerProps.setProperty("zookeeper.connect", zookeeper.getConnectString());
         brokerProps.setProperty("broker.id", "0");
-        brokerProps.setProperty("log.dirs", kafkaDir.getPath());
+        brokerProps.setProperty("log.dirs", kafkaDir.getAbsolutePath());
         brokerProps.setProperty("listeners", String.format("PLAINTEXT://%s:%d", KAFKA_HOST, KAFKA_PORT));
         brokerProps.setProperty("offsets.topic.replication.factor", "1");
         KafkaConfig config = new KafkaConfig(brokerProps);

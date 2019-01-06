@@ -48,6 +48,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 
+import java.nio.file.Path;
+
 public class LocalFsBlobStoreTest {
   private static final Logger LOG = LoggerFactory.getLogger(LocalFsBlobStoreTest.class);
   URI base;
@@ -129,8 +131,8 @@ public class LocalFsBlobStoreTest {
             .WORLD_EVERYTHING);
     try (AtomicOutputStream out = store.createBlob(key, metadata, null)) {
         out.write(1);
-        File blobDir = store.getKeyDataDir(key);
-        Files.createFile(blobDir.toPath().resolve("tempFile.tmp"));
+        Path blobDir = store.getKeyDataDir(key);
+        Files.createFile(blobDir.resolve("tempFile.tmp"));
     }
 
     store.deleteBlob("test",null);
