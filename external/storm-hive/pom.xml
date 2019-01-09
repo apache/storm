@@ -36,6 +36,11 @@
     </developer>
   </developers>
 
+    <properties>
+        <!-- Required downgrade by hive-hcatalog-core 2.3.4 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.storm</groupId>
@@ -164,7 +169,12 @@
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-autocreds</artifactId>
       <version>${project.version}</version>
-    </dependency>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
   </dependencies>
   <build>
     <plugins>

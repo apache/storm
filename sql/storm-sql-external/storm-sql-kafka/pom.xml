@@ -26,6 +26,11 @@
     </parent>
 
     <artifactId>storm-sql-kafka</artifactId>
+    
+    <properties>
+        <!-- Required downgrade by calcite-core 1.15.0 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
 
     <developers>
         <developer>
@@ -72,6 +77,11 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>java-hamcrest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
     </dependencies>
     <build>
