@@ -107,6 +107,10 @@ public class UploadCredentials {
                 }
             }
         }
+
+        // use the local setting for the login config rather than the topology's
+        topologyConf.remove("java.security.auth.login.config");
+
         StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap, (String) cl.get("u"));
         LOG.info("Uploaded new creds to topology: {}", topologyName);
     }
