@@ -84,6 +84,7 @@ public class KinesisConnectionInfo implements Serializable {
 
     private byte[] getKryoSerializedBytes (final Object obj) {
         final Kryo kryo = new Kryo();
+        kryo.getFieldSerializerConfig().setOptimizedGenerics(true);
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         final Output output = new Output(os);
         kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
@@ -94,6 +95,7 @@ public class KinesisConnectionInfo implements Serializable {
 
     private Object getKryoDeserializedObject (final byte[] ser) {
         final Kryo kryo = new Kryo();
+        kryo.getFieldSerializerConfig().setOptimizedGenerics(true);
         final Input input = new Input(new ByteArrayInputStream(ser));
         kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
         return kryo.readClassAndObject(input);

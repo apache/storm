@@ -41,6 +41,7 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
         @Override
         protected Kryo initialValue() {
             Kryo obj = new Kryo();
+            obj.getFieldSerializerConfig().setOptimizedGenerics(true);
             if (context != null && topoConf != null) {
                 KryoTupleSerializer ser = new KryoTupleSerializer(topoConf, context);
                 KryoTupleDeserializer deser = new KryoTupleDeserializer(topoConf, context);

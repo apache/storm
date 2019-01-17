@@ -25,6 +25,7 @@ public class DefaultKryoFactory implements IKryoFactory {
         KryoSerializableDefault k = new KryoSerializableDefault();
         k.setRegistrationRequired(!((Boolean) conf.get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION)));
         k.setReferences(false);
+        k.getFieldSerializerConfig().setOptimizedGenerics(true);
         return k;
     }
 

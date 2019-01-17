@@ -390,7 +390,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * Class that specifies how to create a Kryo instance for serialization. Storm will then apply topology.kryo.register and
      * topology.kryo.decorators on top of this. The default implementation implements topology.fall.back.on.java.serialization and turns
-     * references off.
+     * references off. It also enables optimized generics for compatibility with Kryo 3.x.
      */
     @isString
     public static final String TOPOLOGY_KRYO_FACTORY = "topology.kryo.factory";
