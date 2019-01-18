@@ -22,8 +22,8 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.storm.Config.SUPERVISOR_RUN_WORKER_AS_USER;
 import static org.apache.storm.Config.TOPOLOGY_SUBMITTER_USER;
-import static org.apache.storm.daemon.utils.ListFunctionalSupport.takeLast;
 
+import com.codahale.metrics.Meter;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -38,16 +38,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.storm.daemon.supervisor.ClientSupervisorUtils;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.utils.PathUtil;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Unchecked;
-import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,21 +56,28 @@ import org.slf4j.LoggerFactory;
  * A class that knows about how to operate with worker log directory.
  */
 public class WorkerLogs {
-    private static final Logger LOG = LoggerFactory.getLogger(LogCleaner.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WorkerLogs.class);
 
     public static final String WORKER_YAML = "worker.yaml";
+    
+    private final Meter numSetPermissionsExceptions;
+    
     private final Map<String, Object> stormConf;
     private final File logRootDir;
+    private final DirectoryCleaner directoryCleaner;
 
     /**
      * Constructor.
      *
      * @param stormConf storm configuration
      * @param logRootDir the log root directory
+     * @param metricsRegistry The logviewer metrics registry
      */
-    public WorkerLogs(Map<String, Object> stormConf, File logRootDir) {
+    public WorkerLogs(Map<String, Object> stormConf, File logRootDir, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
         this.logRootDir = logRootDir;
+        this.numSetPermissionsExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_SET_PERMISSION_EXCEPTIONS);
+        this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
     }
 
     /**
@@ -88,9 +96,14 @@ public class WorkerLogs {
 
         if (runAsUser && topoOwner.isPresent() && file.exists() && !Files.isReadable(file.toPath())) {
             LOG.debug("Setting permissions on file {} with topo-owner {}", fileName, topoOwner);
-            ClientSupervisorUtils.processLauncherAndWait(stormConf, topoOwner.get(),
-                    Lists.newArrayList("blob", file.getCanonicalPath()), null,
-                    "setup group read permissions for file: " + fileName);
+            try {
+                ClientSupervisorUtils.processLauncherAndWait(stormConf, topoOwner.get(),
+                        Lists.newArrayList("blob", file.getCanonicalPath()), null,
+                        "setup group read permissions for file: " + fileName);
+            } catch (IOException e) {
+                numSetPermissionsExceptions.mark();
+                throw e;
+            }
         }
     }
 
@@ -102,7 +115,7 @@ public class WorkerLogs {
         Set<File> topoDirFiles = getAllWorkerDirs();
         if (topoDirFiles != null) {
             for (File portDir : topoDirFiles) {
-                files.addAll(DirectoryCleaner.getFilesForDir(portDir));
+                files.addAll(directoryCleaner.getFilesForDir(portDir));
             }
         }
 
@@ -127,15 +140,10 @@ public class WorkerLogs {
     /**
      * Return a sorted set of java.io.Files that were written by workers that are now active.
      */
-    public SortedSet<String> getAliveWorkerDirs() throws Exception {
+    public SortedSet<File> getAliveWorkerDirs() {
         Set<String> aliveIds = getAliveIds(Time.currentTimeSecs());
         Set<File> logDirs = getAllWorkerDirs();
-        Map<String, File> idToDir = identifyWorkerLogDirs(logDirs);
-
-        return idToDir.entrySet().stream()
-                .filter(entry -> aliveIds.contains(entry.getKey()))
-                .map(Unchecked.function(entry -> entry.getValue().getCanonicalPath()))
-                .collect(toCollection(TreeSet::new));
+        return getLogDirs(logDirs, (wid) -> aliveIds.contains(wid));
     }
 
     /**
@@ -159,7 +167,7 @@ public class WorkerLogs {
      */
     public String getWorkerIdFromMetadataFile(String metaFile) {
         Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(metaFile);
-        return ObjectReader.getString(map.get("worker-id"), null);
+        return ObjectReader.getString(map == null ? null : map.get("worker-id"), null);
     }
 
     /**
@@ -177,7 +185,7 @@ public class WorkerLogs {
      *
      * @param nowSecs current time in seconds
      */
-    public Set<String> getAliveIds(int nowSecs) throws Exception {
+    public Set<String> getAliveIds(int nowSecs) {
         return SupervisorUtils.readWorkerHeartbeats(stormConf).entrySet().stream()
                 .filter(entry -> Objects.nonNull(entry.getValue())
                         && !SupervisorUtils.isWorkerHbTimedOut(nowSecs, entry.getValue(), stormConf))
@@ -186,19 +194,33 @@ public class WorkerLogs {
     }
 
     /**
-     * Finds a worker ID for each directory in set and return it as map.
+     * Finds directories for specific worker ids that can be cleaned up.
      *
      * @param logDirs directories to check whether they're worker directories or not
-     * @return the pair of worker ID, directory. worker ID will be an empty string if the directory is not a worker directory.
+     * @param predicate a check on a worker id to see if the log dir should be included
+     * @return directories that can be cleaned up.
      */
-    public Map<String, File> identifyWorkerLogDirs(Set<File> logDirs) {
+    public SortedSet<File> getLogDirs(Set<File> logDirs, Predicate<String> predicate) {
         // we could also make this static, but not to do it due to mock
-        return logDirs.stream().map(Unchecked.function(logDir -> {
-            Optional<File> metaFile = getMetadataFileForWorkerLogDir(logDir);
-
-            return metaFile.map(Unchecked.function(m -> new Tuple2<>(getWorkerIdFromMetadataFile(m.getCanonicalPath()), logDir)))
-                    .orElse(new Tuple2<>("", logDir));
-        })).collect(toMap(Tuple2::v1, Tuple2::v2));
+        TreeSet<File> ret = new TreeSet<>();
+        for (File logDir: logDirs) {
+            String workerId = "";
+            try {
+                Optional<File> metaFile = getMetadataFileForWorkerLogDir(logDir);
+                if (metaFile.isPresent()) {
+                    workerId = getWorkerIdFromMetadataFile(metaFile.get().getCanonicalPath());
+                    if (workerId == null) {
+                        workerId = "";
+                    }
+                }
+            } catch (IOException e) {
+                LOG.warn("Error trying to find worker.yaml in {}", logDir, e);
+            }
+            if (predicate.test(workerId)) {
+                ret.add(logDir);
+            }
+        }
+        return ret;
     }
 
     /**

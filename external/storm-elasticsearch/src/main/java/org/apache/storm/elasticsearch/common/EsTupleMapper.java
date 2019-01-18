@@ -15,12 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.elasticsearch.common;
 
-import org.apache.storm.tuple.ITuple;
+package org.apache.storm.elasticsearch.common;
 
 import java.io.Serializable;
 import java.util.Map;
+
+import org.apache.storm.tuple.ITuple;
 
 /**
  * TupleMapper defines how to extract source, index, type, and id from tuple for ElasticSearch.

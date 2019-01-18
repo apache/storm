@@ -30,19 +30,9 @@ public class Topologies implements Iterable<TopologyDetails> {
     Map<String, String> nameToId;
     Map<String, Map<String, Component>> allComponents;
 
-    private static Map<String, TopologyDetails> mkMap(TopologyDetails[] details) {
-        Map<String, TopologyDetails> ret = new HashMap<>();
-        for (TopologyDetails td : details) {
-            if (ret.put(td.getId(), td) != null) {
-                throw new IllegalArgumentException(
-                    "Cannot have multiple topologies with the id " + td.getId());
-            }
-        }
-        return ret;
-    }
-
     /**
      * Create a new Topologies from a list of TopologyDetails.
+     *
      * @param details the list of details to use.
      * @throws IllegalArgumentException if duplicate topology ids are found.
      */
@@ -52,6 +42,7 @@ public class Topologies implements Iterable<TopologyDetails> {
 
     /**
      * Create a new Topologies from a map of id to topology
+     *
      * @param topologies a map of topology id to topology details.
      */
     public Topologies(Map<String, TopologyDetails> topologies) {
@@ -74,12 +65,24 @@ public class Topologies implements Iterable<TopologyDetails> {
         this(src.topologies);
     }
 
+    private static Map<String, TopologyDetails> mkMap(TopologyDetails[] details) {
+        Map<String, TopologyDetails> ret = new HashMap<>();
+        for (TopologyDetails td : details) {
+            if (ret.put(td.getId(), td) != null) {
+                throw new IllegalArgumentException(
+                    "Cannot have multiple topologies with the id " + td.getId());
+            }
+        }
+        return ret;
+    }
+
     public Collection<String> getAllIds() {
         return topologies.keySet();
     }
 
     /**
      * Get a topology given an ID
+     *
      * @param topologyId the id of the topology to get
      * @return the topology or null if it is not found.
      */
@@ -88,8 +91,8 @@ public class Topologies implements Iterable<TopologyDetails> {
     }
 
     /**
-     * Get a topology given a topology name. Nimbus prevents multiple topologies
-     * from having the same name, so this assumes it is true.
+     * Get a topology given a topology name. Nimbus prevents multiple topologies from having the same name, so this assumes it is true.
+     *
      * @param topologyName the name of the topology to look for
      * @return the a topology with the given name.
      */
@@ -109,6 +112,7 @@ public class Topologies implements Iterable<TopologyDetails> {
 
     /**
      * Get all topologies submitted/owned by a given user.
+     *
      * @param user the name of the user
      * @return all of the topologies submitted by this user.
      */

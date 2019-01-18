@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
@@ -58,10 +59,11 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
     public static final String TOPIC = "topic";
 
-    private KafkaProducer<K, V> producer;
+    private Producer<K, V> producer;
     private OutputCollector collector;
     private TupleToKafkaMapper<K,V> mapper;
     private KafkaTopicSelector topicSelector;
+    private PreparableCallback providedCallback;
     private Properties boltSpecifiedProperties = new Properties();
     /**
      * {@see KafkaBolt#setFireAndForget(boolean)} for more details on this. 
@@ -98,6 +100,16 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
         return this;
     }
 
+    /**
+     * Sets a user defined callback for use with the KafkaProducer.
+     * @param producerCallback user defined callback
+     * @return this
+     */
+    public KafkaBolt<K, V> withProducerCallback(PreparableCallback producerCallback) {
+        this.providedCallback = producerCallback;
+        return this;
+    }
+
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         LOG.info("Preparing bolt with configuration {}", this);
@@ -118,6 +130,10 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
             }
         }
 
+        if (providedCallback != null) {
+            providedCallback.prepare(topoConf, context);
+        }
+
         producer = mkProducer(boltSpecifiedProperties);
         this.collector = collector;
     }
@@ -125,8 +141,30 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     /**
      * Intended to be overridden for tests.  Make the producer with the given props
      */
-    protected KafkaProducer<K, V> mkProducer(Properties props) {
+    protected Producer<K, V> mkProducer(Properties props) {
         return new KafkaProducer<>(props);
+    }
+
+    /**
+     * Creates the Callback to send to the Producer. Using this Callback will also execute
+     * the user defined Callback, if provided.
+     */
+    private Callback createProducerCallback(final Tuple input) {
+        return (ignored, e) -> {
+            synchronized (collector) {
+                if (e != null) {
+                    collector.reportError(e);
+                    collector.fail(input);
+                } else {
+                    collector.ack(input);
+                }
+
+                // User defined Callback
+                if (providedCallback != null) {
+                    providedCallback.onCompletion(ignored, e);
+                }
+            }
+        };
     }
 
     @Override
@@ -142,21 +180,11 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
                 Callback callback = null;
 
                 if (!fireAndForget && async) {
-                    callback = new Callback() {
-                        @Override
-                        public void onCompletion(RecordMetadata ignored, Exception e) {
-                            synchronized (collector) {
-                                if (e != null) {
-                                    collector.reportError(e);
-                                    collector.fail(input);
-                                } else {
-                                    collector.ack(input);
-                                }
-                            }
-                        }
-                    };
+                    callback = createProducerCallback(input);
+                } else if (providedCallback != null) {
+                    callback = providedCallback;
                 }
-                Future<RecordMetadata> result = producer.send(new ProducerRecord<K, V>(topic, key, message), callback);
+                Future<RecordMetadata> result = producer.send(new ProducerRecord<>(topic, key, message), callback);
                 if (!async) {
                     try {
                         result.get();
@@ -207,7 +235,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     public void setAsync(boolean async) {
         this.async = async;
     }
-    
+
     @Override
     public String toString() {
         return "KafkaBolt: {mapper: " + mapper 
