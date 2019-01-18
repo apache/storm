@@ -16,7 +16,7 @@
 # limitations under the License.
 
 JDKPATH=$JAVA_HOME
-BINPATH="/usr/bin"
+BINPATH="/usr/bin/"
 USER=`whoami`
 
 #SETTINGS=/Library/Java/JavaVirtualMachines/jdk1.8.0_51.jdk/Contents/Home/jre/lib/jfr/profile.jfc
@@ -33,9 +33,22 @@ elif [[ "$unamestr" == 'FreeBSD' ]]; then
 fi
 
 if [[ $platform == 'linux' ]]; then
-    BINPATH="$JDKPATH/bin"
+    if [ -z "$JDKPATH" ]; then
+        BINPATH="/usr/bin/"
+    else
+        BINPATH="$JDKPATH/bin/"
+    fi
 elif [[ $platform == 'darwin' ]]; then
-    BINPATH="/usr/bin"
+    BINPATH="/usr/bin/"
+fi
+
+#check if java is available at $BINPATH; if not, fall back to use java commands directly.
+JAVAPATH="${BINPATH}java"
+if [ -f "$JAVAPATH" ]; then
+	echo "$JAVAPATH found. Will use java utils from $BINPATH"
+else
+	echo "$JAVAPATH or JAVA_HOME not found. Will use java utils directly";
+	BINPATH=""
 fi
 
 function start_record {
@@ -46,37 +59,38 @@ function start_record {
         break;
     done
     if [ "$already_recording" = false ]; then
-        $BINPATH/jcmd $1 JFR.start settings=${SETTINGS}
+        ${BINPATH}jcmd $1 JFR.start settings=${SETTINGS}
     fi
 }
 
 function dump_record {
     for rid in `get_recording_ids $1`; do
         FILENAME=recording-$1-${rid}-${NOW}.jfr
-        $BINPATH/jcmd $1 JFR.dump recording=$rid filename="$2/${FILENAME}"
+        ${BINPATH}jcmd $1 JFR.dump recording=$rid filename="$2/${FILENAME}"
     done
 }
 
 function jstack_record {
     FILENAME=jstack-$1-${NOW}.txt
-    $BINPATH/jstack $1 > "$2/${FILENAME}" 2>&1
+    ${BINPATH}jstack $1 > "$2/${FILENAME}" 2>&1
 }
 
 function jmap_record {
     FILENAME=recording-$1-${NOW}.bin
-    $BINPATH/jmap -dump:format=b,file="$2/${FILENAME}" $1
+    ${BINPATH}jmap -dump:format=b,file="$2/${FILENAME}" $1
+    /bin/chmod g+r "$2/${FILENAME}"
 }
 
 function stop_record {
     for rid in `get_recording_ids $1`; do
         FILENAME=recording-$1-${rid}-${NOW}.jfr
-        $BINPATH/jcmd $1 JFR.dump recording=$rid filename="$2/${FILENAME}"
-        $BINPATH/jcmd $1 JFR.stop recording=$rid
+        ${BINPATH}jcmd $1 JFR.dump recording=$rid filename="$2/${FILENAME}"
+        ${BINPATH}jcmd $1 JFR.stop recording=$rid
     done
 }
 
 function get_recording_ids {
-    $BINPATH/jcmd $1 JFR.check | perl -n -e '/recording=([0-9]+)/ && print "$1 "'
+    ${BINPATH}jcmd $1 JFR.check | perl -n -e '/recording=([0-9]+)/ && print "$1 "'
 }
 
 function usage_and_quit {

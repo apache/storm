@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.trident.format;
 
 import org.apache.hadoop.io.LongWritable;
@@ -25,7 +26,6 @@ import org.apache.storm.trident.tuple.TridentTuple;
 /**
  * Basic <code>SequenceFormat</code> implementation that uses
  * <code>LongWritable</code> for keys and <code>Text</code> for values.
- *
  */
 public class DefaultSequenceFormat implements SequenceFormat {
     private transient LongWritable key;
@@ -34,11 +34,10 @@ public class DefaultSequenceFormat implements SequenceFormat {
     private String keyField;
     private String valueField;
 
-    public DefaultSequenceFormat(String keyField, String valueField){
+    public DefaultSequenceFormat(String keyField, String valueField) {
         this.keyField = keyField;
         this.valueField = valueField;
     }
-
 
 
     @Override
@@ -53,8 +52,8 @@ public class DefaultSequenceFormat implements SequenceFormat {
 
     @Override
     public Writable key(TridentTuple tuple) {
-        if(this.key == null){
-            this.key  = new LongWritable();
+        if (this.key == null) {
+            this.key = new LongWritable();
         }
         this.key.set(tuple.getLongByField(this.keyField));
         return this.key;
@@ -62,7 +61,7 @@ public class DefaultSequenceFormat implements SequenceFormat {
 
     @Override
     public Writable value(TridentTuple tuple) {
-        if(this.value == null){
+        if (this.value == null) {
             this.value = new Text();
         }
         this.value.set(tuple.getStringByField(this.valueField));

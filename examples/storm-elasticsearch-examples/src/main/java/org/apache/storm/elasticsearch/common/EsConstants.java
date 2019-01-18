@@ -15,8 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.common;
 
-public class EsConstants {
-    public static String clusterName = "test-cluster";
+/**
+ * Constants used in ElasticSearch examples.
+ */
+public final class EsConstants {
+
+    /**
+     * The cluster name.
+     */
+    public static final String CLUSTER_NAME = "test-cluster";
+    /**
+     * The default wait value in seconds.
+     */
+    public static final int WAIT_DEFAULT_SECS = 5;
+
+    /**
+     * Utility constructor.
+     */
+    private EsConstants() {
+    }
 }

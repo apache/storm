@@ -15,22 +15,27 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.monitor;
 
 /**
- * Class representing information for querying kafka for log head offsets, consumer offsets and the difference for new kafka spout using new consumer api
+ * Class representing information for querying kafka for log head offsets, consumer offsets and the difference for new kafka spout using new
+ * consumer api
  */
 public class NewKafkaSpoutOffsetQuery {
     private final String topics; // comma separated list of topics
     private final String consumerGroupId; // consumer group id for which the offset needs to be calculated
     private final String bootStrapBrokers; // bootstrap brokers
     private final String securityProtocol; // security protocol to connect to kafka
+    private final String consumerPropertiesFileName; // properties file containing additional kafka consumer configs
 
-    public NewKafkaSpoutOffsetQuery(String topics, String bootstrapBrokers, String consumerGroupId, String securityProtocol) {
+    public NewKafkaSpoutOffsetQuery(String topics, String bootstrapBrokers, String consumerGroupId, String securityProtocol,
+        String consumerPropertiesFileName) {
         this.topics = topics;
         this.bootStrapBrokers = bootstrapBrokers;
         this.consumerGroupId = consumerGroupId;
         this.securityProtocol = securityProtocol;
+        this.consumerPropertiesFileName = consumerPropertiesFileName;
     }
 
     public String getTopics() {
@@ -49,13 +54,17 @@ public class NewKafkaSpoutOffsetQuery {
         return this.securityProtocol;
     }
 
+    public String getConsumerPropertiesFileName() {
+        return this.consumerPropertiesFileName;
+    }
+
     @Override
     public String toString() {
         return "NewKafkaSpoutOffsetQuery{" +
-                "topics='" + topics + '\'' +
-                ", consumerGroupId='" + consumerGroupId + '\'' +
-                ", bootStrapBrokers='" + bootStrapBrokers + '\'' +
-                '}';
+               "topics='" + topics + '\'' +
+               ", consumerGroupId='" + consumerGroupId + '\'' +
+               ", bootStrapBrokers='" + bootStrapBrokers + '\'' +
+               '}';
     }
 
     @Override

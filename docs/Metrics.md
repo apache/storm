@@ -6,6 +6,8 @@ documentation: true
 Storm exposes a metrics interface to report summary statistics across the full topology.
 The numbers you see on the UI come from some of these built in metrics, but are reported through the worker heartbeats instead of through the IMetricsConsumer described below.
 
+If you are looking for cluster wide monitoring please see [Cluster Metrics](ClusterMetrics.html).
+
 ### Metric Types
 
 Metrics have to implement [`IMetric`]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/metric/api/IMetric.java) which contains just one method, `getValueAndReset` -- do any remaining work to find the summary value, and reset back to an initial state. For example, the MeanReducer divides the running total by its running count to find the mean, then initializes both values back to zero.
@@ -198,9 +200,9 @@ This is also just for bolts.  It is the average amount of time between when `exe
 This metric records how much time a spout was idle because more tuples than `topology.max.spout.pending` were still outstanding.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled.
 
 
-##### `__skipped-throttle-ms`
+##### `__skipped-backpressure-ms`
 
-This metric records how much time a spout was idle because back-pressure indicated that downstream queues in the topology were too full.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled.
+This metric records how much time a spout was idle because back-pressure indicated that downstream queues in the topology were too full.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled. This is similar to skipped-throttle-ms in Storm 1.x.
 
 ##### `skipped-inactive-ms`
 

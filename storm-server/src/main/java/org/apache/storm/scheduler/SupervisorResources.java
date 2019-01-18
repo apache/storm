@@ -31,8 +31,8 @@ public class SupervisorResources {
      *
      * @param totalMem the total mem on the supervisor
      * @param totalCpu the total CPU on the supervisor
-     * @param usedMem the used mem on the supervisor
-     * @param usedCpu the used CPU on the supervisor
+     * @param usedMem  the used mem on the supervisor
+     * @param usedCpu  the used CPU on the supervisor
      */
     public SupervisorResources(double totalMem, double totalCpu, double usedMem, double usedCpu) {
         this.totalMem = totalMem;

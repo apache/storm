@@ -52,7 +52,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
-import org.apache.storm.ui.InvalidRequestException;
+import org.apache.storm.daemon.ui.InvalidRequestException;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
@@ -627,6 +628,7 @@ public class LogviewerLogSearchHandlerTest {
 
     public static class TestDeepSearchLogs {
 
+        public static final int METRIC_SCANNED_FILES = 0;
         private List<File> logFiles;
         private String topoPath;
 
@@ -848,7 +850,7 @@ public class LogviewerLogSearchHandlerTest {
         private LogviewerLogSearchHandler getStubbedSearchHandler() {
             Map<String, Object> stormConf = Utils.readStormConfig();
             LogviewerLogSearchHandler handler = new LogviewerLogSearchHandler(stormConf, topoPath, null,
-                    new ResourceAuthorizer(stormConf));
+                    new ResourceAuthorizer(stormConf), new StormMetricsRegistry());
             handler = spy(handler);
 
             doReturn(logFiles).when(handler).logsForPort(any(), any());
@@ -857,7 +859,7 @@ public class LogviewerLogSearchHandlerTest {
                 int fileOffset = (Integer) arguments[2];
                 String search = (String) arguments[4];
 
-                return new LogviewerLogSearchHandler.Matched(fileOffset, search, Collections.emptyList());
+                return new LogviewerLogSearchHandler.Matched(fileOffset, search, Collections.emptyList(), METRIC_SCANNED_FILES);
             }).when(handler).findNMatches(any(), anyInt(), anyInt(), anyInt(), any());
 
             return handler;
@@ -867,14 +869,14 @@ public class LogviewerLogSearchHandlerTest {
     private static LogviewerLogSearchHandler getSearchHandler() {
         Map<String, Object> stormConf = Utils.readStormConfig();
         return new LogviewerLogSearchHandler(stormConf, null, null,
-                new ResourceAuthorizer(stormConf));
+                new ResourceAuthorizer(stormConf), new StormMetricsRegistry());
     }
 
     private static LogviewerLogSearchHandler getSearchHandlerWithPort(int port) {
         Map<String, Object> stormConf = Utils.readStormConfig();
         stormConf.put(DaemonConfig.LOGVIEWER_PORT, port);
         return new LogviewerLogSearchHandler(stormConf, null, null,
-                new ResourceAuthorizer(stormConf));
+                new ResourceAuthorizer(stormConf), new StormMetricsRegistry());
     }
 
 }

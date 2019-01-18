@@ -13,7 +13,7 @@ Please read [Storm SQL integration](storm-sql.html) page first to see what featu
 
 ## Grammar
 
-Calcite provides broader SQL Grammar. But Storm SQL is not database system and handles streaming data, so only subset of grammar is supported.
+Calcite provides broader SQL Grammar. But Storm SQL is not a database system and handles streaming data, so only subset of grammar is supported.
 Storm SQL doesn't redefine SQL Grammar and just utilize the parser Calcite provided, so SQL statements are still parsed based on Calcite's SQL Grammar. 
 
 SQL grammar in [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form)-like form.
@@ -189,7 +189,7 @@ may refer to tables in the FROM clause of an enclosing query.
 
 *selectWithoutFrom* is equivalent to VALUES,
 but is not standard SQL and is only allowed in certain
-[conformance levels]({{ site.apiRoot }}/org/apache/calcite/sql/validate/SqlConformance.html#isFromRequired--).
+[conformance levels](https://calcite.apache.org/apidocs/org/apache/calcite/sql/validate/SqlConformance.html#isFromRequired--).
 
 ## Keywords
 
@@ -827,7 +827,7 @@ The operator precedence and associativity, highest to lowest.
 | Operator                                          | Associativity
 |:------------------------------------------------- |:-------------
 | .                                                 | left
-| [ ] (array element)                               | left
+| \[ \] (array element)                             | left
 | + - (unary plus, minus)                           | right
 | * /                                               | left
 | + -                                               | left
@@ -1194,7 +1194,7 @@ Default input format and output format are JSON. We will introduce `supported fo
 For example, the following statement specifies a Kafka spout and sink:
 
 ```
-CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/brokers?topic=test' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.org.apache.storm.kafka.ByteBufferSerializer"}}'
+CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://test?bootstrap-hosts=localhost:9092' TBLPROPERTIES '{"producer":{"acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer"}}'
 ```
 
 Please note that users should use `--jars` or `--artifacts` while running Storm SQL runner to make sure UDFs are available in classpath. 
@@ -1238,7 +1238,7 @@ Please note that it supports only one letter for delimiter.
 | Data Source     | Artifact Name      | Location prefix     | Support Input data source | Support Output data source | Requires properties
 |:--------------- |:------------------ |:------------------- |:------------------------- |:-------------------------- |:-------------------
 | Socket | <built-in> | `socket://host:port` | Yes | Yes | No
-| Kafka | org.apache.storm:storm-sql-kafka | `kafka://zkhost:port/broker_path?topic=topic` | Yes | Yes | Yes
+| Kafka | org.apache.storm:storm-sql-kafka | `kafka://topic?bootstrap-servers=host1:port1,host2:port2` | Yes | Yes | Yes
 | Redis | org.apache.storm:storm-sql-redis | `redis://:[password]@host:port/[dbIdx]` | No | Yes | Yes
 | MongoDB | org.apache.stormg:storm-sql-mongodb | `mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]` | No | Yes | Yes
 | HDFS | org.apache.storm:storm-sql-hdfs | `hdfs://host:port/path-to-file` | No | Yes | Yes
@@ -1247,7 +1247,7 @@ Please note that it supports only one letter for delimiter.
 
 Socket data source is a built-in feature so users don't need to add any artifacts to `--artifacts` options.
 
-Please note that Socket data source is only for testing: it doesn't guarantee exactly-once and at-least-once.
+Please note that Socket data source is only for testing: it doesn't ensure any delivery guarantee.
 
 TIP: `netcat` is a convenient tool for Socket: users can use netcat to connect Socket data source for either or both input and output purposes.
 
@@ -1256,12 +1256,13 @@ TIP: `netcat` is a convenient tool for Socket: users can use netcat to connect S
 Kafka data source requires below properties only when its used for output data source:
 
 * `producer`: Specify Kafka Producer configuration - Please refer [Kafka producer configs](http://kafka.apache.org/documentation.html#producerconfigs) for details.
-   * `bootstrap.servers` must be described in `producer`
+   * Do not set `bootstrap.servers`. It is extracted from the URI you provide for the data source (e.g. `kafka://topic?bootstrap-servers=localhost:9092,localhost:9093` would extract to `localhost:9092,localhost:9093`).
+   * Do not set `value.serializer`. It is hardcoded to use `ByteBufferSerializer`. Instead use the `STORED AS INPUTFORMAT ... OUTPUTFORMAT ...` syntax to specify the output serializer Storm will use to create the ByteBuffer from input tuples.
 
-Please note that `storm-sql-kafka` requires users to provide `storm-kafka`, and `storm-kafka` requires users to provide `kafka` and `kafka-clients`.
+Please note that `storm-sql-kafka` requires users to provide `storm-kafka-client`, and `storm-kafka-client` requires users to provide `kafka-clients`.
 You can use below as working reference for `--artifacts` option, and change dependencies version, and see it works:
 
-`org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka:2.0.0-SNAPSHOT,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12,org.apache.kafka:kafka-clients:0.8.2.2`
+`org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka-client:2.0.0-SNAPSHOT,org.apache.kafka:kafka-clients:1.1.0^org.slf4j:slf4j-log4j12`
 
 #### Redis
 
@@ -1281,9 +1282,9 @@ You can use below as working reference for `--artifacts` option, and change depe
 
 MongoDB data source requires below properties to be set:
 
-`{"collection.name": "storm_sql_mongo", "trident.ser.field": "serfield"}`
+`{"collection.name": "storm_sql_mongo", "ser.field": "serfield"}`
 
-* `trident.ser.field`: field to store - record will be serialized and stored as BSON in this field
+* `ser.field`: field to store - record will be serialized and stored as BSON in this field
 * `collection.name`: Collection name
 
 Please note that `storm-sql-mongodb` requires users to provide `storm-mongodb`.
@@ -1298,7 +1299,7 @@ Storing record with preserving fields are not supported for now.
 HDFS data source requires below properties to be set:
 
 * `hdfs.file.path`: HDFS file path
-* `hdfs.file.name`: HDFS file name - please refer to [SimpleFileNameFormat]({{page.git-blob-base}}/external/storm-hdfs/src/main/java/org/apache/storm/hdfs/trident/format/SimpleFileNameFormat.java)
+* `hdfs.file.name`: HDFS file name - please refer to [SimpleFileNameFormat]({{page.git-blob-base}}/external/storm-hdfs/src/main/java/org/apache/storm/hdfs/bolt/format/SimpleFileNameFormat.java)
 * `hdfs.rotation.size.kb`: HDFS FileSizeRotationPolicy in KB
 * `hdfs.rotation.time.seconds`: HDFS TimedRotationPolicy in seconds
 

@@ -18,6 +18,9 @@
 
 package org.apache.storm.scheduler;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class ExecutorDetails {
     public final int startTask;
     public final int endTask;
@@ -35,13 +38,17 @@ public class ExecutorDetails {
         return endTask;
     }
 
+    public List<Long> toList() {
+        return Arrays.asList((long) startTask, (long) endTask);
+    }
+
     @Override
     public boolean equals(Object other) {
-        if (other == null || !(other instanceof ExecutorDetails)) {
+        if (!(other instanceof ExecutorDetails)) {
             return false;
         }
-        
-        ExecutorDetails executor = (ExecutorDetails)other;
+
+        ExecutorDetails executor = (ExecutorDetails) other;
         return (this.startTask == executor.startTask) && (this.endTask == executor.endTask);
     }
 
@@ -49,7 +56,7 @@ public class ExecutorDetails {
     public int hashCode() {
         return this.startTask + 13 * this.endTask;
     }
-    
+
     @Override
     public String toString() {
         return "[" + this.startTask + ", " + this.endTask + "]";

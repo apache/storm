@@ -15,34 +15,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import com.microsoft.azure.eventhubs.EventData;
 
 public class EventDataWrap implements Comparable<EventDataWrap> {
-  private final EventData eventData;
-  private final MessageId messageId;
+    private final EventData eventData;
+    private final MessageId messageId;
 
-  public EventDataWrap(EventData eventdata, MessageId messageId) {
-    this.eventData = eventdata;
-    this.messageId = messageId;
-  }
+    public EventDataWrap(EventData eventdata, MessageId messageId) {
+        this.eventData = eventdata;
+        this.messageId = messageId;
+    }
 
-  public static EventDataWrap create(EventData eventData, MessageId messageId) {
-    return new EventDataWrap(eventData, messageId);
-  }
+    public static EventDataWrap create(EventData eventData, MessageId messageId) {
+        return new EventDataWrap(eventData, messageId);
+    }
 
-  public EventData getEventData() {
-    return this.eventData;
-  }
+    public EventData getEventData() {
+        return this.eventData;
+    }
 
-  public MessageId getMessageId() {
-    return this.messageId;
-  }
+    public MessageId getMessageId() {
+        return this.messageId;
+    }
 
-  @Override
-  public int compareTo(EventDataWrap ed) {
-    return messageId.getSequenceNumber().
-        compareTo(ed.getMessageId().getSequenceNumber());
-  }
+    @Override
+    public int compareTo(EventDataWrap ed) {
+        return messageId.getSequenceNumber().
+            compareTo(ed.getMessageId().getSequenceNumber());
+    }
 }

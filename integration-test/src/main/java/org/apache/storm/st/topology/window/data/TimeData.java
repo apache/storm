@@ -26,12 +26,12 @@ import org.apache.storm.tuple.Values;
 import java.util.Collection;
 import java.util.Date;
 
-public class TimeData implements Comparable<TimeData>, FromJson<TimeData> {
+public class TimeData implements Comparable<TimeData> {
     public static final TimeData CLS = new TimeData(-1);
     private static final String NUMBER_FIELD_NAME = "number";
     private static final String STRING_FIELD_NAME = "dateAsStr";
     private static final String TIMESTAMP_FIELD_NAME = "date";
-    static final Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
+    static final Gson GSON = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
     private final int num;
     private final Date now;
     private final long timestamp;
@@ -54,16 +54,17 @@ public class TimeData implements Comparable<TimeData>, FromJson<TimeData> {
         return new TimeData(tuple.getIntegerByField(NUMBER_FIELD_NAME), new Date(tuple.getLongByField(TIMESTAMP_FIELD_NAME)));
     }
 
-    public TimeData fromJson(String jsonStr) {
-        return gson.fromJson(jsonStr, TimeData.class);
+    public static TimeData fromJson(String jsonStr) {
+        return GSON.fromJson(jsonStr, TimeData.class);
     }
 
+    @Override
     public String toString() {
-        return gson.toJson(this);
+        return GSON.toJson(this);
     }
 
     public static String toString(Collection<TimeData> elements) {
-        return gson.toJson(elements);
+        return GSON.toJson(elements);
     }
 
     public Values getValues() {

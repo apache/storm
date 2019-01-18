@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import org.apache.storm.Constants;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -90,21 +91,22 @@ public class NormalizedResourcesTest {
     }
     
     @Test
-    public void testRemoveThrowsIfResourcesBecomeNegative() {
+    public void testRemoveZeroesWhenResourcesBecomeNegative() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(gpuResourceName, 1)));
         NormalizedResources removedResources = new NormalizedResources(normalize(Collections.singletonMap(gpuResourceName, 2)));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.remove(removedResources);
+
+        resources.remove(removedResources, new ResourceMetrics(new StormMetricsRegistry()));
+        Map<String, Double> normalizedMap = resources.toNormalizedMap();
+        assertThat(normalizedMap.get(gpuResourceName), is(0.0));
     }
     
     @Test
-    public void testRemoveThrowsIfCpuBecomesNegative() {
+    public void testRemoveZeroesWhenCpuBecomesNegative() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 1)));
         NormalizedResources removedResources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 2)));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.remove(removedResources);
+
+        resources.remove(removedResources, new ResourceMetrics(new StormMetricsRegistry()));
+        assertThat(resources.getTotalCpu(), is(0.0));
     }
     
     @Test
@@ -112,7 +114,7 @@ public class NormalizedResourcesTest {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 2)));
         NormalizedResources removedResources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 1)));
         
-        resources.remove(removedResources);
+        resources.remove(removedResources, new ResourceMetrics(new StormMetricsRegistry()));
         
         Map<String, Double> normalizedMap = resources.toNormalizedMap();
         assertThat(normalizedMap.get(Constants.COMMON_CPU_RESOURCE_NAME), is(1.0));
@@ -124,7 +126,7 @@ public class NormalizedResourcesTest {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(gpuResourceName, 15)));
         NormalizedResources removedResources = new NormalizedResources(normalize(Collections.singletonMap(gpuResourceName, 1)));
         
-        resources.remove(removedResources);
+        resources.remove(removedResources, new ResourceMetrics(new StormMetricsRegistry()));
         
         Map<String, Double> normalizedMap = resources.toNormalizedMap();
         assertThat(normalizedMap.get(gpuResourceName), is(14.0));

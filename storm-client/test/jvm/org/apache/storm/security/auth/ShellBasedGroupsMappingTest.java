@@ -16,14 +16,6 @@
 
 package org.apache.storm.security.auth;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +27,14 @@ import org.apache.storm.utils.Time.SimulatedTime;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class ShellBasedGroupsMappingTest {
 
     private static final String TEST_TWO_GROUPS = "group1 group2";
@@ -42,7 +42,7 @@ public class ShellBasedGroupsMappingTest {
     private static final String TEST_USER_1 = "TestUserOne";
     private static final String GROUP_SEPARATOR_REGEX = "\\s";
     private static final int CACHE_EXPIRATION_SECS = 10;
-    
+
     private ShellCommandRunner mockShell;
     private ShellBasedGroupsMapping groupsMapping;
     private Map<String, Object> topoConf;
@@ -55,42 +55,42 @@ public class ShellBasedGroupsMappingTest {
         topoConf.put(Config.STORM_GROUP_MAPPING_SERVICE_CACHE_DURATION_SECS, 10);
         when(mockShell.getTokenSeparatorRegex()).thenReturn(GROUP_SEPARATOR_REGEX);
     }
-    
+
     @Test
     public void testCanGetGroups() throws Exception {
         try (SimulatedTime t = new SimulatedTime()) {
             groupsMapping.prepare(topoConf);
             when(mockShell.execCommand(ShellUtils.getGroupsForUserCommand(TEST_USER_1))).thenReturn(TEST_TWO_GROUPS);
-            
+
             Set<String> groups = groupsMapping.getGroups(TEST_USER_1);
-            
+
             assertThat(groups, containsInAnyOrder(TEST_TWO_GROUPS.split(GROUP_SEPARATOR_REGEX)));
         }
     }
-    
+
     @Test
     public void testWillCacheGroups() throws Exception {
-        try(SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime t = new SimulatedTime()) {
             groupsMapping.prepare(topoConf);
             when(mockShell.execCommand(ShellUtils.getGroupsForUserCommand(TEST_USER_1))).thenReturn(TEST_TWO_GROUPS, TEST_NO_GROUPS);
-            
+
             Set<String> firstGroups = groupsMapping.getGroups(TEST_USER_1);
             Set<String> secondGroups = groupsMapping.getGroups(TEST_USER_1);
-            
+
             assertThat(firstGroups, is(secondGroups));
         }
     }
-    
+
     @Test
     public void testWillExpireCache() throws Exception {
-        try(SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime t = new SimulatedTime()) {
             groupsMapping.prepare(topoConf);
             when(mockShell.execCommand(ShellUtils.getGroupsForUserCommand(TEST_USER_1))).thenReturn(TEST_TWO_GROUPS, TEST_NO_GROUPS);
-            
+
             Set<String> firstGroups = groupsMapping.getGroups(TEST_USER_1);
             Time.advanceTimeSecs(CACHE_EXPIRATION_SECS * 2);
             Set<String> secondGroups = groupsMapping.getGroups(TEST_USER_1);
-            
+
             assertThat(firstGroups, not(secondGroups));
             assertThat(secondGroups, contains(TEST_NO_GROUPS));
         }

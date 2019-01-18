@@ -53,8 +53,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     }
   end
 
-  config.vm.synced_folder "../../", "/home/ubuntu/build/vagrant/storm"
-  config.vm.synced_folder "~/.m2", "/home/ubuntu/.m2"
+  config.vm.synced_folder "../../", "/home/vagrant/build/vagrant/storm"
+  config.vm.synced_folder "~/.m2", "/home/vagrant/.m2"
 
   config.vm.define "node1" do |node1|
     node1.vm.provider "virtualbox" do |v|
@@ -62,7 +62,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
     node1.vm.network "private_network", ip: "192.168.50.3"
     node1.vm.hostname = "node1"
-    node1.vm.provision :shell, :inline => "echo run integration test; whoami; env; cd /home/ubuntu/build/vagrant/storm/; pwd; bash integration-test/run-it.sh", privileged: false
+    node1.vm.provision :shell, env: {"JDK_VERSION" => ENV["JDK_VERSION"]}, :inline => "echo run integration test; whoami; env; cd /home/vagrant/build/vagrant/storm/; pwd; bash integration-test/run-it.sh", privileged: false
     #node1.vm.provision :shell, :inline => "sudo ln -fs /vagrant/etc-hosts /etc/hosts"
   end
 

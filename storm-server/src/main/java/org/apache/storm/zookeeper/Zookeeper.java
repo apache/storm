@@ -15,58 +15,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.zookeeper;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.leader.LeaderLatch;
-import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
-import org.apache.curator.framework.recipes.leader.Participant;
-import org.apache.storm.Config;
-import org.apache.storm.blobstore.BlobStore;
-import org.apache.storm.blobstore.InputStreamWithMeta;
-import org.apache.storm.callback.DefaultWatcherCallBack;
-import org.apache.storm.cluster.ClusterUtils;
-import org.apache.storm.daemon.nimbus.TopoCache;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.nimbus.ILeaderElector;
-import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.security.auth.ReqContext;
-import org.apache.storm.utils.Utils;
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.ZooKeeperServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
 import java.io.File;
-import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.commons.lang.StringUtils;
+import org.apache.storm.Config;
+import org.apache.storm.blobstore.BlobStore;
+import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.daemon.nimbus.TopoCache;
+import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.nimbus.ILeaderElector;
+import org.apache.storm.nimbus.LeaderListenerCallback;
+import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatch;
+import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.Participant;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
+import org.apache.storm.shade.org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.storm.shade.org.apache.zookeeper.server.ZooKeeperServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Zookeeper {
-    private static Logger LOG = LoggerFactory.getLogger(Zookeeper.class);
-
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
     private static final Zookeeper INSTANCE = new Zookeeper();
+    private static Logger LOG = LoggerFactory.getLogger(Zookeeper.class);
     private static Zookeeper _instance = INSTANCE;
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out
-     * delegated methods, provide an instance of a subclass that overrides the
-     * implementation of the delegated method.
+     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * overrides the implementation of the delegated method.
      *
      * @param u a Zookeeper instance
      */
@@ -75,15 +64,14 @@ public class Zookeeper {
     }
 
     /**
-     * Resets the singleton instance to the default. This is helpful to reset
-     * the class to its original functionality when mocking is no longer
-     * desired.
+     * Resets the singleton instance to the default. This is helpful to reset the class to its original functionality when mocking is no
+     * longer desired.
      */
     public static void resetInstance() {
         _instance = INSTANCE;
     }
 
-    public static List mkInprocessZookeeper(String localdir, Integer port) throws Exception {
+    public static NIOServerCnxnFactory mkInprocessZookeeper(String localdir, Integer port) throws Exception {
         File localfile = new File(localdir);
         ZooKeeperServer zk = new ZooKeeperServer(localfile, localfile, 2000);
         NIOServerCnxnFactory factory = null;
@@ -107,7 +95,7 @@ public class Zookeeper {
         }
         LOG.info("Starting inprocess zookeeper at port {} and dir {}", report, localdir);
         factory.startup(zk);
-        return Arrays.asList((Object) new Long(report), (Object) factory);
+        return factory;
     }
 
     public static void shutdownInprocessZookeeper(NIOServerCnxnFactory handle) {
@@ -125,155 +113,58 @@ public class Zookeeper {
     }
 
     // Leader latch listener that will be invoked when we either gain or lose leadership
-    public static LeaderLatchListener leaderLatchListenerImpl(final Map<String, Object> conf, final CuratorFramework zk,
-                                                              final BlobStore blobStore, final LeaderLatch leaderLatch,
-                                                              final TopoCache tc)
+    public static LeaderLatchListener leaderLatchListenerImpl(final LeaderListenerCallback callback)
         throws UnknownHostException {
         final String hostName = InetAddress.getLocalHost().getCanonicalHostName();
         return new LeaderLatchListener() {
-            final String STORM_JAR_SUFFIX = "-stormjar.jar";
-            final String STORM_CODE_SUFFIX = "-stormcode.ser";
-            final String STORM_CONF_SUFFIX = "-stormconf.ser";
 
             @Override
             public void isLeader() {
-                Set<String> activeTopologyIds = new TreeSet<>(ClientZookeeper.getChildren(zk,
-                    ClusterUtils.STORMS_SUBTREE, false));
-
-                Set<String> activeTopologyBlobKeys = populateTopologyBlobKeys(activeTopologyIds);
-                Set<String> activeTopologyCodeKeys = filterTopologyCodeKeys(activeTopologyBlobKeys);
-                Set<String> allLocalBlobKeys = Sets.newHashSet(blobStore.listKeys());
-                Set<String> allLocalTopologyBlobKeys = filterTopologyBlobKeys(allLocalBlobKeys);
-
-                // this finds all active topologies blob keys from all local topology blob keys
-                Sets.SetView<String> diffTopology = Sets.difference(activeTopologyBlobKeys, allLocalTopologyBlobKeys);
-                LOG.info("active-topology-blobs [{}] local-topology-blobs [{}] diff-topology-blobs [{}]",
-                        generateJoinedString(activeTopologyIds), generateJoinedString(allLocalTopologyBlobKeys),
-                        generateJoinedString(diffTopology));
-
-                if (diffTopology.isEmpty()) {
-                    Set<String> activeTopologyDependencies = getTopologyDependencyKeys(activeTopologyCodeKeys);
-
-                    // this finds all dependency blob keys from active topologies from all local blob keys
-                    Sets.SetView<String> diffDependencies = Sets.difference(activeTopologyDependencies, allLocalBlobKeys);
-                    LOG.info("active-topology-dependencies [{}] local-blobs [{}] diff-topology-dependencies [{}]",
-                            generateJoinedString(activeTopologyDependencies), generateJoinedString(allLocalBlobKeys),
-                            generateJoinedString(diffDependencies));
-
-                    if (diffDependencies.isEmpty()) {
-                        LOG.info("Accepting leadership, all active topologies and corresponding dependencies found locally.");
-                        tc.clear();
-                    } else {
-                        LOG.info("Code for all active topologies is available locally, but some dependencies are not found locally, "
-                            + "giving up leadership.");
-                        closeLatch();
-                    }
-                } else {
-                    LOG.info("code for all active topologies not available locally, giving up leadership.");
-                    closeLatch();
-                }
+                callback.leaderCallBack();
+                LOG.info("{} gained leadership.", hostName);
             }
 
             @Override
             public void notLeader() {
                 LOG.info("{} lost leadership.", hostName);
                 //Just to be sure
-                tc.clear();
-            }
-
-            private String generateJoinedString(Set<String> activeTopologyIds) {
-                return Joiner.on(",").join(activeTopologyIds);
-            }
-
-            private Set<String> populateTopologyBlobKeys(Set<String> activeTopologyIds) {
-                Set<String> activeTopologyBlobKeys = new TreeSet<>();
-                for (String activeTopologyId : activeTopologyIds) {
-                    activeTopologyBlobKeys.add(activeTopologyId + STORM_JAR_SUFFIX);
-                    activeTopologyBlobKeys.add(activeTopologyId + STORM_CODE_SUFFIX);
-                    activeTopologyBlobKeys.add(activeTopologyId + STORM_CONF_SUFFIX);
-                }
-                return activeTopologyBlobKeys;
-            }
-
-            private Set<String> filterTopologyBlobKeys(Set<String> blobKeys) {
-                Set<String> topologyBlobKeys = new HashSet<>();
-                for (String blobKey : blobKeys) {
-                    if (blobKey.endsWith(STORM_JAR_SUFFIX) || blobKey.endsWith(STORM_CODE_SUFFIX) ||
-                            blobKey.endsWith(STORM_CONF_SUFFIX)) {
-                        topologyBlobKeys.add(blobKey);
-                    }
-                }
-                return topologyBlobKeys;
-            }
-
-            private Set<String> filterTopologyCodeKeys(Set<String> blobKeys) {
-                Set<String> topologyCodeKeys = new HashSet<>();
-                for (String blobKey : blobKeys) {
-                    if (blobKey.endsWith(STORM_CODE_SUFFIX)) {
-                        topologyCodeKeys.add(blobKey);
-                    }
-                }
-                return topologyCodeKeys;
-            }
-
-            private Set<String> getTopologyDependencyKeys(Set<String> activeTopologyCodeKeys) {
-                Set<String> activeTopologyDependencies = new TreeSet<>();
-                Subject subject = ReqContext.context().subject();
-
-                for (String activeTopologyCodeKey : activeTopologyCodeKeys) {
-                    try {
-                        InputStreamWithMeta blob = blobStore.getBlob(activeTopologyCodeKey, subject);
-                        byte[] blobContent = IOUtils.readFully(blob, new Long(blob.getFileLength()).intValue());
-                        StormTopology stormCode = Utils.deserialize(blobContent, StormTopology.class);
-                        if (stormCode.is_set_dependency_jars()) {
-                            activeTopologyDependencies.addAll(stormCode.get_dependency_jars());
-                        }
-                        if (stormCode.is_set_dependency_artifacts()) {
-                            activeTopologyDependencies.addAll(stormCode.get_dependency_artifacts());
-                        }
-                    } catch (AuthorizationException | KeyNotFoundException | IOException e) {
-                        LOG.error("Exception occurs while reading blob for key: " + activeTopologyCodeKey + ", exception: " + e, e);
-                        throw new RuntimeException("Exception occurs while reading blob for key: " + activeTopologyCodeKey +
-                                ", exception: " + e, e);
-                    }
-                }
-                return activeTopologyDependencies;
-            }
-
-            private void closeLatch() {
-                try {
-                    leaderLatch.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                callback.notLeaderCallback();
             }
         };
     }
 
     /**
      * Get master leader elector.
-     * @param conf Config.
-     * @param zkClient ZkClient, the client must have a default Config.STORM_ZOOKEEPER_ROOT as root path.
-     * @param blobStore {@link BlobStore}
-     * @param tc {@link TopoCache}
+     *
+     * @param conf         Config.
+     * @param zkClient     ZkClient, the client must have a default Config.STORM_ZOOKEEPER_ROOT as root path.
+     * @param blobStore    {@link BlobStore}
+     * @param tc           {@link TopoCache}
+     * @param clusterState {@link IStormClusterState}
+     * @param acls         ACLs
      * @return Instance of {@link ILeaderElector}
+     *
      * @throws UnknownHostException
      */
-    public static ILeaderElector zkLeaderElector(Map<String, Object> conf, CuratorFramework zkClient,
-        BlobStore blobStore, final TopoCache tc) throws UnknownHostException {
-        return _instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc);
+    public static ILeaderElector zkLeaderElector(Map<String, Object> conf, CuratorFramework zkClient, BlobStore blobStore,
+                                                 final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
+                                                 StormMetricsRegistry metricsRegistry) throws UnknownHostException {
+        return _instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc, clusterState, acls, metricsRegistry);
     }
 
-    protected ILeaderElector zkLeaderElectorImpl(Map<String, Object> conf, CuratorFramework zk, BlobStore blobStore, final TopoCache tc)
-        throws UnknownHostException {
+    protected ILeaderElector zkLeaderElectorImpl(Map<String, Object> conf, CuratorFramework zk, BlobStore blobStore,
+                                                 final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
+                                                 StormMetricsRegistry metricsRegistry) throws
+        UnknownHostException {
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         String leaderLockPath = "/leader-lock";
         String id = NimbusInfo.fromConf(conf).toHostPortString();
         AtomicReference<LeaderLatch> leaderLatchAtomicReference = new AtomicReference<>(new LeaderLatch(zk, leaderLockPath, id));
         AtomicReference<LeaderLatchListener> leaderLatchListenerAtomicReference =
-                new AtomicReference<>(leaderLatchListenerImpl(conf, zk, blobStore, leaderLatchAtomicReference.get(), tc));
+            new AtomicReference<>(leaderLatchListenerImpl(
+                new LeaderListenerCallback(conf, zk, leaderLatchAtomicReference.get(), blobStore, tc, clusterState, acls, metricsRegistry)));
         return new LeaderElectorImp(conf, servers, zk, leaderLockPath, id, leaderLatchAtomicReference,
-            leaderLatchListenerAtomicReference, blobStore, tc);
+                                    leaderLatchListenerAtomicReference, blobStore, tc, clusterState, acls, metricsRegistry);
     }
 
 }

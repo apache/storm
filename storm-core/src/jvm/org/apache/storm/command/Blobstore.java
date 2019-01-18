@@ -1,33 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
-package org.apache.storm.command;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.storm.blobstore.*;
-import org.apache.storm.generated.AccessControl;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.generated.ReadableBlobMeta;
-import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.utils.ServerUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.apache.storm.command;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -42,6 +25,20 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.storm.blobstore.AtomicOutputStream;
+import org.apache.storm.blobstore.BlobStore;
+import org.apache.storm.blobstore.BlobStoreAclHandler;
+import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.blobstore.InputStreamWithMeta;
+import org.apache.storm.generated.AccessControl;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.ReadableBlobMeta;
+import org.apache.storm.generated.SettableBlobMeta;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Blobstore {
     private static final Logger LOG = LoggerFactory.getLogger(Blobstore.class);
@@ -90,8 +87,8 @@ public class Blobstore {
 
     private static void readCli(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("f", "file", null, CLI.AS_STRING)
-                .arg("key", CLI.FIRST_WINS)
-                .parse(args);
+                                    .arg("key", CLI.FIRST_WINS)
+                                    .parse(args);
         final String key = (String) cl.get("key");
         final String file = (String) cl.get("f");
 
@@ -106,10 +103,10 @@ public class Blobstore {
 
     private static void createCli(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("f", "file", null, CLI.AS_STRING)
-                .opt("a", "acl", Collections.emptyList(), new AsAclParser())
-                .opt("r", "replication-factor", -1, CLI.AS_INT)
-                .arg("key", CLI.FIRST_WINS)
-                .parse(args);
+                                    .opt("a", "acl", Collections.emptyList(), new AsAclParser())
+                                    .opt("r", "replication-factor", -1, CLI.AS_INT)
+                                    .arg("key", CLI.FIRST_WINS)
+                                    .parse(args);
 
         final String key = (String) cl.get("key");
         final String file = (String) cl.get("f");
@@ -136,8 +133,8 @@ public class Blobstore {
 
     private static void updateCli(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("f", "file", null, CLI.AS_STRING)
-                .arg("key", CLI.FIRST_WINS)
-                .parse(args);
+                                    .arg("key", CLI.FIRST_WINS)
+                                    .parse(args);
 
         final String key = (String) cl.get("key");
         final String file = (String) cl.get("f");
@@ -203,8 +200,8 @@ public class Blobstore {
 
     private static void setAclCli(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("s", "set", Collections.emptyList(), new AsAclParser())
-                .arg("key", CLI.FIRST_WINS)
-                .parse(args);
+                                    .arg("key", CLI.FIRST_WINS)
+                                    .parse(args);
 
         final String key = (String) cl.get("key");
         final List<AccessControl> setAcl = (List<AccessControl>) cl.get("s");
@@ -260,8 +257,8 @@ public class Blobstore {
 
             private void updateReplicationFactor(ClientBlobStore blobStore, String[] args) throws Exception {
                 Map<String, Object> cl = CLI.opt("r", "replication-factor", null, CLI.AS_INT)
-                        .arg("key", CLI.FIRST_WINS)
-                        .parse(args);
+                                            .arg("key", CLI.FIRST_WINS)
+                                            .parse(args);
 
                 final String key = (String) cl.get("key");
                 final Integer replicationFactor = (Integer) cl.get("r");
@@ -274,6 +271,14 @@ public class Blobstore {
                 LOG.info("Replication factor is set to {}", blobReplication);
             }
         });
+    }
+
+    private static List<String> generateAccessControlsInfo(List<AccessControl> acl) {
+        List<String> accessControlStrings = new ArrayList<>();
+        for (AccessControl ac : acl) {
+            accessControlStrings.add(BlobStoreAclHandler.accessControlToString(ac));
+        }
+        return accessControlStrings;
     }
 
     private static final class BlobStoreSupport {
@@ -317,14 +322,6 @@ public class Blobstore {
                 throw e;
             }
         }
-    }
-
-    private static List<String> generateAccessControlsInfo(List<AccessControl> acl) {
-        List<String> accessControlStrings = new ArrayList<>();
-        for (AccessControl ac : acl) {
-            accessControlStrings.add(BlobStoreAclHandler.accessControlToString(ac));
-        }
-        return accessControlStrings;
     }
 
     private static final class AsAclParser implements CLI.Parse {

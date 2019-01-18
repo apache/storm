@@ -1,12 +1,7 @@
-
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
@@ -14,31 +9,29 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
+
 package org.apache.storm.hdfs.spout;
 
+import java.io.IOException;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
-
-import java.io.IOException;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
 import org.junit.Rule;
+import org.junit.Test;
 
 public class TestDirLock {
 
+    private static final int LOCK_EXPIRY_SEC = 1;
+    private final Path locksDir = new Path("/tmp/lockdir");
     @Rule
     public MiniDFSClusterRule DFS_CLUSTER_RULE = new MiniDFSClusterRule();
-
-    private static final int LOCK_EXPIRY_SEC = 1;
-
     private FileSystem fs;
     private HdfsConfiguration conf = new HdfsConfiguration();
-    private final Path locksDir = new Path("/tmp/lockdir");
 
     @Before
     public void setUp() throws IOException {
@@ -92,7 +85,7 @@ public class TestDirLock {
                 for (DirLockingThread thread : threads) {
                     thread.interrupt();
                     thread.join(30_000);
-                    if(thread.isAlive()) {
+                    if (thread.isAlive()) {
                         throw new RuntimeException("Failed to stop threads within 30 seconds, threads may leak into other tests");
                     }
                 }
@@ -134,10 +127,10 @@ public class TestDirLock {
 
     class DirLockingThread extends Thread {
 
-        private int thdNum;
         private final FileSystem fs;
         private final Path dir;
         public boolean cleanExit = false;
+        private int thdNum;
 
         public DirLockingThread(int thdNum, FileSystem fs, Path dir)
             throws IOException {

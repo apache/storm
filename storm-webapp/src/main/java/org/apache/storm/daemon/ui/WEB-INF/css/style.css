@@ -1,0 +1,263 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+.js-only {
+    display: none;
+}
+
+#ui-flux img {
+    width: 50px;
+    padding: 0.5em;
+    padding-top: 1em;
+    float:right;
+}
+
+#ui-user {
+    text-align: right;
+    padding: 0.5em;
+}
+
+#change-log-level select{
+    width:10em;
+}
+
+#change-log-level input.timeout_input{
+    width:5em;
+}
+
+body,
+.dataTables_wrapper label,
+div.dataTables_info[role="status"],
+.btn-default
+{
+    color: #6d6d6d;
+}
+
+table.dataTable thead th,
+table.dataTable.no-footer
+{
+    border-color: #d5d5d5;
+}
+
+.table > tbody > tr > td {
+    border-top-width: 1px;
+}
+
+table.dataTable {
+    border-collapse: collapse;
+}
+
+td {
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-color: #d5d5d5;
+}
+
+a {
+    color: #0069d6;
+}
+
+a:hover {
+    color: #0050a3;
+}
+
+h1
+{
+    font-weight: bold;
+}
+
+h2
+{
+    color: #404040;
+    font-weight: bold;
+}
+
+table.dataTable thead .sorting_asc,
+table.dataTable thead .sorting_desc {
+    background-color: rgba(141, 192, 219, 0.25);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button:active {
+    background: none;
+    background-image: none;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+PRE.jsonFormatter-codeContainer 
+.jsonFormatter-number {
+    color: #A00;
+}
+
+PRE.jsonFormatter-codeContainer {
+  border: none;
+  padding: 0px;
+  background-color: transparent;
+}
+
+.image_pre_format {
+  border: none;
+  padding: 0px;
+  height: 1em;
+  width: 1em;
+}
+
+.worker-component-button {
+  margin-right: 2px;
+  margin-top: 2px;
+}
+
+.worker-component-button .badge {
+  margin-left: 2px; 
+}
+
+.worker-child-row {
+  padding: 10px;
+}
+
+.supervisor-page #toggle-sys {
+  padding: 10px;
+}
+
+#toggle-on-components-btn .btn {
+  margin: 10px;
+}
+
+div#visualization {
+    color: #333;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    line-height: 1.42857;
+}
+
+div#visualization a, div#visualization a:visited {
+    color: blue;
+}
+
+div#visualization ul {
+    list-style-type: none;
+    margin-top: 0;
+    padding-left: 10px;
+}
+
+div#visualization details li {
+    margin-left: 10px;
+}
+
+div#visualization #available-streams {
+    padding-left: 0;
+}
+
+div#visualization #bolt-details {
+    padding-left: 20px;
+}
+
+div#visualization #streams_slideout:hover {
+    left: 0;
+}
+
+div#visualization #streams_slideout_inner:hover {
+    left: 0;
+}
+
+div#visualization #streams_slideout_inner {
+    position: fixed;
+    top: 40px;
+    left: -300px;
+    background: #6DAD53;
+    width: 325px;
+    padding: 10px;
+    -webkit-transition-duration: 0.3s;
+    -moz-transition-duration: 0.3s;
+    -o-transition-duration: 0.3s;
+    transition-duration: 0.3s;
+    text-align: left;
+    -webkit-border-radius: 0 0 5px 0;
+    -moz-border-radius: 0 0 5px 0;
+    border-radius: 0 0 5px 0;
+    z-index: 10;
+    max-height: 300px;
+    overflow: scroll;
+    opacity: 0.95;
+}
+
+div#visualization #bolt_slideout:hover {
+    right: 0;
+}
+
+div#visualization #bolt_slideout_inner:hover {
+    right: 0;
+}
+
+div#visualization #bolt_slideout_inner {
+    display: none;
+    position: fixed;
+    top: 40px;
+    right: -370px;
+    background: #6DAD53;
+    width: 400px;
+    padding: 10px;
+    -webkit-transition-duration: 0.3s;
+    -moz-transition-duration: 0.3s;
+    -o-transition-duration: 0.3s;
+    transition-duration: 0.3s;
+    text-align: left;
+    -webkit-border-radius: 0 0 0 5px;
+    -moz-border-radius: 0 0 0 5px;
+    border-radius: 0 0 0 5px;
+    z-index: 10;
+    max-height: 300px;
+    overflow: scroll;
+    opacity: 0.95;
+}
+
+div#visualization details {
+    padding-left: 5px;
+    margin-left: 0;
+}
+div#visualization summary {
+    display: list-item;
+    outline: none;
+}
+
+.warning {
+    width: 100%;
+    height: 150px;
+    display: none;
+}
+
+#ras-warning-fixed-buffer {
+    background: #FF0000;
+    float:left;
+    position:fixed;
+    z-index:999999 !important;
+    text-align:center;
+    color:#FFFFFF;
+}
+
+.resource-guarantee-remaining-positive {
+    color: green;
+    font-weight: bold;
+}
+
+.resource-guarantee-remaining-negative {
+    color: red;
+    font-weight: bold;
+}

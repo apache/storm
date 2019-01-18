@@ -435,7 +435,7 @@ public class CaptureLoad {
      * @param topologyConf topology configuration
      * @throws Exception on any error
      */
-    public static void checkInitialization(Map<String, Double> topologyResources, String componentId, Map topologyConf) {
+    public static void checkInitialization(Map<String, Double> topologyResources, String componentId, Map<String, Object> topologyConf) {
         StringBuilder msgBuilder = new StringBuilder();
 
         for (String resourceName : topologyResources.keySet()) {
@@ -450,7 +450,7 @@ public class CaptureLoad {
         }
     }
 
-    private static String checkInitResource(Map<String, Double> topologyResources, Map topologyConf, String resourceName) {
+    private static String checkInitResource(Map<String, Double> topologyResources, Map<String, Object> topologyConf, String resourceName) {
         StringBuilder msgBuilder = new StringBuilder();
         if (topologyResources.containsKey(resourceName)) {
             Double resourceValue = (Double) topologyConf.getOrDefault(resourceName, null);

@@ -21,7 +21,7 @@
   (:import [org.apache.storm.trident.state StateSpec])
   (:import [org.apache.storm.trident TridentTopology]
            [org.apache.storm.trident.operation.impl CombinerAggStateUpdater]
-           [org.apache.storm.trident.operation BaseFunction]
+           [org.apache.storm.trident.operation Function]
            [org.apache.storm.trident.operation.builtin Count Sum Equals MapGet Debug FilterNull FirstN TupleCollectionGet]
            [org.apache.storm.tuple Fields]
            [org.json.simple.parser JSONParser]
@@ -47,7 +47,7 @@
 
 (deftest test-memory-map-get-tuples
   (with-open [cluster (LocalCluster. )]
-    (with-open [drpc (LocalDRPC.)]
+    (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
       (letlocals
         (bind topo (TridentTopology.))
         (bind feeder (FeederBatchSpout. ["sentence"]))
@@ -74,7 +74,7 @@
 
 (deftest test-word-count
   (with-open [cluster (LocalCluster. )]
-    (with-open [drpc (LocalDRPC.)]
+    (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
       (letlocals
         (bind topo (TridentTopology.))
         (bind feeder (FeederBatchSpout. ["sentence"]))
@@ -107,7 +107,7 @@
 ;; there's at least one repartitioning after the spout
 (deftest test-word-count-committer-spout
   (with-open [cluster (LocalCluster. )]
-    (with-open [drpc (LocalDRPC.)]
+    (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
       (letlocals
         (bind topo (TridentTopology.))
         (bind feeder (FeederCommitterBatchSpout. ["sentence"]))
@@ -146,7 +146,7 @@
 
 (deftest test-count-agg
   (with-open [cluster (LocalCluster. )]
-    (with-open [drpc (LocalDRPC.)]
+    (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
       (letlocals
         (bind topo (TridentTopology.))
         (-> topo
@@ -164,7 +164,7 @@
 
 (deftest test-split-merge
   (with-open [cluster (LocalCluster. )]
-    (with-open [drpc (LocalDRPC.)]
+    (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
       (letlocals
         (bind topo (TridentTopology.))
         (bind drpc-stream (-> topo (.newDRPCStream "splitter" drpc)))
@@ -185,7 +185,7 @@
 
 (deftest test-multiple-groupings-same-stream
   (with-open [cluster (LocalCluster. )]
-    (with-open [drpc (LocalDRPC.)]
+    (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
       (letlocals
         (bind topo (TridentTopology.))
         (bind drpc-stream (-> topo (.newDRPCStream "tester" drpc)
@@ -207,7 +207,7 @@
 
 (deftest test-multi-repartition
   (with-open [cluster (LocalCluster. )]
-    (with-open [drpc (LocalDRPC.)]
+    (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
       (letlocals
         (bind topo (TridentTopology.))
         (bind drpc-stream (-> topo (.newDRPCStream "tester" drpc)
@@ -281,7 +281,7 @@
                                          (CombinerAggStateUpdater. (Count.))
                                          (Fields. ["count"])))))
      ;; test .stateQuery
-     (with-open [drpc (LocalDRPC.)]
+     (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
        (is (thrown? IllegalArgumentException
                     (-> topo
                         (.newDRPCStream "words" drpc)
@@ -293,12 +293,12 @@
 
 (deftest test-set-component-resources
   (with-open [cluster (LocalCluster. )]
-    (with-open [drpc (LocalDRPC.)]
+    (with-open [drpc (LocalDRPC. (.getMetricRegistry cluster))]
       (letlocals
         (bind topo (TridentTopology.))
         (bind feeder (FeederBatchSpout. ["sentence"]))
-        (bind add-bang (proxy [BaseFunction] []
-                         (execute [tuple collector]
+        (bind add-bang (reify Function
+                         (execute [_ tuple collector]
                            (. collector emit (str (. tuple getString 0) "!")))))
         (bind word-counts
           (.. topo

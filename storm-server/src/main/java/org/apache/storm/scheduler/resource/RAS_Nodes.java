@@ -32,9 +32,8 @@ import org.slf4j.LoggerFactory;
 
 public class RAS_Nodes {
 
-    private Map<String, RAS_Node> nodeMap;
-
     private static final Logger LOG = LoggerFactory.getLogger(RAS_Nodes.class);
+    private Map<String, RAS_Node> nodeMap;
 
     public RAS_Nodes(Cluster cluster) {
         this.nodeMap = getAllNodesFrom(cluster);
@@ -116,13 +115,16 @@ public class RAS_Nodes {
         return nodeIdToNode;
     }
 
-    /** get node object from nodeId. */
+    /**
+     * get node object from nodeId.
+     */
     public RAS_Node getNodeById(String nodeId) {
         return this.nodeMap.get(nodeId);
     }
 
     /**
      * Free everything on the given slots.
+     *
      * @param workerSlots the slots to free
      */
     public void freeSlots(Collection<WorkerSlot> workerSlots) {

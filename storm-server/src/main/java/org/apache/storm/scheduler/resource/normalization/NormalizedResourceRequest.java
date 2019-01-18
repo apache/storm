@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
+import org.apache.storm.daemon.Acker;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.utils.ObjectReader;
@@ -37,6 +38,37 @@ import org.slf4j.LoggerFactory;
 public class NormalizedResourceRequest implements NormalizedResourcesWithMemory {
 
     private static final Logger LOG = LoggerFactory.getLogger(NormalizedResourceRequest.class);
+    private final NormalizedResources normalizedResources;
+    private double onHeap;
+    private double offHeap;
+
+    private NormalizedResourceRequest(Map<String, ? extends Number> resources,
+        Map<String, Double> defaultResources) {
+        if (resources == null && defaultResources == null) {
+            onHeap = 0.0;
+            offHeap = 0.0;
+            normalizedResources = new NormalizedResources();
+        } else {
+            Map<String, Double> normalizedResourceMap = NormalizedResources.RESOURCE_NAME_NORMALIZER
+                .normalizedResourceMap(defaultResources);
+            normalizedResourceMap.putAll(NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resources));
+            onHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
+            offHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0);
+            normalizedResources = new NormalizedResources(normalizedResourceMap);
+        }
+    }
+
+    public NormalizedResourceRequest(ComponentCommon component, Map<String, Object> topoConf, String componentId) {
+        this(parseResources(component.get_json_conf()), getDefaultResources(topoConf, componentId));
+    }
+
+    public NormalizedResourceRequest(Map<String, Object> topoConf, String componentId) {
+        this((Map<String, ? extends Number>) null, getDefaultResources(topoConf, componentId));
+    }
+
+    public NormalizedResourceRequest() {
+        this((Map<String, ? extends Number>) null, null);
+    }
 
     private static void putIfMissing(Map<String, Double> dest, String destKey, Map<String, Object> src, String srcKey) {
         if (!dest.containsKey(destKey)) {
@@ -47,9 +79,42 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
         }
     }
 
-    private static Map<String, Double> getDefaultResources(Map<String, Object> topoConf) {
-        Map<String, Double> ret = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap((Map<String, Number>) topoConf.getOrDefault(
-            Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>()));
+    private static Map<String, Double> getDefaultResources(Map<String, Object> topoConf, String componentId) {
+        Map<String, Double> ret =
+            NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap((Map<String, Number>) topoConf.getOrDefault(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>()));
+
+        // Some components might have different resource configs.
+        if (componentId != null) {
+            if (componentId.equals(Acker.ACKER_COMPONENT_ID)) {
+                if (topoConf.containsKey(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB)) {
+                    ret.put(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME,
+                            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB)));
+                }
+                if (topoConf.containsKey(Config.TOPOLOGY_ACKER_RESOURCES_OFFHEAP_MEMORY_MB)) {
+                    ret.put(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME,
+                            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_ACKER_RESOURCES_OFFHEAP_MEMORY_MB)));
+                }
+                if (topoConf.containsKey(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT)) {
+                    ret.put(Constants.COMMON_CPU_RESOURCE_NAME,
+                            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT)));
+                }
+            } else if (componentId.startsWith(Constants.METRICS_COMPONENT_ID_PREFIX)) {
+                if (topoConf.containsKey(Config.TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB)) {
+                    ret.put(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME,
+                            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB)));
+                }
+                if (topoConf.containsKey(Config.TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB)) {
+                    ret.put(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME,
+                            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB)));
+                }
+                if (topoConf.containsKey(Config.TOPOLOGY_METRICS_CONSUMER_CPU_PCORE_PERCENT)) {
+                    ret.put(Constants.COMMON_CPU_RESOURCE_NAME,
+                            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_METRICS_CONSUMER_CPU_PCORE_PERCENT)));
+                }
+            }
+        }
+
         putIfMissing(ret, Constants.COMMON_CPU_RESOURCE_NAME, topoConf, Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
         putIfMissing(ret, Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, topoConf, Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
         putIfMissing(ret, Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, topoConf, Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
@@ -78,7 +143,7 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
                 }
                 if (jsonObject.containsKey(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)) {
                     Double topoCpu = ObjectReader.getDouble(jsonObject.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT),
-                        null);
+                                                            null);
                     topologyResources.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, topoCpu);
                 }
 
@@ -102,31 +167,10 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
         return topologyResources;
     }
 
-    private final NormalizedResources normalizedResources;
-    private double onHeap;
-    private double offHeap;
-
-    private NormalizedResourceRequest(Map<String, ? extends Number> resources,
-        Map<String, Double> defaultResources) {
-        Map<String, Double> normalizedResourceMap = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(defaultResources);
-        normalizedResourceMap.putAll(NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resources));
-        onHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
-        offHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0);
-        normalizedResources = new NormalizedResources(normalizedResourceMap);
-    }
-
-    public NormalizedResourceRequest(ComponentCommon component, Map<String, Object> topoConf) {
-        this(parseResources(component.get_json_conf()), getDefaultResources(topoConf));
-    }
-
-    public NormalizedResourceRequest(Map<String, Object> topoConf) {
-        this((Map<String, ? extends Number>) null, getDefaultResources(topoConf));
-    }
-
-    public NormalizedResourceRequest() {
-        this((Map<String, ? extends Number>) null, null);
-    }
-
+    /**
+     * Convert to a map that is used by configuration and the UI.
+     * @return a map with the key as the resource name and the value the resource amount.
+     */
     public Map<String, Double> toNormalizedMap() {
         Map<String, Double> ret = this.normalizedResources.toNormalizedMap();
         ret.put(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, offHeap);
@@ -161,6 +205,10 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
         offHeap += other.offHeap;
     }
 
+    /**
+     * Add the resources from a worker to those in this.
+     * @param value the resources on the worker.
+     */
     public void add(WorkerResources value) {
         this.normalizedResources.add(value);
         //The resources are already normalized
@@ -176,7 +224,7 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
 
     @Override
     public String toString() {
-        return super.toString() + " onHeap: " + onHeap + " offHeap: " + offHeap;
+        return "Normalized resources: " + toNormalizedMap();
     }
 
     public double getTotalCpu() {
@@ -186,5 +234,17 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
     @Override
     public NormalizedResources getNormalizedResources() {
         return this.normalizedResources;
+    }
+
+    @Override
+    public void clear() {
+        normalizedResources.clear();
+        offHeap = 0.0;
+        onHeap = 0.0;
+    }
+
+    @Override
+    public boolean areAnyOverZero() {
+        return onHeap > 0 || offHeap > 0 || normalizedResources.areAnyOverZero();
     }
 }

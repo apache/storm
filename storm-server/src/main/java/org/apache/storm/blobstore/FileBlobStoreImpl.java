@@ -1,23 +1,17 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.blobstore;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -34,8 +28,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import org.apache.storm.Config;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,71 +42,8 @@ public class FileBlobStoreImpl {
     private static final int BUCKETS = 1024;
     private static final Logger LOG = LoggerFactory.getLogger(FileBlobStoreImpl.class);
     private static final Timer timer = new Timer("FileBlobStore cleanup thread", true);
-
-    public class KeyInHashDirIterator implements Iterator<String> {
-        private int currentBucket = 0;
-        private Iterator<String> it = null;
-        private String next = null;
-
-        public KeyInHashDirIterator() throws IOException {
-            primeNext();
-        }
-
-        private void primeNext() throws IOException {
-            while (it == null && currentBucket < BUCKETS) {
-                String name = String.valueOf(currentBucket);
-                File dir = new File(fullPath, name);
-                try {
-                    it = listKeys(dir);
-                } catch (FileNotFoundException e) {
-                    it = null;
-                }
-                if (it == null || !it.hasNext()) {
-                    it = null;
-                    currentBucket++;
-                } else {
-                    next = it.next();
-                }
-            }
-        }
-
-        @Override
-        public boolean hasNext() {
-            return next != null;
-        }
-
-        @Override
-        public String next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            String current = next;
-            next = null;
-            if (it != null) {
-                if (!it.hasNext()) {
-                    it = null;
-                    currentBucket++;
-                    try {
-                        primeNext();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    next = it.next();
-                }
-            }
-            return current;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("Delete Not Supported");
-        }
-    }
-
     private File fullPath;
     private TimerTask cleanup = null;
-
     public FileBlobStoreImpl(File path, Map<String, Object> conf) throws IOException {
         LOG.info("Creating new blob store based in {}", path);
         fullPath = path;
@@ -185,9 +116,9 @@ public class FileBlobStoreImpl {
 
     @VisibleForTesting
     File getKeyDir(String key) {
-        String hash = String.valueOf(Math.abs((long)key.hashCode()) % BUCKETS);
+        String hash = String.valueOf(Math.abs((long) key.hashCode()) % BUCKETS);
         File ret = new File(new File(fullPath, hash), key);
-        LOG.debug("{} Looking for {} in {}", new Object[]{fullPath, key, hash});
+        LOG.debug("{} Looking for {} in {}", new Object[]{ fullPath, key, hash });
         return ret;
     }
 
@@ -203,7 +134,7 @@ public class FileBlobStoreImpl {
                 try {
                     keyDir.delete();
                 } catch (Exception e) {
-                    LOG.warn("Could not delete "+keyDir+" will try again later");
+                    LOG.warn("Could not delete " + keyDir + " will try again later");
                 }
             }
             while (i.hasNext()) {
@@ -221,12 +152,12 @@ public class FileBlobStoreImpl {
         ArrayList<LocalFsBlobStoreFile> ret = new ArrayList<LocalFsBlobStoreFile>();
         File[] files = path.listFiles();
         if (files != null) {
-            for (File sub: files) {
+            for (File sub : files) {
                 try {
                     ret.add(new LocalFsBlobStoreFile(sub.getParentFile(), sub.getName()));
                 } catch (IllegalArgumentException e) {
                     //Ignored the file did not match
-                    LOG.warn("Found an unexpected file in {} {}",path, sub.getName());
+                    LOG.warn("Found an unexpected file in {} {}", path, sub.getName());
                 }
             }
         }
@@ -265,6 +196,67 @@ public class FileBlobStoreImpl {
         if (cleanup != null) {
             cleanup.cancel();
             cleanup = null;
+        }
+    }
+
+    public class KeyInHashDirIterator implements Iterator<String> {
+        private int currentBucket = 0;
+        private Iterator<String> it = null;
+        private String next = null;
+
+        public KeyInHashDirIterator() throws IOException {
+            primeNext();
+        }
+
+        private void primeNext() throws IOException {
+            while (it == null && currentBucket < BUCKETS) {
+                String name = String.valueOf(currentBucket);
+                File dir = new File(fullPath, name);
+                try {
+                    it = listKeys(dir);
+                } catch (FileNotFoundException e) {
+                    it = null;
+                }
+                if (it == null || !it.hasNext()) {
+                    it = null;
+                    currentBucket++;
+                } else {
+                    next = it.next();
+                }
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public String next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            String current = next;
+            next = null;
+            if (it != null) {
+                if (!it.hasNext()) {
+                    it = null;
+                    currentBucket++;
+                    try {
+                        primeNext();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    next = it.next();
+                }
+            }
+            return current;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Delete Not Supported");
         }
     }
 }

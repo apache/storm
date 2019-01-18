@@ -54,7 +54,7 @@ public class ListHDFS {
         
         /* CREATE THE BLOBSTORES */
         HdfsBlobStore hdfsBlobStore = new HdfsBlobStore();
-        hdfsBlobStore.prepare(hdfsConf, null, null);
+        hdfsBlobStore.prepare(hdfsConf, null, null, null);
         
         /* LOOK AT HDFS BLOBSTORE */
         System.out.println("Listing HDFS blobstore keys.");

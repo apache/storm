@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * proper latency statistics.
  */
 public class ThroughputVsLatency {
-    private static final Logger LOG = LoggerFactory.getLogger(GenLoad.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ThroughputVsLatency.class);
     private static final int TEST_EXECUTE_TIME_DEFAULT = 5;
     private static final long DEFAULT_RATE_PER_SECOND = 500;
     private static final String DEFAULT_TOPO_NAME = "wc-test";
@@ -97,7 +97,8 @@ public class ThroughputVsLatency {
         }
 
         @Override
-        public void prepare(Map stormConf, TopologyContext context) {
+        public void prepare(Map<String, Object> stormConf,
+                TopologyContext context) {
             executorIndex = context.getThisTaskIndex();
             sleep.prepare();
         }

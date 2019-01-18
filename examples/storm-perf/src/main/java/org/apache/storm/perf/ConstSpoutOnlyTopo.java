@@ -37,7 +37,7 @@ public class ConstSpoutOnlyTopo {
     public static final String SPOUT_ID = "constSpout";
 
 
-    public static StormTopology getTopology() {
+    static StormTopology getTopology() {
 
         // 1 -  Setup Const Spout   --------
         ConstSpout spout = new ConstSpout("some data").withOutputFields("str");
@@ -60,6 +60,10 @@ public class ConstSpoutOnlyTopo {
         if (args.length > 1) {
             topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
         }
+        topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
+        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
+        topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
+        topoConf.putAll(Utils.readCommandLineOpts());
         if (args.length > 2) {
             System.err.println("args: [runDurationSec]  [optionalConfFile]");
             return;

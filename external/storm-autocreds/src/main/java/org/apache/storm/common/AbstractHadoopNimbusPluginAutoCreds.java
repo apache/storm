@@ -25,6 +25,7 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.security.INimbusCredentialPlugin;
 import org.apache.storm.security.auth.ICredentialsRenewer;
+import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,7 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
     public static final String CONFIG_KEY_RESOURCES = "resources";
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         doPrepare(conf);
     }
 
@@ -80,7 +81,8 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
 
     protected void fillHadoopConfiguration(Map topologyConf, String configKey, Configuration configuration) {
         Map<String, Object> config = (Map<String, Object>) topologyConf.get(configKey);
-        LOG.info("TopoConf {}, got config {}, for configKey {}", topologyConf, config, configKey);
+        LOG.info("TopoConf {}, got config {}, for configKey {}", ConfigUtils.maskPasswords(topologyConf),
+                ConfigUtils.maskPasswords(config), configKey);
         if (config != null) {
             List<String> resourcesToLoad = new ArrayList<>();
             for (Map.Entry<String, Object> entry : config.entrySet()) {
@@ -105,7 +107,7 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
      *
      * @param conf the storm cluster conf set via storm.yaml
      */
-    protected abstract void doPrepare(Map conf);
+    protected abstract void doPrepare(Map<String, Object> conf);
 
     /**
      * The lookup key for the config key string
@@ -114,13 +116,13 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
      */
     protected abstract String getConfigKeyString();
 
-    protected abstract byte[] getHadoopCredentials(Map topologyConf, String configKey, final String topologyOwnerPrincipal);
+    protected abstract byte[] getHadoopCredentials(Map<String, Object> topologyConf, String configKey, final String topologyOwnerPrincipal);
 
-    protected abstract byte[] getHadoopCredentials(Map topologyConf, final String topologyOwnerPrincipal);
+    protected abstract byte[] getHadoopCredentials(Map<String, Object> topologyConf, final String topologyOwnerPrincipal);
 
-    protected abstract void doRenew(Map<String, String> credentials, Map topologyConf, final String topologyOwnerPrincipal);
+    protected abstract void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, final String topologyOwnerPrincipal);
 
-    protected List<String> getConfigKeys(Map conf) {
+    protected List<String> getConfigKeys(Map<String, Object> conf) {
         String configKeyString = getConfigKeyString();
         List<String> configKeys = (List<String>) conf.get(configKeyString);
         return configKeys != null ? configKeys : Collections.emptyList();

@@ -1,42 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
-package org.apache.storm.streams;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
-import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.streams.processors.ChainedProcessorContext;
-import org.apache.storm.streams.processors.EmittingProcessorContext;
-import org.apache.storm.streams.processors.ForwardingProcessorContext;
-import org.apache.storm.streams.processors.Processor;
-import org.apache.storm.streams.processors.ProcessorContext;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
-import org.jgrapht.DirectedGraph;
-import org.jgrapht.graph.DirectedSubgraph;
-import org.jgrapht.traverse.TopologicalOrderIterator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.apache.storm.streams;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -47,20 +21,40 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.shade.com.google.common.collect.ArrayListMultimap;
+import org.apache.storm.shade.com.google.common.collect.HashBasedTable;
+import org.apache.storm.shade.com.google.common.collect.Multimap;
+import org.apache.storm.shade.com.google.common.collect.Table;
+import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.graph.DirectedSubgraph;
+import org.apache.storm.shade.org.jgrapht.traverse.TopologicalOrderIterator;
+import org.apache.storm.streams.processors.ChainedProcessorContext;
+import org.apache.storm.streams.processors.EmittingProcessorContext;
+import org.apache.storm.streams.processors.ForwardingProcessorContext;
+import org.apache.storm.streams.processors.Processor;
+import org.apache.storm.streams.processors.ProcessorContext;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class ProcessorBoltDelegate implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessorBoltDelegate.class);
     private final String id;
     private final DirectedGraph<Node, Edge> graph;
     private final List<ProcessorNode> nodes;
-    private Map<String, Object> topoConf;
-    private TopologyContext topologyContext;
-    private OutputCollector outputCollector;
     private final List<ProcessorNode> outgoingProcessors = new ArrayList<>();
     private final Set<EmittingProcessorContext> emittingProcessorContexts = new HashSet<>();
     private final Table<ProcessorNode, String, Integer> punctuationState = HashBasedTable.create();
-    private Multimap<String, ProcessorNode> streamToInitialProcessors;
     private final Map<String, Integer> streamToInputTaskCount = new HashMap<>();
+    private Map<String, Object> topoConf;
+    private TopologyContext topologyContext;
+    private OutputCollector outputCollector;
+    private Multimap<String, ProcessorNode> streamToInitialProcessors;
     private String timestampField;
 
     ProcessorBoltDelegate(String id, DirectedGraph<Node, Edge> graph, List<ProcessorNode> nodes) {
@@ -219,10 +213,6 @@ class ProcessorBoltDelegate implements Serializable {
         return streamToInitialProcessors.keySet();
     }
 
-    void setTimestampField(String fieldName) {
-        timestampField = fieldName;
-    }
-
     boolean isEventTimestamp() {
         return timestampField != null;
     }
@@ -235,6 +225,10 @@ class ProcessorBoltDelegate implements Serializable {
 
     private String getTimestampField() {
         return timestampField;
+    }
+
+    void setTimestampField(String fieldName) {
+        timestampField = fieldName;
     }
 
     // if there are no windowed/batched processors, we would ack immediately
@@ -260,7 +254,7 @@ class ProcessorBoltDelegate implements Serializable {
     private boolean hasOutgoingChild(ProcessorNode processorNode, Set<ProcessorNode> boltChildren) {
         for (Node child : getChildNodes(processorNode)) {
             if ((child instanceof ProcessorNode && !boltChildren.contains(child))
-                    || child instanceof SinkNode) {
+                || child instanceof SinkNode) {
                 return true;
             }
         }
@@ -290,13 +284,13 @@ class ProcessorBoltDelegate implements Serializable {
             Set<String> receivedStreams = punctuationState.row(processorNode).keySet();
             if (!receivedStreams.equals(processorNode.getWindowedParentStreams())) {
                 throw new IllegalStateException("Received punctuation from streams " + receivedStreams + " expected "
-                        + processorNode.getWindowedParentStreams());
+                                                + processorNode.getWindowedParentStreams());
             }
             for (String receivedStream : receivedStreams) {
                 Integer expected = streamToInputTaskCount.get(receivedStream);
                 if (expected == null) {
                     throw new IllegalStateException("Punctuation received on unexpected stream '" + receivedStream +
-                            "' for which input task count is not set.");
+                                                    "' for which input task count is not set.");
                 }
                 if (punctuationState.get(processorNode, receivedStream) < streamToInputTaskCount.get(receivedStream)) {
                     return false;

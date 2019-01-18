@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.coordination;
 
-import org.apache.storm.utils.Utils;
 import java.util.List;
+import org.apache.storm.utils.Utils;
 
 public abstract class BatchOutputCollector {
 
@@ -30,17 +31,21 @@ public abstract class BatchOutputCollector {
     }
 
     public abstract List<Integer> emit(String streamId, List<Object> tuple);
-    
+
     /**
-     * Emits a tuple to the specified task on the default output stream. This output
-     * stream must have been declared as a direct stream, and the specified task must
-     * use a direct grouping on this stream to receive the message.
+     * Emits a tuple to the specified task on the default output stream. This output stream must have been declared as a direct stream, and
+     * the specified task must use a direct grouping on this stream to receive the message.
      */
     public void emitDirect(int taskId, List<Object> tuple) {
         emitDirect(taskId, Utils.DEFAULT_STREAM_ID, tuple);
     }
-    
-    public abstract void emitDirect(int taskId, String streamId, List<Object> tuple); 
-    
+
+    public abstract void emitDirect(int taskId, String streamId, List<Object> tuple);
+
+    /**
+     * Flush any buffered tuples (when batching is enabled)
+     */
+    public abstract void flush();
+
     public abstract void reportError(Throwable error);
 }

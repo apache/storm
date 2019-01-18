@@ -18,24 +18,20 @@ package org.apache.storm.kafka.spout.internal;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.util.NoSuchElementException;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutMessageId;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class OffsetManagerTest {
     private static final String COMMIT_METADATA = "{\"topologyId\":\"tp1\",\"taskId\":3,\"threadName\":\"Thread-20\"}";
-
-    @Rule
-    public ExpectedException expect = ExpectedException.none();
     
     private final long initialFetchOffset = 0;
     private final TopicPartition testTp = new TopicPartition("testTopic", 0);
@@ -183,8 +179,7 @@ public class OffsetManagerTest {
         assertThat("The third uncommitted offset should be 5", manager.getNthUncommittedOffsetAfterCommittedOffset(3), is(initialFetchOffset + 5L));
         assertThat("The fourth uncommitted offset should be 30", manager.getNthUncommittedOffsetAfterCommittedOffset(4), is(initialFetchOffset + 30L));
         
-        expect.expect(NoSuchElementException.class);
-        manager.getNthUncommittedOffsetAfterCommittedOffset(5);
+        Assertions.assertThrows(NoSuchElementException.class, () -> manager.getNthUncommittedOffsetAfterCommittedOffset(5));
     }
 
     @Test

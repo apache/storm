@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.drpc;
 
 import java.util.concurrent.Semaphore;
-
 import org.apache.storm.generated.DRPCExceptionType;
 import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
+import org.apache.storm.utils.WrappedDRPCExecutionException;
 
 public class BlockingOutstandingRequest extends OutstandingRequest {
-    public static final RequestFactory<BlockingOutstandingRequest> FACTORY =
-            (function, request) -> new BlockingOutstandingRequest(function, request);
+    public static final RequestFactory<BlockingOutstandingRequest> FACTORY = BlockingOutstandingRequest::new;
     private Semaphore _sem;
     private volatile String _result = null;
     private volatile DRPCExecutionException _e = null;
@@ -47,9 +47,9 @@ public class BlockingOutstandingRequest extends OutstandingRequest {
         }
 
         if (_e == null) {
-            _e = new DRPCExecutionException("Internal Error: No Result and No Exception");
+            _e = new WrappedDRPCExecutionException("Internal Error: No Result and No Exception");
             _e.set_type(DRPCExceptionType.INTERNAL_ERROR);
-        } 
+        }
         throw _e;
     }
 

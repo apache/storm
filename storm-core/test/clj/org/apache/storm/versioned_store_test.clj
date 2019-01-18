@@ -23,7 +23,7 @@
 (defmacro defvstest [name [vs-sym] & body]
   `(deftest ~name
     (with-open [dir# (TmpPath.)]
-      (let [~vs-sym (VersionedStore. (.getPath dir#))]
+      (let [~vs-sym (VersionedStore. (.getPath dir#) true)]
         ~@body
         ))))
 

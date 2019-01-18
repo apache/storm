@@ -7,7 +7,9 @@ Local mode simulates a Storm cluster in process and is useful for developing and
 
 To run a topology in local mode you have two options.  The most common option is to run your topology with `storm local` instead of `storm jar`
 
-This will bring up a local simulated cluster and force all interactions with nimbus to go through the simulated cluster instead of going to a separate process.
+This will bring up a local simulated cluster and force all interactions with nimbus to go through the simulated cluster instead of going to a separate process. By default this will run the process for 20 seconds before tearing down the entire cluster.  You can override this by including a `--local-ttl` command line option which sets the number of seconds it should run for.
+
+### Programmatic
 
 If you want to do some automated testing but without actually launching a storm cluster you can use the same classes internally that `storm local` does.
 
@@ -58,7 +60,7 @@ Storm also offers a clojure API for testing.
 
 ### Debugging your topology with an IDE
 
-One of the great use cases for local mode is to be able to walk through the code execution of your bolts and spouts using an IDE.  You can do this on the command line by adding the `--java-debug` option followed by the paramer you would pass to jdwp. This makes it simple to launch the local cluster with `-agentlib:jdwp=` turned on.
+One of the great use cases for local mode is to be able to walk through the code execution of your bolts and spouts using an IDE.  You can do this on the command line by adding the `--java-debug` option followed by the parameter you would pass to jdwp. This makes it simple to launch the local cluster with `-agentlib:jdwp=` turned on.
 
 When running from within an IDE itself you can modify your code run run withing a call to `LocalCluster.withLocalModeOverride`
 
@@ -77,7 +79,7 @@ You can see a full list of configurations [here](javadocs/org/apache/storm/Confi
 1. **Config.TOPOLOGY_MAX_TASK_PARALLELISM**: This config puts a ceiling on the number of threads spawned for a single component. Oftentimes production topologies have a lot of parallelism (hundreds of threads) which places unreasonable load when trying to test the topology in local mode. This config lets you easy control that parallelism.
 2. **Config.TOPOLOGY_DEBUG**: When this is set to true, Storm will log a message every time a tuple is emitted from any spout or bolt. This is extremely useful for debugging.A
 
-These, like all other configs, can be set on the command line when launching your toplogy with the `-c` flag.  The flag is of the form `-c <conf_name>=<JSON_VALUE>`  so to enable debugging when launching your topology in local mode you could run
+These, like all other configs, can be set on the command line when launching your topology with the `-c` flag.  The flag is of the form `-c <conf_name>=<JSON_VALUE>`  so to enable debugging when launching your topology in local mode you could run
 
 ```
 storm local topology.jar <MY_MAIN_CLASS> -c topology.debug=true

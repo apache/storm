@@ -18,26 +18,36 @@
 
 package org.apache.storm.perf.bolt;
 
+import java.util.Map;
+import java.util.concurrent.locks.LockSupport;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
-
-import java.util.Map;
+import org.apache.storm.utils.ObjectReader;
+import org.slf4j.LoggerFactory;
 
 
 public class DevNullBolt extends BaseRichBolt {
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DevNullBolt.class);
     private OutputCollector collector;
+    private Long sleepNanos;
+    private int eCount = 0;
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
+        this.sleepNanos = ObjectReader.getLong(topoConf.get("nullbolt.sleep.micros"), 0L) * 1_000;
     }
 
     @Override
     public void execute(Tuple tuple) {
         collector.ack(tuple);
+        if (sleepNanos > 0) {
+            LockSupport.parkNanos(sleepNanos);
+        }
+        ++eCount;
     }
 
     @Override

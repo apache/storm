@@ -18,37 +18,40 @@
 
 package org.apache.storm;
 
+import java.util.Map;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.testing.TrackedTopology;
-import org.apache.thrift.TException;
-
-import java.util.Map;
+import org.apache.storm.thrift.TException;
 
 /**
- * This is here mostly for backwards compatibility.
- * Please see {@link org.apache.storm.LocalCluster} for
- * more details on testing a Storm Topology.
+ * This is here mostly for backwards compatibility. Please see {@link org.apache.storm.LocalCluster} for more details on testing a Storm
+ * Topology.
  */
 public interface ILocalClusterTrackedTopologyAware extends ILocalCluster {
     /**
      * Submit a tracked topology to be run in local mode
+     *
      * @param topologyName the name of the topology to use
-     * @param conf the config for the topology
-     * @param topology the topology itself.
+     * @param conf         the config for the topology
+     * @param topology     the topology itself.
      * @return an AutoCloseable that will kill the topology.
+     *
      * @throws TException on any error from nimbus
      */
     ILocalTopology submitTopology(String topologyName, Map<String, Object> conf, TrackedTopology topology) throws TException;
 
     /**
      * Submit a tracked topology to be run in local mode
+     *
      * @param topologyName the name of the topology to use
-     * @param conf the config for the topology
-     * @param topology the topology itself.
-     * @param submitOpts options for topology
+     * @param conf         the config for the topology
+     * @param topology     the topology itself.
+     * @param submitOpts   options for topology
      * @return an AutoCloseable that will kill the topology.
+     *
      * @throws TException on any error from nimbus
      */
-    ILocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf, TrackedTopology topology, SubmitOptions submitOpts) throws TException;
+    ILocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf, TrackedTopology topology,
+                                          SubmitOptions submitOpts) throws TException;
 
 }

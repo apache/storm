@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.jdbc.bolt;
@@ -32,14 +26,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractJdbcBolt extends BaseTickTupleAwareRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(
-            AbstractJdbcBolt.class);
-
-    protected OutputCollector collector;
-
-    protected transient JdbcClient jdbcClient;
-    protected String configKey;
-    protected Integer queryTimeoutSecs;
-    protected ConnectionProvider connectionProvider;
+        AbstractJdbcBolt.class);
 
     static {
         /*
@@ -58,27 +45,11 @@ public abstract class AbstractJdbcBolt extends BaseTickTupleAwareRichBolt {
         DriverManager.getDrivers();
     }
 
-    /**
-     * Subclasses should call this to ensure output collector and connection
-     * provider are set up, and finally jdbcClient is initialized properly.
-     * <p/>
-     * {@inheritDoc}
-     */
-    @Override
-    public void prepare(final Map map, final TopologyContext topologyContext,
-                        final OutputCollector outputCollector) {
-        this.collector = outputCollector;
-
-        connectionProvider.prepare();
-
-        if (queryTimeoutSecs == null) {
-            String msgTimeout = map.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)
-                    .toString();
-            queryTimeoutSecs = Integer.parseInt(msgTimeout);
-        }
-
-        this.jdbcClient = new JdbcClient(connectionProvider, queryTimeoutSecs);
-    }
+    protected OutputCollector collector;
+    protected transient JdbcClient jdbcClient;
+    protected String configKey;
+    protected Integer queryTimeoutSecs;
+    protected ConnectionProvider connectionProvider;
 
     /**
      * Constructor.
@@ -88,6 +59,28 @@ public abstract class AbstractJdbcBolt extends BaseTickTupleAwareRichBolt {
     public AbstractJdbcBolt(final ConnectionProvider connectionProviderParam) {
         Validate.notNull(connectionProviderParam);
         this.connectionProvider = connectionProviderParam;
+    }
+
+    /**
+     * Subclasses should call this to ensure output collector and connection
+     * provider are set up, and finally jdbcClient is initialized properly.
+     * <p/>
+     * {@inheritDoc}
+     */
+    @Override
+    public void prepare(final Map<String, Object> map, final TopologyContext topologyContext,
+                        final OutputCollector outputCollector) {
+        this.collector = outputCollector;
+
+        connectionProvider.prepare();
+
+        if (queryTimeoutSecs == null) {
+            String msgTimeout = map.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)
+                                   .toString();
+            queryTimeoutSecs = Integer.parseInt(msgTimeout);
+        }
+
+        this.jdbcClient = new JdbcClient(connectionProvider, queryTimeoutSecs);
     }
 
     /**

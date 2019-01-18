@@ -15,23 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import java.util.Map;
 
 public interface IPartitionManager {
 
-  void open() throws Exception;
+    void open() throws Exception;
 
-  void close();
+    void close();
 
-  EventDataWrap receive();
+    EventDataWrap receive();
 
-  void checkpoint();
+    void checkpoint();
 
-  void ack(String offset);
+    void ack(String offset);
 
-  void fail(String offset);
-  
-  Map getMetricsData();
+    void fail(String offset);
+
+    Map<String, Object> getMetricsData();
 }

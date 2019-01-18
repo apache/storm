@@ -34,9 +34,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.testsupport.ArgumentsVerifier;
 import org.apache.storm.utils.Utils;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class ResourceAuthorizerTest {
 
@@ -178,5 +180,19 @@ public class ResourceAuthorizerTest {
         ArgumentsVerifier.verifyFirstCallArgsForSingleArgMethod(
             captor -> verify(authorizer).getUserGroups(captor.capture()),
             String.class, "alice");
+    }
+
+    @Test
+    public void authorizationFailsWhenFilterConfigured() {
+        Map<String, Object> stormConf = Utils.readStormConfig();
+        Map<String, Object> conf = new HashMap<>(stormConf);
+        ResourceAuthorizer authorizer = spy(new ResourceAuthorizer(conf));
+        Mockito.when(authorizer.isAuthorizedLogUser(anyString(), anyString())).thenReturn(false);
+        boolean authorized = authorizer.isUserAllowedToAccessFile("bob", "anyfile");
+        assertTrue(authorized); // no filter configured, allow anyone
+
+        conf.put(DaemonConfig.LOGVIEWER_FILTER, "someFilter");
+        authorized = authorizer.isUserAllowedToAccessFile("bob", "anyfile");
+        assertFalse(authorized); // filter configured, should fail all users
     }
 }

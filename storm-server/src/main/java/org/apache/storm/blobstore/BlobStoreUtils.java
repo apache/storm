@@ -1,22 +1,18 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.blobstore;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,25 +22,26 @@ import java.util.Map;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.Config;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.security.auth.NimbusPrincipal;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.apache.storm.utils.ZookeeperAuthInfo;
-import org.apache.thrift.transport.TTransportException;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BlobStoreUtils {
-    private static final String BLOBSTORE_SUBTREE="/blobstore";
+    private static final String BLOBSTORE_SUBTREE = "/blobstore";
 
     private static final Logger LOG = LoggerFactory.getLogger(BlobStoreUtils.class);
 
@@ -52,12 +49,14 @@ public class BlobStoreUtils {
         return BLOBSTORE_SUBTREE;
     }
 
-    public static CuratorFramework createZKClient(Map<String, Object> conf) {
+    public static CuratorFramework createZKClient(Map<String, Object> conf, DaemonType type) {
         @SuppressWarnings("unchecked")
         List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         ZookeeperAuthInfo zkAuthInfo = new ZookeeperAuthInfo(conf);
-        CuratorFramework zkClient = CuratorUtils.newCurator(conf, zkServers, port, (String) conf.get(Config.STORM_ZOOKEEPER_ROOT), zkAuthInfo);
+        CuratorFramework zkClient = CuratorUtils.newCurator(conf, zkServers, port,
+                                                            (String) conf.get(Config.STORM_ZOOKEEPER_ROOT), zkAuthInfo,
+                                                            type.getDefaultZkAcls(conf));
         zkClient.start();
         return zkClient;
     }
@@ -85,14 +84,14 @@ public class BlobStoreUtils {
         } catch (KeeperException.NoNodeException e) {
             // there's a race condition with a delete: blobstore
             // this should be thrown to the caller to indicate that the key is invalid now
-            throw new KeyNotFoundException(key);
+            throw new WrappedKeyNotFoundException(key);
         }
 
         Set<NimbusInfo> nimbusInfoSet = new HashSet<NimbusInfo>();
         int latestSeqNumber = getLatestSequenceNumber(stateInfoList);
         LOG.debug("getNimbodesWithLatestSequenceNumberOfBlob stateInfo {} version {}", stateInfoList, latestSeqNumber);
         // Get the nimbodes with the latest version
-        for(String state : stateInfoList) {
+        for (String state : stateInfoList) {
             BlobKeySequenceInfo sequenceInfo = normalizeNimbusHostPortSequenceNumberInfo(state);
             if (latestSeqNumber == Integer.parseInt(sequenceInfo.getSequenceNumber())) {
                 nimbusInfoSet.add(NimbusInfo.parse(sequenceInfo.getNimbusHostPort()));
@@ -120,14 +119,13 @@ public class BlobStoreUtils {
 
     // Download missing blobs from potential nimbodes
     public static boolean downloadMissingBlob(Map<String, Object> conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
-            throws TTransportException {
+        throws TTransportException {
         ReadableBlobMeta rbm;
         ClientBlobStore remoteBlobStore;
-        InputStreamWithMeta in;
         boolean isSuccess = false;
         LOG.debug("Download blob NimbusInfos {}", nimbusInfos);
         for (NimbusInfo nimbusInfo : nimbusInfos) {
-            if(isSuccess) {
+            if (isSuccess) {
                 break;
             }
             LOG.debug("Download blob key: {}, NimbusInfo {}", key, nimbusInfo);
@@ -135,8 +133,9 @@ public class BlobStoreUtils {
                 rbm = client.getClient().getBlobMeta(key);
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
-                in = remoteBlobStore.getBlob(key);
-                blobStore.createBlob(key, in, rbm.get_settable(), getNimbusSubject());
+                try (InputStreamWithMeta in = remoteBlobStore.getBlob(key)) {
+                    blobStore.createBlob(key, in, rbm.get_settable(), getNimbusSubject());
+                }
                 // if key already exists while creating the blob else update it
                 Iterator<String> keyIterator = blobStore.listKeys();
                 while (keyIterator.hasNext()) {
@@ -169,10 +168,9 @@ public class BlobStoreUtils {
 
     // Download updated blobs from potential nimbodes
     public static boolean downloadUpdatedBlob(Map<String, Object> conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
-            throws TTransportException {
+        throws TTransportException {
         ClientBlobStore remoteBlobStore;
-        InputStreamWithMeta in;
-        AtomicOutputStream out;
+        AtomicOutputStream out = null;
         boolean isSuccess = false;
         LOG.debug("Download blob NimbusInfos {}", nimbusInfos);
         for (NimbusInfo nimbusInfo : nimbusInfos) {
@@ -182,17 +180,19 @@ public class BlobStoreUtils {
             try (NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
-                in = remoteBlobStore.getBlob(key);
-                out = blobStore.updateBlob(key, getNimbusSubject());
-                byte[] buffer = new byte[2048];
-                int len = 0;
-                while ((len = in.read(buffer)) > 0) {
-                    out.write(buffer, 0, len);
-                }
-                if (out != null) {
+                try (InputStreamWithMeta in = remoteBlobStore.getBlob(key)) {
+                    out = blobStore.updateBlob(key, getNimbusSubject());
+                    byte[] buffer = new byte[2048];
+                    int len = 0;
+                    while ((len = in.read(buffer)) > 0) {
+                        out.write(buffer, 0, len);
+                    }
                     out.close();
+                    out = null;
                 }
                 isSuccess = true;
+            } catch(FileNotFoundException fnf) {
+                LOG.warn("Blobstore file for key '{}' does not exist or got deleted before it could be downloaded.", key, fnf);
             } catch (IOException | AuthorizationException exception) {
                 throw new RuntimeException(exception);
             } catch (KeyNotFoundException knf) {
@@ -203,6 +203,14 @@ public class BlobStoreUtils {
             } catch (Exception exp) {
                 // Logging an exception while client is connecting
                 LOG.error("Exception", exp);
+            } finally {
+                if (out != null) {
+                    try {
+                        out.cancel();
+                    } catch (IOException e) {
+                        // Ignore.
+                    }
+                }
             }
         }
 
@@ -231,7 +239,8 @@ public class BlobStoreUtils {
         cb.createStateInZookeeper(key);
     }
 
-    public static void updateKeyForBlobStore (Map<String, Object> conf, BlobStore blobStore, CuratorFramework zkClient, String key, NimbusInfo nimbusDetails) {
+    public static void updateKeyForBlobStore(Map<String, Object> conf, BlobStore blobStore, CuratorFramework zkClient, String key,
+                                             NimbusInfo nimbusDetails) {
         try {
             // Most of clojure tests currently try to access the blobs using getBlob. Since, updateKeyForBlobStore
             // checks for updating the correct version of the blob as a part of nimbus ha before performing any
@@ -266,7 +275,7 @@ public class BlobStoreUtils {
                 LOG.debug("Updating state inside zookeeper for an update");
                 createStateInZookeeper(conf, key, nimbusDetails);
             }
-        } catch (NoNodeException | KeyNotFoundException e) {
+        } catch (KeeperException.NoNodeException | KeyNotFoundException e) {
             //race condition with a delete
             return;
         } catch (Exception exp) {

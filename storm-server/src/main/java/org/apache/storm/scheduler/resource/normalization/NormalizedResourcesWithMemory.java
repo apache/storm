@@ -25,4 +25,13 @@ public interface NormalizedResourcesWithMemory {
 
     double getTotalMemoryMb();
 
+    /**
+     * Set all resources to 0.
+     */
+    void clear();
+
+    /**
+     * Return true if any of the resources are > 0.
+     */
+    boolean areAnyOverZero();
 }

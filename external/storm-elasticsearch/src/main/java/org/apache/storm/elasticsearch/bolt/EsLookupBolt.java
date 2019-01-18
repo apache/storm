@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.bolt;
 
 import static java.util.Objects.requireNonNull;
@@ -35,6 +36,7 @@ import org.apache.storm.tuple.Values;
 import org.elasticsearch.client.Response;
 
 /**
+ * Basic bolt for looking up document in ES.
  * @since 0.11
  */
 public class EsLookupBolt extends AbstractEsBolt {
@@ -76,12 +78,12 @@ public class EsLookupBolt extends AbstractEsBolt {
     }
 
     private Collection<Values> lookupValuesInEs(Tuple tuple) throws IOException {
-    	String index = tupleMapper.getIndex(tuple);
-    	String type = tupleMapper.getType(tuple);
-    	String id = tupleMapper.getId(tuple);
-    	Map<String, String> params = tupleMapper.getParams(tuple, new HashMap<>());
+        String index = tupleMapper.getIndex(tuple);
+        String type = tupleMapper.getType(tuple);
+        String id = tupleMapper.getId(tuple);
+        Map<String, String> params = tupleMapper.getParams(tuple, new HashMap<>());
 
-    	Response response = client.performRequest("get", getEndpoint(index, type, id), params);
+        Response response = client.performRequest("get", getEndpoint(index, type, id), params);
         return output.toValues(response);
     }
 

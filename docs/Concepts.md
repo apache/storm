@@ -113,3 +113,8 @@ Topologies execute across one or more worker processes. Each worker process is a
 **Resources:**
 
 * [Config.TOPOLOGY_WORKERS](javadocs/org/apache/storm/Config.html#TOPOLOGY_WORKERS): this config sets the number of workers to allocate for executing the topology
+
+### Performance Tuning
+
+Refer to [performance tuning guide](Performance.html).
+

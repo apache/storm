@@ -153,6 +153,10 @@ exception KeyNotFoundException {
   1: required string msg;
 }
 
+exception IllegalStateException {
+  1: required string msg;
+}
+
 exception KeyAlreadyExistsException {
   1: required string msg;
 }
@@ -202,8 +206,7 @@ struct NimbusSummary {
 
 struct ClusterSummary {
   1: required list<SupervisorSummary> supervisors;
-  //@deprecated, please use nimbuses.uptime_secs instead.
-  2: optional i32 nimbus_uptime_secs = 0;
+  //2: Removed. Do not reuse.
   3: required list<TopologySummary> topologies;
   4: required list<NimbusSummary> nimbuses;
 }
@@ -426,6 +429,7 @@ struct RebalanceOptions {
 
 struct Credentials {
   1: required map<string,string> creds;
+  2: optional string topoOwner;
 }
 
 enum TopologyInitialStatus {
@@ -483,6 +487,7 @@ struct SupervisorInfo {
     7: optional i64 uptime_secs;
     8: optional string version;
     9: optional map<string, double> resources_map;
+   10: optional i32 server_port;
 }
 
 struct NodeInfo {
@@ -672,6 +677,21 @@ struct OwnerResourceSummary {
   18: optional double assigned_off_heap_memory;
 }
 
+struct SupervisorWorkerHeartbeat {
+  1: required string storm_id;
+  2: required list<ExecutorInfo> executors
+  3: required i32 time_secs;
+}
+
+struct SupervisorWorkerHeartbeats {
+  1: required string supervisor_id;
+  2: required list<SupervisorWorkerHeartbeat> worker_heartbeats;
+}
+
+struct SupervisorAssignments {
+  1: optional map<string, Assignment> storm_assignment = {}
+}
+
 struct WorkerMetricPoint {
   1: required string metricName;
   2: required i64 timestamp;
@@ -693,6 +713,9 @@ struct WorkerMetrics {
 }
 
 service Nimbus {
+  //Removed methods, be careful about reusing these names
+  //string beginFileDownload(1: string file) throws (1: AuthorizationException aze);
+
   void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
   void submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
   void killTopology(1: string name) throws (1: NotAliveException e, 2: AuthorizationException aze);
@@ -728,7 +751,7 @@ service Nimbus {
   void setBlobMeta(1: string key, 2: SettableBlobMeta meta) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
   BeginDownloadResult beginBlobDownload(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
   binary downloadBlobChunk(1: string session) throws (1: AuthorizationException aze);
-  void deleteBlob(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  void deleteBlob(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf, 3: IllegalStateException ise);
   ListBlobsResult listBlobs(1: string session); //empty string "" means start at the beginning
   i32 getBlobReplication(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
   i32 updateBlobReplication(1: string key, 2: i32 replication) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
@@ -739,9 +762,7 @@ service Nimbus {
   string beginFileUpload() throws (1: AuthorizationException aze);
   void uploadChunk(1: string location, 2: binary chunk) throws (1: AuthorizationException aze);
   void finishFileUpload(1: string location) throws (1: AuthorizationException aze);
-
-  //@deprecated beginBlobDownload does that
-  string beginFileDownload(1: string file) throws (1: AuthorizationException aze);
+  
   //can stop downloading chunks when receive 0-length byte array back
   binary downloadChunk(1: string id) throws (1: AuthorizationException aze);
 
@@ -768,7 +789,23 @@ service Nimbus {
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyHistoryInfo getTopologyHistory(1: string user) throws (1: AuthorizationException aze);
   list<OwnerResourceSummary> getOwnerResourceSummaries (1: string owner) throws (1: AuthorizationException aze);
+  /**
+   * Get assigned assignments for a specific supervisor
+   */
+  SupervisorAssignments getSupervisorAssignments(1: string node) throws (1: AuthorizationException aze);
+  /**
+   * Send supervisor worker heartbeats for a specific supervisor
+   */
+  void sendSupervisorWorkerHeartbeats(1: SupervisorWorkerHeartbeats heartbeats) throws (1: AuthorizationException aze);
+  /**
+   * Send supervisor local worker heartbeat when a supervisor is unreachable
+   */
+  void sendSupervisorWorkerHeartbeat(1: SupervisorWorkerHeartbeat heatbeat) throws (1: AuthorizationException aze, 2: NotAliveException e);
   void processWorkerMetrics(1: WorkerMetrics metrics);
+  /**
+   * Decide if the blob is removed from cluster.
+   */
+  bool isRemoteBlobExists(1: string blobKey) throws (1: AuthorizationException aze);
 }
 
 struct DRPCRequest {
@@ -858,4 +895,59 @@ exception HBExecutionException {
   1: required string msg;
 }
 
+service Supervisor {
+  /**
+   * Send node specific assignments to supervisor
+   */
+  void sendSupervisorAssignments(1: SupervisorAssignments assignments) throws (1: AuthorizationException aze);
+  /**
+   * Get local assignment for a storm
+   */
+  Assignment getLocalAssignmentForStorm(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  /**
+   * Send worker heartbeat to local supervisor
+   */
+  void sendSupervisorWorkerHeartbeat(1: SupervisorWorkerHeartbeat heartbeat) throws (1: AuthorizationException aze);
+}
 
+# WorkerTokens are used as credentials that allow a Worker to authenticate with DRPC, Nimbus, or other storm processes that we add in here.
+enum WorkerTokenServiceType {
+    NIMBUS,
+    DRPC,
+    SUPERVISOR
+}
+
+#This is information that we want to be sure users do not modify in any way...
+struct WorkerTokenInfo {
+    # The user/owner of the topology.  So we can authorize based off of a user
+    1: required string userName;
+    # The topology id that this token is a part of.  So we can find the right sceret key, and so we can
+    #  authorize based off of a topology if needed.
+    2: required string topologyId;
+    # What version of the secret key to use.  If it is too old or we cannot find it, then the token will not be valid.
+    3: required i64 secretVersion;
+    # Unix time stamp in millis when this expires
+    4: required i64 expirationTimeMillis;
+}
+
+#This is what we give to worker so they can authenticate with built in daemons
+struct WorkerToken {
+    # What service is this for?
+    1: required WorkerTokenServiceType serviceType;
+    # A serialized version of a WorkerTokenInfo.  We double encode it so the bits don't change between a serialzie/deserialize cycle.
+    2: required binary info;
+    # how to prove that info is correct and unmodified when it gets back to us.
+    3: required binary signature;
+}
+
+#This is the private information that we can use to verify a WorkerToken is still valid
+# The topology id and version number are stored outside of this as the key to look it up.
+struct PrivateWorkerKey {
+    #This is the key itself.  An algorithm selection may be added in the future, but for now there is only
+    # one so don't worry about it.
+    1: required binary key;
+    # Extra sanity check that the user is correct.
+    2: required string userName;
+    # Unix time stamp in millis when this, and any corresponding tokens, expire
+    3: required i64 expirationTimeMillis;
+}

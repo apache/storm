@@ -20,7 +20,6 @@ package org.apache.storm.perf.utils;
 
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
@@ -33,16 +32,16 @@ import org.apache.storm.utils.Utils;
 
 public class MetricsSample {
 
-    private long sampleTime = -1;
-    private long totalTransferred = 0l;
-    private long totalEmitted = 0l;
-    private long totalAcked = 0l;
-    private long totalFailed = 0l;
+    private long sampleTime = -1L;
+    private long totalTransferred = 0L;
+    private long totalEmitted = 0L;
+    private long totalAcked = 0L;
+    private long totalFailed = 0L;
 
     private double totalLatency;
 
-    private long spoutEmitted = 0l;
-    private long spoutTransferred = 0l;
+    private long spoutEmitted = 0L;
+    private long spoutTransferred = 0L;
     private int spoutExecutors = 0;
 
     private int numSupervisors = 0;
@@ -64,7 +63,7 @@ public class MetricsSample {
         int topologyTasks = topSummary.get_num_tasks();
         TopologyInfo topInfo = client.getTopologyInfo(topSummary.get_id());
 
-        MetricsSample sample =  getMetricsSample( topInfo);
+        MetricsSample sample = getMetricsSample(topInfo);
         sample.numWorkers = topologyWorkers;
         sample.numExecutors = topologyExecutors;
         sample.numTasks = topologyTasks;
@@ -75,75 +74,77 @@ public class MetricsSample {
         List<ExecutorSummary> executorSummaries = topInfo.get_executors();
 
         // totals
-        long totalTransferred = 0l;
-        long totalEmitted = 0l;
-        long totalAcked = 0l;
-        long totalFailed = 0l;
+        long totalTransferred = 0L;
+        long totalEmitted = 0L;
+        long totalAcked = 0L;
+        long totalFailed = 0L;
 
         // number of spout executors
         int spoutExecCount = 0;
         double spoutLatencySum = 0.0;
 
-        long spoutEmitted = 0l;
-        long spoutTransferred = 0l;
+        long spoutEmitted = 0L;
+        long spoutTransferred = 0L;
 
         // Executor summaries
-        for(ExecutorSummary executorSummary : executorSummaries){
-            ExecutorStats execuatorStats = executorSummary.get_stats();
-            if(execuatorStats == null){
+        for (ExecutorSummary executorSummary : executorSummaries) {
+            ExecutorStats executorStats = executorSummary.get_stats();
+            if (executorStats == null) {
                 continue;
             }
 
-            ExecutorSpecificStats executorSpecificStats = execuatorStats.get_specific();
-            if(executorSpecificStats == null){
+            ExecutorSpecificStats executorSpecificStats = executorStats.get_specific();
+            if (executorSpecificStats == null) {
                 // bail out
                 continue;
             }
 
             // transferred totals
-            Map<String,Map<String,Long>> transferred = execuatorStats.get_transferred();
+            Map<String, Map<String, Long>> transferred = executorStats.get_transferred();
             Map<String, Long> txMap = transferred.get(":all-time");
-            if(txMap == null){
+            if (txMap == null) {
                 continue;
             }
-            for(String key : txMap.keySet()){
+            for (String key : txMap.keySet()) {
                 // todo, ignore the master batch coordinator ?
-                if(!Utils.isSystemId(key)){
+                if (!Utils.isSystemId(key)) {
                     Long count = txMap.get(key);
                     totalTransferred += count;
-                    if(executorSpecificStats.is_set_spout()){
+                    if (executorSpecificStats.is_set_spout()) {
                         spoutTransferred += count;
                     }
                 }
             }
 
             // we found a spout
-            if(executorSpecificStats.isSet(2)) { // spout
+            if (executorSpecificStats.isSet(2)) { // spout
 
                 SpoutStats spoutStats = executorSpecificStats.get_spout();
                 Map<String, Long> acked = spoutStats.get_acked().get(":all-time");
-                if(acked != null){
-                    for(String key : acked.keySet()) {
+                if (acked != null) {
+                    for (String key : acked.keySet()) {
                         totalAcked += acked.get(key);
                     }
                 }
 
                 Map<String, Long> failed = spoutStats.get_failed().get(":all-time");
-                if(failed != null){
-                    for(String key : failed.keySet()) {
+                if (failed != null) {
+                    for (String key : failed.keySet()) {
                         totalFailed += failed.get(key);
                     }
                 }
 
                 Double total = 0d;
                 Map<String, Double> vals = spoutStats.get_complete_ms_avg().get(":all-time");
-                for(String key : vals.keySet()){
-                    total += vals.get(key);
+                if (vals != null) {
+                    for (String key : vals.keySet()) {
+                        total += vals.get(key);
+                    }
+                    Double latency = total / vals.size();
+                    spoutLatencySum += latency;
                 }
-                Double latency = total / vals.size();
 
                 spoutExecCount++;
-                spoutLatencySum += latency;
             }
 
 
@@ -152,13 +153,13 @@ public class MetricsSample {
         MetricsSample ret = new MetricsSample();
         ret.totalEmitted = totalEmitted;
         ret.totalTransferred = totalTransferred;
-        ret.totalAcked  = totalAcked;
+        ret.totalAcked = totalAcked;
         ret.totalFailed = totalFailed;
-        ret.totalLatency = spoutLatencySum/spoutExecCount;
+        ret.totalLatency = spoutLatencySum / spoutExecCount;
         ret.spoutEmitted = spoutEmitted;
         ret.spoutTransferred = spoutTransferred;
         ret.sampleTime = System.currentTimeMillis();
-//        ret.numSupervisors = clusterSummary.get_supervisors_size();
+        //        ret.numSupervisors = clusterSummary.get_supervisors_size();
         ret.numWorkers = 0;
         ret.numExecutors = 0;
         ret.numTasks = 0;
@@ -174,7 +175,6 @@ public class MetricsSample {
         }
         return null;
     }
-
 
 
     // getters
@@ -226,7 +226,7 @@ public class MetricsSample {
         return totalSlots;
     }
 
-    public int getSpoutExecutors(){
+    public int getSpoutExecutors() {
         return this.spoutExecutors;
     }
 

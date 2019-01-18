@@ -17,36 +17,7 @@ order to change configuration.
 Flux is a framework and set of utilities that make defining and deploying Apache Storm topologies less painful and
 deveoper-intensive.
 
-Have you ever found yourself repeating this pattern?:
-
-```java
-
-public static void main(String[] args) throws Exception {
-    // logic to determine if we're running locally or not...
-    // create necessary config options...
-    boolean runLocal = shouldRunLocal();
-    if(runLocal){
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology(name, conf, topology);
-    } else {
-        StormSubmitter.submitTopology(name, conf, topology);
-    }
-}
-```
-
-Wouldn't something like this be easier:
-
-```bash
-storm jar mytopology.jar org.apache.storm.flux.Flux --local config.yaml
-```
-
-or:
-
-```bash
-storm jar mytopology.jar org.apache.storm.flux.Flux --remote config.yaml
-```
-
-Another pain point often mentioned is the fact that the wiring for a Topology graph is often tied up in Java code,
+A Major pain point often mentioned is the fact that the wiring for a Topology graph is often tied up in Java code,
 and that any changes require recompilation and repackaging of the topology jar file. Flux aims to alleviate that
 pain by allowing you to package all your Storm components in a single jar, and use an external text file to define
 the layout and configuration of your topologies.
@@ -57,7 +28,7 @@ the layout and configuration of your topologies.
    in your topology code
  * Support for existing topology code (see below)
  * Define Storm Core API (Spouts/Bolts) using a flexible YAML DSL
- * YAML DSL support for most Storm components (storm-kafka, storm-hdfs, storm-hbase, etc.)
+ * YAML DSL support for most Storm components (storm-kafka-client, storm-hdfs, storm-hbase, etc.)
  * Convenient support for multi-lang components
  * External property substitution/filtering for easily switching between configurations/environments (similar to Maven-style
    `${variable.name}` substitution)
@@ -202,13 +173,13 @@ The example below illustrates Flux usage with the Maven shade plugin:
  ```
 
 ### Deploying and Running a Flux Topology
-Once your topology components are packaged with the Flux dependency, you can run different topologies either locally
-or remotely using the `storm jar` command. For example, if your fat jar is named `myTopology-0.1.0-SNAPSHOT.jar` you
+Once your topology components are packaged with the Flux dependency, you can run different topologies either locally using the `storm local` command
+or remotely using `storm jar`. For example, if your fat jar is named `myTopology-0.1.0-SNAPSHOT.jar` you
 could run it locally with the command:
 
 
 ```bash
-storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --local my_config.yaml
+storm local myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux my_config.yaml
 
 ```
 
@@ -228,20 +199,22 @@ usage: storm jar <my_topology_uber_jar.jar> org.apache.storm.flux.Flux
                               and replace keys identified with {$[property
                               name]} with the value defined in the
                               properties file.
+ -h,--help                    Print this help message
  -i,--inactive                Deploy the topology, but do not activate it.
- -l,--local                   Run the topology in local mode.
+ -l,--local                   Ignored: to run in local mode use `storm
+                              local` instead of `storm jar`
  -n,--no-splash               Suppress the printing of the splash screen.
  -q,--no-detail               Suppress the printing of topology details.
- -r,--remote                  Deploy the topology to a remote cluster.
+ -r,--remote                  Ignored: to run on a remote cluster launch
+                              using `storm jar` to run in a local cluster
+                              use `storm local`
  -R,--resource                Treat the supplied path as a classpath
                               resource instead of a file.
- -s,--sleep <ms>              When running locally, the amount of time to
-                              sleep (in ms.) before killing the topology
-                              and shutting down the local cluster.
- -z,--zookeeper <host:port>   When running in local mode, use the
-                              ZooKeeper at the specified <host>:<port>
-                              instead of the in-process ZooKeeper.
-                              (requires Storm 0.9.3 or later)
+ -s,--sleep <ms>              Ignored: to set cluster run time use
+                              `--local-ttl` with `storm local` instead.
+ -z,--zookeeper <host:port>   Ignored, if you want to set the zookeeper
+                              host/port in local mode use
+                              `--local-zookeeper` instead
 ```
 
 **NOTE:** Flux tries to avoid command line switch collision with the `storm` command, and allows any other command line
@@ -251,7 +224,7 @@ For example, you can use the `storm` command switch `-c` to override a topology 
 example command will run Flux and override the `nimus.host` configuration:
 
 ```bash
-storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --remote my_config.yaml -c nimbus.host=localhost
+storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux my_config.yaml -c nimbus.host=localhost
 ```
 
 ### Sample output
@@ -279,7 +252,6 @@ sentence-spout --SHUFFLE--> splitsentence
 splitsentence --FIELDS--> count
 count --SHUFFLE--> log
 --------------------------------------
-Submitting topology: 'shell-topology' to remote cluster...
 ```
 
 ## YAML Configuration
@@ -354,19 +326,20 @@ storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --local my_co
 With the following `dev.properties` file:
 
 ```properties
-kafka.zookeeper.hosts: localhost:2181
+kafka.bootstrap.hosts: localhost:9092
 ```
 
 You would then be able to reference those properties by key in your `.yaml` file using `${}` syntax:
 
 ```yaml
-  - id: "zkHosts"
-    className: "org.apache.storm.kafka.ZkHosts"
+  - id: "spoutConfigBuilder"
+    className: "org.apache.storm.kafka.spout.KafkaSpoutConfig$Builder"
     constructorArgs:
-      - "${kafka.zookeeper.hosts}"
+      - "${kafka.bootstrap.hosts}"
+      - ["myKafkaTopic"]
 ```
 
-In this case, Flux would replace `${kafka.zookeeper.hosts}` with `localhost:2181` before parsing the YAML contents.
+In this case, Flux would replace `${kafka.bootstrap.hosts}` with `localhost:9092` before parsing the YAML contents.
 
 ### Environment Variable Substitution/Filtering
 Flux also allows environment variable substitution. For example, if an environment variable named `ZK_HOSTS` if defined,
@@ -378,16 +351,16 @@ ${ENV-ZK_HOSTS}
 
 ## Components
 Components are essentially named object instances that are made available as configuration options for spouts and
-bolts. If you are familiar with the Spring framework, components are roughly analagous to Spring beans.
+bolts. If you are familiar with the Spring framework, components are roughly analogous to Spring beans.
 
 Every component is identified, at a minimum, by a unique identifier (String) and a class name (String). For example,
-the following will make an instance of the `org.apache.storm.kafka.StringScheme` class available as a reference under the key
-`"stringScheme"` . This assumes the `org.apache.storm.kafka.StringScheme` has a default constructor.
+the following will make an instance of the `org.apache.storm.flux.examples.OnlyValueRecordTranslator` class available as a reference under the key
+`"recordTranslator"` . This assumes the `org.apache.storm.flux.examples.OnlyValueRecordTranslator` has a default constructor.
 
 ```yaml
 components:
-  - id: "stringScheme"
-    className: "org.apache.storm.kafka.StringScheme"
+  - id: "recordTranslator"
+    className: "org.apache.storm.flux.examples.OnlyValueRecordTranslator"
 ```
 
 ### Contructor Arguments, References, Properties and Configuration Methods
@@ -395,32 +368,36 @@ components:
 ####Constructor Arguments
 Arguments to a class constructor can be configured by adding a `contructorArgs` element to a components.
 `constructorArgs` is a list of objects that will be passed to the class' constructor. The following example creates an
-object by calling the constructor that takes a single string as an argument:
+object by calling the constructor that takes a string and an array of strings as arguments:
 
 ```yaml
-  - id: "zkHosts"
-    className: "org.apache.storm.kafka.ZkHosts"
+  - id: "spoutConfigBuilder"
+    className: "org.apache.storm.kafka.spout.KafkaSpoutConfig$Builder"
     constructorArgs:
-      - "localhost:2181"
-      - true
+      - "${kafka.bootstrap.hosts}"
+      - ["myKafkaTopic"]
 ```
 
 ####References
 Each component instance is identified by a unique id that allows it to be used/reused by other components. To
 reference an existing component, you specify the id of the component with the `ref` tag.
 
-In the following example, a component with the id `"stringScheme"` is created, and later referenced, as a an argument
+In the following example, a component with the id `"recordTranslator"` is created, and later referenced, as a an argument
 to another component's constructor:
 
 ```yaml
 components:
-  - id: "stringScheme"
-    className: "org.apache.storm.kafka.StringScheme"
+  - id: "recordTranslator"
+    className: "org.apache.storm.flux.examples.OnlyValueRecordTranslator"
 
-  - id: "stringMultiScheme"
-    className: "org.apache.storm.spout.SchemeAsMultiScheme"
+    - id: "spoutConfigBuilder"
+    className: "org.apache.storm.kafka.spout.KafkaSpoutConfig$Builder"
     constructorArgs:
-      - ref: "stringScheme" # component with id "stringScheme" must be declared above.
+      - "localhost:9092"
+      - ["myKafkaTopic"]
+    properties:
+      - name: "recordTranslator"
+        ref: "onlyValueRecordTranslator" #Component with id "recordTranslator" must be declared above
 ```
 
 You can also reference existing components in list via specifying the id of the components with the `reflist` tag.
@@ -448,27 +425,20 @@ In addition to calling constructors with different arguments, Flux also allows y
 JavaBean-like setter methods and fields declared as `public`:
 
 ```yaml
-  - id: "spoutConfig"
-    className: "org.apache.storm.kafka.SpoutConfig"
+  - id: "spoutConfigBuilder"
+    className: "org.apache.storm.kafka.spout.KafkaSpoutConfig$Builder"
     constructorArgs:
-      # brokerHosts
-      - ref: "zkHosts"
-      # topic
-      - "myKafkaTopic"
-      # zkRoot
-      - "/kafkaSpout"
-      # id
-      - "myId"
+      - "localhost:9092"
+      - ["myKafkaTopic"]
     properties:
-      - name: "ignoreZkOffsets"
-        value: true
-      - name: "scheme"
-        ref: "stringMultiScheme"
+      - name: "pollTimeoutMs"
+        value: 5000
 ```
 
-In the example above, the `properties` declaration will cause Flux to look for a public method in the `SpoutConfig` with
-the signature `setForceFromStart(boolean b)` and attempt to invoke it. If a setter method is not found, Flux will then
-look for a public instance variable with the name `ignoreZkOffsets` and attempt to set its value.
+In the example above, the `properties` declaration will cause Flux to look for a public method in the `KafkaSpoutConfig$Builder` with
+the signature `setPollTimeoutMs(int i)` and attempt to invoke it. If a setter method is not found, Flux will then
+look for a public instance variable with the name `pollTimeoutMs` and attempt to set its value.
+Note that Flux will attempt to coerce actual parameter types to fit the setter parameter types, so e.g. calling `setMyFloat(float f)` with `value: 10` is possible.
 
 References may also be used as property values.
 
@@ -623,46 +593,31 @@ Kafka spout example:
 
 ```yaml
 components:
-  - id: "stringScheme"
-    className: "org.apache.storm.kafka.StringScheme"
-
-  - id: "stringMultiScheme"
-    className: "org.apache.storm.spout.SchemeAsMultiScheme"
+  - id: "onlyValueRecordTranslator"
+    className: "org.apache.storm.flux.examples.OnlyValueRecordTranslator"
+    
+  - id: "spoutConfigBuilder"
+    className: "org.apache.storm.kafka.spout.KafkaSpoutConfig$Builder"
     constructorArgs:
-      - ref: "stringScheme"
-
-  - id: "zkHosts"
-    className: "org.apache.storm.kafka.ZkHosts"
-    constructorArgs:
-      - "localhost:2181"
-
-# Alternative kafka config
-#  - id: "kafkaConfig"
-#    className: "org.apache.storm.kafka.KafkaConfig"
-#    constructorArgs:
-#      # brokerHosts
-#      - ref: "zkHosts"
-#      # topic
-#      - "myKafkaTopic"
-#      # clientId (optional)
-#      - "myKafkaClientId"
-
-  - id: "spoutConfig"
-    className: "org.apache.storm.kafka.SpoutConfig"
-    constructorArgs:
-      # brokerHosts
-      - ref: "zkHosts"
-      # topic
-      - "myKafkaTopic"
-      # zkRoot
-      - "/kafkaSpout"
-      # id
-      - "myId"
+      - "localhost:9092"
+      - ["myKafkaTopic"]
     properties:
-      - name: "ignoreZkOffsets"
-        value: true
-      - name: "scheme"
-        ref: "stringMultiScheme"
+      - name: "firstPollOffsetStrategy"
+        value: EARLIEST
+      - name: "recordTranslator"
+        ref: "onlyValueRecordTranslator"
+    configMethods:
+      - name: "setProp"
+        args:
+          - {
+              "key.deserializer" : "org.apache.kafka.common.serialization.StringDeserializer",
+              "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer"
+            }
+                
+  - id: "spoutConfig"
+    className: "org.apache.storm.kafka.spout.KafkaSpoutConfig"
+    constructorArgs:
+      - ref: "spoutConfigBuilder"
 
 config:
   topology.workers: 1
@@ -670,7 +625,7 @@ config:
 # spout definitions
 spouts:
   - id: "kafka-spout"
-    className: "org.apache.storm.kafka.KafkaSpout"
+    className: "org.apache.storm.kafka.spout.KafkaSpout"
     constructorArgs:
       - ref: "spoutConfig"
 

@@ -15,15 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.serialization;
 
 import java.util.Map;
-
+import org.apache.storm.thrift.TBase;
+import org.apache.storm.thrift.TDeserializer;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.thrift.TSerializer;
 import org.apache.storm.utils.Utils;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
 
 /**
  * Note, this assumes it's deserializing a gzip byte stream, and will err if it encounters any other serialization.
@@ -49,7 +49,7 @@ public class GzipThriftSerializationDelegate implements SerializationDelegate {
         try {
             TBase instance = (TBase) clazz.newInstance();
             new TDeserializer().deserialize(instance, Utils.gunzip(bytes));
-            return (T)instance;
+            return (T) instance;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -18,27 +18,19 @@
 
 package org.apache.storm.perf.utils;
 
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.log4j.Logger;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.Utils;
-import org.apache.log4j.Logger;
-
-import java.io.PrintWriter;
-import java.util.*;
-
 
 public class BasicMetricsCollector implements AutoCloseable {
-    private PrintWriter dataWriter;
-    private long startTime=0;
-
-    public enum MetricsItem {
-        TOPOLOGY_STATS,
-        XSFER_RATE,
-        SPOUT_THROUGHPUT,
-        SPOUT_LATENCY,
-        ALL
-    }
-
-
     /* headers */
     public static final String TIME = "elapsed (sec)";
     public static final String TIME_FORMAT = "%d";
@@ -54,29 +46,27 @@ public class BasicMetricsCollector implements AutoCloseable {
     public static final String SPOUT_ACKED = "spout_acks";
     public static final String SPOUT_THROUGHPUT = "spout_throughput (acks/s)";
     public static final String SPOUT_AVG_COMPLETE_LATENCY = "spout_avg_complete_latency(ms)";
-    public static final String SPOUT_AVG_LATENCY_FORMAT = "%.1f";
+    public static final String SPOUT_AVG_LATENCY_FORMAT = "%.3f";
     public static final String SPOUT_MAX_COMPLETE_LATENCY = "spout_max_complete_latency(ms)";
-    public static final String SPOUT_MAX_LATENCY_FORMAT = "%.1f";
+    public static final String SPOUT_MAX_LATENCY_FORMAT = "%.3f";
     private static final Logger LOG = Logger.getLogger(BasicMetricsCollector.class);
     final MetricsCollectorConfig config;
     //    final StormTopology topology;
     final Set<String> header = new LinkedHashSet<String>();
     final Map<String, String> metrics = new HashMap<String, String>();
-    int lineNumber = 0;
-
     final boolean collectTopologyStats;
     final boolean collectExecutorStats;
     final boolean collectThroughput;
-
     final boolean collectSpoutThroughput;
     final boolean collectSpoutLatency;
-
+    int lineNumber = 0;
+    boolean first = true;
+    private PrintWriter dataWriter;
+    private long startTime = 0;
     private MetricsSample lastSample;
     private MetricsSample curSample;
     private double maxLatency = 0;
 
-    boolean first = true;
-    
     public BasicMetricsCollector(String topoName, Map<String, Object> topoConfig) {
         Set<MetricsItem> items = getMetricsToCollect();
         this.config = new MetricsCollectorConfig(topoName, topoConfig);
@@ -88,7 +78,7 @@ public class BasicMetricsCollector implements AutoCloseable {
         dataWriter = new PrintWriter(System.err);
     }
 
-    private Set<MetricsItem>  getMetricsToCollect() {
+    private Set<MetricsItem> getMetricsToCollect() {
         Set<MetricsItem> result = new HashSet<>();
         result.add(MetricsItem.ALL);
         return result;
@@ -119,7 +109,7 @@ public class BasicMetricsCollector implements AutoCloseable {
     }
 
     boolean updateStats(PrintWriter writer)
-            throws Exception {
+        throws Exception {
         if (collectTopologyStats) {
             updateTopologyStats();
         }
@@ -169,13 +159,12 @@ public class BasicMetricsCollector implements AutoCloseable {
                 this.maxLatency = latency;
             }
             metrics.put(SPOUT_AVG_COMPLETE_LATENCY,
-                    String.format(SPOUT_AVG_LATENCY_FORMAT, latency));
+                        String.format(SPOUT_AVG_LATENCY_FORMAT, latency));
             metrics.put(SPOUT_MAX_COMPLETE_LATENCY,
-                    String.format(SPOUT_MAX_LATENCY_FORMAT, this.maxLatency));
+                        String.format(SPOUT_MAX_LATENCY_FORMAT, this.maxLatency));
 
         }
     }
-
 
     void writeHeader(PrintWriter writer) {
         header.add(TIME);
@@ -202,10 +191,12 @@ public class BasicMetricsCollector implements AutoCloseable {
             header.add(SPOUT_MAX_COMPLETE_LATENCY);
         }
 
-        writer.println("\n------------------------------------------------------------------------------------------------------------------");
+        writer.println(
+            "\n------------------------------------------------------------------------------------------------------------------");
         String str = Utils.join(header, ",");
         writer.println(str);
-        writer.println("------------------------------------------------------------------------------------------------------------------");
+        writer
+            .println("------------------------------------------------------------------------------------------------------------------");
         writer.flush();
     }
 
@@ -219,34 +210,39 @@ public class BasicMetricsCollector implements AutoCloseable {
         writer.flush();
     }
 
-
     boolean collectTopologyStats(Set<MetricsItem> items) {
-        return items.contains(MetricsItem.ALL) ||
-                items.contains(MetricsItem.TOPOLOGY_STATS);
+        return items.contains(MetricsItem.ALL)
+               || items.contains(MetricsItem.TOPOLOGY_STATS);
     }
 
     boolean collectExecutorStats(Set<MetricsItem> items) {
-        return items.contains(MetricsItem.ALL) ||
-                items.contains(MetricsItem.XSFER_RATE) ||
-                items.contains(MetricsItem.SPOUT_LATENCY);
+        return items.contains(MetricsItem.ALL)
+               || items.contains(MetricsItem.XSFER_RATE)
+               || items.contains(MetricsItem.SPOUT_LATENCY);
     }
 
     boolean collectThroughput(Set<MetricsItem> items) {
-        return items.contains(MetricsItem.ALL) ||
-                items.contains(MetricsItem.XSFER_RATE);
+        return items.contains(MetricsItem.ALL)
+               || items.contains(MetricsItem.XSFER_RATE);
     }
 
     boolean collectSpoutThroughput(Set<MetricsItem> items) {
-        return items.contains(MetricsItem.ALL) ||
-                items.contains(MetricsItem.SPOUT_THROUGHPUT);
+        return items.contains(MetricsItem.ALL)
+               || items.contains(MetricsItem.SPOUT_THROUGHPUT);
     }
 
     boolean collectSpoutLatency(Set<MetricsItem> items) {
-        return items.contains(MetricsItem.ALL) ||
-                items.contains(MetricsItem.SPOUT_LATENCY);
+        return items.contains(MetricsItem.ALL)
+               || items.contains(MetricsItem.SPOUT_LATENCY);
     }
 
-
+    public enum MetricsItem {
+        TOPOLOGY_STATS,
+        XSFER_RATE,
+        SPOUT_THROUGHPUT,
+        SPOUT_LATENCY,
+        ALL
+    }
 
     public static class MetricsCollectorConfig {
         private static final Logger LOG = Logger.getLogger(MetricsCollectorConfig.class);

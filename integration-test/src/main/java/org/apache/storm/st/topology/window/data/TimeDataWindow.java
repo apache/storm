@@ -17,75 +17,45 @@
 
 package org.apache.storm.st.topology.window.data;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 import com.google.gson.reflect.TypeToken;
-import org.joda.time.DateTime;
-
-import javax.annotation.Nullable;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.TreeSet;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
-public class TimeDataWindow extends ArrayList<TimeData> implements FromJson<TimeDataWindow> {
-    public static final TimeDataWindow CLS = new TimeDataWindow();
-    private static final Type listType = new TypeToken<List<TimeData>>() {}.getType();
+public class TimeDataWindow {
+    private static final Type LIST_TYPE = new TypeToken<List<TimeData>>() {}.getType(); 
+    
+    private final TreeSet<TimeData> data;
 
-    private TimeDataWindow() {
-    }
-
-    private TimeDataWindow(List<TimeData> data) {
-        super(data);
-    }
-
-    public static TimeDataWindow newInstance(Collection<TimeData> data) {
-        final List<TimeData> dataCopy = new ArrayList<>(data);
-        Collections.sort(dataCopy);
-        return new TimeDataWindow(dataCopy);
-    }
-
-    public static TimeDataWindow newInstance(Collection<TimeData> data, Predicate<TimeData> predicate) {
-        return newInstance(Collections2.filter(data, predicate));
-    }
-
-    public static TimeDataWindow newInstance(Collection<TimeData> data, final DateTime fromDate, final DateTime toDate) {
-        return TimeDataWindow.newInstance(data, new Predicate<TimeData>() {
-            @Override
-            public boolean apply(@Nullable TimeData input) {
-                if (input == null) {
-                    return false;
-                }
-                final DateTime inputDate = new DateTime(input.getDate());
-                return inputDate.isAfter(fromDate) && inputDate.isBefore(toDate.plusMillis(1));
-            }
-        });
-    }
-
-    public TimeData first() {
-        return get(0);
-    }
-
-    public TimeData last() {
-        return get(size()-1);
+    public TimeDataWindow(List<TimeData> data) {
+        this.data = new TreeSet<>(data);
     }
 
     public String getDescription() {
-        final int size = size();
+        final int size = data.size();
         if (size > 0) {
-            final TimeData first = first();
-            final TimeData last = last();
+            final TimeData first = data.first();
+            final TimeData last = data.last();
             return "Total " + size + " items: " + first + " to " + last;
         }
         return "Total " + size + " items.";
     }
-
-    public TimeDataWindow fromJson(String jsonStr) {
-        final List<TimeData> dataList = TimeData.gson.fromJson(jsonStr, listType);
-        Collections.sort(dataList);
-        return TimeDataWindow.newInstance(dataList);
+    
+    public TreeSet<TimeData> getTimeData() {
+        return data;
     }
 
+    public static TimeDataWindow fromJson(String jsonStr) {
+        final List<TimeData> dataList = TimeData.GSON.fromJson(jsonStr, LIST_TYPE);
+        return new TimeDataWindow(dataList);
+    }
 
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+            .append(data)
+            .toString();
+    }
 }

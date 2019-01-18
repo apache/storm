@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.scheduler.resource;
@@ -37,20 +31,20 @@ public class ResourceUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceUtils.class);
 
     public static NormalizedResourceRequest getBoltResources(StormTopology topology, Map<String, Object> topologyConf,
-                                                              String componentId) {
+                                                             String componentId) {
         if (topology.get_bolts() != null) {
             Bolt bolt = topology.get_bolts().get(componentId);
-            return new NormalizedResourceRequest(bolt.get_common(), topologyConf);
+            return new NormalizedResourceRequest(bolt.get_common(), topologyConf, componentId);
         }
         return null;
     }
 
-    public static Map<String, NormalizedResourceRequest> getBoltsResources(StormTopology topology,
-                                                                     Map<String, Object> topologyConf) {
+    public static Map<String, NormalizedResourceRequest> getBoltsResources(StormTopology topology, Map<String, Object> topologyConf) {
         Map<String, NormalizedResourceRequest> boltResources = new HashMap<>();
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
-                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(bolt.getValue().get_common(), topologyConf);
+                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(bolt.getValue().get_common(),
+                        topologyConf, bolt.getKey());
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Turned {} into {}", bolt.getValue().get_common().get_json_conf(), topologyResources);
                 }
@@ -60,21 +54,22 @@ public class ResourceUtils {
         return boltResources;
     }
 
-    public static NormalizedResourceRequest getSpoutResources(StormTopology topology, Map<String, Object> topologyConf,
-                                                              String componentId) {
+    public static NormalizedResourceRequest getSpoutResources(StormTopology topology,
+        Map<String, Object> topologyConf, String componentId) {
         if (topology.get_spouts() != null) {
             SpoutSpec spout = topology.get_spouts().get(componentId);
-            return new NormalizedResourceRequest(spout.get_common(), topologyConf);
+            return new NormalizedResourceRequest(spout.get_common(), topologyConf, componentId);
         }
         return null;
     }
 
     public static Map<String, NormalizedResourceRequest> getSpoutsResources(StormTopology topology,
-                                                                      Map<String, Object> topologyConf) {
+        Map<String, Object> topologyConf) {
         Map<String, NormalizedResourceRequest> spoutResources = new HashMap<>();
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
-                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(spout.getValue().get_common(), topologyConf);
+                NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(spout.getValue().get_common(),
+                        topologyConf, spout.getKey());
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Turned {} into {}", spout.getValue().get_common().get_json_conf(), topologyResources);
                 }
@@ -128,7 +123,7 @@ public class ResourceUtils {
     }
 
     public static String getCorrespondingLegacyResourceName(String normalizedResourceName) {
-        for(Map.Entry<String, String> entry : NormalizedResources.RESOURCE_NAME_NORMALIZER.getResourceNameMapping().entrySet()) {
+        for (Map.Entry<String, String> entry : NormalizedResources.RESOURCE_NAME_NORMALIZER.getResourceNameMapping().entrySet()) {
             if (entry.getValue().equals(normalizedResourceName)) {
                 return entry.getKey();
             }
@@ -143,9 +138,9 @@ public class ResourceUtils {
             JSONObject jsonObject = (JSONObject) obj;
 
             Map<String, Double> componentResourceMap =
-                    (Map<String, Double>) jsonObject.getOrDefault(
-                            Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<String, Double>()
-                    );
+                (Map<String, Double>) jsonObject.getOrDefault(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<String, Double>()
+                );
 
             for (Map.Entry<String, Double> resourceUpdateEntry : resourceUpdates.entrySet()) {
                 if (NormalizedResources.RESOURCE_NAME_NORMALIZER.getResourceNameMapping().containsValue(resourceUpdateEntry.getKey())) {
@@ -159,7 +154,7 @@ public class ResourceUtils {
 
             return jsonObject.toJSONString();
         } catch (ParseException ex) {
-            throw new RuntimeException("Failed to parse component resources with json: " +  jsonConf);
+            throw new RuntimeException("Failed to parse component resources with json: " + jsonConf);
         }
     }
 

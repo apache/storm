@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class FaultGenerateUtils {
 
@@ -50,7 +52,7 @@ public class FaultGenerateUtils {
         return supervisorsList;
     }
 
-    public static Cluster nextCluster(Cluster cluster, Map<String, SupervisorDetails> supervisors, INimbus iNimbus, Map config,
+    public static Cluster nextCluster(Cluster cluster, Map<String, SupervisorDetails> supervisors, INimbus iNimbus, Map<String, Object> config,
                                       Topologies topologies) {
         Map<String, SchedulerAssignmentImpl> assignment;
         if (cluster == null) {
@@ -58,6 +60,6 @@ public class FaultGenerateUtils {
         } else {
             assignment = TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments());
         }
-        return new Cluster(iNimbus, supervisors, assignment, topologies, config);
+        return new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supervisors, assignment, topologies, config);
     }
 }

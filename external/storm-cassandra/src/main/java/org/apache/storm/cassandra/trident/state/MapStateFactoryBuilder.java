@@ -1,25 +1,24 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.cassandra.trident.state;
 
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.Select;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.apache.storm.cassandra.CassandraContext;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
 import org.apache.storm.trident.state.JSONNonTransactionalSerializer;
@@ -34,12 +33,10 @@ import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.*;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.apache.storm.cassandra.DynamicStatementBuilder.all;
 import static org.apache.storm.cassandra.DynamicStatementBuilder.boundQuery;
 
@@ -80,25 +77,25 @@ public class MapStateFactoryBuilder<T> {
     private Integer maxParallelism;
     private StateType stateType;
     private StateMapper<T> stateMapper;
-    private Map cassandraConfig;
+    private Map<String, Object> cassandraConfig;
     private int cacheSize;
 
-    public static <U> MapStateFactoryBuilder<OpaqueValue<U>> opaque(Map cassandraConf) {
+    public static <U> MapStateFactoryBuilder<OpaqueValue<U>> opaque(Map<String, Object> cassandraConf) {
         return new MapStateFactoryBuilder<OpaqueValue<U>>()
-                .withStateType(StateType.OPAQUE)
-                .withCassandraConfig(cassandraConf);
+            .withStateType(StateType.OPAQUE)
+            .withCassandraConfig(cassandraConf);
     }
 
-    public static <U> MapStateFactoryBuilder<TransactionalValue<U>> transactional(Map cassandraConf) {
+    public static <U> MapStateFactoryBuilder<TransactionalValue<U>> transactional(Map<String, Object> cassandraConf) {
         return new MapStateFactoryBuilder<TransactionalValue<U>>()
-                .withStateType(StateType.TRANSACTIONAL)
-                .withCassandraConfig(cassandraConf);
+            .withStateType(StateType.TRANSACTIONAL)
+            .withCassandraConfig(cassandraConf);
     }
 
-    public static <U> MapStateFactoryBuilder<U> nontransactional(Map cassandraConf) {
+    public static <U> MapStateFactoryBuilder<U> nontransactional(Map<String, Object> cassandraConf) {
         return new MapStateFactoryBuilder<U>()
-                .withStateType(StateType.NON_TRANSACTIONAL)
-                .withCassandraConfig(cassandraConf);
+            .withStateType(StateType.NON_TRANSACTIONAL)
+            .withCassandraConfig(cassandraConf);
     }
 
     public MapStateFactoryBuilder<T> withTable(String keyspace, String table) {
@@ -145,7 +142,7 @@ public class MapStateFactoryBuilder<T> {
         return this;
     }
 
-    protected MapStateFactoryBuilder<T> withCassandraConfig(Map cassandraConf) {
+    protected MapStateFactoryBuilder<T> withCassandraConfig(Map<String, Object> cassandraConf) {
         this.cassandraConfig = cassandraConf;
         return this;
     }
@@ -167,7 +164,7 @@ public class MapStateFactoryBuilder<T> {
         Objects.requireNonNull(stateType, "A state type must be specified.");
 
         List<String> stateFields = stateMapper.getStateFields()
-                .toList();
+                                              .toList();
 
         String[] stateFieldsArray = stateFields.toArray(new String[stateFields.size()]);
 
@@ -177,47 +174,47 @@ public class MapStateFactoryBuilder<T> {
 
         // Build get query
         Select.Where getQuery = select(stateFieldsArray)
-                .from(keyspace, table)
-                .where();
+            .from(keyspace, table)
+            .where();
 
         for (String key : keys) {
             getQuery.and(eq(key, bindMarker()));
         }
 
         CQLStatementTupleMapper get = boundQuery(getQuery.toString())
-                .bind(all())
-                .build();
+            .bind(all())
+            .build();
 
         // Build put query
         Insert putStatement = insertInto(keyspace, table)
-                .values(allFields, Collections.<Object>nCopies(allFields.size(), bindMarker()));
+            .values(allFields, Collections.<Object>nCopies(allFields.size(), bindMarker()));
 
         CQLStatementTupleMapper put = boundQuery(putStatement.toString())
-                .bind(all())
-                .build();
+            .bind(all())
+            .build();
 
         CassandraBackingMap.Options options = new CassandraBackingMap.Options<T>(new CassandraContext())
-                .withGetMapper(get)
-                .withPutMapper(put)
-                .withStateMapper(stateMapper)
-                .withKeys(new Fields(keys))
-                .withMaxParallelism(maxParallelism);
+            .withGetMapper(get)
+            .withPutMapper(put)
+            .withStateMapper(stateMapper)
+            .withKeys(new Fields(keys))
+            .withMaxParallelism(maxParallelism);
 
         logger.debug("Building factory with: \n  get: {}\n  put: {}\n  mapper: {}",
-                getQuery.toString(),
-                putStatement.toString(),
-                stateMapper.toString());
+                     getQuery.toString(),
+                     putStatement.toString(),
+                     stateMapper.toString());
 
         switch (stateType) {
             case NON_TRANSACTIONAL:
                 return CassandraMapStateFactory.nonTransactional(options, cassandraConfig)
-                        .withCache(cacheSize);
+                                               .withCache(cacheSize);
             case TRANSACTIONAL:
                 return CassandraMapStateFactory.transactional(options, cassandraConfig)
-                        .withCache(cacheSize);
+                                               .withCache(cacheSize);
             case OPAQUE:
                 return CassandraMapStateFactory.opaque(options, cassandraConfig)
-                        .withCache(cacheSize);
+                                               .withCache(cacheSize);
         }
 
         return null;

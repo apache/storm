@@ -1,6 +1,6 @@
 # Storm RocketMQ
 
-Storm/Trident integration for [RocketMQ](https://rocketmq.incubator.apache.org/). This package includes the core spout, bolt and trident states that allows a storm topology to either write storm tuples into a topic or read from topics in a storm topology.
+Storm/Trident integration for [RocketMQ](https://rocketmq.apache.org/). This package includes the core spout, bolt and trident states that allows a storm topology to either write storm tuples into a topic or read from topics in a storm topology.
 
 
 ## Read from Topic
@@ -9,7 +9,7 @@ The spout included in this package for reading data from a topic.
 ### RocketMqSpout
 To use the `RocketMqSpout`,  you construct an instance of it by specifying a Properties instance which including rocketmq configs.
 RocketMqSpout uses RocketMQ MQPushConsumer as the default implementation. PushConsumer is a high level consumer API, wrapping the pulling details. Looks like broker push messages to consumer.
-RocketMqSpout will retry 3(use `SpoutConfig.DEFAULT_MESSAGES_MAX_RETRY` to change the value) times when messages are failed.
+RocketMqSpout's messages retrying depends on RocketMQ's push mode retry policy.
 
  ```java
         Properties properties = new Properties();
@@ -91,6 +91,38 @@ We support trident persistent state that can be used with trident topologies. To
         stream.partitionPersist(factory, fields,
                 new RocketMqStateUpdater(), new Fields());
  ```
+
+## Configurations
+
+### Producer Configurations
+| NAME        | DESCRIPTION           | DEFAULT  |
+| ------------- |:-------------:|:------:|
+| nameserver.address      | name server address *Required* | null |
+| nameserver.poll.interval      | name server poll topic info interval     |   30000 |
+| brokerserver.heartbeat.interval | broker server heartbeat interval      |    30000 |
+| producer.group | producer group      |    $UUID |
+| producer.retry.times | producer send messages retry times      |    3 |
+| producer.timeout | producer send messages timeout      |    3000 |
+
+
+### Consumer Configurations
+| NAME        | DESCRIPTION           | DEFAULT  |
+| ------------- |:-------------:|:------:|
+| nameserver.address      | name server address *Required* | null |
+| nameserver.poll.interval      | name server poll topic info interval     |   30000 |
+| brokerserver.heartbeat.interval | broker server heartbeat interval      |    30000 |
+| consumer.group | consumer group *Required*     |    null |
+| consumer.topic | consumer topic *Required*       |    null |
+| consumer.tag | consumer topic tag      |    * |
+| consumer.offset.reset.to | what to do when there is no initial offset on the server      |   latest/earliest/timestamp |
+| consumer.offset.from.timestamp | the timestamp when `consumer.offset.reset.to=timestamp` was set   |   $TIMESTAMP |
+| consumer.messages.orderly | if the consumer topic is ordered      |    false |
+| consumer.offset.persist.interval | auto commit offset interval      |    5000 |
+| consumer.min.threads | consumer min threads      |    20 |
+| consumer.max.threads | consumer max threads      |    64 |
+| consumer.callback.executor.threads | client callback executor threads      |    $availableProcessors |
+| consumer.batch.size | consumer messages batch size      |    32 |
+| consumer.batch.process.timeout | consumer messages batch process timeout      |   $TOPOLOGY_MESSAGE_TIMEOUT_SECS + 10s|
 
 
 ## License

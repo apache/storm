@@ -15,10 +15,15 @@
  */
 package org.apache.storm.kafka.spout;
 
+import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -39,26 +44,26 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
-import org.apache.storm.kafka.spout.subscription.Subscription;
+import org.apache.storm.kafka.spout.internal.ConsumerFactory;
+import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
+import org.apache.storm.kafka.spout.subscription.TopicAssigner;
+import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
-
-import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class KafkaSpoutRebalanceTest {
+
+    @Rule
+    public MockitoRule mockito = MockitoJUnit.rule();
 
     @Captor
     private ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> commitCapture;
@@ -68,24 +73,33 @@ public class KafkaSpoutRebalanceTest {
     private TopologyContext contextMock;
     private SpoutOutputCollector collectorMock;
     private KafkaConsumer<String, String> consumerMock;
-    private KafkaConsumerFactory<String, String> consumerFactory;
+    private ConsumerFactory<String, String> consumerFactory;
+    private TopicFilter topicFilterMock;
+    private ManualPartitioner partitionerMock;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         contextMock = mock(TopologyContext.class);
         collectorMock = mock(SpoutOutputCollector.class);
         consumerMock = mock(KafkaConsumer.class);
         consumerFactory = (kafkaSpoutConfig) -> consumerMock;
+        topicFilterMock = mock(TopicFilter.class);
+        when(topicFilterMock.getAllSubscribedPartitions(any()))
+            .thenReturn(new HashSet<>());
+        partitionerMock = mock(ManualPartitioner.class);
+        when(partitionerMock.getPartitionsForThisTask(any(), any()))
+            .thenReturn(new HashSet<>());
     }
 
     //Returns messageIds in order of emission
-    private List<KafkaSpoutMessageId> emitOneMessagePerPartitionThenRevokeOnePartition(KafkaSpout<String, String> spout, TopicPartition partitionThatWillBeRevoked, TopicPartition assignedPartition, ArgumentCaptor<ConsumerRebalanceListener> rebalanceListenerCapture) {
+    private List<KafkaSpoutMessageId> emitOneMessagePerPartitionThenRevokeOnePartition(KafkaSpout<String, String> spout, TopicPartition partitionThatWillBeRevoked, TopicPartition assignedPartition, TopicAssigner topicAssigner) {
         //Setup spout with mock consumer so we can get at the rebalance listener   
         spout.open(conf, contextMock, collectorMock);
         spout.activate();
 
         //Assign partitions to the spout
+        ArgumentCaptor<ConsumerRebalanceListener> rebalanceListenerCapture = ArgumentCaptor.forClass(ConsumerRebalanceListener.class);
+        verify(topicAssigner).assignPartitions(any(), any(), rebalanceListenerCapture.capture());
         ConsumerRebalanceListener consumerRebalanceListener = rebalanceListenerCapture.getValue();
         Set<TopicPartition> assignedPartitions = new HashSet<>();
         assignedPartitions.add(partitionThatWillBeRevoked);
@@ -123,21 +137,17 @@ public class KafkaSpoutRebalanceTest {
     public void spoutMustIgnoreAcksForTuplesItIsNotAssignedAfterRebalance() throws Exception {
         //Acking tuples for partitions that are no longer assigned is useless since the spout will not be allowed to commit them
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
-            ArgumentCaptor<ConsumerRebalanceListener> rebalanceListenerCapture = ArgumentCaptor.forClass(ConsumerRebalanceListener.class);
-            Subscription subscriptionMock = mock(Subscription.class);
-            doNothing()
-                .when(subscriptionMock)
-                .subscribe(any(), rebalanceListenerCapture.capture(), any());
-            KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(subscriptionMock, -1)
+            TopicAssigner assignerMock = mock(TopicAssigner.class);
+            KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(topicFilterMock, partitionerMock, -1)
                 .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
-                .build(), consumerFactory);
+                .build(), consumerFactory, assignerMock);
             String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
             TopicPartition partitionThatWillBeRevoked = new TopicPartition(topic, 1);
             TopicPartition assignedPartition = new TopicPartition(topic, 2);
 
             //Emit a message on each partition and revoke the first partition
             List<KafkaSpoutMessageId> emittedMessageIds = emitOneMessagePerPartitionThenRevokeOnePartition(
-                spout, partitionThatWillBeRevoked, assignedPartition, rebalanceListenerCapture);
+                spout, partitionThatWillBeRevoked, assignedPartition, assignerMock);
 
             //Ack both emitted tuples
             spout.ack(emittedMessageIds.get(0));
@@ -159,16 +169,12 @@ public class KafkaSpoutRebalanceTest {
     @Test
     public void spoutMustIgnoreFailsForTuplesItIsNotAssignedAfterRebalance() throws Exception {
         //Failing tuples for partitions that are no longer assigned is useless since the spout will not be allowed to commit them if they later pass
-        ArgumentCaptor<ConsumerRebalanceListener> rebalanceListenerCapture = ArgumentCaptor.forClass(ConsumerRebalanceListener.class);
-        Subscription subscriptionMock = mock(Subscription.class);
-        doNothing()
-            .when(subscriptionMock)
-            .subscribe(any(), rebalanceListenerCapture.capture(), any());
+        TopicAssigner assignerMock = mock(TopicAssigner.class);
         KafkaSpoutRetryService retryServiceMock = mock(KafkaSpoutRetryService.class);
-        KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(subscriptionMock, -1)
+        KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(topicFilterMock, partitionerMock, -1)
             .setOffsetCommitPeriodMs(10)
             .setRetry(retryServiceMock)
-            .build(), consumerFactory);
+            .build(), consumerFactory, assignerMock);
         String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
         TopicPartition partitionThatWillBeRevoked = new TopicPartition(topic, 1);
         TopicPartition assignedPartition = new TopicPartition(topic, 2);
@@ -179,7 +185,7 @@ public class KafkaSpoutRebalanceTest {
 
         //Emit a message on each partition and revoke the first partition
         List<KafkaSpoutMessageId> emittedMessageIds = emitOneMessagePerPartitionThenRevokeOnePartition(
-            spout, partitionThatWillBeRevoked, assignedPartition, rebalanceListenerCapture);
+            spout, partitionThatWillBeRevoked, assignedPartition, assignerMock);
 
         //Check that only two message ids were generated
         verify(retryServiceMock, times(2)).getMessageId(any(TopicPartition.class), anyLong());
@@ -200,14 +206,10 @@ public class KafkaSpoutRebalanceTest {
          * Previously assigned partitions should be left alone, since the spout keeps the emitted and acked state for those.
          */
 
-        ArgumentCaptor<ConsumerRebalanceListener> rebalanceListenerCapture = ArgumentCaptor.forClass(ConsumerRebalanceListener.class);
-        Subscription subscriptionMock = mock(Subscription.class);
-        doNothing()
-            .when(subscriptionMock)
-            .subscribe(any(), rebalanceListenerCapture.capture(), any());
-        KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(subscriptionMock, -1)
-            .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST)
-            .build(), consumerFactory);
+        TopicAssigner assignerMock = mock(TopicAssigner.class);
+        KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(topicFilterMock, partitionerMock, -1)
+            .setFirstPollOffsetStrategy(FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST)
+            .build(), consumerFactory, assignerMock);
         String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
         TopicPartition assignedPartition = new TopicPartition(topic, 1);
         TopicPartition newPartition = new TopicPartition(topic, 2);
@@ -215,6 +217,9 @@ public class KafkaSpoutRebalanceTest {
         //Setup spout with mock consumer so we can get at the rebalance listener   
         spout.open(conf, contextMock, collectorMock);
         spout.activate();
+        
+        ArgumentCaptor<ConsumerRebalanceListener> rebalanceListenerCapture = ArgumentCaptor.forClass(ConsumerRebalanceListener.class);
+        verify(assignerMock).assignPartitions(any(), any(), rebalanceListenerCapture.capture());
 
         //Assign partitions to the spout
         ConsumerRebalanceListener consumerRebalanceListener = rebalanceListenerCapture.getValue();

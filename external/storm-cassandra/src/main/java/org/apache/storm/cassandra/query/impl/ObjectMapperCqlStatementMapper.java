@@ -1,20 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.cassandra.query.impl;
@@ -54,7 +47,8 @@ public class ObjectMapperCqlStatementMapper implements CQLStatementTupleMapper {
     private final Collection<TypeCodec<?>> codecs;
     private final Collection<Class<?>> udtClasses;
 
-    public ObjectMapperCqlStatementMapper(String operationField, String valueField, String timestampField, String ttlField, String consistencyLevelField, Collection<TypeCodec<?>> codecs, Collection<Class<?>> udtClasses) {
+    public ObjectMapperCqlStatementMapper(String operationField, String valueField, String timestampField, String ttlField,
+                                          String consistencyLevelField, Collection<TypeCodec<?>> codecs, Collection<Class<?>> udtClasses) {
         Preconditions.checkNotNull(operationField, "Operation field must not be null");
         Preconditions.checkNotNull(valueField, "Value field should not be null");
         this.operationField = operationField;
@@ -67,15 +61,16 @@ public class ObjectMapperCqlStatementMapper implements CQLStatementTupleMapper {
     }
 
     @Override
-    public List<Statement> map(Map map, Session session, ITuple tuple) {
-        final ObjectMapperOperation operation = (ObjectMapperOperation)tuple.getValueByField(operationField);
+    public List<Statement> map(Map<String, Object> map, Session session, ITuple tuple) {
+        final ObjectMapperOperation operation = (ObjectMapperOperation) tuple.getValueByField(operationField);
 
         Preconditions.checkNotNull(operation, "Operation must not be null");
 
         final Object value = tuple.getValueByField(valueField);
         final Object timestampObject = timestampField != null ? tuple.getValueByField(timestampField) : null;
         final Object ttlObject = ttlField != null ? tuple.getValueByField(ttlField) : null;
-        final ConsistencyLevel consistencyLevel = consistencyLevelField != null ? (ConsistencyLevel) tuple.getValueByField(consistencyLevelField) : null;
+        final ConsistencyLevel consistencyLevel =
+            consistencyLevelField != null ? (ConsistencyLevel) tuple.getValueByField(consistencyLevelField) : null;
 
         final Class<?> valueClass = value.getClass();
 

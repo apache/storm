@@ -17,6 +17,9 @@ Authentication and Authorization. But to do so usually requires
 configuring your Operating System to restrict the operations that can be done.
 This is generally a good idea even if you plan on running your cluster with Auth.
 
+Storm's OS level security relies on running Storm processes using OS accounts that have only the permissions they need. 
+Note that workers run under the same OS account as the Supervisor daemon by default.
+
 The exact detail of how to setup these precautions varies a lot and is beyond
 the scope of this document.
 
@@ -47,24 +50,42 @@ The UI and logviewer processes provide a way to not only see what a cluster is
 doing, but also manipulate running topologies.  In general these processes should
 not be exposed except to users of the cluster.
 
-Some form of Authentication is typically required, with using java servlet filters 
+Some form of Authentication is typically required, and can be done using a java servlet filter
 
 ```yaml
 ui.filter: "filter.class"
 ui.filter.params: "param1":"value1"
+logviewer.filter: "filter.class"
+logviewer.filter.params: "param1":"value1"
 ```
-or by restricting the UI/log viewers ports to only accept connections from local
-hosts, and then front them with another web server, like Apache httpd, that can
-authenticate/authorize incoming connections and
+
+The `ui.filter` is an instance of `javax.servlet.Filter` that is intended to 
+filter all incoming requests to the UI and authenticate the request mapping 
+it to a "user".  Typically this is done by modifying or wrapping the 
+`HttpServletRequest` to return the user principal through the 
+`getUserPrincipal()` method or returning the user name through the 
+`getRemoteUser()` method.  If your filter authenticates in a different way you
+can look at setting `ui.http.creds.plugin` to point to an instance of `IHttpCredentialsPlugin`
+that can take the `HttpServletRequest` and return a user name and populate the needed fields
+in the current `ReqContext`.  These are advanced features and you may want to look at the 
+`DefaultHttpCredentialsPlugin` as an example of how to do this.
+
+These same settings apply to the logviewer too.  If you want to have separate control
+over how authentication works in the logviewer you may optionally set `logviewer.filter`
+instead and it will override any `ui.filter` settings for the logviewer process.
+
+If the cluster is single tenant you might want to just restrict access to the UI/log
+viewers ports to only accept connections from local hosts, and then front them with
+another web server, like Apache httpd, that can authenticate/authorize incoming connections and
 proxy the connection to the storm process.  To make this work the ui process must have
 logviewer.port set to the port of the proxy in its storm.yaml, while the logviewers
 must have it set to the actual port that they are going to bind to.
 
 The servlet filters are preferred because it allows individual topologies to
-specificy who is and who is not allowed to access the pages associated with
+specify who is and who is not allowed to access the pages associated with
 them.  
 
-Storm UI can be configured to use AuthenticationFilter from hadoop-auth.
+Storm UI (or logviewer) can be configured to use AuthenticationFilter from hadoop-auth.
 ```yaml
 ui.filter: "org.apache.hadoop.security.authentication.server.AuthenticationFilter"
 ui.filter.params:
@@ -89,9 +110,20 @@ curl  -i --negotiate -u:anyUser  -b ~/cookiejar.txt -c ~/cookiejar.txt  http://s
 **Caution**: In AD MIT Keberos setup the key size is bigger than the default UI jetty server request header size. Make sure you set ui.header.buffer.bytes to 65536 in storm.yaml. More details are on [STORM-633](https://issues.apache.org/jira/browse/STORM-633)
 
 
-## UI / DRPC SSL 
+## DRPC HTTP
 
-Both UI and DRPC allows users to configure ssl .
+The DRPC server optionally supports a REST endpoint as well, and you can configure authentication
+on that endpoint similar to the ui/logviewer.
+
+The `drpc.http.filter` and `drpc.http.filter.params` configs can be used to setup a `Filter` for the DRPC server.  Unlike the logviewer
+it does not fall back to the UI configs as the DRPC server is intended to be REST only and often will be hit by headless users.
+
+The `drpc.http.creds.plugin` config can be used in cases where the default plugin is not good enough because of how authentication happens.
+
+
+## UI / DRPC / LOGVIEWER SSL 
+
+UI,DRPC and LOGVIEWER allows users to configure ssl .
 
 ### UI
 
@@ -109,7 +141,7 @@ optional config
 8. ui.https.truststore.type (example "jks")
 
 If users want to setup 2-way auth
-9. ui.https.want.client.auth (If this set to true server requests for client certifcate authentication, but keeps the connection if no authentication provided)
+9. ui.https.want.client.auth (If this set to true server requests for client certificate authentication, but keeps the connection if no authentication provided)
 10. ui.https.need.client.auth (If this set to true server requires client to provide authentication)
 
 
@@ -130,9 +162,29 @@ optional config
 8. drpc.https.truststore.type (example "jks")
 
 If users want to setup 2-way auth
-9. drpc.https.want.client.auth (If this set to true server requests for client certifcate authentication, but keeps the connection if no authentication provided)
+9. drpc.https.want.client.auth (If this set to true server requests for client certificate authentication, but keeps the connection if no authentication provided)
 10. drpc.https.need.client.auth (If this set to true server requires client to provide authentication)
 
+
+
+
+### LOGVIEWER
+similarly to UI and DRPC , users need to configure following for LOGVIEWER
+
+1. logviewer.https.port 
+2. logviewer.https.keystore.type (example "jks")
+3. logviewer.https.keystore.path (example "/etc/ssl/storm_keystore.jks")
+4. logviewer.https.keystore.password (keystore password)
+5. logviewer.https.key.password (private key password)
+
+optional config 
+6. logviewer.https.truststore.path (example "/etc/ssl/storm_truststore.jks")
+7. logviewer.https.truststore.password (truststore password)
+8. logviewer.https.truststore.type (example "jks")
+
+If users want to setup 2-way auth
+9. logviewer.https.want.client.auth (If this set to true server requests for client certificate authentication, but keeps the connection if no authentication provided)
+10. logviewer.https.need.client.auth (If this set to true server requires client to provide authentication)
 
 
 
@@ -155,7 +207,7 @@ details may vary depending on your KDC and OS.
 
 
 ```bash
-# Zookeeper (Will need one of these for each box in teh Zk ensamble)
+# Zookeeper (Will need one of these for each box in the Zk ensemble)
 sudo kadmin.local -q 'addprinc zookeeper/zk1.example.com@STORM.EXAMPLE.COM'
 sudo kadmin.local -q "ktadd -k /tmp/zk.keytab  zookeeper/zk1.example.com@STORM.EXAMPLE.COM"
 # Nimbus and DRPC
@@ -378,7 +430,7 @@ supervisor.run.worker.as.user: true
 
 There are several files that go along with this that are needed to be configured properly to make storm secure.
 
-The worker-launcher executable is a special program that allows the supervisor to launch workers as different users.  For this to work it needs to be owned by root, but with the group set to be a group that only teh supervisor headless user is a part of.
+The worker-launcher executable is a special program that allows the supervisor to launch workers as different users.  For this to work it needs to be owned by root, but with the group set to be a group that only the supervisor headless user is a part of.
 It also needs to have 6550 permissions.
 There is also a worker-launcher.cfg file, usually located under /etc/ that should look something like the following
 
@@ -429,7 +481,9 @@ To hide this from them in the common case plugins can be used to populate the cr
 `topology.auto-credentials` is a list of java plugins, all of which must implement the `IAutoCredentials` interface, that populate the credentials on gateway 
 and unpack them on the worker side. On a kerberos secure cluster they should be set by default to point to `org.apache.storm.security.auth.kerberos.AutoTGT`
 
-`nimbus.credential.renewers.classes` should also be set to `org.apache.storm.security.auth.kerberos.AutoTGT` so that nimbus can periodically renew the TGT on behalf of the user.
+`nimbus.credential.renewers.classes` should also be set to `org.apache.storm.security.auth.kerberos.AutoTGT` so that nimbus can periodically renew the TGT on behalf of the user.  
+
+All autocredential classes that desire to implement the IMetricsRegistrant interface can register metrics automatically for each topology.  The AutoTGT class currently implements this interface and adds a metric named TGT-TimeToExpiryMsecs showing the remaining time until the TGT needs to be renewed.
 
 `nimbus.credential.renewers.freq.secs` controls how often the renewer will poll to see if anything needs to be renewed, but the default should be fine.
 
@@ -479,43 +533,45 @@ nimbus.groups:
 
 ### DRPC
  
- Storm provides the Access Control List for the DRPC Authorizer.Users can see [org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer](javadocs/org/apache/storm/security/auth/authorizer/DRPCSimpleACLAuthorizer.html) for more details.
+Storm provides the Access Control List for the DRPC Authorizer.Users can see [org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer](javadocs/org/apache/storm/security/auth/authorizer/DRPCSimpleACLAuthorizer.html) for more details.
  
- There are several DRPC ACL related configurations.
+There are several DRPC ACL related configurations.
  
- | YAML Setting | Description |
- |------------|----------------------|
- | drpc.authorizer.acl | A class that will perform authorization for DRPC operations. Set this to org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer when using security.|
- | drpc.authorizer.acl.filename | This is the name of a file that the ACLs will be loaded from. It is separate from storm.yaml to allow the file to be updated without bringing down a DRPC server. Defaults to drpc-auth-acl.yaml |
- | drpc.authorizer.acl.strict| It is useful to set this to false for staging where users may want to experiment, but true for production where you want users to be secure. Defaults to false. |
+| YAML Setting | Description |
+|------------|----------------------|
+| drpc.authorizer.acl | A class that will perform authorization for DRPC operations. Set this to org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer when using security.|
+| drpc.authorizer.acl.filename | This is the name of a file that the ACLs will be loaded from. It is separate from storm.yaml to allow the file to be updated without bringing down a DRPC server. Defaults to drpc-auth-acl.yaml |
+| drpc.authorizer.acl.strict| It is useful to set this to false for staging where users may want to experiment, but true for production where you want users to be secure. Defaults to false. |
 
- The file pointed to by drpc.authorizer.acl.filename will have only one config in it drpc.authorizer.acl this should be of the form
+The file pointed to by drpc.authorizer.acl.filename will have only one config in it drpc.authorizer.acl this should be of the form
 
- drpc.authorizer.acl:
+```yaml
+drpc.authorizer.acl:
    "functionName1":
      "client.users":
        - "alice"
        - "bob"
      "invocation.user": "bob"
-     
- In this the users bob and alice as client.users are allowed to run DRPC requests against functionName1, but only bob as the invocation.user is allowed to run the topology that actually processes those requests.
+```
+
+In this the users bob and alice as client.users are allowed to run DRPC requests against functionName1, but only bob as the invocation.user is allowed to run the topology that actually processes those requests.
 
 
 ## Cluster Zookeeper Authentication
  
- Users can implement cluster Zookeeper authentication by setting several configurations are shown below.
- 
- | YAML Setting | Description |
- |------------|----------------------|
- | storm.zookeeper.auth.scheme | The cluster Zookeeper authentication scheme to use, e.g. "digest". Defaults to no authentication. |
- | storm.zookeeper.auth.payload | A string representing the payload for cluster Zookeeper authentication.It should only be set in the storm-cluster-auth.yaml.Users can see storm-cluster-auth.yaml.example for more details. |
- 
- 
- Also,there are several configurations for topology Zookeeper authentication:
- 
- | YAML Setting | Description |
- |------------|----------------------|
- | storm.zookeeper.topology.auth.scheme | The topology Zookeeper authentication scheme to use, e.g. "digest". It is the internal config and user shouldn't set it. |
- | storm.zookeeper.topology.auth.payload | A string representing the payload for topology Zookeeper authentication. |
- 
- Note: If storm.zookeeper.topology.auth.payload isn't set,storm will generate a ZooKeeper secret payload for MD5-digest with generateZookeeperDigestSecretPayload() method.
+Users can implement cluster Zookeeper authentication by setting several configurations are shown below.
+
+| YAML Setting | Description |
+|------------|----------------------|
+| storm.zookeeper.auth.scheme | The cluster Zookeeper authentication scheme to use, e.g. "digest". Defaults to no authentication. |
+| storm.zookeeper.auth.payload | A string representing the payload for cluster Zookeeper authentication. It should only be set in the storm-cluster-auth.yaml. Users can see storm-cluster-auth.yaml.example for more details. |
+
+
+Also, there are several configurations for topology Zookeeper authentication:
+
+| YAML Setting | Description |
+|------------|----------------------|
+| storm.zookeeper.topology.auth.scheme | The topology Zookeeper authentication scheme to use, e.g. "digest". It is the internal config and user shouldn't set it. |
+| storm.zookeeper.topology.auth.payload | A string representing the payload for topology Zookeeper authentication. |
+
+Note: If storm.zookeeper.topology.auth.payload isn't set, Storm will generate a ZooKeeper secret payload for MD5-digest with generateZookeeperDigestSecretPayload() method.

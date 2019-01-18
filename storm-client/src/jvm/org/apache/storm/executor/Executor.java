@@ -1,26 +1,17 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.executor;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.dsl.ProducerType;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
@@ -30,9 +21,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
@@ -60,32 +55,27 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
-import org.apache.storm.stats.BoltExecutorStats;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.shade.org.jctools.queues.MpscChunkedArrayQueue;
+import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.stats.CommonStats;
-import org.apache.storm.stats.SpoutExecutorStats;
-import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.DisruptorBackpressureCallback;
-import org.apache.storm.utils.DisruptorQueue;
+import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
-import org.apache.storm.utils.WorkerBackpressureThread;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-
-public abstract class Executor implements Callable, EventHandler<Object> {
+public abstract class Executor implements Callable, JCQueue.Consumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(Executor.class);
 
@@ -104,31 +94,31 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     protected final Runnable suicideFn;
     protected final IStormClusterState stormClusterState;
     protected final Map<Integer, String> taskToComponent;
-    protected CommonStats stats;
     protected final Map<Integer, Map<Integer, Map<String, IMetric>>> intervalToTaskToMetricToRegistry;
     protected final Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamToComponentToGrouper;
     protected final List<LoadAwareCustomStreamGrouping> groupers;
     protected final ReportErrorAndDie reportErrorDie;
-    protected final Callable<Boolean> sampler;
-    protected ExecutorTransfer executorTransfer;
+    protected final BooleanSupplier sampler;
     protected final String type;
-    protected final AtomicBoolean throttleOn;
-
     protected final IReportError reportError;
     protected final Random rand;
-    protected final DisruptorQueue sendQueue;
-    protected final DisruptorQueue receiveQueue;
-    protected Map<Integer, Task> idToTask;
+    protected final JCQueue receiveQueue;
     protected final Map<String, String> credentials;
     protected final Boolean isDebug;
     protected final Boolean hasEventLoggers;
+    protected final boolean ackingEnabled;
+    protected final ErrorReportingMetrics errorReportingMetrics;
+    protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits = new MpscChunkedArrayQueue<>(1024, (int)Math.pow(2, 30));
+    private final AddressedTuple flushTuple;
+    protected ExecutorTransfer executorTransfer;
+    protected ArrayList<Task> idToTask;
+    protected int idToTaskBase;
     protected String hostname;
 
-    protected final ErrorReportingMetrics errorReportingMetrics;
-
-    protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
+    protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
         this.executorId = executorId;
+        this.type = type;
         this.workerTopologyContext = workerData.getWorkerTopologyContext();
         this.taskIds = StormCommon.executorIdToTasks(executorId);
         this.componentId = workerTopologyContext.getComponentId(taskIds.get(0));
@@ -141,28 +131,14 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         this.stormActive = workerData.getIsTopologyActive();
         this.stormComponentDebug = workerData.getStormComponentToDebug();
 
-        this.sendQueue = mkExecutorBatchQueue(topoConf, executorId);
-        this.executorTransfer = new ExecutorTransfer(workerData, sendQueue, topoConf);
+        this.executorTransfer = new ExecutorTransfer(workerData, topoConf);
 
         this.suicideFn = workerData.getSuicideCallback();
         try {
-            this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(), Utils.getWorkerACL(topoConf),
-                    new ClusterStateContext(DaemonType.WORKER));
+            this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(),
+                                                                      new ClusterStateContext(DaemonType.WORKER, topoConf));
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
-        }
-
-        StormTopology topology = workerTopologyContext.getRawTopology();
-        Map<String, SpoutSpec> spouts = topology.get_spouts();
-        Map<String, Bolt> bolts = topology.get_bolts();
-        if (spouts.containsKey(componentId)) {
-            this.type = StatsUtil.SPOUT;
-            this.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(topoConf),ObjectReader.getInt(topoConf.get(Config.NUM_STAT_BUCKETS)));
-        } else if (bolts.containsKey(componentId)) {
-            this.type = StatsUtil.BOLT;
-            this.stats = new BoltExecutorStats(ConfigUtils.samplingRate(topoConf),ObjectReader.getInt(topoConf.get(Config.NUM_STAT_BUCKETS)));
-        } else {
-            throw new RuntimeException("Could not find " + componentId + " in " + topology);
         }
 
         this.intervalToTaskToMetricToRegistry = new HashMap<>();
@@ -170,27 +146,27 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, topoConf);
         if (this.streamToComponentToGrouper != null) {
             this.groupers = streamToComponentToGrouper.values().stream()
-                .filter(Objects::nonNull)
-                .flatMap(m -> m.values().stream()).collect(Collectors.toList());
+                                                      .filter(Objects::nonNull)
+                                                      .flatMap(m -> m.values().stream()).collect(Collectors.toList());
         } else {
             this.groupers = Collections.emptyList();
         }
         this.reportError = new ReportError(topoConf, stormClusterState, stormId, componentId, workerTopologyContext);
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
         this.sampler = ConfigUtils.mkStatsSampler(topoConf);
-        this.throttleOn = workerData.getThrottleOn();
         this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
         this.rand = new Random(Utils.secureRandomLong());
         this.credentials = credentials;
         this.hasEventLoggers = StormCommon.hasEventLoggers(topoConf);
+        this.ackingEnabled = StormCommon.hasAckers(topoConf);
 
         try {
             this.hostname = Utils.hostname();
         } catch (UnknownHostException ignored) {
             this.hostname = "";
         }
-
         this.errorReportingMetrics = new ErrorReportingMetrics();
+        flushTuple = AddressedTuple.createFlushTuple(workerTopologyContext);
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -201,27 +177,26 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         String componentId = workerTopologyContext.getComponentId(taskIds.get(0));
 
         String type = getExecutorType(workerTopologyContext, componentId);
-        if (StatsUtil.SPOUT.equals(type)) {
+        if (ClientStatsUtil.SPOUT.equals(type)) {
             executor = new SpoutExecutor(workerState, executorId, credentials);
-            executor.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()),ObjectReader.getInt(executor.getStormConf().get(Config.NUM_STAT_BUCKETS)));
         } else {
             executor = new BoltExecutor(workerState, executorId, credentials);
-            executor.stats = new BoltExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()),ObjectReader.getInt(executor.getStormConf().get(Config.NUM_STAT_BUCKETS)));
         }
 
+        int minId = Integer.MAX_VALUE;
         Map<Integer, Task> idToTask = new HashMap<>();
         for (Integer taskId : taskIds) {
+            minId = Math.min(minId, taskId);
             try {
                 Task task = new Task(executor, taskId);
-                executor.sendUnanchored(
-                        task, StormCommon.SYSTEM_STREAM_ID, new Values("startup"), executor.getExecutorTransfer());
                 idToTask.put(taskId, task);
             } catch (IOException ex) {
                 throw Utils.wrapInRuntime(ex);
             }
         }
 
-        executor.idToTask = idToTask;
+        executor.idToTaskBase = minId;
+        executor.idToTask = Utils.convertToArray(idToTask, minId);
         return executor;
     }
 
@@ -230,45 +205,69 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         Map<String, SpoutSpec> spouts = topology.get_spouts();
         Map<String, Bolt> bolts = topology.get_bolts();
         if (spouts.containsKey(componentId)) {
-            return StatsUtil.SPOUT;
+            return ClientStatsUtil.SPOUT;
         } else if (bolts.containsKey(componentId)) {
-            return StatsUtil.BOLT;
+            return ClientStatsUtil.BOLT;
         } else {
             throw new RuntimeException("Could not find " + componentId + " in " + topology);
         }
     }
 
     /**
-     * separated from mkExecutor in order to replace executor transfer in executor data for testing
+     * Retrieves all values of all static fields of {@link Config} which represent all available configuration keys through reflection. The
+     * method assumes that they are {@code String}s through reflection.
+     *
+     * @return the list of retrieved field values
+     *
+     * @throws ClassCastException if one of the fields is not of type {@code String}
+     */
+    private static List<String> retrieveAllConfigKeys() {
+        List<String> ret = new ArrayList<>();
+        Field[] fields = Config.class.getFields();
+        for (int i = 0; i < fields.length; i++) {
+            try {
+                String fieldValue = (String) fields[i].get(null);
+                ret.add(fieldValue);
+            } catch (IllegalArgumentException e) {
+                LOG.error(e.getMessage(), e);
+            } catch (IllegalAccessException e) {
+                LOG.error(e.getMessage(), e);
+            }
+        }
+        return ret;
+    }
+
+    public Queue<AddressedTuple> getPendingEmits() {
+        return pendingEmits;
+    }
+
+    /**
+     * separated from mkExecutor in order to replace executor transfer in executor data for testing.
      */
     public ExecutorShutdown execute() throws Exception {
         LOG.info("Loading executor tasks " + componentId + ":" + executorId);
 
-        registerBackpressure();
-        Utils.SmartThread systemThreads =
-                Utils.asyncLoop(executorTransfer, executorTransfer.getName(), reportErrorDie);
-
         String handlerName = componentId + "-executor" + executorId;
-        Utils.SmartThread handlers =
-                Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, true, true, handlerName);
-        setupTicks(StatsUtil.SPOUT.equals(type));
+        Utils.SmartThread handler =
+            Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, true, true, handlerName);
 
         LOG.info("Finished loading executor " + componentId + ":" + executorId);
-        return new ExecutorShutdown(this, Lists.newArrayList(systemThreads, handlers), idToTask, receiveQueue, sendQueue);
+        return new ExecutorShutdown(this, Lists.newArrayList(handler), idToTask, receiveQueue);
     }
 
     public abstract void tupleActionFn(int taskId, TupleImpl tuple) throws Exception;
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void onEvent(Object event, long seq, boolean endOfBatch) throws Exception {
-        ArrayList<AddressedTuple> addressedTuples = (ArrayList<AddressedTuple>) event;
-        for (AddressedTuple addressedTuple : addressedTuples) {
-            TupleImpl tuple = (TupleImpl) addressedTuple.getTuple();
-            int taskId = addressedTuple.getDest();
-            if (isDebug) {
-                LOG.info("Processing received message FOR {} TUPLE: {}", taskId, tuple);
-            }
+    public void accept(Object event) {
+        AddressedTuple addressedTuple = (AddressedTuple) event;
+        int taskId = addressedTuple.getDest();
+
+        TupleImpl tuple = (TupleImpl) addressedTuple.getTuple();
+        if (isDebug) {
+            LOG.info("Processing received message FOR {} TUPLE: {}", taskId, tuple);
+        }
+
+        try {
             if (taskId != AddressedTuple.BROADCAST_DEST) {
                 tupleActionFn(taskId, tuple);
             } else {
@@ -276,13 +275,20 @@ public abstract class Executor implements Callable, EventHandler<Object> {
                     tupleActionFn(t, tuple);
                 }
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public void metricsTick(Task taskData, TupleImpl tuple) {
+    @Override
+    public void flush() {
+        // NO-OP
+    }
+
+    public void metricsTick(Task task, TupleImpl tuple) {
         try {
             Integer interval = tuple.getInteger(0);
-            int taskId = taskData.getTaskId();
+            int taskId = task.getTaskId();
             Map<Integer, Map<String, IMetric>> taskToMetricToRegistry = intervalToTaskToMetricToRegistry.get(interval);
             Map<String, IMetric> nameToRegistry = null;
             if (taskToMetricToRegistry != null) {
@@ -290,8 +296,8 @@ public abstract class Executor implements Callable, EventHandler<Object> {
             }
             if (nameToRegistry != null) {
                 IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
-                        hostname, workerTopologyContext.getThisWorkerPort(),
-                        componentId, taskId, Time.currentTimeSecs(), interval);
+                    hostname, workerTopologyContext.getThisWorkerPort(),
+                    componentId, taskId, Time.currentTimeSecs(), interval);
                 List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>();
                 for (Map.Entry<String, IMetric> entry : nameToRegistry.entrySet()) {
                     IMetric metric = entry.getValue();
@@ -302,8 +308,9 @@ public abstract class Executor implements Callable, EventHandler<Object> {
                     }
                 }
                 if (!dataPoints.isEmpty()) {
-                    sendUnanchored(taskData, Constants.METRICS_STREAM_ID,
-                            new Values(taskInfo, dataPoints), executorTransfer);
+                    task.sendUnanchored(Constants.METRICS_STREAM_ID,
+                                        new Values(taskInfo, dataPoints), executorTransfer, pendingEmits);
+                    executorTransfer.flush();
                 }
             }
         } catch (Exception e) {
@@ -314,42 +321,52 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     protected void setupMetrics() {
         for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
             StormTimer timerTask = workerData.getUserTimer();
-            timerTask.scheduleRecurring(interval, interval, new Runnable() {
-                @Override
-                public void run() {
-                    TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(interval),
-                            (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                    List<AddressedTuple> metricsTickTuple =
-                            Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
-                    receiveQueue.publish(metricsTickTuple);
-                }
-            });
+            timerTask.scheduleRecurring(interval, interval,
+                                        () -> {
+                                            TupleImpl tuple =
+                                                new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
+                                                              (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
+                                            AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                                            try {
+                                                receiveQueue.publish(metricsTickTuple);
+                                                receiveQueue.flush();  // avoid buffering
+                                            } catch (InterruptedException e) {
+                                                LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
+                                                Thread.currentThread().interrupt();
+                                                return;
+                                            }
+                                        }
+            );
         }
     }
 
-    public void sendUnanchored(Task task, String stream, List<Object> values, ExecutorTransfer transfer) {
-        Tuple tuple = task.getTuple(stream, values);
-        List<Integer> tasks = task.getOutgoingTasks(stream, values);
-        for (Integer t : tasks) {
-            transfer.transfer(t, tuple);
-        }
-    }
-
-    /**
-     * Send sampled data to the eventlogger if the global or component level debug flag is set (via nimbus api).
-     */
-    public void sendToEventLogger(Executor executor, Task taskData, List values,
-                                  String componentId, Object messageId, Random random) {
-        Map<String, DebugOptions> componentDebug = executor.getStormComponentDebug().get();
-        DebugOptions debugOptions = componentDebug.get(componentId);
-        if (debugOptions == null) {
-            debugOptions = componentDebug.get(executor.getStormId());
-        }
-        double spct = ((debugOptions != null) && (debugOptions.is_enable())) ? debugOptions.get_samplingpct() : 0;
-        if (spct > 0 && (random.nextDouble() * 100) < spct) {
-            sendUnanchored(taskData, StormCommon.EVENTLOGGER_STREAM_ID,
-                    new Values(componentId, messageId, System.currentTimeMillis(), values),
-                    executor.getExecutorTransfer());
+    protected void setupTicks(boolean isSpout) {
+        final Integer tickTimeSecs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
+        if (tickTimeSecs != null) {
+            boolean enableMessageTimeout = (Boolean) topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
+            if ((!Acker.ACKER_COMPONENT_ID.equals(componentId) && Utils.isSystemId(componentId))
+                || (!enableMessageTimeout && isSpout)) {
+                LOG.info("Timeouts disabled for executor {}:{}", componentId, executorId);
+            } else {
+                StormTimer timerTask = workerData.getUserTimer();
+                timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs,
+                                            () -> {
+                                                TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
+                                                                                Constants.SYSTEM_COMPONENT_ID,
+                                                                                (int) Constants.SYSTEM_TASK_ID,
+                                                                                Constants.SYSTEM_TICK_STREAM_ID);
+                                                AddressedTuple tickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                                                try {
+                                                    receiveQueue.publish(tickTuple);
+                                                    receiveQueue.flush(); // avoid buffering
+                                                } catch (InterruptedException e) {
+                                                    LOG.warn("Thread interrupted when emitting tick tuple. Setting interrupt flag.");
+                                                    Thread.currentThread().interrupt();
+                                                    return;
+                                                }
+                                            }
+                );
+            }
         }
     }
 
@@ -359,62 +376,22 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         }
     }
 
-    private void registerBackpressure() {
-        receiveQueue.registerBackpressureCallback(new DisruptorBackpressureCallback() {
-            @Override
-            public void highWaterMark() throws Exception {
-                LOG.debug("executor " + executorId + " is congested, set backpressure flag true");
-                WorkerBackpressureThread.notifyBackpressureChecker(workerData.getBackpressureTrigger());
-            }
-
-            @Override
-            public void lowWaterMark() throws Exception {
-                LOG.debug("executor " + executorId + " is not-congested, set backpressure flag false");
-                WorkerBackpressureThread.notifyBackpressureChecker(workerData.getBackpressureTrigger());
-            }
-        });
-        receiveQueue.setHighWaterMark(ObjectReader.getDouble(topoConf.get(Config.BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK)));
-        receiveQueue.setLowWaterMark(ObjectReader.getDouble(topoConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK)));
-        receiveQueue.setEnableBackpressure(ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE), false));
-    }
-
-    protected void setupTicks(boolean isSpout) {
-        final Integer tickTimeSecs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
-        boolean enableMessageTimeout = (Boolean) topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
-        if (tickTimeSecs != null) {
-            if ((!Acker.ACKER_COMPONENT_ID.equals(componentId) && Utils.isSystemId(componentId))
-                || (!enableMessageTimeout && isSpout)) {
-                LOG.info("Timeouts disabled for executor {}:{}", componentId, executorId);
-            } else {
-                StormTimer timerTask = workerData.getUserTimer();
-                timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs, () -> {
-                    // We should create a new tick tuple for each recurrence instead of sharing object
-                    // More detail on https://issues.apache.org/jira/browse/STORM-2912
-                    TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
-                            (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TICK_STREAM_ID);
-                    final List<AddressedTuple> tickTuple =
-                            Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
-                    receiveQueue.publish(tickTuple);
-                });
-            }
+    // Called by flush-tuple-timer thread
+    public boolean publishFlushTuple() {
+        if (receiveQueue.tryPublishDirect(flushTuple)) {
+            LOG.debug("Published Flush tuple to: {} ", getComponentId());
+            return true;
+        } else {
+            LOG.debug("RecvQ is currently full, will retry publishing Flush Tuple later to : {}", getComponentId());
+            return false;
         }
     }
 
-
-    private DisruptorQueue mkExecutorBatchQueue(Map<String, Object> topoConf, List<Long> executorId) {
-        int sendSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE));
-        int waitTimeOutMs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS));
-        int batchSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE));
-        int batchTimeOutMs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
-        return new DisruptorQueue("executor" + executorId + "-send-queue", ProducerType.MULTI,
-                sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
-    }
-
     /**
-     * Returns map of stream id to component id to grouper
+     * Returns map of stream id to component id to grouper.
      */
     private Map<String, Map<String, LoadAwareCustomStreamGrouping>> outboundComponents(
-            WorkerTopologyContext workerTopologyContext, String componentId, Map<String, Object> topoConf) {
+        WorkerTopologyContext workerTopologyContext, String componentId, Map<String, Object> topoConf) {
         Map<String, Map<String, LoadAwareCustomStreamGrouping>> ret = new HashMap<>();
 
         Map<String, Map<String, Grouping>> outputGroupings = workerTopologyContext.getTargets(componentId);
@@ -428,7 +405,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
                 Grouping grouping = cg.getValue();
                 List<Integer> outTasks = workerTopologyContext.getComponentTasks(component);
                 LoadAwareCustomStreamGrouping grouper = GrouperFactory.mkGrouper(
-                        workerTopologyContext, componentId, streamId, outFields, grouping, outTasks, topoConf);
+                    workerTopologyContext, componentId, streamId, outFields, grouping, outTasks, topoConf);
                 componentGrouper.put(component, grouper);
             }
             if (componentGrouper.size() > 0) {
@@ -445,8 +422,13 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         return ret;
     }
 
-    private Map normalizedComponentConf(Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
-        List<Object> keysToRemove = All_CONFIGS();
+    // =============================================================================
+    // ============================ getter methods =================================
+    // =============================================================================
+
+    private Map<String, Object> normalizedComponentConf(
+        Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
+        List<String> keysToRemove = retrieveAllConfigKeys();
         keysToRemove.remove(Config.TOPOLOGY_DEBUG);
         keysToRemove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);
         keysToRemove.remove(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
@@ -464,11 +446,11 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         keysToRemove.remove(Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
         keysToRemove.remove(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
 
-        Map<Object, Object> componentConf;
+        Map<String, Object> componentConf;
         String specJsonConf = topologyContext.getComponentCommon(componentId).get_json_conf();
         if (specJsonConf != null) {
             try {
-                componentConf = (Map<Object, Object>) JSONValue.parseWithException(specJsonConf);
+                componentConf = (Map<String, Object>) JSONValue.parseWithException(specJsonConf);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }
@@ -479,16 +461,12 @@ public abstract class Executor implements Callable, EventHandler<Object> {
             componentConf = new HashMap<>();
         }
 
-        Map<Object, Object> ret = new HashMap<>();
+        Map<String, Object> ret = new HashMap<>();
         ret.putAll(topoConf);
         ret.putAll(componentConf);
 
         return ret;
     }
-
-    // =============================================================================
-    // ============================ getter methods =================================
-    // =============================================================================
 
     public List<Long> getExecutorId() {
         return executorId;
@@ -506,7 +484,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         return openOrPrepareWasCalled;
     }
 
-    public Map getStormConf() {
+    public Map<String, Object> getTopoConf() {
         return topoConf;
     }
 
@@ -514,13 +492,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         return stormId;
     }
 
-    public CommonStats getStats() {
-        return stats;
-    }
-
-    public AtomicBoolean getThrottleOn() {
-        return throttleOn;
-    }
+    public abstract CommonStats getStats();
 
     public String getType() {
         return type;
@@ -546,24 +518,16 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         return workerTopologyContext;
     }
 
-    public Callable<Boolean> getSampler() {
-        return sampler;
+    public boolean samplerCheck() {
+        return sampler.getAsBoolean();
     }
 
     public AtomicReference<Map<String, DebugOptions>> getStormComponentDebug() {
         return stormComponentDebug;
     }
 
-    public DisruptorQueue getReceiveQueue() {
+    public JCQueue getReceiveQueue() {
         return receiveQueue;
-    }
-
-    public boolean getBackpressure() {
-        return receiveQueue.getThrottleOn();
-    }
-
-    public DisruptorQueue getTransferWorkerQueue() {
-        return sendQueue;
     }
 
     public IStormClusterState getStormClusterState() {
@@ -589,24 +553,6 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     @VisibleForTesting
     public void setLocalExecutorTransfer(ExecutorTransfer executorTransfer) {
         this.executorTransfer = executorTransfer;
-    }
-
-    private static List<Object> All_CONFIGS() {
-        List<Object> ret = new ArrayList<Object>();
-        Config config = new Config();
-        Class<?> ConfigClass = config.getClass();
-        Field[] fields = ConfigClass.getFields();
-        for (int i = 0; i < fields.length; i++) {
-            try {
-                Object obj = fields[i].get(null);
-                ret.add(obj);
-            } catch (IllegalArgumentException e) {
-                LOG.error(e.getMessage(), e);
-            } catch (IllegalAccessException e) {
-                LOG.error(e.getMessage(), e);
-            }
-        }
-        return ret;
     }
 
 }

@@ -49,7 +49,7 @@ public final class HdfsSecurityUtil {
     private HdfsSecurityUtil() {
     }
 
-    public static void login(Map conf, Configuration hdfsConfig) throws IOException {
+    public static void login(Map<String, Object> conf, Configuration hdfsConfig) throws IOException {
         //If AutoHDFS is specified, do not attempt to login using keytabs, only kept for backward compatibility.
         if(conf.get(TOPOLOGY_AUTO_CREDENTIALS) == null ||
                 (!(((List)conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHDFS.class.getName())) &&

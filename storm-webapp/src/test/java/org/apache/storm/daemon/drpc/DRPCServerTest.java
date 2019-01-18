@@ -37,6 +37,7 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.drpc.DRPCInvocationsClient;
 import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.SimpleTransportPlugin;
 import org.apache.storm.utils.DRPCClient;
 import org.junit.AfterClass;
@@ -88,7 +89,7 @@ public class DRPCServerTest {
     @Test
     public void testGoodThrift() throws Exception {
         Map<String, Object> conf = getConf(0, 0, null);
-        try (DRPCServer server = new DRPCServer(conf)) {
+        try (DRPCServer server = new DRPCServer(conf, new StormMetricsRegistry())) {
             server.start();
             try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDrpcPort());
                 DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDrpcInvokePort())) {
@@ -107,7 +108,7 @@ public class DRPCServerTest {
     @Test
     public void testFailedThrift() throws Exception {
         Map<String, Object> conf = getConf(0, 0, null);
-        try (DRPCServer server = new DRPCServer(conf)) {
+        try (DRPCServer server = new DRPCServer(conf, new StormMetricsRegistry())) {
             server.start();
             try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDrpcPort());
                     DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDrpcInvokePort())) {
@@ -146,7 +147,7 @@ public class DRPCServerTest {
     public void testGoodHttpGet() throws Exception {
         LOG.info("STARTING HTTP GET TEST...");
         Map<String, Object> conf = getConf(0, 0, 0);
-        try (DRPCServer server = new DRPCServer(conf)) {
+        try (DRPCServer server = new DRPCServer(conf, new StormMetricsRegistry())) {
             server.start();
             //TODO need a better way to do this
             Thread.sleep(2000);
@@ -167,7 +168,7 @@ public class DRPCServerTest {
     public void testFailedHttpGet() throws Exception {
         LOG.info("STARTING HTTP GET (FAIL) TEST...");
         Map<String, Object> conf = getConf(0, 0, 0);
-        try (DRPCServer server = new DRPCServer(conf)) {
+        try (DRPCServer server = new DRPCServer(conf, new StormMetricsRegistry())) {
             server.start();
             //TODO need a better way to do this
             Thread.sleep(2000);

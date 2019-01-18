@@ -28,7 +28,9 @@ public class ObjectReader {
         if (o == null) {
             return new ArrayList<String>();
         } else if (o instanceof String) {
-            return new ArrayList<String>() {{ add((String) o); }};
+            return new ArrayList<String>() {{
+                add((String) o);
+            }};
         } else if (o instanceof Collection) {
             List<String> answer = new ArrayList<String>();
             for (Object v : (Collection) o) {
@@ -61,8 +63,8 @@ public class ObjectReader {
         }
 
         if (o instanceof Integer ||
-                o instanceof Short ||
-                o instanceof Byte) {
+            o instanceof Short ||
+            o instanceof Byte) {
             return ((Number) o).intValue();
         } else if (o instanceof Long) {
             final long l = (Long) o;
@@ -74,6 +76,22 @@ public class ObjectReader {
         }
 
         throw new IllegalArgumentException("Don't know how to convert " + o + " to int");
+    }
+
+    public static Long getLong(Object o) {
+        return getLong(o, null);
+    }
+
+    public static Long getLong(Object o, Long defaultValue) {
+        if (null == o) {
+            return defaultValue;
+        }
+        if (o instanceof Number) {
+            return ((Number) o).longValue();
+        } else if (o instanceof String) {
+            return Long.valueOf((String) o);
+        }
+        throw new IllegalArgumentException("Don't know how to convert " + o + " to a long");
     }
 
     public static Double getDouble(Object o) {

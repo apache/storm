@@ -45,9 +45,9 @@ public class MongoState implements State {
 
     private Options options;
     private MongoDbClient mongoClient;
-    private Map map;
+    private Map<String, Object> map;
 
-    protected MongoState(Map map, Options options) {
+    protected MongoState(Map<String, Object> map, Options options) {
         this.options = options;
         this.map = map;
     }

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.utils.staticmocking;
 
 import org.apache.storm.utils.Utils;
@@ -33,7 +34,7 @@ public class UtilsInstaller implements AutoCloseable {
     public void close() throws Exception {
         if (Utils.setInstance(_oldInstance) != _curInstance) {
             throw new IllegalStateException(
-                    "Instances of this resource must be closed in reverse order of opening.");
+                "Instances of this resource must be closed in reverse order of opening.");
         }
     }
 }

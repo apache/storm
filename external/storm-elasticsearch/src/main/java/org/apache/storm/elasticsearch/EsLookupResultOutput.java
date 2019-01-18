@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch;
 
 import java.io.Serializable;
@@ -25,17 +26,22 @@ import org.apache.storm.tuple.Values;
 import org.elasticsearch.client.Response;
 
 /**
- * @since 0.11
  * The adapter to convert the results fetched from Elasticsearch to values.
+ *
+ * @since 0.11
  */
 public interface EsLookupResultOutput extends Serializable {
 
     /**
+     * Convert Elasticsearch response to a collection of {@link Values}.
+     *
      * @return collection of values to emit.
      */
     Collection<Values> toValues(Response response);
 
     /**
+     * {@link Fields} to be declared for output.
+     *
      * @return output fields to declare.
      */
     Fields fields();

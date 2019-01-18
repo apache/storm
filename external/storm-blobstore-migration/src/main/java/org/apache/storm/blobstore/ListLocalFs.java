@@ -44,7 +44,7 @@ public class ListLocalFs {
         
         /* CREATE THE BLOBSTORE */
         LocalFsBlobStore lfsBlobStore = new LocalFsBlobStore();
-        lfsBlobStore.prepare(lfsConf, null, NimbusInfo.fromConf(lfsConf));
+        lfsBlobStore.prepare(lfsConf, null, NimbusInfo.fromConf(lfsConf), null);
         
         /* LOOK AT HDFS BLOBSTORE */
         System.out.println("Listing Local blobstore keys.");

@@ -26,11 +26,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyListOf;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMapOf;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anySetOf;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -53,10 +51,12 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import java.util.function.Predicate;
 import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
-import org.apache.storm.daemon.logviewer.testsupport.MockFileBuilder;
+import org.apache.storm.daemon.logviewer.testsupport.MockRemovableFileBuilder;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Seq;
@@ -81,9 +81,10 @@ public class LogCleanerTest {
         conf.put(LOGVIEWER_CLEANUP_AGE_MINS, 60);
         conf.put(LOGVIEWER_CLEANUP_INTERVAL_SECS, 300);
 
-        WorkerLogs workerLogs = new WorkerLogs(conf, null);
+        StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+        WorkerLogs workerLogs = new WorkerLogs(conf, null, metricRegistry);
 
-        LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, null);
+        LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, null, metricRegistry);
 
         final long nowMillis = Time.currentTimeMillis();
         final long cutoffMillis = logCleaner.cleanupCutoffAgeMillis(nowMillis);
@@ -96,10 +97,10 @@ public class LogCleanerTest {
         matchingFiles.add(new MockDirectoryBuilder().setDirName("7077").setMtime(oldMtimeMillis).build());
 
         List<File> excludedFiles = new ArrayList<>();
-        excludedFiles.add(new MockFileBuilder().setFileName("oldlog-1-2-worker-.log").setMtime(oldMtimeMillis).build());
-        excludedFiles.add(new MockFileBuilder().setFileName("newlog-1-2-worker-.log").setMtime(newMtimeMillis).build());
-        excludedFiles.add(new MockFileBuilder().setFileName("some-old-file.txt").setMtime(oldMtimeMillis).build());
-        excludedFiles.add(new MockFileBuilder().setFileName("olddir-1-2-worker.log").setMtime(newMtimeMillis).build());
+        excludedFiles.add(new MockRemovableFileBuilder().setFileName("oldlog-1-2-worker-.log").setMtime(oldMtimeMillis).build());
+        excludedFiles.add(new MockRemovableFileBuilder().setFileName("newlog-1-2-worker-.log").setMtime(newMtimeMillis).build());
+        excludedFiles.add(new MockRemovableFileBuilder().setFileName("some-old-file.txt").setMtime(oldMtimeMillis).build());
+        excludedFiles.add(new MockRemovableFileBuilder().setFileName("olddir-1-2-worker.log").setMtime(newMtimeMillis).build());
         excludedFiles.add(new MockDirectoryBuilder().setDirName("metadata").setMtime(newMtimeMillis).build());
         excludedFiles.add(new MockDirectoryBuilder().setDirName("newdir").setMtime(newMtimeMillis).build());
 
@@ -130,13 +131,13 @@ public class LogCleanerTest {
 
             long nowMillis = Time.currentTimeMillis();
 
-            List<File> files1 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("A" + idx)
+            List<File> files1 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("A" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
-            List<File> files2 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("B" + idx)
+            List<File> files2 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("B" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
-            List<File> files3 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("C" + idx)
+            List<File> files3 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("C" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
             File port1Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1/port1")
@@ -158,10 +159,14 @@ public class LogCleanerTest {
                     .setFiles(rootFiles).build();
 
             Map<String, Object> conf = Utils.readStormConfig();
-            WorkerLogs workerLogs = new WorkerLogs(conf, rootDir);
-            LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, rootDir);
+            StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+            WorkerLogs workerLogs = new WorkerLogs(conf, rootDir, metricRegistry);
+            LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, rootDir, metricRegistry);
 
-            List<Integer> deletedFiles = logCleaner.perWorkerDirCleanup(1200);
+            List<Integer> deletedFiles = logCleaner.perWorkerDirCleanup(1200)
+                .stream()
+                .map(deletionMeta -> deletionMeta.deletedFiles)
+                .collect(toList());
             assertEquals(Integer.valueOf(4), deletedFiles.get(0));
             assertEquals(Integer.valueOf(4), deletedFiles.get(1));
             assertEquals(Integer.valueOf(4), deletedFiles.get(deletedFiles.size() - 1));
@@ -183,18 +188,18 @@ public class LogCleanerTest {
                 List<Path> paths = Arrays.stream(file.listFiles()).map(f -> mkMockPath(f)).collect(toList());
                 return mkDirectoryStream(paths);
             });
-            when(mockDirectoryCleaner.deleteOldestWhileTooLarge(anyListOf(File.class), anyLong(), anyBoolean(), anySetOf(String.class)))
+            when(mockDirectoryCleaner.deleteOldestWhileTooLarge(anyListOf(File.class), anyLong(), anyBoolean(), anySetOf(File.class)))
                     .thenCallRealMethod();
 
             long nowMillis = Time.currentTimeMillis();
 
-            List<File> files1 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("A" + idx + ".log")
+            List<File> files1 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("A" + idx + ".log")
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
-            List<File> files2 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("B" + idx)
+            List<File> files2 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("B" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
-            List<File> files3 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("C" + idx)
+            List<File> files3 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("C" + idx)
                     .setMtime(nowMillis + (100 * idx)).setLength(200).build())
                     .collect(toList());
 
@@ -218,15 +223,16 @@ public class LogCleanerTest {
                     .setFiles(rootFiles).build();
 
             Map<String, Object> conf = Utils.readStormConfig();
-            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, rootDir) {
+            StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, rootDir, metricRegistry) {
                 @Override
-                public SortedSet<String> getAliveWorkerDirs() throws Exception {
-                    return new TreeSet<>(Collections.singletonList("/workers-artifacts/topo1/port1"));
+                public SortedSet<File> getAliveWorkerDirs() {
+                    return new TreeSet<>(Collections.singletonList(new File("/workers-artifacts/topo1/port1")));
                 }
             };
 
-            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, mockDirectoryCleaner, rootDir);
-            int deletedFiles = logCleaner.globalLogCleanup(2400);
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, mockDirectoryCleaner, rootDir, metricRegistry);
+            int deletedFiles = logCleaner.globalLogCleanup(2400).deletedFiles;
             assertEquals(18, deletedFiles);
         } finally {
             Utils.setInstance(prevUtils);
@@ -256,20 +262,26 @@ public class LogCleanerTest {
             SupervisorUtils.setInstance(mockedSupervisorUtils);
 
             Map<String, Object> conf = Utils.readStormConfig();
-            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null) {
+            StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null, metricRegistry) {
                 @Override
-                public Map<String, File> identifyWorkerLogDirs(Set<File> logDirs) {
-                    Map<String, File> ret = new HashMap<>();
-                    ret.put("42", unexpectedDir1);
-                    ret.put("007", expectedDir2);
-                    // this tests a directory with no yaml file thus no worker id
-                    ret.put("", expectedDir3);
+                public SortedSet<File> getLogDirs(Set<File> logDirs, Predicate<String> predicate) {
+                    TreeSet<File> ret = new TreeSet<>();
+                    if (predicate.test("42")) {
+                        ret.add(unexpectedDir1);
+                    }
+                    if (predicate.test("007")) {
+                        ret.add(expectedDir2);
+                    }
+                    if(predicate.test("")) {
+                        ret.add(expectedDir3);
+                    }
 
                     return ret;
                 }
             };
 
-            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(), null);
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry);
 
             when(mockedSupervisorUtils.readWorkerHeartbeatsImpl(anyMapOf(String.class, Object.class))).thenReturn(idToHb);
             assertEquals(Sets.newSet(expectedDir2, expectedDir3), logCleaner.getDeadWorkerDirs(nowSecs, logDirs));
@@ -283,8 +295,8 @@ public class LogCleanerTest {
      */
     @Test
     public void testCleanupFn() throws IOException {
-        File mockFile1 = new MockFileBuilder().setFileName("delete-me1").build();
-        File mockFile2 = new MockFileBuilder().setFileName("delete-me2").build();
+        File mockFile1 = new MockRemovableFileBuilder().setFileName("delete-me1").build();
+        File mockFile2 = new MockRemovableFileBuilder().setFileName("delete-me2").build();
 
         Utils prevUtils = null;
         try {
@@ -300,9 +312,10 @@ public class LogCleanerTest {
 
 
             Map<String, Object> conf = Utils.readStormConfig();
-            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null);
+            StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null, metricRegistry);
 
-            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(), null) {
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry) {
                 @Override
                 Set<File> selectDirsForCleanup(long nowMillis) {
                     return Collections.emptySet();
@@ -311,6 +324,7 @@ public class LogCleanerTest {
                 @Override
                 SortedSet<File> getDeadWorkerDirs(int nowSecs, Set<File> logDirs) throws Exception {
                     SortedSet<File> dirs = new TreeSet<>();
+                    //Test maybe flawed, as those weren't actually mocked dirs but mocked regular files
                     dirs.add(mockFile1);
                     dirs.add(mockFile2);
                     return dirs;

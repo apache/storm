@@ -1,35 +1,27 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.stats;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-
-import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.generated.WorkerSummary;
-
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.storm.scheduler.WorkerSlot;
 import org.junit.Assert;
+import org.junit.Test;
 
 public class TestStatsUtil {
 
@@ -42,7 +34,7 @@ public class TestStatsUtil {
     private Map<String, String> nodeHost = new HashMap<String, String>();
     private Map<WorkerSlot, WorkerResources> worker2Resources = new HashMap<WorkerSlot, WorkerResources>();
 
-    private List<Long> makeExecutorId(int firstTask, int lastTask){
+    private List<Long> makeExecutorId(int firstTask, int lastTask) {
         return Arrays.asList(new Long(firstTask), new Long(lastTask));
     }
 
@@ -51,7 +43,7 @@ public class TestStatsUtil {
         hostPort.add("node1");
         hostPort.add(new Long(1));
 
-        exec2NodePort.put(makeExecutorId(1,1), hostPort);
+        exec2NodePort.put(makeExecutorId(1, 1), hostPort);
 
         nodeHost.put("node1", "host1");
         nodeHost.put("node2", "host2");
@@ -70,14 +62,8 @@ public class TestStatsUtil {
         HashMap<String, Object> exec2Beat = new HashMap<String, Object>();
         exec2Beat.put("uptime", 200);
 
-        Map<String, Object> beat1 = new HashMap<String, Object>();
-        beat1.put("heartbeat", exec1Beat);
-
-        Map<String, Object> beat2 = new HashMap<String, Object>();
-        beat2.put("heartbeat", exec2Beat);
-
-        beats.put(exec1, beat1);
-        beats.put(exec2, beat2);
+        beats.put(exec1, exec1Beat);
+        beats.put(exec2, exec2Beat);
 
         task2Component.put(1, "my-component");
         task2Component.put(2, "__sys1");
@@ -125,9 +111,9 @@ public class TestStatsUtil {
     }
 
     private List<WorkerSummary> checkWorkerStats(boolean includeSys, boolean userAuthorized, String filterSupervisor) {
-        List<WorkerSummary> summaries = 
-            StatsUtil.aggWorkerStats("my-storm-id", "my-storm-name", 
-                                     task2Component, beats, exec2NodePort, nodeHost, worker2Resources, 
+        List<WorkerSummary> summaries =
+            StatsUtil.aggWorkerStats("my-storm-id", "my-storm-name",
+                                     task2Component, beats, exec2NodePort, nodeHost, worker2Resources,
                                      includeSys, userAuthorized, filterSupervisor);
         for (WorkerSummary ws : summaries) {
             String host = ws.get_host();
@@ -184,8 +170,8 @@ public class TestStatsUtil {
     @Test
     public void aggWorkerStats() {
         makeTopoInfo();
-        List<WorkerSummary> summaries = checkWorkerStats(true /*include sys*/, 
-                                                         true /*user authorized*/, 
+        List<WorkerSummary> summaries = checkWorkerStats(true /*include sys*/,
+                                                         true /*user authorized*/,
                                                          null /*filter supervisor*/);
         WorkerSummary ws = getWorkerSummaryForPort(summaries, 1);
         Assert.assertEquals(1, ws.get_component_to_num_tasks().size());
@@ -196,8 +182,8 @@ public class TestStatsUtil {
     @Test
     public void aggWorkerStatsWithSystemComponents() {
         makeTopoInfoWithSysWorker();
-        List<WorkerSummary> summaries = checkWorkerStats(true /*include sys*/, 
-                                                         true /*user authorized*/, 
+        List<WorkerSummary> summaries = checkWorkerStats(true /*include sys*/,
+                                                         true /*user authorized*/,
                                                          null /*filter supervisor*/);
         WorkerSummary ws = getWorkerSummaryForPort(summaries, 2);
         // since we made sys components visible, the component map has all system components
@@ -211,8 +197,8 @@ public class TestStatsUtil {
     @Test
     public void aggWorkerStatsWithHiddenSystemComponents() {
         makeTopoInfoWithSysWorker();
-        List<WorkerSummary> summaries = checkWorkerStats(false /*DON'T include sys*/, 
-                                                         true  /*user authorized*/, 
+        List<WorkerSummary> summaries = checkWorkerStats(false /*DON'T include sys*/,
+                                                         true  /*user authorized*/,
                                                          null  /*filter supervisor*/);
         WorkerSummary ws1 = getWorkerSummaryForPort(summaries, 1);
         WorkerSummary ws2 = getWorkerSummaryForPort(summaries, 2);
@@ -225,8 +211,8 @@ public class TestStatsUtil {
     @Test
     public void aggWorkerStatsForUnauthorizedUser() {
         makeTopoInfoWithSysWorker();
-        List<WorkerSummary> summaries = checkWorkerStats(true  /*include sys (should not matter)*/, 
-                                                         false /*user NOT authorized*/, 
+        List<WorkerSummary> summaries = checkWorkerStats(true  /*include sys (should not matter)*/,
+                                                         false /*user NOT authorized*/,
                                                          null  /*filter supervisor*/);
         WorkerSummary ws1 = getWorkerSummaryForPort(summaries, 1);
         WorkerSummary ws2 = getWorkerSummaryForPort(summaries, 2);
@@ -239,8 +225,8 @@ public class TestStatsUtil {
     @Test
     public void aggWorkerStatsFilterSupervisor() {
         makeTopoInfoWithMissingBeats();
-        List<WorkerSummary> summaries = checkWorkerStats(true    /*include sys*/, 
-                                                         true    /*user authorized*/, 
+        List<WorkerSummary> summaries = checkWorkerStats(true    /*include sys*/,
+                                                         true    /*user authorized*/,
                                                          "node3" /*filter supervisor*/);
         WorkerSummary ws = getWorkerSummaryForPort(summaries, 3);
         // only host3 should be returned given filter
@@ -253,8 +239,8 @@ public class TestStatsUtil {
     @Test
     public void aggWorkerStatsFilterSupervisorAndHideSystemComponents() {
         makeTopoInfoWithMissingBeats();
-        List<WorkerSummary> summaries = checkWorkerStats(false   /*DON'T include sys*/, 
-                                                         true    /*user authorized*/, 
+        List<WorkerSummary> summaries = checkWorkerStats(false   /*DON'T include sys*/,
+                                                         true    /*user authorized*/,
                                                          "node3" /*filter supervisor*/);
 
         WorkerSummary ws = getWorkerSummaryForPort(summaries, 3);

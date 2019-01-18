@@ -27,6 +27,10 @@ storm.messaging.netty.max_retries: 10
 storm.messaging.netty.min_wait_ms: 1000
 storm.messaging.netty.max_wait_ms: 5000
 
+# Executor metrics reporting interval, keep it short enough for cases fetching executors metrics
+# through restful API
+executor.metrics.frequency.secs: 3
+
 drpc.servers:
   - "node1"
 

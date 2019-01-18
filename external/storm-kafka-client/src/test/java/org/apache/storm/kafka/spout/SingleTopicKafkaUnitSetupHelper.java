@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.Map;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
@@ -59,7 +59,7 @@ public class SingleTopicKafkaUnitSetupHelper {
      * that there are only commits on one topic,
      * and that the committed offset covers messageCount messages
      */
-    public static <K, V> void verifyAllMessagesCommitted(KafkaConsumer<K, V> consumerSpy,
+    public static <K, V> void verifyAllMessagesCommitted(Consumer<K, V> consumerSpy,
         ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> commitCapture, long messageCount) {
         verify(consumerSpy, times(1)).commitSync(commitCapture.capture());
         Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();

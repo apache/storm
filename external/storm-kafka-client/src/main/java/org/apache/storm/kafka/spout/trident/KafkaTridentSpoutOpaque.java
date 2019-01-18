@@ -20,8 +20,9 @@ package org.apache.storm.kafka.spout.trident;
 
 import java.util.List;
 import java.util.Map;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
+import org.apache.storm.kafka.spout.RecordTranslator;
+import org.apache.storm.kafka.spout.trident.internal.OutputFieldsExtractor;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.tuple.Fields;
@@ -34,26 +35,27 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaque.class);
 
-    private final KafkaTridentSpoutManager<K, V> kafkaManager;
-
-    public KafkaTridentSpoutOpaque(KafkaSpoutConfig<K, V> conf) {
-        this(new KafkaTridentSpoutManager<>(conf));
-    }
+    private final KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig;
+    private final OutputFieldsExtractor outputFieldsExtractor;
     
-    public KafkaTridentSpoutOpaque(KafkaTridentSpoutManager<K, V> kafkaManager) {
-        this.kafkaManager = kafkaManager;
+    /**
+     * Creates a new opaque transactional Trident Kafka spout.
+     */
+    public KafkaTridentSpoutOpaque(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig) {
+        this.kafkaSpoutConfig = kafkaSpoutConfig;
+        this.outputFieldsExtractor = new OutputFieldsExtractor();
         LOG.debug("Created {}", this.toString());
     }
 
     @Override
     public Emitter<List<Map<String, Object>>, KafkaTridentSpoutTopicPartition, Map<String, Object>> getEmitter(
             Map<String, Object> conf, TopologyContext context) {
-        return new KafkaTridentSpoutEmitter<>(kafkaManager, context);
+        return new KafkaTridentOpaqueSpoutEmitter<>(new KafkaTridentSpoutEmitter<>(kafkaSpoutConfig, context));
     }
 
     @Override
     public Coordinator<List<Map<String, Object>>> getCoordinator(Map<String, Object> conf, TopologyContext context) {
-        return new KafkaTridentSpoutOpaqueCoordinator<>(kafkaManager);
+        return new KafkaTridentSpoutCoordinator<>(kafkaSpoutConfig);
     }
 
     @Override
@@ -63,7 +65,7 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     @Override
     public Fields getOutputFields() {
-        final Fields outputFields = kafkaManager.getFields();
+        final Fields outputFields = outputFieldsExtractor.getOutputFields(kafkaSpoutConfig);
         LOG.debug("OutputFields = {}", outputFields);
         return outputFields;
     }
@@ -71,6 +73,6 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
     @Override
     public final String toString() {
         return super.toString()
-                + "{kafkaManager=" + kafkaManager + '}';
+                + "{kafkaSpoutConfig=" + kafkaSpoutConfig + '}';
     }
 }

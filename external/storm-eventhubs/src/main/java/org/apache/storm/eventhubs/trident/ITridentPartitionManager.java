@@ -15,21 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.trident;
 
+import java.util.List;
 import org.apache.storm.eventhubs.spout.EventDataWrap;
 
-import java.util.List;
-
 public interface ITridentPartitionManager {
-  boolean open(String offset);
-  void close();
-  
-  /**
-   * receive a batch of messages from EvenHub up to "count" messages
-   * @param offset the starting offset
-   * @param count max number of messages in this batch
-   * @return list of EventData, if failed to receive, return empty list
-   */
-  public List<EventDataWrap> receiveBatch(String offset, int count);
+    boolean open(String offset);
+
+    void close();
+
+    /**
+     * receive a batch of messages from EvenHub up to "count" messages
+     *
+     * @param offset the starting offset
+     * @param count  max number of messages in this batch
+     * @return list of EventData, if failed to receive, return empty list
+     */
+    public List<EventDataWrap> receiveBatch(String offset, int count);
 }

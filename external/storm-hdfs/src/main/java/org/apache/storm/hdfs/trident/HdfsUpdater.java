@@ -15,15 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.trident;
 
+import java.util.List;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.BaseStateUpdater;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-import java.util.List;
-
-public class HdfsUpdater extends BaseStateUpdater<HdfsState>{
+public class HdfsUpdater extends BaseStateUpdater<HdfsState> {
     @Override
     public void updateState(HdfsState state, List<TridentTuple> tuples, TridentCollector collector) {
         state.updateState(tuples, collector);

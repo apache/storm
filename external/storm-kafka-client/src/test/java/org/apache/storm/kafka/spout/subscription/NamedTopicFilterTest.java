@@ -16,6 +16,7 @@
 
 package org.apache.storm.kafka.spout.subscription;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -54,11 +56,25 @@ public class NamedTopicFilterTest {
         when(consumerMock.partitionsFor(matchingTopicTwo)).thenReturn(partitionTwoPartitions);
         when(consumerMock.partitionsFor(unmatchedTopic)).thenReturn(Collections.singletonList(createPartitionInfo(unmatchedTopic, 0)));
         
-        List<TopicPartition> matchedPartitions = filter.getFilteredTopicPartitions(consumerMock);
+        Set<TopicPartition> matchedPartitions = filter.getAllSubscribedPartitions(consumerMock);
         
         assertThat("Expected filter to pass only topics with exact name matches", matchedPartitions, 
             containsInAnyOrder(new TopicPartition(matchingTopicOne, 0), new TopicPartition(matchingTopicTwo, 0), new TopicPartition(matchingTopicTwo, 1)));
             
+    }
+    
+    @Test
+    public void testFilterOnAbsentTopic() {
+        String presentTopic = "present";
+        String absentTopic = "absent";
+        
+        NamedTopicFilter filter = new NamedTopicFilter(presentTopic, absentTopic);
+        when(consumerMock.partitionsFor(presentTopic)).thenReturn(Collections.singletonList(createPartitionInfo(presentTopic, 2)));
+        when(consumerMock.partitionsFor(absentTopic)).thenReturn(null);
+        
+        Set<TopicPartition> presentPartitions = filter.getAllSubscribedPartitions(consumerMock);
+        assertThat("Expected filter to pass only topics which are present", presentPartitions,
+            contains(new TopicPartition(presentTopic, 2)));
     }
     
     private PartitionInfo createPartitionInfo(String topic, int partition) {

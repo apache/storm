@@ -1,40 +1,31 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.hbase.state;
 
-import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
-
 import com.google.common.primitives.UnsignedBytes;
-
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.state.BaseBinaryStateIterator;
 import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
-
 import org.apache.storm.state.StateEncoder;
+
+import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
 
 /**
  * An iterator over {@link HBaseKeyValueState}.
@@ -42,26 +33,25 @@ import org.apache.storm.state.StateEncoder;
 public class HBaseKeyValueStateIterator<K, V> extends BaseBinaryStateIterator<K, V> {
 
     private final byte[] keyNamespace;
-    private byte[] cursorKey;
     private final byte[] endScanKey;
     private final byte[] columnFamily;
     private final HBaseClient hbaseClient;
     private final int chunkSize;
     private final StateEncoder<K, V, byte[], byte[]> encoder;
-
+    private byte[] cursorKey;
     private Iterator<Map.Entry<byte[], byte[]>> cachedResultIterator;
 
     /**
      * Constructor.
      *
-     * @param namespace The namespace of State
-     * @param columnFamily The column family of state
-     * @param hbaseClient The instance of HBaseClient
+     * @param namespace              The namespace of State
+     * @param columnFamily           The column family of state
+     * @param hbaseClient            The instance of HBaseClient
      * @param pendingPrepareIterator The iterator of pendingPrepare
-     * @param pendingCommitIterator The iterator of pendingCommit
-     * @param chunkSize The size of chunk to get entries from HBase
-     * @param keySerializer The serializer of key
-     * @param valueSerializer The serializer of value
+     * @param pendingCommitIterator  The iterator of pendingCommit
+     * @param chunkSize              The size of chunk to get entries from HBase
+     * @param keySerializer          The serializer of key
+     * @param valueSerializer        The serializer of value
      */
     public HBaseKeyValueStateIterator(String namespace, byte[] columnFamily, HBaseClient hbaseClient,
                                       Iterator<Map.Entry<byte[], byte[]>> pendingPrepareIterator,

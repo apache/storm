@@ -21,34 +21,33 @@ import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.testing.IntegrationTest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.node.Node;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
-@Category(IntegrationTest.class)
+@IntegrationTest
 public abstract class AbstractEsBoltIntegrationTest<Bolt extends AbstractEsBolt> extends AbstractEsBoltTest<Bolt> {
 
     protected static Node node;
 
-    @BeforeClass
+    @BeforeAll
     public static void startElasticSearchNode() throws Exception {
         node = EsTestUtil.startEsNode();
         EsTestUtil.ensureEsGreen(node);
     }
 
-    @AfterClass
+    @AfterAll
     public static void closeElasticSearchNode() throws Exception {
         EsTestUtil.stopEsNode(node);
     }
 
-    @Before
+    @BeforeEach
     public void createIndex() {
         node.client().admin().indices().create(new CreateIndexRequest(index)).actionGet();
     }
 
-    @After
+    @AfterEach
     public void clearIndex() throws Exception {
         EsTestUtil.clearIndex(node, index);
         EsTestUtil.clearIndex(node, "missing");

@@ -65,7 +65,7 @@ import org.slf4j.LoggerFactory;
  * A metrics server that records and reports metrics for a set of running topologies.
  */
 public class LoadMetricsServer extends HttpForwardingMetricsServer {
-    private static final Logger LOG = LoggerFactory.getLogger(HttpForwardingMetricsServer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LoadMetricsServer.class);
 
     private static class MemMeasure {
         private long mem = 0;

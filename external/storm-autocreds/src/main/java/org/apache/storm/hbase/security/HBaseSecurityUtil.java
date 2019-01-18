@@ -15,11 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hbase.security;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.storm.security.auth.kerberos.AutoTGT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,24 +54,27 @@ public class HBaseSecurityUtil {
 
     public static UserProvider login(Map<String, Object> conf, Configuration hbaseConfig) throws IOException {
         //Allowing keytab based login for backward compatibility.
-        if (UserGroupInformation.isSecurityEnabled() && (conf.get(TOPOLOGY_AUTO_CREDENTIALS) == null ||
-                !(((List) conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHBase.class.getName())))) {
-            LOG.info("Logging in using keytab as AutoHBase is not specified for " + TOPOLOGY_AUTO_CREDENTIALS);
-            //insure that if keytab is used only one login per process executed
-            if(legacyProvider == null) {
-                synchronized (HBaseSecurityUtil.class) {
-                    if(legacyProvider == null) {
-                        legacyProvider = UserProvider.instantiate(hbaseConfig);
-                        String keytab = (String) conf.get(STORM_KEYTAB_FILE_KEY);
-                        if (keytab != null) {
-                            hbaseConfig.set(STORM_KEYTAB_FILE_KEY, keytab);
+        if (UserGroupInformation.isSecurityEnabled()) {
+            List<String> autoCredentials = (List) conf.get(TOPOLOGY_AUTO_CREDENTIALS);
+            if ((autoCredentials == null)
+                    || (!autoCredentials.contains(AutoHBase.class.getName()) && !autoCredentials.contains(AutoTGT.class.getName()))) {
+                LOG.info("Logging in using keytab as neither AutoHBase or AutoTGT is specified for " + TOPOLOGY_AUTO_CREDENTIALS);
+                //insure that if keytab is used only one login per process executed
+                if (legacyProvider == null) {
+                    synchronized (HBaseSecurityUtil.class) {
+                        if (legacyProvider == null) {
+                            legacyProvider = UserProvider.instantiate(hbaseConfig);
+                            String keytab = (String) conf.get(STORM_KEYTAB_FILE_KEY);
+                            if (keytab != null) {
+                                hbaseConfig.set(STORM_KEYTAB_FILE_KEY, keytab);
+                            }
+                            String userName = (String) conf.get(STORM_USER_NAME_KEY);
+                            if (userName != null) {
+                                hbaseConfig.set(STORM_USER_NAME_KEY, userName);
+                            }
+                            legacyProvider.login(STORM_KEYTAB_FILE_KEY, STORM_USER_NAME_KEY,
+                                    InetAddress.getLocalHost().getCanonicalHostName());
                         }
-                        String userName = (String) conf.get(STORM_USER_NAME_KEY);
-                        if (userName != null) {
-                            hbaseConfig.set(STORM_USER_NAME_KEY, userName);
-                        }
-                        legacyProvider.login(STORM_KEYTAB_FILE_KEY, STORM_USER_NAME_KEY,
-                                InetAddress.getLocalHost().getCanonicalHostName());
                     }
                 }
             }

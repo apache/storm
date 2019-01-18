@@ -17,14 +17,18 @@
 
 package org.apache.storm.st.topology;
 
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.generated.StormTopology;
-
-import java.util.List;
 
 public interface TestableTopology {
     String DUMMY_FIELD = "dummy";
-    List<String> getExpectedOutput();
+    int TIMEDATA_SLEEP_BETWEEN_EMITS_MS = 20;
+    //Some tests rely on reading the worker log. If there are too many emits and too much is logged, the log might roll, breaking the test.
+    //Ensure the time based windowing tests can emit for 5 minutes
+    long MAX_SPOUT_EMITS = TimeUnit.MINUTES.toMillis(5)/TIMEDATA_SLEEP_BETWEEN_EMITS_MS; 
     StormTopology newTopology();
     String getBoltName();
+    int getBoltExecutors();
     String getSpoutName();
+    int getSpoutExecutors();
 }

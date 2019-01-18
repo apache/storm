@@ -49,6 +49,9 @@ import java.util.Map;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
 
+import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
+
 public class TestConstraintSolverStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestConstraintSolverStrategy.class);
     private static final int MAX_TRAVERSAL_DEPTH = 2000;
@@ -86,7 +89,7 @@ public class TestConstraintSolverStrategy {
     public Cluster makeCluster(TopologyDetails topo) {
         Topologies topologies = new Topologies(topo);
         Map<String, SupervisorDetails> supMap = genSupervisors(4, 2, 120, 1200);
-        return new Cluster(new INimbusTest(), supMap, new HashMap<>(), topologies, new Config());
+        return new Cluster(new INimbusTest(), new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, new Config());
     }
 
     public void basicUnitTestWithKillAndRecover(ConstraintSolverStrategy cs, int boltParallel) {
@@ -214,10 +217,10 @@ public class TestConstraintSolverStrategy {
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
 
         TopologyDetails topo = genTopology("testTopo", config, 2, 3, 30, 300, 0, 0, "user");
-        Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
+        Map<String, TopologyDetails> topoMap = new HashMap<>();
         topoMap.put(topo.getId(), topo);
         Topologies topologies = new Topologies(topoMap);
-        Cluster cluster = new Cluster(new INimbusTest(), supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
+        Cluster cluster = new Cluster(new INimbusTest(), new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
         rs.prepare(config);
         rs.schedule(topologies, cluster);

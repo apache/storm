@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.security.auth;
 
 import java.net.InetAddress;
@@ -23,36 +24,49 @@ import java.security.AccessController;
 import java.security.Principal;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.security.auth.Subject;
-
-import com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 
 /**
  * context request context includes info about:
  *
- *   1. remote address,
- *   2. remote subject and primary principal
- *   3. request ID
+ * 1. remote address, 2. remote subject and primary principal 3. request ID
  */
 public class ReqContext {
     private static final AtomicInteger uniqueId = new AtomicInteger(0);
-    private Subject _subject;
-    private InetAddress _remoteAddr;
-    private Integer _reqID;
+    //each thread will have its own request context
+    private static final ThreadLocal<ReqContext> ctxt =
+        ThreadLocal.withInitial(() -> new ReqContext(AccessController.getContext()));
+    private Subject subject;
+    private InetAddress remoteAddr;
+    private final int reqID;
     private Principal realPrincipal;
 
-    @Override
-    public String toString() {
-        return "ReqContext{" +
-                "realPrincipal=" + ((realPrincipal != null) ? realPrincipal.getName() : "null") +
-                ", _reqID=" + _reqID +
-                ", _remoteAddr=" + _remoteAddr +
-                ", _authZPrincipal=" + ((principal() != null) ? principal().getName() : "null") +
-                ", ThreadId=" + Thread.currentThread().toString() +
-                '}';
+    //private constructor
+    @VisibleForTesting
+    public ReqContext(AccessControlContext acl_ctxt) {
+        subject = Subject.getSubject(acl_ctxt);
+        reqID = uniqueId.incrementAndGet();
     }
-    
+
+    //private constructor
+    @VisibleForTesting
+    public ReqContext(Subject sub) {
+        subject = sub;
+        reqID = uniqueId.incrementAndGet();
+    }
+
+    /**
+     * Copy Constructor.
+     */
+    @VisibleForTesting
+    public ReqContext(ReqContext other) {
+        subject = other.subject;
+        remoteAddr = other.remoteAddr;
+        reqID = other.reqID;
+        realPrincipal = other.realPrincipal;
+    }
+
     /**
      * @return a request context associated with current thread
      */
@@ -67,67 +81,60 @@ public class ReqContext {
         ctxt.remove();
     }
 
-    //each thread will have its own request context
-    private static final ThreadLocal < ReqContext > ctxt = 
-            new ThreadLocal < ReqContext > () {
-        @Override 
-        protected ReqContext initialValue() {
-            return new ReqContext(AccessController.getContext());
-        }
-    };
-
-    //private constructor
-    @VisibleForTesting
-    public ReqContext(AccessControlContext acl_ctxt) {
-        _subject = Subject.getSubject(acl_ctxt);
-        _reqID = uniqueId.incrementAndGet();
-    }
-
-    //private constructor
-    @VisibleForTesting
-    public ReqContext(Subject sub) {
-        _subject = sub;
-        _reqID = uniqueId.incrementAndGet();
+    @Override
+    public String toString() {
+        return "ReqContext{" +
+               "realPrincipal=" + ((realPrincipal != null) ? realPrincipal.getName() : "null") +
+               ", reqID=" + reqID +
+               ", remoteAddr=" + remoteAddr +
+               ", authZPrincipal=" + ((principal() != null) ? principal().getName() : "null") +
+               ", ThreadId=" + Thread.currentThread().toString() +
+               '}';
     }
 
     /**
      * client address
      */
     public void setRemoteAddress(InetAddress addr) {
-        _remoteAddr = addr;
+        remoteAddr = addr;
     }
 
     public InetAddress remoteAddress() {
-        return _remoteAddr;
+        return remoteAddr;
     }
 
     /**
      * Set remote subject explicitly
      */
     public void setSubject(Subject subject) {
-        _subject = subject;
+        this.subject = subject;
     }
 
     /**
      * Retrieve client subject associated with this request context
      */
     public Subject subject() {
-        return _subject;
+        return subject;
     }
 
     /**
      * The primary principal associated current subject
      */
     public Principal principal() {
-        if (_subject == null) return null;
-        Set<Principal> princs = _subject.getPrincipals();
-        if (princs.size()==0) return null;
+        if (subject == null) {
+            return null;
+        }
+        Set<Principal> princs = subject.getPrincipals();
+        if (princs.size() == 0) {
+            return null;
+        }
         return (Principal) (princs.toArray()[0]);
     }
 
     public void setRealPrincipal(Principal realPrincipal) {
         this.realPrincipal = realPrincipal;
     }
+
     /**
      * The real principal associated with the subject.
      */
@@ -141,12 +148,11 @@ public class ReqContext {
     public boolean isImpersonating() {
         return this.realPrincipal != null && !this.realPrincipal.equals(this.principal());
     }
-    
+
     /**
      * request ID of this request
      */
-    public Integer requestID() {
-        return _reqID;
+    public int requestID() {
+        return reqID;
     }
-
 }

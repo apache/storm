@@ -15,18 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.utils;
 
-import org.apache.storm.generated.*;
-import org.apache.storm.hooks.BaseWorkerHook;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import junit.framework.TestCase;
-import org.junit.Assert;
-import org.junit.Test;
+package org.apache.storm.utils;
 
 import java.nio.ByteBuffer;
 import java.util.Set;
+import junit.framework.TestCase;
+import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.ComponentCommon;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StateSpoutSpec;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.hooks.BaseWorkerHook;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
+import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class ThriftTopologyUtilsTest extends TestCase {
     @Test
@@ -54,9 +58,9 @@ public class ThriftTopologyUtilsTest extends TestCase {
         StormTopology stormTopology = genereateStormTopology(true);
         Set<String> componentIds = ThriftTopologyUtils.getComponentIds(stormTopology);
         Assert.assertEquals(
-                "We expect to get the IDs of the components sans the Worker Hook",
-                ImmutableSet.of("bolt-1", "spout-1"),
-                componentIds);
+            "We expect to get the IDs of the components sans the Worker Hook",
+            ImmutableSet.of("bolt-1", "spout-1"),
+            componentIds);
     }
 
     @Test
@@ -64,9 +68,9 @@ public class ThriftTopologyUtilsTest extends TestCase {
         StormTopology stormTopology = genereateStormTopology(false);
         Set<String> componentIds = ThriftTopologyUtils.getComponentIds(stormTopology);
         Assert.assertEquals(
-                "We expect to get the IDs of the components sans the Worker Hook",
-                ImmutableSet.of("bolt-1", "spout-1"),
-                componentIds);
+            "We expect to get the IDs of the components sans the Worker Hook",
+            ImmutableSet.of("bolt-1", "spout-1"),
+            componentIds);
     }
 
     @Test
@@ -74,9 +78,9 @@ public class ThriftTopologyUtilsTest extends TestCase {
         StormTopology stormTopology = genereateStormTopology(true);
         ComponentCommon componentCommon = ThriftTopologyUtils.getComponentCommon(stormTopology, "bolt-1");
         Assert.assertEquals(
-                "We expect to get bolt-1's common",
-                new Bolt().get_common(),
-                componentCommon);
+            "We expect to get bolt-1's common",
+            new Bolt().get_common(),
+            componentCommon);
     }
 
     @Test
@@ -84,19 +88,19 @@ public class ThriftTopologyUtilsTest extends TestCase {
         StormTopology stormTopology = genereateStormTopology(false);
         ComponentCommon componentCommon = ThriftTopologyUtils.getComponentCommon(stormTopology, "bolt-1");
         Assert.assertEquals(
-                "We expect to get bolt-1's common",
-                new Bolt().get_common(),
-                componentCommon);
+            "We expect to get bolt-1's common",
+            new Bolt().get_common(),
+            componentCommon);
     }
 
     private StormTopology genereateStormTopology(boolean withWorkerHook) {
-        ImmutableMap<String,SpoutSpec> spouts = ImmutableMap.of("spout-1", new SpoutSpec());
-        ImmutableMap<String,Bolt> bolts = ImmutableMap.of("bolt-1", new Bolt());
-        ImmutableMap<String,StateSpoutSpec> state_spouts = ImmutableMap.of();
+        ImmutableMap<String, SpoutSpec> spouts = ImmutableMap.of("spout-1", new SpoutSpec());
+        ImmutableMap<String, Bolt> bolts = ImmutableMap.of("bolt-1", new Bolt());
+        ImmutableMap<String, StateSpoutSpec> state_spouts = ImmutableMap.of();
 
         StormTopology stormTopology = new StormTopology(spouts, bolts, state_spouts);
 
-        if(withWorkerHook) {
+        if (withWorkerHook) {
             BaseWorkerHook workerHook = new BaseWorkerHook();
             stormTopology.add_to_worker_hooks(ByteBuffer.wrap(Utils.javaSerialize(workerHook)));
         }

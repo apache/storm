@@ -56,7 +56,7 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     private String hdfsPrincipal;
 
     @Override
-    public void doPrepare(Map conf) {
+    public void doPrepare(Map<String, Object> conf) {
         if(conf.containsKey(STORM_KEYTAB_FILE_KEY) && conf.containsKey(STORM_USER_NAME_KEY)) {
             hdfsKeyTab = (String) conf.get(STORM_KEYTAB_FILE_KEY);
             hdfsPrincipal = (String) conf.get(STORM_USER_NAME_KEY);
@@ -74,24 +74,24 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    protected  byte[] getHadoopCredentials(Map conf, String configKey, final String topologyOwnerPrincipal) {
+    protected  byte[] getHadoopCredentials(Map<String, Object> conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
         return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf, final String topologyOwnerPrincipal) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, final String topologyOwnerPrincipal) {
         return getHadoopCredentials(conf, new Configuration(), topologyOwnerPrincipal);
     }
 
-    private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
+    private Configuration getHadoopConfiguration(Map<String, Object> topoConf, String configKey) {
         Configuration configuration = new Configuration();
         fillHadoopConfiguration(topoConf, configKey, configuration);
         return configuration;
     }
 
     @SuppressWarnings("unchecked")
-    private byte[] getHadoopCredentials(Map conf, final Configuration configuration, final String topologySubmitterUser) {
+    private byte[] getHadoopCredentials(Map<String, Object> conf, final Configuration configuration, final String topologySubmitterUser) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 login(configuration);
@@ -144,8 +144,7 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("unchecked")
-    public void doRenew(Map<String, String> credentials, Map topologyConf, final String topologyOwnerPrincipal) {
+    public void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, final String topologyOwnerPrincipal) {
         List<String> confKeys = getConfigKeys(topologyConf);
         for (Pair<String, Credentials> cred : getCredentials(credentials, confKeys)) {
             try {
@@ -153,7 +152,7 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
                 Collection<Token<? extends TokenIdentifier>> tokens = cred.getSecond().getAllTokens();
 
                 if (tokens != null && !tokens.isEmpty()) {
-                    for (Token token : tokens) {
+                    for (Token<? extends TokenIdentifier> token : tokens) {
                         //We need to re-login some other thread might have logged into hadoop using
                         // their credentials (e.g. AutoHBase might be also part of nimbu auto creds)
                         login(configuration);

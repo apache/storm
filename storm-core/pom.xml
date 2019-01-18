@@ -20,7 +20,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.1-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
@@ -32,8 +32,9 @@
     <properties>
         <worker-launcher.conf.dir>/etc/storm</worker-launcher.conf.dir>
         <worker-launcher.build.dir>${project.build.directory}/native/worker-launcher</worker-launcher.build.dir>
-        <worker-launcher.additional_cflags></worker-launcher.additional_cflags>
-        <argLine></argLine>
+        <worker-launcher.additional_cflags />
+        <argLine />
+        <conjure.version>2.1.3</conjure.version>
     </properties>
 
     <dependencies>
@@ -50,14 +51,10 @@
         </dependency>
 
         <!--Hadoop Mini Cluster cannot use log4j2 bridge,
-            Surefire has a way to exclude the conflicting log4j API jar
-            from the classpath, classpathDependencyExcludes, but it didn't work in practice.
-            This is here as a work around to place it at the beginning of the classpath
-            even though maven does not officially support ordering of the classpath.-->
-        <dependency>
-            <groupId>uk.org.lidalia</groupId>
-            <artifactId>sysout-over-slf4j</artifactId>
-        </dependency>
+        Surefire has a way to exclude the conflicting log4j API jar
+        from the classpath, classpathDependencyExcludes, but it didn't work in practice.
+        This is here as a work around to place it at the beginning of the classpath
+        even though maven does not officially support ordering of the classpath.-->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -68,82 +65,18 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>clj-time</groupId>
-            <artifactId>clj-time</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>compojure</groupId>
-            <artifactId>compojure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>hiccup</groupId>
-            <artifactId>hiccup</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ring</groupId>
-            <artifactId>ring-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ring</groupId>
-            <artifactId>ring-devel</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ring</groupId>
-            <artifactId>ring-jetty-adapter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.mortbay.jetty</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>ring</groupId>
-            <artifactId>ring-json</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>tools.logging</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>math.numeric-tower</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>tools.cli</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>tools.nrepl</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>clojure-complete</groupId>
-            <artifactId>clojure-complete</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.clojars.runa</groupId>
             <artifactId>conjure</artifactId>
+            <version>${conjure.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>clojure-contrib</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>data.codec</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>org.clojure</groupId>
-          <artifactId>java.jmx</artifactId>
-          <version>${java_jmx.version}</version>
         </dependency>
 
         <!--java-->
@@ -154,86 +87,18 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-compress</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-exec</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-collections</groupId>
-            <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>javax.servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-framework</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-recipes</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twitter</groupId>
-            <artifactId>carbonite</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jgrapht</groupId>
-            <artifactId>jgrapht-core</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -247,41 +112,36 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>log4j-over-slf4j</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>metrics-clojure</groupId>
-            <artifactId>metrics-clojure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-client</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>java-hamcrest</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -314,10 +174,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-smile</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-client</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>
@@ -374,17 +230,17 @@
             <resource>
                 <directory>${basedir}/src/resources</directory>
                 <excludes>
-                  <exclude>storm-core-version-info.properties</exclude>
+                    <exclude>storm-core-version-info.properties</exclude>
                 </excludes>
                 <filtering>false</filtering>
-           </resource>
-           <resource>
-              <directory>${basedir}/src/resources</directory>
-              <includes>
-                <include>storm-core-version-info.properties</include>
-             </includes>
-             <filtering>true</filtering>
-         </resource>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/resources</directory>
+                <includes>
+                    <include>storm-core-version-info.properties</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
         </resources>
         <testResources>
             <testResource>
@@ -400,9 +256,6 @@
                 <artifactId>clojure-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <sourceDirectories>
-                        <sourceDirectory>src/clj</sourceDirectory>
-                    </sourceDirectories>
                     <testSourceDirectories>
                         <testSourceDirectory>test/clj</testSourceDirectory>
                     </testSourceDirectories>
@@ -413,13 +266,6 @@
                     </copiedNamespaces>
                 </configuration>
                 <executions>
-                    <execution>
-                        <id>compile-clojure</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
                     <execution>
                         <id>test-clojure</id>
                         <phase>test</phase>
@@ -436,6 +282,9 @@
                                 <testNamespace>${clojure.test.set}</testNamespace>
                             </testNamespaces>
                             <testDeclaredNamespaceOnly>${clojure.test.declared.namespace.only}</testDeclaredNamespaceOnly>
+                            <configuration>
+                                <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
+                            </configuration>
                         </configuration>
                     </execution>
                 </executions>
@@ -445,7 +294,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
                 <configuration>
-                    <maxAllowedViolations>254</maxAllowedViolations>
+                    <maxAllowedViolations>73</maxAllowedViolations>
                 </configuration>
             </plugin>
             <plugin>
@@ -465,31 +314,29 @@
                 </configuration>
             </plugin>
             <plugin>
-               <groupId>org.apache.storm</groupId>
-               <artifactId>storm-maven-plugins</artifactId>
-               <version>${project.version}</version>
-               <executions>
-                 <execution>
-                   <id>version-info</id>
-                   <phase>generate-resources</phase>
-                   <goals>
-                     <goal>version-info</goal>
-                   </goals>
-                   <configuration>
-                   <source>
-                      <directory>${basedir}/src/</directory>
-                      <includes>
-                        <include>jvm/**/*.java</include>
-                        <include>clj/**/*.clj</include>
-                      </includes>
-                  </source>
-                 </configuration>
-               </execution>
-             </executions>
-          </plugin>
-          <plugin>
+                <groupId>org.apache.storm</groupId>
+                <artifactId>storm-maven-plugins</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>version-info</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>version-info</goal>
+                        </goals>
+                        <configuration>
+                            <source>
+                                <directory>${basedir}/src/</directory>
+                                <includes>
+                                    <include>jvm/**/*.java</include>
+                                </includes>
+                            </source>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.8</version>
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
@@ -505,40 +352,39 @@
                         </configuration>
                     </execution>
                     <!-- multi-lang resources -->
-                               <execution>
-                                 <id>unpack</id>
-                                 <phase>process-test-resources</phase>
-                                 <goals>
-                                   <goal>unpack</goal>
-                                 </goals>
-                                 <configuration>
-                                   <artifactItems>
-                                     <artifactItem>
-                                       <groupId>org.apache.storm</groupId>
-                                       <artifactId>multilang-ruby</artifactId>
-                                       <version>${project.version}</version>
-                                     </artifactItem>
-                                     <artifactItem>
-                                        <groupId>org.apache.storm</groupId>
-                                        <artifactId>multilang-python</artifactId>
-                                        <version>${project.version}</version>
-                                      </artifactItem>
-                                      <artifactItem>
-                                         <groupId>org.apache.storm</groupId>
-                                         <artifactId>multilang-javascript</artifactId>
-                                         <version>${project.version}</version>
-                                       </artifactItem>
-                                   </artifactItems>
-                                   <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
-                                 </configuration>
-                               </execution>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-ruby</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-python</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.storm</groupId>
+                                    <artifactId>multilang-javascript</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
 
                 </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.2.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -552,7 +398,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.6</version>
                 <executions>
                     <execution>
                         <goals>
@@ -567,32 +412,14 @@
     <profiles>
         <profile>
             <id>coverage</id>
-            <activation><activeByDefault>true</activeByDefault></activation>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>build-helper-maven-plugin</artifactId>
-                        <version>1.7</version>
-                        <executions>
-                            <execution>
-                                <id>add-source</id>
-                                <phase>generate-sources</phase>
-                                <goals>
-                                    <goal>add-source</goal>
-                                </goals>
-                                <configuration>
-                                    <sources><!-- Allows JaCoCo to find the clojure source code -->
-                                        <source>src/clj</source>
-                                    </sources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.7</version>
                         <executions>
                             <execution>
                                 <id>pre-test-jacoco-clean</id>
@@ -662,11 +489,12 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.6.0</version>
                         <executions>
                             <execution>
                                 <phase>generate-sources</phase>
-                                <goals><goal>exec</goal></goals>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
                                 <configuration>
                                     <executable>sh</executable>
                                     <arguments>
@@ -708,7 +536,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-resources-plugin</artifactId>
-                        <version>3.0.2</version>
                         <executions>
                             <execution>
                                 <id>copy-build-scripts</id>

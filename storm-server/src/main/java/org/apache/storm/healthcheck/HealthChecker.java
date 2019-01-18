@@ -18,11 +18,6 @@
 
 package org.apache.storm.healthcheck;
 
-import org.apache.storm.DaemonConfig;
-import org.apache.storm.utils.ServerConfigUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -31,6 +26,11 @@ import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerConfigUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HealthChecker {
 
@@ -49,13 +49,15 @@ public class HealthChecker {
             if (parentFile.exists()) {
                 File[] list = parentFile.listFiles();
                 for (File f : list) {
-                    if (!f.isDirectory() && f.canExecute())
+                    if (!f.isDirectory() && f.canExecute()) {
                         healthScripts.add(f.getAbsolutePath());
+                    }
                 }
             }
             for (String script : healthScripts) {
                 String result = processScript(conf, script);
                 results.add(result);
+                LOG.info("The healthcheck script [ {} ] exited with status: {}", script, result);
             }
         }
 
@@ -64,9 +66,12 @@ public class HealthChecker {
         // to execute properly, not that the system is unhealthy, in which case
         // we don't want to start killing things.
 
-        if (results.contains(FAILED) || results.contains(TIMEOUT)) {
+        if (results.contains(FAILED) || results.contains(FAILED_WITH_EXIT_CODE)
+            || results.contains(TIMEOUT)) {
+            LOG.warn("The supervisor healthchecks failed!!!");
             return 1;
         } else {
+            LOG.info("The supervisor healthchecks succeeded.");
             return 0;
         }
 
@@ -76,7 +81,7 @@ public class HealthChecker {
         Thread interruptThread = null;
         try {
             Process process = Runtime.getRuntime().exec(script);
-            final long timeout = (long) (conf.get(DaemonConfig.STORM_HEALTH_CHECK_TIMEOUT_MS));
+            final long timeout = ObjectReader.getLong(conf.get(DaemonConfig.STORM_HEALTH_CHECK_TIMEOUT_MS), 5000L);
             final Thread curThread = Thread.currentThread();
             // kill process when timeout
             interruptThread = new Thread(new Runnable() {
@@ -101,21 +106,23 @@ public class HealthChecker {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(stdin));
                 while ((str = reader.readLine()) != null) {
                     if (str.startsWith("ERROR")) {
+                        LOG.warn("The healthcheck process {} exited with code {}", script, process.exitValue());
                         return FAILED;
                     }
                 }
-                return SUCCESS;
+                return FAILED_WITH_EXIT_CODE;
             }
-            return FAILED_WITH_EXIT_CODE;
+            return SUCCESS;
         } catch (InterruptedException | ClosedByInterruptException e) {
             LOG.warn("Script:  {} timed out.", script);
             return TIMEOUT;
         } catch (Exception e) {
             LOG.warn("Script failed with exception: ", e);
-            return FAILED_WITH_EXIT_CODE;
+            return FAILED;
         } finally {
-            if (interruptThread != null)
+            if (interruptThread != null) {
                 interruptThread.interrupt();
+            }
         }
     }
 

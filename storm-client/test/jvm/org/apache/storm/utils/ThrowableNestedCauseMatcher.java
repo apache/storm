@@ -15,30 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.utils;
 
-import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 
-public class ThrowableNestedCauseMatcher extends BaseMatcher<Throwable> {
+public class ThrowableNestedCauseMatcher extends TypeSafeMatcher<Throwable> {
 
-    private Class<? extends Throwable> exceptionCause;
+    private final Class<? extends Throwable> exceptionCause;
 
     public ThrowableNestedCauseMatcher(Class<? extends Throwable> exceptionCause) {
         this.exceptionCause = exceptionCause;
     }
 
+    public static ThrowableNestedCauseMatcher isCausedBy(Class<? extends Throwable> exceptionCause) {
+        return new ThrowableNestedCauseMatcher(exceptionCause);
+    }
+
     @Override
-    public boolean matches(Object throwable) {
-        return Utils.exceptionCauseIsInstanceOf(exceptionCause, (Throwable) throwable);
+    protected boolean matchesSafely(Throwable throwable) {
+        return Utils.exceptionCauseIsInstanceOf(exceptionCause, throwable);
     }
 
     @Override
     public void describeTo(Description description) {
         description.appendText(exceptionCause.getName());
-    }
-
-    public static ThrowableNestedCauseMatcher isCausedBy(Class<? extends Throwable> exceptionCause) {
-        return new ThrowableNestedCauseMatcher(exceptionCause);
     }
 }

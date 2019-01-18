@@ -18,24 +18,6 @@
 
 package org.apache.storm;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import org.apache.storm.blobstore.BlobStore;
-import org.apache.storm.blobstore.NimbusBlobStore;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.InvalidTopologyException;
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.security.auth.ReqContext;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.validation.ConfigValidation;
-import org.apache.storm.validation.ConfigValidation.*;
-import org.apache.storm.validation.ConfigValidationAnnotations.*;
-import org.junit.Test;
-import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,14 +26,50 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import static org.mockito.Mockito.*;
+import javax.security.auth.Subject;
+import org.apache.storm.blobstore.BlobStore;
+import org.apache.storm.blobstore.NimbusBlobStore;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.shade.com.google.common.collect.ImmutableList;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
+import org.apache.storm.utils.Utils;
+import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.ConfigValidation.ImpersonationAclUserEntryValidator;
+import org.apache.storm.validation.ConfigValidation.IntegerValidator;
+import org.apache.storm.validation.ConfigValidation.KryoRegValidator;
+import org.apache.storm.validation.ConfigValidation.ListEntryTypeValidator;
+import org.apache.storm.validation.ConfigValidation.NoDuplicateInListValidator;
+import org.apache.storm.validation.ConfigValidation.NotNullValidator;
+import org.apache.storm.validation.ConfigValidation.PositiveNumberValidator;
+import org.apache.storm.validation.ConfigValidation.PowerOf2Validator;
+import org.apache.storm.validation.ConfigValidation.StringValidator;
+import org.apache.storm.validation.ConfigValidation.UserResourcePoolEntryValidator;
+import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
+import org.apache.storm.validation.ConfigValidationAnnotations.isImplementationOfClass;
+import org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
+import org.apache.storm.validation.ConfigValidationAnnotations.isListEntryType;
+import org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
+import org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
+import org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplicateInList;
+import org.apache.storm.validation.ConfigValidationAnnotations.isString;
+import org.junit.Assert;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestConfigValidate {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestConfigValidate.class);
 
     @Test
-    public void validPacemakerAuthTest() throws InstantiationException, IllegalAccessException, NoSuchFieldException, NoSuchMethodException, InvocationTargetException {
+    public void validPacemakerAuthTest() throws InstantiationException, IllegalAccessException, NoSuchFieldException, NoSuchMethodException,
+        InvocationTargetException {
         Map<String, Object> conf = new HashMap<String, Object>();
         conf.put(Config.PACEMAKER_AUTH_METHOD, "NONE");
         ConfigValidation.validateFields(conf);
@@ -62,14 +80,16 @@ public class TestConfigValidate {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void invalidPacemakerAuthTest() throws InstantiationException, IllegalAccessException, NoSuchFieldException, NoSuchMethodException, InvocationTargetException {
+    public void invalidPacemakerAuthTest() throws InstantiationException, IllegalAccessException, NoSuchFieldException,
+        NoSuchMethodException, InvocationTargetException {
         Map<String, Object> conf = new HashMap<String, Object>();
         conf.put(Config.PACEMAKER_AUTH_METHOD, "invalid");
         ConfigValidation.validateFields(conf);
     }
 
     @Test
-    public void validConfigTest() throws InstantiationException, IllegalAccessException, NoSuchFieldException, NoSuchMethodException, InvocationTargetException {
+    public void validConfigTest() throws InstantiationException, IllegalAccessException, NoSuchFieldException, NoSuchMethodException,
+        InvocationTargetException {
 
 
         Map<String, Object> conf = new HashMap<String, Object>();
@@ -81,7 +101,8 @@ public class TestConfigValidate {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void invalidConfigTest() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void invalidConfigTest() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException,
+        IllegalAccessException {
         Map<String, Object> conf = new HashMap<String, Object>();
         conf.put(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG, 5);
         conf.put(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS, 500);
@@ -91,11 +112,12 @@ public class TestConfigValidate {
     }
 
     @Test(expected = InvalidTopologyException.class)
-    public void testValidateTopologyBlobStoreMapWithBlobStore() throws InvalidTopologyException, AuthorizationException, KeyNotFoundException {
+    public void testValidateTopologyBlobStoreMapWithBlobStore() throws InvalidTopologyException, AuthorizationException,
+        KeyNotFoundException {
         Map<String, Object> topoConf = new HashMap<>();
-        Map<String,Map> topologyMap = new HashMap<>();
-        topologyMap.put("key1", new HashMap<String,String>());
-        topologyMap.put("key2", new HashMap<String,String>());
+        Map<String, Map> topologyMap = new HashMap<>();
+        topologyMap.put("key1", new HashMap<String, String>());
+        topologyMap.put("key2", new HashMap<String, String>());
         topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topologyMap);
         Subject subject = ReqContext.context().subject();
 
@@ -107,11 +129,12 @@ public class TestConfigValidate {
     }
 
     @Test(expected = InvalidTopologyException.class)
-    public void testValidateTopologyBlobStoreMapWithNimbusBlobStore() throws InvalidTopologyException, AuthorizationException, KeyNotFoundException {
+    public void testValidateTopologyBlobStoreMapWithNimbusBlobStore() throws InvalidTopologyException, AuthorizationException,
+        KeyNotFoundException {
         Map<String, Object> topoConf = new HashMap<>();
-        Map<String,Map> topologyMap = new HashMap<>();
-        topologyMap.put("key1", new HashMap<String,String>());
-        topologyMap.put("key2", new HashMap<String,String>());
+        Map<String, Map> topologyMap = new HashMap<>();
+        topologyMap.put("key1", new HashMap<String, String>());
+        topologyMap.put("key2", new HashMap<String, String>());
         topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topologyMap);
 
         NimbusBlobStore nimbusBlobStoreMock = mock(NimbusBlobStore.class);
@@ -122,13 +145,15 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void defaultYamlTest() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void defaultYamlTest() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException,
+        IllegalAccessException {
         Map<String, Object> conf = Utils.readStormConfig();
         ConfigValidation.validateFields(conf);
     }
 
     @Test
-    public void testTopologyWorkersIsInteger() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testTopologyWorkersIsInteger() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         Map<String, Object> conf = new HashMap<String, Object>();
         conf.put(Config.TOPOLOGY_WORKERS, 42);
         ConfigValidation.validateFields(conf);
@@ -142,7 +167,8 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void testTopologyStatsSampleRateIsFloat() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testTopologyStatsSampleRateIsFloat() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         Map<String, Object> conf = new HashMap<String, Object>();
         conf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.5);
         ConfigValidation.validateFields(conf);
@@ -154,18 +180,19 @@ public class TestConfigValidate {
 
 
     @Test
-    public void testWorkerChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testWorkerChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         Map<String, Object> conf = new HashMap<String, Object>();
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
 
         passCases.add(null);
         passCases.add("some string");
-        String[] stuff = {"some", "string", "list"};
+        String[] stuff = { "some", "string", "list" };
         passCases.add(Arrays.asList(stuff));
 
         failCases.add(42);
-        Integer[] wrongStuff = {1, 2, 3};
+        Integer[] wrongStuff = { 1, 2, 3 };
         failCases.add(Arrays.asList(wrongStuff));
 
         //worker.childopts validates
@@ -212,8 +239,25 @@ public class TestConfigValidate {
         testList.add(2);
         testList.add(new Integer("3"));
         testList.add(new Long("4"));
+        testList.add(new Float("3"));
+        testList.add(new Double("4"));
+        testList.add(ImmutableList.of("asdf", 3));
         conf.put("eee", testList);
-        Utils.isValidConf(conf);
+        Assert.assertTrue(Utils.isValidConf(conf));
+    }
+
+    @Test
+    public void testNonValidConfigChar() {
+        Map<String, Object> conf = new HashMap<String, Object>();
+        conf.put("q", ImmutableList.of("asdf", 'c'));
+        Assert.assertFalse(Utils.isValidConf(conf));
+    }
+
+    @Test
+    public void testNonValidConfigRandomObject() {
+        Map<String, Object> conf = new HashMap<String, Object>();
+        conf.put("q", ImmutableList.of("asdf", new TestConfigValidate()));
+        Assert.assertFalse(Utils.isValidConf(conf));
     }
 
     @Test
@@ -221,7 +265,7 @@ public class TestConfigValidate {
         KryoRegValidator validator = new KryoRegValidator();
 
         // fail cases
-        Object[] failCases = {ImmutableMap.of("f", "g"), ImmutableList.of(1), Arrays.asList(ImmutableMap.of("a", 1))};
+        Object[] failCases = { ImmutableMap.of("f", "g"), ImmutableList.of(1), Arrays.asList(ImmutableMap.of("a", 1)) };
         for (Object value : failCases) {
             try {
                 validator.validateField("test", value);
@@ -238,7 +282,7 @@ public class TestConfigValidate {
     public void testPowerOf2Validator() {
         PowerOf2Validator validator = new PowerOf2Validator();
 
-        Object[] failCases = {42.42, 42, -33, 23423423423.0, -32, -1, -0.00001, 0, -0, "Forty-two"};
+        Object[] failCases = { 42.42, 42, -33, 23423423423.0, -32, -1, -0.00001, 0, -0, "Forty-two" };
         for (Object value : failCases) {
             try {
                 validator.validateField("test", value);
@@ -247,7 +291,7 @@ public class TestConfigValidate {
             }
         }
 
-        Object[] passCases = {64, 4294967296.0, 1, null};
+        Object[] passCases = { 64, 4294967296.0, 1, null };
         for (Object value : passCases) {
             validator.validateField("test", value);
         }
@@ -257,13 +301,13 @@ public class TestConfigValidate {
     public void testPositiveNumberValidator() {
         PositiveNumberValidator validator = new PositiveNumberValidator();
 
-        Object[] passCases = {null, 1.0, 0.01, 1, 2147483647, 42};
+        Object[] passCases = { null, 1.0, 0.01, 1, 2147483647, 42 };
 
         for (Object value : passCases) {
             validator.validateField("test", value);
         }
 
-        Object[] failCases = {-1.0, -1, -0.01, 0.0, 0, "43", "string"};
+        Object[] failCases = { -1.0, -1, -0.01, 0.0, 0, "43", "string" };
 
         for (Object value : failCases) {
             try {
@@ -273,13 +317,13 @@ public class TestConfigValidate {
             }
         }
 
-        Object[] passCasesIncludeZero = {null, 1.0, 0.01, 0, 2147483647, 0.0};
+        Object[] passCasesIncludeZero = { null, 1.0, 0.01, 0, 2147483647, 0.0 };
 
         for (Object value : passCasesIncludeZero) {
             validator.validateField("test", true, value);
         }
 
-        Object[] failCasesIncludeZero = {-1.0, -1, -0.01, "43", "string"};
+        Object[] failCasesIncludeZero = { -1.0, -1, -0.01, "43", "string" };
 
         for (Object value : failCasesIncludeZero) {
             try {
@@ -294,13 +338,13 @@ public class TestConfigValidate {
     public void testIntegerValidator() {
         IntegerValidator validator = new IntegerValidator();
 
-        Object[] passCases = {null, 1000, Integer.MAX_VALUE};
+        Object[] passCases = { null, 1000, Integer.MAX_VALUE };
 
         for (Object value : passCases) {
             validator.validateField("test", value);
         }
 
-        Object[] failCases = {1.34, new Long(Integer.MAX_VALUE) + 1};
+        Object[] failCases = { 1.34, new Long(Integer.MAX_VALUE) + 1 };
 
         for (Object value : failCases) {
             try {
@@ -317,11 +361,11 @@ public class TestConfigValidate {
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
 
-        Object[] passCase1 = {1000, 0, -1000};
-        Object[] passCase2 = {"one", "two", "three"};
-        Object[] passCase3 = {false, true};
-        Object[] passCase4 = {false, true, 1000, 0, -1000, "one", "two", "three"};
-        Object[] passCase5 = {1000.0, 0.0, -1000.0};
+        Object[] passCase1 = { 1000, 0, -1000 };
+        Object[] passCase2 = { "one", "two", "three" };
+        Object[] passCase3 = { false, true };
+        Object[] passCase4 = { false, true, 1000, 0, -1000, "one", "two", "three" };
+        Object[] passCase5 = { 1000.0, 0.0, -1000.0 };
         passCases.add(Arrays.asList(passCase1));
         passCases.add(Arrays.asList(passCase2));
         passCases.add(Arrays.asList(passCase3));
@@ -333,9 +377,9 @@ public class TestConfigValidate {
             validator.validateField("test", value);
         }
 
-        Object[] failCase1 = {1000, 0, 1000};
-        Object[] failCase2 = {"one", "one", "two"};
-        Object[] failCase3 = {5.0, 5.0, 6};
+        Object[] failCase1 = { 1000, 0, 1000 };
+        Object[] failCase2 = { "one", "one", "two" };
+        Object[] failCase3 = { 5.0, 5.0, 6 };
         failCases.add(Arrays.asList(failCase1));
         failCases.add(Arrays.asList(failCase2));
         failCases.add(Arrays.asList(failCase3));
@@ -354,9 +398,9 @@ public class TestConfigValidate {
         Collection<Object> testCases2 = new LinkedList<Object>();
         Collection<Object> testCases3 = new LinkedList<Object>();
 
-        Object[] testCase1 = {"one", "two", "three"};
+        Object[] testCase1 = { "one", "two", "three" };
         ;
-        Object[] testCase2 = {"three"};
+        Object[] testCase2 = { "three" };
         testCases1.add(Arrays.asList(testCase1));
         testCases1.add(Arrays.asList(testCase2));
 
@@ -372,9 +416,9 @@ public class TestConfigValidate {
             }
         }
 
-        Object[] testCase3 = {1000, 0, 1000};
-        Object[] testCase4 = {5};
-        Object[] testCase5 = {5.0, 5.0, 6};
+        Object[] testCase3 = { 1000, 0, 1000 };
+        Object[] testCase4 = { 5 };
+        Object[] testCase5 = { 5.0, 5.0, 6 };
         testCases2.add(Arrays.asList(testCase3));
         testCases2.add(Arrays.asList(testCase4));
         testCases2.add(Arrays.asList(testCase5));
@@ -389,8 +433,8 @@ public class TestConfigValidate {
             ListEntryTypeValidator.validateField("test", Number.class, value);
         }
 
-        Object[] testCase6 = {1000, 0, 1000, "5"};
-        Object[] testCase7 = {"4", "5", 5};
+        Object[] testCase6 = { 1000, 0, 1000, "5" };
+        Object[] testCase7 = { "4", "5", 5 };
         testCases3.add(Arrays.asList(testCase6));
         testCases3.add(Arrays.asList(testCase7));
         for (Object value : testCases3) {
@@ -410,7 +454,8 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void testMapEntryTypeAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testMapEntryTypeAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         TestConfig config = new TestConfig();
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
@@ -448,7 +493,8 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void testMapEntryCustomAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testMapEntryCustomAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         TestConfig config = new TestConfig();
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
@@ -496,12 +542,13 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void testListEntryTypeAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testListEntryTypeAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         TestConfig config = new TestConfig();
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
-        Object[] passCase1 = {1, 5.0, -0.01, 0, Integer.MAX_VALUE, Double.MIN_VALUE};
-        Object[] passCase2 = {1};
+        Object[] passCase1 = { 1, 5.0, -0.01, 0, Integer.MAX_VALUE, Double.MIN_VALUE };
+        Object[] passCase2 = { 1 };
         passCases.add(Arrays.asList(passCase1));
         passCases.add(Arrays.asList(passCase2));
 
@@ -510,8 +557,8 @@ public class TestConfigValidate {
             ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
-        Object[] failCase1 = {1, 5.0, -0.01, 0, "aaa"};
-        Object[] failCase2 = {"aaa"};
+        Object[] failCase1 = { 1, 5.0, -0.01, 0, "aaa" };
+        Object[] failCase2 = { "aaa" };
         failCases.add(failCase1);
         failCases.add(failCase2);
         failCases.add(1);
@@ -528,12 +575,13 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void testListEntryCustomAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void testListEntryCustomAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         TestConfig config = new TestConfig();
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
-        Object[] passCase1 = {1, 5.0, 0.01, Double.MAX_VALUE};
-        Object[] passCase2 = {1};
+        Object[] passCase1 = { 1, 5.0, 0.01, Double.MAX_VALUE };
+        Object[] passCase2 = { 1 };
         passCases.add(Arrays.asList(passCase1));
         passCases.add(Arrays.asList(passCase2));
 
@@ -542,11 +590,11 @@ public class TestConfigValidate {
             ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
-        Object[] failCase1 = {1, 5.0, -0.01, 3.0};
-        Object[] failCase2 = {1, 5.0, -0.01, 1};
-        Object[] failCase3 = {"aaa", "bbb", "aaa"};
-        Object[] failCase4 = {1, 5.0, null, 1};
-        Object[] failCase5 = {1, 5.0, 0, 1};
+        Object[] failCase1 = { 1, 5.0, -0.01, 3.0 };
+        Object[] failCase2 = { 1, 5.0, -0.01, 1 };
+        Object[] failCase3 = { "aaa", "bbb", "aaa" };
+        Object[] failCase4 = { 1, 5.0, null, 1 };
+        Object[] failCase5 = { 1, 5.0, 0, 1 };
 
         failCases.add(Arrays.asList(failCase1));
         failCases.add(Arrays.asList(failCase2));
@@ -566,16 +614,17 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void TestAcceptedStrings() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void TestAcceptedStrings() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException,
+        IllegalAccessException {
         TestConfig config = new TestConfig();
-        String[] passCases = {"aaa", "bbb", "ccc"};
+        String[] passCases = { "aaa", "bbb", "ccc" };
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_5, value);
             ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
-        String[] failCases = {"aa", "bb", "cc", "abc", "a", "b", "c", ""};
+        String[] failCases = { "aa", "bb", "cc", "abc", "a", "b", "c", "" };
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG_5, value);
@@ -587,16 +636,17 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void TestImpersonationAclUserEntryValidator() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public void TestImpersonationAclUserEntryValidator() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
+        InstantiationException, IllegalAccessException {
         TestConfig config = new TestConfig();
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
 
         Map<String, Map<String, List<String>>> passCase1 = new HashMap<String, Map<String, List<String>>>();
         Map<String, List<String>> passCase1_hostsAndGroups = new HashMap<String, List<String>>();
-        String[] hosts = {"host.1", "host.2", "host.3"};
+        String[] hosts = { "host.1", "host.2", "host.3" };
         passCase1_hostsAndGroups.put("hosts", Arrays.asList(hosts));
-        String[] groups = {"group.1", "group.2", "group.3"};
+        String[] groups = { "group.1", "group.2", "group.3" };
         passCase1_hostsAndGroups.put("groups", Arrays.asList(groups));
         passCase1.put("jerry", passCase1_hostsAndGroups);
         passCases.add(passCase1);
@@ -608,14 +658,14 @@ public class TestConfigValidate {
 
         Map<String, Map<String, List<String>>> failCase1 = new HashMap<String, Map<String, List<String>>>();
         Map<String, List<String>> failCase1_hostsAndGroups = new HashMap<String, List<String>>();
-        String[] failhosts = {"host.1", "host.2", "host.3"};
+        String[] failhosts = { "host.1", "host.2", "host.3" };
         failCase1_hostsAndGroups.put("hosts", Arrays.asList(hosts));
         failCase1.put("jerry", failCase1_hostsAndGroups);
 
 
         Map<String, Map<String, List<String>>> failCase2 = new HashMap<String, Map<String, List<String>>>();
         Map<String, List<String>> failCase2_hostsAndGroups = new HashMap<String, List<String>>();
-        String[] failgroups = {"group.1", "group.2", "group.3"};
+        String[] failgroups = { "group.1", "group.2", "group.3" };
         failCase2_hostsAndGroups.put("groups", Arrays.asList(groups));
         failCase2.put("jerry", failCase2_hostsAndGroups);
 
@@ -701,7 +751,8 @@ public class TestConfigValidate {
             config.put(TestConfig.TEST_MAP_CONFIG_8, value);
             ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
-        //will fail since org.apache.storm.nimbus.NimbusInfo doesn't implement or extend org.apache.storm.networktopography.DNSToSwitchMapping
+        //will fail since org.apache.storm.nimbus.NimbusInfo doesn't implement or extend org.apache.storm.networktopography
+        // .DNSToSwitchMapping
         failCases.add("org.apache.storm.nimbus.NimbusInfo");
         failCases.add(null);
         for (Object value : failCases) {
@@ -719,8 +770,8 @@ public class TestConfigValidate {
         public static final String TEST_MAP_CONFIG = "test.map.config";
 
         @isMapEntryCustom(
-                keyValidatorClasses = {StringValidator.class},
-                valueValidatorClasses = {PositiveNumberValidator.class, IntegerValidator.class})
+            keyValidatorClasses = { StringValidator.class },
+            valueValidatorClasses = { PositiveNumberValidator.class, IntegerValidator.class })
         public static final String TEST_MAP_CONFIG_2 = "test.map.config.2";
 
         @isListEntryType(type = Number.class)
@@ -728,17 +779,18 @@ public class TestConfigValidate {
         public static final String TEST_MAP_CONFIG_3 = "test.map.config.3";
 
         @isListEntryCustom(
-                entryValidatorClasses = {PositiveNumberValidator.class, NotNullValidator.class})
+            entryValidatorClasses = { PositiveNumberValidator.class, NotNullValidator.class })
         @isNoDuplicateInList
         public static final String TEST_MAP_CONFIG_4 = "test.map.config.4";
 
-        @isString(acceptedValues = {"aaa", "bbb", "ccc"})
+        @isString(acceptedValues = { "aaa", "bbb", "ccc" })
         public static final String TEST_MAP_CONFIG_5 = "test.map.config.5";
 
-        @isMapEntryCustom(keyValidatorClasses = {StringValidator.class}, valueValidatorClasses = {ImpersonationAclUserEntryValidator.class})
+        @isMapEntryCustom(keyValidatorClasses = { StringValidator.class }, valueValidatorClasses = { ImpersonationAclUserEntryValidator
+            .class })
         public static final String TEST_MAP_CONFIG_6 = "test.map.config.6";
 
-        @isMapEntryCustom(keyValidatorClasses = {StringValidator.class}, valueValidatorClasses = {UserResourcePoolEntryValidator.class})
+        @isMapEntryCustom(keyValidatorClasses = { StringValidator.class }, valueValidatorClasses = { UserResourcePoolEntryValidator.class })
         public static final String TEST_MAP_CONFIG_7 = "test.map.config.7";
 
         @isImplementationOfClass(implementsClass = org.apache.storm.networktopography.DNSToSwitchMapping.class)

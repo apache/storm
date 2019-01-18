@@ -15,14 +15,13 @@
 ;; limitations under the License.
 (ns org.apache.storm.security.auth.nimbus-auth-test
   (:use [clojure test])
-  (:require [org.apache.storm.security.auth [auth-test :refer [nimbus-timeout]]])
   (:import [java.nio ByteBuffer])
   (:import [java.util Optional])
   (:import [org.apache.storm LocalCluster$Builder DaemonConfig Config])
   (:import [org.apache.storm.blobstore BlobStore])
   (:import [org.apache.storm.daemon.nimbus TopoCache])
   (:import [org.apache.storm.generated NotAliveException StormBase])
-  (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient
+  (:import [org.apache.storm.security.auth ThriftServer ThriftClient
                                          ReqContext ThriftConnectionType])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Processor
             AuthorizationException SubmitOptions TopologyInitialStatus KillOptions])
@@ -33,8 +32,13 @@
   (:require [conjure.core])
   (:use [conjure core]))
 
+;; 3 seconds in milliseconds
+;; This is plenty of time for a thrift client to respond.
+(def nimbus-timeout (Integer. (* 3 1000)))
+
 (defn to-conf [nimbus-port login-cfg aznClass transportPluginClass]
   (let [conf {NIMBUS-AUTHORIZER aznClass
+              SUPERVISOR-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
               NIMBUS-THRIFT-PORT nimbus-port
               STORM-THRIFT-TRANSPORT-PLUGIN transportPluginClass }
          conf (if login-cfg (merge conf {"java.security.auth.login.config" login-cfg}) conf)]
@@ -75,6 +79,7 @@
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
+                                SUPERVISOR-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
                                 NIMBUS-THRIFT-PORT 0
                                 STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
@@ -103,6 +108,7 @@
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
+                                SUPERVISOR-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
                                 NIMBUS-THRIFT-PORT 0
                                 STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
@@ -119,7 +125,6 @@
 
         (is (thrown-cause? AuthorizationException (.uploadChunk nimbus_client nil nil)))
         (is (thrown-cause? AuthorizationException (.finishFileUpload nimbus_client nil)))
-        (is (thrown-cause? AuthorizationException (.beginFileDownload nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.downloadChunk nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.getNimbusConf nimbus_client)))
         (is (thrown-cause? AuthorizationException (.getClusterInfo nimbus_client)))
@@ -167,6 +172,7 @@
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
+                                SUPERVISOR-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
                                 NIMBUS-THRIFT-PORT 0
                                 "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
                                 STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"})))]
@@ -185,7 +191,6 @@
 
         (is (thrown-cause? AuthorizationException (.uploadChunk nimbus_client nil nil)))
         (is (thrown-cause? AuthorizationException (.finishFileUpload nimbus_client nil)))
-        (is (thrown-cause? AuthorizationException (.beginFileDownload nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.downloadChunk nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.getNimbusConf nimbus_client)))
         (is (thrown-cause? AuthorizationException (.getClusterInfo nimbus_client)))

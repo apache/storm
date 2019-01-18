@@ -109,6 +109,7 @@ STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
 DEP_JARS_OPTS = []
 DEP_ARTIFACTS_OPTS = []
 DEP_ARTIFACTS_REPOSITORIES_OPTS = []
+DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY = None
 DEP_PROXY_URL = None
 DEP_PROXY_USERNAME = None
 DEP_PROXY_PASSWORD = None
@@ -139,6 +140,7 @@ def get_jars_full(adir):
 
 # If given path is a dir, make it a wildcard so the JVM will include all JARs in the directory.
 def get_wildcard_dir(path):
+    ret = []
     if os.path.isdir(path):
         ret = [(os.path.join(path, "*"))]
     elif os.path.exists(path):
@@ -180,11 +182,14 @@ def confvalue(name, extrapaths, daemon=True):
     return ""
 
 
-def resolve_dependencies(artifacts, artifact_repositories, proxy_url, proxy_username, proxy_password):
+def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir, proxy_url, proxy_username, proxy_password):
     if len(artifacts) == 0:
         return {}
 
     print("Resolving dependencies on demand: artifacts (%s) with repositories (%s)" % (artifacts, artifact_repositories))
+
+    if maven_local_repos_dir is not None:
+        print("Local repository directory: %s" % maven_local_repos_dir)
 
     if proxy_url is not None:
         print("Proxy information: url (%s) username (%s)" % (proxy_url, proxy_username))
@@ -201,6 +206,9 @@ def resolve_dependencies(artifacts, artifact_repositories, proxy_url, proxy_user
 
     command.extend(["--artifacts", ",".join(artifacts)])
     command.extend(["--artifactRepositories", ",".join(artifact_repositories)])
+
+    if maven_local_repos_dir is not None:
+        command.extend(["--mavenLocalRepositoryDirectory", maven_local_repos_dir])
 
     if proxy_url is not None:
         command.extend(["--proxyUrl", proxy_url])
@@ -298,10 +306,10 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     return exit_code
 
 def run_client_jar(jarfile, klass, args, daemon=False, client=True, extrajvmopts=[]):
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
 
     local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
 
     extra_jars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR]
     extra_jars.extend(local_jars)
@@ -330,12 +338,16 @@ def local(jarfile, klass, *args):
     local also adds in the option --local-ttl which sets the number of seconds the
     local cluster will run for before it shuts down.
 
+    --local-zookeeper if using an external zookeeper sets the connection string to use for it.
+
     --java-debug lets you turn on java debugging and set the parameters passed to -agentlib:jdwp on the JDK
     --java-debug transport=dt_socket,address=localhost:8000
     will open up a debugging server on port 8000.
     """
-    [ttl, debug_args, args] = parse_local_opts(args)
+    [ttl, lzk, debug_args, args] = parse_local_opts(args)
     extrajvmopts = ["-Dstorm.local.sleeptime=" + ttl]
+    if lzk != None:
+        extrajvmopts = extrajvmopts + ["-Dstorm.local.zookeeper=" + lzk]
     if debug_args != None:
         extrajvmopts = extrajvmopts + ["-agentlib:jdwp=" + debug_args]
     run_client_jar(jarfile, "org.apache.storm.LocalCluster", [klass] + list(args), client=False, daemon=False, extrajvmopts=extrajvmopts)
@@ -354,18 +366,19 @@ def jar(jarfile, klass, *args):
     And when you want to ship maven artifacts and its transitive dependencies, you can pass them to --artifacts with comma-separated string.
     You can also exclude some dependencies like what you're doing in maven pom.
     Please add exclusion artifacts with '^' separated string after the artifact.
-    For example, --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" will load jedis and kafka artifact and all of transitive dependencies but exclude slf4j-log4j12 from kafka.
+    For example, -artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka-clients:1.0.0^org.slf4j:slf4j-api" will load jedis and kafka-clients artifact and all of transitive dependencies but exclude slf4j-api from kafka.
 
     When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with comma-separated string.
     Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters.
     For example, --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/" will add JBoss and HDP repositories for dependency resolver.
+    You can provide local maven repository directory via --mavenLocalRepositoryDirectory if you would like to use specific directory. It might help when you don't have '.m2/repository' directory in home directory, because CWD is sometimes non-deterministic (fragile).
 
     You can also provide proxy information to let dependency resolver utilizing proxy if needed. There're three parameters for proxy:
     --proxyUrl: URL representation of proxy ('http://host:port')
     --proxyUsername: username of proxy if it requires basic auth
     --proxyPassword: password of proxy if it requires basic auth
 
-    Complete example of options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka/storm-kafka-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
+    Complete example of options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka-client/storm-kafka-client-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka-clients:1.0.0^org.slf4j:slf4j-api" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
 
     When you pass jars and/or artifacts options, StormSubmitter will upload them when the topology is submitted, and they will be included to classpath of both the process which runs the class, and also workers for that topology.
 
@@ -380,14 +393,14 @@ def sql(sql_file, topology_name):
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     If user activates explain mode, SQL Runner analyzes each query statement and shows query plan instead of submitting topology.
 
-    --jars and --artifacts, and --artifactRepositories, --proxyUrl, --proxyUsername, --proxyPassword options available for jar are also applied to sql command.
+    --jars and --artifacts, and --artifactRepositories, --mavenLocalRepositoryDirectory, --proxyUrl, --proxyUsername, --proxyPassword options available for jar are also applied to sql command.
     Please refer "help jar" to see how to use --jars and --artifacts, and --artifactRepositories, --proxyUrl, --proxyUsername, --proxyPassword options.
     You normally want to pass these options since you need to set data source to your sql which is an external storage in many cases.
     """
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
 
     local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
 
     # include storm-sql-runtime jar(s) to local jar list
     # --jars doesn't support wildcard so it should call get_jars_full
@@ -437,9 +450,12 @@ def kill(*args):
 
 
 def upload_credentials(*args):
-    """Syntax: [storm upload-credentials topology-name [credkey credvalue]*]
+    """Syntax: [storm upload-credentials topology-name [options] [credkey credvalue]*]
 
-    Uploads a new set of credentials to a running topology
+    Uploads a new set of credentials to a running topology.
+
+    -f --file <FILE>: provide a properties file with credentials in it to be uploaded
+    -u --user <USER_NAME>: give the name of the owner of the topology (security precaution).
     """
     if not args:
         print_usage(command="upload-credentials")
@@ -632,15 +648,31 @@ def kill_workers(*args):
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
 def admin(*args):
-    """Syntax: [storm admin cmd]
+    """Syntax: [storm admin cmd [options]]
 
-    This is a proxy of nimbus and allow to execute admin commands. As of now it supports
-    command to remove corrupt topologies.
-    Nimbus doesn't clean up corrupted topologies automatically. This command should clean
-    up corrupt topologies i.e.topologies whose codes are not available on blobstore.
-    In future this command would support more admin commands.
-    Supported command
-    storm admin remove_corrupt_topologies
+    The storm admin command provides access to several operations that can help
+    an administrator debug or fix a cluster.
+
+    remove_corrupt_topologies - This command should be run on a nimbus node as
+    the same user nimbus runs as.  It will go directly to zookeeper + blobstore
+    and find topologies that appear to be corrupted because of missing blobs.
+    It will kill those topologies.
+
+    zk_cli [options] - This command will launch a zookeeper cli pointing to the
+    storm zookeeper instance logged in as the nimbus user.  It should be run on
+    a nimbus server as the user nimbus runs as.
+        -s --server <connection string>: Set the connection string to use,
+            defaults to storm connection string.
+        -t --time-out <timeout>:  Set the timeout to use, defaults to storm
+            zookeeper timeout.
+        -w --write: Allow for writes, defaults to read only, we don't want to
+            cause problems.
+        -n --no-root: Don't include the storm root on the default connection string.
+        -j --jaas <jaas_file>: Include a jaas file that should be used when
+            authenticating with ZK defaults to the
+            java.security.auth.login.config conf.
+
+    creds topology_id - Print the credential keys for a topology.
     """
     exec_storm_class(
         "org.apache.storm.command.AdminCommands",
@@ -660,7 +692,7 @@ def shell(resourcesdir, command, *args):
     runnerargs = [tmpjarpath, command]
     runnerargs.extend(args)
     exec_storm_class(
-        "org.apache.storm.command.shell_submission",
+        "org.apache.storm.command.ShellSubmission",
         args=runnerargs,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR],
@@ -668,7 +700,8 @@ def shell(resourcesdir, command, *args):
     os.system("rm " + tmpjarpath)
 
 def repl():
-    """Syntax: [storm repl]
+    """DEPRECATED: This subcommand may be removed in a future release.
+    Syntax: [storm repl]
 
     Opens up a Clojure REPL with the storm jars and configuration
     on the classpath. Useful for debugging.
@@ -696,8 +729,8 @@ def nimbus(klass="org.apache.storm.daemon.nimbus.Nimbus"):
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("nimbus.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=nimbus.log",
-        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
     ]
     exec_storm_class(
@@ -718,6 +751,7 @@ def pacemaker(klass="org.apache.storm.pacemaker.Pacemaker"):
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("pacemaker.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=pacemaker.log",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
     ]
@@ -739,6 +773,7 @@ def supervisor(klass="org.apache.storm.daemon.supervisor.Supervisor"):
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("supervisor.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=" + STORM_SUPERVISOR_LOG_FILE,
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
     ]
@@ -761,16 +796,19 @@ def ui():
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("ui.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=ui.log",
-        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
+
+    allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
+    allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.ui.core",
+        "org.apache.storm.daemon.ui.UIServer",
         jvmtype="-server",
         daemonName="ui",
         jvmopts=jvmopts,
-        extrajars=[STORM_DIR, CLUSTER_CONF_DIR])
+        extrajars=allextrajars)
 
 def logviewer():
     """Syntax: [storm logviewer]
@@ -784,8 +822,8 @@ def logviewer():
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("logviewer.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=logviewer.log",
-        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
 
@@ -829,8 +867,8 @@ def drpc():
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("drpc.childopts", cppaths)) + [
+        "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=drpc.log",
-        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
@@ -849,10 +887,16 @@ def dev_zookeeper():
     "storm.zookeeper.port" as its port. This is only intended for development/testing, the
     Zookeeper instance launched is not configured to be used in production.
     """
+    jvmopts = [
+        "-Dlogfile.name=dev-zookeeper.log",
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
+    ]
     cppaths = [CLUSTER_CONF_DIR]
     exec_storm_class(
         "org.apache.storm.command.DevZookeeper",
         jvmtype="-server",
+        daemonName="dev_zookeeper",
+        jvmopts=jvmopts,
         extrajars=[CLUSTER_CONF_DIR])
 
 def version():
@@ -940,19 +984,22 @@ def parse_local_opts(args):
     curr = list(args[:])
     curr.reverse()
     ttl = "20"
+    lzk = None
     debug_args = None
     args_list = []
 
     while len(curr) > 0:
         token = curr.pop()
-        if token == "--local-ttl":
+        if token == "--local-zookeeper":
+            lzk = curr.pop()
+        elif token == "--local-ttl":
             ttl = curr.pop()
         elif token == "--java-debug":
             debug_args = curr.pop()
         else:
             args_list.append(token)
 
-    return ttl, debug_args, args_list
+    return ttl, lzk, debug_args, args_list
 
 
 def parse_jar_opts(args):
@@ -978,6 +1025,7 @@ def parse_config_opts(args):
     jars_list = []
     artifacts_list = []
     artifact_repositories_list = []
+    maven_local_repository_dir = None
     proxy_url = None
     proxy_username = None
     proxy_password = None
@@ -995,6 +1043,8 @@ def parse_config_opts(args):
             artifacts_list.extend(curr.pop().split(','))
         elif token == "--artifactRepositories":
             artifact_repositories_list.extend(curr.pop().split(','))
+        elif token == "--mavenLocalRepositoryDirectory":
+            maven_local_repository_dir = curr.pop()
         elif token == "--proxyUrl":
             proxy_url = curr.pop()
         elif token == "--proxyUsername":
@@ -1004,21 +1054,23 @@ def parse_config_opts(args):
         else:
             args_list.append(token)
 
-    return config_list, jars_list, artifacts_list, artifact_repositories_list, \
+    return config_list, jars_list, artifacts_list, artifact_repositories_list, maven_local_repository_dir, \
            proxy_url, proxy_username, proxy_password, args_list
 
 def main():
     if len(sys.argv) <= 1:
         print_usage()
         sys.exit(-1)
-    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, \
+    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, \
+        DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, \
         DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
-    config_list, jars_list, artifacts_list, artifact_repositories_list, proxy_url, proxy_username, \
-    proxy_password, args = parse_config_opts(sys.argv[1:])
+    config_list, jars_list, artifacts_list, artifact_repositories_list, maven_local_directory, proxy_url, \
+        proxy_username, proxy_password, args = parse_config_opts(sys.argv[1:])
     parse_config(config_list)
     DEP_JARS_OPTS = jars_list
     DEP_ARTIFACTS_OPTS = artifacts_list
     DEP_ARTIFACTS_REPOSITORIES_OPTS = artifact_repositories_list
+    DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY = maven_local_directory
     DEP_PROXY_URL = proxy_url
     DEP_PROXY_USERNAME = proxy_username
     DEP_PROXY_PASSWORD = proxy_password

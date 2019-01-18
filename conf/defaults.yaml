@@ -48,6 +48,9 @@ storm.messaging.transport: "org.apache.storm.messaging.netty.Context"
 storm.nimbus.retry.times: 5
 storm.nimbus.retry.interval.millis: 2000
 storm.nimbus.retry.intervalceiling.millis: 60000
+storm.nimbus.zookeeper.acls.check: true
+storm.nimbus.zookeeper.acls.fixup: true
+
 storm.auth.simple-white-list.users: []
 storm.cluster.state.store: "org.apache.storm.cluster.ZKStateStorageFactory"
 storm.meta.serialization.delegate: "org.apache.storm.serialization.GzipThriftSerializationDelegate"
@@ -77,6 +80,11 @@ topology.max.replication.wait.time.sec: 60
 nimbus.credential.renewers.freq.secs: 600
 nimbus.queue.size: 100000
 scheduler.display.resource: false
+nimbus.local.assignments.backend.class: "org.apache.storm.assignments.InMemoryAssignmentBackend"
+nimbus.assignments.service.threads: 10
+nimbus.assignments.service.thread.queue.size: 100
+nimbus.worker.heartbeats.recovery.strategy.class: "org.apache.storm.nimbus.TimeOutWorkerHeartbeatsRecoveryStrategy"
+nimbus.topology.blobstore.deletion.delay.ms: 300000
 
 ### ui.* configs are for the master
 ui.host: 0.0.0.0
@@ -89,6 +97,7 @@ ui.users: null
 ui.header.buffer.bytes: 4096
 ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
 ui.pagination: 20
+ui.disable.http.binding: true
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"
@@ -96,6 +105,9 @@ logviewer.cleanup.age.mins: 10080
 logviewer.appender.name: "A1"
 logviewer.max.sum.worker.logs.size.mb: 4096
 logviewer.max.per.worker.logs.size.mb: 2048
+logviewer.disable.http.binding: true
+logviewer.filter: null
+logviewer.filter.params: null
 
 logs.users: null
 
@@ -114,6 +126,7 @@ drpc.https.keystore.type: "JKS"
 drpc.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
 drpc.authorizer.acl.filename: "drpc-auth-acl.yaml"
 drpc.authorizer.acl.strict: false
+drpc.disable.http.binding: true
 
 transactional.zookeeper.root: "/transactional"
 transactional.zookeeper.servers: null
@@ -154,6 +167,8 @@ supervisor.worker.shutdown.sleep.secs: 3
 supervisor.monitor.frequency.secs: 3
 #how frequently the supervisor heartbeats to the cluster state (for nimbus)
 supervisor.heartbeat.frequency.secs: 5
+#max timeout for a node worker heartbeats when master gains leadership
+supervisor.worker.heartbeats.max.timeout.secs: 600
 supervisor.enable: true
 supervisor.supervisors: []
 supervisor.supervisors.commands: []
@@ -162,6 +177,13 @@ supervisor.memory.capacity.mb: 4096.0
 # using 100 makes it simple to set the desired value to the capacity measurement
 # for single threaded bolts
 supervisor.cpu.capacity: 400.0
+
+#Supervisor thrift config
+supervisor.thrift.port: 6628
+supervisor.queue.size: 128
+supervisor.thrift.threads: 16
+supervisor.thrift.max_buffer_size: 1048576
+supervisor.thrift.socket.timeout.ms: 5000
 
 ### worker.* configs are for task workers
 worker.heap.memory.mb: 768
@@ -182,24 +204,30 @@ worker.log.level.reset.poll.secs: 30
 # control how many worker receiver threads we need per worker
 topology.worker.receiver.thread.count: 1
 
+# Executor metrics reporting interval.
+# Cause the ui only show built in metrics, we should keep sync with the built in metrics interval,
+# also the metrics consumer's collecting interval.
+# See topology.builtin.metrics.bucket.size.secs and storm.cluster.metrics.consumer.publish.interval.secs.
+executor.metrics.frequency.secs: 60
+
 task.heartbeat.frequency.secs: 3
 task.refresh.poll.secs: 10
 task.credentials.poll.secs: 30
-task.backpressure.poll.secs: 30
-
-# now should be null by default
-topology.backpressure.enable: false
-backpressure.disruptor.high.watermark: 0.9
-backpressure.disruptor.low.watermark: 0.4
-backpressure.znode.timeout.secs: 30
-backpressure.znode.update.freq.secs: 15
 
 # Used by workers to communicate
 storm.messaging.netty.server_worker_threads: 1
 storm.messaging.netty.client_worker_threads: 1
 storm.messaging.netty.buffer_size: 5242880 #5MB buffer
+
+# The netty write buffer high watermark in bytes.
+# If the number of bytes queued in the netty's write buffer exceeds this value, the netty client will block
+# until the value falls below the low water mark.
+storm.messaging.netty.buffer.high.watermark: 16777216 # 16 MB
+# The netty write buffer low watermark in bytes.
+# Once the number of bytes queued in the write buffer exceeded the high water mark and then
+# dropped down below this value, any blocked clients will unblock and start processing further messages.
+storm.messaging.netty.buffer.low.watermark: 8388608 # 8 MB
 # Since nimbus.task.launch.secs and supervisor.worker.start.timeout.secs are 120, other workers should also wait at least that long before giving up on connecting to the other worker. The reconnection period need also be bigger than storm.zookeeper.session.timeout(default is 20s), so that we can abort the reconnection when the target worker is dead.
-storm.messaging.netty.max_retries: 300
 storm.messaging.netty.max_wait_ms: 1000
 storm.messaging.netty.min_wait_ms: 100
 
@@ -230,20 +258,46 @@ topology.multilang.serializer: "org.apache.storm.multilang.JsonSerializer"
 topology.shellbolt.max.pending: 100
 topology.skip.missing.kryo.registrations: false
 topology.max.task.parallelism: null
-topology.max.spout.pending: null
+topology.max.spout.pending: null    # ideally should be larger than topology.producer.batch.size. (esp. if topology.batch.flush.interval.millis=0)
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60
 topology.fall.back.on.java.serialization: true
 topology.worker.childopts: null
 topology.worker.logwriter.childopts: "-Xmx64m"
-topology.executor.receive.buffer.size: 1024 #batched
-topology.executor.send.buffer.size: 1024 #individual messages
-topology.transfer.buffer.size: 1024 # batched
 topology.tick.tuple.freq.secs: null
 topology.worker.shared.thread.pool.size: 4
-topology.spout.wait.strategy: "org.apache.storm.spout.SleepSpoutWaitStrategy"
-topology.sleep.spout.wait.strategy.time.ms: 1
+
+# Spout Wait Strategy - employed when there is no data to produce
+topology.spout.wait.strategy: "org.apache.storm.policy.WaitStrategyProgressive"
+topology.spout.wait.park.microsec : 100          # park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
+
+topology.spout.wait.progressive.level1.count: 0          # number of iterations to spend in level 1 [no sleep] of WaitStrategyProgressive, before progressing to level 2
+topology.spout.wait.progressive.level2.count: 0          # number of iterations to spend in level 2 [parkNanos(1)] of WaitStrategyProgressive, before progressing to level 3
+topology.spout.wait.progressive.level3.sleep.millis: 1   # sleep duration for idling iterations in level 3 of WaitStrategyProgressive
+
+# Bolt Wait Strategy - employed when there is no data in its receive buffer to process
+topology.bolt.wait.strategy : "org.apache.storm.policy.WaitStrategyProgressive"
+
+topology.bolt.wait.park.microsec : 100          # park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
+
+topology.bolt.wait.progressive.level1.count: 1          # number of iterations to spend in level 1 [no sleep] of WaitStrategyProgressive, before progressing to level 2
+topology.bolt.wait.progressive.level2.count: 1000       # number of iterations to spend in level 2 [parkNanos(1)] of WaitStrategyProgressive, before progressing to level 3
+topology.bolt.wait.progressive.level3.sleep.millis: 1   # sleep duration for idling iterations in level 3 of WaitStrategyProgressive
+
+# BackPressure Wait Strategy - for any producer (spout/bolt/transfer thread) when the downstream Q is full
+topology.backpressure.wait.strategy: "org.apache.storm.policy.WaitStrategyProgressive"
+
+topology.backpressure.wait.park.microsec: 100          #  park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
+
+topology.backpressure.wait.progressive.level1.count: 1        # number of iterations to spend in level 1 [no sleep] of WaitStrategyProgressive, before progressing to level 2
+topology.backpressure.wait.progressive.level2.count: 1000     # number of iterations to spend in level 2 [parkNanos(1)] of WaitStrategyProgressive, before progressing to level 3
+topology.backpressure.wait.progressive.level3.sleep.millis: 1 # sleep duration for idling iterations in level 3 of WaitStrategyProgressive
+
+
+topology.backpressure.check.millis: 50   # how often to check if backpressure has relieved on executors under BP, for informing other workers to resume sending msgs to them. Must be > 0
+topology.executor.overflow.limit: 0    # max items in overflowQ of any bolt/spout. When exceeded, worker will drop incoming messages (from the workers) destined to that overflowing spout/bolt. Set to 0 to disable overflow limiting. Enabling this may degrade perf slightly.
+
 topology.error.throttle.interval.secs: 10
 topology.max.error.report.per.interval: 5
 topology.kryo.factory: "org.apache.storm.serialization.DefaultKryoFactory"
@@ -252,14 +306,20 @@ topology.trident.batch.emit.interval.millis: 500
 topology.testing.always.try.serialize: false
 topology.classpath: null
 topology.environment: null
-topology.bolts.outgoing.overflow.buffer.enable: false
-topology.disruptor.wait.timeout.millis: 1000
-topology.disruptor.batch.size: 100
-topology.disruptor.batch.timeout.millis: 1
+
+topology.transfer.buffer.size: 1000   # size of recv  queue for transfer worker thread
+topology.transfer.batch.size: 1       # can be no larger than half of `topology.transfer.buffer.size`
+
+topology.executor.receive.buffer.size: 32768  # size of recv queue for spouts & bolts. Will be internally rounded up to next power of 2 (if not already a power of 2)
+topology.producer.batch.size: 1               # can be no larger than half of `topology.executor.receive.buffer.size`
+
+topology.batch.flush.interval.millis: 1  # Flush tuples are disabled if this is set to 0 or if (topology.producer.batch.size=1 and topology.transfer.batch.size=1).
+topology.spout.recvq.skips: 3  # Check recvQ once every N invocations of Spout's nextTuple() [when ACKs disabled]
+
 topology.disable.loadaware.messaging: false
 topology.state.checkpoint.interval.ms: 1000
-topology.localityaware.higher.bound.percent: 0.8
-topology.localityaware.lower.bound.percent: 0.2
+topology.localityaware.higher.bound: 0.8
+topology.localityaware.lower.bound: 0.2
 topology.serialized.message.size.metrics: false
 
 # Configs for Resource Aware Scheduler
@@ -285,6 +345,7 @@ pacemaker.servers: []
 pacemaker.port: 6699
 pacemaker.base.threads: 10
 pacemaker.max.threads: 50
+pacemaker.client.max.threads: 2
 pacemaker.thread.timeout: 10
 pacemaker.childopts: "-Xmx1024m"
 pacemaker.auth.method: "NONE"
@@ -296,6 +357,7 @@ storm.daemon.metrics.reporter.plugins:
      - "org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter"
 
 storm.metricstore.class: "org.apache.storm.metricstore.rocksdb.RocksDbStore"
+storm.metricprocessor.class: "org.apache.storm.metricstore.NimbusMetricProcessor"
 storm.metricstore.rocksdb.location: "storm_rocks"
 storm.metricstore.rocksdb.create_if_missing: true
 storm.metricstore.rocksdb.metadata_string_cache_capacity: 4000
@@ -309,6 +371,7 @@ storm.resource.isolation.plugin: "org.apache.storm.container.cgroup.CgroupManage
 # If storm.resource.isolation.plugin.enable is set to false the unit tests for cgroups will not run
 storm.resource.isolation.plugin.enable: false
 storm.cgroup.memory.enforcement.enable: false
+storm.cgroup.inherit.cpuset.configs: false
 
 # Configs for CGroup support
 storm.cgroup.hierarchy.dir: "/cgroup/storm_resources"
@@ -325,6 +388,7 @@ storm.supervisor.hard.memory.limit.overage.mb: 2024
 storm.supervisor.low.memory.threshold.mb: 1024
 storm.supervisor.medium.memory.threshold.mb: 1536
 storm.supervisor.medium.memory.grace.period.ms: 30000
+
 storm.topology.classpath.beginning.enabled: false
 worker.metrics:
     "CGroupMemory": "org.apache.storm.metric.cgroup.CGroupMemoryUsage"
@@ -334,3 +398,26 @@ worker.metrics:
 
 # The number of buckets for running statistics
 num.stat.buckets: 20
+
+# Metrics v2 configuration (optional)
+#storm.metrics.reporters:
+#  # Graphite Reporter
+#  - class: "org.apache.storm.metrics2.reporters.GraphiteStormReporter"
+#    daemons:
+#        - "supervisor"
+#        - "nimbus"
+#        - "worker"
+#    report.period: 60
+#    report.period.units: "SECONDS"
+#    graphite.host: "localhost"
+#    graphite.port: 2003
+#
+#  # Console Reporter
+#  - class: "org.apache.storm.metrics2.reporters.ConsoleStormReporter"
+#    daemons:
+#        - "worker"
+#    report.period: 10
+#    report.period.units: "SECONDS"
+#    filter:
+#        class: "org.apache.storm.metrics2.filters.RegexFilter"
+#        expression: ".*my_component.*emitted.*"

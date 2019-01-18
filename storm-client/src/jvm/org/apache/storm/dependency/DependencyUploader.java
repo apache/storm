@@ -15,9 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.dependency;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -27,17 +34,10 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 public class DependencyUploader {
     public static final Logger LOG = LoggerFactory.getLogger(DependencyUploader.class);
@@ -59,16 +59,16 @@ public class DependencyUploader {
         }
     }
 
-    @VisibleForTesting
-    void setBlobStore(ClientBlobStore blobStore) {
-        this.blobStore = blobStore;
-    }
-
     private synchronized ClientBlobStore getBlobStore() {
         if (blobStore == null) {
             blobStore = Utils.getClientBlobStore(conf);
         }
         return blobStore;
+    }
+
+    @VisibleForTesting
+    void setBlobStore(ClientBlobStore blobStore) {
+        this.blobStore = blobStore;
     }
 
     public List<String> uploadFiles(List<File> dependencies, boolean cleanupIfFails) throws IOException, AuthorizationException {
@@ -139,7 +139,7 @@ public class DependencyUploader {
     }
 
     private boolean uploadDependencyToBlobStore(String key, File dependency)
-            throws KeyAlreadyExistsException, AuthorizationException, IOException {
+        throws KeyAlreadyExistsException, AuthorizationException, IOException {
 
         boolean uploadNew = false;
         try {
@@ -150,15 +150,27 @@ public class DependencyUploader {
             // set acl to below so that it can be shared by other users as well, but allows only read
             List<AccessControl> acls = new ArrayList<>();
             acls.add(new AccessControl(AccessControlType.USER,
-                    BlobStoreAclHandler.READ | BlobStoreAclHandler.WRITE | BlobStoreAclHandler.ADMIN));
+                                       BlobStoreAclHandler.READ | BlobStoreAclHandler.WRITE | BlobStoreAclHandler.ADMIN));
             acls.add(new AccessControl(AccessControlType.OTHER,
-                    BlobStoreAclHandler.READ));
+                                       BlobStoreAclHandler.READ));
 
-            AtomicOutputStream blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
-            Files.copy(dependency.toPath(), blob);
-            blob.close();
+            AtomicOutputStream blob = null;
+            try {
+                blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
+                Files.copy(dependency.toPath(), blob);
+                blob.close();
+                blob = null;
 
-            uploadNew = true;
+                uploadNew = true;
+            } finally {
+                try {
+                    if (blob != null) {
+                        blob.cancel();
+                    }
+                } catch (IOException throwaway) {
+                    // Ignore.
+                }
+            }
         }
 
         return uploadNew;

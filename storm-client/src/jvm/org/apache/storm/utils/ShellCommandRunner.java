@@ -20,44 +20,47 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Contains convenience functions for running shell commands for cases that are too simple to need a full {@link ShellUtils} implementation.
+ * Contains convenience functions for running shell commands for cases that are too simple to need a full {@link ShellUtils}
+ * implementation.
  */
 public interface ShellCommandRunner {
-    
+
     /**
-     * Method to execute a shell command.
-     * Covers most of the simple cases without requiring the user to implement
-     * the {@link ShellUtils} interface.
+     * Method to execute a shell command. Covers most of the simple cases without requiring the user to implement the {@link ShellUtils}
+     * interface.
+     *
      * @param cmd shell command to execute.
      * @return the output of the executed command.
      */
-    String execCommand(String ... cmd) throws IOException;
+    String execCommand(String... cmd) throws IOException;
 
     /**
-     * Method to execute a shell command.
-     * Covers most of the simple cases without requiring the user to implement
-     * the {@link ShellUtils} interface.
-     * @param env the map of environment key=value
-     * @param cmd shell command to execute.
+     * Method to execute a shell command. Covers most of the simple cases without requiring the user to implement the {@link ShellUtils}
+     * interface.
+     *
+     * @param env     the map of environment key=value
+     * @param cmd     shell command to execute.
      * @param timeout time in milliseconds after which script should be marked timeout
      * @return the output of the executed command.
      */
 
     String execCommand(Map<String, String> env, String[] cmd,
-                                     long timeout) throws IOException;
+                       long timeout) throws IOException;
 
     /**
-     * Method to execute a shell command.
-     * Covers most of the simple cases without requiring the user to implement
-     * the {@link ShellUtils} interface.
+     * Method to execute a shell command. Covers most of the simple cases without requiring the user to implement the {@link ShellUtils}
+     * interface.
+     *
      * @param env the map of environment key=value
      * @param cmd shell command to execute.
      * @return the output of the executed command.
      */
-    String execCommand(Map<String,String> env, String ... cmd)
+    String execCommand(Map<String, String> env, String... cmd)
         throws IOException;
-    
-    /** Token separator regex used to parse Shell tool outputs */
+
+    /**
+     * Token separator regex used to parse Shell tool outputs
+     */
     String getTokenSeparatorRegex();
 
 }

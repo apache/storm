@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.common;
 
 import java.io.Serializable;
@@ -28,6 +29,7 @@ import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback;
 import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback;
 
 /**
+ * Configuration for Elasticsearch connection.
  * @since 0.11
  */
 public class EsConfig implements Serializable {
@@ -49,7 +51,7 @@ public class EsConfig implements Serializable {
     }
 
     /**
-     * EsConfig Constructor to be used in EsIndexBolt, EsPercolateBolt and EsStateFactory
+     * EsConfig Constructor to be used in EsIndexBolt, EsPercolateBolt and EsStateFactory.
      *
      * @param urls Elasticsearch addresses in scheme://host:port pattern string array
      * @throws IllegalArgumentException if urls are empty
@@ -61,12 +63,12 @@ public class EsConfig implements Serializable {
         }
         this.httpHosts = new HttpHost[urls.length];
         for (int i = 0; i < urls.length; i++) {
-            URI uri = toURI(urls[i]);
+            URI uri = toUri(urls[i]);
             this.httpHosts[i] = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
         }
     }
 
-    static URI toURI(String url) throws IllegalArgumentException {
+    static URI toUri(String url) throws IllegalArgumentException {
         try {
             return new URI(url);
         } catch (URISyntaxException e) {

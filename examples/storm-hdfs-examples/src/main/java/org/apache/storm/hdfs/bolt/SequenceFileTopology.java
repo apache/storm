@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt;
 
 import java.io.FileInputStream;
@@ -23,7 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
@@ -66,8 +60,8 @@ public class SequenceFileTopology {
         FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(5.0f, Units.MB);
 
         FileNameFormat fileNameFormat = new DefaultFileNameFormat()
-                .withPath("/tmp/source/")
-                .withExtension(".seq");
+            .withPath("/tmp/source/")
+            .withExtension(".seq");
 
         // create sequence format instance.
         DefaultSequenceFormat format = new DefaultSequenceFormat("timestamp", "sentence");
@@ -79,22 +73,22 @@ public class SequenceFileTopology {
         config.put("hdfs.config", yamlConf);
 
         SequenceFileBolt bolt = new SequenceFileBolt()
-                .withFsUrl(args[0])
-                .withConfigKey("hdfs.config")
-                .withFileNameFormat(fileNameFormat)
-                .withSequenceFormat(format)
-                .withRotationPolicy(rotationPolicy)
-                .withSyncPolicy(syncPolicy)
-                .withCompressionType(SequenceFile.CompressionType.RECORD)
-                .withCompressionCodec("deflate")
-                .addRotationAction(new MoveFileAction().toDestination("/tmp/dest/"));
+            .withFsUrl(args[0])
+            .withConfigKey("hdfs.config")
+            .withFileNameFormat(fileNameFormat)
+            .withSequenceFormat(format)
+            .withRotationPolicy(rotationPolicy)
+            .withSyncPolicy(syncPolicy)
+            .withCompressionType(SequenceFile.CompressionType.RECORD)
+            .withCompressionCodec("deflate")
+            .addRotationAction(new MoveFileAction().toDestination("/tmp/dest/"));
 
         TopologyBuilder builder = new TopologyBuilder();
 
         builder.setSpout(SENTENCE_SPOUT_ID, spout, 1);
         // SentenceSpout --> MyBolt
         builder.setBolt(BOLT_ID, bolt, 4)
-                .shuffleGrouping(SENTENCE_SPOUT_ID);
+               .shuffleGrouping(SENTENCE_SPOUT_ID);
 
         String topoName = TOPOLOGY_NAME;
         if (args.length == 3) {
@@ -120,11 +114,11 @@ public class SequenceFileTopology {
         private ConcurrentHashMap<UUID, Values> pending;
         private SpoutOutputCollector collector;
         private String[] sentences = {
-                "my dog has fleas",
-                "i like cold beverages",
-                "the dog ate my homework",
-                "don't have a cow man",
-                "i don't think i like fleas"
+            "my dog has fleas",
+            "i like cold beverages",
+            "the dog ate my homework",
+            "don't have a cow man",
+            "i don't think i like fleas"
         };
         private int index = 0;
         private int count = 0;
@@ -151,7 +145,7 @@ public class SequenceFileTopology {
             }
             count++;
             total++;
-            if(count > 20000){
+            if (count > 20000) {
                 count = 0;
                 System.out.println("Pending count: " + this.pending.size() + ", total: " + this.total);
             }
@@ -159,7 +153,7 @@ public class SequenceFileTopology {
         }
 
         public void ack(Object msgId) {
-//            System.out.println("ACK");
+            //            System.out.println("ACK");
             this.pending.remove(msgId);
         }
 

@@ -15,64 +15,62 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
 import com.microsoft.azure.eventhubs.EventData;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 /**
- * An Event Data Scheme which deserializes message payload into the Strings. No
- * encoding is assumed. The receiver will need to handle parsing of the string
- * data in appropriate encoding.
+ * An Event Data Scheme which deserializes message payload into the Strings. No encoding is assumed. The receiver will need to handle
+ * parsing of the string data in appropriate encoding.
  *
- * The resulting tuple would contain two items: the the message string, and a
- * map of properties that include metadata, which can be used to determine who
- * processes the message, and how it is processed.
- * 
- * For passing the raw bytes of a messsage to Bolts, refer to
- * {@link BinaryEventDataScheme}.
+ * The resulting tuple would contain two items: the the message string, and a map of properties that include metadata, which can be used to
+ * determine who processes the message, and how it is processed.
+ *
+ * For passing the raw bytes of a messsage to Bolts, refer to {@link BinaryEventDataScheme}.
  */
 public class EventDataScheme implements IEventDataScheme {
 
-	private static final long serialVersionUID = 1L;
-	private static final Logger logger = LoggerFactory.getLogger(EventDataScheme.class);
-	@Override
-	public List<Object> deserialize(EventData eventData) {
-		final List<Object> fieldContents = new ArrayList<Object>();
-		String messageData = "";
-		if (eventData.getBytes()!=null) {
-			messageData = new String(eventData.getBytes());
-		}
-		/*Will only serialize AMQPValue type*/
-		else if (eventData.getObject()!=null) {
-			try {
-				if (!(eventData.getObject() instanceof List)) {
-					messageData = eventData.getObject().toString();
-				} else {
-					throw new RuntimeException("Cannot serialize the given AMQP type");
-				}
-			} catch (RuntimeException e) {
-				logger.error("Failed to serialize EventData payload class"
-						+ eventData.getObject().getClass());
-				logger.error("Exception encountered while serializing EventData payload is"
-						+ e.toString());
-				throw e;
-			}
-		}
-		Map metaDataMap = eventData.getProperties();
-		fieldContents.add(messageData);
-		fieldContents.add(metaDataMap);
-		return fieldContents;
-	}
+    private static final long serialVersionUID = 1L;
+    private static final Logger logger = LoggerFactory.getLogger(EventDataScheme.class);
 
-	@Override
-	public Fields getOutputFields() {
-		return new Fields(FieldConstants.Message, FieldConstants.META_DATA);
-	}
+    @Override
+    public List<Object> deserialize(EventData eventData) {
+        final List<Object> fieldContents = new ArrayList<Object>();
+        String messageData = "";
+        if (eventData.getBytes() != null) {
+            messageData = new String(eventData.getBytes());
+        }
+        /*Will only serialize AMQPValue type*/
+        else if (eventData.getObject() != null) {
+            try {
+                if (!(eventData.getObject() instanceof List)) {
+                    messageData = eventData.getObject().toString();
+                } else {
+                    throw new RuntimeException("Cannot serialize the given AMQP type");
+                }
+            } catch (RuntimeException e) {
+                logger.error("Failed to serialize EventData payload class"
+                             + eventData.getObject().getClass());
+                logger.error("Exception encountered while serializing EventData payload is"
+                             + e.toString());
+                throw e;
+            }
+        }
+        Map<String, Object> metaDataMap = eventData.getProperties();
+        fieldContents.add(messageData);
+        fieldContents.add(metaDataMap);
+        return fieldContents;
+    }
+
+    @Override
+    public Fields getOutputFields() {
+        return new Fields(FieldConstants.Message, FieldConstants.META_DATA);
+    }
 }

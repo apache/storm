@@ -1,19 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.container.cgroup;
@@ -34,11 +28,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.container.cgroup.core.CpuCore;
+import org.apache.storm.container.cgroup.core.CpusetCore;
 import org.apache.storm.container.cgroup.core.MemoryCore;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
@@ -50,16 +44,39 @@ import org.slf4j.LoggerFactory;
 public class CgroupManager implements ResourceIsolationInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(CgroupManager.class);
-
+    private static final Pattern MEMINFO_PATTERN = Pattern.compile("^([^:\\s]+):\\s*([0-9]+)\\s*kB$");
     private CgroupCenter center;
-
     private Hierarchy hierarchy;
-
     private CgroupCommon rootCgroup;
-
     private String rootDir;
-
     private Map<String, Object> conf;
+
+    static long getMemInfoFreeMb() throws IOException {
+        //MemFree:        14367072 kB
+        //Buffers:          536512 kB
+        //Cached:          1192096 kB
+        // MemFree + Buffers + Cached
+        long memFree = 0;
+        long buffers = 0;
+        long cached = 0;
+        try (BufferedReader in = new BufferedReader(new FileReader("/proc/meminfo"))) {
+            String line = null;
+            while ((line = in.readLine()) != null) {
+                Matcher match = MEMINFO_PATTERN.matcher(line);
+                if (match.matches()) {
+                    String tag = match.group(1);
+                    if (tag.equalsIgnoreCase("MemFree")) {
+                        memFree = Long.parseLong(match.group(2));
+                    } else if (tag.equalsIgnoreCase("Buffers")) {
+                        buffers = Long.parseLong(match.group(2));
+                    } else if (tag.equalsIgnoreCase("Cached")) {
+                        cached = Long.parseLong(match.group(2));
+                    }
+                }
+            }
+        }
+        return (memFree + buffers + cached) / 1024;
+    }
 
     /**
      * initialize data structures.
@@ -102,7 +119,7 @@ public class CgroupManager implements ResourceIsolationInterface {
             Set<SubSystemType> types = new HashSet<>();
             types.add(SubSystemType.cpu);
             this.hierarchy = new Hierarchy(DaemonConfig.getCgroupStormHierarchyName(conf), types,
-                DaemonConfig.getCgroupStormHierarchyDir(conf));
+                                           DaemonConfig.getCgroupStormHierarchyDir(conf));
         }
         this.rootCgroup =
             new CgroupCommon(this.rootDir, this.hierarchy, this.hierarchy.getRootCgroups());
@@ -185,6 +202,23 @@ public class CgroupManager implements ResourceIsolationInterface {
                 }
             }
         }
+
+        if ((boolean) this.conf.get(DaemonConfig.STORM_CGROUP_INHERIT_CPUSET_CONFIGS)) {
+            if (workerGroup.getParent().getCores().containsKey(SubSystemType.cpuset)) {
+                CpusetCore parentCpusetCore = (CpusetCore) workerGroup.getParent().getCores().get(SubSystemType.cpuset);
+                CpusetCore cpusetCore = (CpusetCore) workerGroup.getCores().get(SubSystemType.cpuset);
+                try {
+                    cpusetCore.setCpus(parentCpusetCore.getCpus());
+                } catch (IOException e) {
+                    throw new RuntimeException("Cannot set cpuset.cpus! Exception: ", e);
+                }
+                try {
+                    cpusetCore.setMems(parentCpusetCore.getMems());
+                } catch (IOException e) {
+                    throw new RuntimeException("Cannot set cpuset.mems! Exception: ", e);
+                }
+            }
+        }
     }
 
     @Override
@@ -194,7 +228,7 @@ public class CgroupManager implements ResourceIsolationInterface {
             Set<Integer> tasks = workerGroup.getTasks();
             if (!tasks.isEmpty()) {
                 throw new Exception("Cannot correctly shutdown worker CGroup " + workerId + "tasks " + tasks
-                    + " still running!");
+                                    + " still running!");
             }
             this.center.deleteCgroup(workerGroup);
         } catch (Exception e) {
@@ -252,35 +286,6 @@ public class CgroupManager implements ResourceIsolationInterface {
         CgroupCommon workerGroup = new CgroupCommon(workerId, this.hierarchy, this.rootCgroup);
         MemoryCore memCore = (MemoryCore) workerGroup.getCores().get(SubSystemType.memory);
         return memCore.getPhysicalUsage();
-    }
-
-    private static final Pattern MEMINFO_PATTERN = Pattern.compile("^([^:\\s]+):\\s*([0-9]+)\\s*kB$");
-
-    static long getMemInfoFreeMb() throws IOException {
-        //MemFree:        14367072 kB
-        //Buffers:          536512 kB
-        //Cached:          1192096 kB
-        // MemFree + Buffers + Cached
-        long memFree = 0;
-        long buffers = 0;
-        long cached = 0;
-        try (BufferedReader in = new BufferedReader(new FileReader("/proc/meminfo"))) {
-            String line = null;
-            while ((line = in.readLine()) != null) {
-                Matcher match = MEMINFO_PATTERN.matcher(line);
-                if (match.matches()) {
-                    String tag = match.group(1);
-                    if (tag.equalsIgnoreCase("MemFree")) {
-                        memFree = Long.parseLong(match.group(2));
-                    } else if (tag.equalsIgnoreCase("Buffers")) {
-                        buffers = Long.parseLong(match.group(2));
-                    } else if (tag.equalsIgnoreCase("Cached")) {
-                        cached = Long.parseLong(match.group(2));
-                    }
-                }
-            }
-        }
-        return (memFree + buffers + cached) / 1024;
     }
 
     @Override

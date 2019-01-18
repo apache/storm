@@ -1,20 +1,15 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.streams.tuple;
 
 /**
@@ -64,18 +59,36 @@ public class Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Tuple8<?, ?, ?, ?, ?, ?, ?, ?> tuple8 = (Tuple8<?, ?, ?, ?, ?, ?, ?, ?>) o;
 
-        if (_1 != null ? !_1.equals(tuple8._1) : tuple8._1 != null) return false;
-        if (_2 != null ? !_2.equals(tuple8._2) : tuple8._2 != null) return false;
-        if (_3 != null ? !_3.equals(tuple8._3) : tuple8._3 != null) return false;
-        if (_4 != null ? !_4.equals(tuple8._4) : tuple8._4 != null) return false;
-        if (_5 != null ? !_5.equals(tuple8._5) : tuple8._5 != null) return false;
-        if (_6 != null ? !_6.equals(tuple8._6) : tuple8._6 != null) return false;
-        if (_7 != null ? !_7.equals(tuple8._7) : tuple8._7 != null) return false;
+        if (_1 != null ? !_1.equals(tuple8._1) : tuple8._1 != null) {
+            return false;
+        }
+        if (_2 != null ? !_2.equals(tuple8._2) : tuple8._2 != null) {
+            return false;
+        }
+        if (_3 != null ? !_3.equals(tuple8._3) : tuple8._3 != null) {
+            return false;
+        }
+        if (_4 != null ? !_4.equals(tuple8._4) : tuple8._4 != null) {
+            return false;
+        }
+        if (_5 != null ? !_5.equals(tuple8._5) : tuple8._5 != null) {
+            return false;
+        }
+        if (_6 != null ? !_6.equals(tuple8._6) : tuple8._6 != null) {
+            return false;
+        }
+        if (_7 != null ? !_7.equals(tuple8._7) : tuple8._7 != null) {
+            return false;
+        }
         return _8 != null ? _8.equals(tuple8._8) : tuple8._8 == null;
 
     }

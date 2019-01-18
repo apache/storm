@@ -26,13 +26,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.function.Function;
 import org.apache.storm.generated.WorkerResources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SchedulerAssignmentImpl implements SchedulerAssignment {
     private static final Logger LOG = LoggerFactory.getLogger(SchedulerAssignmentImpl.class);
+    private static Function<WorkerSlot, Collection<ExecutorDetails>> MAKE_LIST = (k) -> new LinkedList<>();
 
     /**
      * topology-id this assignment is for.
@@ -45,24 +46,27 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     private final Map<ExecutorDetails, WorkerSlot> executorToSlot = new HashMap<>();
     private final Map<WorkerSlot, WorkerResources> resources = new HashMap<>();
     private final Map<String, Double> nodeIdToTotalSharedOffHeap = new HashMap<>();
-    //Used to cache the slotToExecutors mapping.
-    private Map<WorkerSlot, Collection<ExecutorDetails>> slotToExecutorsCache = null;
+    private final Map<WorkerSlot, Collection<ExecutorDetails>> slotToExecutors = new HashMap<>();
 
     /**
      * Create a new assignment.
-     * @param topologyId the id of the topology the assignment is for.
-     * @param executorToSlot the executor to slot mapping for the assignment.  Can be null and set through other methods later.
-     * @param resources the resources for the current assignments.  Can be null and set through other methods later.
+     *
+     * @param topologyId                 the id of the topology the assignment is for.
+     * @param executorToSlot             the executor to slot mapping for the assignment.  Can be null and set through other methods later.
+     * @param resources                  the resources for the current assignments.  Can be null and set through other methods later.
      * @param nodeIdToTotalSharedOffHeap the shared memory for this assignment can be null and set through other methods later.
      */
     public SchedulerAssignmentImpl(String topologyId, Map<ExecutorDetails, WorkerSlot> executorToSlot,
-            Map<WorkerSlot, WorkerResources> resources, Map<String, Double> nodeIdToTotalSharedOffHeap) {
-        this.topologyId = topologyId;       
+                                   Map<WorkerSlot, WorkerResources> resources, Map<String, Double> nodeIdToTotalSharedOffHeap) {
+        this.topologyId = topologyId;
         if (executorToSlot != null) {
             if (executorToSlot.entrySet().stream().anyMatch((entry) -> entry.getKey() == null || entry.getValue() == null)) {
                 throw new RuntimeException("Cannot create a scheduling with a null in it " + executorToSlot);
             }
             this.executorToSlot.putAll(executorToSlot);
+            for (Map.Entry<ExecutorDetails, WorkerSlot> entry : executorToSlot.entrySet()) {
+                slotToExecutors.computeIfAbsent(entry.getValue(), MAKE_LIST).add(entry.getKey());
+            }
         }
         if (resources != null) {
             if (resources.entrySet().stream().anyMatch((entry) -> entry.getKey() == null || entry.getValue() == null)) {
@@ -83,8 +87,8 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     }
 
     public SchedulerAssignmentImpl(SchedulerAssignment assignment) {
-        this(assignment.getTopologyId(), assignment.getExecutorToSlot(), 
-                assignment.getScheduledResources(), assignment.getNodeIdToTotalSharedOffHeapMemory());
+        this(assignment.getTopologyId(), assignment.getExecutorToSlot(),
+             assignment.getScheduledResources(), assignment.getNodeIdToTotalSharedOffHeapMemory());
     }
 
     @Override
@@ -94,6 +98,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
 
     /**
      * Like the equals command, but ignores the resources.
+     *
      * @param other the object to check for equality against.
      * @return true if they are equal, ignoring resources, else false.
      */
@@ -105,11 +110,11 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
             return false;
         }
         SchedulerAssignmentImpl o = (SchedulerAssignmentImpl) other;
-        
+
         return topologyId.equals(o.topologyId)
-            && executorToSlot.equals(o.executorToSlot);
+               && executorToSlot.equals(o.executorToSlot);
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -118,7 +123,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         result = prime * result + ((executorToSlot == null) ? 0 : executorToSlot.hashCode());
         return result;
     }
-    
+
     @Override
     public boolean equals(Object other) {
         if (!equalsIgnoreResources(other)) {
@@ -127,13 +132,13 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         SchedulerAssignmentImpl o = (SchedulerAssignmentImpl) other;
 
         return resources.equals(o.resources)
-            && nodeIdToTotalSharedOffHeap.equals(o.nodeIdToTotalSharedOffHeap);
+               && nodeIdToTotalSharedOffHeap.equals(o.nodeIdToTotalSharedOffHeap);
     }
-    
+
     @Override
     public Set<WorkerSlot> getSlots() {
         return new HashSet<>(executorToSlot.values());
-    }    
+    }
 
     @Deprecated
     public void assign(WorkerSlot slot, Collection<ExecutorDetails> executors) {
@@ -148,39 +153,33 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         for (ExecutorDetails executor : executors) {
             this.executorToSlot.put(executor, slot);
         }
+        slotToExecutors.computeIfAbsent(slot, MAKE_LIST)
+            .addAll(executors);
         if (slotResources != null) {
             resources.put(slot, slotResources);
         } else {
             resources.remove(slot);
         }
-        //Clear the cache scheduling changed
-        slotToExecutorsCache = null;
     }
 
     /**
      * Release the slot occupied by this assignment.
      */
     public void unassignBySlot(WorkerSlot slot) {
-        //Clear the cache scheduling is going to change
-        slotToExecutorsCache = null;
-        List<ExecutorDetails> executors = new ArrayList<>();
-        for (ExecutorDetails executor : executorToSlot.keySet()) {
-            WorkerSlot ws = executorToSlot.get(executor);
-            if (ws.equals(slot)) {
-                executors.add(executor);
-            }
-        }
+        Collection<ExecutorDetails> executors = slotToExecutors.remove(slot);
 
         // remove
-        for (ExecutorDetails executor : executors) {
-            executorToSlot.remove(executor);
+        if (executors != null) {
+            for (ExecutorDetails executor : executors) {
+                executorToSlot.remove(executor);
+            }
         }
 
         resources.remove(slot);
 
         String node = slot.getNodeId();
         boolean isFound = false;
-        for (WorkerSlot ws: executorToSlot.values()) {
+        for (WorkerSlot ws : executorToSlot.values()) {
             if (node.equals(ws.getNodeId())) {
                 isFound = true;
                 break;
@@ -193,7 +192,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
 
     @Override
     public boolean isSlotOccupied(WorkerSlot slot) {
-        return this.executorToSlot.containsValue(slot);
+        return this.slotToExecutors.containsKey(slot);
     }
 
     @Override
@@ -218,21 +217,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
 
     @Override
     public Map<WorkerSlot, Collection<ExecutorDetails>> getSlotToExecutors() {
-        Map<WorkerSlot, Collection<ExecutorDetails>> ret = slotToExecutorsCache;
-        if (ret != null) {
-            return ret;
-        }
-        ret = new HashMap<>();
-        for (Map.Entry<ExecutorDetails, WorkerSlot> entry : executorToSlot.entrySet()) {
-            ExecutorDetails exec = entry.getKey();
-            WorkerSlot ws = entry.getValue();
-            if (!ret.containsKey(ws)) {
-                ret.put(ws, new LinkedList<ExecutorDetails>());
-            }
-            ret.get(ws).add(exec);
-        }
-        slotToExecutorsCache = ret;
-        return ret;
+        return slotToExecutors;
     }
 
     @Override
@@ -243,7 +228,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     public void setTotalSharedOffHeapMemory(String node, double value) {
         nodeIdToTotalSharedOffHeap.put(node, value);
     }
-    
+
     @Override
     public Map<String, Double> getNodeIdToTotalSharedOffHeapMemory() {
         return nodeIdToTotalSharedOffHeap;

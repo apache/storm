@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.common;
 
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.storm.Config;
 import org.apache.storm.task.GeneralTopologyContext;
@@ -33,32 +35,66 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
-public class EsTestUtil {
-    public static Tuple generateTestTuple(String source, String index, String type, String id) {
+/**
+ * ElasticSearch example utilities.
+ */
+public final class EsTestUtil {
+
+    /**
+     * Generates a test tuple.
+     * @param source the source of the tuple
+     * @param index the index of the tuple
+     * @param type the type of the tuple
+     * @param id the id of the tuple
+     * @return the generated tuple
+     */
+    public static Tuple generateTestTuple(final String source,
+            final String index,
+            final String type,
+            final String id) {
         TopologyBuilder builder = new TopologyBuilder();
-        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(),
-                new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+        GeneralTopologyContext topologyContext = new GeneralTopologyContext(
+                builder.createTopology(),
+                new Config(),
+                new HashMap<>(),
+                new HashMap<>(),
+                new HashMap<>(),
+                "") {
             @Override
-            public Fields getComponentOutputFields(String componentId, String streamId) {
+            public Fields getComponentOutputFields(final String componentId,
+                    final String streamId) {
                 return new Fields("source", "index", "type", "id");
             }
         };
-        return new TupleImpl(topologyContext, new Values(source, index, type, id), 1, "");
+        return new TupleImpl(topologyContext,
+                new Values(source, index, type, id),
+                source,
+                1,
+                "");
     }
 
+    /**
+     * Generates a new tuple mapper.
+     * @return the generated mapper
+     */
     public static EsTupleMapper generateDefaultTupleMapper() {
         return new DefaultEsTupleMapper();
     }
 
-    public static Node startEsNode(){
+    /**
+     * Starts an ElasticSearch node.
+     * @return the started node.
+     */
+    public static Node startEsNode() {
         Node node = NodeBuilder.nodeBuilder().data(true).settings(
                 Settings.settingsBuilder()
-                        .put(ClusterName.SETTING, EsConstants.clusterName)
+                        .put(ClusterName.SETTING, EsConstants.CLUSTER_NAME)
                         .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
                         .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0)
                         .put(EsExecutors.PROCESSORS, 1)
                         .put("http.enabled", true)
-                        .put("index.percolator.map_unmapped_fields_as_string", true)
+                        .put("index.percolator.map_unmapped_fields_as_string",
+                                true)
                         .put("index.store.type", "mmapfs")
                         .put("path.home", "./data")
         ).build();
@@ -66,10 +102,21 @@ public class EsTestUtil {
         return node;
     }
 
-    public static void waitForSeconds(int seconds) {
+    /**
+     * Waits for specified seconds and ignores {@link InterruptedException}.
+     * @param seconds the seconds to wait
+     */
+    public static void waitForSeconds(final int seconds) {
         try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
+            Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+        } catch (InterruptedException ex) {
+            //expected
         }
+    }
+
+    /**
+     * Utility constructor.
+     */
+    private EsTestUtil() {
     }
 }

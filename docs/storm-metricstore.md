@@ -23,6 +23,7 @@ The following configuation options exist:
 
 ```yaml
 storm.metricstore.class: "org.apache.storm.metricstore.rocksdb.RocksDbStore"
+storm.metricprocessor.class: "org.apache.storm.metricstore.NimbusMetricProcessor"
 storm.metricstore.rocksdb.location: "storm_rocks"
 storm.metricstore.rocksdb.create_if_missing: true
 storm.metricstore.rocksdb.metadata_string_cache_capacity: 4000
@@ -31,6 +32,8 @@ storm.metricstore.rocksdb.retention_hours: 240
 
 * storm.metricstore.class is the class that implements the 
 ([`MetricStore`]({{page.git-blob-base}}/storm-server/src/main/java/org/apache/storm/metricstore/MetricStore.java)).
+* storm.metricprocessor.class is the class that implements the 
+([`WorkerMetricsProcessor`]({{page.git-blob-base}}/storm-server/src/main/java/org/apache/storm/metricstore/WorkerMetricsProcessor.java)).
 * storm.metricstore.rocksdb.location provides to location of the RocksDB database on Nimbus
 * storm.metricstore.rocksdb.create_if_missing permits creating a RocksDB database if missing
 * storm.metricstore.rocksdb.metadata_string_cache_capacity controls the number of metadata strings cached in memory.

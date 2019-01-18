@@ -18,13 +18,11 @@
 
 package org.apache.storm.scheduler.resource;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ISchedulingState;
@@ -32,13 +30,11 @@ import org.apache.storm.scheduler.SchedulerAssignment;
 import org.apache.storm.scheduler.TopologyDetails;
 
 public class User {
-    private String userId;
-
     //Topologies that were deemed to be invalid
     private final Set<TopologyDetails> unsuccess = new HashSet<>();
-
     private final double cpuGuarantee;
     private final double memoryGuarantee;
+    private String userId;
 
     public User(String userId) {
         this(userId, 0, 0);
@@ -206,8 +202,8 @@ public class User {
     }
 
     /**
-     * Comparator that sorts topologies by priority and then by submission time First sort by Topology
-     * Priority, if there is a tie for topology priority, topology uptime is used to sort.
+     * Comparator that sorts topologies by priority and then by submission time First sort by Topology Priority, if there is a tie for
+     * topology priority, topology uptime is used to sort.
      */
     static class PQsortByPriorityAndSubmittionTime implements Comparator<TopologyDetails> {
 

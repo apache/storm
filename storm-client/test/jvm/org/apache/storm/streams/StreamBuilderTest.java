@@ -1,22 +1,20 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
+
 package org.apache.storm.streams;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
@@ -44,10 +42,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -56,6 +50,46 @@ import static org.junit.Assert.assertTrue;
  */
 public class StreamBuilderTest {
     StreamBuilder streamBuilder;
+
+    private static IRichSpout newSpout(final String os) {
+        return new BaseRichSpout() {
+
+            @Override
+            public void declareOutputFields(OutputFieldsDeclarer declarer) {
+                declarer.declareStream(os, new Fields("value"));
+            }
+
+            @Override
+            public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+
+            }
+
+            @Override
+            public void nextTuple() {
+
+            }
+        };
+    }
+
+    private static IRichBolt newBolt() {
+        return new BaseRichBolt() {
+
+            @Override
+            public void declareOutputFields(OutputFieldsDeclarer declarer) {
+
+            }
+
+            @Override
+            public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+
+            }
+
+            @Override
+            public void execute(Tuple input) {
+
+            }
+        };
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -107,7 +141,7 @@ public class StreamBuilderTest {
     @Test
     public void testJoin() throws Exception {
         Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
-        Stream<Integer>[] streams = stream.branch(x -> x % 2 == 0, x-> x % 3 == 0);
+        Stream<Integer>[] streams = stream.branch(x -> x % 2 == 0, x -> x % 3 == 0);
         PairStream<Integer, Integer> s1 = streams[0].mapToPair(x -> Pair.of(x, 1));
         PairStream<Integer, Integer> s2 = streams[1].mapToPair(x -> Pair.of(x, 1));
         PairStream<Integer, Pair<Integer, Integer>> sj = s1.join(s2);
@@ -174,7 +208,8 @@ public class StreamBuilderTest {
         OutputCollector mockCollector = Mockito.mock(OutputCollector.class);
         Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0), 2);
         Stream<Integer>[] streams = stream.branch(x -> x % 2 == 0, x -> x % 2 == 1);
-        PairStream<Integer, Pair<Integer, Integer>> joined = streams[0].mapToPair(x -> Pair.of(x, 1)).join(streams[1].mapToPair(x -> Pair.of(x, 1)));
+        PairStream<Integer, Pair<Integer, Integer>> joined =
+            streams[0].mapToPair(x -> Pair.of(x, 1)).join(streams[1].mapToPair(x -> Pair.of(x, 1)));
         assertTrue(joined.getNode() instanceof ProcessorNode);
         StormTopology topology = streamBuilder.build();
         assertEquals(2, topology.get_bolts_size());
@@ -186,10 +221,10 @@ public class StreamBuilderTest {
         OutputCollector mockCollector = Mockito.mock(OutputCollector.class);
         Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
         stream.mapToPair(x -> Pair.of(x, x))
-                .window(TumblingWindows.of(BaseWindowedBolt.Count.of(10)))
-                .reduceByKey((x, y) -> x + y)
-                .reduceByKey((x, y) -> 0)
-                .print();
+              .window(TumblingWindows.of(BaseWindowedBolt.Count.of(10)))
+              .reduceByKey((x, y) -> x + y)
+              .reduceByKey((x, y) -> 0)
+              .print();
         StormTopology topology = streamBuilder.build();
         assertEquals(2, topology.get_bolts_size());
     }
@@ -203,11 +238,11 @@ public class StreamBuilderTest {
         expected.put(new GlobalStreamId("bolt2", "s3__punctuation"), Grouping.all(new NullStruct()));
         Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
         stream.mapToPair(x -> Pair.of(x, x))
-                .window(TumblingWindows.of(BaseWindowedBolt.Count.of(10)))
-                .reduceByKey((x, y) -> x + y)
-                .repartition(10)
-                .reduceByKey((x, y) -> 0)
-                .print();
+              .window(TumblingWindows.of(BaseWindowedBolt.Count.of(10)))
+              .reduceByKey((x, y) -> x + y)
+              .repartition(10)
+              .reduceByKey((x, y) -> 0)
+              .print();
         StormTopology topology = streamBuilder.build();
         assertEquals(3, topology.get_bolts_size());
         assertEquals(expected, topology.get_bolts().get("bolt3").get_common().get_inputs());
@@ -220,49 +255,9 @@ public class StreamBuilderTest {
         OutputCollector mockCollector = Mockito.mock(OutputCollector.class);
         Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
         stream.mapToPair(x -> Pair.of(x, x))
-                .reduceByKey((x, y) -> x + y)
-                .print();
+              .reduceByKey((x, y) -> x + y)
+              .print();
         StormTopology topology = streamBuilder.build();
         assertEquals(1, topology.get_bolts_size());
-    }
-
-    private static IRichSpout newSpout(final String os) {
-        return new BaseRichSpout() {
-
-            @Override
-            public void declareOutputFields(OutputFieldsDeclarer declarer) {
-                declarer.declareStream(os, new Fields("value"));
-            }
-
-            @Override
-            public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-
-            }
-
-            @Override
-            public void nextTuple() {
-
-            }
-        };
-    }
-
-    private static IRichBolt newBolt() {
-        return new BaseRichBolt() {
-
-            @Override
-            public void declareOutputFields(OutputFieldsDeclarer declarer) {
-
-            }
-
-            @Override
-            public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-
-            }
-
-            @Override
-            public void execute(Tuple input) {
-
-            }
-        };
     }
 }

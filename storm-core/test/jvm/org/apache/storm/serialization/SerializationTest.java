@@ -15,19 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.serialization;
 
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.testing.TestSerObject;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 // FIXME: it should be moved to storm-client when serialization-test.clj can be removed
 public class SerializationTest {
@@ -78,27 +78,27 @@ public class SerializationTest {
         isRoundtrip(Lists.newArrayList(mkString(1024 * 1024 * 2)));
     }
 
-    private Map mkConf(Map extra) {
+    private Map<String, Object> mkConf(Map<String, Object> extra) {
         Map<String, Object> config = Utils.readDefaultConfig();
         config.putAll(extra);
         return config;
     }
 
-    private byte[] serialize(List vals, Map<String, Object> conf) throws IOException {
+    private byte[] serialize(List<Object> vals, Map<String, Object> conf) throws IOException {
         KryoValuesSerializer serializer = new KryoValuesSerializer(mkConf(conf));
         return serializer.serialize(vals);
     }
 
-    private List deserialize(byte[] bytes, Map<String, Object> conf) throws IOException {
+    private List<Object> deserialize(byte[] bytes, Map<String, Object> conf) throws IOException {
         KryoValuesDeserializer deserializer = new KryoValuesDeserializer(mkConf(conf));
         return deserializer.deserialize(bytes);
     }
 
-    private List roundtrip(List vals) throws IOException {
-        return roundtrip(vals, new HashMap());
+    private List<Object> roundtrip(List<Object> vals) throws IOException {
+        return roundtrip(vals, new HashMap<>());
     }
 
-    private List roundtrip(List vals, Map<String, Object> conf) throws IOException {
+    private List<Object> roundtrip(List<Object> vals, Map<String, Object> conf) throws IOException {
         return deserialize(serialize(vals, conf), conf);
     }
 

@@ -45,7 +45,7 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
     private Set<String> configKeys = new HashSet<>();
 
     @Override
-    public void prepare(Map topoConf) {
+    public void prepare(Map<String, Object> topoConf) {
         doPrepare(topoConf);
         loadConfigKeys(topoConf);
     }
@@ -83,7 +83,7 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
      *
      * @param topoConf the topology conf
      */
-    protected abstract void doPrepare(Map topoConf);
+    protected abstract void doPrepare(Map<String, Object> topoConf);
 
     /**
      * The lookup key for the config key string
@@ -120,6 +120,12 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
 
                                 LOG.debug("Current user: {}", UserGroupInformation.getCurrentUser());
                                 LOG.debug("Token from Credentials : {}", token);
+
+                                TokenIdentifier tokenId = token.decodeIdentifier();
+                                if (tokenId != null) {
+                                    LOG.debug("Token identifier : {}", tokenId);
+                                    LOG.debug("Username in token identifier : {}", tokenId.getUser());
+                                }
 
                                 UserGroupInformation.getCurrentUser().addToken(token);
                                 LOG.info("Added delegation tokens to UGI.");

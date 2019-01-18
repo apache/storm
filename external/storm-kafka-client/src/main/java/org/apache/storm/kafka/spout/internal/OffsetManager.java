@@ -17,13 +17,11 @@
 package org.apache.storm.kafka.spout.internal;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
-
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutMessageId;
@@ -131,6 +129,7 @@ public class OffsetManager {
                     if (nextEmittedOffset != null && currOffset == nextEmittedOffset) {
                         LOG.debug("Found committable offset: [{}] after missing offset: [{}], skipping to the committable offset",
                             currOffset, nextCommitOffset);
+                        found = true;
                         nextCommitOffset = currOffset + 1;
                     } else {
                         LOG.debug("Topic-partition [{}] has non-sequential offset [{}]."

@@ -18,8 +18,17 @@ STORM_SRC_ROOT_DIR=$1
 
 TRAVIS_SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
+cd ${STORM_SRC_ROOT_DIR}/shaded-deps/
+python ${TRAVIS_SCRIPT_DIR}/save-logs.py "install-shade.txt" mvn clean install --batch-mode
+BUILD_RET_VAL=$?
+if [[ "$BUILD_RET_VAL" != "0" ]];
+then
+  cat "install-shade.txt"
+  exit ${BUILD_RET_VAL}
+fi
+
 cd ${STORM_SRC_ROOT_DIR}
-python ${TRAVIS_SCRIPT_DIR}/save-logs.py "install.txt" mvn clean install -DskipTests -Pnative --batch-mode
+python ${TRAVIS_SCRIPT_DIR}/save-logs.py "install.txt" mvn clean install -DskipTests -Pnative,examples,externals '-P!include-shaded-deps' --batch-mode
 BUILD_RET_VAL=$?
 
 if [[ "$BUILD_RET_VAL" != "0" ]];

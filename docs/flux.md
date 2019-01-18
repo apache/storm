@@ -31,7 +31,7 @@ the layout and configuration of your topologies.
    in your topology code
  * Support for existing topology code (see below)
  * Define Storm Core API (Spouts/Bolts) using a flexible YAML DSL
- * YAML DSL support for most Storm components (storm-kafka, storm-hdfs, storm-hbase, etc.)
+ * YAML DSL support for most Storm components (storm-kafka-client, storm-hdfs, storm-hbase, etc.)
  * Convenient support for multi-lang components
  * External property substitution/filtering for easily switching between configurations/environments (similar to Maven-style
    `${variable.name}` substitution)
@@ -342,6 +342,41 @@ components:
     className: "org.apache.storm.kafka.StringScheme"
 ```
 
+### Static factory methods
+It is also possible to use static factory methods from Flux. Given the following Java code:
+
+```java
+public class TestBolt extends BaseBasicBolt {
+  public static TestBolt newInstance(Duration triggerTime) {
+    return new TestBolt(triggerTime);
+  }
+}
+```
+
+```java
+public class Duration {
+  public static Duration ofSeconds(long seconds) {
+    return new Duration(seconds);
+  }
+}
+```
+
+it is possible to use the factory methods as follows:
+
+```yaml
+components:
+  - id: "time"
+    className: "java.time.Duration"
+    factory: "ofSeconds"
+
+bolts:
+  - id: "testBolt"
+    className: "org.apache.storm.flux.test.TestBolt"
+    factory: "newInstance"
+    factoryArgs:
+      - ref: "time"
+``` 
+
 ### Contructor Arguments, References, Properties and Configuration Methods
 
 ####Constructor Arguments
@@ -444,7 +479,7 @@ well.
 ### Using Java `enum`s in Contructor Arguments, References, Properties and Configuration Methods
 You can easily use Java `enum` values as arguments in a Flux YAML file, simply by referencing the name of the `enum`.
 
-For example, [Storm's HDFS module]() includes the following `enum` definition (simplified for brevity):
+For example, [Storm's HDFS module](storm-hdfs.html) includes the following `enum` definition (simplified for brevity):
 
 ```java
 public static enum Units {

@@ -21,68 +21,69 @@ import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CON
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 
-import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import kafka.admin.AdminUtils;
-import kafka.admin.RackAwareMode;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.utils.MockTime;
 import kafka.utils.TestUtils;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
-import kafka.zk.EmbeddedZookeeper;
-import org.I0Itec.zkclient.ZkClient;
+import org.apache.curator.test.TestingServer;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.Serializer;
+import org.apache.storm.testing.TmpPath;
 
 public class KafkaUnit {
+    private TestingServer zookeeper;
     private KafkaServer kafkaServer;
-    private EmbeddedZookeeper zkServer;
-    private ZkUtils zkUtils;
     private KafkaProducer<String, String> producer;
-    private static final String ZK_HOST = "127.0.0.1";
+    private AdminClient kafkaAdminClient;
+    private TmpPath kafkaDir;
     private static final String KAFKA_HOST = "127.0.0.1";
     private static final int KAFKA_PORT = 9092;
 
     public KafkaUnit() {
     }
 
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
         // setup ZK
-        zkServer = new EmbeddedZookeeper();
-        String zkConnect = ZK_HOST + ":" + zkServer.port();
-        ZkClient zkClient = new ZkClient(zkConnect, 30000, 30000, ZKStringSerializer$.MODULE$);
-        zkUtils = ZkUtils.apply(zkClient, false);
+        zookeeper = new TestingServer(true);
 
         // setup Broker
+        kafkaDir = new TmpPath(Files.createTempDirectory("kafka-").toAbsolutePath().toString());
         Properties brokerProps = new Properties();
-        brokerProps.setProperty("zookeeper.connect", zkConnect);
+        brokerProps.setProperty("zookeeper.connect", zookeeper.getConnectString());
         brokerProps.setProperty("broker.id", "0");
-        brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
+        brokerProps.setProperty("log.dirs", kafkaDir.getPath());
         brokerProps.setProperty("listeners", String.format("PLAINTEXT://%s:%d", KAFKA_HOST, KAFKA_PORT));
+        brokerProps.setProperty("offsets.topic.replication.factor", "1");
         KafkaConfig config = new KafkaConfig(brokerProps);
         MockTime mock = new MockTime();
         kafkaServer = TestUtils.createServer(config, mock);
 
         // setup default Producer
         createProducer();
+        kafkaAdminClient = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_HOST + ":" + KAFKA_PORT));
     }
 
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        kafkaAdminClient.close();
         closeProducer();
         kafkaServer.shutdown();
-        zkUtils.close();
-        zkServer.shutdown();
+        kafkaDir.close();
+        zookeeper.close();
     }
 
-    public void createTopic(String topicName) {
-        AdminUtils.createTopic(zkUtils, topicName, 1, 1, new Properties(), RackAwareMode.Disabled$.MODULE$);
+    public void createTopic(String topicName) throws Exception {
+        kafkaAdminClient.createTopics(Collections.singleton(new NewTopic(topicName, 1, (short)1)))
+            .all()
+            .get(30, TimeUnit.SECONDS);
     }
 
     public int getKafkaPort() {
@@ -97,13 +98,7 @@ public class KafkaUnit {
         producer = new KafkaProducer<>(producerProps);
     }
 
-    public void createProducer(Serializer keySerializer, Serializer valueSerializer) {
-        Properties producerProps = new Properties();
-        producerProps.setProperty(BOOTSTRAP_SERVERS_CONFIG, KAFKA_HOST + ":" + KAFKA_PORT);
-        producer = new KafkaProducer<>(producerProps, keySerializer, valueSerializer);
-    }
-
-    public void sendMessage(ProducerRecord producerRecord) throws InterruptedException, ExecutionException, TimeoutException {
+    public void sendMessage(ProducerRecord<String, String> producerRecord) throws InterruptedException, ExecutionException, TimeoutException {
         producer.send(producerRecord).get(10, TimeUnit.SECONDS);
     }
 

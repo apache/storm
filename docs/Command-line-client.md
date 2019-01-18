@@ -8,6 +8,7 @@ This page describes all the commands that are possible with the "storm" command 
 These commands are:
 
 1. jar
+1. local
 1. sql
 1. kill
 1. activate
@@ -15,6 +16,7 @@ These commands are:
 1. rebalance
 1. repl
 1. classpath
+1. server_classpath
 1. localconfvalue
 1. remoteconfvalue
 1. nimbus
@@ -36,6 +38,7 @@ These commands are:
 1. shell
 1. upload-credentials
 1. version
+1. admin
 1. help
 
 ### jar
@@ -50,9 +53,15 @@ And when you want to ship maven artifacts and its transitive dependencies, you c
 
 When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with comma-separated string. Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters. For example, --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/" will add JBoss and HDP repositories for dependency resolver.
 
-Complete example of both options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka/storm-kafka-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
+Complete example of both options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka-client/storm-kafka-client-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka-clients:1.0.0^org.slf4j:slf4j-api" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
 
 When you pass jars and/or artifacts options, StormSubmitter will upload them when the topology is submitted, and they will be included to classpath of both the process which runs the class, and also workers for that topology.
+
+### local
+
+Syntax: `storm jar topology-jar-path class ...`
+
+The local command acts just like `storm jar` except instead of submitting a topology to a cluster it will run the cluster in local mode.  This means an embedded version of the storm daemons will be run within the same process as your topology for 30 seconds before it shuts down automatically.  As such the classpath of your topology will be extended to include everything needed to run those daemons.
 
 ### sql
 
@@ -92,6 +101,8 @@ The rebalance command can also be used to change the parallelism of a running to
 
 ### repl
 
+*DEPRECATED: This subcommand may be removed in a future release.*
+
 Syntax: `storm repl`
 
 Opens up a Clojure REPL with the storm jars and configuration on the classpath. Useful for debugging.
@@ -101,6 +112,12 @@ Opens up a Clojure REPL with the storm jars and configuration on the classpath. 
 Syntax: `storm classpath`
 
 Prints the classpath used by the storm client when running commands.
+
+### server_classpath
+
+Syntax: `storm server_classpath`
+
+Prints the classpath used by the storm daemons.
 
 ### localconfvalue
 
@@ -147,7 +164,7 @@ as arguments to the function.  If no function is given the arguments must be pai
 
 *NOTE:* This is not really intended for production use.  This is mostly because parsing out the results can be a pain.
 
-Creating an actuall DRPC client only takes a few lines, so for production please go with that.
+Creating an actual DRPC client only takes a few lines, so for production please go with that.
 
 ```java
 Config conf = new Config();
@@ -162,14 +179,14 @@ try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {
 `storm drpc-client exclaim a exclaim b test bar`
 
 This will submit 3 separate DRPC request.
-1. funciton = "exclaim" args = "a"
+1. function = "exclaim" args = "a"
 2. function = "exclaim" args = "b"
 3. function = "test" args = "bar"
 
 `storm drpc-client -f exclaim a b`
 
 This will submit 2 separate DRPC request.
-1. funciton = "exclaim" args = "a"
+1. function = "exclaim" args = "a"
 2. function = "exclaim" args = "b"
 
 ### blobstore
@@ -284,7 +301,7 @@ e.g.
 
   ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123 topology-name
 
-  Set the com.myapp logger's level to WARN indifinitely, and com.myOtherLogger to ERROR for 123 seconds
+  Set the com.myapp logger's level to WARN indefinitely, and com.myOtherLogger to ERROR for 123 seconds
 
   ./bin/storm set_log_level -r com.myOtherLogger topology-name
 
@@ -309,6 +326,29 @@ Uploads a new set of credentials to a running topology
 Syntax: `storm version`
 
 Prints the version number of this Storm release.
+
+### admin
+
+Syntax: `storm admin <cmd> [options]`
+
+The storm admin command provides access to several operations that can help an administrator debug or fix a cluster.
+
+`remove_corrupt_topologies` - This command should be run on a nimbus node as the same user nimbus runs as.  It will go directly to zookeeper + blobstore and find topologies that appear to be corrupted because of missing blobs. It will kill those topologies.
+
+ `zk_cli [options]` - This command will launch a zookeeper cli pointing to the storm zookeeper instance logged in as the nimbus user.  It should be run on a nimbus server as the user nimbus runs as.
+ 
+   * `-s --server <connection string>`: Set the connection string to use,
+            defaults to storm connection string.
+   * `-t --time-out <timeout>`:  Set the timeout to use, defaults to storm
+            zookeeper timeout.
+   * `-w --write`: Allow for writes, defaults to read only, we don't want to
+            cause problems.
+   * `-n --no-root`: Don't include the storm root on the default connection string.
+   * `-j --jaas <jaas_file>`: Include a jaas file that should be used when
+            authenticating with ZK defaults to the
+            java.security.auth.login.config conf.
+
+`creds <topology_id>` - Print the credential keys for a topology.
 
 ### help
 Syntax: `storm help [command]`

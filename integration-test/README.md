@@ -21,19 +21,21 @@ Following describes how we can run individual tests against this vagrant cluster
 
 Configs for running
 -------------------
-The supplied configuration will run tests against vagrant setup. However, it can be changed to use a different cluster.
-Change `integration-test/src/test/resources/storm.yaml` as necessary.
+Configuration for the Storm cluster in Vagrant can be found in `integration-test/config/storm.yaml`. The configuration for the tests when running against Vagrant can be found in `src/test/resources/storm-conf/`, which is used if you run Maven with the `intellij` profile.
+Outside Vagrant, you will need to configure your cluster as normal through your cluster's storm.yaml file. You can configure the tests by pointing to a storm.yaml by adding "-Dstorm.conf.file=/your/path/to/storm.yaml". This file needs to contain `nimbus.seeds` pointing to your Nimbus URL(s).
+
+If you're running against a cluster outside Vagrant, the test needs access to Nimbus and the test must be able to hit the Logviewer URLs at port 8000 on each Supervisor. 
 
 Running all tests manually
 --------------------------
 To run all tests:
 ```sh
-mvn clean package -DskipTests && mvn test
+mvn clean package -DskipTests && mvn test -DskipTests=false
 ```
 
 To run a single test:
 ```sh
-mvn clean package -DskipTests && mvn test -Dtest=SlidingWindowCountTest
+mvn clean package -DskipTests && mvn test -DskipTests=false -Dtest=SlidingWindowCountTest#testWindowCount
 ```
 
 Running tests from IDE
@@ -41,7 +43,7 @@ Running tests from IDE
 You might have to enable intellij profile to make your IDE happy.
 Make sure that the following is run before tests are launched.
 ```sh
-mvn package -DskipTests
+mvn package
 ```
 
 Running tests with custom storm version
@@ -49,7 +51,7 @@ Running tests with custom storm version
 You can supply custom storm version using `-Dstorm.version=<storm-version>` property to all the maven commands.
 ```sh
 mvn clean package -DskipTests -Dstorm.version=<storm-version>
-mvn test -Dtest=DemoTest -Dstorm.version=<storm-version>
+mvn test -DskipTests=false -Dtest=DemoTest -Dstorm.version=<storm-version>
 ```
 
 To find version of the storm that you are running run `storm version` command.

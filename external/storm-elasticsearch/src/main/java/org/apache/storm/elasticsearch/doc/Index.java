@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.doc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,6 +29,13 @@ public class Index {
 
     }
 
+    /**
+     * Create a Index with the specified index, type and id.
+     *
+     * @param index index name
+     * @param type  document type to be stored
+     * @param id    unique document id in Elasticsearch
+     */
     public Index(String index, String type, String id) {
         this.index = index;
         this.type = type;

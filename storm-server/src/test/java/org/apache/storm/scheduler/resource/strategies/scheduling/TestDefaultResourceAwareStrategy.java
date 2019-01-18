@@ -62,6 +62,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
+import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class TestDefaultResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestDefaultResourceAwareStrategy.class);
@@ -128,7 +130,7 @@ public class TestDefaultResourceAwareStrategy {
                 genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
 
         Topologies topologies = new Topologies(topo);
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, conf);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
 
@@ -195,7 +197,7 @@ public class TestDefaultResourceAwareStrategy {
                 genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
 
         Topologies topologies = new Topologies(topo);
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, conf);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
 
@@ -264,7 +266,7 @@ public class TestDefaultResourceAwareStrategy {
         TopologyDetails topo2 = genTopology("topo-2", config, 8, 0, 2, 0, CURRENT_TIME - 2, 10, "user");
         
         Topologies topologies = new Topologies(topo1, topo2);
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         
         List<String> supHostnames = new LinkedList<>();
         for (SupervisorDetails sup : supMap.values()) {
@@ -319,7 +321,7 @@ public class TestDefaultResourceAwareStrategy {
         List<String> nodeHostnames = rackToNodes.get("rack-1");
         for (int i = 0; i< topo2.getExecutors().size()/2; i++) {
             String nodeHostname = nodeHostnames.get(i % nodeHostnames.size());
-            RAS_Node node = rs.idToNode(rs.nodeHostnameToId(nodeHostname));
+            RAS_Node node = rs.hostnameToNodes(nodeHostname).get(0);
             WorkerSlot targetSlot = node.getFreeSlots().iterator().next();
             ExecutorDetails targetExec = executorIterator.next();
             // to keep track of free slots
@@ -388,7 +390,7 @@ public class TestDefaultResourceAwareStrategy {
         TopologyDetails topo2 = genTopology("topo-2", t2Conf, 8, 0, 2, 0, CURRENT_TIME - 2, 10, "user");
 
         Topologies topologies = new Topologies(topo1, topo2);
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
         List<String> supHostnames = new LinkedList<>();
         for (SupervisorDetails sup : supMap.values()) {
@@ -444,7 +446,7 @@ public class TestDefaultResourceAwareStrategy {
         List<String> nodeHostnames = rackToNodes.get("rack-1");
         for (int i = 0; i< topo2.getExecutors().size()/2; i++) {
             String nodeHostname = nodeHostnames.get(i % nodeHostnames.size());
-            RAS_Node node = rs.idToNode(rs.nodeHostnameToId(nodeHostname));
+            RAS_Node node = rs.hostnameToNodes(nodeHostname).get(0);
             WorkerSlot targetSlot = node.getFreeSlots().iterator().next();
             ExecutorDetails targetExec = executorIterator.next();
             // to keep track of free slots

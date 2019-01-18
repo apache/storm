@@ -20,22 +20,25 @@ package org.apache.storm.kafka.spout.subscription;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.task.TopologyContext;
 
 /**
  * A function used to assign partitions to this spout.
- * WARNING if this is not done correctly you can really mess things up, like not reading data in some partitions.
+ * 
+ * <p>WARNING if this is not done correctly you can really mess things up, like not reading data in some partitions.
  * The complete TopologyContext is passed in, but it is suggested that you use the index of the spout and the total
  * number of spouts to avoid missing partitions or double assigning partitions.
  */
 @FunctionalInterface
 public interface ManualPartitioner extends Serializable {
     /**
-     * Get the partitions for this assignment.
-     * @param allPartitions all of the partitions that the set of spouts want to subscribe to, in a strict ordering
+     * Filter the list of all partitions handled by this set of spouts to get only the partitions assigned to this task.
+     * @param allPartitionsSorted all of the partitions that the set of spouts want to subscribe to
+     *     in a strict ordering that is consistent across tasks
      * @param context the context of the topology
-     * @return the subset of the partitions that this spout should use.
+     * @return the subset of the partitions that this spout task should handle.
      */
-    public List<TopicPartition> partition(List<TopicPartition> allPartitions, TopologyContext context);
+    public Set<TopicPartition> getPartitionsForThisTask(List<TopicPartition> allPartitionsSorted, TopologyContext context);
 }

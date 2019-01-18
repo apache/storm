@@ -6,6 +6,7 @@ documentation: true
 ### Basics of Storm
 
 * [Javadoc](javadocs/index.html)
+* [Tutorial](Tutorial.html)
 * [Concepts](Concepts.html)
 * [Scheduler](Storm-Scheduler.html)
 * [Configuration](Configuration.html)
@@ -64,7 +65,7 @@ But small change will not affect the user experience. We will notify the user wh
 * [CGroup Enforcement](cgroups_in_storm.html)
 * [Pacemaker reduces load on zookeeper for large clusters](Pacemaker.html)
 * [Resource Aware Scheduler](Resource_Aware_Scheduler_overview.html)
-* [Daemon Metrics/Monitoring](storm-metrics-profiling-internal-actions.html)
+* [Daemon Metrics/Monitoring](ClusterMetrics.html)
 * [Windows users guide](windows-users-guide.html)
 * [Classpath handling](Classpath-handling.html)
 
@@ -75,13 +76,13 @@ But small change will not affect the user experience. We will notify the user wh
 * [DSLs and multilang adapters](DSLs-and-multilang-adapters.html)
 * [Using non-JVM languages with Storm](Using-non-JVM-languages-with-Storm.html)
 * [Distributed RPC](Distributed-RPC.html)
-* [Transactional topologies](Transactional-topologies.html)
 * [Hooks](Hooks.html)
-* [Metrics](Metrics.html)
+* [Metrics (Deprecated)](Metrics.html)
+* [Metrics V2](metrics_v2.html)
 * [State Checkpointing](State-checkpointing.html)
 * [Windowing](Windowing.html)
 * [Joining Streams](Joins.html)
-* [Blobstore(Distcahce)](distcache-blobstore.html)
+* [Blobstore(Distcache)](distcache-blobstore.html)
 
 ### Debugging
 * [Dynamic Log Level Settings](dynamic-log-level-settings.html)
@@ -90,7 +91,7 @@ But small change will not affect the user experience. We will notify the user wh
 * [Event Logging](Eventlogging.html)
 
 ### Integration With External Systems, and Other Libraries
-* [Apache Kafka Integration](storm-kafka.html), [New Kafka Consumer Integration](storm-kafka-client.html)
+* [Apache Kafka Integration](storm-kafka-client.html)
 * [Apache HBase Integration](storm-hbase.html)
 * [Apache HDFS Integration](storm-hdfs.html)
 * [Apache Hive Integration](storm-hive.html)
@@ -106,7 +107,6 @@ But small change will not affect the user experience. We will notify the user wh
 * [Mongodb Integration](storm-mongodb.html)
 * [OpenTSDB Integration](storm-opentsdb.html)
 * [Kinesis Integration](storm-kinesis.html)
-* [Druid Integration](storm-druid.html)
 * [PMML Integration](storm-pmml.html)
 * [Kestrel Integration](Kestrel-and-Storm.html)
 

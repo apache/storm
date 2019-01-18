@@ -21,13 +21,12 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>18</version>
+        <version>21</version>
     </parent>
-
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -82,7 +81,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone/>
+            <timezone />
         </developer>
         <developer>
             <id>afeng</id>
@@ -109,7 +108,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone/>
+            <timezone />
         </developer>
         <developer>
             <id>jjackson</id>
@@ -210,17 +209,31 @@
             </roles>
             <timezone>-8</timezone>
         </developer>
+        <developer>
+            <id>roshannaik</id>
+            <name>Roshan Naik</name>
+            <email>roshannaik@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-8</timezone>
+        </developer>
+        <developer>
+            <id>Ethanlm</id>
+            <name>Ethan Li</name>
+            <email>ethanli@apache.org</email>
+            <roles>	
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+
     </developers>
-
-
-    <prerequisites>
-        <maven>3.0.0</maven>
-    </prerequisites>
 
     <scm>
         <connection>scm:git:https://git-wip-us.apache.org/repos/asf/storm.git</connection>
         <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/storm.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v2.0.0</tag>
         <url>https://git-wip-us.apache.org/repos/asf/storm</url>
     </scm>
 
@@ -235,91 +248,75 @@
 
         <!-- dependency versions -->
         <clojure.version>1.7.0</clojure.version>
-        <java_jmx.version>0.3.1</java_jmx.version>
-        <compojure.version>1.1.9</compojure.version>
-        <hiccup.version>0.3.6</hiccup.version>
-        <commons-compress.version>1.4.1</commons-compress.version>
-        <commons-io.version>2.5</commons-io.version>
-        <commons-lang.version>2.5</commons-lang.version>
-        <commons-exec.version>1.1</commons-exec.version>
+        <commons-compress.version>1.16.1</commons-compress.version>
+        <commons-io.version>2.6</commons-io.version>
+        <commons-lang.version>2.6</commons-lang.version>
+        <commons-exec.version>1.3</commons-exec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
-        <commons-fileupload.version>1.3.2</commons-fileupload.version>
-        <commons-codec.version>1.6</commons-codec.version>
-        <commons-cli.version>1.3.1</commons-cli.version>
-        <clj-time.version>0.8.0</clj-time.version>
-        <curator.version>4.0.0</curator.version>
-        <curator-test.version>2.12.0</curator-test.version>
+        <commons-fileupload.version>1.3.3</commons-fileupload.version>
+        <commons-codec.version>1.11</commons-codec.version>
+        <commons-cli.version>1.4</commons-cli.version>
+        <curator.version>4.0.1</curator.version>
+        <curator-test.version>2.13.0</curator-test.version>
         <json-simple.version>1.1</json-simple.version>
-        <ring.version>1.6.2</ring.version>
-        <ring-json.version>0.4.0</ring-json.version>
-        <jetty.version>9.4.7.v20170914</jetty.version>
+        <jetty.version>9.4.14.v20181114</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
-        <clojure.math.numeric-tower.version>0.0.1</clojure.math.numeric-tower.version>
         <carbonite.version>1.5.0</carbonite.version>
         <snakeyaml.version>1.11</snakeyaml.version>
-        <httpclient.version>4.3.3</httpclient.version>
-        <clojure.tools.cli.version>0.2.4</clojure.tools.cli.version>
-        <disruptor.version>3.3.2</disruptor.version>
+        <httpclient.version>4.5.6</httpclient.version>
+        <jctools.version>2.0.1</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
         <auto-service.version>1.0-rc3</auto-service.version>
-        <netty.version>3.9.0.Final</netty.version>
+        <netty.version>4.1.30.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
-        <log4j.version>2.8.2</log4j.version>
+        <log4j.version>2.11.1</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
-        <metrics.version>3.1.0</metrics.version>
-        <clojure.tools.nrepl.version>0.2.3</clojure.tools.nrepl.version>
-        <clojure-complete.version>0.2.3</clojure-complete.version>
-        <mockito.version>2.10.0</mockito.version>
-        <conjure.version>2.1.3</conjure.version>
+        <metrics.version>3.2.6</metrics.version>
+        <mockito.version>2.19.0</mockito.version>
         <zookeeper.version>3.4.6</zookeeper.version>
-        <clojure-data-codec.version>0.1.0</clojure-data-codec.version>
-        <clojure-contrib.version>1.2.0</clojure-contrib.version>
-        <hive.version>0.14.0</hive.version>
+        <jline.version>0.9.94</jline.version>
+        <hive.version>2.3.3</hive.version>
         <hadoop.version>2.6.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
-        <hbase.version>1.1.12</hbase.version>
+        <hbase.version>1.4.4</hbase.version>
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>
-        <thrift.version>0.9.3</thrift.version>
-        <junit.version>4.11</junit.version>
-        <metrics-clojure.version>2.5.1</metrics-clojure.version>
-        <hdrhistogram.version>2.1.7</hdrhistogram.version>
+        <thrift.version>0.11.0</thrift.version>
+        <junit.jupiter.version>5.3.2</junit.jupiter.version>
+        <surefire.version>2.22.1</surefire.version>
+        <awaitility.version>3.1.0</awaitility.version>
+        <hdrhistogram.version>2.1.10</hdrhistogram.version>
         <hamcrest.version>2.0.0.0</hamcrest.version>
         <cassandra.version>2.1.7</cassandra.version>
         <druid.version>0.8.2</druid.version>
         <elasticsearch.version>5.2.2</elasticsearch.version>
-        <calcite.version>1.11.0</calcite.version>
+        <calcite.version>1.14.0</calcite.version>
         <mongodb.version>3.2.0</mongodb.version>
         <solr.version>5.2.1</solr.version>
         <jpmml.version>1.0.22</jpmml.version>
         <jedis.version>2.9.0</jedis.version>
-        <rocketmq.version>4.0.0-incubating</rocketmq.version>
+        <activemq.version>5.15.3</activemq.version>
+        <rocketmq.version>4.2.0</rocketmq.version>
 
-        <jackson.version>2.9.2</jackson.version>
-        <!-- Kafka version used by old storm-kafka spout code -->
-        <storm.kafka.version>0.8.2.2</storm.kafka.version>
-        <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
-
-        <!-- kafka version used by new storm-kafka-client spout code -->
-        <storm.kafka.client.version>0.10.1.0</storm.kafka.client.version>
-
+        <jackson.version>2.9.4</jackson.version>
+        
+        <storm.kafka.client.version>0.11.0.0</storm.kafka.client.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
-        <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
-        <java.unit.test.include>**/Test*.java, **/*Test.java, **/*TestCase.java</java.unit.test.include>    <!--maven surefire plugin default test list-->
-        <java.integration.test.include>no.tests</java.integration.test.include>
+        <java.unit.test.exclude.groups>PerformanceTest</java.unit.test.exclude.groups>
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
+        <skipITs>true</skipITs>
 
         <aetherVersion>1.1.0</aetherVersion>
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
-        <jersey.version>2.24.1</jersey.version>
-        <dropwizard.version>1.1.2</dropwizard.version>
+        <jersey.version>2.27</jersey.version>
+        <dropwizard.version>1.3.5</dropwizard.version>
         <j2html.version>1.0.0</j2html.version>
         <jool.version>0.9.12</jool.version>
         <caffeine.version>2.3.5</caffeine.version>
@@ -344,61 +341,19 @@
         <module>storm-clojure</module>
         <module>storm-clojure-test</module>
         <module>storm-submit-tools</module>
-        <module>flux</module>
-        <module>sql</module>
-
-        <!-- externals -->
-        <module>external/storm-autocreds</module>
-        <module>external/storm-kafka</module>
-        <module>external/storm-hdfs</module>
-        <module>external/storm-hbase</module>
-        <module>external/storm-hive</module>
-        <module>external/storm-jdbc</module>
-        <module>external/storm-redis</module>
-        <module>external/storm-eventhubs</module>
-        <module>external/storm-elasticsearch</module>
-        <module>external/storm-solr</module>
-        <module>external/storm-metrics</module>
-        <module>external/storm-cassandra</module>
-        <module>external/storm-mqtt</module>
-        <module>external/storm-mongodb</module>
-        <module>external/storm-kafka-client</module>
-        <module>external/storm-opentsdb</module>
-        <module>external/storm-kafka-monitor</module>
-        <module>external/storm-kinesis</module>
-        <module>external/storm-druid</module>
-        <module>external/storm-jms</module>
-        <module>external/storm-pmml</module>
-        <module>external/storm-rocketmq</module>
-        <module>external/storm-blobstore-migration</module>
-        <module>integration-test</module>
-
-        <!-- examples -->
-        <module>examples/storm-starter</module>
-        <module>examples/storm-loadgen</module>
-        <module>examples/storm-mongodb-examples</module>
-        <module>examples/storm-redis-examples</module>
-        <module>examples/storm-opentsdb-examples</module>
-        <module>examples/storm-solr-examples</module>
-        <module>examples/storm-kafka-examples</module>
-        <module>examples/storm-kafka-client-examples</module>
-        <module>examples/storm-jdbc-examples</module>
-        <module>examples/storm-hdfs-examples</module>
-        <module>examples/storm-hbase-examples</module>
-        <module>examples/storm-hive-examples</module>
-        <module>examples/storm-elasticsearch-examples</module>
-        <module>examples/storm-mqtt-examples</module>
-        <module>examples/storm-pmml-examples</module>
-        <module>examples/storm-jms-examples</module>
-        <module>examples/storm-rocketmq-examples</module>
-        <module>examples/storm-perf</module>
     </modules>
 
     <dependencies>
         <!-- The JUnit dependency is required for submodules by the maven-surefire-plugin <excludedGroups> configuration -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- This also puts JUnit 4 on the test classpath for all modules -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -415,7 +370,15 @@
                 <provided.scope>compile</provided.scope>
             </properties>
         </profile>
-
+        <profile>
+            <id>include-shaded-deps</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>shaded-deps</module>
+            </modules>
+        </profile>
         <profile>
             <id>rat</id>
             <build>
@@ -465,29 +428,32 @@
                                 <!-- thrift-generated code -->
                                 <exclude>**/src/py/**</exclude>
 
+                                <!-- Used as part of travis-ci build -->
+                                <exclude>install.txt</exclude>
+                                <exclude>shaded-deps/install-shade.txt</exclude>
                                 <!-- the following are in the LICENSE file -->
-                                <exclude>**/src/ui/public/js/jquery.dataTables.1.10.4.min.js</exclude>
-                                <exclude>**/src/ui/public/css/jquery.dataTables.1.10.4.min.css</exclude>
-                                <exclude>**/src/ui/public/images/*</exclude>
-                                <exclude>**/src/ui/public/js/bootstrap-3.3.1.min.js</exclude>
-                                <exclude>**/src/ui/public/css/bootstrap-3.3.1.min.css</exclude>
-                                <exclude>**/src/ui/public/js/dataTables.bootstrap.min.js</exclude>
-                                <exclude>**/src/ui/public/css/dataTables.bootstrap.css</exclude>
-                                <exclude>**/src/ui/public/js/jsonFormatter.min.js</exclude>
-                                <exclude>**/src/ui/public/css/jsonFormatter.min.css</exclude>
-                                <exclude>**/src/ui/public/js/jquery-1.11.1.min.js</exclude>
-                                <exclude>**/src/ui/public/js/jquery.cookies.2.2.0.min.js</exclude>
-                                <exclude>**/src/ui/public/js/moment.min.js</exclude>
-                                <exclude>**/src/ui/public/js/jquery.blockUI.min.js</exclude>
-                                <exclude>**/src/ui/public/js/url.min.js</exclude>
-                                <exclude>**/src/ui/public/js/jquery.mustache.js</exclude>
-                                <exclude>**/src/ui/public/js/typeahead.jquery.min.js</exclude>
-                                <exclude>**/src/ui/public/js/cytoscape-dagre.js</exclude>
-                                <exclude>**/src/ui/public/js/dagre.min.js</exclude>
-                                <exclude>**/src/ui/public/js/esprima.min.js</exclude>
-                                <exclude>**/src/ui/public/js/js-yaml.min.js</exclude>
-                                <exclude>**/src/ui/public/js/vis.min.js</exclude>
-                                <exclude>**/src/ui/public/css/vis.min.css</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.dataTables.1.10.4.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jquery.dataTables.1.10.4.min.css</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/images/*</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/bootstrap-3.3.1.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/bootstrap-3.3.1.min.css</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/dataTables.bootstrap.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/dataTables.bootstrap.css</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jsonFormatter.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jsonFormatter.min.css</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery-1.11.1.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.cookies.2.2.0.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/moment.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.blockUI.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/url.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.mustache.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/typeahead.jquery.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/cytoscape-dagre.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/dagre.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/esprima.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/js-yaml.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/vis.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/vis.min.css</exclude>
                                 <exclude>**/src/main/resources/Audit.50.csv</exclude>
                                 <exclude>**/src/main/resources/KNIME_PMML_4.1_Examples_single_audit_logreg.xml</exclude>
                                 <exclude>**/src/main/sampledata/**</exclude>
@@ -573,7 +539,7 @@
                             <execution>
                                 <id>attach-javadocs</id>
                                 <goals>
-                                    <goal>jar-no-fork</goal>
+                                    <goal>javadoc</goal>
                                 </goals>
                             </execution>
                             <execution>
@@ -603,20 +569,102 @@
         <profile>
             <id>all-tests</id>
             <properties>
-                <java.integration.test.include>**/*.java</java.integration.test.include>
+                <!-- add perf tests back in -->
+                <java.unit.test.exclude.groups>nothing</java.unit.test.exclude.groups>
                 <clojure.test.set>*.*</clojure.test.set>
+                <skipITs>false</skipITs>
             </properties>
         </profile>
+        <profile>
+            <id>performance-tests</id>
+            <properties>
+                <!-- add perf tests back in -->
+                <java.unit.test.exclude.groups>nothing</java.unit.test.exclude.groups>
+            </properties>
+        </profile> 
         <profile>
             <id>integration-tests-only</id>
             <properties>
                 <!--Java-->
-                <java.unit.test.include>no.unit.tests</java.unit.test.include>
-                <java.integration.test.include>**/*.java</java.integration.test.include>
+                <skipITs>false</skipITs>
                 <!--Clojure-->
                 <clojure.test.set>integration.*</clojure.test.set>
                 <clojure.test.declared.namespace.only>true</clojure.test.declared.namespace.only>
             </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <skipTests>true</skipTests>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>externals</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>external/storm-autocreds</module>
+                <module>external/storm-hdfs</module>
+                <module>external/storm-hdfs-blobstore</module>
+                <module>external/storm-hbase</module>
+                <module>external/storm-hive</module>
+                <module>external/storm-jdbc</module>
+                <module>external/storm-redis</module>
+                <module>external/storm-eventhubs</module>
+                <module>external/storm-elasticsearch</module>
+                <module>external/storm-solr</module>
+                <module>external/storm-metrics</module>
+                <module>external/storm-cassandra</module>
+                <module>external/storm-mqtt</module>
+                <module>external/storm-mongodb</module>
+                <module>external/storm-kafka-client</module>
+                <module>external/storm-kafka-migration</module>
+                <module>external/storm-opentsdb</module>
+                <module>external/storm-kafka-monitor</module>
+                <module>external/storm-kinesis</module>
+                <module>external/storm-jms</module>
+                <module>external/storm-pmml</module>
+                <module>external/storm-rocketmq</module>
+                <module>external/storm-blobstore-migration</module>
+                <module>integration-test</module>
+
+                <!-- The following modules have dependencies on external modules. -->
+                <module>flux</module>
+                <module>sql</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>examples</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>examples/storm-starter</module>
+                <module>examples/storm-loadgen</module>
+                <module>examples/storm-mongodb-examples</module>
+                <module>examples/storm-redis-examples</module>
+                <module>examples/storm-opentsdb-examples</module>
+                <module>examples/storm-solr-examples</module>
+                <module>examples/storm-kafka-client-examples</module>
+                <module>examples/storm-jdbc-examples</module>
+                <module>examples/storm-hdfs-examples</module>
+                <module>examples/storm-hbase-examples</module>
+                <module>examples/storm-hive-examples</module>
+                <module>examples/storm-elasticsearch-examples</module>
+                <module>examples/storm-mqtt-examples</module>
+                <module>examples/storm-pmml-examples</module>
+                <module>examples/storm-jms-examples</module>
+                <module>examples/storm-rocketmq-examples</module>
+                <module>examples/storm-perf</module>
+            </modules>
         </profile>
     </profiles>
 
@@ -691,9 +739,9 @@
                 <version>${commons-lang.version}</version>
             </dependency>
             <dependency>
-                <groupId>clj-time</groupId>
-                <artifactId>clj-time</artifactId>
-                <version>${clj-time.version}</version>
+                <groupId>jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>${jline.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
@@ -778,6 +826,13 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-client</artifactId>
                 <version>${curator.version}</version>
+                <exclusions>
+                    <!-- Curator depends on Zookeeper 3.5.x, since it is still in beta we should exclude it and depend on Zookeeper 3.4.x.-->
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -792,36 +847,6 @@
                 <groupId>com.googlecode.json-simple</groupId>
                 <artifactId>json-simple</artifactId>
                 <version>${json-simple.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>compojure</groupId>
-                <artifactId>compojure</artifactId>
-                <version>${compojure.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>hiccup</groupId>
-                <artifactId>hiccup</artifactId>
-                <version>${hiccup.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ring</groupId>
-                <artifactId>ring-core</artifactId>
-                <version>${ring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ring</groupId>
-                <artifactId>ring-devel</artifactId>
-                <version>${ring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ring</groupId>
-                <artifactId>ring-jetty-adapter</artifactId>
-                <version>${ring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ring</groupId>
-                <artifactId>ring-json</artifactId>
-                <version>${ring-json.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -850,11 +875,6 @@
                 <version>${clojure.tools.logging.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>math.numeric-tower</artifactId>
-                <version>${clojure.math.numeric-tower.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.twitter</groupId>
                 <artifactId>carbonite</artifactId>
                 <version>${carbonite.version}</version>
@@ -870,14 +890,9 @@
                 <version>${httpclient.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>tools.cli</artifactId>
-                <version>${clojure.tools.cli.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.lmax</groupId>
-                <artifactId>disruptor</artifactId>
-                <version>${disruptor.version}</version>
+                <groupId>org.jctools</groupId>
+                <artifactId>jctools-core</artifactId>
+                <version>${jctools.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jgrapht</groupId>
@@ -922,7 +937,7 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty</artifactId>
+                <artifactId>netty-all</artifactId>
                 <version>${netty.version}</version>
             </dependency>
             <dependency>
@@ -931,44 +946,9 @@
                 <version>${metrics.version}</version>
             </dependency>
             <dependency>
-                <groupId>metrics-clojure</groupId>
-                <artifactId>metrics-clojure</artifactId>
-                <version>${metrics-clojure.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>clojure-contrib</artifactId>
-                <version>${clojure-contrib.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>data.codec</artifactId>
-                <version>${clojure-data-codec.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.clojure</groupId>
-                <artifactId>tools.nrepl</artifactId>
-                <version>${clojure.tools.nrepl.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>clojure</artifactId>
-                        <groupId>org.clojure</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>clojure-complete</groupId>
-                <artifactId>clojure-complete</artifactId>
-                <version>${clojure-complete.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>clojure</artifactId>
-                        <groupId>org.clojure</groupId>
-                    </exclusion>
-                </exclusions>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-graphite</artifactId>
+                <version>${metrics.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -977,15 +957,21 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>java-hamcrest</artifactId>
-                <version>${hamcrest.version}</version>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.clojars.runa</groupId>
-                <artifactId>conjure</artifactId>
-                <version>${conjure.version}</version>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>java-hamcrest</artifactId>
+                <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -996,37 +982,16 @@
             </dependency>
             <!-- used by examples/storm-starter -->
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.calcite</groupId>
                 <artifactId>calcite-core</artifactId>
                 <version>${calcite.version}</version>
-            </dependency> 
-
-            <!-- kafka artifact dependency needed for storm-kafka -->
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>${storm.kafka.artifact.id}</artifactId>
-                <version>${storm.kafka.version}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -1050,10 +1015,65 @@
                 <version>${jaxb-version}</version>
             </dependency>
             <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>1.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>1.3.2</version>
+            </dependency>
+            <dependency>
                 <groupId>org.rocksdb</groupId>
                 <artifactId>rocksdbjni</artifactId>
                 <version>${rocksdb-version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-client</artifactId>
+                <version>${activemq.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-broker</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-mqtt</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-kahadb-store</artifactId>
+                <version>${activemq.version}</version>
+           </dependency>
+           <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-all</artifactId>
+                <version>${activemq.version}</version>
+                <exclusions>
+                   <exclusion>
+                       <groupId>org.slf4j</groupId>
+                       <artifactId>slf4j-api</artifactId>
+                   </exclusion>
+                   <exclusion>
+                       <groupId>log4j</groupId>
+                       <artifactId>log4j</artifactId>
+                   </exclusion>
+                </exclusions>
+           </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1089,11 +1109,8 @@
                     <version>${surefire.version}</version>
                     <configuration>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                        <excludedGroups>${java.unit.test.exclude}</excludedGroups>
-                        <includes>
-                            <include>${java.unit.test.include}</include>
-                        </includes>
-                        <argLine>-Xmx1536m</argLine>
+                        <excludedGroups>IntegrationTest | ${java.unit.test.exclude.groups}</excludedGroups>
+                        <argLine>-Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
                         <trimStackTrace>false</trimStackTrace>
                         <forkCount>1.0C</forkCount>
                         <reuseForks>true</reuseForks>
@@ -1109,9 +1126,9 @@
                     <configuration>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <includes>
-                            <include>${java.integration.test.include}</include>
+                            <include>**/*.java</include>
                         </includes>
-                        <groups>org.apache.storm.testing.IntegrationTest</groups>
+                        <groups>IntegrationTest</groups>
                         <argLine>-Xmx1536m</argLine>
                     </configuration>
                     <executions>
@@ -1127,7 +1144,7 @@
                     <!--To support checkstyle goals. For example: "mvn checkstyle:checkstyle"-->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.17</version>
+                    <version>3.0.0</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.storm</groupId>
@@ -1188,9 +1205,9 @@
                     <extensions>true</extensions>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>2.4.1</version>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.6.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1230,6 +1247,31 @@
                     </docletArtifact>
                     <useStandardDocletOptions>true</useStandardDocletOptions>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-maven-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.0</version>
+                                </requireMavenVersion>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <!-- STORM-3114 -->
+                                        <exclude>jdk.tools:jdk.tools:*</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>    
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

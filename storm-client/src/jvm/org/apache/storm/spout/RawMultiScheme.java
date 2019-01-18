@@ -15,24 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.spout;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
 import static java.util.Arrays.asList;
 
 public class RawMultiScheme implements MultiScheme {
-  @Override
-  public Iterable<List<Object>> deserialize(ByteBuffer ser) {
-    return asList(Utils.tuple(Utils.toByteArray(ser)));
-  }
+    @Override
+    public Iterable<List<Object>> deserialize(ByteBuffer ser) {
+        return asList(Utils.tuple(Utils.toByteArray(ser)));
+    }
 
-  @Override
-  public Fields getOutputFields() {
-    return new Fields("bytes");
-  }
+    @Override
+    public Fields getOutputFields() {
+        return new Fields("bytes");
+    }
 }

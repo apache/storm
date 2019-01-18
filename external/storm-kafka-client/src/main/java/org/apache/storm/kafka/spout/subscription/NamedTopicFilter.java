@@ -16,21 +16,23 @@
 
 package org.apache.storm.kafka.spout.subscription;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Filter that returns all partitions for the specified topics.
  */
 public class NamedTopicFilter implements TopicFilter {
 
+    private static final Logger LOG = LoggerFactory.getLogger(NamedTopicFilter.class);
     private final Set<String> topics;
     
     /**
@@ -50,11 +52,16 @@ public class NamedTopicFilter implements TopicFilter {
     }
     
     @Override
-    public List<TopicPartition> getFilteredTopicPartitions(KafkaConsumer<?, ?> consumer) {
-        List<TopicPartition> allPartitions = new ArrayList<>();
+    public Set<TopicPartition> getAllSubscribedPartitions(Consumer<?, ?> consumer) {
+        Set<TopicPartition> allPartitions = new HashSet<>();
         for (String topic : topics) {
-            for (PartitionInfo partitionInfo: consumer.partitionsFor(topic)) {
-                allPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
+            List<PartitionInfo> partitionInfoList = consumer.partitionsFor(topic);
+            if (partitionInfoList != null) {
+                for (PartitionInfo partitionInfo : partitionInfoList) {
+                    allPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
+                }
+            } else {
+                LOG.warn("Topic {} not found, skipping addition of the topic", topic);
             }
         }
         return allPartitions;

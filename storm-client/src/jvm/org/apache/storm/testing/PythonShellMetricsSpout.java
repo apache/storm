@@ -15,10 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.testing;
 
 import java.util.Map;
-
 import org.apache.storm.metric.api.rpc.CountShellMetric;
 import org.apache.storm.spout.ShellSpout;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -28,29 +28,29 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 
 public class PythonShellMetricsSpout extends ShellSpout implements IRichSpout {
-	private static final long serialVersionUID = 1999209252187463355L;
+    private static final long serialVersionUID = 1999209252187463355L;
 
-	public PythonShellMetricsSpout(String[] command) {
-		super(command);
-	}
+    public PythonShellMetricsSpout(String[] command) {
+        super(command);
+    }
 
     public PythonShellMetricsSpout(String command, String file) {
         super(command, file);
     }
 
-	@Override
-	public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-		super.open(conf, context, collector);
+    @Override
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+        super.open(conf, context, collector);
 
-		CountShellMetric cMetric = new CountShellMetric();
-		context.registerMetric("my-custom-shellspout-metric", cMetric, 5);
-	}
+        CountShellMetric cMetric = new CountShellMetric();
+        context.registerMetric("my-custom-shellspout-metric", cMetric, 5);
+    }
 
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("field1"));
-	}
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields("field1"));
+    }
 
-	public Map<String, Object> getComponentConfiguration() {
-		return null;
-	}
+    public Map<String, Object> getComponentConfiguration() {
+        return null;
+    }
 }

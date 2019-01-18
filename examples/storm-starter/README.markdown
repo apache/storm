@@ -97,18 +97,8 @@ You can submit (run) a topology contained in this uberjar to Storm via the `stor
 
 With submitting you can run topologies which use multilang, for example, `WordCountTopology`.
 
-_Submitting a topology in local vs. remote mode:_
-It depends on the actual code of a topology how you can or even must tell Storm whether to run the topology locally (in
-an in-memory LocalCluster instance of Storm) or remotely (in a "real" Storm cluster).  In the case of topologies extending
-[ConfigurableTopology](https://github.com/apache/storm/tree/master/storm-server/src/jvm/org/apache/storm/topology/ConfigurableTopology.java),
-such as [RollingTopWords](src/jvm/org/apache/storm/starter/RollingTopWords.java) or [ExclamationTopology](src/jvm/org/apache/storm/starter/ExclamationTopology.java), 
-this is done by specifying `-local` in the command line arguments.
-Other topologies may behave differently, e.g. by always submitting to a remote cluster (i.e. hardcoded in a way that you, as a user,
-cannot change without modifying the topology code), or by requiring a customized configuration file that the topology
-code will parse prior submitting the topology to Storm.  Similarly, further options such as the name of the topology may
-be user-configurable or be hardcoded into the topology code.  So make sure you understand how the topology of your
-choice is set up and configured!
-
+### Submitting a topology in local vs. remote mode.
+You can also submit any topology in local mode via the `storm local` command, which works much like the `storm jar` command described above. If you need to run the examples from your IDE, you will need to modify the project slightly, to add a dependency on the `storm-server` module, and use `LocalCluster` to create a local cluster you can submit your topology to. Please see the documentation describing [Local Mode](https://github.com/apache/storm/blob/master/docs/Local-mode.md) for a complete overview of this topic.
 
 ## Running unit tests
 

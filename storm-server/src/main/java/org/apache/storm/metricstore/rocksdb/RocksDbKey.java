@@ -1,24 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
 package org.apache.storm.metricstore.rocksdb;
 
-import com.google.common.primitives.UnsignedBytes;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -26,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.DatatypeConverter;
 import org.apache.storm.metricstore.AggLevel;
+import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,10 +44,9 @@ import org.slf4j.LoggerFactory;
  * </pre>
  */
 public class RocksDbKey implements Comparable<RocksDbKey> {
-    private static final Logger LOG = LoggerFactory.getLogger(RocksDbKey.class);
     static final int KEY_SIZE = 38;
+    private static final Logger LOG = LoggerFactory.getLogger(RocksDbKey.class);
     private static Map<Byte, RocksDbKey> PREFIX_MAP = new HashMap<>();
-    private byte[] key;
 
     static {
         // pregenerate commonly used keys for scans
@@ -64,6 +56,8 @@ public class RocksDbKey implements Comparable<RocksDbKey> {
         }
         PREFIX_MAP = Collections.unmodifiableMap(PREFIX_MAP);
     }
+
+    private byte[] key;
 
     /**
      * Constructor for a RocksDB key for a metadata string.
@@ -94,56 +88,16 @@ public class RocksDbKey implements Comparable<RocksDbKey> {
      * Get a zeroed key of the specified type.
      *
      * @param type  the desired type
-     * @return  a key of the desired type
+     * @return a key of the desired type
      */
     static RocksDbKey getPrefix(KeyType type) {
         return PREFIX_MAP.get(type.getValue());
     }
 
     /**
-     * get the metadata string Id portion of the key for metadata keys.
-     *
-     * @return  the metadata string Id
-     * @throws  RuntimeException  if the key is not a metadata type
-     */
-    int getMetadataStringId() {
-        if (this.getType().getValue() < KeyType.METADATA_STRING_END.getValue()) {
-            return ByteBuffer.wrap(key, 2, 4).getInt();
-        } else {
-            throw new RuntimeException("Cannot fetch metadata string for key of type " + this.getType());
-        }
-    }
-
-    /**
-     * get the raw key bytes
-     */
-    byte[] getRaw() {
-        return this.key;
-    }
-
-    /**
-     * get the type of key.
-     *
-     * @return  the type of key
-     */
-    KeyType getType() {
-        return KeyType.getKeyType(key[0]);
-    }
-
-    /**
-     * compares to keys on a byte by byte basis.
-     *
-     * @return  comparison of key byte values
-     */
-    @Override
-    public int compareTo(RocksDbKey o) {
-        return UnsignedBytes.lexicographicalComparator().compare(this.getRaw(), o.getRaw());
-    }
-
-    /**
      * gets the first possible key value for the desired key type.
      *
-     * @return  the initial key
+     * @return the initial key
      */
     static RocksDbKey getInitialKey(KeyType type) {
         return PREFIX_MAP.get(type.getValue());
@@ -152,17 +106,17 @@ public class RocksDbKey implements Comparable<RocksDbKey> {
     /**
      * gets the key just larger than the last possible key value for the desired key type.
      *
-     * @return  the last key
+     * @return the last key
      */
     static RocksDbKey getLastKey(KeyType type) {
-        byte value = (byte)(type.getValue() + 1);
+        byte value = (byte) (type.getValue() + 1);
         return PREFIX_MAP.get(value);
     }
 
     /**
      * Creates a metric key with the desired properties.
      *
-     * @return  the generated key
+     * @return the generated key
      */
     static RocksDbKey createMetricKey(AggLevel aggLevel, int topologyId, long metricTimestamp, int metricId,
                                       int componentId, int executorId, int hostId, int port,
@@ -182,6 +136,46 @@ public class RocksDbKey implements Comparable<RocksDbKey> {
 
         RocksDbKey key = new RocksDbKey(raw);
         return key;
+    }
+
+    /**
+     * get the metadata string Id portion of the key for metadata keys.
+     *
+     * @return the metadata string Id
+     * @throws RuntimeException  if the key is not a metadata type
+     */
+    int getMetadataStringId() {
+        if (this.getType().getValue() < KeyType.METADATA_STRING_END.getValue()) {
+            return ByteBuffer.wrap(key, 2, 4).getInt();
+        } else {
+            throw new RuntimeException("Cannot fetch metadata string for key of type " + this.getType());
+        }
+    }
+
+    /**
+     * get the raw key bytes
+     */
+    byte[] getRaw() {
+        return this.key;
+    }
+
+    /**
+     * get the type of key.
+     *
+     * @return the type of key
+     */
+    KeyType getType() {
+        return KeyType.getKeyType(key[0]);
+    }
+
+    /**
+     * compares to keys on a byte by byte basis.
+     *
+     * @return comparison of key byte values
+     */
+    @Override
+    public int compareTo(RocksDbKey o) {
+        return UnsignedBytes.lexicographicalComparator().compare(this.getRaw(), o.getRaw());
     }
 
     /**
