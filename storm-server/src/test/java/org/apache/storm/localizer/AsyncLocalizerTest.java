@@ -149,21 +149,15 @@ public class AsyncLocalizerTest {
             f.get(20, TimeUnit.SECONDS);
 
             verify(jarBlob).fetchUnzipToTemp(any());
-            verify(jarBlob).informAllOfChangeAndWaitForConsensus();
-            verify(jarBlob).commitNewVersion(100L);
-            verify(jarBlob).informAllChangeComplete();
+            verify(jarBlob).informReferencesAndCommitNewVersion(100L);
             verify(jarBlob).cleanupOrphanedData();
 
             verify(codeBlob).fetchUnzipToTemp(any());
-            verify(codeBlob).informAllOfChangeAndWaitForConsensus();
-            verify(codeBlob).commitNewVersion(200L);
-            verify(codeBlob).informAllChangeComplete();
+            verify(codeBlob).informReferencesAndCommitNewVersion(200L);
             verify(codeBlob).cleanupOrphanedData();
 
             verify(confBlob).fetchUnzipToTemp(any());
-            verify(confBlob).informAllOfChangeAndWaitForConsensus();
-            verify(confBlob).commitNewVersion(300L);
-            verify(confBlob).informAllChangeComplete();
+            verify(confBlob).informReferencesAndCommitNewVersion(300L);
             verify(confBlob).cleanupOrphanedData();
         } finally {
             bl.close();
