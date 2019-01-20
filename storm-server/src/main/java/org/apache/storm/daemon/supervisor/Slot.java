@@ -128,13 +128,10 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                     }
                 } catch (ContainerRecoveryException e) {
                     //We could not recover container will be null.
+                    currentAssignment = null;
                 }
 
                 newAssignment = currentAssignment;
-                if (container == null) {
-                    currentAssignment = null;
-                    //Assigned something but it is not running
-                }
             }
         }
 
@@ -155,7 +152,9 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
     //In some cases the new LocalAssignment may be equivalent to the old, but
     // It is not equal.  In those cases we want to update the current assignment to
     // be the same as the new assignment
+    //PRECONDITION: The new and current assignments must be equivalent
     private static DynamicState updateAssignmentIfNeeded(DynamicState dynamicState) {
+        assert equivalent(dynamicState.newAssignment, dynamicState.currentAssignment);
         if (dynamicState.newAssignment != null
             && !dynamicState.newAssignment.equals(dynamicState.currentAssignment)) {
             dynamicState =
@@ -244,6 +243,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
      */
     private static DynamicState prepareForNewAssignmentNoWorkersRunning(DynamicState dynamicState, StaticState staticState) throws IOException {
         assert (dynamicState.container == null);
+        assert dynamicState.currentAssignment == null;
 
         if (dynamicState.newAssignment == null) {
             return dynamicState.withState(MachineState.EMPTY);
@@ -416,6 +416,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         assert (dynamicState.pendingLocalization != null);
         assert (dynamicState.pendingDownload != null);
         assert (dynamicState.container == null);
+        assert dynamicState.currentAssignment == null;
 
         //Ignore changes to scheduling while downloading the topology blobs
         // We don't support canceling the download through the future yet,
@@ -435,8 +436,10 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
                 // Switch to the new assignment even if localization hasn't completed, or go to empty state
                 // if no new assignment.
-                return prepareForNewAssignmentNoWorkersRunning(dynamicState.withPendingChangingBlobs(Collections.emptySet(), null),
-                                                               staticState);
+                return prepareForNewAssignmentNoWorkersRunning(dynamicState
+                    .withPendingChangingBlobs(Collections.emptySet(), null)
+                    .withPendingLocalization(null, null),
+                    staticState);
             }
 
             // Wait until time out
@@ -449,7 +452,6 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                                    .withPendingLocalization(null, null);
             }
 
-            dynamicState = updateAssignmentIfNeeded(dynamicState);
             staticState.slotMetrics.numWorkersLaunched.mark();
             Container c =
                 staticState.containerLauncher.launchContainer(staticState.port, dynamicState.pendingLocalization, staticState.localState);
@@ -471,7 +473,11 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
             // we wait for 3 seconds
             Time.sleepSecs(3);
-            return dynamicState.withState(MachineState.EMPTY);
+            //Try again, or go to empty if assignment has been nulled
+            return prepareForNewAssignmentNoWorkersRunning(dynamicState
+                .withPendingChangingBlobs(Collections.emptySet(), null)
+                .withPendingLocalization(null, null),
+                staticState);
         }
     }
 
@@ -777,6 +783,8 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
     }
 
     static DynamicState handleEmpty(DynamicState dynamicState, StaticState staticState) throws InterruptedException, IOException {
+        assert dynamicState.currentAssignment == null;
+        assert dynamicState.container == null;
         assert dynamicState.changingBlobs.isEmpty();
         assert dynamicState.pendingChangingBlobsAssignment == null;
         if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
@@ -810,12 +818,12 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
     @Override
     public void blobChanging(LocalAssignment assignment, int port, LocallyCachedBlob blob, GoodToGo go) {
-        assert port == staticState.port : "got a callaback that is not for us " + port + " != " + staticState.port;
+        assert port == staticState.port : "got a callback that is not for us " + port + " != " + staticState.port;
         //This is called async so lets assume that it is something we care about
         try {
             changingBlobs.put(new BlobChanging(assignment, blob, go.getLatch()));
         } catch (InterruptedException e) {
-            throw new RuntimeException("This should not have happend, but it did (the queue is unbounded)", e);
+            throw new RuntimeException("This should not have happened, but it did (the queue is unbounded)", e);
         }
     }
 

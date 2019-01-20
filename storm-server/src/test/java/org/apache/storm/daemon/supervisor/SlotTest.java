@@ -12,6 +12,9 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -52,6 +55,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
+import java.util.concurrent.ExecutionException;
 import org.apache.storm.metric.StormMetricsRegistry;
 
 public class SlotTest {
@@ -231,7 +235,83 @@ public class SlotTest {
             assertTrue(Time.currentTimeMillis() > 2000);
         }
     }
+    
+    @Test
+    public void testErrorHandlingWhenLocalizationFails() throws Exception {
+        try (SimulatedTime t = new SimulatedTime(1010)) {
+            int port = 8080;
+            String topoId = "NEW";
+            List<ExecutorInfo> execList = mkExecutorInfoList(1, 2, 3, 4, 5);
+            LocalAssignment newAssignment =
+                mkLocalAssignment(topoId, execList, mkWorkerResources(100.0, 100.0, 100.0));
 
+            AsyncLocalizer localizer = mock(AsyncLocalizer.class);
+            BlobChangingCallback cb = mock(BlobChangingCallback.class);
+            Container container = mock(Container.class);
+            LocalState state = mock(LocalState.class);
+            ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
+            when(containerLauncher.launchContainer(port, newAssignment, state)).thenReturn(container);
+            LSWorkerHeartbeat hb = mkWorkerHB(topoId, port, execList, Time.currentTimeSecs());
+            when(container.readHeartbeat()).thenReturn(hb, hb);
+
+            @SuppressWarnings("unchecked")
+            CompletableFuture<Void> blobFuture = mock(CompletableFuture.class);
+            CompletableFuture<Void> secondBlobFuture = mock(CompletableFuture.class);
+            when(secondBlobFuture.get(anyLong(), any())).thenThrow(new ExecutionException(new RuntimeException("Localization failure")));
+            CompletableFuture<Void> thirdBlobFuture = mock(CompletableFuture.class);
+            when(localizer.requestDownloadTopologyBlobs(newAssignment, port, cb))
+                .thenReturn(blobFuture)
+                .thenReturn(secondBlobFuture)
+                .thenReturn(thirdBlobFuture);
+
+            ISupervisor iSuper = mock(ISupervisor.class);
+            SlotMetrics slotMetrics = new SlotMetrics(new StormMetricsRegistry());
+            StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
+                                                      containerLauncher, "localhost", port, iSuper, state, cb, null, null, slotMetrics);
+            DynamicState dynamicState = new DynamicState(null, null, null, slotMetrics)
+                .withNewAssignment(newAssignment);
+
+            DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
+            verify(localizer).requestDownloadTopologyBlobs(newAssignment, port, cb);
+            assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
+            assertSame("pendingDownload not set properly", blobFuture, nextState.pendingDownload);
+            assertEquals(newAssignment, nextState.pendingLocalization);
+            assertEquals(0, Time.currentTimeMillis());
+
+            //Assignment has changed
+            nextState = Slot.stateMachineStep(nextState.withNewAssignment(null), staticState);
+            assertThat(nextState.state, is(MachineState.EMPTY));
+            assertThat(nextState.pendingChangingBlobs, is(Collections.emptySet()));
+            assertThat(nextState.pendingChangingBlobsAssignment, nullValue());
+            assertThat(nextState.pendingLocalization, nullValue());
+            assertThat(nextState.pendingDownload, nullValue());
+            
+            clearInvocations(localizer);
+            nextState = Slot.stateMachineStep(dynamicState.withNewAssignment(newAssignment), staticState);
+            verify(localizer).requestDownloadTopologyBlobs(newAssignment, port, cb);
+            assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
+            assertSame("pendingDownload not set properly", secondBlobFuture, nextState.pendingDownload);
+            assertEquals(newAssignment, nextState.pendingLocalization);
+            
+            //Error occurs, but assignment has not changed
+            clearInvocations(localizer);
+            nextState = Slot.stateMachineStep(nextState, staticState);
+            verify(localizer).requestDownloadTopologyBlobs(newAssignment, port, cb);
+            assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
+            assertSame("pendingDownload not set properly", thirdBlobFuture, nextState.pendingDownload);
+            assertEquals(newAssignment, nextState.pendingLocalization);
+            assertThat(Time.currentTimeMillis(), greaterThan(3L));
+
+            nextState = Slot.stateMachineStep(nextState, staticState);
+            verify(thirdBlobFuture).get(1000, TimeUnit.MILLISECONDS);
+            verify(containerLauncher).launchContainer(port, newAssignment, state);
+            assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
+            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingLocalization);
+            assertSame(newAssignment, nextState.currentAssignment);
+            assertSame(container, nextState.container);
+        }
+    }
 
     @Test
     public void testRelaunch() throws Exception {
