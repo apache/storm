@@ -30,6 +30,7 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 import org.apache.storm.blobstore.BlobStore;
@@ -91,6 +92,7 @@ import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
+import org.apache.storm.shade.org.apache.zookeeper.server.ServerConfig;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.testing.NonRichBoltTracker;
@@ -231,6 +233,8 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             } else {
                 this.clusterState = builder.clusterState;
             }
+            //Ensure Nimbus assigns topologies as quickly as possible
+            conf.put(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 1);
             //Set it for nimbus only
             conf.put(Config.STORM_LOCAL_DIR, nimbusTmp.getPath());
             Nimbus nimbus = new Nimbus(conf, builder.inimbus == null ? new StandaloneINimbus() : builder.inimbus,
@@ -241,6 +245,10 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             }
             this.nimbus = nimbus;
             this.nimbus.launchServer();
+            if (!this.nimbus.awaitLeadership(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                //Ensure Nimbus has leadership, otherwise topology submission will fail.
+                throw new RuntimeException("LocalCluster Nimbus failed to gain leadership.");
+            }
             IContext context = null;
             if (!ObjectReader.getBoolean(this.daemonConf.get(Config.STORM_LOCAL_MODE_ZMQ), false)) {
                 context = new Context();
@@ -690,6 +698,8 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         }
         superConf.put(Config.STORM_LOCAL_DIR, tmpDir.getPath());
         superConf.put(DaemonConfig.SUPERVISOR_SLOTS_PORTS, portNumbers);
+        //Monitor for assignment changes as often as possible, so e.g. shutdown happens as fast as possible.
+        superConf.put(DaemonConfig.SUPERVISOR_MONITOR_FREQUENCY_SECS, 1);
 
         final String superId = id == null ? Utils.uuid() : id;
         ISupervisor isuper = new StandaloneSupervisor() {
