@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -529,7 +530,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
     }
 
-    public void shutdownAllWorkers(UniFunc<Slot> onWarnTimeout, UniFunc<Slot> onErrorTimeout) {
+    public void shutdownAllWorkers(BiConsumer<Slot, Long> onWarnTimeout, UniFunc<Slot> onErrorTimeout) {
         if (readState != null) {
             readState.shutdownAllWorkers(onWarnTimeout, onErrorTimeout);
         } else {
