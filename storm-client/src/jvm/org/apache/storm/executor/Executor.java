@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -89,6 +90,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final Map<String, Object> conf;
     protected final String stormId;
     protected final HashMap sharedExecutorData;
+    protected final CountDownLatch workerReady;
     protected final AtomicBoolean stormActive;
     protected final AtomicReference<Map<String, DebugOptions>> stormComponentDebug;
     protected final Runnable suicideFn;
@@ -128,6 +130,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.stormId = workerData.getTopologyId();
         this.conf = workerData.getConf();
         this.sharedExecutorData = new HashMap();
+        this.workerReady = workerData.getIsWorkerActive();
         this.stormActive = workerData.getIsTopologyActive();
         this.stormComponentDebug = workerData.getStormComponentToDebug();
 
