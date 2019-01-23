@@ -245,9 +245,13 @@ streams.  If you are doing this for Trident a value must be in the List returned
 otherwise trident can throw exceptions.
 
 
-### Manual Partition Assigment (ADVANCED)
+### Manual Partition Assignment (ADVANCED)
 
-By default the KafkaSpout instances will be assigned partitions using a round robin strategy. If you need to customize partition assignment, you must implement the `ManualPartitioner` interface. The implementation can be passed to the `ManualPartitionSubscription` constructor, and the `Subscription` can then be set in the `KafkaSpoutConfig` via the `KafkaSpoutConfig.Builder` constructor. Please take care when supplying a custom implementation, since an incorrect `ManualPartitioner` implementation could leave some partitions unread, or concurrently read by multiple spout instances. See the `RoundRobinManualPartitioner` for an example of how to implement this functionality.
+By default the KafkaSpout instances will be assigned partitions using a round robin strategy. If you need to customize partition assignment, you must implement the `ManualPartitioner` interface. You can pass your implementation to the `KafkaSpoutConfig.Builder` constructor. Please take care when supplying a custom implementation, since an incorrect `ManualPartitioner` implementation could leave some partitions unread, or concurrently read by multiple spout instances. See the `RoundRobinManualPartitioner` for an example of how to implement this functionality.
+
+### Manual partition discovery
+
+You can customize how the spout discovers existing partitions, by implementing the `TopicFilter` interface. Storm-kafka-client ships with a few implementations. Like `ManualPartitioner`, you can pass your implementation to the `KafkaSpoutConfig.Builder` constructor. Note that the `TopicFilter` is only responsible for discovering partitions, deciding which of the discovered partitions to subscribe to is the responsibility of `ManualPartitioner`.
 
 ## Using storm-kafka-client with different versions of kafka
 
