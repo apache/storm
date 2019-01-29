@@ -227,6 +227,15 @@
             </roles>
             <timezone>-6</timezone>
         </developer>
+        <developer>
+            <id>govind-menon</id>
+            <name>Govind Menon</name>
+            <email>govind@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
 
     </developers>
 
