@@ -114,6 +114,7 @@ under the License.
 * Stig Rohde Døssing ([@srdo](https://github.com/srdo/))
 * Roshan Naik ([@roshannaik](http://github.com/roshannaik))
 * Ethan Li ([@Ethanlm](https://github.com/Ethanlm))
+* Govind Menon ([@govind](https://github.com/govind-menon))
 
 ## Acknowledgements
 
