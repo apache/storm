@@ -32,7 +32,7 @@ then
   TEST_MODULES=storm-client
 elif [ "$2" == "Server" ]
 then
-  TEST_MODULES=storm-server
+  TEST_MODULES=storm-server,storm-webapp
 elif [ "$2" == "Core" ]
 then
   TEST_MODULES=storm-core
@@ -40,9 +40,9 @@ elif [ "$2" == "External" ]
 then
   if [ "$TRAVIS_JDK_VERSION" == "openjdk11" ]
   then 
-    TEST_MODULES='!storm-client,!storm-server,!storm-core,!external/storm-cassandra,!external/storm-hive,!external/storm-hdfs,!external/storm-hbase,!sql/storm-sql-external/storm-sql-hdfs,!external/storm-hdfs-blobstore'
+    TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp,!external/storm-cassandra,!external/storm-hive,!external/storm-hdfs,!external/storm-hbase,!sql/storm-sql-external/storm-sql-hdfs,!external/storm-hdfs-blobstore'
   else
-    TEST_MODULES='!storm-client,!storm-server,!storm-core'
+    TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp'
   fi
 fi
 # We should be concerned that Travis CI could be very slow because it uses VM
