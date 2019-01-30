@@ -16,8 +16,8 @@
 
 package org.apache.storm.integration;
 
-import static org.apache.storm.integration.AssertLoop.assertAcked;
-import static org.apache.storm.integration.AssertLoop.assertFailed;
+import static org.apache.storm.AssertLoop.assertAcked;
+import static org.apache.storm.AssertLoop.assertFailed;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;

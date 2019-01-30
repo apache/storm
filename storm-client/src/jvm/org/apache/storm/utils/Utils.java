@@ -659,6 +659,15 @@ public class Utils {
         return des;
     }
 
+    public static void sleepNoSimulation(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+    
     public static void sleep(long millis) {
         try {
             Time.sleep(millis);

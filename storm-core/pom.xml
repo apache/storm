@@ -49,6 +49,14 @@
             <artifactId>storm-server</artifactId>
             <version>${project.version}</version>
         </dependency>
+        
+        <dependency>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-server</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
 
         <!--Hadoop Mini Cluster cannot use log4j2 bridge,
         Surefire has a way to exclude the conflicting log4j API jar

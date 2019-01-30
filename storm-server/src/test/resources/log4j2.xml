@@ -16,15 +16,17 @@
  limitations under the License.
 -->
 <Configuration>
-  <Appenders>
-    <Console name="console" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
-    </Console>
-  </Appenders>
-  <Loggers>
-    <Root level="INFO">
-      <appender-ref ref="console" />
-    </Root>
-  </Loggers>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="org.apache.storm.shade.org.apache.zookeeper" level="WARN"/>
+        <Logger name="org.apache.storm.shade.org.apache.curator" level="WARN"/>
+        <Root level="INFO">
+            <appender-ref ref="console" />
+        </Root>
+    </Loggers>
 </Configuration>
       

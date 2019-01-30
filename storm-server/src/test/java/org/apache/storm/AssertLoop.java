@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.integration;
+package org.apache.storm;
 
 import static org.apache.storm.utils.PredicateMatcher.matchesPredicate;
 import static org.hamcrest.CoreMatchers.everyItem;
@@ -27,13 +27,13 @@ import org.apache.storm.testing.AckFailMapTracker;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 
-class AssertLoop {
+public class AssertLoop {
 
     public static void assertLoop(Predicate<Object> condition, Object... conditionParams) {
         try {
             Awaitility.with()
                 .pollInterval(1, TimeUnit.MILLISECONDS)
-                .atMost(10, TimeUnit.SECONDS)
+                .atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> assertThat(Arrays.asList(conditionParams), everyItem(matchesPredicate(condition))));
         } catch (ConditionTimeoutException e) {
             throw new AssertionError(e.getMessage());

@@ -344,8 +344,10 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         final Integer tickTimeSecs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
         if (tickTimeSecs != null) {
             boolean enableMessageTimeout = (Boolean) topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
-            if ((!Acker.ACKER_COMPONENT_ID.equals(componentId) && Utils.isSystemId(componentId))
-                || (!enableMessageTimeout && isSpout)) {
+            boolean isAcker = Acker.ACKER_COMPONENT_ID.equals(componentId);
+            if ((!isAcker && Utils.isSystemId(componentId))
+                || (!enableMessageTimeout && isSpout)
+                || (!enableMessageTimeout && isAcker)) {
                 LOG.info("Timeouts disabled for executor {}:{}", componentId, executorId);
             } else {
                 StormTimer timerTask = workerData.getUserTimer();
