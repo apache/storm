@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -449,7 +448,7 @@ public class ConfigUtils {
     }
 
     public String supervisorStormDistRootImpl(Map<String, Object> conf, String stormId) throws IOException {
-        return supervisorStormDistRoot(conf) + FILE_SEPARATOR + URLEncoder.encode(stormId, "UTF-8");
+        return supervisorStormDistRoot(conf) + FILE_SEPARATOR + Utils.urlEncodeUtf8(stormId);
     }
 
     public String workerRootImpl(Map<String, Object> conf) {

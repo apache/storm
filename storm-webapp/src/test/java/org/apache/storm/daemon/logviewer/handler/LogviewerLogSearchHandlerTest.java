@@ -36,9 +36,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
@@ -589,8 +587,8 @@ public class LogviewerLogSearchHandlerTest {
             return match;
         }
         
-        private String encodedFileSeparator() throws Exception {
-            return URLEncoder.encode(File.separator, StandardCharsets.UTF_8.name());
+        private String encodedFileSeparator() {
+            return Utils.urlEncodeUtf8(File.separator);
         }
     }
 

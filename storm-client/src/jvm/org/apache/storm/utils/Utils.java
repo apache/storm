@@ -32,14 +32,17 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,7 +85,6 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.security.auth.ReqContext;
-import org.apache.storm.serialization.GzipThriftSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
@@ -230,6 +232,33 @@ public class Utils {
         return findAndReadConfigFile("defaults.yaml", true);
     }
 
+    /**
+     * URL encode the given string using the UTF-8 charset. Once Storm is baselined to Java 11, we can use URLEncoder.encode(String,
+     * Charset) instead, which obsoletes this method.
+     */
+    public static String urlEncodeUtf8(String s) {
+        try {
+            return URLEncoder.encode(s, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            //This cannot happen since we're using a standard charset
+            throw Utils.wrapInRuntime(e);
+        }
+    }
+    
+    /**
+     * URL decode the given string using the UTF-8 charset. Once Storm is baselined to Java 11, we can use URLDecoder.decode(String,
+     * Charset) instead, which obsoletes this method.
+     */
+    public static String urlDecodeUtf8(String s) {
+        try {
+            //Once Storm is baselined to Java 11, we can use URLDecoder.decode(String, Charset) instead, which obsoletes this method.
+            return URLDecoder.decode(s, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            //This cannot happen since we're using a standard charset
+            throw Utils.wrapInRuntime(e);
+        }
+    }
+    
     public static Map<String, Object> readCommandLineOpts() {
         Map<String, Object> ret = new HashMap<>();
         String commandOptions = System.getProperty("storm.options");
@@ -246,7 +275,7 @@ public class Utils {
               */
             String[] configs = commandOptions.split(",(?![^\\[\\]{}]*(]|}))");
             for (String config : configs) {
-                config = URLDecoder.decode(config);
+                config = urlDecodeUtf8(config);
                 String[] options = config.split("=", 2);
                 if (options.length == 2) {
                     Object val = options[1];
