@@ -38,11 +38,13 @@ import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.metric.HttpForwardingMetricsConsumer;
 import org.apache.storm.metric.LoggingMetricsConsumer;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.NimbusClient;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

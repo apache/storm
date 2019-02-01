@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.loadgen;
+package org.apache.storm.metric;
 
 import com.esotericsoftware.kryo.io.Output;
 import java.net.HttpURLConnection;
