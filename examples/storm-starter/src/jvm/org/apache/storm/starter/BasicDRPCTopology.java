@@ -31,24 +31,29 @@ import org.apache.storm.utils.DRPCClient;
  */
 public class BasicDRPCTopology {
     public static void main(String[] args) throws Exception {
-        LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder("exclamation");
-        builder.addBolt(new ExclaimBolt(), 3);
-
         Config conf = new Config();
         String topoName = "DRPCExample";
-
-        if (args != null && args.length > 0) {
-            topoName = args[0];
+        String function = "exclamation";
+        if (args != null) {
+            if (args.length > 0) {
+                topoName = args[0];
+            }
+            if (args.length > 1) {
+                function = args[1];
+            }
         }
+
+        LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder(function);
+        builder.addBolt(new ExclaimBolt(), 3);
 
         conf.setNumWorkers(3);
         StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createRemoteTopology());
 
-        if (args.length > 1) {
+        if (args != null && args.length > 2) {
             try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {
-                for (int i = 1; i < args.length; i++) {
+                for (int i = 2; i < args.length; i++) {
                     String word = args[i];
-                    System.out.println("Result for \"" + word + "\": " + drpc.execute("exclamation", word));
+                    System.out.println("Result for \"" + word + "\": " + drpc.execute(function, word));
                 }
             }
         }
