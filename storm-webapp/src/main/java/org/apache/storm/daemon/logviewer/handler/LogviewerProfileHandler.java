@@ -33,6 +33,7 @@ import j2html.tags.DomContent;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import javax.ws.rs.core.Response;
 
@@ -42,7 +43,6 @@ import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.metric.StormMetricsRegistry;
-import org.apache.storm.utils.ServerUtils;
 
 public class LogviewerProfileHandler {
 
@@ -139,8 +139,10 @@ public class LogviewerProfileHandler {
     }
 
     private List<String> getProfilerDumpFiles(File dir) throws IOException {
-        List<File> filesForDir = directoryCleaner.getFilesForDir(dir);
-        return filesForDir.stream().filter(file -> {
+        List<Path> filesForDir = directoryCleaner.getFilesForDir(dir.toPath());
+        return filesForDir.stream()
+            .map(path -> path.toFile())
+            .filter(file -> {
             String fileName = file.getName();
             return StringUtils.isNotEmpty(fileName)
                     && (fileName.endsWith(".txt") || fileName.endsWith(".jfr") || fileName.endsWith(".bin"));

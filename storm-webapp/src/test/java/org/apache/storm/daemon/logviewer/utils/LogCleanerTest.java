@@ -22,28 +22,31 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.storm.Config.SUPERVISOR_WORKER_TIMEOUT_SECS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyListOf;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMapOf;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anySetOf;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -52,30 +55,26 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import java.util.function.Predicate;
-import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
-import org.apache.storm.daemon.logviewer.testsupport.MockRemovableFileBuilder;
+import java.util.stream.Collectors;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.shade.io.netty.util.internal.ThreadLocalRandom;
+import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Seq;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
+import org.slf4j.LoggerFactory;
 
 public class LogCleanerTest {
+    
     /**
      * Log file filter selects the correct worker-log dirs for purge.
      */
     @Test
     public void testMkFileFilterForLogCleanup() throws IOException {
-        DirectoryCleaner mockDirectoryCleaner = mock(DirectoryCleaner.class);
-        when(mockDirectoryCleaner.getStreamForDirectory(any(File.class))).thenAnswer(invocationOnMock -> {
-            File file = (File) invocationOnMock.getArguments()[0];
-            List<Path> paths = Arrays.stream(file.listFiles()).map(f -> mkMockPath(f)).collect(toList());
-            return mkDirectoryStream(paths);
-        });
-
         // this is to read default value for other configurations
         Map<String, Object> conf = Utils.readStormConfig();
         conf.put(LOGVIEWER_CLEANUP_AGE_MINS, 60);
@@ -84,30 +83,68 @@ public class LogCleanerTest {
         StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
         WorkerLogs workerLogs = new WorkerLogs(conf, null, metricRegistry);
 
-        LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, null, metricRegistry);
+        LogCleaner logCleaner = new LogCleaner(conf, workerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry);
 
         final long nowMillis = Time.currentTimeMillis();
         final long cutoffMillis = logCleaner.cleanupCutoffAgeMillis(nowMillis);
         final long oldMtimeMillis = cutoffMillis - 500;
         final long newMtimeMillis = cutoffMillis + 500;
+       
+        try (TmpPath testDir = new TmpPath()) {
+            Files.createDirectories(testDir.getFile().toPath());
 
-        List<File> matchingFiles = new ArrayList<>();
-        matchingFiles.add(new MockDirectoryBuilder().setDirName("3031").setMtime(oldMtimeMillis).build());
-        matchingFiles.add(new MockDirectoryBuilder().setDirName("3032").setMtime(oldMtimeMillis).build());
-        matchingFiles.add(new MockDirectoryBuilder().setDirName("7077").setMtime(oldMtimeMillis).build());
+            List<Path> matchingFiles = Arrays.asList(
+                createDir(testDir.getFile().toPath(), "3031", oldMtimeMillis),
+                createDir(testDir.getFile().toPath(), "3032", oldMtimeMillis),
+                createDir(testDir.getFile().toPath(), "7077", oldMtimeMillis)
+            );
+            List<Path> excludedFiles = Arrays.asList(
+                createFile(testDir.getFile().toPath(), "oldlog-1-2-worker-.log", oldMtimeMillis),
+                createFile(testDir.getFile().toPath(), "newlog-1-2-worker-.log", newMtimeMillis),
+                createFile(testDir.getFile().toPath(), "some-old-file.txt", oldMtimeMillis),
+                createFile(testDir.getFile().toPath(), "olddir-1-2-worker.log", newMtimeMillis),
+                createFile(testDir.getFile().toPath(), "metadata", newMtimeMillis),
+                createFile(testDir.getFile().toPath(), "newdir", newMtimeMillis)
+            );
 
-        List<File> excludedFiles = new ArrayList<>();
-        excludedFiles.add(new MockRemovableFileBuilder().setFileName("oldlog-1-2-worker-.log").setMtime(oldMtimeMillis).build());
-        excludedFiles.add(new MockRemovableFileBuilder().setFileName("newlog-1-2-worker-.log").setMtime(newMtimeMillis).build());
-        excludedFiles.add(new MockRemovableFileBuilder().setFileName("some-old-file.txt").setMtime(oldMtimeMillis).build());
-        excludedFiles.add(new MockRemovableFileBuilder().setFileName("olddir-1-2-worker.log").setMtime(newMtimeMillis).build());
-        excludedFiles.add(new MockDirectoryBuilder().setDirName("metadata").setMtime(newMtimeMillis).build());
-        excludedFiles.add(new MockDirectoryBuilder().setDirName("newdir").setMtime(newMtimeMillis).build());
+            Predicate<Path> fileFilter = logCleaner.mkFileFilterForLogCleanup(nowMillis);
 
-        FileFilter fileFilter = logCleaner.mkFileFilterForLogCleanup(nowMillis);
+            matchingFiles.forEach(p -> assertTrue("Missing " + p.getFileName(), fileFilter.test(p)));
+            excludedFiles.forEach(p -> assertFalse("Not excluded " + p.getFileName(), fileFilter.test(p)));
+        }
+    }
 
-        assertTrue(matchingFiles.stream().allMatch(fileFilter::accept));
-        assertTrue(excludedFiles.stream().noneMatch(fileFilter::accept));
+    private Path createFile(Path parentDir, String name, long lastModifiedMs) {
+        return createFile(parentDir, name, lastModifiedMs, 0);
+    }
+    
+    private Path createFile(Path parentDir, String name, long lastModifiedMs, int sizeBytes) {
+        try {
+            Path path = Files.createFile(parentDir.resolve(name));
+            Files.setLastModifiedTime(path, FileTime.fromMillis(lastModifiedMs));
+            if (sizeBytes != 0) {
+                byte[] randBytes = new byte[sizeBytes];
+                ThreadLocalRandom.current().nextBytes(randBytes);
+                Files.write(path, randBytes);
+            }
+            return path;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+    
+    private Path createDir(Path parentDir, String name) {
+        return createDir(parentDir, name, Time.currentTimeMillis());
+    }
+    
+    private Path createDir(Path parentDir, String name, long lastModifiedMs) {
+        try {
+            Path path = Files.createDirectories(parentDir.resolve(name));
+            Files.setLastModifiedTime(path, FileTime.fromMillis(lastModifiedMs));
+            return path;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -115,53 +152,28 @@ public class LogCleanerTest {
      */
     @Test
     public void testPerWorkerDirectoryCleanup() throws IOException {
-        Utils prevUtils = null;
-        try {
-            Utils mockUtils = mock(Utils.class);
-            prevUtils = Utils.setInstance(mockUtils);
+        long nowMillis = Time.currentTimeMillis();
 
-            DirectoryCleaner mockDirectoryCleaner = mock(DirectoryCleaner.class);
-            when(mockDirectoryCleaner.getStreamForDirectory(any())).thenAnswer(invocationOnMock -> {
-                File file = (File) invocationOnMock.getArguments()[0];
-                List<Path> paths = Arrays.stream(file.listFiles()).map(f -> mkMockPath(f)).collect(toList());
-                return mkDirectoryStream(paths);
-            });
-            when(mockDirectoryCleaner.deleteOldestWhileTooLarge(any(), anyLong(), anyBoolean(), any()))
-                    .thenCallRealMethod();
+        try (TmpPath testDir = new TmpPath()) {
+            Files.createDirectories(testDir.getFile().toPath());
+            Path rootDir = createDir(testDir.getFile().toPath(), "workers-artifacts");
+            Path topo1Dir = createDir(rootDir, "topo1");
+            Path topo2Dir = createDir(rootDir, "topo2");
+            Path port1Dir = createDir(topo1Dir, "port1");
+            Path port2Dir = createDir(topo1Dir, "port2");
+            Path port3Dir = createDir(topo2Dir, "port3");
 
-            long nowMillis = Time.currentTimeMillis();
-
-            List<File> files1 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("A" + idx)
-                    .setMtime(nowMillis + (100 * idx)).setLength(200).build())
-                    .collect(toList());
-            List<File> files2 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("B" + idx)
-                    .setMtime(nowMillis + (100 * idx)).setLength(200).build())
-                    .collect(toList());
-            List<File> files3 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("C" + idx)
-                    .setMtime(nowMillis + (100 * idx)).setLength(200).build())
-                    .collect(toList());
-            File port1Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1/port1")
-                    .setFiles(files1.toArray(new File[]{})).build();
-            File port2Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1/port2")
-                    .setFiles(files2.toArray(new File[]{})).build();
-            File port3Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo2/port3")
-                    .setFiles(files3.toArray(new File[]{})).build();
-
-            File[] topo1Files = new File[] { port1Dir, port2Dir };
-            File[] topo2Files = new File[] { port3Dir };
-            File topo1Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1")
-                    .setFiles(topo1Files).build();
-            File topo2Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo2")
-                    .setFiles(topo2Files).build();
-
-            File[] rootFiles = new File[] { topo1Dir, topo2Dir };
-            File rootDir = new MockDirectoryBuilder().setDirName("/workers-artifacts")
-                    .setFiles(rootFiles).build();
+            Seq.range(0, 10)
+                .forEach(idx -> createFile(port1Dir, "A" + idx, nowMillis + 100 * idx, 200));
+            Seq.range(0, 10)
+                .forEach(idx -> createFile(port2Dir, "B" + idx, nowMillis + 100 * idx, 200));
+            Seq.range(0, 10)
+                .forEach(idx -> createFile(port3Dir, "C" + idx, nowMillis + 100 * idx, 200));
 
             Map<String, Object> conf = Utils.readStormConfig();
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
             WorkerLogs workerLogs = new WorkerLogs(conf, rootDir, metricRegistry);
-            LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, rootDir, metricRegistry);
+            LogCleaner logCleaner = new LogCleaner(conf, workerLogs, new DirectoryCleaner(metricRegistry), rootDir, metricRegistry);
 
             List<Integer> deletedFiles = logCleaner.perWorkerDirCleanup(1200)
                 .stream()
@@ -170,72 +182,42 @@ public class LogCleanerTest {
             assertEquals(Integer.valueOf(4), deletedFiles.get(0));
             assertEquals(Integer.valueOf(4), deletedFiles.get(1));
             assertEquals(Integer.valueOf(4), deletedFiles.get(deletedFiles.size() - 1));
-        } finally {
-            Utils.setInstance(prevUtils);
         }
     }
 
     @Test
     public void testGlobalLogCleanup() throws Exception {
-        Utils prevUtils = null;
-        try {
-            Utils mockUtils = mock(Utils.class);
-            prevUtils = Utils.setInstance(mockUtils);
+        long nowMillis = Time.currentTimeMillis();
 
-            DirectoryCleaner mockDirectoryCleaner = mock(DirectoryCleaner.class);
-            when(mockDirectoryCleaner.getStreamForDirectory(any(File.class))).thenAnswer(invocationOnMock -> {
-                File file = (File) invocationOnMock.getArguments()[0];
-                List<Path> paths = Arrays.stream(file.listFiles()).map(f -> mkMockPath(f)).collect(toList());
-                return mkDirectoryStream(paths);
-            });
-            when(mockDirectoryCleaner.deleteOldestWhileTooLarge(anyListOf(File.class), anyLong(), anyBoolean(), anySetOf(File.class)))
-                    .thenCallRealMethod();
-
-            long nowMillis = Time.currentTimeMillis();
-
-            List<File> files1 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("A" + idx + ".log")
-                    .setMtime(nowMillis + (100 * idx)).setLength(200).build())
-                    .collect(toList());
-            List<File> files2 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("B" + idx)
-                    .setMtime(nowMillis + (100 * idx)).setLength(200).build())
-                    .collect(toList());
-            List<File> files3 = Seq.range(0, 10).map(idx -> new MockRemovableFileBuilder().setFileName("C" + idx)
-                    .setMtime(nowMillis + (100 * idx)).setLength(200).build())
-                    .collect(toList());
-
+        try (TmpPath testDir = new TmpPath()) {
+            Files.createDirectories(testDir.getFile().toPath());
+            Path rootDir = createDir(testDir.getFile().toPath(), "workers-artifacts");
+            Path topo1Dir = createDir(rootDir, "topo1");
+            Path topo2Dir = createDir(rootDir, "topo2");
             // note that port1Dir is active worker containing active logs
-            File port1Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1/port1")
-                    .setFiles(files1.toArray(new File[]{})).build();
-            File port2Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1/port2")
-                    .setFiles(files2.toArray(new File[]{})).build();
-            File port3Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo2/port3")
-                    .setFiles(files3.toArray(new File[]{})).build();
+            Path port1Dir = createDir(topo1Dir, "port1");
+            Path port2Dir = createDir(topo1Dir, "port2");
+            Path port3Dir = createDir(topo2Dir, "port3");
 
-            File[] topo1Files = new File[] { port1Dir, port2Dir };
-            File[] topo2Files = new File[] { port3Dir };
-            File topo1Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1")
-                    .setFiles(topo1Files).build();
-            File topo2Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo2")
-                    .setFiles(topo2Files).build();
-
-            File[] rootFiles = new File[] { topo1Dir, topo2Dir };
-            File rootDir = new MockDirectoryBuilder().setDirName("/workers-artifacts")
-                    .setFiles(rootFiles).build();
+            Seq.range(0, 10)
+                .forEach(idx -> createFile(port1Dir, "A" + idx + ".log", nowMillis + 100 * idx, 200));
+            Seq.range(0, 10)
+                .forEach(idx -> createFile(port2Dir, "B" + idx, nowMillis + 100 * idx, 200));
+            Seq.range(0, 10)
+                .forEach(idx -> createFile(port3Dir, "C" + idx, nowMillis + 100 * idx, 200));
 
             Map<String, Object> conf = Utils.readStormConfig();
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
             WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, rootDir, metricRegistry) {
                 @Override
-                public SortedSet<File> getAliveWorkerDirs() {
-                    return new TreeSet<>(Collections.singletonList(new File("/workers-artifacts/topo1/port1")));
+                public SortedSet<Path> getAliveWorkerDirs() {
+                    return new TreeSet<>(Collections.singletonList(port1Dir));
                 }
             };
 
-            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, mockDirectoryCleaner, rootDir, metricRegistry);
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(metricRegistry), rootDir, metricRegistry);
             int deletedFiles = logCleaner.globalLogCleanup(2400).deletedFiles;
             assertEquals(18, deletedFiles);
-        } finally {
-            Utils.setInstance(prevUtils);
         }
     }
 
@@ -252,12 +234,11 @@ public class LogCleanerTest {
 
         Map<String, LSWorkerHeartbeat> idToHb = Collections.singletonMap("42", hb);
         int nowSecs = 2;
-        File unexpectedDir1 = new MockDirectoryBuilder().setDirName("dir1").build();
-        File expectedDir2 = new MockDirectoryBuilder().setDirName("dir2").build();
-        File expectedDir3 = new MockDirectoryBuilder().setDirName("dir3").build();
-        Set<File> logDirs = Sets.newSet(unexpectedDir1, expectedDir2, expectedDir3);
-
-        try {
+        try (TmpPath testDir = new TmpPath()) {
+            Path unexpectedDir1 = createDir(testDir.getFile().toPath(), "dir1");
+            Path expectedDir2 = createDir(testDir.getFile().toPath(), "dir2");
+            Path expectedDir3 = createDir(testDir.getFile().toPath(), "dir3");
+            Set<Path> logDirs = Sets.newSet(unexpectedDir1, expectedDir2, expectedDir3);
             SupervisorUtils mockedSupervisorUtils = mock(SupervisorUtils.class);
             SupervisorUtils.setInstance(mockedSupervisorUtils);
 
@@ -265,15 +246,15 @@ public class LogCleanerTest {
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
             WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null, metricRegistry) {
                 @Override
-                public SortedSet<File> getLogDirs(Set<File> logDirs, Predicate<String> predicate) {
-                    TreeSet<File> ret = new TreeSet<>();
+                public SortedSet<Path> getLogDirs(Set<Path> logDirs, Predicate<String> predicate) {
+                    TreeSet<Path> ret = new TreeSet<>();
                     if (predicate.test("42")) {
                         ret.add(unexpectedDir1);
                     }
                     if (predicate.test("007")) {
                         ret.add(expectedDir2);
                     }
-                    if(predicate.test("")) {
+                    if (predicate.test("")) {
                         ret.add(expectedDir3);
                     }
 
@@ -283,7 +264,7 @@ public class LogCleanerTest {
 
             LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry);
 
-            when(mockedSupervisorUtils.readWorkerHeartbeatsImpl(anyMapOf(String.class, Object.class))).thenReturn(idToHb);
+            when(mockedSupervisorUtils.readWorkerHeartbeatsImpl(anyMap())).thenReturn(idToHb);
             assertEquals(Sets.newSet(expectedDir2, expectedDir3), logCleaner.getDeadWorkerDirs(nowSecs, logDirs));
         } finally {
             SupervisorUtils.resetInstance();
@@ -295,21 +276,9 @@ public class LogCleanerTest {
      */
     @Test
     public void testCleanupFn() throws IOException {
-        File mockFile1 = new MockRemovableFileBuilder().setFileName("delete-me1").build();
-        File mockFile2 = new MockRemovableFileBuilder().setFileName("delete-me2").build();
-
-        Utils prevUtils = null;
-        try {
-            Utils mockUtils = mock(Utils.class);
-            prevUtils = Utils.setInstance(mockUtils);
-
-            List<String> forceDeleteArgs = new ArrayList<>();
-            doAnswer(invocationOnMock -> {
-                String path = (String) invocationOnMock.getArguments()[0];
-                forceDeleteArgs.add(path);
-                return null;
-            }).when(mockUtils).forceDelete(anyString());
-
+        try (TmpPath dir1 = new TmpPath(); TmpPath dir2 = new TmpPath()) {
+            Files.createDirectory(dir1.getFile().toPath());
+            Files.createDirectory(dir2.getFile().toPath());
 
             Map<String, Object> conf = Utils.readStormConfig();
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
@@ -317,31 +286,27 @@ public class LogCleanerTest {
 
             LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry) {
                 @Override
-                Set<File> selectDirsForCleanup(long nowMillis) {
+                Set<Path> selectDirsForCleanup(long nowMillis) {
                     return Collections.emptySet();
                 }
 
                 @Override
-                SortedSet<File> getDeadWorkerDirs(int nowSecs, Set<File> logDirs) throws Exception {
-                    SortedSet<File> dirs = new TreeSet<>();
-                    //Test maybe flawed, as those weren't actually mocked dirs but mocked regular files
-                    dirs.add(mockFile1);
-                    dirs.add(mockFile2);
+                SortedSet<Path> getDeadWorkerDirs(int nowSecs, Set<Path> logDirs) throws Exception {
+                    SortedSet<Path> dirs = new TreeSet<>();
+                    dirs.add(dir1.getFile().toPath());
+                    dirs.add(dir2.getFile().toPath());
                     return dirs;
                 }
 
                 @Override
-                void cleanupEmptyTopoDirectory(File dir) throws IOException {
+                void cleanupEmptyTopoDirectory(Path dir) throws IOException {
                 }
             };
 
             logCleaner.run();
 
-            assertEquals(2, forceDeleteArgs.size());
-            assertEquals(mockFile1.getCanonicalPath(), forceDeleteArgs.get(0));
-            assertEquals(mockFile2.getCanonicalPath(), forceDeleteArgs.get(1));
-        } finally {
-            Utils.setInstance(prevUtils);
+            assertThat(Files.exists(dir1.getFile().toPath()), is(false));
+            assertThat(Files.exists(dir2.getFile().toPath()), is(false));
         }
     }
 

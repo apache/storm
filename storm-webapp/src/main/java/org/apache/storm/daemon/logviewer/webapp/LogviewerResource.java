@@ -314,7 +314,7 @@ public class LogviewerResource {
     @GET
     @Path("/deepSearch/{topoId}")
     public Response deepSearch(@PathParam("topoId") String topologyId,
-                               @Context HttpServletRequest request) {
+                               @Context HttpServletRequest request) throws IOException {
         String user = httpCredsHandler.getUserName(request);
         String searchString = request.getParameter("search-string");
         String numMatchesStr = request.getParameter("num-matches");

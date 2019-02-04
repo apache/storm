@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,7 @@ public class LogviewerLogPageHandlerTest {
         Map<String, Object> stormConf = Utils.readStormConfig();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         LogviewerLogPageHandler handler = new LogviewerLogPageHandler(rootPath, null,
-                new WorkerLogs(stormConf, new File(rootPath), metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
+                new WorkerLogs(stormConf, Paths.get(rootPath), metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
 
         final Response expectedAll = LogviewerResponseBuilder.buildSuccessJsonResponse(
                 Lists.newArrayList("topoA/port1/worker.log", "topoA/port2/worker.log", "topoB/port1/worker.log"),

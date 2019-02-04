@@ -33,7 +33,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -42,9 +41,12 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +58,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
@@ -71,6 +74,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
+import org.jooq.lambda.Unchecked;
 import org.json.simple.JSONAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,8 +93,8 @@ public class LogviewerLogSearchHandler {
     private final Meter numFileReadExceptions;
     
     private final Map<String, Object> stormConf;
-    private final String logRoot;
-    private final String daemonLogRoot;
+    private final Path logRoot;
+    private final Path daemonLogRoot;
     private final ResourceAuthorizer resourceAuthorizer;
     private final Integer logviewerPort;
     private final String scheme;
@@ -105,7 +109,7 @@ public class LogviewerLogSearchHandler {
      * @param resourceAuthorizer {@link ResourceAuthorizer}
      * @param metricsRegistry The logviewer metrics registry
      */
-    public LogviewerLogSearchHandler(Map<String, Object> stormConf, String logRoot, String daemonLogRoot,
+    public LogviewerLogSearchHandler(Map<String, Object> stormConf, Path logRoot, Path daemonLogRoot,
                                      ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
         this.logRoot = logRoot;
@@ -145,10 +149,10 @@ public class LogviewerLogSearchHandler {
             throws IOException, InvalidRequestException {
         boolean noResult = true;
 
-        String rootDir = isDaemon ? daemonLogRoot : logRoot;
-        File file = new File(rootDir, fileName).getCanonicalFile();
+        Path rootDir = isDaemon ? daemonLogRoot : logRoot;
+        Path file = rootDir.resolve(fileName).toAbsolutePath().normalize();
         Response response;
-        if (file.exists()) {
+        if (file.toFile().exists()) {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 Integer numMatchesInt = numMatchesStr != null ? tryParseIntParam("num-matches", numMatchesStr) : null;
                 Integer offsetInt = offsetStr != null ? tryParseIntParam("start-byte-offset", offsetStr) : null;
@@ -206,44 +210,38 @@ public class LogviewerLogSearchHandler {
      */
     public Response deepSearchLogsForTopology(String topologyId, String user, String search,
                                               String numMatchesStr, String portStr, String fileOffsetStr, String offsetStr,
-                                              Boolean searchArchived, String callback, String origin) {
+                                              Boolean searchArchived, String callback, String origin) throws IOException {
         int numMatchedFiles = 0;
         int numScannedFiles = 0;
 
-        String rootDir = logRoot;
+        Path rootDir = logRoot;
         Object returnValue;
-        File topologyDir = new File(rootDir, topologyId);
-        if (StringUtils.isEmpty(search) || !topologyDir.exists()) {
+        Path topologyDir = rootDir.resolve(topologyId);
+        if (StringUtils.isEmpty(search) || !topologyDir.toFile().exists()) {
             returnValue = new ArrayList<>();
         } else {
             int fileOffset = ObjectReader.getInt(fileOffsetStr, 0);
             int offset = ObjectReader.getInt(offsetStr, 0);
             int numMatches = ObjectReader.getInt(numMatchesStr, 1);
 
-            File[] portDirsArray = topologyDir.listFiles();
-            List<File> portDirs;
-            if (portDirsArray != null) {
-                portDirs = Arrays.asList(portDirsArray);
-            } else {
-                portDirs = new ArrayList<>();
-            }
-
             if (StringUtils.isEmpty(portStr) || portStr.equals("*")) {
-                // check for all ports
-                Stream<List<File>> portsOfLogs = portDirs.stream()
-                    .map(portDir -> logsForPort(user, portDir))
-                    .filter(logs -> logs != null && !logs.isEmpty());
+                try (Stream<Path> topoDir = Files.list(topologyDir)) {
+                    // check for all ports
+                    Stream<List<Path>> portsOfLogs = topoDir
+                        .map(portDir -> logsForPort(user, portDir))
+                        .filter(logs -> logs != null && !logs.isEmpty());
 
-                if (BooleanUtils.isNotTrue(searchArchived)) {
-                    portsOfLogs = portsOfLogs.map(fl -> Collections.singletonList(first(fl)));
-                }
+                    if (BooleanUtils.isNotTrue(searchArchived)) {
+                        portsOfLogs = portsOfLogs.map(fl -> Collections.singletonList(first(fl)));
+                    }
 
-                final List<Matched> matchedList = portsOfLogs
+                    final List<Matched> matchedList = portsOfLogs
                         .map(logs -> findNMatches(logs, numMatches, 0, 0, search))
                         .collect(toList());
-                numMatchedFiles = matchedList.stream().mapToInt(match -> match.getMatches().size()).sum();
-                numScannedFiles = matchedList.stream().mapToInt(match -> match.openedFiles).sum();
-                returnValue = matchedList;
+                    numMatchedFiles = matchedList.stream().mapToInt(match -> match.getMatches().size()).sum();
+                    numScannedFiles = matchedList.stream().mapToInt(match -> match.openedFiles).sum();
+                    returnValue = matchedList;
+                }
             } else {
                 int port = Integer.parseInt(portStr);
                 // check just the one port
@@ -255,13 +253,12 @@ public class LogviewerLogSearchHandler {
                 if (!containsPort) {
                     returnValue = new ArrayList<>();
                 } else {
-                    File portDir = new File(rootDir + File.separator + topologyId
-                            + File.separator + port);
+                    Path portDir = rootDir.resolve(topologyId).resolve(Integer.toString(port));
 
-                    if (!portDir.exists() || logsForPort(user, portDir).isEmpty()) {
+                    if (!portDir.toFile().exists() || logsForPort(user, portDir).isEmpty()) {
                         returnValue = new ArrayList<>();
                     } else {
-                        List<File> filteredLogs = logsForPort(user, portDir);
+                        List<Path> filteredLogs = logsForPort(user, portDir);
                         if (BooleanUtils.isNotTrue(searchArchived)) {
                             filteredLogs = Collections.singletonList(first(filteredLogs));
                             fileOffset = 0;
@@ -290,21 +287,21 @@ public class LogviewerLogSearchHandler {
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearch(File file, String searchString) throws InvalidRequestException {
+    Map<String,Object> substringSearch(Path file, String searchString) throws InvalidRequestException {
         return substringSearch(file, searchString, false, 10, 0);
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearch(File file, String searchString, int numMatches) throws InvalidRequestException {
+    Map<String,Object> substringSearch(Path file, String searchString, int numMatches) throws InvalidRequestException {
         return substringSearch(file, searchString, false, numMatches, 0);
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearch(File file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
+    Map<String,Object> substringSearch(Path file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
         return substringSearch(file, searchString, false, numMatches, startByteOffset);
     }
 
-    private Map<String,Object> substringSearch(File file, String searchString, boolean isDaemon, Integer numMatches,
+    private Map<String,Object> substringSearch(Path file, String searchString, boolean isDaemon, Integer numMatches,
                                                Integer startByteOffset) throws InvalidRequestException {
         if (StringUtils.isEmpty(searchString)) {
             throw new IllegalArgumentException("Precondition fails: search string should not be empty.");
@@ -314,13 +311,13 @@ public class LogviewerLogSearchHandler {
                 + GREP_MAX_SEARCH_SIZE);
         }
 
-        boolean isZipFile = file.getName().endsWith(".gz");
-        try (InputStream fis = Files.newInputStream(file.toPath())) {
+        boolean isZipFile = file.toString().endsWith(".gz");
+        try (InputStream fis = Files.newInputStream(file)) {
             try (InputStream gzippedInputStream = isZipFile ? new GZIPInputStream(fis) : fis;
                  BufferedInputStream stream = new BufferedInputStream(gzippedInputStream)) {
 
                 //It's more likely to be a file read exception here, so we don't differentiate
-                int fileLength = isZipFile ? (int) ServerUtils.zipFileSize(file) : (int) file.length();
+                int fileLength = isZipFile ? (int) ServerUtils.zipFileSize(file.toFile()) : (int) Files.size(file);
 
                 ByteBuffer buf = ByteBuffer.allocate(GREP_BUF_SIZE);
                 final byte[] bufArray = buf.array();
@@ -401,7 +398,7 @@ public class LogviewerLogSearchHandler {
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearchDaemonLog(File file, String searchString) throws InvalidRequestException {
+    Map<String,Object> substringSearchDaemonLog(Path file, String searchString) throws InvalidRequestException {
         return substringSearch(file, searchString, true, 10, 0);
     }
 
@@ -409,16 +406,18 @@ public class LogviewerLogSearchHandler {
      * Get the filtered, authorized, sorted log files for a port.
      */
     @VisibleForTesting
-    List<File> logsForPort(String user, File portDir) {
+    List<Path> logsForPort(String user, Path portDir) {
         try {
-            List<File> workerLogs = directoryCleaner.getFilesForDir(portDir).stream()
-                    .filter(file -> WORKER_LOG_FILENAME_PATTERN.asPredicate().test(file.getName()))
+            List<Path> workerLogs = directoryCleaner.getFilesForDir(portDir).stream()
+                    .filter(file -> WORKER_LOG_FILENAME_PATTERN.asPredicate().test(file.getFileName().toString()))
                     .collect(toList());
 
             return workerLogs.stream()
-                    .filter(log -> resourceAuthorizer.isUserAllowedToAccessFile(user, WorkerLogs.getTopologyPortWorkerLog(log)))
-                    .sorted((f1, f2) -> (int) (f2.lastModified() - f1.lastModified()))
-                    .collect(toList());
+                .filter(log -> resourceAuthorizer.isUserAllowedToAccessFile(user, WorkerLogs.getTopologyPortWorkerLog(log)))
+                .map(Unchecked.function(p -> Pair.of(p, Files.getLastModifiedTime(p))))
+                .sorted(Comparator.comparing((Pair<Path, FileTime> p) -> p.getRight()).reversed())
+                .map(p -> p.getLeft())
+                .collect(toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -434,7 +433,7 @@ public class LogviewerLogSearchHandler {
      * @return all matched results
      */
     @VisibleForTesting
-    Matched findNMatches(List<File> logs, int numMatches, int fileOffset, int startByteOffset, String targetStr) {
+    Matched findNMatches(List<Path> logs, int numMatches, int fileOffset, int startByteOffset, String targetStr) {
         logs = drop(logs, fileOffset);
         LOG.debug("{} files to scan", logs.size());
 
@@ -448,7 +447,7 @@ public class LogviewerLogSearchHandler {
                 break;
             }
 
-            File firstLog = logs.get(0);
+            Path firstLog = logs.get(0);
             Map<String, Object> matchInLog;
             try {
                 LOG.debug("Looking through {}", firstLog);
@@ -465,16 +464,11 @@ public class LogviewerLogSearchHandler {
             final List<Map<String, Object>> newMatches = new ArrayList<>(matches);
             Map<String, Object> currentFileMatch = new HashMap<>(matchInLog);
             currentFileMatch.put("fileName", fileName);
-            Path firstLogAbsPath;
-            try {
-                firstLogAbsPath = firstLog.getCanonicalFile().toPath();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            Path firstLogAbsPath = firstLog.toAbsolutePath().normalize();
             currentFileMatch.put("port", truncatePathToLastElements(firstLogAbsPath, 2).getName(0).toString());
             newMatches.add(currentFileMatch);
 
-            int newCount = matchCount + ((List<?>)matchInLog.get("matches")).size();
+            int newCount = matchCount + ((List<?>)matchInLog.getOrDefault("matches", Collections.emptyList())).size();
             if (newCount == matchCount) {
                 // matches and matchCount is not changed
                 logs = rest(logs);
@@ -502,7 +496,7 @@ public class LogviewerLogSearchHandler {
      * As the file is read into a buffer, 1/2 the buffer's size at a time, we search the buffer for matches of the
      * substring and return a list of zero or more matches.
      */
-    private SubstringSearchResult bufferSubstringSearch(boolean isDaemon, File file, int fileLength, int offsetToBuf,
+    private SubstringSearchResult bufferSubstringSearch(boolean isDaemon, Path file, int fileLength, int offsetToBuf,
                                                         int initBufOffset, BufferedInputStream stream, Integer bytesSkipped,
                                                         int bytesRead, ByteBuffer haystack, byte[] needle,
                                                         List<Map<String, Object>> initialMatches, Integer numMatches, byte[] beforeBytes)
@@ -531,7 +525,7 @@ public class LogviewerLogSearchHandler {
 
                 bufOffset = offset + needle.length;
                 matches.add(mkMatchData(needle, haystack, offset, fileOffset,
-                        file.getCanonicalFile().toPath(), isDaemon, beforeArg, afterArg));
+                        file.toAbsolutePath().normalize(), isDaemon, beforeArg, afterArg));
             } else {
                 int beforeStrToOffset = Math.min(haystack.limit(), GREP_MAX_SEARCH_SIZE);
                 int beforeStrFromOffset = Math.max(0, beforeStrToOffset - GREP_CONTEXT_SIZE);

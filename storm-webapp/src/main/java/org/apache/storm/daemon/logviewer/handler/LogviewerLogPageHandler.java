@@ -47,6 +47,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -120,7 +122,7 @@ public class LogviewerLogPageHandler {
      * @return list of worker logs for given criteria
      */
     public Response listLogFiles(String user, Integer port, String topologyId, String callback, String origin) throws IOException {
-        List<File> fileResults = null;
+        List<Path> fileResults = null;
         if (topologyId == null) {
             if (port == null) {
                 fileResults = workerLogs.getAllLogsForRootDir();
@@ -134,7 +136,7 @@ public class LogviewerLogPageHandler {
                         if (topoDirFiles != null) {
                             for (File portDir : topoDirFiles) {
                                 if (portDir.getName().equals(port.toString())) {
-                                    fileResults.addAll(directoryCleaner.getFilesForDir(portDir));
+                                    fileResults.addAll(directoryCleaner.getFilesForDir(portDir.toPath()));
                                 }
                             }
                         }
@@ -150,7 +152,7 @@ public class LogviewerLogPageHandler {
                     File[] topoDirFiles = topoDir.listFiles();
                     if (topoDirFiles != null) {
                         for (File portDir : topoDirFiles) {
-                            fileResults.addAll(directoryCleaner.getFilesForDir(portDir));
+                            fileResults.addAll(directoryCleaner.getFilesForDir(portDir.toPath()));
                         }
                     }
                 }
@@ -158,7 +160,7 @@ public class LogviewerLogPageHandler {
             } else {
                 File portDir = ConfigUtils.getWorkerDirFromRoot(logRoot, topologyId, port);
                 if (portDir.exists()) {
-                    fileResults = directoryCleaner.getFilesForDir(portDir);
+                    fileResults = directoryCleaner.getFilesForDir(portDir.toPath());
                 }
             }
         }
@@ -197,12 +199,12 @@ public class LogviewerLogPageHandler {
             File topoDir = file.getParentFile().getParentFile();
 
             if (file.exists() && new File(rootDir).getCanonicalFile().equals(topoDir.getParentFile())) {
-                SortedSet<File> logFiles;
+                SortedSet<Path> logFiles;
                 try {
                     logFiles = Arrays.stream(topoDir.listFiles())
-                            .flatMap(Unchecked.function(portDir -> directoryCleaner.getFilesForDir(portDir).stream()))
-                            .filter(File::isFile)
-                            .collect(toCollection(TreeSet::new));
+                        .flatMap(Unchecked.function(portDir -> directoryCleaner.getFilesForDir(portDir.toPath()).stream()))
+                        .filter(Files::isRegularFile)
+                        .collect(toCollection(TreeSet::new));
                 } catch (UncheckedIOException e) {
                     throw e.getCause();
                 }
