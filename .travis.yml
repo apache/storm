@@ -32,6 +32,9 @@ before_install:
   - rvm use 2.4.2 --install
   - nvm install 8.9.3
   - nvm use 8.9.3
+  - sudo apt-get update
+  - sudo apt-get install python3
+  - sudo apt-get install python3-pip
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
 script:
   - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
