@@ -47,7 +47,7 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         }
         Collection<ExecutorDetails> unassignedExecutors =
             new HashSet<>(this.cluster.getUnassignedExecutors(td));
-        LOG.debug("ExecutorsNeedScheduling: {}", unassignedExecutors);
+        LOG.debug("{} ExecutorsNeedScheduling: {}", td.getId(), unassignedExecutors);
         Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
         List<Component> spouts = this.getSpouts(td);
 
@@ -65,6 +65,9 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         final Iterable<String> sortedNodes = sortAllNodes(td, null, favoredNodesIds, unFavoredNodesIds);
 
         for (ExecutorDetails exec : orderedExecutors) {
+            if (Thread.currentThread().isInterrupted()) {
+                return null;
+            }
             LOG.debug(
                 "Attempting to schedule: {} of component {}[ REQ {} ]",
                 exec,
@@ -79,6 +82,9 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
         // schedule left over system tasks
         for (ExecutorDetails exec : executorsNotScheduled) {
+            if (Thread.currentThread().isInterrupted()) {
+                return null;
+            }
             if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
                 return mkNotEnoughResources(td);
             }

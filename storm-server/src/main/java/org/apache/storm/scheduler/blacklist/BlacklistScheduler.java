@@ -95,6 +95,12 @@ public class BlacklistScheduler implements IScheduler {
     }
 
     @Override
+    public void cleanup() {
+        LOG.info("Cleanup black list scheduler");
+        underlyingScheduler.cleanup();
+    }
+
+    @Override
     public void schedule(Topologies topologies, Cluster cluster) {
         LOG.debug("running Black List scheduler");
         LOG.debug("AssignableSlots: {}", cluster.getAssignableSlots());

@@ -34,6 +34,7 @@ import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.INimbus;
+import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SchedulerAssignment;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.SupervisorResources;
@@ -45,6 +46,7 @@ import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
+import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +61,15 @@ public class TestGenericResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareStrategy.class);
 
     private static int currentTime = 1450418597;
+    private static IScheduler scheduler = null;
+
+    @After
+    public void cleanup() {
+        if (scheduler != null) {
+            scheduler.cleanup();
+            scheduler = null;
+        }
+    }
 
     /**
      * test if the scheduling logic for the GenericResourceAwareStrategy is correct.
@@ -104,10 +115,10 @@ public class TestGenericResourceAwareStrategy {
 
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
-        ResourceAwareScheduler rs = new ResourceAwareScheduler();
+        scheduler = new ResourceAwareScheduler();
 
-        rs.prepare(conf);
-        rs.schedule(topologies, cluster);
+        scheduler.prepare(conf);
+        scheduler.schedule(topologies, cluster);
         
         for (Entry<String, SupervisorResources> entry: cluster.getSupervisorsResourcesMap().entrySet()) {
             String supervisorId = entry.getKey();
@@ -192,10 +203,10 @@ public class TestGenericResourceAwareStrategy {
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
-        ResourceAwareScheduler rs = new ResourceAwareScheduler();
+        scheduler = new ResourceAwareScheduler();
 
-        rs.prepare(conf);
-        rs.schedule(topologies, cluster);
+        scheduler.prepare(conf);
+        scheduler.schedule(topologies, cluster);
 
         //We need to have 3 slots on 3 separate hosts. The topology needs 6 GPUs 3500 MB memory and 350% CPU
         // The bolt-3 instances must be on separate nodes because they each need 2 GPUs.
@@ -236,8 +247,8 @@ public class TestGenericResourceAwareStrategy {
         Config config = new Config();
         config.putAll(createGrasClusterConfig(88, 775, 25, null, null));
 
-        ResourceAwareScheduler rs = new ResourceAwareScheduler();
-        rs.prepare(config);
+        scheduler = new ResourceAwareScheduler();
+        scheduler.prepare(config);
 
         TopologyDetails tdSimple = genTopology("topology-simple", config, 1,
             5, 100, 300, 0, 0, "user", 8192);
@@ -245,7 +256,7 @@ public class TestGenericResourceAwareStrategy {
         //Schedule the simple topology first
         Topologies topologies = new Topologies(tdSimple);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
-        rs.schedule(topologies, cluster);
+        scheduler.schedule(topologies, cluster);
 
         TopologyBuilder builder = topologyBuilder(1, 5, 100, 300);
         builder.setBolt("gpu-bolt", new TestBolt(), 40)
@@ -256,7 +267,7 @@ public class TestGenericResourceAwareStrategy {
         //Now schedule GPU but with the simple topology in place.
         topologies = new Topologies(tdSimple, tdGpu);
         cluster = new Cluster(cluster, topologies);
-        rs.schedule(topologies, cluster);
+        scheduler.schedule(topologies, cluster);
 
         Map<String, SchedulerAssignment> assignments = new TreeMap<>(cluster.getAssignments());
         assertEquals(2, assignments.size());
