@@ -40,6 +40,8 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -183,7 +185,7 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("matches", matches);
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
+                Map<String, Object> searchResult = handler.substringSearch(file.toPath(), pattern);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -220,7 +222,7 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("matches", matches);
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
+                Map<String, Object> searchResult = handler.substringSearch(file.toPath(), pattern);
                 
                 assertEquals(expected, searchResult);
             } finally {
@@ -256,7 +258,7 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("matches", matches);
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearchDaemonLog(file, pattern);
+                Map<String, Object> searchResult = handler.substringSearchDaemonLog(file.toPath(), pattern);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -294,8 +296,8 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("matches", matches);
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
-                Map<String, Object> searchResult2 = handler.substringSearch(file, pattern, 1);
+                Map<String, Object> searchResult = handler.substringSearch(file.toPath(), pattern);
+                Map<String, Object> searchResult2 = handler.substringSearch(file.toPath(), pattern, 1);
 
                 assertEquals(expected, searchResult);
                 assertEquals(expected, searchResult2);
@@ -336,7 +338,7 @@ public class LogviewerLogSearchHandlerTest {
                 dataAndExpected.add(new Tuple3<>(13, 12, null));
 
                 dataAndExpected.forEach(Unchecked.consumer(data -> {
-                    Map<String, Object> result = handler.substringSearch(file, pattern, data.v1());
+                    Map<String, Object> result = handler.substringSearch(file.toPath(), pattern, data.v1());
                     assertEquals(data.v3(), result.get("nextByteOffset"));
                     assertEquals(data.v2().intValue(), ((List) result.get("matches")).size());
                 }));
@@ -407,7 +409,7 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 7);
+                Map<String, Object> searchResult = handler.substringSearch(file.toPath(), pattern, 7);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -449,7 +451,7 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("matches", matches);
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 1, startByteOffset);
+                Map<String, Object> searchResult = handler.substringSearch(file.toPath(), pattern, 1, startByteOffset);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -499,7 +501,7 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("matches", matches);
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 2);
+                Map<String, Object> searchResult = handler.substringSearch(file.toPath(), pattern, 2);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -540,7 +542,7 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("matches", matches);
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 1);
+                Map<String, Object> searchResult = handler.substringSearch(file.toPath(), pattern, 1);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -570,7 +572,7 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("matches", Collections.emptyList());
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
+                Map<String, Object> searchResult = handler.substringSearch(file.toPath(), pattern);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -600,11 +602,11 @@ public class LogviewerLogSearchHandlerTest {
          */
         @Test
         public void testFindNMatches() {
-            List<File> files = new ArrayList<>();
+            List<Path> files = new ArrayList<>();
             files.add(new File(String.join(File.separator, "src", "test", "resources"),
-                    "logviewer-search-context-tests.log.test"));
+                    "logviewer-search-context-tests.log.test").toPath());
             files.add(new File(String.join(File.separator, "src", "test", "resources"),
-                    "logviewer-search-context-tests.log.gz"));
+                    "logviewer-search-context-tests.log.gz").toPath());
 
             final LogviewerLogSearchHandler handler = getSearchHandler();
 
@@ -629,8 +631,8 @@ public class LogviewerLogSearchHandlerTest {
     public static class TestDeepSearchLogs {
 
         public static final int METRIC_SCANNED_FILES = 0;
-        private List<File> logFiles;
-        private String topoPath;
+        private List<Path> logFiles;
+        private Path topoPath;
 
         /**
          * Setup test environment for each test.
@@ -638,17 +640,15 @@ public class LogviewerLogSearchHandlerTest {
         @Before
         public void setUp() throws IOException {
             logFiles = new ArrayList<>();
-            logFiles.add(new File(String.join(File.separator, "src", "test", "resources"),
-                    "logviewer-search-context-tests.log.test"));
-            logFiles.add(new File(String.join(File.separator, "src", "test", "resources"),
-                    "logviewer-search-context-tests.log.gz"));
+            logFiles.add(Paths.get("src/test/resources/logviewer-search-context-tests.log.test"));
+            logFiles.add(Paths.get("src/test/resources/logviewer-search-context-tests.log.gz"));
 
             FileAttribute[] attrs = new FileAttribute[0];
-            topoPath = Files.createTempDirectory("topoA", attrs).toFile().getCanonicalPath();
-            new File(topoPath, "6400").createNewFile();
-            new File(topoPath, "6500").createNewFile();
-            new File(topoPath, "6600").createNewFile();
-            new File(topoPath, "6700").createNewFile();
+            topoPath = Files.createTempDirectory("topoA", attrs).toAbsolutePath().normalize();
+            new File(topoPath.toFile(), "6400").createNewFile();
+            new File(topoPath.toFile(), "6500").createNewFile();
+            new File(topoPath.toFile(), "6600").createNewFile();
+            new File(topoPath.toFile(), "6700").createNewFile();
         }
 
         /**
@@ -656,9 +656,9 @@ public class LogviewerLogSearchHandlerTest {
          */
         @After
         public void tearDown() {
-            if (StringUtils.isNotEmpty(topoPath)) {
+            if (topoPath != null) {
                 try {
-                    Utils.forceDelete(topoPath);
+                    Utils.forceDelete(topoPath.toString());
                 } catch (IOException e) {
                     // ignore...
                 }
@@ -679,7 +679,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(4)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(4)).logsForPort(isNull(), any(File.class));
+            verify(handler, times(4)).logsForPort(isNull(), any());
 
             // File offset and byte offset should always be zero when searching multiple workers (multiple ports).
             assertEquals(logFiles, files.getAllValues().get(0));
@@ -721,7 +721,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(4)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(4)).logsForPort(isNull(), any(File.class));
+            verify(handler, times(4)).logsForPort(isNull(), any());
 
             // File offset and byte offset should always be zero when searching multiple workers (multiple ports).
             assertEquals(Collections.singletonList(logFiles.get(0)), files.getAllValues().get(0));
@@ -763,7 +763,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(1)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(2)).logsForPort(isNull(), any(File.class));
+            verify(handler, times(2)).logsForPort(isNull(), any());
 
             assertEquals(logFiles, files.getAllValues().get(0));
             assertEquals(Integer.valueOf(20), numMatches.getAllValues().get(0));
@@ -786,7 +786,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(1)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(2)).logsForPort(isNull(), any(File.class));
+            verify(handler, times(2)).logsForPort(isNull(), any());
 
             assertEquals(logFiles, files.getAllValues().get(0));
             assertEquals(Integer.valueOf(20), numMatches.getAllValues().get(0));
@@ -809,7 +809,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(1)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(2)).logsForPort(isNull(), any(File.class));
+            verify(handler, times(2)).logsForPort(isNull(), any());
 
             // File offset should be zero, since search-archived is false.
             assertEquals(Collections.singletonList(logFiles.get(0)), files.getAllValues().get(0));
@@ -826,7 +826,7 @@ public class LogviewerLogSearchHandlerTest {
             handler.deepSearchLogsForTopology("", null, "search", "20", "6700", "1", "100", true, null, null);
 
             verify(handler, times(1)).findNMatches(anyList(), anyInt(), anyInt(), anyInt(), anyString());
-            verify(handler, times(2)).logsForPort(isNull(), any(File.class));
+            verify(handler, times(2)).logsForPort(isNull(), any());
         }
 
         @Test
@@ -844,7 +844,7 @@ public class LogviewerLogSearchHandlerTest {
             // Called with a bad port (not in the config) No searching should be done.
             verify(handler, never()).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, never()).logsForPort(anyString(), any(File.class));
+            verify(handler, never()).logsForPort(anyString(), any());
         }
 
         private LogviewerLogSearchHandler getStubbedSearchHandler() {
