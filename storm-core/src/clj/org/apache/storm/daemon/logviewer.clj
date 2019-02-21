@@ -38,6 +38,7 @@
            [org.yaml.snakeyaml.constructor SafeConstructor])
   (:import [org.apache.storm.ui InvalidRequestException]
            [org.apache.storm.security.auth AuthUtils])
+  (:import [java.util.regex Pattern])
   (:require [org.apache.storm.daemon common])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
@@ -120,7 +121,7 @@
   [^File file]
   (clojure.string/join file-path-separator
                        (take-last 3
-                                  (split (.getCanonicalPath file) (re-pattern file-path-separator)))))
+                                  (split (.getCanonicalPath file) (re-pattern (Pattern/quote file-path-separator))))))
 
 (defn get-metadata-file-for-log-root-name [root-name root-dir]
   (let [metaFile (clojure.java.io/file root-dir "metadata"
@@ -496,8 +497,12 @@
           (resp/status 404)))))
 
 (defnk download-log-file [fname req resp user ^String root-dir :is-daemon false]
-  (let [file (.getCanonicalFile (File. root-dir fname))]
-    (if (.exists file)
+  (let [raw-file (File. root-dir fname)
+        file (.getCanonicalFile raw-file)
+        has-daemon-traversal (and is-daemon (not= (.getNameCount (Paths/get fname (into-array String nil))) 1))
+        is-in-root-dir (.startsWith (.toPath file) root-dir)
+        no-dots (.equals (.toString (.normalize (.toPath raw-file))) (.toString (.toPath raw-file)))]
+    (if (and (.exists file) (not has-daemon-traversal) is-in-root-dir no-dots)
 
       (if (or is-daemon
             (or (blank? (*STORM-CONF* UI-FILTER))
@@ -520,7 +525,7 @@
   [needle fname offset port]
   (let [host (hostname)
         port (logviewer-port)
-        fname (clojure.string/join file-path-separator (take-last 3 (split fname (re-pattern file-path-separator))))]
+        fname (clojure.string/join file-path-separator (take-last 3 (split fname (re-pattern (Pattern/quote file-path-separator)))))]
     (url (str "http://" host ":" port "/log")
       {:file fname
        :start (max 0
@@ -533,7 +538,7 @@
   [needle fname offset port]
   (let [host (hostname)
         port (logviewer-port)
-        fname (clojure.string/join file-path-separator (take-last 1 (split fname (re-pattern file-path-separator))))]
+        fname (clojure.string/join file-path-separator (take-last 1 (split fname (re-pattern (Pattern/quote file-path-separator)))))]
     (url (str "http://" host ":" port "/daemonlog")
       {:file fname
        :start (max 0
@@ -819,8 +824,12 @@
 
 (defn search-log-file
   [fname user ^String root-dir is-daemon search num-matches offset callback origin]
-  (let [file (.getCanonicalFile (File. root-dir fname))]
-    (if (.exists file)
+  (let [raw-file (File. root-dir fname)
+        file (.getCanonicalFile raw-file)
+        has-daemon-traversal (and is-daemon (not= (.getNameCount (Paths/get fname (into-array String nil))) 1))
+        is-in-root-dir (.startsWith (.toPath file) root-dir)
+        no-dots (.equals (.toString (.normalize (.toPath raw-file))) (.toString (.toPath raw-file)))]
+    (if (and (.exists file) (not has-daemon-traversal) is-in-root-dir no-dots)
       (if (or is-daemon
             (or (blank? (*STORM-CONF* UI-FILTER))
               (authorized-log-user? user fname *STORM-CONF*)))
@@ -881,7 +890,7 @@
               new-matches (conj matches
                             (merge these-matches
                               { "fileName" file-name
-                                "port" (first (take-last 2 (split (.getCanonicalPath (first logs)) (re-pattern file-path-separator))))}))
+                                "port" (first (take-last 2 (split (.getCanonicalPath (first logs)) (re-pattern (Pattern/quote file-path-separator)))))}))
               new-count (+ match-count (count (these-matches "matches")))]
           (if (empty? these-matches)
             (recur matches (rest logs) 0 (+ file-offset 1) match-count)
@@ -904,31 +913,32 @@
 (defn deep-search-logs-for-topology
   [topology-id user ^String root-dir search num-matches port file-offset offset search-archived? callback origin]
   (json-response
-    (if (or (not search) (not (.exists (File. (str root-dir file-path-separator topology-id)))))
-      []
-      (let [file-offset (if file-offset (Integer/parseInt file-offset) 0)
-            offset (if offset (Integer/parseInt offset) 0)
-            num-matches (or (Integer/parseInt num-matches) 1)
-            port-dirs (vec (.listFiles (File. (str root-dir file-path-separator topology-id))))
-            logs-for-port-fn (partial logs-for-port user)]
-        (if (or (not port) (= "*" port))
-          ;; Check for all ports
-          (let [filtered-logs (filter (comp not empty?) (map logs-for-port-fn port-dirs))]
-            (if search-archived?
-              (map #(find-n-matches % num-matches 0 0 search)
-                filtered-logs)
-              (map #(find-n-matches % num-matches 0 0 search)
-                (map (comp vector first) filtered-logs))))
-          ;; Check just the one port
-          (if (not (contains? (into #{} (map str (*STORM-CONF* SUPERVISOR-SLOTS-PORTS))) port))
-            []
-            (let [port-dir (File. (str root-dir file-path-separator topology-id file-path-separator port))]
-              (if (or (not (.exists port-dir)) (empty? (logs-for-port user port-dir)))
-                []
-                (let [filtered-logs (logs-for-port user port-dir)]
-                  (if search-archived?
-                    (find-n-matches filtered-logs num-matches file-offset offset search)
-                    (find-n-matches [(first filtered-logs)] num-matches 0 offset search)))))))))
+    (let [file (.getCanonicalFile (File. (str root-dir file-path-separator topology-id)))]
+      (if (or (not search) (not (.exists file)) (not (.startsWith (.toPath file) root-dir)))
+        []
+        (let [file-offset (if file-offset (Integer/parseInt file-offset) 0)
+              offset (if offset (Integer/parseInt offset) 0)
+              num-matches (or (Integer/parseInt num-matches) 1)
+              port-dirs (vec (.listFiles file))
+              logs-for-port-fn (partial logs-for-port user)]
+          (if (or (not port) (= "*" port))
+            ;; Check for all ports
+            (let [filtered-logs (filter (comp not empty?) (map logs-for-port-fn port-dirs))]
+              (if search-archived?
+                (map #(find-n-matches % num-matches 0 0 search)
+                  filtered-logs)
+                (map #(find-n-matches % num-matches 0 0 search)
+                  (map (comp vector first) filtered-logs))))
+            ;; Check just the one port
+            (if (not (contains? (into #{} (map str (*STORM-CONF* SUPERVISOR-SLOTS-PORTS))) port))
+              []
+              (let [port-dir (.getCanonicalFile (File. (str root-dir file-path-separator topology-id file-path-separator port)))]
+                (if (or (not (.exists port-dir)) (empty? (logs-for-port user port-dir)) (not (.startsWith (.toPath port-dir) root-dir)))
+                  []
+                  (let [filtered-logs (logs-for-port user port-dir)]
+                    (if search-archived?
+                      (find-n-matches filtered-logs num-matches file-offset offset search)
+                      (find-n-matches [(first filtered-logs)] num-matches 0 offset search))))))))))
     callback
     :headers {"Access-Control-Allow-Origin" origin
               "Access-Control-Allow-Credentials" "true"}))
@@ -975,14 +985,14 @@
                     (if (= (str port) (.getName port-dir))
                       (into [] (DirectoryCleaner/getFilesForDir port-dir))))))))
           (if (nil? port)
-            (let [topo-dir (File. (str log-root file-path-separator topoId))]
-              (if (.exists topo-dir)
+            (let [topo-dir (.getCanonicalFile (File. (str log-root file-path-separator topoId)))]
+              (if (and (.exists topo-dir) (.startsWith (.toPath topo-dir) log-root))
                 (reduce concat
                   (for [port-dir (.listFiles topo-dir)]
                     (into [] (DirectoryCleaner/getFilesForDir port-dir))))
                 []))
-            (let [port-dir (get-worker-dir-from-root log-root topoId port)]
-              (if (.exists port-dir)
+            (let [port-dir (.getCanonicalFile (get-worker-dir-from-root log-root topoId port))]
+              (if (and (.exists port-dir) (.startsWith (.toPath port-dir) log-root))
                 (into [] (DirectoryCleaner/getFilesForDir port-dir))
                 []))))
         file-strs (sort (for [file file-results]
@@ -1027,14 +1037,15 @@
                            topo-id
                            file-path-separator
                            port))
-           file (File. (str log-root
+           raw-file (File. (str log-root
                             file-path-separator
                             topo-id
                             file-path-separator
                             port
                             file-path-separator
-                            filename))]
-       (if (and (.exists dir) (.exists file))
+                            filename))
+           file (.getCanonicalFile raw-file)]
+       (if (and (.exists dir) (.exists file) (.startsWith (.toPath file) log-root) (.equals (.toString (.normalize (.toPath raw-file))) (.toString (.toPath raw-file))))
          (if (or (blank? (*STORM-CONF* UI-FILTER))
                (authorized-log-user? user 
                                      (str topo-id file-path-separator port file-path-separator "worker.log")
@@ -1048,12 +1059,13 @@
        [:as {:keys [servlet-request servlet-response log-root]} topo-id host-port &m]
      (let [user (.getUserName http-creds-handler servlet-request)
            port (second (split host-port #":"))
-           dir (File. (str log-root
+           raw-dir (File. (str log-root
                            file-path-separator
                            topo-id
                            file-path-separator
-                           port))]
-       (if (.exists dir)
+                           port))
+           dir (.getCanonicalFile raw-dir)]
+       (if (and (.exists dir) (.startsWith (.toPath dir) log-root) (.equals (.toString (.normalize (.toPath raw-dir))) (.toString (.toPath raw-dir))))
          (if (or (blank? (*STORM-CONF* UI-FILTER))
                (authorized-log-user? user 
                                      (str topo-id file-path-separator port file-path-separator "worker.log")
@@ -1230,5 +1242,5 @@
     (log-message "Starting logviewer server for storm version '"
                  STORM-VERSION
                  "'")
-    (start-logviewer! conf log-root daemonlog-root)
+    (start-logviewer! conf (.toString (.normalize (.toAbsolutePath (Paths/get log-root (into-array String nil))))) (.toString (.normalize (.toAbsolutePath (Paths/get daemonlog-root (into-array String nil))))))
     (start-metrics-reporters conf)))
