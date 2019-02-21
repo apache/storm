@@ -80,6 +80,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LogviewerLogSearchHandler {
+
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerLogSearchHandler.class);
     public static final int GREP_MAX_SEARCH_SIZE = 1024;
     public static final int GREP_BUF_SIZE = 2048;
@@ -91,7 +92,7 @@ public class LogviewerLogSearchHandler {
     private final Meter numSearchRequestNoResult;
     private final Meter numFileOpenExceptions;
     private final Meter numFileReadExceptions;
-    
+
     private final Map<String, Object> stormConf;
     private final Path logRoot;
     private final Path daemonLogRoot;
@@ -110,10 +111,10 @@ public class LogviewerLogSearchHandler {
      * @param metricsRegistry The logviewer metrics registry
      */
     public LogviewerLogSearchHandler(Map<String, Object> stormConf, Path logRoot, Path daemonLogRoot,
-                                     ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
+        ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
-        this.logRoot = logRoot;
-        this.daemonLogRoot = daemonLogRoot;
+        this.logRoot = logRoot.toAbsolutePath().normalize();
+        this.daemonLogRoot = daemonLogRoot.toAbsolutePath().normalize();
         this.resourceAuthorizer = resourceAuthorizer;
         Object httpsPort = stormConf.get(DaemonConfig.LOGVIEWER_HTTPS_PORT);
         if (httpsPort == null) {
@@ -145,14 +146,23 @@ public class LogviewerLogSearchHandler {
      * @return Response containing JSON content representing search result
      */
     public Response searchLogFile(String fileName, String user, boolean isDaemon, String search,
-                                  String numMatchesStr, String offsetStr, String callback, String origin)
-            throws IOException, InvalidRequestException {
+        String numMatchesStr, String offsetStr, String callback, String origin)
+        throws IOException, InvalidRequestException {
         boolean noResult = true;
 
         Path rootDir = isDaemon ? daemonLogRoot : logRoot;
-        Path file = rootDir.resolve(fileName).toAbsolutePath().normalize();
+        Path rawFile = rootDir.resolve(fileName);
+        Path absFile = rawFile.toAbsolutePath().normalize();
+        if (!absFile.startsWith(rootDir) || !rawFile.normalize().toString().equals(rawFile.toString())) {
+            //Ensure filename doesn't contain ../ parts 
+            return searchLogFileNotFound(callback);
+        }
+        if (isDaemon && Paths.get(fileName).getNameCount() != 1) {
+            //Don't permit path traversal for calls intended to read from the daemon logs
+            return searchLogFileNotFound(callback);
+        }
         Response response;
-        if (file.toFile().exists()) {
+        if (absFile.toFile().exists()) {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 Integer numMatchesInt = numMatchesStr != null ? tryParseIntParam("num-matches", numMatchesStr) : null;
                 Integer offsetInt = offsetStr != null ? tryParseIntParam("start-byte-offset", offsetStr) : null;
@@ -161,14 +171,14 @@ public class LogviewerLogSearchHandler {
                     if (StringUtils.isNotEmpty(search) && search.getBytes("UTF-8").length <= GREP_MAX_SEARCH_SIZE) {
                         Map<String, Object> entity = new HashMap<>();
                         entity.put("isDaemon", isDaemon ? "yes" : "no");
-                        Map<String, Object> res = substringSearch(file, search, isDaemon, numMatchesInt, offsetInt);
+                        Map<String, Object> res = substringSearch(absFile, search, isDaemon, numMatchesInt, offsetInt);
                         entity.putAll(res);
                         noResult = ((List) res.get("matches")).isEmpty();
 
                         response = LogviewerResponseBuilder.buildSuccessJsonResponse(entity, callback, origin);
                     } else {
                         throw new InvalidRequestException("Search substring must be between 1 and 1024 "
-                                + "UTF-8 bytes in size (inclusive)");
+                            + "UTF-8 bytes in size (inclusive)");
                     }
                 } catch (Exception ex) {
                     response = LogviewerResponseBuilder.buildExceptionJsonResponse(ex, callback);
@@ -178,12 +188,7 @@ public class LogviewerLogSearchHandler {
                 response = LogviewerResponseBuilder.buildUnauthorizedUserJsonResponse(user, callback);
             }
         } else {
-            // not found
-            Map<String, String> entity = new HashMap<>();
-            entity.put("error", "Not Found");
-            entity.put("errorMessage", "The file was not found on this node.");
-
-            response = new JsonResponseBuilder().setData(entity).setCallback(callback).setStatus(404).build();
+            response = searchLogFileNotFound(callback);
         }
 
         if (noResult) {
@@ -192,14 +197,22 @@ public class LogviewerLogSearchHandler {
         return response;
     }
 
+    private Response searchLogFileNotFound(String callback) {
+        Map<String, String> entity = new HashMap<>();
+        entity.put("error", "Not Found");
+        entity.put("errorMessage", "The file was not found on this node.");
+
+        return new JsonResponseBuilder().setData(entity).setCallback(callback).setStatus(404).build();
+    }
+
     /**
      * Advanced search across worker log files in a topology.
      *
      * @param topologyId topology ID
      * @param user username
      * @param search search string
-     * @param numMatchesStr the count of maximum matches. Note that this number is with respect to
-     *                      each port, not to each log or each search request
+     * @param numMatchesStr the count of maximum matches. Note that this number is with respect to each port, not to each log or each search
+     * request
      * @param portStr worker port, null or '*' if the request wants to search from all worker logs
      * @param fileOffsetStr index (offset) of the log files
      * @param offsetStr start offset for log file
@@ -209,15 +222,15 @@ public class LogviewerLogSearchHandler {
      * @return Response containing JSON content representing search result
      */
     public Response deepSearchLogsForTopology(String topologyId, String user, String search,
-                                              String numMatchesStr, String portStr, String fileOffsetStr, String offsetStr,
-                                              Boolean searchArchived, String callback, String origin) throws IOException {
+        String numMatchesStr, String portStr, String fileOffsetStr, String offsetStr,
+        Boolean searchArchived, String callback, String origin) throws IOException {
         int numMatchedFiles = 0;
         int numScannedFiles = 0;
 
         Path rootDir = logRoot;
+        Path absTopoDir = rootDir.resolve(topologyId).toAbsolutePath().normalize();
         Object returnValue;
-        Path topologyDir = rootDir.resolve(topologyId);
-        if (StringUtils.isEmpty(search) || !topologyDir.toFile().exists()) {
+        if (StringUtils.isEmpty(search) || !absTopoDir.toFile().exists() || !absTopoDir.startsWith(rootDir)) {
             returnValue = new ArrayList<>();
         } else {
             int fileOffset = ObjectReader.getInt(fileOffsetStr, 0);
@@ -225,7 +238,7 @@ public class LogviewerLogSearchHandler {
             int numMatches = ObjectReader.getInt(numMatchesStr, 1);
 
             if (StringUtils.isEmpty(portStr) || portStr.equals("*")) {
-                try (Stream<Path> topoDir = Files.list(topologyDir)) {
+                try (Stream<Path> topoDir = Files.list(absTopoDir)) {
                     // check for all ports
                     Stream<List<Path>> portsOfLogs = topoDir
                         .map(portDir -> logsForPort(user, portDir))
@@ -247,18 +260,19 @@ public class LogviewerLogSearchHandler {
                 // check just the one port
                 @SuppressWarnings("unchecked")
                 List<Integer> slotsPorts = (List<Integer>) stormConf.getOrDefault(DaemonConfig.SUPERVISOR_SLOTS_PORTS,
-                        new ArrayList<>());
+                    new ArrayList<>());
                 boolean containsPort = slotsPorts.stream()
-                        .anyMatch(slotPort -> slotPort != null && (slotPort == port));
+                    .anyMatch(slotPort -> slotPort != null && (slotPort == port));
                 if (!containsPort) {
                     returnValue = new ArrayList<>();
                 } else {
-                    Path portDir = rootDir.resolve(topologyId).resolve(Integer.toString(port));
+                    Path absPortDir = absTopoDir.resolve(Integer.toString(port)).toAbsolutePath().normalize();
 
-                    if (!portDir.toFile().exists() || logsForPort(user, portDir).isEmpty()) {
+                    if (!absPortDir.toFile().exists()
+                        || !absPortDir.startsWith(absTopoDir)) {
                         returnValue = new ArrayList<>();
                     } else {
-                        List<Path> filteredLogs = logsForPort(user, portDir);
+                        List<Path> filteredLogs = logsForPort(user, absPortDir);
                         if (BooleanUtils.isNotTrue(searchArchived)) {
                             filteredLogs = Collections.singletonList(first(filteredLogs));
                             fileOffset = 0;
@@ -287,22 +301,22 @@ public class LogviewerLogSearchHandler {
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearch(Path file, String searchString) throws InvalidRequestException {
+    Map<String, Object> substringSearch(Path file, String searchString) throws InvalidRequestException {
         return substringSearch(file, searchString, false, 10, 0);
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearch(Path file, String searchString, int numMatches) throws InvalidRequestException {
+    Map<String, Object> substringSearch(Path file, String searchString, int numMatches) throws InvalidRequestException {
         return substringSearch(file, searchString, false, numMatches, 0);
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearch(Path file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
+    Map<String, Object> substringSearch(Path file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
         return substringSearch(file, searchString, false, numMatches, startByteOffset);
     }
 
-    private Map<String,Object> substringSearch(Path file, String searchString, boolean isDaemon, Integer numMatches,
-                                               Integer startByteOffset) throws InvalidRequestException {
+    private Map<String, Object> substringSearch(Path file, String searchString, boolean isDaemon, Integer numMatches,
+        Integer startByteOffset) throws InvalidRequestException {
         if (StringUtils.isEmpty(searchString)) {
             throw new IllegalArgumentException("Precondition fails: search string should not be empty.");
         }
@@ -314,7 +328,7 @@ public class LogviewerLogSearchHandler {
         boolean isZipFile = file.toString().endsWith(".gz");
         try (InputStream fis = Files.newInputStream(file)) {
             try (InputStream gzippedInputStream = isZipFile ? new GZIPInputStream(fis) : fis;
-                 BufferedInputStream stream = new BufferedInputStream(gzippedInputStream)) {
+                BufferedInputStream stream = new BufferedInputStream(gzippedInputStream)) {
 
                 //It's more likely to be a file read exception here, so we don't differentiate
                 int fileLength = isZipFile ? (int) ServerUtils.zipFileSize(file.toFile()) : (int) Files.size(file);
@@ -398,7 +412,7 @@ public class LogviewerLogSearchHandler {
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearchDaemonLog(Path file, String searchString) throws InvalidRequestException {
+    Map<String, Object> substringSearchDaemonLog(Path file, String searchString) throws InvalidRequestException {
         return substringSearch(file, searchString, true, 10, 0);
     }
 
@@ -409,8 +423,8 @@ public class LogviewerLogSearchHandler {
     List<Path> logsForPort(String user, Path portDir) {
         try {
             List<Path> workerLogs = directoryCleaner.getFilesForDir(portDir).stream()
-                    .filter(file -> WORKER_LOG_FILENAME_PATTERN.asPredicate().test(file.getFileName().toString()))
-                    .collect(toList());
+                .filter(file -> WORKER_LOG_FILENAME_PATTERN.asPredicate().test(file.getFileName().toString()))
+                .collect(toList());
 
             return workerLogs.stream()
                 .filter(log -> resourceAuthorizer.isUserAllowedToAccessFile(user, WorkerLogs.getTopologyPortWorkerLog(log)))
@@ -425,6 +439,7 @@ public class LogviewerLogSearchHandler {
 
     /**
      * Find the first N matches of target string in files.
+     *
      * @param logs all candidate log files to search
      * @param numMatches number of matches expected
      * @param fileOffset number of log files to skip initially
@@ -468,7 +483,7 @@ public class LogviewerLogSearchHandler {
             currentFileMatch.put("port", truncatePathToLastElements(firstLogAbsPath, 2).getName(0).toString());
             newMatches.add(currentFileMatch);
 
-            int newCount = matchCount + ((List<?>)matchInLog.getOrDefault("matches", Collections.emptyList())).size();
+            int newCount = matchCount + ((List<?>) matchInLog.getOrDefault("matches", Collections.emptyList())).size();
             if (newCount == matchCount) {
                 // matches and matchCount is not changed
                 logs = rest(logs);
@@ -491,16 +506,15 @@ public class LogviewerLogSearchHandler {
         return new Matched(fileOffset, targetStr, matches, scannedFiles);
     }
 
-
     /**
-     * As the file is read into a buffer, 1/2 the buffer's size at a time, we search the buffer for matches of the
-     * substring and return a list of zero or more matches.
+     * As the file is read into a buffer, 1/2 the buffer's size at a time, we search the buffer for matches of the substring and return a
+     * list of zero or more matches.
      */
     private SubstringSearchResult bufferSubstringSearch(boolean isDaemon, Path file, int fileLength, int offsetToBuf,
-                                                        int initBufOffset, BufferedInputStream stream, Integer bytesSkipped,
-                                                        int bytesRead, ByteBuffer haystack, byte[] needle,
-                                                        List<Map<String, Object>> initialMatches, Integer numMatches, byte[] beforeBytes)
-            throws IOException {
+        int initBufOffset, BufferedInputStream stream, Integer bytesSkipped,
+        int bytesRead, ByteBuffer haystack, byte[] needle,
+        List<Map<String, Object>> initialMatches, Integer numMatches, byte[] beforeBytes)
+        throws IOException {
         int bufOffset = initBufOffset;
         List<Map<String, Object>> matches = initialMatches;
 
@@ -525,7 +539,7 @@ public class LogviewerLogSearchHandler {
 
                 bufOffset = offset + needle.length;
                 matches.add(mkMatchData(needle, haystack, offset, fileOffset,
-                        file.toAbsolutePath().normalize(), isDaemon, beforeArg, afterArg));
+                    file.toAbsolutePath().normalize(), isDaemon, beforeArg, afterArg));
             } else {
                 int beforeStrToOffset = Math.min(haystack.limit(), GREP_MAX_SEARCH_SIZE);
                 int beforeStrFromOffset = Math.max(0, beforeStrToOffset - GREP_CONTEXT_SIZE);
@@ -561,10 +575,9 @@ public class LogviewerLogSearchHandler {
         return totalBytesRead + bytesRead;
     }
 
-
     private Map<String, Object> mkMatchData(byte[] needle, ByteBuffer haystack, int haystackOffset, int fileOffset, Path canonicalPath,
-                                            boolean isDaemon, byte[] beforeBytes, byte[] afterBytes)
-            throws UnsupportedEncodingException, UnknownHostException {
+        boolean isDaemon, byte[] beforeBytes, byte[] afterBytes)
+        throws UnsupportedEncodingException, UnknownHostException {
         String url;
         if (isDaemon) {
             url = urlToMatchCenteredInLogPageDaemonFile(needle, canonicalPath, fileOffset, logviewerPort);
@@ -625,11 +638,10 @@ public class LogviewerLogSearchHandler {
     }
 
     /**
-     * Tries once to read ahead in the stream to fill the context and
-     * resets the stream to its position before the call.
+     * Tries once to read ahead in the stream to fill the context and resets the stream to its position before the call.
      */
     private byte[] tryReadAhead(BufferedInputStream stream, ByteBuffer haystack, int offset, int fileLength, int bytesRead)
-            throws IOException {
+        throws IOException {
         int numExpected = Math.min(fileLength - bytesRead, GREP_CONTEXT_SIZE);
         byte[] afterBytes = new byte[numExpected];
         stream.mark(numExpected);
@@ -640,8 +652,8 @@ public class LogviewerLogSearchHandler {
     }
 
     /**
-     * Searches a given byte array for a match of a sub-array of bytes.
-     * Returns the offset to the byte that matches, or -1 if no match was found.
+     * Searches a given byte array for a match of a sub-array of bytes. Returns the offset to the byte that matches, or -1 if no match was
+     * found.
      */
     private int offsetOfBytes(byte[] buffer, byte[] search, int initOffset) {
         if (search.length <= 0) {
@@ -692,7 +704,7 @@ public class LogviewerLogSearchHandler {
      * This response data only includes a next byte offset if there is more of the file to read.
      */
     private Map<String, Object> mkGrepResponse(byte[] searchBytes, Integer offset, List<Map<String, Object>> matches,
-                                               Integer nextByteOffset) throws UnsupportedEncodingException {
+        Integer nextByteOffset) throws UnsupportedEncodingException {
         Map<String, Object> ret = new HashMap<>();
         ret.put("searchString", new String(searchBytes, "UTF-8"));
         ret.put("startByteOffset", offset);
@@ -702,7 +714,7 @@ public class LogviewerLogSearchHandler {
         }
         return ret;
     }
-    
+
     @VisibleForTesting
     String urlToMatchCenteredInLogPage(byte[] needle, Path canonicalPath, int offset, Integer port) throws UnknownHostException {
         final String host = Utils.hostname();
@@ -731,6 +743,7 @@ public class LogviewerLogSearchHandler {
 
     @VisibleForTesting
     public static class Matched implements JSONAware {
+
         private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
         private int fileOffset;
@@ -741,7 +754,8 @@ public class LogviewerLogSearchHandler {
 
         /**
          * Constructor.
-         *  @param fileOffset offset (index) of the files
+         *
+         * @param fileOffset offset (index) of the files
          * @param searchString search string
          * @param matches map representing matched search result
          * @param openedFiles number of files scanned, used for metrics only
@@ -776,6 +790,7 @@ public class LogviewerLogSearchHandler {
     }
 
     private static class SubstringSearchResult {
+
         private List<Map<String, Object>> matches;
         private Integer newByteOffset;
         private byte[] newBeforeBytes;

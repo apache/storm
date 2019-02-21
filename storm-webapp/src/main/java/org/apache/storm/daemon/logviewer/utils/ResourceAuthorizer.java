@@ -23,6 +23,7 @@ import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.security.auth.ClientAuthUtils;
@@ -38,9 +40,13 @@ import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ResourceAuthorizer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ResourceAuthorizer.class);
+    
     private final Map<String, Object> stormConf;
     private final IGroupMappingServiceProvider groupMappingServiceProvider;
     private final IPrincipalToLocal principalToLocal;
@@ -59,7 +65,7 @@ public class ResourceAuthorizer {
     /**
      * Checks whether user is allowed to access a Logviewer file via UI. Always true when the Logviewer filter is not configured.
      *
-     * @param fileName file name to access
+     * @param fileName file name to access. The file name must not contain upward path traversal sequences (e.g. "../").
      * @param user username
      */
     public boolean isUserAllowedToAccessFile(String user, String fileName) {
@@ -70,15 +76,17 @@ public class ResourceAuthorizer {
      * Checks whether user is authorized to access file. Checks regardless of UI filter.
      *
      * @param user username
-     * @param fileName file name to access
+     * @param fileName file name to access. The file name must not contain upward path traversal sequences (e.g. "../").
      */
     public boolean isAuthorizedLogUser(String user, String fileName) {
-        if (StringUtils.isEmpty(user) || StringUtils.isEmpty(fileName)
-                || getLogUserGroupWhitelist(fileName) == null) {
+        Validate.isTrue(!fileName.contains(".." + FileSystems.getDefault().getSeparator()));
+        if (StringUtils.isEmpty(user) || StringUtils.isEmpty(fileName)) {
+            return false;
+        }
+        LogUserGroupWhitelist whitelist = getLogUserGroupWhitelist(fileName);
+        if (whitelist == null) {
             return false;
         } else {
-            LogUserGroupWhitelist whitelist = getLogUserGroupWhitelist(fileName);
-
             List<String> logsUsers = new ArrayList<>();
             logsUsers.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_USERS)));
             logsUsers.addAll(ObjectReader.getStrings(stormConf.get(Config.NIMBUS_ADMINS)));

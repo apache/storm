@@ -23,6 +23,8 @@ import com.codahale.metrics.Meter;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.ws.rs.core.Response;
 
@@ -33,8 +35,8 @@ import org.apache.storm.metric.StormMetricsRegistry;
 public class LogFileDownloader {
     private final Histogram fileDownloadSizeDistMb;
     private final Meter numFileDownloadExceptions;
-    private final String logRoot;
-    private final String daemonLogRoot;
+    private final Path logRoot;
+    private final Path daemonLogRoot;
     private final ResourceAuthorizer resourceAuthorizer;
 
     /**
@@ -47,8 +49,8 @@ public class LogFileDownloader {
      */
     public LogFileDownloader(String logRoot, String daemonLogRoot, ResourceAuthorizer resourceAuthorizer,
         StormMetricsRegistry metricsRegistry) {
-        this.logRoot = logRoot;
-        this.daemonLogRoot = daemonLogRoot;
+        this.logRoot = Paths.get(logRoot).toAbsolutePath().normalize();
+        this.daemonLogRoot = Paths.get(daemonLogRoot).toAbsolutePath().normalize();
         this.resourceAuthorizer = resourceAuthorizer;
         this.fileDownloadSizeDistMb = metricsRegistry.registerHistogram("logviewer:download-file-size-rounded-MB");
         this.numFileDownloadExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS);
@@ -63,12 +65,22 @@ public class LogFileDownloader {
      * @return a Response which lets browsers download that file.
      */
     public Response downloadFile(String fileName, String user, boolean isDaemon) throws IOException {
-        String rootDir = isDaemon ? daemonLogRoot : logRoot;
-        File file = new File(rootDir, fileName).getCanonicalFile();
-        if (file.exists()) {
+        Path rootDir = isDaemon ? daemonLogRoot : logRoot;
+        Path rawFile = rootDir.resolve(fileName);
+        Path file = rawFile.toAbsolutePath().normalize();
+        if (!file.startsWith(rootDir) || !rawFile.normalize().toString().equals(rawFile.toString())) {
+            //Ensure filename doesn't contain ../ parts 
+            return LogviewerResponseBuilder.buildResponsePageNotFound();
+        }
+        if (isDaemon && Paths.get(fileName).getNameCount() != 1) {
+            //Prevent daemon log reads from pathing into worker logs
+            return LogviewerResponseBuilder.buildResponsePageNotFound();
+        }
+        
+        if (file.toFile().exists()) {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
-                fileDownloadSizeDistMb.update(Math.round((double) file.length() / FileUtils.ONE_MB));
-                return LogviewerResponseBuilder.buildDownloadFile(file, numFileDownloadExceptions);
+                fileDownloadSizeDistMb.update(Math.round((double) file.toFile().length() / FileUtils.ONE_MB));
+                return LogviewerResponseBuilder.buildDownloadFile(file.toFile(), numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }

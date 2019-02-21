@@ -27,13 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyListOf;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anySetOf;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,8 +37,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -55,7 +49,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -66,7 +59,6 @@ import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
-import org.slf4j.LoggerFactory;
 
 public class LogCleanerTest {
     
@@ -81,7 +73,7 @@ public class LogCleanerTest {
         conf.put(LOGVIEWER_CLEANUP_INTERVAL_SECS, 300);
 
         StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
-        WorkerLogs workerLogs = new WorkerLogs(conf, null, metricRegistry);
+        WorkerLogs workerLogs = new WorkerLogs(conf, Paths.get(""), metricRegistry);
 
         LogCleaner logCleaner = new LogCleaner(conf, workerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry);
 
@@ -244,7 +236,7 @@ public class LogCleanerTest {
 
             Map<String, Object> conf = Utils.readStormConfig();
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
-            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null, metricRegistry) {
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, Paths.get(""), metricRegistry) {
                 @Override
                 public SortedSet<Path> getLogDirs(Set<Path> logDirs, Predicate<String> predicate) {
                     TreeSet<Path> ret = new TreeSet<>();
@@ -282,7 +274,7 @@ public class LogCleanerTest {
 
             Map<String, Object> conf = Utils.readStormConfig();
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
-            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null, metricRegistry);
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, Paths.get(""), metricRegistry);
 
             LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(metricRegistry), null, metricRegistry) {
                 @Override
@@ -308,24 +300,5 @@ public class LogCleanerTest {
             assertThat(Files.exists(dir1.getFile().toPath()), is(false));
             assertThat(Files.exists(dir2.getFile().toPath()), is(false));
         }
-    }
-
-    private Path mkMockPath(File file) {
-        Path mockPath = mock(Path.class);
-        when(mockPath.toFile()).thenReturn(file);
-        return mockPath;
-    }
-
-    private DirectoryStream<Path> mkDirectoryStream(List<Path> listOfPaths) {
-        return new DirectoryStream<Path>() {
-            @Override
-            public Iterator<Path> iterator() {
-                return listOfPaths.iterator();
-            }
-
-            @Override
-            public void close() throws IOException {
-            }
-        };
     }
 }

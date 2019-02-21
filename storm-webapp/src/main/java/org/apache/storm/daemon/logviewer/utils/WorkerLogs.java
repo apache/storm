@@ -74,7 +74,7 @@ public class WorkerLogs {
      */
     public WorkerLogs(Map<String, Object> stormConf, Path logRootDir, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
-        this.logRootDir = logRootDir;
+        this.logRootDir = logRootDir.toAbsolutePath().normalize();
         this.numSetPermissionsExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_SET_PERMISSION_EXCEPTIONS);
         this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
     }
@@ -85,7 +85,10 @@ public class WorkerLogs {
      * @param fileName log file
      */
     public void setLogFilePermission(String fileName) throws IOException {
-        Path file = logRootDir.resolve(fileName).toAbsolutePath().normalize();
+        Path absFile = logRootDir.resolve(fileName).toAbsolutePath().normalize();
+        if (!absFile.startsWith(logRootDir)) {
+            return;
+        }
         boolean runAsUser = ObjectReader.getBoolean(stormConf.get(SUPERVISOR_RUN_WORKER_AS_USER), false);
         Path parent = logRootDir.resolve(fileName).getParent();
         Optional<Path> mdFile = (parent == null) ? Optional.empty() : getMetadataFileForWorkerLogDir(parent);
@@ -93,11 +96,11 @@ public class WorkerLogs {
                 ? Optional.of(getTopologyOwnerFromMetadataFile(mdFile.get().toAbsolutePath().normalize()))
                 : Optional.empty();
 
-        if (runAsUser && topoOwner.isPresent() && file.toFile().exists() && !Files.isReadable(file)) {
+        if (runAsUser && topoOwner.isPresent() && absFile.toFile().exists() && !Files.isReadable(absFile)) {
             LOG.debug("Setting permissions on file {} with topo-owner {}", fileName, topoOwner);
             try {
                 ClientSupervisorUtils.processLauncherAndWait(stormConf, topoOwner.get(),
-                        Lists.newArrayList("blob", file.toAbsolutePath().normalize().toString()), null,
+                        Lists.newArrayList("blob", absFile.toAbsolutePath().normalize().toString()), null,
                         "setup group read permissions for file: " + fileName);
             } catch (IOException e) {
                 numSetPermissionsExceptions.mark();
@@ -120,7 +123,7 @@ public class WorkerLogs {
 
         return files;
     }
-    
+
     /**
      * Return a set of all worker directories in root log directory.
      */

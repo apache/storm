@@ -228,17 +228,6 @@ public class ServerUtils {
     }
 
     /**
-     * Extract dir from the jar to destdir
-     *
-     * @param jarpath Path to the jar file
-     * @param dir     Directory in the jar to pull out
-     * @param destdir Path to the directory where the extracted directory will be put
-     */
-    public static void extractDirFromJar(String jarpath, String dir, File destdir) {
-        _instance.extractDirFromJarImpl(jarpath, dir, destdir);
-    }
-
-    /**
      * Returns the value of java.class.path System property. Kept separate for testing.
      *
      * @return the classpath
@@ -583,8 +572,17 @@ public class ServerUtils {
             localrsrc.delete();
         }
     }
-
-    private static void extractZipFile(ZipFile zipFile, File toDir, String prefix) throws IOException {
+    
+    /**
+     * Extracts the given file to the given directory. Only zip entries starting with the given prefix are extracted.
+     * The prefix is stripped off entry names before extraction.
+     *
+     * @param zipFile The zip file to extract.
+     * @param toDir The directory to extract to.
+     * @param prefix The prefix to look for in the zip file. If not null only paths starting with the prefix will be
+     * extracted.
+     */
+    public static void extractZipFile(ZipFile zipFile, File toDir, String prefix) throws IOException {
         ensureDirectory(toDir);
         final String base = toDir.getCanonicalPath();
 
@@ -596,7 +594,14 @@ public class ServerUtils {
                     //No need to extract it, it is not what we are looking for.
                     continue;
                 }
-                File file = new File(toDir, entry.getName());
+                String entryName;
+                if (prefix != null) {
+                    entryName = entry.getName().substring(prefix.length());
+                    LOG.debug("Extracting {} shortened to {} into {}", entry.getName(), entryName, toDir);
+                } else {
+                    entryName = entry.getName();
+                }
+                File file = new File(toDir, entryName);
                 String found = file.getCanonicalPath();
                 if (!found.startsWith(base)) {
                     LOG.error("Invalid location {} is outside of {}", found, base);
@@ -746,14 +751,6 @@ public class ServerUtils {
     // Non-static impl methods exist for mocking purposes.
     public String currentClasspathImpl() {
         return System.getProperty("java.class.path");
-    }
-
-    public void extractDirFromJarImpl(String jarpath, String dir, File destdir) {
-        try (JarFile jarFile = new JarFile(jarpath)) {
-            extractZipFile(jarFile, destdir, dir);
-        } catch (IOException e) {
-            LOG.info("Could not extract {} from {}", dir, jarpath);
-        }
     }
 
     public void downloadResourcesAsSupervisorImpl(String key, String localFile,

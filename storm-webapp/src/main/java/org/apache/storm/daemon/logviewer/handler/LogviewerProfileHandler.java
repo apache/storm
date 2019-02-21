@@ -34,6 +34,7 @@ import j2html.tags.DomContent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import javax.ws.rs.core.Response;
 
@@ -47,10 +48,10 @@ import org.apache.storm.metric.StormMetricsRegistry;
 public class LogviewerProfileHandler {
 
     public static final String WORKER_LOG_FILENAME = "worker.log";
-    
+
     private final Meter numFileDownloadExceptions;
-    
-    private final String logRoot;
+
+    private final Path logRoot;
     private final ResourceAuthorizer resourceAuthorizer;
     private final DirectoryCleaner directoryCleaner;
 
@@ -62,7 +63,7 @@ public class LogviewerProfileHandler {
      * @param metricsRegistry The logviewer metrisc registry
      */
     public LogviewerProfileHandler(String logRoot, ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
-        this.logRoot = logRoot;
+        this.logRoot = Paths.get(logRoot).toAbsolutePath().normalize();
         this.resourceAuthorizer = resourceAuthorizer;
         this.numFileDownloadExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS);
         this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
@@ -78,12 +79,17 @@ public class LogviewerProfileHandler {
      */
     public Response listDumpFiles(String topologyId, String hostPort, String user) throws IOException {
         String portStr = hostPort.split(":")[1];
-        File dir = new File(String.join(File.separator, logRoot, topologyId, portStr));
+        Path rawDir = logRoot.resolve(topologyId).resolve(portStr);
+        Path absDir = rawDir.toAbsolutePath().normalize();
+        if (!absDir.startsWith(logRoot) || !rawDir.normalize().toString().equals(rawDir.toString())) {
+            //Ensure filename doesn't contain ../ parts 
+            return LogviewerResponseBuilder.buildResponsePageNotFound();
+        }
 
-        if (dir.exists()) {
+        if (absDir.toFile().exists()) {
             String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
-                String content = buildDumpFileListPage(topologyId, hostPort, dir);
+                String content = buildDumpFileListPage(topologyId, hostPort, absDir.toFile());
                 return LogviewerResponseBuilder.buildSuccessHtmlResponse(content);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
@@ -105,13 +111,17 @@ public class LogviewerProfileHandler {
      */
     public Response downloadDumpFile(String topologyId, String hostPort, String fileName, String user) throws IOException {
         String portStr = hostPort.split(":")[1];
-        File dir = new File(String.join(File.separator, logRoot, topologyId, portStr));
-        File file = new File(dir, fileName);
+        Path rawFile = logRoot.resolve(topologyId).resolve(portStr).resolve(fileName);
+        Path absFile = rawFile.toAbsolutePath().normalize();
+        if (!absFile.startsWith(logRoot) || !rawFile.normalize().toString().equals(rawFile.toString())) {
+            //Ensure filename doesn't contain ../ parts 
+            return LogviewerResponseBuilder.buildResponsePageNotFound();
+        }
 
-        if (dir.exists() && file.exists()) {
+        if (absFile.toFile().exists()) {
             String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
-                return LogviewerResponseBuilder.buildDownloadFile(file, numFileDownloadExceptions);
+                return LogviewerResponseBuilder.buildDownloadFile(absFile.toFile(), numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
@@ -122,19 +132,19 @@ public class LogviewerProfileHandler {
 
     private String buildDumpFileListPage(String topologyId, String hostPort, File dir) throws IOException {
         List<DomContent> liTags = getProfilerDumpFiles(dir).stream()
-                .map(file -> li(a(file).withHref("/api/v1/dumps/" + topologyId + "/" + hostPort + "/" + file)))
-                .collect(toList());
+            .map(file -> li(a(file).withHref("/api/v1/dumps/" + topologyId + "/" + hostPort + "/" + file)))
+            .collect(toList());
 
         return html(
-                head(
-                        title("File Dumps - Storm Log Viewer"),
-                        link().withRel("stylesheet").withHref("/css/bootstrap-3.3.1.min.css"),
-                        link().withRel("stylesheet").withHref("/css/jquery.dataTables.1.10.4.min.css"),
-                        link().withRel("stylesheet").withHref("/css/style.css")
-                ),
-                body(
-                        ul(liTags.toArray(new DomContent[]{}))
-                )
+            head(
+                title("File Dumps - Storm Log Viewer"),
+                link().withRel("stylesheet").withHref("/css/bootstrap-3.3.1.min.css"),
+                link().withRel("stylesheet").withHref("/css/jquery.dataTables.1.10.4.min.css"),
+                link().withRel("stylesheet").withHref("/css/style.css")
+            ),
+            body(
+                ul(liTags.toArray(new DomContent[]{}))
+            )
         ).render();
     }
 
@@ -143,10 +153,10 @@ public class LogviewerProfileHandler {
         return filesForDir.stream()
             .map(path -> path.toFile())
             .filter(file -> {
-            String fileName = file.getName();
-            return StringUtils.isNotEmpty(fileName)
+                String fileName = file.getName();
+                return StringUtils.isNotEmpty(fileName)
                     && (fileName.endsWith(".txt") || fileName.endsWith(".jfr") || fileName.endsWith(".bin"));
-        }).map(File::getName).collect(toList());
+            }).map(File::getName).collect(toList());
     }
 
 }
