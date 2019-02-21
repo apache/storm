@@ -63,7 +63,7 @@ public interface IBolt extends Serializable {
     void execute(Tuple input);
 
     /**
-     * Called when an IBolt is going to be shutdown. There is no guarentee that cleanup will be called, because the supervisor kill -9's
+     * Called when an IBolt is going to be shutdown. There is no guarantee that cleanup will be called, because the supervisor kill -9's
      * worker processes on the cluster.
      *
      * The one context where cleanup is guaranteed to be called is when a topology is killed when running Storm in local mode.

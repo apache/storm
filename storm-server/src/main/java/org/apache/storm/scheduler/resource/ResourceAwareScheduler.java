@@ -17,6 +17,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -45,6 +50,8 @@ public class ResourceAwareScheduler implements IScheduler {
     private ISchedulingPriorityStrategy schedulingPriorityStrategy;
     private IConfigLoader configLoader;
     private int maxSchedulingAttempts;
+    private int schedulingTimeoutSeconds;
+    private ExecutorService backgroundScheduling;
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
         markFailedTopology(u, c, td, message, null);
@@ -78,6 +85,15 @@ public class ResourceAwareScheduler implements IScheduler {
         configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
         maxSchedulingAttempts = ObjectReader.getInt(
             conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_TOPOLOGY_SCHEDULING_ATTEMPTS), 5);
+        schedulingTimeoutSeconds = ObjectReader.getInt(
+                conf.get(DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY), 60);
+        backgroundScheduling = Executors.newFixedThreadPool(1);
+    }
+
+    @Override
+    public void cleanup() {
+        LOG.info("Cleanup ResourceAwareScheduler scheduler");
+        backgroundScheduling.shutdown();
     }
 
     @Override
@@ -113,10 +129,10 @@ public class ResourceAwareScheduler implements IScheduler {
         try {
             String strategy = (String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY);
             if (strategy.startsWith("backtype.storm")) {
-                // Storm supports to launch workers of older version.
+                // Storm support to launch workers of older version.
                 // If the config of TOPOLOGY_SCHEDULER_STRATEGY comes from the older version, replace the package name.
                 strategy = strategy.replace("backtype.storm", "org.apache.storm");
-                LOG.debug("Replace backtype.storm with org.apache.storm for Config.TOPOLOGY_SCHEDULER_STRATEGY");
+                LOG.debug("Replaced backtype.storm with org.apache.storm for Config.TOPOLOGY_SCHEDULER_STRATEGY");
             }
             rasStrategy = ReflectionUtils.newSchedulerStrategyInstance(strategy, conf);
             rasStrategy.prepare(conf);
@@ -136,10 +152,24 @@ public class ResourceAwareScheduler implements IScheduler {
             return;
         }
 
+        final IStrategy finalRasStrategy = rasStrategy;
         for (int i = 0; i < maxSchedulingAttempts; i++) {
             SingleTopologyCluster toSchedule = new SingleTopologyCluster(workingState, td.getId());
             try {
-                SchedulingResult result = rasStrategy.schedule(toSchedule, td);
+                SchedulingResult result = null;
+                Future<SchedulingResult> schedulingFuture = backgroundScheduling.submit(
+                    () -> finalRasStrategy.schedule(toSchedule, td)
+                );
+                try {
+                    result = schedulingFuture.get(schedulingTimeoutSeconds, TimeUnit.SECONDS);
+                } catch (TimeoutException te) {
+                    markFailedTopology(topologySubmitter, cluster, td, "Scheduling took too long for "
+                            + td.getId() + " using strategy " + rasStrategy.getClass().getName() + " timeout after "
+                            + schedulingTimeoutSeconds + " seconds using config "
+                            + DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY + ".");
+                    schedulingFuture.cancel(true);
+                    return;
+                }
                 LOG.debug("scheduling result: {}", result);
                 if (result == null) {
                     markFailedTopology(topologySubmitter, cluster, td, "Internal scheduler error");

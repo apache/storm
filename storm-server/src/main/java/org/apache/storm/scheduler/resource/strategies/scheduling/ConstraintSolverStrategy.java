@@ -331,6 +331,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             return new SolverResult(state, false);
         }
 
+        if (Thread.currentThread().isInterrupted()) {
+            return new SolverResult(state, false);
+        }
+
         ExecutorDetails exec = state.currentExec();
         Iterable<String> sortedNodes = sortAllNodes(state.td, exec, favoredNodeIds, unFavoredNodeIds);
 

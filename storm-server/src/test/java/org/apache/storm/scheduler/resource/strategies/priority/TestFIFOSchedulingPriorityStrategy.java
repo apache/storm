@@ -60,33 +60,37 @@ public class TestFIFOSchedulingPriorityStrategy {
 
             ResourceAwareScheduler rs = new ResourceAwareScheduler();
             rs.prepare(config);
-            rs.schedule(topologies, cluster);
+            try {
+                rs.schedule(topologies, cluster);
 
-            assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-3-bobby", "topo-4-derek");
+                assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-3-bobby", "topo-4-derek");
 
-            LOG.info("\n\n\t\tINSERTING topo-5");
-            //new topology needs to be scheduled
-            //topo-3 should be evicted since its been up the longest
-            topologies = addTopologies(topologies,
-                genTopology("topo-5-derek", config, 1, 0, 1, 0,Time.currentTimeSecs() - 15,29, "derek"));
+                LOG.info("\n\n\t\tINSERTING topo-5");
+                //new topology needs to be scheduled
+                //topo-3 should be evicted since its been up the longest
+                topologies = addTopologies(topologies,
+                        genTopology("topo-5-derek", config, 1, 0, 1, 0, Time.currentTimeSecs() - 15, 29, "derek"));
 
-            cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
-            rs.schedule(topologies, cluster);
+                cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+                rs.schedule(topologies, cluster);
 
-            assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-4-derek", "topo-5-derek");
-            assertTopologiesNotScheduled(cluster, "topo-3-bobby");
+                assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-4-derek", "topo-5-derek");
+                assertTopologiesNotScheduled(cluster, "topo-3-bobby");
 
-            LOG.info("\n\n\t\tINSERTING topo-6");
-            //new topology needs to be scheduled.  topo-4 should be evicted. Even though topo-1 from user jerry is older, topo-1 will not be evicted
-            //since user jerry has enough resource guarantee
-            topologies = addTopologies(topologies,
-                genTopology("topo-6-bobby", config, 1, 0, 1, 0,Time.currentTimeSecs() - 10,29, "bobby"));
+                LOG.info("\n\n\t\tINSERTING topo-6");
+                //new topology needs to be scheduled.  topo-4 should be evicted. Even though topo-1 from user jerry is older, topo-1 will not be evicted
+                //since user jerry has enough resource guarantee
+                topologies = addTopologies(topologies,
+                        genTopology("topo-6-bobby", config, 1, 0, 1, 0, Time.currentTimeSecs() - 10, 29, "bobby"));
 
-            cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
-            rs.schedule(topologies, cluster);
+                cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+                rs.schedule(topologies, cluster);
 
-            assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-5-derek", "topo-6-bobby");
-            assertTopologiesNotScheduled(cluster, "topo-3-bobby", "topo-4-derek");
+                assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-5-derek", "topo-6-bobby");
+                assertTopologiesNotScheduled(cluster, "topo-3-bobby", "topo-4-derek");
+            } finally {
+                rs.cleanup();
+            }
         }
     }
 }

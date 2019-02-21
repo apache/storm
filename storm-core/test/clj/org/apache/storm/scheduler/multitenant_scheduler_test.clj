@@ -675,6 +675,7 @@
     (.assign (.get node-map "super0") "topology1" (list (ed 1)) cluster)
     (.assign (.get node-map "super1") "topology2" (list (ed 5)) cluster)
     (.prepare scheduler conf)
+    (try
     (.schedule scheduler topologies cluster)
     (let [assignment (.getAssignmentById cluster "topology1")
           assigned-slots (.getSlots assignment)
@@ -687,6 +688,7 @@
     (is (= "Fully Scheduled" (.get (.getStatusMap cluster) "topology1")))
     (is (= "Scheduled Isolated on 2 Nodes" (.get (.getStatusMap cluster) "topology2")))
     (is (= "Scheduled Isolated on 5 Nodes" (.get (.getStatusMap cluster) "topology3")))
+    (finally (.cleanup scheduler)))
 ))
 
 (deftest test-force-free-slot-in-bad-state
@@ -712,6 +714,7 @@
         scheduler (MultitenantScheduler.)]
     (.assign (.get node-map "super0") "topology1" (list (ed 1)) cluster)
     (.prepare scheduler conf)
+    (try
     (.schedule scheduler topologies cluster)
     (let [assignment (.getAssignmentById cluster "topology1")
           assigned-slots (.getSlots assignment)
@@ -722,6 +725,7 @@
       (is (= 1 (.size (into #{} (for [slot assigned-slots] (.getNodeId slot))))))
       )
     (is (= "Fully Scheduled" (.get (.getStatusMap cluster) "topology1")))
+    (finally (.cleanup scheduler)))
     ))
 
 (deftest test-multitenant-scheduler-bad-starting-state
@@ -752,6 +756,7 @@
           conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2 "userB" 1}}
           scheduler (MultitenantScheduler.)]
       (.prepare scheduler conf)
+      (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
             assigned-slots (.getSlots assignment)
@@ -759,7 +764,8 @@
         (is (= 1 (.size assigned-slots))))
       (is (= "Fully Scheduled" (.get (.getStatusMap cluster) "topology1")))
       (is (= "Scheduled Isolated on 2 Nodes" (.get (.getStatusMap cluster) "topology2")))
-      (is (= "Scheduled Isolated on 1 Nodes" (.get (.getStatusMap cluster) "topology3"))))))
+      (is (= "Scheduled Isolated on 1 Nodes" (.get (.getStatusMap cluster) "topology3")))
+      (finally (.cleanup scheduler))))))
 
 (deftest test-existing-assignment-slot-not-found-in-supervisor
   (testing "Scheduler should handle discrepancy when a live supervisor heartbeat does not report slot,
@@ -779,12 +785,14 @@
           conf {}
           scheduler (MultitenantScheduler.)]
       (.prepare scheduler conf)
+      (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
             assigned-slots (.getSlots assignment)
             executors (.getExecutors assignment)]
         (is (= 1 (.size assigned-slots))))
-      (is (= "Fully Scheduled" (.get (.getStatusMap cluster) "topology1"))))))
+      (is (= "Fully Scheduled" (.get (.getStatusMap cluster) "topology1")))
+      (finally(.cleanup scheduler))))))
 
 (deftest test-existing-assignment-slot-on-dead-supervisor
   (testing "Dead supervisor could have slot with duplicate assignments or slot never reported by supervisor"
@@ -817,6 +825,7 @@
           conf {}
           scheduler (MultitenantScheduler.)]
       (.prepare scheduler conf)
+      (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
             assigned-slots (.getSlots assignment)
@@ -829,7 +838,8 @@
             executors (.getExecutors assignment)]
         (is (= 2 (.size assigned-slots)))
         (is (= 2 (.size executors))))
-      (is (= "Fully Scheduled" (.get (.getStatusMap cluster) "topology2"))))))
+      (is (= "Fully Scheduled" (.get (.getStatusMap cluster) "topology2")))
+      (finally (.cleanup scheduler))))))
 
 
 (deftest test-isolated-pool-scheduling-with-nodes-with-different-number-of-slots
@@ -855,5 +865,7 @@
         conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2}}
         scheduler (MultitenantScheduler.)]
     (.prepare scheduler conf)
+    (try
     (.schedule scheduler topologies cluster)
+    (finally (.cleanup scheduler)))
     (is (= "Scheduled Isolated on 2 Nodes" (.get (.getStatusMap cluster) "topology1")))))
