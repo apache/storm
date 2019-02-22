@@ -155,8 +155,10 @@ public class BlacklistScheduler implements IScheduler {
 
         Set<Integer> newPorts = Sets.difference(supervisorPorts, cachedSupervisorPorts);
         if (newPorts.size() > 0) {
-            //add new ports to cached supervisor
-            cachedSupervisors.put(supervisorKey, Sets.union(newPorts, cachedSupervisorPorts));
+            //add new ports to cached supervisor.  We need a modifiable set to allow removing ports later.
+            Set<Integer> allPorts = new HashSet<>(newPorts);
+            allPorts.addAll(cachedSupervisorPorts);
+            cachedSupervisors.put(supervisorKey, allPorts);
         }
 
         Set<Integer> badSlots = Sets.difference(cachedSupervisorPorts, supervisorPorts);
