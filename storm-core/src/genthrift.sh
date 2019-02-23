@@ -17,7 +17,7 @@
 
 rm -rf gen-javabean gen-py py
 rm -rf jvm/org/apache/storm/generated
-thrift --gen java:beans,hashcode,nocamel,generated_annotations=undated --gen py:utf8strings storm.thrift
+thrift --gen java:beans,nocamel,generated_annotations=undated --gen py:utf8strings storm.thrift
 for file in gen-javabean/org/apache/storm/generated/* ; do
   cat java_license_header.txt ${file} > ${file}.tmp
   mv -f ${file}.tmp ${file}
