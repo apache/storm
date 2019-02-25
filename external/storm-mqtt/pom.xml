@@ -35,7 +35,7 @@
     <repositories>
         <repository>
             <id>bintray</id>
-            <url>http://dl.bintray.com/andsel/maven/</url>
+            <url>https://dl.bintray.com/andsel/maven/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
