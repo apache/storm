@@ -254,6 +254,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <test.extra.args>-Djava.net.preferIPv4Stack=true</test.extra.args>
+        <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
 
         <!-- dependency versions -->
         <clojure.version>1.7.0</clojure.version>
@@ -1279,6 +1280,92 @@
                                 </bannedDependencies>
                             </rules>    
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.17</version>
+                <inherited>false</inherited>
+                <configuration>
+                    <useMissingFile>true</useMissingFile>
+                    <missingFile>${project.basedir}/THIRD-PARTY.properties</missingFile>
+                    <aggregateMissingLicensesFile>${project.basedir}/THIRD-PARTY.properties</aggregateMissingLicensesFile>
+                    <failOnMissing>true</failOnMissing>
+                    <includeTransitiveDependencies>true</includeTransitiveDependencies>
+                    <fileTemplate>/org/codehaus/mojo/license/third-party-file-groupByMultiLicense.ftl</fileTemplate>
+                    <excludedScopes>system,test</excludedScopes>
+                    <licenseMerges>
+                        <licenseMerge>
+                            Apache License, Version 2.0 |
+                            Apache License, version 2.0 |
+                            Apache License Version 2 |
+                            Apache License Version 2.0 |
+                            Apache License version 2.0 |
+                            Apache 2 |
+                            Apache 2.0 |
+                            Apache License, 2.0 |
+                            Apache License 2 |
+                            Apache License 2.0 |
+                            Apache Public License 2.0 |
+                            Apache Software License - Version 2.0 |
+                            Apache v2 |
+                            ASL, version 2 |
+                            The Apache License, Version 2.0 |
+                            The Apache Software License, Version 2.0
+                        </licenseMerge>
+                        <licenseMerge>
+                            BSD 3-Clause License |
+                            BSD 3-Clause |
+                            BSD 3-clause |
+                            The BSD 3-Clause License
+                        </licenseMerge>
+                        <licenseMerge>
+                            Common Development and Distribution License (CDDL) v1.0 |
+                            COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 |
+                            CDDL 1.0
+                        </licenseMerge>
+                        <licenseMerge>
+                            Common Development and Distribution License (CDDL) v1.1 | 
+                            COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1 |
+                            CDDL 1.1 |
+                            Common Development and Distribution License (CDDL), Version 1.1
+                        </licenseMerge>
+                        <licenseMerge>
+                            Eclipse Public License, Version 1.0 |
+                            Eclipse Public License 1.0 |
+                            Eclipse Public License - v 1.0
+                        </licenseMerge>
+                        <licenseMerge>
+                            MIT License |
+                            The MIT License |
+                            MIT license |
+                            MIT X11 License |
+                            MIT
+                        </licenseMerge>
+                        <licenseMerge>
+                            The GNU General Public License (GPL), Version 2, With Classpath Exception |
+                            GPL2 w/ CPE
+                        </licenseMerge>
+                        <licenseMerge>
+                            GNU Lesser General Public License (LGPL), Version 2.1 |
+                            LGPL, version 2.1 |
+                            GNU Lesser General Public License Version 2.1 |
+                            GNU Lesser General Public License, version 2.1
+                        </licenseMerge>
+                        <licenseMerge>
+                            Common Public License Version 1.0 |
+                            Common Public License - v 1.0
+                        </licenseMerge>
+                    </licenseMerges>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-and-check-licenses</id>
+                        <goals>
+                            <goal>aggregate-add-third-party</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
