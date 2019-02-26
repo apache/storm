@@ -44,9 +44,6 @@ public class JCQueueTest {
 
                     @Override
                     public void accept(Object event) {
-                        if (Thread.currentThread().isInterrupted()) {
-                            throw new RuntimeException(new InterruptedException("ConsumerThd interrupted"));
-                        }
                         if (head) {
                             head = false;
                             result.set(event);
@@ -55,7 +52,6 @@ public class JCQueueTest {
 
                     @Override
                     public void flush() {
-                        return;
                     }
                 });
 
@@ -87,7 +83,6 @@ public class JCQueueTest {
 
                 @Override
                 public void flush() {
-                    return;
                 }
             });
             run(producer, consumer, queue, 1000, 1);
@@ -117,7 +112,6 @@ public class JCQueueTest {
 
                 @Override
                 public void flush() {
-                    return;
                 }
             });
 
@@ -168,9 +162,9 @@ public class JCQueueTest {
 
     private static class IncProducer implements Runnable {
 
-        private JCQueue queue;
-        private long _max;
-        private long min;
+        private final JCQueue queue;
+        private final long _max;
+        private final long min;
 
         public IncProducer(JCQueue queue, long _max, long min) {
             this.queue = queue;
@@ -185,15 +179,15 @@ public class JCQueueTest {
                     queue.publish(i);
                 }
             } catch (InterruptedException e) {
-                return;
+                //Just quit
             }
         }
     }
 
     private static class ConsumerThd implements Runnable {
 
-        private JCQueue.Consumer handler;
-        private JCQueue queue;
+        private final JCQueue.Consumer handler;
+        private final JCQueue queue;
 
         ConsumerThd(JCQueue queue, JCQueue.Consumer handler) {
             this.handler = handler;
