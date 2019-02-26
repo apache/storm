@@ -29,7 +29,7 @@ limitations under the License.
     <packaging>jar</packaging>
 
     <name>blobstore-migrator</name>
-    <url>http://maven.apache.org</url>
+    <url>https://maven.apache.org</url>
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
