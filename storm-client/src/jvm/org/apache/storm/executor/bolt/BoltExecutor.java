@@ -97,9 +97,11 @@ public class BoltExecutor extends Executor {
         return stats;
     }
 
-    public void init(ArrayList<Task> idToTask, int idToTaskBase) {
+    public void init(ArrayList<Task> idToTask, int idToTaskBase) throws InterruptedException {
         executorTransfer.initLocalRecvQueues();
+        workerReady.await();
         while (!stormActive.get()) {
+            //Topology may be deployed in deactivated mode, wait for activation
             Utils.sleepNoSimulation(100);
         }
 
