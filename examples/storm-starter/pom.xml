@@ -225,33 +225,14 @@
               <excludedGroups>none</excludedGroups>
           </configuration>
       </plugin>
-        <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <executable>java</executable>
-          <includeProjectDependencies>true</includeProjectDependencies>
-          <includePluginDependencies>false</includePluginDependencies>
-          <classpathScope>compile</classpathScope>
-          <!-- allows you to specify which topology class to run by specifying -Dstorm.topology= on the command line -->
-          <mainClass>${storm.topology}</mainClass>
-        </configuration>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <!--Note - the version would be inherited-->
+          <configuration>
+              <maxAllowedViolations>263</maxAllowedViolations>
+          </configuration>
       </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-checkstyle-plugin</artifactId>
-            <!--Note - the version would be inherited-->
-            <configuration>
-                <maxAllowedViolations>263</maxAllowedViolations>
-            </configuration>
-        </plugin>
     </plugins>
   </build>
 </project>
