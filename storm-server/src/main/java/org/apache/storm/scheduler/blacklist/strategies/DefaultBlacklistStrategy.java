@@ -98,12 +98,12 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
     public void resumeFromBlacklist() {
         Set<String> readyToRemove = new HashSet<>();
         for (Map.Entry<String, Integer> entry : blacklist.entrySet()) {
-            String key = entry.getKey();
-            int value = entry.getValue() - 1;
-            if (value == 0) {
-                readyToRemove.add(key);
+            String supervisor = entry.getKey();
+            int countUntilResume = entry.getValue() - 1;
+            if (countUntilResume == 0) {
+                readyToRemove.add(supervisor);
             } else {
-                blacklist.put(key, value);
+                blacklist.put(supervisor, countUntilResume);
             }
         }
         for (String key : readyToRemove) {

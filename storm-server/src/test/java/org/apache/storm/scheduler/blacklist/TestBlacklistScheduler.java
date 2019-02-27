@@ -120,9 +120,9 @@ public class TestBlacklistScheduler {
         scheduler.prepare(config);
         scheduler.schedule(topologies, cluster);
 
-        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removePortFromSupervisors(supMap, "sup-0", 0), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.modifyPortFromSupervisors(supMap, "sup-0", 0, false), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
         scheduler.schedule(topologies, cluster);
-        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removePortFromSupervisors(supMap, "sup-0", 0), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.modifyPortFromSupervisors(supMap, "sup-0", 0, false), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
         scheduler.schedule(topologies, cluster);
         cluster = new Cluster(iNimbus, resourceMetrics, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         scheduler.schedule(topologies, cluster);
@@ -329,11 +329,51 @@ public class TestBlacklistScheduler {
         Assert.assertEquals(cached, bs.cachedSupervisors.keySet());
         cluster = new Cluster(iNimbus, resourceMetrics, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         bs.schedule(topologies,cluster);
-        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removePortFromSupervisors(supMap,"sup-0",0),TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.modifyPortFromSupervisors(supMap,"sup-0",0, false),TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
         for (int i = 0 ;i < 20 ; i++){
             bs.schedule(topologies, cluster);
         }
         Set<Integer> cachedPorts = Sets.newHashSet(1, 2, 3);
         Assert.assertEquals(cachedPorts, bs.cachedSupervisors.get("sup-0"));
     }
+
+    @Test
+    public void blacklistSupervisorWithAddedPort() {
+        Config config = new Config();
+        config.putAll(Utils.readDefaultConfig());
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_TIME,10);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT,2);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME,300);
+
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        scheduler = new BlacklistScheduler(new DefaultScheduler(), metricsRegistry);
+        scheduler.prepare(config);
+
+        Map<String, TopologyDetails> topoMap = new HashMap<>();
+        TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 5,
+                15, 1, 1, currentTime - 2,true);
+        topoMap.put(topo1.getId(), topo1);
+        Topologies topologies = new Topologies(topoMap);
+
+        INimbus iNimbus = new TestUtilsForBlacklistScheduler.INimbusTest();
+        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
+        Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(3,4);
+        Cluster cluster = new Cluster(iNimbus, resourceMetrics, supMap, new HashMap<String, SchedulerAssignmentImpl>(),
+                topologies, config);
+
+        // allow blacklist scheduler to cache the supervisor
+        scheduler.schedule(topologies, cluster);
+        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.modifyPortFromSupervisors(supMap,
+                "sup-0",4, true),TestUtilsForBlacklistScheduler.assignmentMapToImpl(
+                        cluster.getAssignments()), topologies, config);
+        // allow blacklist scheduler to cache the supervisor with an added port
+        scheduler.schedule(topologies, cluster);
+        // remove the port from the supervisor and make sure the blacklist scheduler can remove the port without
+        // throwing an exception
+        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.modifyPortFromSupervisors(supMap,
+                "sup-0",4, false),TestUtilsForBlacklistScheduler.assignmentMapToImpl(
+                        cluster.getAssignments()), topologies, config);
+        scheduler.schedule(topologies, cluster);
+    }
+
 }
