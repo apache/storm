@@ -39,6 +39,8 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
+
 public class TopologySpoutLag {
     private static final String SPOUT_ID = "spoutId";
     private static final String SPOUT_TYPE = "spoutType";
@@ -152,7 +154,7 @@ public class TopologySpoutLag {
                                                   Map topologyConf) throws IOException {
         ComponentCommon componentCommon = spoutSpec.get_common();
         String json = componentCommon.get_json_conf();
-        if (json != null && !json.isEmpty()) {
+        if (!Strings.isNullOrEmpty(json)) {
             Map<String, Object> jsonMap = null;
             try {
                 jsonMap = (Map<String, Object>) JSONValue.parseWithException(json);
@@ -177,7 +179,7 @@ public class TopologySpoutLag {
         String json = componentCommon.get_json_conf();
         Map<String, Object> result = null;
         String errorMsg = "Offset lags for kafka not supported for older versions. Please update kafka spout to latest version.";
-        if (json != null && !json.isEmpty()) {
+        if (!Strings.isNullOrEmpty(json)) {
             List<String> commands = new ArrayList<>();
             String stormHomeDir = System.getenv("STORM_BASE_DIR");
             if (stormHomeDir != null && !stormHomeDir.endsWith("/")) {
@@ -216,6 +218,13 @@ public class TopologySpoutLag {
                         extraPropertiesFile.delete();
                     }
                 }
+            } else if(!old) {
+              errorMsg = new StringBuilder(TOPICS_CONFIG).append(", ")
+                  .append(GROUPID_CONFIG)
+                  .append(" and ")
+                  .append(BOOTSTRAP_CONFIG)
+                  .append(" are mandatory and should not be null for newer versions of kafka spout.")
+                  .toString();
             }
         }
 
