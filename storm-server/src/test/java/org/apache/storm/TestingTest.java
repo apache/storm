@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test that the testing class does what it should do.
  */
+@IntegrationTest
 public class TestingTest {
 
     private static final TestJob COMPLETE_TOPOLOGY_TESTJOB = (cluster) -> {
@@ -87,7 +88,6 @@ public class TestingTest {
     };
 
     @Test
-    @IntegrationTest
     public void testCompleteTopologyNettySimulated() throws Exception {
         Config daemonConf = new Config();
         daemonConf.put(Config.STORM_LOCAL_MODE_ZMQ, true);
@@ -99,7 +99,6 @@ public class TestingTest {
     }
 
     @Test
-    @IntegrationTest
     public void testCompleteTopologyNetty() throws Exception {
         Config daemonConf = new Config();
         daemonConf.put(Config.STORM_LOCAL_MODE_ZMQ, true);
@@ -111,7 +110,6 @@ public class TestingTest {
     }
 
     @Test
-    @IntegrationTest
     public void testCompleteTopologyLocalSimulated() throws Exception {
         MkClusterParam param = new MkClusterParam();
         param.setSupervisors(4);
@@ -120,7 +118,6 @@ public class TestingTest {
     }
 
     @Test
-    @IntegrationTest
     public void testCompleteTopologyLocal() throws Exception {
         MkClusterParam param = new MkClusterParam();
         param.setSupervisors(4);

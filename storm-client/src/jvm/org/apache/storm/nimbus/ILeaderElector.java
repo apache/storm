@@ -15,6 +15,8 @@ package org.apache.storm.nimbus;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 
 /**
  * The interface for leader election.
@@ -52,6 +54,15 @@ public interface ILeaderElector extends Closeable {
      * @return the current leader's address , may return null if no one has the lock.
      */
     NimbusInfo getLeader();
+    
+    /**
+     * Wait for the caller to gain leadership. This should only be used in single-Nimbus clusters, and is only useful to allow testing
+     * code to wait for a LocalCluster's Nimbus to gain leadership before trying to submit topologies.
+     *
+     * @return true is leadership was acquired, false otherwise
+     */
+    @VisibleForTesting
+    boolean awaitLeadership(long timeout, TimeUnit timeUnit) throws InterruptedException;
 
     /**
      * Get list of current nimbus addresses.
