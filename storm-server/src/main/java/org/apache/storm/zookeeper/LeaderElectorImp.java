@@ -18,54 +18,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.storm.blobstore.BlobStore;
-import org.apache.storm.cluster.IStormClusterState;
-import org.apache.storm.daemon.nimbus.TopoCache;
-import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.StormTimer;
 import org.apache.storm.nimbus.ILeaderElector;
-import org.apache.storm.nimbus.LeaderListenerCallback;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatch;
-import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.Participant;
-import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LeaderElectorImp implements ILeaderElector {
-    private static Logger LOG = LoggerFactory.getLogger(LeaderElectorImp.class);
-    private final Map<String, Object> conf;
-    private final List<String> servers;
+    private static final Logger LOG = LoggerFactory.getLogger(LeaderElectorImp.class);
     private final CuratorFramework zk;
-    private final String leaderlockPath;
+    private final String leaderLockPath = "/leader-lock";
     private final String id;
     private final AtomicReference<LeaderLatch> leaderLatch;
-    private final AtomicReference<LeaderLatchListener> leaderLatchListener;
-    private final BlobStore blobStore;
-    private final TopoCache tc;
-    private final IStormClusterState clusterState;
-    private final List<ACL> acls;
-    private final StormMetricsRegistry metricsRegistry;
+    private final LeaderListenerCallbackFactory leaderListenerCallbackFactory;
+    private final StormTimer timer;
 
-    public LeaderElectorImp(Map<String, Object> conf, List<String> servers, CuratorFramework zk, String leaderlockPath, String id,
-                            AtomicReference<LeaderLatch> leaderLatch, AtomicReference<LeaderLatchListener> leaderLatchListener,
-                            BlobStore blobStore, final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
-                            StormMetricsRegistry metricsRegistry) {
-        this.conf = conf;
-        this.servers = servers;
+    public LeaderElectorImp(CuratorFramework zk, String id, LeaderListenerCallbackFactory leaderListenerCallbackFactory) {
         this.zk = zk;
-        this.leaderlockPath = leaderlockPath;
         this.id = id;
-        this.leaderLatch = leaderLatch;
-        this.leaderLatchListener = leaderLatchListener;
-        this.blobStore = blobStore;
-        this.tc = tc;
-        this.clusterState = clusterState;
-        this.acls = acls;
-        this.metricsRegistry = metricsRegistry;
+        this.leaderLatch = new AtomicReference<>(new LeaderLatch(zk, leaderLockPath, id));
+        this.leaderListenerCallbackFactory = leaderListenerCallbackFactory;
+        this.timer = new StormTimer("leader-elector-timer", Utils.createDefaultUncaughtExceptionHandler());
     }
 
     @Override
@@ -75,17 +53,17 @@ public class LeaderElectorImp implements ILeaderElector {
 
     @Override
     public void addToLeaderLockQueue() throws Exception {
-        // if this latch is already closed, we need to create new instance.
+        // if this latch is closed, we need to create new instance.
         if (LeaderLatch.State.CLOSED.equals(leaderLatch.get().getState())) {
-            leaderLatch.set(new LeaderLatch(zk, leaderlockPath));
-            LeaderListenerCallback callback = new LeaderListenerCallback(conf, zk, leaderLatch.get(), blobStore, tc, clusterState, acls,
-                metricsRegistry);
-            leaderLatchListener.set(Zookeeper.leaderLatchListenerImpl(callback));
-            LOG.info("LeaderLatch was in closed state. Resetted the leaderLatch and listeners.");
+            LeaderLatch latch = new LeaderLatch(zk, leaderLockPath, id);
+            latch.addListener(leaderListenerCallbackFactory.create(this));
+            latch.start();
+            leaderLatch.set(latch);
+            LOG.info("LeaderLatch was in closed state. Reset the leaderLatch, and queued for leader lock.");
         }
-        // Only if the latch is not already started we invoke start
+        // If the latch is not started yet, start it
         if (LeaderLatch.State.LATENT.equals(leaderLatch.get().getState())) {
-            leaderLatch.get().addListener(leaderLatchListener.get());
+            leaderLatch.get().addListener(leaderListenerCallbackFactory.create(this));
             leaderLatch.get().start();
             LOG.info("Queued up for leader lock.");
         } else {
@@ -94,13 +72,23 @@ public class LeaderElectorImp implements ILeaderElector {
     }
 
     @Override
-    // Only started latches can be closed.
-    public void removeFromLeaderLockQueue() throws Exception {
+    public void quitElectionFor(int delayMs) throws Exception {
+        removeFromLeaderLockQueue();
+        timer.schedule(delayMs, () -> {
+            try {
+                addToLeaderLockQueue();
+            } catch (Exception e) {
+                throw Utils.wrapInRuntime(e);
+            }
+        }, false, 0); //Don't error if timer is shut down, happens when the elector is closed.
+    }
+    
+    private void removeFromLeaderLockQueue() throws Exception {
         if (LeaderLatch.State.STARTED.equals(leaderLatch.get().getState())) {
             leaderLatch.get().close();
             LOG.info("Removed from leader lock queue.");
         } else {
-            LOG.info("leader latch is not started so no removeFromLeaderLockQueue needed.");
+            LOG.info("Leader latch is not started so no removeFromLeaderLockQueue needed.");
         }
     }
 
@@ -135,7 +123,8 @@ public class LeaderElectorImp implements ILeaderElector {
     }
 
     @Override
-    public void close() {
-        //Do nothing now.
+    public void close() throws Exception {
+        timer.close();
+        removeFromLeaderLockQueue();
     }
 }

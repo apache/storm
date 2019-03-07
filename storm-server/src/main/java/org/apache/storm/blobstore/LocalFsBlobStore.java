@@ -171,7 +171,7 @@ public class LocalFsBlobStore extends BlobStore {
                 sync.setZookeeperKeySet(zkKeys);
                 sync.setZkClient(zkClient);
                 sync.syncBlobs();
-            } //else not leader (NOOP)
+            } //else leader (NOOP)
         } //else local (NOOP)
     }
 

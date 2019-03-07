@@ -47,7 +47,7 @@ public class MockLeaderElector implements ILeaderElector {
     }
 
     @Override
-    public void removeFromLeaderLockQueue() throws Exception {
+    public void quitElectionFor(int delayMs) throws Exception {
         //NOOP
     }
 

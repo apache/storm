@@ -455,7 +455,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private MetricStore metricsStore;
     private IAuthorizer authorizationHandler;
     //Cached CuratorFramework, mainly used for BlobStore.
-    private CuratorFramework zkClient;
+    private final CuratorFramework zkClient;
     //Cached topology -> executor ids, used for deciding timeout workers of heartbeatsCache.
     private AtomicReference<Map<String, Set<List<Integer>>>> idToExecutors;
     //May be null if worker tokens are not supported by the thrift transport.
@@ -4625,9 +4625,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (actionNotifier != null) {
                 actionNotifier.cleanup();
             }
-            if (zkClient != null) {
-                zkClient.close();
-            }
+            zkClient.close();
             if (metricsStore != null) {
                 metricsStore.close();
             }
