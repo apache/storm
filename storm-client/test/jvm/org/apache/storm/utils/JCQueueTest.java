@@ -20,6 +20,7 @@ import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 public class JCQueueTest {
@@ -31,34 +32,32 @@ public class JCQueueTest {
     @Test
     public void testFirstMessageFirst() throws InterruptedException {
         Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-            for (int i = 0; i < 100; i++) {
-                JCQueue queue = createQueue("firstMessageOrder", 16);
+            JCQueue queue = createQueue("firstMessageOrder", 16);
 
-                queue.publish("FIRST");
+            queue.publish("FIRST");
 
-                Runnable producer = new IncProducer(queue, i + 100, 1);
+            Runnable producer = new IncProducer(queue, 100, 1);
 
-                final AtomicReference<Object> result = new AtomicReference<>();
-                Runnable consumer = new ConsumerThd(queue, new JCQueue.Consumer() {
-                    private boolean head = true;
+            final AtomicReference<Object> result = new AtomicReference<>();
+            Runnable consumer = new ConsumerThd(queue, new JCQueue.Consumer() {
+                private boolean head = true;
 
-                    @Override
-                    public void accept(Object event) {
-                        if (head) {
-                            head = false;
-                            result.set(event);
-                        }
+                @Override
+                public void accept(Object event) {
+                    if (head) {
+                        head = false;
+                        result.set(event);
                     }
+                }
 
-                    @Override
-                    public void flush() {
-                    }
-                });
+                @Override
+                public void flush() {
+                }
+            });
 
-                run(producer, consumer, queue);
-                Assert.assertEquals("We expect to receive first published message first, but received " + result.get(),
+            run(producer, consumer, queue);
+            Assert.assertEquals("We expect to receive first published message first, but received " + result.get(),
                     "FIRST", result.get());
-            }
         });
     }
 
