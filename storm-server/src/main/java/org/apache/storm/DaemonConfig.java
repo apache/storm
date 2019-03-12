@@ -773,13 +773,6 @@ public class DaemonConfig implements Validated {
     public static final String SUPERVISOR_CHILDOPTS = "supervisor.childopts";
 
     /**
-     * How many seconds to sleep for before shutting down threads on worker.
-     */
-    @isInteger
-    @isPositiveNumber
-    public static final String SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS = "supervisor.worker.shutdown.sleep.secs";
-
-    /**
      * How long a worker can go without heartbeating during the initial launch before the supervisor tries to restart the worker process.
      * This value override supervisor.worker.timeout.secs during launch because there is additional overhead to starting and configuring the
      * JVM on launch.
