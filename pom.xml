@@ -257,7 +257,7 @@
         <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
 
         <!-- dependency versions -->
-        <clojure.version>1.7.0</clojure.version>
+        <clojure.version>1.10.0</clojure.version>
         <commons-compress.version>1.18</commons-compress.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
