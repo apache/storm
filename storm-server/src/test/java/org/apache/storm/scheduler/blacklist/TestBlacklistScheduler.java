@@ -321,7 +321,7 @@ public class TestBlacklistScheduler {
         scheduler = bs;
         bs.prepare(config);
         bs.schedule(topologies,cluster);
-        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap,"sup-0"),
+        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap, "sup-0"),
                 TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
         for (int i = 0 ; i < 20 ; i++){
             bs.schedule(topologies,cluster);
