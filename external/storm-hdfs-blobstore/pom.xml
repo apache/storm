@@ -26,6 +26,11 @@
     </parent>
 
     <artifactId>storm-hdfs-blobstore</artifactId>
+    
+    <properties>
+        <!-- Required downgrade by hadoop-hdfs 2.8.5 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
 
     <developers>
         <developer>
@@ -198,7 +203,11 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

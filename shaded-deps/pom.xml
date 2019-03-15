@@ -177,7 +177,7 @@
                     <minimizeJar>false</minimizeJar>
                     <artifactSet>
                         <includes>
-                            <include>com.google.guava:guava</include>
+                            <include>com.google.guava:*</include>
                             <include>com.googlecode.json-simple:json-simple</include>
                             <include>commons-codec:commons-codec</include>
                             <include>commons-collections:commons-collections</include>
@@ -203,12 +203,8 @@
                             <shadedPattern>org.apache.storm.thrift</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>com.google.common</pattern>
-                            <shadedPattern>org.apache.storm.shade.com.google.common</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.google.thirdparty</pattern>
-                            <shadedPattern>org.apache.storm.shade.com.google.thirdparty</shadedPattern>
+                            <pattern>com.google</pattern>
+                            <shadedPattern>org.apache.storm.shade.com.google</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.apache.curator</pattern>

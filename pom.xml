@@ -276,8 +276,8 @@
         <httpclient.version>4.5.6</httpclient.version>
         <jctools.version>2.0.1</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
-        <guava.version>16.0.1</guava.version>
-        <auto-service.version>1.0-rc3</auto-service.version>
+        <guava.version>27.0.1-jre</guava.version>
+        <auto-service.version>1.0-rc4</auto-service.version>
         <netty.version>4.1.30.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>

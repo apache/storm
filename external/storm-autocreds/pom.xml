@@ -26,7 +26,6 @@
 
     <artifactId>storm-autocreds</artifactId>
 
-
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>

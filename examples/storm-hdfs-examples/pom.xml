@@ -26,6 +26,11 @@
     </parent>
 
     <artifactId>storm-hdfs-examples</artifactId>
+    
+    <properties>
+        <!-- Required downgrade by hadoop-hdfs 2.6.1 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -38,6 +43,11 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-hdfs</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
     </dependencies>
 
