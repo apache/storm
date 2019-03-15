@@ -127,7 +127,9 @@ public class Worker implements Shutdownable, DaemonCommon {
         Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(supervisorPort),
                                    Integer.parseInt(portStr), workerId);
         worker.start();
-        Utils.addShutdownHookWithForceKillIn1Sec(worker::shutdown);
+        int workerShutdownSleepSecs = ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS));
+        LOG.info("Adding shutdown hook with kill in {} secs", workerShutdownSleepSecs);
+        Utils.addShutdownHookWithDelayedForceKill(worker::shutdown, workerShutdownSleepSecs);
     }
 
     public void start() throws Exception {

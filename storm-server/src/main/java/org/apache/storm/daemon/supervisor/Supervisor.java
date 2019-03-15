@@ -508,7 +508,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 LOG.error("Error trying to kill {}", workerId, e);
             }
         }
-        int shutdownSleepSecs = ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS), 1);
+        int shutdownSleepSecs = ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS));
         if (!containers.isEmpty()) {
             Time.sleepSecs(shutdownSleepSecs);
         }

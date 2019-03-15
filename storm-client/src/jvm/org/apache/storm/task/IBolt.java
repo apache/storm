@@ -14,6 +14,7 @@ package org.apache.storm.task;
 
 import java.io.Serializable;
 import java.util.Map;
+import org.apache.storm.Config;
 import org.apache.storm.tuple.Tuple;
 
 /**
@@ -63,8 +64,9 @@ public interface IBolt extends Serializable {
     void execute(Tuple input);
 
     /**
-     * Called when an IBolt is going to be shutdown. There is no guarantee that cleanup will be called, because the supervisor kill -9's
-     * worker processes on the cluster.
+     * Called when an IBolt is going to be shutdown. Storm will make a best-effort attempt to call this if the worker shutdown is orderly.
+     * The {@link Config#SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS} setting controls how long orderly shutdown is allowed to take.
+     * There is no guarantee that cleanup will be called if shutdown is not orderly, or if the shutdown exceeds the time limit.
      *
      * The one context where cleanup is guaranteed to be called is when a topology is killed when running Storm in local mode.
      */
