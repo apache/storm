@@ -276,7 +276,7 @@ public class LocalizedResource extends LocallyCachedBlob {
     }
 
     @Override
-    public void commitNewVersion(long version) throws IOException {
+    protected void commitNewVersion(long version) throws IOException {
         String key = getKey();
         LOG.info("Blob: {} updated to version {} from version {}", key, version, getLocalVersion());
         Path localVersionFile = versionFilePath;

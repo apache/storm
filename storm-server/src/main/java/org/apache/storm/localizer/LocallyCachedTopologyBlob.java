@@ -204,7 +204,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     }
 
     @Override
-    public void commitNewVersion(long newVersion) throws IOException {
+    protected void commitNewVersion(long newVersion) throws IOException {
         //This is not atomic (so if something bad happens in the middle we need to be able to recover
         Path tempLoc = topologyBasicBlobsRootDir.resolve(type.getTempFileName(newVersion));
         Path dest = topologyBasicBlobsRootDir.resolve(type.getFileName());

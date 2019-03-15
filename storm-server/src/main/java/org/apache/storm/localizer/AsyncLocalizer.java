@@ -70,17 +70,13 @@ import org.slf4j.LoggerFactory;
 public class AsyncLocalizer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncLocalizer.class);
 
-    private static final CompletableFuture<Void> ALL_DONE_FUTURE = new CompletableFuture<>();
+    private static final CompletableFuture<Void> ALL_DONE_FUTURE = CompletableFuture.completedFuture(null);
     private static final int ATTEMPTS_INTERVAL_TIME = 100;
 
     private final Timer singleBlobLocalizationDuration;
     private final Timer blobCacheUpdateDuration;
     private final Timer blobLocalizationDuration;
     private final Meter numBlobUpdateVersionChanged;
-
-    static {
-        ALL_DONE_FUTURE.complete(null);
-    }
 
     // track resources - user to resourceSet
     //ConcurrentHashMap is explicitly used everywhere in this class because it uses locks to guarantee atomicity for compute and
@@ -275,9 +271,7 @@ public class AsyncLocalizer implements AutoCloseable {
                                     Timer.Context t = singleBlobLocalizationDuration.time();
                                     try {
                                         long newVersion = blob.fetchUnzipToTemp(blobStore);
-                                        blob.informAllOfChangeAndWaitForConsensus();
-                                        blob.commitNewVersion(newVersion);
-                                        blob.informAllChangeComplete();
+                                        blob.informReferencesAndCommitNewVersion(newVersion);
                                         t.stop();
                                     } finally {
                                         blob.cleanupOrphanedData();
