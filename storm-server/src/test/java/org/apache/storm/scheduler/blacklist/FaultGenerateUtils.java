@@ -43,7 +43,7 @@ public class FaultGenerateUtils {
                     supervisors = TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supervisors, "sup-" + supervisor);
                 } else {
                     for (int slot : slots) {
-                        supervisors = TestUtilsForBlacklistScheduler.modifyPortFromSupervisors(supervisors, "sup-" + supervisor, slot, false);
+                        supervisors = TestUtilsForBlacklistScheduler.removePortFromSupervisors(supervisors, "sup-" + supervisor, slot);
                     }
                 }
             }

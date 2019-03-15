@@ -67,7 +67,7 @@ public class TestUtilsForBlacklistScheduler {
         return retList;
     }
 
-    public static Map<String, SupervisorDetails> modifyPortFromSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap, String supervisor, int port, boolean add) {
+    public static Map<String, SupervisorDetails> removePortFromSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap, String supervisor, int port) {
         Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
         for (Map.Entry<String, SupervisorDetails> supervisorDetailsEntry : supervisorDetailsMap.entrySet()) {
             String supervisorKey = supervisorDetailsEntry.getKey();
@@ -75,11 +75,23 @@ public class TestUtilsForBlacklistScheduler {
             Set<Integer> ports = new HashSet<>();
             ports.addAll(supervisorDetails.getAllPorts());
             if (supervisorKey.equals(supervisor)) {
-                if (add) {
-                    ports.add(port);
-                } else {
-                    ports.remove(port);
-                }
+                ports.remove(port);
+            }
+            SupervisorDetails sup = new SupervisorDetails(supervisorDetails.getId(), supervisorDetails.getHost(), null, (HashSet) ports, null);
+            retList.put(sup.getId(), sup);
+        }
+        return retList;
+    }
+
+    public static Map<String, SupervisorDetails> addPortToSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap, String supervisor, int port) {
+        Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
+        for (Map.Entry<String, SupervisorDetails> supervisorDetailsEntry : supervisorDetailsMap.entrySet()) {
+            String supervisorKey = supervisorDetailsEntry.getKey();
+            SupervisorDetails supervisorDetails = supervisorDetailsEntry.getValue();
+            Set<Integer> ports = new HashSet<>();
+            ports.addAll(supervisorDetails.getAllPorts());
+            if (supervisorKey.equals(supervisor)) {
+                ports.add(port);
             }
             SupervisorDetails sup = new SupervisorDetails(supervisorDetails.getId(), supervisorDetails.getHost(), null, (HashSet) ports, null);
             retList.put(sup.getId(), sup);
