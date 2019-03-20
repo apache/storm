@@ -64,7 +64,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                 matrix.get(comp).put(comp2, 0);
             }
         }
-        List<List<String>> constraints = (List<List<String>>) topo.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINTS);
+        List<List<String>> constraints = (List<List<String>>) topo.getConf().getOrDefault(Config.TOPOLOGY_RAS_CONSTRAINTS, topo.getConf().get(Config.TOPOLOGY_CONSTRAINTS));
         if (constraints != null) {
             for (List<String> constraintPair : constraints) {
                 String comp1 = constraintPair.get(0);
