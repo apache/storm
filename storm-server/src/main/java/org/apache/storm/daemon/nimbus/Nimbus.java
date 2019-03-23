@@ -2835,7 +2835,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @VisibleForTesting
     public void launchServer() throws Exception {
         try {
-            BlobStore store = blobStore;
             IStormClusterState state = stormClusterState;
             NimbusInfo hpi = nimbusHostPortInfo;
 
@@ -2956,6 +2955,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             LOG.error("Error on initialization of nimbus", e);
             Utils.exitProcess(13, "Error on initialization of nimbus");
         }
+    }
+    
+    @VisibleForTesting
+    public boolean awaitLeadership(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        return leaderElector.awaitLeadership(timeout, timeUnit);
     }
 
     @Override

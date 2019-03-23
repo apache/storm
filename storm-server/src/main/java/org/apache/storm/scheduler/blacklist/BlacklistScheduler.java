@@ -155,8 +155,10 @@ public class BlacklistScheduler implements IScheduler {
 
         Set<Integer> newPorts = Sets.difference(supervisorPorts, cachedSupervisorPorts);
         if (newPorts.size() > 0) {
-            //add new ports to cached supervisor
-            cachedSupervisors.put(supervisorKey, Sets.union(newPorts, cachedSupervisorPorts));
+            // add new ports to cached supervisor.  We need a modifiable set to allow removing ports later.
+            Set<Integer> allPorts = new HashSet<>(newPorts);
+            allPorts.addAll(cachedSupervisorPorts);
+            cachedSupervisors.put(supervisorKey, allPorts);
         }
 
         Set<Integer> badSlots = Sets.difference(cachedSupervisorPorts, supervisorPorts);
@@ -191,9 +193,11 @@ public class BlacklistScheduler implements IScheduler {
             for (String supervisor : supervisors) {
                 int supervisorCount = supervisorCountMap.getOrDefault(supervisor, 0);
                 Set<Integer> slots = item.get(supervisor);
-                if (slots.equals(cachedSupervisors.get(supervisor))) { // treat supervisor as bad only if all slots are bad
+                if (slots.equals(cachedSupervisors.get(supervisor))) { // treat supervisor as bad only if all of its slots matched the cached supervisor
+                    // track how many times a cached supervisor has been marked bad
                     supervisorCountMap.put(supervisor, supervisorCount + 1);
                 }
+                // track how many times each supervisor slot has been listed as bad
                 for (Integer slot : slots) {
                     WorkerSlot workerSlot = new WorkerSlot(supervisor, slot);
                     int slotCount = slotCountMap.getOrDefault(workerSlot, 0);
@@ -215,8 +219,8 @@ public class BlacklistScheduler implements IScheduler {
             WorkerSlot workerSlot = entry.getKey();
             String supervisorKey = workerSlot.getNodeId();
             Integer slot = workerSlot.getPort();
-            int value = entry.getValue();
-            if (value == windowSize) { // worker slot which was never back to normal in tolerance period will be removed from cache
+            int slotFailures = entry.getValue();
+            if (slotFailures == windowSize) { // worker slot which was never back to normal in tolerance period will be removed from cache
                 Set<Integer> slots = cachedSupervisors.get(supervisorKey);
                 if (slots != null) { // slots will be null while supervisor has been removed from cached supervisors
                     slots.remove(slot);

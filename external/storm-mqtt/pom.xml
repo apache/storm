@@ -28,11 +28,16 @@
         <version>2.0.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
+    
+    <properties>
+        <!-- Required downgrade by activemq-broker 5.15.3 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
 
     <repositories>
         <repository>
             <id>bintray</id>
-            <url>http://dl.bintray.com/andsel/maven/</url>
+            <url>https://dl.bintray.com/andsel/maven/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -86,6 +91,11 @@
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
     </dependencies>
     <build>

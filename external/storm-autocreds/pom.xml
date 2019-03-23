@@ -26,7 +26,6 @@
 
     <artifactId>storm-autocreds</artifactId>
 
-
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -108,6 +107,22 @@
             </exclusions>
         </dependency>
         <dependency>
+            <!-- Needed for TokenUtil, which moved here from hbase-client -->
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-server</artifactId>
+            <version>${hbase.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>org.apache.hive.hcatalog</groupId>
             <artifactId>hive-hcatalog-streaming</artifactId>
             <version>${hive.version}</version>
@@ -115,6 +130,10 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.calcite</groupId>
@@ -138,6 +157,10 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.calcite</groupId>

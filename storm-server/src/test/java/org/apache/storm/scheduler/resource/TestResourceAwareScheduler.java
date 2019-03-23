@@ -716,7 +716,7 @@ public class TestResourceAwareScheduler {
         // wordSpout2 is going to contain 5 executors that needs scheduling. Each of those executors has a memory requirement of 128.0 MB
         // The cluster contains 4 free WorkerSlots. For this topolology each worker is limited to a max heap size of 128.0
         // Thus, one executor not going to be able to get scheduled thus failing the scheduling of this topology and no executors of this
-        // topology will be scheduleded
+        // topology will be scheduled
         TopologyBuilder builder2 = new TopologyBuilder();
         builder2.setSpout("wordSpout2", new TestWordSpout(), 5);
         StormTopology stormTopology2 = builder2.createTopology();

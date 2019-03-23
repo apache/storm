@@ -29,6 +29,11 @@
     <artifactId>storm-pmml-examples</artifactId>
     <name>storm-pmml-examples</name>
 
+    <properties>
+        <!-- Required downgrade by pmml-evaluator 1.0.22 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -44,6 +49,11 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
     </dependencies>
 

@@ -47,7 +47,7 @@ public class Booter {
     }
 
     public static RemoteRepository newCentralRepository() {
-        return new RemoteRepository.Builder("central", "default", "http://repo1.maven.org/maven2/").build();
+        return new RemoteRepository.Builder("central", "default", "https://repo1.maven.org/maven2/").build();
     }
 
     public static RemoteRepository newLocalRepository() {

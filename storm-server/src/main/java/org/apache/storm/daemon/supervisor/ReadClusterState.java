@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.supervisor.Slot.MachineState;
@@ -53,8 +54,8 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         DEFAULT_ON_ERROR_TIMEOUT.call(slot);
     };
     private static final long WARN_MILLIS = 1_000; //Initial timeout 1 second.  Workers commit suicide after this
-    public static final UniFunc<Slot> DEFAULT_ON_WARN_TIMEOUT =
-        (slot) -> LOG.warn("It has taken {}ms so far and {} is still not shut down.", WARN_MILLIS, slot);
+    public static final BiConsumer<Slot, Long> DEFAULT_ON_WARN_TIMEOUT =
+        (slot, elapsedTimeMs) -> LOG.warn("It has taken {}ms so far and {} is still not shut down.", elapsedTimeMs, slot);
     private final Map<String, Object> superConf;
     private final IStormClusterState stormClusterState;
     private final Map<Integer, Slot> slots = new HashMap<>();
@@ -292,7 +293,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         return portTasks;
     }
 
-    public synchronized void shutdownAllWorkers(UniFunc<Slot> onWarnTimeout, UniFunc<Slot> onErrorTimeout) {
+    public synchronized void shutdownAllWorkers(BiConsumer<Slot, Long> onWarnTimeout, UniFunc<Slot> onErrorTimeout) {
         for (Slot slot : slots.values()) {
             LOG.info("Setting {} assignment to null", slot);
             slot.setNewAssignment(null);
@@ -318,7 +319,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                     }
 
                     if (timeSpentMillis > WARN_MILLIS) {
-                        onWarnTimeout.call(slot);
+                        onWarnTimeout.accept(slot, timeSpentMillis);
                     }
                     if (Time.isSimulating()) {
                         Time.advanceTime(100);

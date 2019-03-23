@@ -25,6 +25,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -93,10 +94,10 @@ public class WorkerState {
     final IStateStorage stateStorage;
     final IStormClusterState stormClusterState;
     // when worker bootup, worker will start to setup initial connections to
-    // other workers. When all connection is ready, we will enable this flag
-    // and spout and bolt will be activated.
-    // used in worker only, keep it as atomic
-    final AtomicBoolean isWorkerActive;
+    // other workers. When all connection is ready, we will count down this latch
+    // and spout and bolt will be activated, assuming the topology is not deactivated.
+    // used in worker only, keep it as a latch
+    final CountDownLatch isWorkerActive;
     final AtomicBoolean isTopologyActive;
     final AtomicReference<Map<String, DebugOptions>> stormComponentToDebug;
     // local executors and localTaskIds running in this worker
@@ -160,7 +161,7 @@ public class WorkerState {
         this.workerId = workerId;
         this.stateStorage = stateStorage;
         this.stormClusterState = stormClusterState;
-        this.isWorkerActive = new AtomicBoolean(false);
+        this.isWorkerActive = new CountDownLatch(1);
         this.isTopologyActive = new AtomicBoolean(false);
         this.stormComponentToDebug = new AtomicReference<>();
         this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors);
@@ -262,6 +263,10 @@ public class WorkerState {
         return stateStorage;
     }
 
+    public CountDownLatch getIsWorkerActive() {
+        return isWorkerActive;
+    }
+    
     public AtomicBoolean getIsTopologyActive() {
         return isTopologyActive;
     }
@@ -423,7 +428,7 @@ public class WorkerState {
         StormBase base = stormClusterState.stormBase(topologyId, callback);
         isTopologyActive.set(
             (null != base)
-            && (base.get_status() == TopologyStatus.ACTIVE) && (isWorkerActive.get()));
+            && (base.get_status() == TopologyStatus.ACTIVE));
         if (null != base) {
             Map<String, DebugOptions> debugOptionsMap = new HashMap<>(base.get_component_debug());
             for (DebugOptions debugOptions : debugOptionsMap.values()) {
@@ -479,7 +484,7 @@ public class WorkerState {
                                     () -> {
                                         if (areAllConnectionsReady()) {
                                             LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
-                                            isWorkerActive.set(Boolean.TRUE);
+                                            isWorkerActive.countDown();
                                         } else {
                                             refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
                                         }

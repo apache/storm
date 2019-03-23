@@ -23,8 +23,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -252,11 +254,15 @@ public class TopoWrap {
         }
 
         public ExecutorURL(String componentId, String host, int logViewerPort, int executorPort, String topoId) throws MalformedURLException {
-            String sep = "%2F"; //hex of "/"
             String viewUrlStr = String.format("http://%s:%s/api/v1/log?file=", host, logViewerPort);
-            String downloadUrlStr = String.format("http://%s:%s/api/v1/download?file=%%2F", host, logViewerPort);
-            viewUrl = new URL(String.format("%s/%s%s%d%sworker.log", viewUrlStr, topoId, sep, executorPort, sep));
-            downloadUrl = new URL(String.format("%s/%s%s%d%sworker.log", downloadUrlStr, topoId, sep, executorPort, sep));
+            String downloadUrlStr = String.format("http://%s:%s/api/v1/download?file=", host, logViewerPort);
+            try {
+                String workerLogQueryParam = URLEncoder.encode(topoId + "/" + executorPort + "/worker.log", StandardCharsets.UTF_8.name());
+                viewUrl = new URL(viewUrlStr + workerLogQueryParam);
+                downloadUrl = new URL(downloadUrlStr + workerLogQueryParam);
+            } catch (UnsupportedEncodingException e) {
+                throw Utils.wrapInRuntime(e);
+            }
             this.componentId = componentId;
         }
 

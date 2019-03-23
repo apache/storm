@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.IStormClusterState;
@@ -24,6 +25,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.LeaderListenerCallback;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatchListener;
@@ -105,6 +107,12 @@ public class LeaderElectorImp implements ILeaderElector {
     @Override
     public boolean isLeader() throws Exception {
         return leaderLatch.get().hasLeadership();
+    }
+
+    @Override
+    @VisibleForTesting
+    public boolean awaitLeadership(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        return leaderLatch.get().await(timeout, timeUnit);
     }
 
     @Override
