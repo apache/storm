@@ -43,6 +43,34 @@
     <modules>
         <module>storm-client-bin</module>
         <module>storm-webapp-bin</module>
+        <module>storm-autocreds-bin</module>
+        <module>storm-sql-core-bin</module>
+        <module>storm-sql-runtime-bin</module>
+        <module>storm-submit-tools-bin</module>
+        <module>storm-kafka-monitor-bin</module>
+        <!-- Final package must be last, as it needs to copy files from the other modules -->
         <module>final-package</module>
     </modules>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <missingFile>${project.basedir}/../../THIRD-PARTY.properties</missingFile>
+                    <aggregateMissingLicensesFile>${project.basedir}/../../THIRD-PARTY.properties</aggregateMissingLicensesFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-and-check-licenses</id>
+                        <goals>
+                            <goal>aggregate-add-third-party</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

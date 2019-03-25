@@ -69,7 +69,6 @@
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-core</artifactId>
-            <version>${calcite.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.calcite.avatica</groupId>
@@ -235,25 +234,6 @@
                                     <includes>**/Parser.jj</includes>
                                 </artifactItem>
                             </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- using appassembler-maven-plugin instead of maven-dependency-plugin to copy dependencies
-            as copy and unpack goal are not working together -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>appassembler-maven-plugin</artifactId>
-                <version>1.9</version>
-                <executions>
-                    <execution>
-                        <id>create-repo</id>
-                        <goals>
-                            <goal>create-repository</goal>
-                        </goals>
-                        <configuration>
-                            <assembleDirectory>${project.build.directory}/app-assembler</assembleDirectory>
-                            <repositoryLayout>flat</repositoryLayout>
                         </configuration>
                     </execution>
                 </executions>

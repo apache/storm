@@ -62,7 +62,7 @@
 
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>shaded-deps</artifactId>
+            <artifactId>storm-shaded-deps</artifactId>
             <version>${project.version}</version>
         </dependency>
 
