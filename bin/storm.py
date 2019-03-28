@@ -198,8 +198,8 @@ def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir
         JAVA_CMD, "-client", "-cp", classpath, "org.apache.storm.submit.command.DependencyResolverMain"
     ]
 
-    command.extend(["--artifacts", ",".join(artifacts)])
-    command.extend(["--artifactRepositories", ",".join(artifact_repositories)])
+    command.extend(["--artifacts", artifacts])
+    command.extend(["--artifactRepositories", artifact_repositories])
 
     if maven_local_repos_dir is not None:
         command.extend(["--mavenLocalRepositoryDirectory", maven_local_repos_dir])

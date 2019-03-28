@@ -320,9 +320,8 @@
         <clojure.test.set>!integration.*</clojure.test.set>
         <skipITs>true</skipITs>
 
-        <aetherVersion>1.1.0</aetherVersion>
-        <mavenVersion>3.1.0</mavenVersion>
-        <wagonVersion>1.0</wagonVersion>
+        <maven-resolver.version>1.3.3</maven-resolver.version>
+        <maven.version>3.6.0</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>2.27</jersey.version>
         <dropwizard.version>1.3.5</dropwizard.version>
