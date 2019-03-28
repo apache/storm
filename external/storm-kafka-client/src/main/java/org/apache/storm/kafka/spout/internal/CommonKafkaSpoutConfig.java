@@ -43,9 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
-    // 200ms
     public static final long DEFAULT_POLL_TIMEOUT_MS = 200;
-    // 2s
     public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000;
 
     public static final FirstPollOffsetStrategy DEFAULT_FIRST_POLL_OFFSET_STRATEGY = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
@@ -150,7 +148,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
 
         //Spout Settings
         /**
-         * Specifies the time, in milliseconds, spent waiting in poll if data is not available. Default is 2s.
+         * Specifies the time, in milliseconds, spent waiting in poll if data is not available. Default is 200ms.
          *
          * @param pollTimeoutMs time in ms
          */
