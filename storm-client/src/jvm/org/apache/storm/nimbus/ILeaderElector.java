@@ -12,7 +12,6 @@
 
 package org.apache.storm.nimbus;
 
-import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +20,7 @@ import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 /**
  * The interface for leader election.
  */
-public interface ILeaderElector extends Closeable {
+public interface ILeaderElector extends AutoCloseable {
 
     /**
      * Method guaranteed to be called as part of initialization of leader elector instance.
@@ -37,11 +36,11 @@ public interface ILeaderElector extends Closeable {
     void addToLeaderLockQueue() throws Exception;
 
     /**
-     * Removes the caller from the leader lock queue. If the caller is leader
-     * also releases the lock. This method can be called multiple times so it needs
-     * to be idempotent.
+     * Removes the caller from leadership election, relinquishing leadership if acquired, then requeues for leadership after the specified
+     * delay.
+     * @param delayMs The delay to wait before re-entering the election
      */
-    void removeFromLeaderLockQueue() throws Exception;
+    void quitElectionFor(int delayMs) throws Exception;
 
     /**
      * Decide if the caller currently has the leader lock.
@@ -51,7 +50,7 @@ public interface ILeaderElector extends Closeable {
 
     /**
      * Get the current leader's address.
-     * @return the current leader's address , may return null if no one has the lock.
+     * @return the current leader's address, may return null if no one has the lock.
      */
     NimbusInfo getLeader();
     
@@ -71,9 +70,9 @@ public interface ILeaderElector extends Closeable {
     List<NimbusInfo> getAllNimbuses() throws Exception;
 
     /**
-     * Method called to allow for cleanup. once close this object can not be reused.
+     * Method called to allow for cleanup. Relinquishes leadership if owned by the caller.
      */
     @Override
-    void close();
+    void close() throws Exception;
 }
 
