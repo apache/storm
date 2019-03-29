@@ -317,6 +317,12 @@ public class DaemonConfig implements Validated {
     public static final String UI_DISABLE_HTTP_BINDING = "ui.disable.http.binding";
 
     /**
+     * This controls whether Storm UI would not monitor Spout lag.
+     */
+    @isBoolean
+    public static final String UI_DISABLE_SPOUT_LAG_MONITORING = "ui.disable.spout.lag.monitoring";
+
+    /**
      * This controls wheather Storm Logviewer should bind to http port even if logviewer.port is > 0.
      */
     @isBoolean

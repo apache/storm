@@ -24,6 +24,7 @@ import com.google.common.collect.Lists;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -1618,7 +1619,8 @@ public class UIHelpers {
      * @return getTopologyLag.
      */
     public static Map<String, Map<String, Object>> getTopologyLag(StormTopology userTopology, Map<String,Object> config) {
-        return TopologySpoutLag.lag(userTopology, config);
+        Boolean disableLagMonitoring = ObjectReader.getBoolean(config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING), false);
+        return disableLagMonitoring ? Collections.EMPTY_MAP : TopologySpoutLag.lag(userTopology, config);
     }
 
     /**
