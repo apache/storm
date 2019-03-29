@@ -42,6 +42,7 @@ public class EventHubSpoutConfig implements Serializable {
     // disabling filter
     private String connectionString;
     private String topologyName;
+    private int receiverTimeoutInMillis = 1000; // default
     private IEventDataScheme scheme = new StringEventDataScheme();
     private String consumerGroupName = EventHubClient.DEFAULT_CONSUMER_GROUP_NAME;
     private String outputStreamId;
@@ -251,5 +252,13 @@ public class EventHubSpoutConfig implements Serializable {
 
     public void setOutputStreamId(String outputStreamId) {
         this.outputStreamId = outputStreamId;
+    }
+
+    public int getReceiverTimeoutInMillis() {
+        return receiverTimeoutInMillis;
+    }
+
+    public void setReceiverTimeoutInMillis(int receiverTimeoutInMillis) {
+        this.receiverTimeoutInMillis = receiverTimeoutInMillis;
     }
 }
