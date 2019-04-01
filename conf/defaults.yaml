@@ -98,6 +98,7 @@ ui.header.buffer.bytes: 4096
 ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
 ui.pagination: 20
 ui.disable.http.binding: true
+ui.disable.spout.lag.monitoring: true
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"

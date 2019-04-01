@@ -1619,7 +1619,7 @@ public class UIHelpers {
      * @return getTopologyLag.
      */
     public static Map<String, Map<String, Object>> getTopologyLag(StormTopology userTopology, Map<String,Object> config) {
-        Boolean disableLagMonitoring = ObjectReader.getBoolean(config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING), false);
+        Boolean disableLagMonitoring = (Boolean)(config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING));
         return disableLagMonitoring ? Collections.EMPTY_MAP : TopologySpoutLag.lag(userTopology, config);
     }
 
