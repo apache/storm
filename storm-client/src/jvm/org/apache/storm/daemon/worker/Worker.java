@@ -78,7 +78,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     private final int port;
     private final String workerId;
     private final LogConfigManager logConfigManager;
-
+    private final StormMetricRegistry metricRegistry;
 
     private WorkerState workerState;
     private AtomicReference<List<IRunningExecutor>> executorsAtom;
@@ -112,6 +112,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         this.port = port;
         this.workerId = workerId;
         this.logConfigManager = new LogConfigManager();
+        this.metricRegistry = new StormMetricRegistry();
     }
 
     public static void main(String[] args) throws Exception {
@@ -152,7 +153,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         IStateStorage stateStorage = ClusterUtils.mkStateStorage(conf, topologyConf, csContext);
         IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, null, csContext);
 
-        StormMetricRegistry.start(conf, DaemonType.WORKER);
+        metricRegistry.start(conf, DaemonType.WORKER);
 
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();
@@ -172,7 +173,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                               Map<String, String> initCreds, Credentials initialCredentials)
         throws Exception {
         workerState = new WorkerState(conf, context, topologyId, assignmentId, supervisorPort, port, workerId,
-                                      topologyConf, stateStorage, stormClusterState, autoCreds);
+                                      topologyConf, stateStorage, stormClusterState, autoCreds, metricRegistry);
 
         // Heartbeat here so that worker process dies if this fails
         // it's important that worker heartbeat to supervisor ASAP so that supervisor knows
@@ -484,7 +485,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             
             workerState.closeResources();
 
-            StormMetricRegistry.stop();
+            metricRegistry.stop();
 
             LOG.info("Trigger any worker shutdown hooks");
             workerState.runWorkerShutdownHooks();

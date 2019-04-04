@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
@@ -59,6 +60,7 @@ import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.messaging.netty.BackPressureStatus;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.serialization.ITupleSerializer;
@@ -144,11 +146,14 @@ public class WorkerState {
     private final AtomicLong nextLoadUpdate = new AtomicLong(0);
     private final boolean trySerializeLocal;
     private final Collection<IAutoCredentials> autoCredentials;
+    private final StormMetricRegistry metricRegistry;
 
     public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId,
                        int supervisorPort, int port, String workerId, Map<String, Object> topologyConf, IStateStorage stateStorage,
-                       IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials) throws IOException,
+                       IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials,
+                       StormMetricRegistry metricRegistry) throws IOException,
         InvalidTopologyException {
+        this.metricRegistry = metricRegistry;
         this.autoCredentials = autoCredentials;
         this.conf = conf;
         this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
@@ -673,8 +678,8 @@ public class WorkerState {
         for (List<Long> executor : executors) {
             int port = this.getPort();
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
-                                                      recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
-                                                      this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, this.getPort()));
+                recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
+                this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, this.getPort(), metricRegistry));
 
         }
         return receiveQueueMap;
@@ -752,6 +757,10 @@ public class WorkerState {
 
     public JCQueue getTransferQueue() {
         return workerTransfer.getTransferQueue();
+    }
+
+    public StormMetricRegistry getMetricRegistry() {
+        return metricRegistry;
     }
 
     public interface ILocalTransferCallback {
