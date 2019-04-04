@@ -69,7 +69,7 @@ public class TestSimpleFileNameFormat {
     }
 
     private TopologyContext createTopologyContext(Map<String, Object> topoConf) {
-        Map<Integer, String> taskToComponent = new HashMap<Integer, String>();
+        Map<Integer, String> taskToComponent = new HashMap<>();
         taskToComponent.put(7, "Xcom");
         return new TopologyContext(null, topoConf, taskToComponent, null, null, null, null, null, null, 7, 6703, null, null, null, null,
                                    null, null, null);

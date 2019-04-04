@@ -56,6 +56,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
+
 @RunWith(MockitoJUnitRunner.class)
 public class TestHdfsBolt {
 
@@ -202,6 +203,17 @@ public class TestHdfsBolt {
 
         //Tick should have flushed it
         Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
+    }
+    
+    @Test
+    public void testCleanupDoesNotThrowExceptionWhenRotationPolicyIsNotTimed() {
+        //STORM-3372: Rotation policy other than TimedRotationPolicy causes NPE on cleanup
+        FileRotationPolicy fieldsRotationPolicy =
+            new FileSizeRotationPolicy(10_000, FileSizeRotationPolicy.Units.MB);
+        HdfsBolt bolt = makeHdfsBolt(hdfsURI, 10, 10000f)
+            .withRotationPolicy(fieldsRotationPolicy);
+        bolt.prepare(new Config(), topologyContext, collector);
+        bolt.cleanup();
     }
 
     public void createBaseDirectory(FileSystem passedFs, String path) throws IOException {
