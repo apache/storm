@@ -12,6 +12,7 @@
 
 package org.apache.storm.messaging.netty;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +97,11 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (!(cause instanceof ConnectException)) {
-            LOG.info("Connection to " + client.getDstAddress() + " failed:", cause);
+            if (cause instanceof IOException) {
+                LOG.info("Connection to {} failed: {}", client.getDstAddress(), cause.getMessage());
+            } else {
+                LOG.error("Connection to {} failed: {}", client.getDstAddress(), cause);
+            }
         }
     }
 }
