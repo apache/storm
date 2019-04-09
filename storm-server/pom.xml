@@ -62,7 +62,7 @@
             <artifactId>rocksdbjni</artifactId>
         </dependency>
 
-        <!-- jline is included to make teh zk shell work through the cli for debugging -->
+        <!-- jline is included to make the zk shell work through the cli for debugging -->
         <dependency>
             <groupId>jline</groupId>
             <artifactId>jline</artifactId>

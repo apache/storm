@@ -28,7 +28,7 @@
     </parent>
 
     <groupId>org.apache.storm</groupId>
-    <artifactId>shaded-deps</artifactId>
+    <artifactId>storm-shaded-deps</artifactId>
     <packaging>jar</packaging>
     <name>Shaded Deps for Storm Client</name>
     <description>Shaded version of dependencies used only for internal storm code.</description>

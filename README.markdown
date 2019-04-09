@@ -76,6 +76,8 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 
+The LICENSE and NOTICE files cover the source distributions. The LICENSE-binary and NOTICE-binary files cover the binary distributions. The DEPENDENCY-LICENSES file lists the licenses of all dependencies of Storm, including those not packaged in the source or binary distributions, such as dependencies of optional connector modules.
+
 
 ## Project lead
 

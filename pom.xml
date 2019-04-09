@@ -255,6 +255,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <test.extra.args>-Djava.net.preferIPv4Stack=true</test.extra.args>
         <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
+        <license.skipAggregateDownloadLicenses>true</license.skipAggregateDownloadLicenses>
 
         <!-- dependency versions -->
         <clojure.version>1.10.0</clojure.version>
@@ -384,7 +385,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
-                <module>shaded-deps</module>
+                <module>storm-shaded-deps</module>
             </modules>
         </profile>
         <profile>
@@ -433,12 +434,17 @@
                                 <exclude>SECURITY.md</exclude>
                                 <exclude>VERSION</exclude>
                                 <exclude>TODO</exclude>
+                                <exclude>DEPENDENCY-LICENSES</exclude>
+                                <exclude>LICENSE-binary</exclude>
+                                <exclude>NOTICE-binary</exclude>
+                                <!-- Exclude dependency license files -->
+                                <exclude>licenses/**</exclude>
                                 <!-- thrift-generated code -->
                                 <exclude>**/src/py/**</exclude>
 
                                 <!-- Used as part of travis-ci build -->
                                 <exclude>install.txt</exclude>
-                                <exclude>shaded-deps/install-shade.txt</exclude>
+                                <exclude>storm-shaded-deps/install-shade.txt</exclude>
                                 <!-- the following are in the LICENSE file -->
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.dataTables.1.10.4.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jquery.dataTables.1.10.4.min.css</exclude>
@@ -750,6 +756,12 @@
                 <groupId>jline</groupId>
                 <artifactId>jline</artifactId>
                 <version>${jline.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
@@ -1275,6 +1287,100 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>1.6.0</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>1.19</version>
+                    <configuration>
+                        <useMissingFile>true</useMissingFile>
+                        <failOnMissing>true</failOnMissing>
+                        <includeTransitiveDependencies>true</includeTransitiveDependencies>
+                        <fileTemplate>/org/codehaus/mojo/license/third-party-file-groupByMultiLicense.ftl</fileTemplate>
+                        <excludedScopes>system,test</excludedScopes>
+                        <licenseMerges>
+                            <licenseMerge>
+                                Apache License, Version 2.0 |
+                                Apache License, version 2.0 |
+                                Apache License Version 2 |
+                                Apache License Version 2.0 |
+                                Apache License version 2.0 |
+                                Apache 2 |
+                                Apache 2.0 |
+                                Apache License, 2.0 |
+                                Apache License 2 |
+                                Apache License 2.0 |
+                                Apache Public License 2.0 |
+                                Apache Software License - Version 2.0 |
+                                Apache v2 |
+                                ASL, version 2 |
+                                The Apache License, Version 2.0 |
+                                The Apache Software License, Version 2.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                Apache License | 
+                                Apache Software Licenses
+                            </licenseMerge>
+                            <licenseMerge>
+                                BSD License |
+                                BSD license |
+                                BSD |
+                                The BSD License
+                            </licenseMerge>
+                            <licenseMerge>
+                                BSD 3-Clause License |
+                                BSD 3-Clause |
+                                BSD 3-clause |
+                                The BSD 3-Clause License |
+                                New BSD License |
+                                New BSD license
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Development and Distribution License (CDDL) v1.0 |
+                                COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 |
+                                CDDL 1.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Development and Distribution License (CDDL) v1.1 | 
+                                COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1 |
+                                CDDL 1.1 |
+                                Common Development and Distribution License (CDDL), Version 1.1
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Development and Distribution License | 
+                                <!-- Multilicense, choosing CDDL -->
+                                CDDL+GPL |
+                                CDDL+GPL License |
+                                CDDL + GPLv2 with classpath exception
+                            </licenseMerge>
+                            <licenseMerge>
+                                Eclipse Public License, Version 1.0 |
+                                Eclipse Public License 1.0 |
+                                Eclipse Public License - v 1.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                MIT License |
+                                The MIT License |
+                                MIT license |
+                                MIT X11 License |
+                                MIT
+                            </licenseMerge>
+                            <licenseMerge>
+                                The GNU General Public License (GPL), Version 2, With Classpath Exception |
+                                GPL2 w/ CPE
+                            </licenseMerge>
+                            <licenseMerge>
+                                GNU Lesser General Public License (LGPL), Version 2.1 |
+                                LGPL, version 2.1 |
+                                GNU Lesser General Public License Version 2.1 |
+                                GNU Lesser General Public License, version 2.1
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Public License Version 1.0 |
+                                Common Public License - v 1.0
+                            </licenseMerge>
+                        </licenseMerges>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1294,6 +1400,7 @@
                 <configuration>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
+                    <preparationGoals>clean verify -Dlicense.skipAggregateAddThirdParty=false</preparationGoals>
                 </configuration>
             </plugin>
             <plugin>
@@ -1342,85 +1449,24 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <version>1.17</version>
                 <inherited>false</inherited>
                 <configuration>
-                    <useMissingFile>true</useMissingFile>
+                    <thirdPartyFilename>DEPENDENCY-LICENSES</thirdPartyFilename>
+                    <outputDirectory>${project.basedir}</outputDirectory>
                     <missingFile>${project.basedir}/THIRD-PARTY.properties</missingFile>
                     <aggregateMissingLicensesFile>${project.basedir}/THIRD-PARTY.properties</aggregateMissingLicensesFile>
-                    <failOnMissing>true</failOnMissing>
-                    <includeTransitiveDependencies>true</includeTransitiveDependencies>
-                    <fileTemplate>/org/codehaus/mojo/license/third-party-file-groupByMultiLicense.ftl</fileTemplate>
-                    <excludedScopes>system,test</excludedScopes>
-                    <licenseMerges>
-                        <licenseMerge>
-                            Apache License, Version 2.0 |
-                            Apache License, version 2.0 |
-                            Apache License Version 2 |
-                            Apache License Version 2.0 |
-                            Apache License version 2.0 |
-                            Apache 2 |
-                            Apache 2.0 |
-                            Apache License, 2.0 |
-                            Apache License 2 |
-                            Apache License 2.0 |
-                            Apache Public License 2.0 |
-                            Apache Software License - Version 2.0 |
-                            Apache v2 |
-                            ASL, version 2 |
-                            The Apache License, Version 2.0 |
-                            The Apache Software License, Version 2.0
-                        </licenseMerge>
-                        <licenseMerge>
-                            BSD 3-Clause License |
-                            BSD 3-Clause |
-                            BSD 3-clause |
-                            The BSD 3-Clause License
-                        </licenseMerge>
-                        <licenseMerge>
-                            Common Development and Distribution License (CDDL) v1.0 |
-                            COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 |
-                            CDDL 1.0
-                        </licenseMerge>
-                        <licenseMerge>
-                            Common Development and Distribution License (CDDL) v1.1 | 
-                            COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1 |
-                            CDDL 1.1 |
-                            Common Development and Distribution License (CDDL), Version 1.1
-                        </licenseMerge>
-                        <licenseMerge>
-                            Eclipse Public License, Version 1.0 |
-                            Eclipse Public License 1.0 |
-                            Eclipse Public License - v 1.0
-                        </licenseMerge>
-                        <licenseMerge>
-                            MIT License |
-                            The MIT License |
-                            MIT license |
-                            MIT X11 License |
-                            MIT
-                        </licenseMerge>
-                        <licenseMerge>
-                            The GNU General Public License (GPL), Version 2, With Classpath Exception |
-                            GPL2 w/ CPE
-                        </licenseMerge>
-                        <licenseMerge>
-                            GNU Lesser General Public License (LGPL), Version 2.1 |
-                            LGPL, version 2.1 |
-                            GNU Lesser General Public License Version 2.1 |
-                            GNU Lesser General Public License, version 2.1
-                        </licenseMerge>
-                        <licenseMerge>
-                            Common Public License Version 1.0 |
-                            Common Public License - v 1.0
-                        </licenseMerge>
-                    </licenseMerges>
                 </configuration>
                 <executions>
                     <execution>
                         <id>generate-and-check-licenses</id>
                         <goals>
                             <goal>aggregate-add-third-party</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>download-licenses</id>
+                        <goals>
+                            <goal>aggregate-download-licenses</goal>
                         </goals>
                     </execution>
                 </executions>

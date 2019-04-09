@@ -26,7 +26,7 @@ TRAVIS_SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 pip install --user -r ${TRAVIS_SCRIPT_DIR}/requirements.txt
 pip3 install --user -r ${TRAVIS_SCRIPT_DIR}/requirements.txt
 
-cd ${STORM_SRC_ROOT_DIR}/shaded-deps/
+cd ${STORM_SRC_ROOT_DIR}/storm-shaded-deps/
 python ${TRAVIS_SCRIPT_DIR}/save-logs.py "install-shade.txt" mvn clean install --batch-mode
 BUILD_RET_VAL=$?
 if [[ "$BUILD_RET_VAL" != "0" ]];
