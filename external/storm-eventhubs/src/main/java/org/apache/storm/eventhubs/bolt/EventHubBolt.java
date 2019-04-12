@@ -20,7 +20,7 @@ package org.apache.storm.eventhubs.bolt;
 import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.PartitionSender;
-import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.eventhubs.EventHubException;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 /**
  * A bolt that writes event message to EventHub.
@@ -63,7 +64,7 @@ public class EventHubBolt extends BaseRichBolt {
 		logger.info(String.format("Conn String: %s, PartitionMode %s", this.boltConfig.getConnectionString(),
 				String.valueOf(this.boltConfig.getPartitionMode())));
 		try {
-			this.ehClient = EventHubClient.createFromConnectionStringSync(this.boltConfig.getConnectionString());
+			this.ehClient = EventHubClient.createSync(this.boltConfig.getConnectionString(), Executors.newScheduledThreadPool(4));
 			if (boltConfig.getPartitionMode()) {
 				// We can use the task index (starting from 0) as the partition ID
 				String myPartitionId = String.valueOf(context.getThisTaskIndex());
@@ -79,14 +80,14 @@ public class EventHubBolt extends BaseRichBolt {
 	@Override
 	public void execute(Tuple tuple) {
 		try {
-			EventData sendEvent = new EventData(boltConfig.getEventDataFormat().serialize(tuple));
+			EventData sendEvent = EventData.create(boltConfig.getEventDataFormat().serialize(tuple));
 			if (boltConfig.getPartitionMode()) {
 				this.sender.sendSync(sendEvent);
 			} else {
 				this.ehClient.sendSync(sendEvent);
 			}
 			this.collector.ack(tuple);
-		} catch (ServiceBusException e) {
+		} catch (EventHubException e) {
 			this.collector.reportError(e);
 			this.collector.fail(tuple);
 		}
@@ -98,7 +99,7 @@ public class EventHubBolt extends BaseRichBolt {
 		if (this.sender != null) {
 			try {
 				this.sender.closeSync();
-			} catch (ServiceBusException e) {
+			} catch (EventHubException e) {
 				logger.error("Exception during EventHubBolt cleanup phase" + e.toString());
 			}
 			this.sender = null;
@@ -106,7 +107,7 @@ public class EventHubBolt extends BaseRichBolt {
 		if (this.ehClient != null) {
 			try {
 				this.ehClient.closeSync();
-			} catch (ServiceBusException e) {
+			} catch (EventHubException e) {
 				logger.error("Exception during EventHubBolt cleanup phase" + e.toString());
 			}
 			this.ehClient =  null;

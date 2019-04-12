@@ -17,7 +17,7 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.bolt;
 
-import com.microsoft.azure.servicebus.ConnectionStringBuilder;
+import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
 
 import org.apache.storm.eventhubs.core.FieldConstants;
 import org.apache.storm.eventhubs.format.DefaultEventDataFormat;
@@ -88,7 +88,7 @@ public class EventHubBoltConfig implements Serializable {
         } catch (URISyntaxException e) {
             throw new RuntimeException("Failed to construct EventHub connection URI.", e);
         }	  
-        this.connectionString = new ConnectionStringBuilder(uri, userName, password).toString();
+        this.connectionString = new ConnectionStringBuilder().setEndpoint(uri).setSasKeyName(userName).setSasKey(password).toString();
         this.partitionMode = partitionMode;
         this.dataFormat = dataFormat;
         if (this.dataFormat == null) {

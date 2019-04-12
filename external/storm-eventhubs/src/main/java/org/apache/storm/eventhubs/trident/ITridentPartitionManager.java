@@ -19,13 +19,13 @@ package org.apache.storm.eventhubs.trident;
 
 import org.apache.storm.eventhubs.core.EventHubMessage;
 
-import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.eventhubs.EventHubException;
 
 import java.io.IOException;
 import java.util.List;
 
 public interface ITridentPartitionManager {
-    void open(String offset) throws IOException, ServiceBusException;
+    void open(String offset) throws IOException, EventHubException;
     
     void close();
     
@@ -37,5 +37,5 @@ public interface ITridentPartitionManager {
      * @param count max number of messages in this batch
      * @return list of EventData, if failed to receive, return empty list
      */
-    List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, ServiceBusException;
+    List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, EventHubException;
 }

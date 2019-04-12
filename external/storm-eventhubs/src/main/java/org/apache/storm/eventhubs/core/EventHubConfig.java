@@ -18,7 +18,7 @@
 package org.apache.storm.eventhubs.core;
 
 import com.microsoft.azure.eventhubs.EventHubClient;
-import com.microsoft.azure.servicebus.ConnectionStringBuilder;
+import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
 
 import java.io.Serializable;
 
@@ -54,8 +54,8 @@ public class EventHubConfig implements Serializable {
         this.userName = username;
         this.password = password;
         this.partitionCount = partitionCount;
-        this.connectionString = new ConnectionStringBuilder(namespace, entityPath, 
-            username, password).toString();
+        this.connectionString = new ConnectionStringBuilder().setNamespaceName(namespace).setEventHubName(entityPath). 
+            setSasKeyName(username).setSasKey(password).toString();
     }
     
     public String getUserName() {

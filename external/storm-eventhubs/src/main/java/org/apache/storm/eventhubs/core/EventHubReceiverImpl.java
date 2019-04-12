@@ -20,8 +20,8 @@ package org.apache.storm.eventhubs.core;
 import com.google.common.collect.Iterables;
 import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.EventHubException;
 import com.microsoft.azure.eventhubs.PartitionReceiver;
-import com.microsoft.azure.servicebus.ServiceBusException;
 
 import org.apache.storm.metric.api.CountMetric;
 import org.apache.storm.metric.api.MeanReducer;
@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 public class EventHubReceiverImpl implements IEventHubReceiver {
     private static final Logger logger = LoggerFactory.getLogger(EventHubReceiverImpl.class);
@@ -56,15 +57,14 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
     }
 
     @Override
-    public void open(IEventFilter filter) throws ServiceBusException, IOException {
+    public void open(IEventFilter filter) throws EventHubException, IOException {
         long start = System.currentTimeMillis();
         logger.debug(String.format("Creating EventHub Client: partitionId: %s, filter value: %s, prefetchCount:%d",
         	    this.partitionId, filter.toString(), this.eventHubConfig.getPrefetchCount()));
     
-        this.ehClient = EventHubClient.createFromConnectionStringSync(this.eventHubConfig.getConnectionString());
+        this.ehClient = EventHubClient.createSync(this.eventHubConfig.getConnectionString(), Executors.newScheduledThreadPool(4));
         this.receiver = PartitionReceiverFactory.createReceiver(this.ehClient, filter, this.eventHubConfig,
                 this.partitionId);
-        this.receiver.setPrefetchCount(this.eventHubConfig.getPrefetchCount());
         logger.info("created eventhub receiver, time taken(ms): " + (System.currentTimeMillis() - start));
     }
 
@@ -73,7 +73,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
         if (this.receiver != null) {
 	        try {
 	            this.receiver.closeSync();
-	        } catch (ServiceBusException e) {
+	        } catch (EventHubException e) {
 	    	    logger.error("Exception during receiver close phase " + e.toString());
 	        }
 	        this.receiver = null;
@@ -81,7 +81,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 		if (this.ehClient != null) {
 			try {
 				this.ehClient.closeSync();
-			} catch (ServiceBusException e) {
+			} catch (EventHubException e) {
 				logger.error("Exception during ehclient close phase " + e.toString());
 			}
 			this.ehClient =  null;
@@ -111,7 +111,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
             	logger.debug("Batchsize: " + batchSize + ", Received event count: " +
             			Iterables.size(receivedEvents));
             }
-        } catch (ServiceBusException e) {
+        } catch (EventHubException e) {
             logger.error("Exception occured during receive" + e.toString());
             return null;
         }

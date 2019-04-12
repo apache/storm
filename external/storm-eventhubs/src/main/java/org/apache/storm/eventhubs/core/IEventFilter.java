@@ -17,5 +17,8 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.core;
 
+import com.microsoft.azure.eventhubs.EventPosition;
+
 public interface IEventFilter {
+	EventPosition getEventPosition();
 }

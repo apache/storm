@@ -23,7 +23,7 @@ import org.apache.curator.retry.RetryNTimes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.microsoft.azure.servicebus.StringUtil;
+import com.google.common.base.Strings;
 
 public class ZookeeperStateStore implements IStateStore {
 	private static final long serialVersionUID = -995647135239199102L;
@@ -37,7 +37,7 @@ public class ZookeeperStateStore implements IStateStore {
 	}
 
 	public ZookeeperStateStore(String connectionString, int retries, int retryInterval) {
-		this.zookeeperConnectionString = StringUtil.isNullOrWhiteSpace(connectionString) ?
+		this.zookeeperConnectionString = Strings.isNullOrEmpty(connectionString) ?
 				ZK_LOCAL_URL : connectionString;
 		logger.debug("using ZKConnectionString: " + this.zookeeperConnectionString);
 
@@ -57,7 +57,7 @@ public class ZookeeperStateStore implements IStateStore {
 
 	@Override
 	public void saveData(String statePath, String data) {
-		data = StringUtil.isNullOrWhiteSpace(data) ? "" : data;
+		data = Strings.isNullOrEmpty(data) ? "" : data;
 		byte[] bytes = data.getBytes();
 
 		try {

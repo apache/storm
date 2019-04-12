@@ -18,13 +18,13 @@
 package org.apache.storm.eventhubs.core;
 
 import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.eventhubs.EventHubException;
 
 import java.io.IOException;
 import java.util.Map;
 
 public interface IEventHubReceiver {
-    void open(IEventFilter paramIEventFilter) throws IOException, ServiceBusException;
+    void open(IEventFilter paramIEventFilter) throws IOException, EventHubException;
 
     void close();
 

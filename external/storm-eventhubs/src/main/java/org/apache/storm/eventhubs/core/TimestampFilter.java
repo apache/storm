@@ -19,17 +19,21 @@ package org.apache.storm.eventhubs.core;
 
 import java.time.Instant;
 
+import com.microsoft.azure.eventhubs.EventPosition;
+
 public class TimestampFilter implements IEventFilter {
     Instant time = null;
 	  
     public TimestampFilter(Instant time) {
         this.time = time;
     }
-	  
-    public Instant getTime() {
-        return this.time;
+    
+    @Override
+    public EventPosition getEventPosition() {
+    	return EventPosition.fromEnqueuedTime(this.time);
     }
-	  
+
+    @Override
     public String toString() {
         if (this.time != null) {
             return Long.toString(this.time.toEpochMilli());

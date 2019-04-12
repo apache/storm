@@ -32,7 +32,7 @@ import org.apache.storm.trident.topology.TransactionAttempt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.eventhubs.EventHubException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -123,7 +123,7 @@ public class TransactionalTridentEventHubEmitter
     List<EventHubMessage> listEvents = null;
     try {
     	listEvents = pm.receiveBatch(offset, count);
-    } catch (IOException | ServiceBusException e) {
+    } catch (IOException | EventHubException e) {
     	throw new RuntimeException("Failed to retrieve events from EventHub.", e);
     }
     if (listEvents.size() != count) {
@@ -148,7 +148,7 @@ public class TransactionalTridentEventHubEmitter
     List<EventHubMessage> listEvents = null;
     try {
     	listEvents = pm.receiveBatch(offset, batchSize);
-    } catch (IOException | ServiceBusException e) {
+    } catch (IOException | EventHubException e) {
     	throw new RuntimeException("Failed to retrieve events from EventHub.", e);
     }
 

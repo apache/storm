@@ -18,30 +18,16 @@
 package org.apache.storm.eventhubs.core;
 
 import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.EventHubException;
 import com.microsoft.azure.eventhubs.PartitionReceiver;
-import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.eventhubs.ReceiverOptions;
 
 public final class PartitionReceiverFactory {
     public static PartitionReceiver createReceiver(EventHubClient ehClient, IEventFilter filter,
-            EventHubConfig eventHubConfig, String partitionId) throws ServiceBusException
+            EventHubConfig eventHubConfig, String partitionId) throws EventHubException
     {
-        if ((filter instanceof OffsetFilter)) {
-            return createOffsetReceiver(ehClient, (OffsetFilter)filter, eventHubConfig, partitionId);
-        }
-        return createTimestampReceiver(ehClient, (TimestampFilter)filter, eventHubConfig, partitionId);
-    }
-			  
-    private static PartitionReceiver createOffsetReceiver(EventHubClient ehClient, OffsetFilter filter,
-            EventHubConfig eventHubConfig, String partitionId) throws ServiceBusException
-    {
-        return ehClient.createEpochReceiverSync(eventHubConfig.getConsumerGroupName(), partitionId,
-                filter.getOffset(), false, 1L);
-    }
-			  
-    private static PartitionReceiver createTimestampReceiver(EventHubClient ehClient, TimestampFilter filter,
-            EventHubConfig eventHubConfig, String partitionId) throws ServiceBusException
-    {
-        return ehClient.createEpochReceiverSync(eventHubConfig.getConsumerGroupName(), partitionId,
-                filter.getTime(), 1L);
+        ReceiverOptions opts = new ReceiverOptions();
+        opts.setPrefetchCount(eventHubConfig.getPrefetchCount());
+    	return ehClient.createEpochReceiverSync(eventHubConfig.getConsumerGroupName(), partitionId, filter.getEventPosition(), 1L, opts);
     }
 }

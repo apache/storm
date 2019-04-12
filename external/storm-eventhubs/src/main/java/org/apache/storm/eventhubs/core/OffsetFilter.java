@@ -17,6 +17,8 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.core;
 
+import com.microsoft.azure.eventhubs.EventPosition;
+
 public class OffsetFilter implements IEventFilter {
     String offset = null;
 
@@ -24,10 +26,12 @@ public class OffsetFilter implements IEventFilter {
         this.offset = offset;
     }
 	  
-    public String getOffset() {
-      return this.offset;
+    @Override
+    public EventPosition getEventPosition() {
+    	return EventPosition.fromOffset(this.offset);
     }
-	  
+
+    @Override
     public String toString() {
         if (this.offset != null) {
             return this.offset;
