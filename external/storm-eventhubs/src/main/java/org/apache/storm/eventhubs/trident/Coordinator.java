@@ -17,44 +17,33 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;
-
+import org.apache.storm.eventhubs.core.Partition;
+import org.apache.storm.eventhubs.core.Partitions;
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 
 public class Coordinator implements IPartitionedTridentSpout.Coordinator<Partitions>,
-    IOpaquePartitionedTridentSpout.Coordinator<Partitions> {
-  private static final Logger logger = LoggerFactory.getLogger(Coordinator.class);
-  private final EventHubSpoutConfig spoutConfig;
-  Partitions partitions;
+        IOpaquePartitionedTridentSpout.Coordinator<Partitions> {
+    private Partitions partitions;
   
-  public Coordinator(EventHubSpoutConfig spoutConfig) {
-    this.spoutConfig = spoutConfig;
-  }
-
-  @Override
-  public void close() {
-  }
-
-  @Override
-  public Partitions getPartitionsForBatch() {
-    if(partitions != null) {
-      return partitions;
+    public Coordinator(EventHubSpoutConfig spoutConfig) {
+        for (int i = 0; i < spoutConfig.getPartitionCount(); i++) {
+        	this.partitions.addPartition(new Partition(String.valueOf(i)));
+        }
     }
-    
-    partitions = new Partitions();
-    for(int i=0; i<spoutConfig.getPartitionCount(); ++i) {
-      partitions.addPartition(new Partition(spoutConfig, Integer.toString(i)));
-    }
-    logger.info("created partitions, size=" + spoutConfig.getPartitionCount());
-    return partitions;
-  }
 
-  @Override
-  public boolean isReady(long txid) {
-    return true;
-  }
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public Partitions getPartitionsForBatch() {
+        return this.partitions;
+    }
+
+    @Override
+    public boolean isReady(long txid) {
+        return true;
+    }
 }

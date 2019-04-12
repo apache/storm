@@ -17,19 +17,25 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
+import org.apache.storm.eventhubs.core.EventHubMessage;
+
+import com.microsoft.azure.servicebus.ServiceBusException;
+
+import java.io.IOException;
 import java.util.List;
 
-import org.apache.storm.eventhubs.spout.EventData;
-
 public interface ITridentPartitionManager {
-  boolean open(String offset);
-  void close();
+    void open(String offset) throws IOException, ServiceBusException;
+    
+    void close();
+    
+    String getPartitionId();
   
-  /**
-   * receive a batch of messages from EvenHub up to "count" messages
-   * @param offset the starting offset
-   * @param count max number of messages in this batch
-   * @return list of EventData, if failed to receive, return empty list
-   */
-  public List<EventData> receiveBatch(String offset, int count);
+    /**
+     * receive a batch of messages from EvenHub up to "count" messages
+     * @param offset the starting offset
+     * @param count max number of messages in this batch
+     * @return list of EventData, if failed to receive, return empty list
+     */
+    List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, ServiceBusException;
 }

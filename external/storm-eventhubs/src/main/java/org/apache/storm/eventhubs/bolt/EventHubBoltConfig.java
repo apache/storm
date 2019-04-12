@@ -17,10 +17,15 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.bolt;
 
-import java.io.Serializable;
+import com.microsoft.azure.servicebus.ConnectionStringBuilder;
 
-import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-import com.microsoft.eventhubs.client.ConnectionStringBuilder;
+import org.apache.storm.eventhubs.core.FieldConstants;
+import org.apache.storm.eventhubs.format.DefaultEventDataFormat;
+import org.apache.storm.eventhubs.format.IEventDataFormat;
+
+import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /*
  * EventHubs bolt configurations
@@ -35,75 +40,71 @@ import com.microsoft.eventhubs.client.ConnectionStringBuilder;
  * if null, the default format is common delimited tuple fields.
  */
 public class EventHubBoltConfig implements Serializable {
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
   
-  private String connectionString;
-  private final String entityPath;
-  protected boolean partitionMode;
-  protected IEventDataFormat dataFormat;
+    private String connectionString;
+    protected boolean partitionMode;
+    protected IEventDataFormat dataFormat;
   
-  public EventHubBoltConfig(String connectionString, String entityPath) {
-    this(connectionString, entityPath, false, null);
-  }
-  
-  public EventHubBoltConfig(String connectionString, String entityPath,
-      boolean partitionMode) {
-    this(connectionString, entityPath, partitionMode, null);
-  }
-  
-  public EventHubBoltConfig(String userName, String password, String namespace,
-      String entityPath, boolean partitionMode) {
-    this(userName, password, namespace,
-        EventHubSpoutConfig.EH_SERVICE_FQDN_SUFFIX, entityPath, partitionMode);
-  }
-  
-  public EventHubBoltConfig(String connectionString, String entityPath,
-      boolean partitionMode, IEventDataFormat dataFormat) {
-    this.connectionString = connectionString;
-    this.entityPath = entityPath;
-    this.partitionMode = partitionMode;
-    this.dataFormat = dataFormat;
-    if(this.dataFormat == null) {
-      this.dataFormat = new DefaultEventDataFormat();
+    public EventHubBoltConfig(String connectionString, String entityPath) {
+        this(connectionString, false, null);
     }
-  }
   
-  public EventHubBoltConfig(String userName, String password, String namespace,
-      String targetFqnAddress, String entityPath) {
-    this(userName, password, namespace, targetFqnAddress, entityPath, false, null);
-  }
-  
-  public EventHubBoltConfig(String userName, String password, String namespace,
-      String targetFqnAddress, String entityPath, boolean partitionMode) {
-    this(userName, password, namespace, targetFqnAddress, entityPath, partitionMode, null);
-  }
-  
-  public EventHubBoltConfig(String userName, String password, String namespace,
-      String targetFqnAddress, String entityPath, boolean partitionMode,
-      IEventDataFormat dataFormat) {
-    this.connectionString = new ConnectionStringBuilder(userName, password,
-    		namespace, targetFqnAddress).getConnectionString();
-    this.entityPath = entityPath;
-    this.partitionMode = partitionMode;
-    this.dataFormat = dataFormat;
-    if(this.dataFormat == null) {
-      this.dataFormat = new DefaultEventDataFormat();
+    public EventHubBoltConfig(String connectionString, String entityPath, boolean partitionMode) {
+        this(connectionString, partitionMode, null);
     }
-  }
   
-  public String getConnectionString() {
-    return connectionString;
-  }
+    public EventHubBoltConfig(String userName, String password, String namespace,
+            String entityPath, boolean partitionMode) {
+        this(userName, password, namespace, FieldConstants.EH_SERVICE_FQDN_SUFFIX,
+            entityPath, partitionMode);
+    }
   
-  public String getEntityPath() {
-    return entityPath;
-  }
+    public EventHubBoltConfig(String connectionString, boolean partitionMode, IEventDataFormat dataFormat) {
+        this.connectionString = connectionString;
+        this.partitionMode = partitionMode;
+        this.dataFormat = dataFormat;
+        if (this.dataFormat == null) {
+            this.dataFormat = new DefaultEventDataFormat();
+        }
+    }
   
-  public boolean getPartitionMode() {
-    return partitionMode;
-  }
+    public EventHubBoltConfig(String userName, String password, String namespace,
+            String fqdnSuffix, String entityPath) {
+        this(userName, password, namespace, fqdnSuffix, entityPath, false, null);
+    }
   
-  public IEventDataFormat getEventDataFormat() {
-    return dataFormat;
-  }
+    public EventHubBoltConfig(String userName, String password, String namespace,
+            String fqdnSuffix, String entityPath, boolean partitionMode) {
+        this(userName, password, namespace, fqdnSuffix, entityPath, partitionMode, null);
+    }
+  
+    public EventHubBoltConfig(String userName, String password, String namespace,
+            String fqdnSuffix, String entityPath, boolean partitionMode,
+            IEventDataFormat dataFormat) {
+        URI uri = null;
+        try {
+            uri = new URI(String.format("amqps://%s.%s", new Object[] { namespace, fqdnSuffix }));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Failed to construct EventHub connection URI.", e);
+        }	  
+        this.connectionString = new ConnectionStringBuilder(uri, userName, password).toString();
+        this.partitionMode = partitionMode;
+        this.dataFormat = dataFormat;
+        if (this.dataFormat == null) {
+            this.dataFormat = new DefaultEventDataFormat();
+        }
+    }
+  
+    public String getConnectionString() {
+        return connectionString;
+    }
+  
+    public boolean getPartitionMode() {
+        return partitionMode;
+    }
+  
+    public IEventDataFormat getEventDataFormat() {
+        return dataFormat;
+    }
 }

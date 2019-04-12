@@ -17,77 +17,74 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.microsoft.azure.eventhubs.EventData;
+import com.microsoft.azure.servicebus.ServiceBusException;
 
+import org.apache.storm.eventhubs.core.EventHubMessage;
+import org.apache.storm.eventhubs.core.FieldConstants;
+import org.apache.storm.eventhubs.core.IEventHubReceiver;
+import org.apache.storm.eventhubs.core.OffsetFilter;
+import org.apache.storm.eventhubs.core.TimestampFilter;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.microsoft.eventhubs.client.Constants;
-import com.microsoft.eventhubs.client.EventHubEnqueueTimeFilter;
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.EventHubOffsetFilter;
-
-import org.apache.storm.eventhubs.spout.EventData;
-import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-import org.apache.storm.eventhubs.spout.IEventHubReceiver;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TridentPartitionManager implements ITridentPartitionManager {
-  private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
-  private final int receiveTimeoutMs = 5000;
-  private final IEventHubReceiver receiver;
-  private final EventHubSpoutConfig spoutConfig;
-  private String lastOffset = Constants.DefaultStartingOffset;
+	private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
+	private final IEventHubReceiver receiver;
+    private final EventHubSpoutConfig spoutConfig;
+    private String lastOffset = FieldConstants.DefaultStartingOffset;
+    private String partitionId;
   
-  public TridentPartitionManager(EventHubSpoutConfig spoutConfig, IEventHubReceiver receiver) {
-    this.receiver = receiver;
-    this.spoutConfig = spoutConfig;
-  }
-  
-  @Override
-  public boolean open(String offset) {
-    try {
-      if((offset == null || offset.equals(Constants.DefaultStartingOffset)) 
-        && spoutConfig.getEnqueueTimeFilter() != 0) {
-          receiver.open(new EventHubEnqueueTimeFilter(spoutConfig.getEnqueueTimeFilter()));
-      }
-      else {
-        receiver.open(new EventHubOffsetFilter(offset));
-      }
-      lastOffset = offset;
-      return true;
+    public TridentPartitionManager(EventHubSpoutConfig spoutConfig, IEventHubReceiver receiver, String partitionId) {
+        this.receiver = receiver;
+        this.spoutConfig = spoutConfig;
+        this.partitionId = partitionId;
     }
-    catch(EventHubException ex) {
-      logger.error("failed to open eventhub receiver: " + ex.getMessage());
-      return false;
+  
+    @Override
+    public void open(String offset) throws IOException, ServiceBusException {
+    	logger.debug("Creating EventHub Client");
+        if ((offset == null || offset.equals(FieldConstants.DefaultStartingOffset)) 
+                && spoutConfig.getEnqueueTimeFilter() != 0) {
+            this.receiver.open(new TimestampFilter(
+                    Instant.ofEpochMilli(this.spoutConfig.getEnqueueTimeFilter())));
+        }
+        else {
+            receiver.open(new OffsetFilter(offset));
+        }
+        lastOffset = offset;
     }
-  }
   
-  @Override
-  public void close() {
-    receiver.close();
-  }
+    @Override
+    public void close() {
+        this.receiver.close();
+    }
   
-  @Override
-  public List<EventData> receiveBatch(String offset, int count) {
-    List<EventData> batch = new ArrayList<EventData>(count);
-    if(!offset.equals(lastOffset) || !receiver.isOpen()) {
-      //re-establish connection to eventhub servers using the right offset
-      //TBD: might be optimized with cache.
-      close();
-      if(!open(offset)) {
+    @Override
+    public List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, ServiceBusException {
+        List<EventHubMessage> batch = new ArrayList<EventHubMessage>(this.spoutConfig.getReceiveEventsMaxCount());
+        if (!offset.equals(this.lastOffset) || !this.receiver.isOpen()) {
+            close();
+            open(offset);
+        }
+
+        Iterable<EventData> messages = this.receiver.receive(count);
+        for (EventData ed : messages) {
+            EventHubMessage ehm = new EventHubMessage(ed, this.partitionId);
+            batch.add(ehm);
+            this.lastOffset = ehm.getOffset();
+        }
         return batch;
-      }
     }
-    
-    for(int i=0; i<count; ++i) {
-      EventData ed = receiver.receive(receiveTimeoutMs);
-      if(ed == null) {
-        break;
-      }
-      batch.add(ed);
-      lastOffset = ed.getMessageId().getOffset();
+  
+    @Override
+    public String getPartitionId() {
+        return this.partitionId;
     }
-    return batch;
-  }
 }

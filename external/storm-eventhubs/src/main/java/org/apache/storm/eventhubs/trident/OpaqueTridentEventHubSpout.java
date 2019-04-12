@@ -19,9 +19,10 @@ package org.apache.storm.eventhubs.trident;
 
 import java.util.Map;
 
+import org.apache.storm.eventhubs.core.Partition;
+import org.apache.storm.eventhubs.core.Partitions;
+import org.apache.storm.eventhubs.format.IEventDataScheme;
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-import org.apache.storm.eventhubs.spout.IEventDataScheme;
-
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
@@ -29,36 +30,36 @@ import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 /**
  * Opaque Trident EventHubs Spout
  */
-public class OpaqueTridentEventHubSpout implements IOpaquePartitionedTridentSpout<Partitions, Partition, Map> {
-  private static final long serialVersionUID = 1L;
-  private final IEventDataScheme scheme;
-  private final EventHubSpoutConfig spoutConfig;
+public class OpaqueTridentEventHubSpout
+        implements IOpaquePartitionedTridentSpout<Partitions, Partition, Map<String, String>> {
+    private static final long serialVersionUID = 1L;
+    private final IEventDataScheme scheme;
+    private final EventHubSpoutConfig spoutConfig;
 
-  public OpaqueTridentEventHubSpout(EventHubSpoutConfig config) {
-    spoutConfig = config;
-    scheme = spoutConfig.getEventDataScheme();
-  }
+    public OpaqueTridentEventHubSpout(EventHubSpoutConfig config) {
+        this.spoutConfig = config;
+        this.scheme = this.spoutConfig.getEventDataScheme();
+    }
 
-  @Override
-  public Map<String, Object> getComponentConfiguration() {
-    return null;
-  }
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        return null;
+    }
 
-  @Override
-  public IOpaquePartitionedTridentSpout.Coordinator<Partitions> getCoordinator(
-      Map conf, TopologyContext context) {
-    return new org.apache.storm.eventhubs.trident.Coordinator(spoutConfig);
-  }
+    @Override
+    public IOpaquePartitionedTridentSpout.Coordinator<Partitions> getCoordinator(
+            Map<String, Object> conf, TopologyContext context) {
+        return new org.apache.storm.eventhubs.trident.Coordinator(this.spoutConfig);
+    }
 
-  @Override
-  public IOpaquePartitionedTridentSpout.Emitter<Partitions, Partition, Map> getEmitter(
-      Map conf, TopologyContext context) {
-    return new OpaqueTridentEventHubEmitter(spoutConfig);
-  }
+    @Override
+    public IOpaquePartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, String>> getEmitter(
+            Map<String, Object> conf, TopologyContext context) {
+        return new OpaqueTridentEventHubEmitter(this.spoutConfig);
+    }
 
-  @Override
-  public Fields getOutputFields() {
-    return scheme.getOutputFields();
-  }
-
+    @Override
+    public Fields getOutputFields() {
+        return this.scheme.getOutputFields();
+    }
 }

@@ -15,22 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.core;
 
+import com.microsoft.azure.eventhubs.EventData;
+import com.microsoft.azure.servicebus.ServiceBusException;
+
+import java.io.IOException;
 import java.util.Map;
 
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.IEventHubFilter;
-
 public interface IEventHubReceiver {
+    void open(IEventFilter paramIEventFilter) throws IOException, ServiceBusException;
 
-  void open(IEventHubFilter filter) throws EventHubException;
+    void close();
 
-  void close();
-  
-  boolean isOpen();
+    boolean isOpen();
 
-  EventData receive(long timeoutInMilliseconds);
-  
-  Map getMetricsData();
+    Iterable<EventData> receive();
+    
+    Iterable<EventData> receive(int paramCount);
+
+    Map<String, Object> getMetricsData();
 }
