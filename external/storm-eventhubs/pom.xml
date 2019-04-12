@@ -52,9 +52,9 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>com.microsoft.eventhubs.client</groupId>
-            <artifactId>eventhubs-client</artifactId>
-            <version>${eventhubs.client.version}</version>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>azure-eventhubs</artifactId>
+            <version>0.14.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -71,21 +71,6 @@
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-amqp-1-0-client</artifactId>
-            <version>${qpid.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-amqp-1-0-client-jms</artifactId>
-            <version>${qpid.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-amqp-1-0-common</artifactId>
-            <version>${qpid.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
