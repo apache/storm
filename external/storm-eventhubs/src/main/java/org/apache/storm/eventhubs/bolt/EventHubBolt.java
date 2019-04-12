@@ -58,7 +58,7 @@ public class EventHubBolt extends BaseRichBolt {
 	}
 
 	@Override
-	public void prepare(Map<String, Object> config, TopologyContext context, OutputCollector collector) {
+	public void prepare(Map config, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
 		logger.info(String.format("Conn String: %s, PartitionMode %s", this.boltConfig.getConnectionString(),
 				String.valueOf(this.boltConfig.getPartitionMode())));

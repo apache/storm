@@ -65,4 +65,9 @@ public class OpaqueTridentEventHubEmitter
     public void refreshPartitions(List<Partition> partitionList) {
         transactionalEmitter.refreshPartitions(partitionList);
     }
+
+	@Override
+	public List<Partition> getPartitionsForTask(int arg0, int arg1, Partitions arg2) {
+		throw new RuntimeException("Trident is not fully implemented");
+	}
 }

@@ -19,7 +19,6 @@ package org.apache.storm.eventhubs.spout;
 
 import com.google.common.base.Strings;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.eventhubs.core.EventHubReceiverImpl;
 import org.apache.storm.eventhubs.core.EventHubConfig;
@@ -124,7 +123,7 @@ public class EventHubSpout extends BaseRichSpout {
         this.collector = collector;
         if (this.stateStore == null) {
             String zkEndpointAddress = eventHubSpoutConfig.getZkConnectionString();
-            if (StringUtils.isBlank(zkEndpointAddress)) {
+            if (zkEndpointAddress.length() != 0) {
                 // use storm's zookeeper servers if not specified.
                 @SuppressWarnings("unchecked")
 				List<String> zkServers = (List<String>)config.get(Config.STORM_ZOOKEEPER_SERVERS);
@@ -156,7 +155,7 @@ public class EventHubSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> config, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map config, TopologyContext context, SpoutOutputCollector collector) {
         logger.debug("EventHubSpout start: open()");
         String topologyName = (String)config.get(Config.TOPOLOGY_NAME);
         this.eventHubSpoutConfig.setTopologyName(topologyName);
