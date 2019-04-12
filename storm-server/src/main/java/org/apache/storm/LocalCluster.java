@@ -134,7 +134,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     private final Nimbus nimbus;
     //This is very private and does not need to be exposed
-    private final AtomicInteger portCounter;
+    private int portCounter;
     private final Map<String, Object> daemonConf;
     private final List<Supervisor> supervisors;
     private final IStateStorage state;
@@ -225,7 +225,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             this.daemonConf = new HashMap<>(conf);
             this.metricRegistry = new StormMetricsRegistry();
 
-            this.portCounter = new AtomicInteger(builder.supervisorSlotPortMin);
+            this.portCounter = builder.supervisorSlotPortMin;
             ClusterStateContext cs = new ClusterStateContext(DaemonType.NIMBUS, daemonConf);
             this.state = ClusterUtils.mkStateStorage(this.daemonConf, null, cs);
             if (builder.clusterState == null) {
@@ -691,7 +691,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
         List<Integer> portNumbers = new ArrayList<>(ports.intValue());
         for (int i = 0; i < ports.intValue(); i++) {
-            portNumbers.add(portCounter.getAndIncrement());
+            portNumbers.add(portCounter++);
         }
 
         Map<String, Object> superConf = new HashMap<>(daemonConf);

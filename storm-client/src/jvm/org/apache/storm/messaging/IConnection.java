@@ -22,20 +22,6 @@ import org.apache.storm.messaging.netty.BackPressureStatus;
 public interface IConnection extends AutoCloseable {
 
     /**
-     * Register a callback to be notified when data is ready to be processed.
-     *
-     * @param cb the callback to process the messages.
-     */
-    void registerRecv(IConnectionCallback cb);
-
-    /**
-     * Register a response generator to be used to send an initial response when a new client connects.
-     *
-     * @param cb the callback to process the connection.
-     */
-    void registerNewConnectionResponse(Supplier<Object> cb);
-
-    /**
      * Send load metrics to all downstream connections.
      *
      * @param taskToLoad a map from the task id to the load for that task.

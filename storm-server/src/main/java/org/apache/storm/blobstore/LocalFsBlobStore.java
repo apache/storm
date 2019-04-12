@@ -415,6 +415,7 @@ public class LocalFsBlobStore extends BlobStore {
         if (timer != null) {
             timer.cancel();;
         }
+        stormClusterState.disconnect();
     }
 
     @Override

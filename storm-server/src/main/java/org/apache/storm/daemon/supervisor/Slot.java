@@ -835,7 +835,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
      * Set a new assignment asynchronously.
      * @param newAssignment the new assignment for this slot to run, null to run nothing
      */
-    public void setNewAssignment(LocalAssignment newAssignment) {
+    public final void setNewAssignment(LocalAssignment newAssignment) {
         this.newAssignment.set(newAssignment == null ? null : new TimerDecoratedAssignment(newAssignment, staticState.slotMetrics.workerLaunchDuration));
     }
 

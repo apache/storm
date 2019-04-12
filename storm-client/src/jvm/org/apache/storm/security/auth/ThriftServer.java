@@ -12,9 +12,11 @@
 
 package org.apache.storm.security.auth;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import javax.security.auth.login.Configuration;
+import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.thrift.TProcessor;
 import org.apache.storm.thrift.server.TServer;
 import org.apache.storm.thrift.transport.TTransportException;
@@ -30,6 +32,7 @@ public class ThriftServer {
     private Configuration loginConf;
     private int port;
     private boolean areWorkerTokensSupported;
+    private ITransportPlugin transportPlugin;
 
     public ThriftServer(Map<String, Object> conf, TProcessor processor, ThriftConnectionType type) {
         this.conf = conf;
@@ -44,7 +47,7 @@ public class ThriftServer {
         }
         try {
             //locate our thrift transport plugin
-            ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(this.type, this.conf, loginConf);
+            transportPlugin = ClientAuthUtils.getTransportPlugin(this.type, this.conf, loginConf);
             //server
             server = transportPlugin.getServer(this.processor);
             port = transportPlugin.getPort();
@@ -57,6 +60,9 @@ public class ThriftServer {
 
     public void stop() {
         server.stop();
+        if (transportPlugin instanceof SaslTransportPlugin) {
+            ((SaslTransportPlugin)transportPlugin).close();
+        }
     }
 
     /**

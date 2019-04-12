@@ -29,28 +29,24 @@ import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.tuple.Values;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(TestUtils.MockBoltExtension.class)
+@ExtendWith(TestUtils.MockInsertBoltExtension.class)
 public class TestStormSql {
 
     public static final int WAIT_TIMEOUT_MS = 1000 * 1000;
     public static final int WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED = 1000 * 10;
     public static final int WAIT_TIMEOUT_MS_ERROR_EXPECTED = 1000;
 
-    @Rule
-    public ExternalResource mockBoltValues = TestUtils.mockBoltValueResource;
-
-    @Rule
-    public ExternalResource mockInsertBoltValues = TestUtils.mockInsertBoltValueResource;
-
     private static LocalCluster cluster;
 
-    @BeforeClass
+    @BeforeAll
     public static void staticSetup() throws Exception {
         DataSourcesRegistry.providerMap().put("mock", new MockDataSourceProvider());
         DataSourcesRegistry.providerMap().put("mocknested", new MockNestedDataSourceProvider());
@@ -61,7 +57,7 @@ public class TestStormSql {
         cluster = new LocalCluster();
     }
 
-    @AfterClass
+    @AfterAll
     public static void staticCleanup() {
         DataSourcesRegistry.providerMap().remove("mock");
         DataSourcesRegistry.providerMap().remove("mocknested");
@@ -176,7 +172,7 @@ public class TestStormSql {
         Assert.assertEquals(0, values.size());
     }
 
-    @Test(expected = ValidationException.class)
+    @Test
     public void testExternalUdfType() throws Exception {
         List<String> stmt = new ArrayList<>();
         stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, NAME VARCHAR) LOCATION 'mock:///foo'");
@@ -185,12 +181,11 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM MYPLUS(NAME, 1) FROM FOO WHERE ID = 0");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED);
-
-        Assert.fail("Should raise ValidationException.");
+        Assertions.assertThrows(ValidationException.class,
+            () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 
-    @Test(expected = CompilingClassLoader.CompilerException.class)
+    @Test
     public void testExternalUdfType2() throws Exception {
         List<String> stmt = new ArrayList<>();
         // generated code will be not compilable since return type of MYPLUS and type of 'x' are different
@@ -200,9 +195,8 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM ID FROM FOO WHERE MYPLUS(ID, 1) = 'x'");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED);
-
-        Assert.fail("Should raise CompilerException.");
+        Assertions.assertThrows(CompilingClassLoader.CompilerException.class,
+            () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 
     @Test
@@ -222,7 +216,7 @@ public class TestStormSql {
         Assert.assertEquals(5, values.get(1).getFirst());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testExternalUdfUsingJar() throws Exception {
         List<String> stmt = new ArrayList<>();
         stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'mock:///foo'");
@@ -231,9 +225,8 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM MYPLUS(ID, 1) FROM FOO WHERE ID > 2");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED);
-
-        Assert.fail("Should raise UnsupportedOperationException.");
+        Assertions.assertThrows(UnsupportedOperationException.class,
+            () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 
     private static class MockDataSourceProvider implements DataSourcesProvider {
