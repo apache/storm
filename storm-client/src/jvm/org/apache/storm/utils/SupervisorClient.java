@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  * <li>nimbus -> supervisor: assign assignments for a node.</li>
  * </ul>
  */
-public class SupervisorClient extends ThriftClient {
+public class SupervisorClient extends ThriftClient implements SupervisorIfaceFactory {
     private static final Logger LOG = LoggerFactory.getLogger(SupervisorClient.class);
     private Supervisor.Client client;
 
@@ -76,7 +76,8 @@ public class SupervisorClient extends ThriftClient {
         }
     }
 
-    public Supervisor.Client getClient() {
+    @Override
+    public Supervisor.Client getIface() {
         return client;
     }
 }
