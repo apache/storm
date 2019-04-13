@@ -25,28 +25,28 @@ import org.apache.storm.trident.operation.TridentCollector;
  * A mock of TridentCollector
  */
 public class TridentCollectorMock implements TridentCollector {
-  StringBuilder buffer;
+	StringBuilder buffer;
   
-  public TridentCollectorMock() {
-    buffer = new StringBuilder();
-  }
+	public TridentCollectorMock() {
+		buffer = new StringBuilder();
+	}
   
-  @Override
-  public void emit(List<Object> tuples) {
-    for(Object o: tuples) {
-      buffer.append(o.toString());
-    }
-  }
+	@Override
+	public void emit(List<Object> tuples) {
+		for (Object o: tuples) {
+			buffer.append(o.toString());
+		}
+	}
 
-  @Override
-  public void reportError(Throwable arg0) {
-  }
+	@Override
+	public void reportError(Throwable arg0) {
+	}
 
-  public void clear() {
-    buffer.setLength(0);
-  }
+	public void clear() {
+		buffer.setLength(0);
+	}
   
-  public String getBuffer() {
-    return buffer.toString();
-  }
+	public String getBuffer() {
+		return buffer.toString();
+	}
 }

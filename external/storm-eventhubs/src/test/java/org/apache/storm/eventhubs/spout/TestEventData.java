@@ -19,29 +19,26 @@ package org.apache.storm.eventhubs.spout;
 
 import static org.junit.Assert.*;
 
-import org.junit.After;
-import org.junit.Before;
+import java.time.Instant;
+
+import org.apache.storm.eventhubs.core.EventHubMessage;
 import org.junit.Test;
 
+import com.microsoft.azure.eventhubs.EventData;
+
 public class TestEventData {
+	@Test
+	public void testEventDataComparision() {
+		EventData ed1 = EventData.create("blah".getBytes());
+		EventData.SystemProperties sysprops1 = new EventData.SystemProperties(2L, Instant.now(), "100", null);
+		ed1.setSystemProperties(sysprops1);
+		EventHubMessage ehm1 = new EventHubMessage(ed1, "0");
 
-  @Before
-  public void setUp() throws Exception {
-  }
+		EventData ed2 = EventData.create("blah".getBytes());
+		EventData.SystemProperties sysprops2 = new EventData.SystemProperties(3L, Instant.now(), "150", null);
+		ed2.setSystemProperties(sysprops2);
+		EventHubMessage ehm2 = new EventHubMessage(ed2, "0");
 
-  @After
-  public void tearDown() throws Exception {
-  }
-
-  @Test
-  public void testEventDataComparision() {
-
-	MessageId messageId1 = MessageId.create(null, "3", 1);
-	EventData eventData1 = EventData.create(null, messageId1);
-
-	MessageId messageId2 = MessageId.create(null, "13", 2);
-	EventData eventData2 = EventData.create(null, messageId2);
-
-	assertTrue(eventData2.compareTo(eventData1) > 0);
-  }
+		assertTrue(ehm2.compareTo(ehm1) > 0);
+  	}
 }

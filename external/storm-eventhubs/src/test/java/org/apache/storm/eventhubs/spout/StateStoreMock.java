@@ -20,35 +20,38 @@ package org.apache.storm.eventhubs.spout;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.storm.eventhubs.spout.IStateStore;
+import org.apache.storm.eventhubs.state.IStateStore;
 
 /**
  * A state store mocker
  */
 public class StateStoreMock implements IStateStore {
-  Map<String, String> myDataMap;
-  @Override
-  public void open() {
-    myDataMap = new HashMap<String, String>();
-  }
+	private static final long serialVersionUID = 1L;
+	
+	Map<String, String> myDataMap;
+	
+	@Override
+	public void open() {
+		this.myDataMap = new HashMap<String, String>();
+	}
 
-  @Override
-  public void close() {
-    myDataMap = null;
-  }
+	@Override
+	public void close() {
+		this.myDataMap = null;
+	}
 
-  @Override
-  public void saveData(String path, String data) {
-    if(myDataMap != null) {
-      myDataMap.put(path, data);
-    }
-  }
+	@Override
+	public void saveData(String path, String data) {
+		if (this.myDataMap != null) {
+			this.myDataMap.put(path, data);
+		}
+	}
 
-  @Override
-  public String readData(String path) {
-    if(myDataMap != null) {
-      return myDataMap.get(path);
-    }
-    return null;
-  }
+	@Override
+	public String readData(String path) {
+		if (this.myDataMap != null) {
+			return this.myDataMap.get(path);
+		}
+		return null;
+	}
 }
