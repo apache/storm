@@ -28,7 +28,7 @@ public class TestEventHubSpout {
 		EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "pas\\s+w/ord", "namespace", "entityname", 16);
 		conf.setZkConnectionString("zookeeper");
 		conf.setCheckpointIntervalInSeconds(1);
-		assertEquals(conf.getConnectionString(), "amqps://username:pas%5Cs%2Bw%2Ford@namespace.servicebus.windows.net");
+		assertEquals(conf.getConnectionString(), "Endpoint=sb://namespace.servicebus.windows.net;EntityPath=entityname;SharedAccessKeyName=username;SharedAccessKey=pas\\s+w/ord");
 	}
 
 	@Test

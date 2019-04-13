@@ -71,7 +71,7 @@ public class PartitionManagerCallerMock {
 				if (cmd.length() > 1) {
 					count = Integer.parseInt(cmd.substring(1));
 				}
-				for (int i=0; i<count; ++i) {
+				for (int i = 0; i < count; ++i) {
 					EventHubMessage ed = pm.receive();
 					if (ed == null) {
 						ret.append("null,");

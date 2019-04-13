@@ -52,7 +52,11 @@ public class EventHubReceiverMock implements IEventHubReceiver {
 
 	@Override
 	public void open(IEventFilter filter) throws EventHubException {
-		currentOffset = Long.parseLong(filter.getEventPosition().getOffset());
+		if (filter.getEventPosition().getEnqueuedTime() != null) {
+			currentOffset = filter.getEventPosition().getEnqueuedTime().toEpochMilli();
+		} else {
+			currentOffset = Long.parseLong(filter.getEventPosition().getOffset());
+		}
 		isOpen = true;
 	}
 
@@ -77,12 +81,15 @@ public class EventHubReceiverMock implements IEventHubReceiver {
 			return null;
 		}
 
-		currentOffset++;
-		EventData ed = EventData.create(("message" + currentOffset).getBytes());
-		EventData.SystemProperties sysprops = new EventData.SystemProperties(currentOffset, Instant.now(), String.valueOf(currentOffset), null);
-		ed.setSystemProperties(sysprops);
 		LinkedList<EventData> events = new LinkedList<EventData>();
-		events.add(ed);
+		
+		for (int i = 0; i < count; i++) {
+			currentOffset++;
+			EventData ed = EventData.create(("message" + currentOffset).getBytes());
+			EventData.SystemProperties sysprops = new EventData.SystemProperties(currentOffset, Instant.now(), String.valueOf(currentOffset), null);
+			ed.setSystemProperties(sysprops);
+			events.add(ed);
+		}
 		return events;
 	}
   
