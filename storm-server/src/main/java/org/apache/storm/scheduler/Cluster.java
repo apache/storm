@@ -551,7 +551,7 @@ public class Cluster implements ISchedulingState {
         double maxHeap) {
 
         NormalizedResourceRequest requestedResources = td.getTotalResources(exec);
-        if (!resourcesAvailable.couldHoldIgnoringSharedMemory(requestedResources)) {
+        if (!resourcesAvailable.couldFit(minWorkerCpu, requestedResources)) {
             return false;
         }
 
@@ -1067,5 +1067,9 @@ public class Cluster implements ISchedulingState {
         }
         setAssignments(other.getAssignments(), false);
         setStatusMap(other.getStatusMap());
+    }
+
+    public double getMinWorkerCpu() {
+        return minWorkerCpu;
     }
 }
