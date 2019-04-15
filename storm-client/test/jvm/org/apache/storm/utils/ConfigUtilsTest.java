@@ -92,32 +92,32 @@ public class ConfigUtilsTest {
     }
 
     @Test
-    public void getBlobstoreHDFSPrincipal() throws UnknownHostException {
-        Map<String, Object> conf = mockMap(Config.BLOBSTORE_HDFS_PRINCIPAL, "primary/_HOST@EXAMPLE.COM");
+    public void getHfdsPrincipal() throws UnknownHostException {
+        Map<String, Object> conf = mockMap(Config.STORM_HDFS_LOGIN_PRINCIPAL, "primary/_HOST@EXAMPLE.COM");
         Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), "primary/" +  Utils.localHostname() + "@EXAMPLE.COM");
 
         String principal = "primary/_HOST_HOST@EXAMPLE.COM";
-        conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
+        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "primary/_HOST2@EXAMPLE.COM";
-        conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
+        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "_HOST/instance@EXAMPLE.COM";
-        conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
+        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "primary/instance@_HOST.COM";
-        conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
+        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "_HOST@EXAMPLE.COM";
-        conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
+        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "primary/instance@EXAMPLE.COM";
-        conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
+        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
     }
 }
