@@ -35,7 +35,7 @@ public class EventHubSpoutCallerMock {
   
   public EventHubSpoutCallerMock(int totalPartitions,
       int totalTasks, int taskIndex, int checkpointInterval) {
-	  stateStore = new StateStoreMock();
+	  this.stateStore = new StateStoreMock();
 	  EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password",
 			  "namespace", "entityname", totalPartitions, "zookeeper", checkpointInterval, 1024);
 	  conf.setTopologyName("TestTopo");
@@ -49,12 +49,12 @@ public class EventHubSpoutCallerMock {
 		  }
 	  };
 	  // mock state store and receiver
-	  spout = new EventHubSpout(conf, stateStore, null, recvFactory);
+	  this.spout = new EventHubSpout(conf, stateStore, null, recvFactory);
     
-	  collector = new SpoutOutputCollectorMock();
+	  this.collector = new SpoutOutputCollectorMock();
     
 	  try {
-		  spout.preparePartitions(null, totalTasks, taskIndex, new SpoutOutputCollector(collector));
+		  this.spout.preparePartitions(null, totalTasks, taskIndex, new SpoutOutputCollector(this.collector));
 	  }
 	  catch(Exception ex) {
 	  }
@@ -78,25 +78,25 @@ public class EventHubSpoutCallerMock {
   					count = Integer.parseInt(cmd.substring(1));
   				}
   				for (int i=0; i<count; ++i) {
-  					spout.nextTuple();
+  					this.spout.nextTuple();
   				}
   			}
   			else if (cmd.startsWith("a")) {
   				String[] midStrs = cmd.substring(1).split("_");
   				MessageId msgId = new MessageId(midStrs[0], midStrs[1], Long.parseLong(midStrs[1]));
-  				spout.ack(msgId);
+  				this.spout.ack(msgId);
   			}
   			else if (cmd.startsWith("f")) {
   				String[] midStrs = cmd.substring(1).split("_");
   				MessageId msgId = new MessageId(midStrs[0], midStrs[1], Long.parseLong(midStrs[1]));
-  				spout.fail(msgId);
+  				this.spout.fail(msgId);
   			}
   		}
-  		return collector.getOffsetSequenceAndReset();
+  		return this.collector.getOffsetSequenceAndReset();
   	}
   
   	public String getCheckpoint(int partitionIndex) {
   		String statePath = statePathPrefix + partitionIndex;
-  		return stateStore.readData(statePath);
+  		return this.stateStore.readData(statePath);
   	}
 }
