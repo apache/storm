@@ -123,7 +123,7 @@ public class EventHubSpout extends BaseRichSpout {
         this.collector = collector;
         if (this.stateStore == null) {
             String zkEndpointAddress = eventHubSpoutConfig.getZkConnectionString();
-            if (zkEndpointAddress.length() != 0) {
+            if (Strings.isNullOrEmpty(zkEndpointAddress)) {
                 // use storm's zookeeper servers if not specified.
                 @SuppressWarnings("unchecked")
 				List<String> zkServers = (List<String>)config.get(Config.STORM_ZOOKEEPER_SERVERS);
