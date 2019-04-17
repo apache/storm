@@ -29,6 +29,7 @@
     <packaging>jar</packaging>
     <name>storm-eventhubs</name>
     <description>EventHubs Storm Spout</description>
+    <version>1.1.0.3</version>
     
     <build>
         <plugins>
@@ -67,7 +68,7 @@
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
-            <version>${project.version}</version>
+            <version>1.1.3</version>
             <!-- keep storm out of the jar-with-dependencies -->
             <type>jar</type>
             <scope>${provided.scope}</scope>
