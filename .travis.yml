@@ -19,6 +19,7 @@ env:
   - MODULES=Core
   - MODULES=External
   - MODULES=Integration-Test
+  - MODULES=Check-Updated-License-Files
 
 dist: trusty
 sudo: required
@@ -39,6 +40,12 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install python3
   - sudo apt-get install python3-pip
+  - sudo add-apt-repository ppa:jonathonf/python-3.6 -y
+  - sudo apt-get update
+  - sudo apt-get install python3.6
+  - wget http://mirrors.rackhosting.com/apache/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz -P $HOME
+  - tar xzvf $HOME/apache-maven-3.6.1-bin.tar.gz -C $HOME
+  - export PATH=$HOME/apache-maven-3.6.1/bin:$PATH
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
 script:
   - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
