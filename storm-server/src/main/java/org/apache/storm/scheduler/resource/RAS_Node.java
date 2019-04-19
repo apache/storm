@@ -380,9 +380,12 @@ public class RAS_Node {
      *     way it would ever fit.
      */
     public boolean couldEverFit(ExecutorDetails exec, TopologyDetails td) {
+        if (!isAlive) {
+            return false;
+        }
         NormalizedResourceOffer avail = getTotalAvailableResources();
         NormalizedResourceRequest requestedResources = td.getTotalResources(exec);
-        return isAlive && avail.couldHoldIgnoringSharedMemory(requestedResources);
+        return avail.couldFit(cluster.getMinWorkerCpu(), requestedResources);
     }
 
     @Override

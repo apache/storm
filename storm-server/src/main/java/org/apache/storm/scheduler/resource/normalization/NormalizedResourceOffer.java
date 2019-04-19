@@ -144,6 +144,11 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
             other.getNormalizedResources(), getTotalMemoryMb(), other.getTotalMemoryMb());
     }
 
+    public boolean couldHoldIgnoringSharedMemoryAndCpu(NormalizedResourcesWithMemory other) {
+        return normalizedResources.couldHoldIgnoringSharedMemoryAndCpu(
+                other.getNormalizedResources(), getTotalMemoryMb(), other.getTotalMemoryMb());
+    }
+
     public double getTotalCpu() {
         return normalizedResources.getTotalCpu();
     }
@@ -176,5 +181,28 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     @Override
     public boolean areAnyOverZero() {
         return totalMemoryMb > 0 || normalizedResources.areAnyOverZero();
+    }
+
+    /**
+     * Is there any possibility that a resource request could ever fit on this.
+     * @param minWorkerCpu the configured minimum worker CPU
+     * @param requestedResources the requested resources
+     * @return true if there is the possibility it might fit, no guarantee that it will, or false if there is no
+     *     way it would ever fit.
+     */
+    public boolean couldFit(double minWorkerCpu, NormalizedResourceRequest requestedResources) {
+        if (minWorkerCpu < 0.001) {
+            return this.couldHoldIgnoringSharedMemory(requestedResources);
+        } else {
+            // Assume that there could be a worker already on the node that is under the minWorkerCpu budget.
+            // It's possible we could combine with it.  Let's disregard minWorkerCpu from the request
+            // and validate that CPU as a rough fit.
+            double requestedCpu = Math.max(requestedResources.getTotalCpu() - minWorkerCpu, 0.0);
+            if (requestedCpu > this.getTotalCpu()) {
+                return false;
+            }
+            // now check memory only
+            return this.couldHoldIgnoringSharedMemoryAndCpu(requestedResources);
+        }
     }
 }
