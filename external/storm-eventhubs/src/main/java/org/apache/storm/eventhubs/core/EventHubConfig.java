@@ -21,6 +21,8 @@ import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
 
 import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.apache.storm.eventhubs.format.IEventDataScheme;
 import org.apache.storm.eventhubs.format.StringEventDataScheme;
@@ -54,8 +56,21 @@ public class EventHubConfig implements Serializable {
         this.userName = username;
         this.password = password;
         this.partitionCount = partitionCount;
-        this.connectionString = new ConnectionStringBuilder().setNamespaceName(namespace).setEventHubName(entityPath). 
-            setSasKeyName(username).setSasKey(password).toString();
+        ConnectionStringBuilder csb = new ConnectionStringBuilder();
+        if (namespace.indexOf('.') == -1) {
+        	// Not FQDN. Assume prod.
+        	csb.setNamespaceName(namespace);
+        } else {
+        	// Assume FDQN for other environment.
+        	try {
+				URI namespaceUri = new URI("sb://" + namespace);
+				csb.setEndpoint(namespaceUri);
+			} catch (URISyntaxException e) {
+				// Treat it as a non-FQDN and let it fail.
+				csb.setNamespaceName(namespace);
+			}
+        }
+        this.connectionString = csb.setEventHubName(entityPath).setSasKeyName(username).setSasKey(password).toString();
     }
     
     public String getUserName() {
