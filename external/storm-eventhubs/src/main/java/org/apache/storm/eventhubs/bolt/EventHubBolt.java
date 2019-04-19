@@ -30,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -43,6 +45,7 @@ public class EventHubBolt extends BaseRichBolt {
 	protected EventHubClient ehClient;
 	protected PartitionSender sender;
 	protected EventHubBoltConfig boltConfig;
+	protected ExecutorService threadpool;
 
 	public EventHubBolt(String connectionString, String entityPath) {
 		boltConfig = new EventHubBoltConfig(connectionString, entityPath);
@@ -61,6 +64,7 @@ public class EventHubBolt extends BaseRichBolt {
 	@Override
 	public void prepare(Map config, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
+		this.threadpool = Executors.newFixedThreadPool(4);
 		logger.info(String.format("Conn String: %s, PartitionMode %s", this.boltConfig.getConnectionString(),
 				String.valueOf(this.boltConfig.getPartitionMode())));
 		try {
@@ -79,18 +83,16 @@ public class EventHubBolt extends BaseRichBolt {
 
 	@Override
 	public void execute(Tuple tuple) {
-		try {
-			EventData sendEvent = EventData.create(boltConfig.getEventDataFormat().serialize(tuple));
-			if (boltConfig.getPartitionMode()) {
-				this.sender.sendSync(sendEvent);
+		EventData sendEvent = EventData.create(boltConfig.getEventDataFormat().serialize(tuple));
+		CompletableFuture<Void> future = boltConfig.getPartitionMode() ? this.sender.send(sendEvent) : this.ehClient.send(sendEvent);
+		future.whenCompleteAsync((unused, e) -> {
+			if (e == null) {
+				this.collector.ack(tuple);
 			} else {
-				this.ehClient.sendSync(sendEvent);
+				this.collector.reportError(e);
+				this.collector.fail(tuple);
 			}
-			this.collector.ack(tuple);
-		} catch (EventHubException e) {
-			this.collector.reportError(e);
-			this.collector.fail(tuple);
-		}
+		}, this.threadpool);
 	}
 
 	@Override
