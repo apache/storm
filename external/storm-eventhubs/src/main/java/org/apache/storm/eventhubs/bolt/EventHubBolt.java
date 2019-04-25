@@ -42,29 +42,31 @@ public class EventHubBolt extends BaseRichBolt {
 	private static final Logger logger = LoggerFactory.getLogger(EventHubBolt.class);
 
 	protected OutputCollector collector;
+	protected Object collectorSynchronizer;
 	protected EventHubClient ehClient;
 	protected PartitionSender sender;
 	protected EventHubBoltConfig boltConfig;
 	protected ExecutorService threadpool;
 
 	public EventHubBolt(String connectionString, String entityPath) {
-		boltConfig = new EventHubBoltConfig(connectionString, entityPath);
+		this.boltConfig = new EventHubBoltConfig(connectionString, entityPath);
 	}
 
 	public EventHubBolt(String userName, String password, String namespace,
 			String entityPath, boolean partitionMode) {
-		boltConfig = new EventHubBoltConfig(userName, password, namespace,
+		this.boltConfig = new EventHubBoltConfig(userName, password, namespace,
 				entityPath, partitionMode);
 	}
 
 	public EventHubBolt(EventHubBoltConfig config) {
-		boltConfig = config;
+		this.boltConfig = config;
 	}
 
 	@Override
 	public void prepare(Map config, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
 		this.threadpool = Executors.newFixedThreadPool(4);
+		this.collectorSynchronizer = new Object();
 		logger.info(String.format("Conn String: %s, PartitionMode %s", this.boltConfig.getConnectionString(),
 				String.valueOf(this.boltConfig.getPartitionMode())));
 		try {
@@ -84,13 +86,15 @@ public class EventHubBolt extends BaseRichBolt {
 	@Override
 	public void execute(Tuple tuple) {
 		EventData sendEvent = EventData.create(boltConfig.getEventDataFormat().serialize(tuple));
-		CompletableFuture<Void> future = boltConfig.getPartitionMode() ? this.sender.send(sendEvent) : this.ehClient.send(sendEvent);
+		CompletableFuture<Void> future = this.boltConfig.getPartitionMode() ? this.sender.send(sendEvent) : this.ehClient.send(sendEvent);
 		future.whenCompleteAsync((unused, e) -> {
-			if (e == null) {
-				this.collector.ack(tuple);
-			} else {
-				this.collector.reportError(e);
-				this.collector.fail(tuple);
+			synchronized (this.collectorSynchronizer) {
+				if (e == null) {
+					this.collector.ack(tuple);
+				} else {
+					this.collector.reportError(e);
+					this.collector.fail(tuple);
+				}
 			}
 		}, this.threadpool);
 	}
