@@ -28,7 +28,7 @@
         topology (first (filter (fn [topo] (= name (.get_name topo))) topologies))]
     (if topology 
       (.get_id topology)
-      (throw (.IllegalArgumentException (str name " is not a running topology"))))))
+      (throw (IllegalArgumentException. (str name " is not a running topology"))))))
 
 (defn- parse-named-log-levels [action]
   "Parses [logger name]=[level string]:[optional timeout],[logger name2]...
