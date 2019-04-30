@@ -17,8 +17,6 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -66,7 +64,7 @@ public class TestPartitionManager {
 		// return the smaller of pending and toResend
 		assertEquals("0", mock.checkpoint());
 		mock.execute("a0,r");
-		// now pending: [3], toResend: [1,2]
+        // now pending: [3], toResend: [1,2]
 		assertEquals("1", mock.checkpoint());
 	}
   
