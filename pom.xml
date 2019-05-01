@@ -1436,7 +1436,7 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <version>3.0</version>
+                                    <version>3.5</version>
                                 </requireMavenVersion>
                                 <bannedDependencies>
                                     <excludes>
