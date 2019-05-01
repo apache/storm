@@ -80,7 +80,7 @@
         <dependency>
             <groupId>com.microsoft.azure</groupId>
             <artifactId>azure-eventhubs</artifactId>
-            <version>{eventhubs.client.version}</version>
+            <version>${eventhubs.client.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
