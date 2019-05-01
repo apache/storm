@@ -36,53 +36,50 @@ import org.apache.storm.tuple.Tuple;
  * Globally count number of messages
  */
 public class GlobalCountBolt extends BaseBasicBolt {
-  private static final long serialVersionUID = 1L;
-  private static final Logger logger = LoggerFactory
-      .getLogger(GlobalCountBolt.class);
-  private long globalCount;
-  private long globalCountDiff;
-  private long lastMetricsTime;
-  private long throughput;
+	private static final long serialVersionUID = 1L;
+	private static final Logger logger = LoggerFactory.getLogger(GlobalCountBolt.class);
+	private long globalCount;
+	private long globalCountDiff;
+	private long lastMetricsTime;
+	private long throughput;
   
-  @Override
-  public void prepare(Map config, TopologyContext context) {
-    globalCount = 0;
-    globalCountDiff = 0;
-    lastMetricsTime = System.nanoTime();
-    context.registerMetric("GlobalMessageCount", new IMetric() {
-      @Override
-      public Object getValueAndReset() {
-        long now = System.nanoTime();
-        long millis = (now - lastMetricsTime) / 1000000;
-        throughput = globalCountDiff / millis * 1000;
-        Map values = new HashMap();
-        values.put("global_count", globalCount);
-        values.put("throughput", throughput);
-        lastMetricsTime = now;
-        globalCountDiff = 0;
-        return values;
-      }
-  }, (Integer)config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
-  }
+	@Override
+	public void prepare(Map config, TopologyContext context) {
+		globalCount = 0;
+		globalCountDiff = 0;
+		lastMetricsTime = System.nanoTime();
+		context.registerMetric("GlobalMessageCount", new IMetric() {
+			@Override
+			public Object getValueAndReset() {
+				long now = System.nanoTime();
+				long millis = (now - lastMetricsTime) / 1000000;
+				throughput = globalCountDiff / millis * 1000;
+				Map values = new HashMap();
+				values.put("global_count", globalCount);
+				values.put("throughput", throughput);
+				lastMetricsTime = now;
+				globalCountDiff = 0;
+				return values;
+			}
+		}, (Integer)config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
+	}
 
-  @Override
-  public void execute(Tuple tuple, BasicOutputCollector collector) {
-    if (TupleUtils.isTick(tuple)) {
-      return;
-    }
+	@Override
+	public void execute(Tuple tuple, BasicOutputCollector collector) {
+		if (TupleUtils.isTick(tuple)) {
+			return;
+		}
 
-    int partial = (Integer)tuple.getValueByField("partial_count");
-    globalCount += partial;
-    globalCountDiff += partial;
-    if((globalCountDiff == partial) && (globalCount != globalCountDiff)) {
-      //metrics has just been collected, let's also log it
-      logger.info("Current throughput (messages/second): " + throughput);
-    }
-  }
+		int partial = (Integer)tuple.getValueByField("partial_count");
+		globalCount += partial;
+		globalCountDiff += partial;
+		if ((globalCountDiff == partial) && (globalCount != globalCountDiff)) {
+			// metrics has just been collected, let's also log it
+			logger.info("Current throughput (messages/second): " + throughput);
+		}
+	}
 
-  @Override
-  public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    
-  }
-
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+	}
 }

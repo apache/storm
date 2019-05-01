@@ -20,8 +20,6 @@ package org.apache.storm.eventhubs.samples.bolt;
 import java.util.Map;
 
 import org.apache.storm.utils.TupleUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
@@ -35,34 +33,31 @@ import org.apache.storm.tuple.Values;
  * Partially count number of messages from EventHubs
  */
 public class PartialCountBolt extends BaseBasicBolt {
-  private static final long serialVersionUID = 1L;
-  private static final Logger logger = LoggerFactory
-      .getLogger(PartialCountBolt.class);
-  private static final int PartialCountBatchSize = 1000; 
+	private static final long serialVersionUID = 1L;
+	private static final int PartialCountBatchSize = 1000; 
   
-  private int partialCount;
+	private int partialCount;
   
-  @Override
-  public void prepare(Map stormConf, TopologyContext context) {
-    partialCount = 0;
-  }
+	@Override
+	public void prepare(Map stormConf, TopologyContext context) {
+		partialCount = 0;
+	}
   
-  @Override
-  public void execute(Tuple tuple, BasicOutputCollector collector) {
-    if (TupleUtils.isTick(tuple)) {
-      return;
-    }
+	@Override
+	public void execute(Tuple tuple, BasicOutputCollector collector) {
+		if (TupleUtils.isTick(tuple)) {
+			return;
+		}
 
-    partialCount++;
-    if(partialCount == PartialCountBatchSize) {
-      collector.emit(new Values(PartialCountBatchSize));
-      partialCount = 0;
-    }
-  }
+		partialCount++;
+		if (partialCount == PartialCountBatchSize) {
+			collector.emit(new Values(PartialCountBatchSize));
+			partialCount = 0;
+		}
+	}
 
-  @Override
-  public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    declarer.declare(new Fields("partial_count"));
-  }
-
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		declarer.declare(new Fields("partial_count"));
+	}
 }
