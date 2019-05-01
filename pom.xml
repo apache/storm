@@ -291,7 +291,7 @@
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
         <qpid.version>0.32</qpid.version>
-        <eventhubs.client.version>1.0.1</eventhubs.client.version>
+        <eventhubs.client.version>2.3.0</eventhubs.client.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
