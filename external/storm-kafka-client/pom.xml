@@ -22,7 +22,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.2.5-SNAPSHOT</version>
+        <version>1.2.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
