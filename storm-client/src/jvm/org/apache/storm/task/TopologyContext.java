@@ -394,23 +394,28 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }
 
+    @Override
     public Timer registerTimer(String name) {
         return metricRegistry.registry().timer(metricName(name));
     }
 
+    @Override
     public Histogram registerHistogram(String name) {
         return metricRegistry.registry().histogram(metricName(name));
     }
 
+    @Override
     public Meter registerMeter(String name) {
         return metricRegistry.registry().meter(metricName(name));
     }
 
+    @Override
     public Counter registerCounter(String name) {
         return metricRegistry.registry().counter(metricName(name));
     }
 
-    public Gauge registerGauge(String name, Gauge gauge) {
+    @Override
+    public <T> Gauge<T> registerGauge(String name, Gauge<T> gauge) {
         return metricRegistry.registry().register(metricName(name), gauge);
     }
 
