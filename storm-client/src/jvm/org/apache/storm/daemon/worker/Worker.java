@@ -197,9 +197,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             .scheduleRecurring(0, (Integer) conf.get(Config.EXECUTOR_METRICS_FREQUENCY_SECS),
                                Worker.this::doExecutorHeartbeats);
 
-        workerState.registerCallbacks();
-
-        workerState.refreshConnections(null);
+        workerState.refreshConnections();
 
         workerState.activateWorkerWhenAllConnectionsReady();
 

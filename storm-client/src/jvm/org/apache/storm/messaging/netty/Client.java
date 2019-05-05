@@ -236,21 +236,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         }
     }
 
-    /**
-     * Receiving messages is not supported by a client.
-     *
-     * @throws java.lang.UnsupportedOperationException whenever this method is being called.
-     */
-    @Override
-    public void registerRecv(IConnectionCallback cb) {
-        throw new UnsupportedOperationException("Client connection should not receive any messages");
-    }
-
-    @Override
-    public void registerNewConnectionResponse(Supplier<Object> cb) {
-        throw new UnsupportedOperationException("Client does not accept new connections");
-    }
-
     @Override
     public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
         throw new RuntimeException("Client connection should not send load metrics");

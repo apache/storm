@@ -62,14 +62,23 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private final int port;
     private final ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
     private final KryoValuesSerializer ser;
+    private final IConnectionCallback cb;
+    private final Supplier<Object> newConnectionResponse;
     private volatile boolean closing = false;
-    private IConnectionCallback cb = null;
-    private Supplier<Object> newConnectionResponse;
 
-    Server(Map<String, Object> topoConf, int port) {
+    /**
+     * Starts Netty at the given port
+     * @param topoConf The topology config
+     * @param port The port to start Netty at
+     * @param cb The callback to deliver incoming messages to
+     * @param newConnectionResponse The response to send to clients when they connect. Can be null.
+     */
+    Server(Map<String, Object> topoConf, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
         this.topoConf = topoConf;
         this.port = port;
         ser = new KryoValuesSerializer(topoConf);
+        this.cb = cb;
+        this.newConnectionResponse = newConnectionResponse;
 
         // Configure the server.
         int buffer_size = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
@@ -136,19 +145,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             return;
         }
         addReceiveCount(from, msgs.size());
-        if (cb != null) {
-            cb.recv(msgs);
-        }
-    }
-
-    @Override
-    public void registerRecv(IConnectionCallback cb) {
-        this.cb = cb;
-    }
-
-    @Override
-    public void registerNewConnectionResponse(Supplier<Object> newConnectionResponse) {
-        this.newConnectionResponse = newConnectionResponse;
+        cb.recv(msgs);
     }
 
     @Override

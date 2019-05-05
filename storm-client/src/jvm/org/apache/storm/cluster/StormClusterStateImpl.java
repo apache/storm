@@ -56,7 +56,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     private static Logger LOG = LoggerFactory.getLogger(StormClusterStateImpl.class);
     private final List<ACL> defaultAcls;
     private final String stateId;
-    private final boolean solo;
+    private final boolean shouldCloseStateStorageOnDisconnect;
     private final ClusterStateContext context;
     private IStateStorage stateStorage;
     private ILocalAssignmentsBackend assignmentsBackend;
@@ -74,10 +74,10 @@ public class StormClusterStateImpl implements IStormClusterState {
     private ConcurrentHashMap<String, Runnable> logConfigCallback;
 
     public StormClusterStateImpl(IStateStorage StateStorage, ILocalAssignmentsBackend assignmentsassignmentsBackend,
-                                 ClusterStateContext context, boolean solo) throws Exception {
+                                 ClusterStateContext context, boolean shouldCloseStateStorageOnDisconnect) throws Exception {
 
         this.stateStorage = StateStorage;
-        this.solo = solo;
+        this.shouldCloseStateStorageOnDisconnect = shouldCloseStateStorageOnDisconnect;
         this.defaultAcls = context.getDefaultZkAcls();
         this.context = context;
         this.assignmentsBackend = assignmentsassignmentsBackend;
@@ -831,7 +831,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     @Override
     public void disconnect() {
         stateStorage.unregister(stateId);
-        if (solo) {
+        if (shouldCloseStateStorageOnDisconnect) {
             stateStorage.close();
             this.assignmentsBackend.close();
         }

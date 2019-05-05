@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
@@ -57,6 +58,7 @@ import org.apache.storm.hooks.IWorkerHook;
 import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.DeserializingConnectionCallback;
 import org.apache.storm.messaging.IConnection;
+import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.messaging.netty.BackPressureStatus;
@@ -158,7 +160,6 @@ public class WorkerState {
         this.conf = conf;
         this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
-        this.receiver = this.mqContext.bind(topologyId, port);
         this.topologyId = topologyId;
         this.assignmentId = assignmentId;
         this.supervisorPort = supervisorPort;
@@ -215,6 +216,16 @@ public class WorkerState {
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
         this.bpTracker = new BackPressureTracker(workerId, taskToExecutorQueue);
         this.deserializedWorkerHooks = deserializeWorkerHooks();
+        LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
+        IConnectionCallback cb = new DeserializingConnectionCallback(topologyConf,
+            getWorkerTopologyContext(),
+            this::transferLocalBatch);
+        Supplier<Object> newConnectionResponse = () -> {
+            BackPressureStatus bpStatus = bpTracker.getCurrStatus();
+            LOG.info("Sending BackPressure status to new client. BPStatus: {}", bpStatus);
+            return bpStatus;
+        };
+        this.receiver = this.mqContext.bind(topologyId, port, cb, newConnectionResponse);
     }
 
     private static double getQueueLoad(JCQueue q) {
@@ -356,19 +367,11 @@ public class WorkerState {
         return userTimer;
     }
 
-    public void refreshConnections() {
-        try {
-            refreshConnections(() -> refreshConnectionsTimer.schedule(0, this::refreshConnections));
-        } catch (Exception e) {
-            throw Utils.wrapInRuntime(e);
-        }
-    }
-
     public SmartThread makeTransferThread() {
         return workerTransfer.makeTransferThread();
     }
 
-    public void refreshConnections(Runnable callback) throws Exception {
+    public void refreshConnections() {
         Assignment assignment = getLocalAssignment(conf, stormClusterState, topologyId);
 
         Set<NodeInfo> neededConnections = new HashSet<>();
@@ -497,21 +500,6 @@ public class WorkerState {
         );
     }
 
-    public void registerCallbacks() {
-        LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
-        receiver.registerRecv(new DeserializingConnectionCallback(topologyConf,
-                                                                  getWorkerTopologyContext(),
-                                                                  this::transferLocalBatch));
-        // Send curr BackPressure status to new clients
-        receiver.registerNewConnectionResponse(
-            () -> {
-                BackPressureStatus bpStatus = bpTracker.getCurrStatus();
-                LOG.info("Sending BackPressure status to new client. BPStatus: {}", bpStatus);
-                return bpStatus;
-            }
-        );
-    }
-
     /* Not a Blocking call. If cannot emit, will add 'tuple' to pendingEmits and return 'false'. 'pendingEmits' can be null */
     public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits, ITupleSerializer serializer) {
         return workerTransfer.tryTransferRemote(tuple, pendingEmits, serializer);
@@ -576,7 +564,7 @@ public class WorkerState {
         }
     }
 
-    public WorkerTopologyContext getWorkerTopologyContext() {
+    public final WorkerTopologyContext getWorkerTopologyContext() {
         try {
             String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
             String pidDir = ConfigUtils.workerPidsRoot(conf, topologyId);

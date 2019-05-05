@@ -46,14 +46,13 @@ import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.utils.Utils;
 import org.junit.Test;
-import org.mockito.internal.matchers.LessThan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class NettyTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyTest.class);
-
+    
     private final AtomicBoolean[] remoteBpStatus = new AtomicBoolean[]{new AtomicBoolean(), new AtomicBoolean()};
     private final int taskId = 1;
 
@@ -114,9 +113,8 @@ public class NettyTest {
         IContext context = TransportFactory.makeContext(stormConf);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
-            try (IConnection server = context.bind(null, 0);
+            try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
                 IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback(response::set));
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
@@ -176,9 +174,8 @@ public class NettyTest {
         IContext context = TransportFactory.makeContext(stormConf);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
-            try (IConnection server = context.bind(null, 0);
+            try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
                 IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback(response::set));
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
@@ -231,9 +228,8 @@ public class NettyTest {
         IContext context = TransportFactory.makeContext(stormConf);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
-            try (IConnection server = context.bind(null, 0);
+            try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
                 IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback(response::set));
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
@@ -278,8 +274,7 @@ public class NettyTest {
                     CompletableFuture<?> serverStart = CompletableFuture.runAsync(() -> {
                         try {
                             Thread.sleep(100);
-                            server.set(context.bind(null, port));
-                            server.get().registerRecv(mkConnectionCallback(response::set));
+                            server.set(context.bind(null, port, mkConnectionCallback(response::set), null));
                             waitUntilReady(client, server.get());
                         } catch (Exception e) {
                             throw Utils.wrapInRuntime(e);
@@ -322,12 +317,11 @@ public class NettyTest {
         AtomicInteger received = new AtomicInteger();
         IContext context = TransportFactory.makeContext(stormConf);
         try {
-            try (IConnection server = context.bind(null, 0);
-                IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback((message) -> {
+            try (IConnection server = context.bind(null, 0, mkConnectionCallback((message) -> {
                     responses.add(message);
                     received.incrementAndGet();
-                }));
+                }), null);
+                IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
                 waitUntilReady(client, server);
 
                 IntStream.range(1, numMessages)
@@ -375,8 +369,7 @@ public class NettyTest {
             try (IConnection client = context.connect(null, "localhost", port, remoteBpStatus)) {
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
                 send(client, taskId, messageBytes);
-                try (IConnection server = context.bind(null, port)) {
-                    server.registerRecv(mkConnectionCallback(response::set));
+                try (IConnection server = context.bind(null, port, mkConnectionCallback(response::set), null)) {
                     waitUntilReady(client, server);
                     send(client, taskId, messageBytes);
                     waitForNotNull(response);
@@ -406,9 +399,8 @@ public class NettyTest {
         IContext context = TransportFactory.makeContext(stormConf);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
-            try (IConnection server = context.bind(null, port);
+            try (IConnection server = context.bind(null, port, mkConnectionCallback(response::set), null);
                  IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback(response::set));
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 

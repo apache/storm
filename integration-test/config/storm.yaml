@@ -35,3 +35,9 @@ drpc.servers:
   - "node1"
 
 supervisor.slots.ports: [6700, 6701, 6702, 6703, 6704, 6705, 6706, 6707, 6708, 6709]
+
+# Enable assertions
+nimbus.childopts: "-Xmx1024m -ea"
+supervisor.childopts: "-Xmx256m -ea"
+worker.childopts: "-Xmx%HEAP-MEM%m -XX:+PrintGCDetails -Xloggc:artifacts/gc.log -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump -ea"
+ui.childopts: "-Xmx768m -ea"

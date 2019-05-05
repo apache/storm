@@ -343,9 +343,7 @@ public class AsyncLocalizer implements AutoCloseable {
 
     @Override
     public void close() throws InterruptedException {
-        if (execService != null) {
-            execService.shutdown();
-        }
+        execService.shutdown();
     }
 
     private List<LocalResource> getLocalResources(PortAndAssignment pna) throws IOException {
