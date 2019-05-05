@@ -16,6 +16,7 @@ import static org.junit.Assert.assertFalse;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.junit.Assert;
@@ -156,7 +157,7 @@ public class JCQueueTest {
     }
 
     private JCQueue createQueue(String name, int batchSize, int queueSize) {
-        return new JCQueue(name, queueSize, 0, batchSize, waitStrategy, "test", "test", 1000, 1000);
+        return new JCQueue(name, queueSize, 0, batchSize, waitStrategy, "test", "test", 1000, 1000, new StormMetricRegistry());
     }
 
     private static class IncProducer implements Runnable {
