@@ -29,22 +29,25 @@ public class LocalContainerLauncher extends ContainerLauncher {
     private final IContext _sharedContext;
     private final StormMetricsRegistry metricsRegistry;
     private final ContainerMemoryTracker containerMemoryTracker;
+    private final org.apache.storm.generated.Supervisor.Iface localSupervisor;
 
     public LocalContainerLauncher(Map<String, Object> conf, String supervisorId, int supervisorPort,
                                   IContext sharedContext, StormMetricsRegistry metricsRegistry, 
-                                  ContainerMemoryTracker containerMemoryTracker) {
+                                  ContainerMemoryTracker containerMemoryTracker,
+                                  org.apache.storm.generated.Supervisor.Iface localSupervisor) {
         _conf = conf;
         _supervisorId = supervisorId;
         _supervisorPort = supervisorPort;
         _sharedContext = sharedContext;
         this.metricsRegistry = metricsRegistry;
         this.containerMemoryTracker = containerMemoryTracker;
+        this.localSupervisor = localSupervisor;
     }
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
         LocalContainer ret = new LocalContainer(_conf, _supervisorId, _supervisorPort,
-            port, assignment, _sharedContext, metricsRegistry, containerMemoryTracker);
+            port, assignment, _sharedContext, metricsRegistry, containerMemoryTracker, localSupervisor);
         ret.setup();
         ret.launch();
         return ret;

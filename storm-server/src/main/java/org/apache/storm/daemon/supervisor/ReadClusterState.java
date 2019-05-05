@@ -86,7 +86,8 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         this.slotMetrics = supervisor.getSlotMetrics();
 
         this.launcher = ContainerLauncher.make(superConf, assignmentId, supervisorPort,
-            supervisor.getSharedContext(), supervisor.getMetricsRegistry(), supervisor.getContainerMemoryTracker());
+            supervisor.getSharedContext(), supervisor.getMetricsRegistry(), supervisor.getContainerMemoryTracker(),
+            supervisor.getSupervisorThriftInterface());
 
         this.metricsProcessor = null;
         try {
