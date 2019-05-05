@@ -281,9 +281,8 @@
         <auto-service.version>1.0-rc4</auto-service.version>
         <netty.version>4.1.30.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
-        <log4j.version>2.11.1</log4j.version>
-        <slf4j.version>1.7.21</slf4j.version>
+        <log4j.version>2.11.2</log4j.version>
+        <slf4j.version>1.7.26</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
         <mockito.version>2.19.0</mockito.version>
         <zookeeper.version>3.4.14</zookeeper.version>
@@ -936,28 +935,20 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
+                <artifactId>log4j-bom</artifactId>
                 <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-slf4j-impl</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-                <version>${log4j-over-slf4j.version}</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>log4j-over-slf4j</artifactId>
-                <version>${log4j-over-slf4j.version}</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
