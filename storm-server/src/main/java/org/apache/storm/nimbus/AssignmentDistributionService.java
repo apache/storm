@@ -288,7 +288,7 @@ public class AssignmentDistributionService implements Closeable {
                 try (SupervisorClient client = SupervisorClient.getConfiguredClient(service.getConf(),
                                                                                     assignments.getHost(), assignments.getServerPort())) {
                     try {
-                        client.getClient().sendSupervisorAssignments(assignments.getAssignments());
+                        client.getIface().sendSupervisorAssignments(assignments.getAssignments());
                     } catch (Exception e) {
                         //just ignore the exception.
                         LOG.error("Exception when trying to send assignments to node {}: {}", assignments.getNode(), e.getMessage());

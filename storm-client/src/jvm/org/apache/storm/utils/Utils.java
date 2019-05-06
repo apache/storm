@@ -32,14 +32,18 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,7 +86,6 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.security.auth.ReqContext;
-import org.apache.storm.serialization.GzipThriftSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
@@ -108,7 +111,7 @@ import org.slf4j.LoggerFactory;
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
-    private static final Set<Class> defaultAllowedExceptions = new HashSet<>();
+    private static final Set<Class<?>> defaultAllowedExceptions = Collections.emptySet();
     private static final List<String> LOCALHOST_ADDRESSES = Lists.newArrayList("localhost", "127.0.0.1", "0:0:0:0:0:0:0:1");
     static SerializationDelegate serializationDelegate;
     private static ThreadLocal<TSerializer> threadSer = new ThreadLocal<TSerializer>();
@@ -230,6 +233,33 @@ public class Utils {
         return findAndReadConfigFile("defaults.yaml", true);
     }
 
+    /**
+     * URL encode the given string using the UTF-8 charset. Once Storm is baselined to Java 11, we can use URLEncoder.encode(String,
+     * Charset) instead, which obsoletes this method.
+     */
+    public static String urlEncodeUtf8(String s) {
+        try {
+            return URLEncoder.encode(s, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            //This cannot happen since we're using a standard charset
+            throw Utils.wrapInRuntime(e);
+        }
+    }
+    
+    /**
+     * URL decode the given string using the UTF-8 charset. Once Storm is baselined to Java 11, we can use URLDecoder.decode(String,
+     * Charset) instead, which obsoletes this method.
+     */
+    public static String urlDecodeUtf8(String s) {
+        try {
+            //Once Storm is baselined to Java 11, we can use URLDecoder.decode(String, Charset) instead, which obsoletes this method.
+            return URLDecoder.decode(s, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            //This cannot happen since we're using a standard charset
+            throw Utils.wrapInRuntime(e);
+        }
+    }
+    
     public static Map<String, Object> readCommandLineOpts() {
         Map<String, Object> ret = new HashMap<>();
         String commandOptions = System.getProperty("storm.options");
@@ -246,7 +276,7 @@ public class Utils {
               */
             String[] configs = commandOptions.split(",(?![^\\[\\]{}]*(]|}))");
             for (String config : configs) {
-                config = URLDecoder.decode(config);
+                config = urlDecodeUtf8(config);
                 String[] options = config.split("=", 2);
                 if (options.length == 2) {
                     Object val = options[1];
@@ -596,7 +626,7 @@ public class Utils {
         handleUncaughtException(t, defaultAllowedExceptions);
     }
 
-    public static void handleUncaughtException(Throwable t, Set<Class> allowedExceptions) {
+    public static void handleUncaughtException(Throwable t, Set<Class<?>> allowedExceptions) {
         if (t != null) {
             if (t instanceof OutOfMemoryError) {
                 try {
@@ -659,6 +689,15 @@ public class Utils {
         return des;
     }
 
+    public static void sleepNoSimulation(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+    
     public static void sleep(long millis) {
         try {
             Time.sleep(millis);
@@ -937,17 +976,19 @@ public class Utils {
         return m;
     }
 
-    public static void setupDefaultUncaughtExceptionHandler() {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            public void uncaughtException(Thread thread, Throwable thrown) {
-                try {
-                    handleUncaughtException(thrown);
-                } catch (Error err) {
-                    LOG.error("Received error in main thread.. terminating server...", err);
-                    Runtime.getRuntime().exit(-2);
-                }
+    public static UncaughtExceptionHandler createDefaultUncaughtExceptionHandler() {
+        return (thread, thrown) -> {
+            try {
+                handleUncaughtException(thrown);
+            } catch (Error err) {
+                LOG.error("Received error in thread {}.. terminating server...", thread.getName(), err);
+                Runtime.getRuntime().exit(-2);
             }
-        });
+        };
+    }
+    
+    public static void setupDefaultUncaughtExceptionHandler() {
+        Thread.setDefaultUncaughtExceptionHandler(createDefaultUncaughtExceptionHandler());
     }
 
     public static Map<String, Object> findAndReadConfigFile(String name) {

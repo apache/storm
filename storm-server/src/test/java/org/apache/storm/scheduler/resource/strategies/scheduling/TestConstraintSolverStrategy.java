@@ -223,10 +223,14 @@ public class TestConstraintSolverStrategy {
         Cluster cluster = new Cluster(new INimbusTest(), new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
         rs.prepare(config);
-        rs.schedule(topologies, cluster);
+        try {
+            rs.schedule(topologies, cluster);
 
-        assertStatusSuccess(cluster, topo.getId());
-        Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
+            assertStatusSuccess(cluster, topo.getId());
+            Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
+        } finally {
+            rs.cleanup();
+        }
 
         //simulate worker loss
         Map<ExecutorDetails, WorkerSlot> newExecToSlot = new HashMap<>();
@@ -242,10 +246,14 @@ public class TestConstraintSolverStrategy {
         cluster.setAssignments(newAssignments, false);
         
         rs.prepare(config);
-        rs.schedule(topologies, cluster);
+        try {
+            rs.schedule(topologies, cluster);
 
-        assertStatusSuccess(cluster, topo.getId());
-        Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
+            assertStatusSuccess(cluster, topo.getId());
+            Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
+        } finally {
+            rs.cleanup();
+        }
     }
 
     public static void addContraints(String comp1, String comp2, List<List<String>> constraints) {

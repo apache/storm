@@ -25,15 +25,18 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
@@ -55,15 +58,18 @@ import org.apache.storm.hooks.IWorkerHook;
 import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.DeserializingConnectionCallback;
 import org.apache.storm.messaging.IConnection;
+import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.messaging.netty.BackPressureStatus;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.serialization.ITupleSerializer;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.Sets;
+import org.apache.storm.shade.org.apache.commons.lang.Validate;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
@@ -71,6 +77,7 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.SupervisorClient;
+import org.apache.storm.utils.SupervisorIfaceFactory;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.Utils.SmartThread;
@@ -87,16 +94,16 @@ public class WorkerState {
     final IConnection receiver;
     final String topologyId;
     final String assignmentId;
-    final int supervisorPort;
+    private final Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier;
     final int port;
     final String workerId;
     final IStateStorage stateStorage;
     final IStormClusterState stormClusterState;
     // when worker bootup, worker will start to setup initial connections to
-    // other workers. When all connection is ready, we will enable this flag
-    // and spout and bolt will be activated.
-    // used in worker only, keep it as atomic
-    final AtomicBoolean isWorkerActive;
+    // other workers. When all connection is ready, we will count down this latch
+    // and spout and bolt will be activated, assuming the topology is not deactivated.
+    // used in worker only, keep it as a latch
+    final CountDownLatch isWorkerActive;
     final AtomicBoolean isTopologyActive;
     final AtomicReference<Map<String, DebugOptions>> stormComponentToDebug;
     // local executors and localTaskIds running in this worker
@@ -143,24 +150,26 @@ public class WorkerState {
     private final AtomicLong nextLoadUpdate = new AtomicLong(0);
     private final boolean trySerializeLocal;
     private final Collection<IAutoCredentials> autoCredentials;
+    private final StormMetricRegistry metricRegistry;
 
     public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId,
-                       int supervisorPort, int port, String workerId, Map<String, Object> topologyConf, IStateStorage stateStorage,
-                       IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials) throws IOException,
+                       Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier, int port, String workerId, Map<String, Object> topologyConf, IStateStorage stateStorage,
+                       IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials,
+                       StormMetricRegistry metricRegistry) throws IOException,
         InvalidTopologyException {
+        this.metricRegistry = metricRegistry;
         this.autoCredentials = autoCredentials;
         this.conf = conf;
+        this.supervisorIfaceSupplier = supervisorIfaceSupplier;
         this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
-        this.receiver = this.mqContext.bind(topologyId, port);
         this.topologyId = topologyId;
         this.assignmentId = assignmentId;
-        this.supervisorPort = supervisorPort;
         this.port = port;
         this.workerId = workerId;
         this.stateStorage = stateStorage;
         this.stormClusterState = stormClusterState;
-        this.isWorkerActive = new AtomicBoolean(false);
+        this.isWorkerActive = new CountDownLatch(1);
         this.isTopologyActive = new AtomicBoolean(false);
         this.stormComponentToDebug = new AtomicReference<>();
         this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors);
@@ -209,6 +218,16 @@ public class WorkerState {
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
         this.bpTracker = new BackPressureTracker(workerId, taskToExecutorQueue);
         this.deserializedWorkerHooks = deserializeWorkerHooks();
+        LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
+        IConnectionCallback cb = new DeserializingConnectionCallback(topologyConf,
+            getWorkerTopologyContext(),
+            this::transferLocalBatch);
+        Supplier<Object> newConnectionResponse = () -> {
+            BackPressureStatus bpStatus = bpTracker.getCurrStatus();
+            LOG.info("Sending BackPressure status to new client. BPStatus: {}", bpStatus);
+            return bpStatus;
+        };
+        this.receiver = this.mqContext.bind(topologyId, port, cb, newConnectionResponse);
     }
 
     private static double getQueueLoad(JCQueue q) {
@@ -262,6 +281,10 @@ public class WorkerState {
         return stateStorage;
     }
 
+    public CountDownLatch getIsWorkerActive() {
+        return isWorkerActive;
+    }
+    
     public AtomicBoolean getIsTopologyActive() {
         return isTopologyActive;
     }
@@ -346,20 +369,17 @@ public class WorkerState {
         return userTimer;
     }
 
-    public void refreshConnections() {
-        try {
-            refreshConnections(() -> refreshConnectionsTimer.schedule(0, this::refreshConnections));
-        } catch (Exception e) {
-            throw Utils.wrapInRuntime(e);
-        }
-    }
-
     public SmartThread makeTransferThread() {
         return workerTransfer.makeTransferThread();
     }
-
-    public void refreshConnections(Runnable callback) throws Exception {
-        Assignment assignment = getLocalAssignment(conf, stormClusterState, topologyId);
+    
+    public void refreshConnections() {
+        Assignment assignment = null;
+        try {
+            assignment = getLocalAssignment(stormClusterState, topologyId);
+        } catch (Exception e) {
+            LOG.warn("Failed to read assignment. This should only happen when topology is shutting down.", e);
+        }
 
         Set<NodeInfo> neededConnections = new HashSet<>();
         Map<Integer, NodeInfo> newTaskToNodePort = new HashMap<>();
@@ -380,6 +400,7 @@ public class WorkerState {
         Set<NodeInfo> newConnections = Sets.difference(neededConnections, currentConnections);
         Set<NodeInfo> removeConnections = Sets.difference(currentConnections, neededConnections);
 
+        Map<String, String> nodeHost = assignment != null ? assignment.get_node_host() : null;
         // Add new connections atomically
         cachedNodeToPortSocket.getAndUpdate(prev -> {
             Map<NodeInfo, IConnection> next = new HashMap<>(prev);
@@ -387,7 +408,8 @@ public class WorkerState {
                 next.put(nodeInfo,
                          mqContext.connect(
                              topologyId,
-                             assignment.get_node_host().get(nodeInfo.get_node()),    // Host
+                             //nodeHost is not null here, as newConnections is only non-empty if assignment was not null above.
+                             nodeHost.get(nodeInfo.get_node()),    // Host
                              nodeInfo.get_port().iterator().next().intValue(),       // Port
                              workerTransfer.getRemoteBackPressureStatus()));
             }
@@ -423,7 +445,7 @@ public class WorkerState {
         StormBase base = stormClusterState.stormBase(topologyId, callback);
         isTopologyActive.set(
             (null != base)
-            && (base.get_status() == TopologyStatus.ACTIVE) && (isWorkerActive.get()));
+            && (base.get_status() == TopologyStatus.ACTIVE));
         if (null != base) {
             Map<String, DebugOptions> debugOptionsMap = new HashMap<>(base.get_component_debug());
             for (DebugOptions debugOptions : debugOptionsMap.values()) {
@@ -479,26 +501,11 @@ public class WorkerState {
                                     () -> {
                                         if (areAllConnectionsReady()) {
                                             LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
-                                            isWorkerActive.set(Boolean.TRUE);
+                                            isWorkerActive.countDown();
                                         } else {
                                             refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
                                         }
                                     }
-        );
-    }
-
-    public void registerCallbacks() {
-        LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
-        receiver.registerRecv(new DeserializingConnectionCallback(topologyConf,
-                                                                  getWorkerTopologyContext(),
-                                                                  this::transferLocalBatch));
-        // Send curr BackPressure status to new clients
-        receiver.registerNewConnectionResponse(
-            () -> {
-                BackPressureStatus bpStatus = bpTracker.getCurrStatus();
-                LOG.info("Sending BackPressure status to new client. BPStatus: {}", bpStatus);
-                return bpStatus;
-            }
         );
     }
 
@@ -566,7 +573,7 @@ public class WorkerState {
         }
     }
 
-    public WorkerTopologyContext getWorkerTopologyContext() {
+    public final WorkerTopologyContext getWorkerTopologyContext() {
         try {
             String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
             String pidDir = ConfigUtils.workerPidsRoot(conf, topologyId);
@@ -627,7 +634,8 @@ public class WorkerState {
         LOG.info("Reading assignments");
         List<List<Long>> executorsAssignedToThisWorker = new ArrayList<>();
         executorsAssignedToThisWorker.add(Constants.SYSTEM_EXECUTOR_ID);
-        Map<List<Long>, NodeInfo> executorToNodePort = getLocalAssignment(conf, stormClusterState, topologyId).get_executor_node_port();
+        Map<List<Long>, NodeInfo> executorToNodePort = 
+            getLocalAssignment(stormClusterState, topologyId).get_executor_node_port();
         for (Map.Entry<List<Long>, NodeInfo> entry : executorToNodePort.entrySet()) {
             NodeInfo nodeInfo = entry.getValue();
             if (nodeInfo.get_node().equals(assignmentId) && nodeInfo.get_port().iterator().next() == port) {
@@ -637,18 +645,17 @@ public class WorkerState {
         return executorsAssignedToThisWorker;
     }
 
-    private Assignment getLocalAssignment(Map<String, Object> conf, IStormClusterState stormClusterState, String topologyId) {
-        if (!ConfigUtils.isLocalMode(conf)) {
-            try (SupervisorClient supervisorClient = SupervisorClient.getConfiguredClient(conf, Utils.hostname(),
-                                                                                          supervisorPort)) {
-                Assignment assignment = supervisorClient.getClient().getLocalAssignmentForStorm(topologyId);
-                return assignment;
-            } catch (Throwable tr1) {
+    private Assignment getLocalAssignment(IStormClusterState stormClusterState, String topologyId) {
+        try (SupervisorIfaceFactory fac = supervisorIfaceSupplier.get()) {
+            return fac.getIface().getLocalAssignmentForStorm(topologyId);
+        } catch (Throwable e) {
                 //if any error/exception thrown, fetch it from zookeeper
-                return stormClusterState.remoteAssignmentInfo(topologyId, null);
+            Assignment assignment = stormClusterState.remoteAssignmentInfo(topologyId, null);
+            if (assignment == null) {
+                throw new RuntimeException("Failed to read worker assignment."
+                    + " Supervisor client threw exception, and assignment in Zookeeper was null", e);
             }
-        } else {
-            return stormClusterState.remoteAssignmentInfo(topologyId, null);
+            return assignment;
         }
     }
 
@@ -669,7 +676,7 @@ public class WorkerState {
             int port = this.getPort();
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
                                                       recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
-                                                      this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, this.getPort()));
+                this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, this.getPort(), metricRegistry));
 
         }
         return receiveQueueMap;
@@ -747,6 +754,10 @@ public class WorkerState {
 
     public JCQueue getTransferQueue() {
         return workerTransfer.getTransferQueue();
+    }
+
+    public StormMetricRegistry getMetricRegistry() {
+        return metricRegistry;
     }
 
     public interface ILocalTransferCallback {

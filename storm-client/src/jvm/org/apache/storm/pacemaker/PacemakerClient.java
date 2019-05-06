@@ -187,7 +187,7 @@ public class PacemakerClient implements ISaslClient {
                     throw new PacemakerConnectionException("couldn't get response after " + maxRetries + " attempts.");
                 }
                 retry--;
-                LOG.error("Not getting response or getting null response. Making {} more attempts for {}.", retry, host);
+                LOG.warn("Not getting response or getting null response. Making {} more attempts for {}.", retry, host);
             }
         }
     }

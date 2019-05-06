@@ -39,7 +39,7 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
         enabled = false;
         CgroupCenter center = CgroupCenter.getInstance();
         if (center == null) {
-            LOG.warn("{} is diabled. cgroups do not appear to be enabled on this system", simpleName);
+            LOG.warn("{} is disabled. cgroups do not appear to be enabled on this system", simpleName);
             return;
         }
         if (!center.isSubSystemEnabled(type)) {

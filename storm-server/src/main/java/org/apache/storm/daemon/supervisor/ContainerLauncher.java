@@ -46,14 +46,17 @@ public abstract class ContainerLauncher {
      * @param sharedContext Used in local mode to let workers talk together without netty
      * @param metricsRegistry The metrics registry.
      * @param containerMemoryTracker The shared memory tracker for the supervisor's containers
+     * @param localSupervisor The local supervisor Thrift interface. Only used for local clusters, distributed clusters use Thrift directly.
      * @return the proper container launcher
      * @throws IOException on any error
      */
     public static ContainerLauncher make(Map<String, Object> conf, String supervisorId, int supervisorPort,
                                          IContext sharedContext, StormMetricsRegistry metricsRegistry, 
-                                         ContainerMemoryTracker containerMemoryTracker) throws IOException {
+                                         ContainerMemoryTracker containerMemoryTracker,
+                                         org.apache.storm.generated.Supervisor.Iface localSupervisor) throws IOException {
         if (ConfigUtils.isLocalMode(conf)) {
-            return new LocalContainerLauncher(conf, supervisorId, supervisorPort, sharedContext, metricsRegistry, containerMemoryTracker);
+            return new LocalContainerLauncher(conf, supervisorId, supervisorPort, sharedContext, metricsRegistry, containerMemoryTracker,
+                localSupervisor);
         }
 
         ResourceIsolationInterface resourceIsolationManager = null;

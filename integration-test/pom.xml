@@ -74,10 +74,12 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-server</artifactId>
-            <version>${project.version}</version>
-            <scope>${provided.scope}</scope>
+          <groupId>commons-lang</groupId>
+          <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -105,6 +107,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- TestNG provider does not understand the JUnit 5 groups syntax used in the rest of the project, make sure to override it -->
+                    <excludedGroups>none</excludedGroups>
                     <skipTests>${skipTests}</skipTests>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                     <argLine>-Xmx1024m</argLine>

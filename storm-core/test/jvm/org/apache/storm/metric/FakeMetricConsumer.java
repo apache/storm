@@ -16,9 +16,11 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.task.IErrorReporter;
 import org.apache.storm.task.TopologyContext;
@@ -30,7 +32,11 @@ public class FakeMetricConsumer implements IMetricsConsumer {
     public static Map<Integer, Collection<Object>> getTaskIdToBuckets(String componentName, String metricName) {
         synchronized (BUFFER) {
             Multimap<Integer, Object> taskIdToBuckets = BUFFER.get(componentName, metricName);
-            return (null != taskIdToBuckets) ? new HashMap<>(taskIdToBuckets.asMap()) : null;
+            if (taskIdToBuckets == null) {
+                return null;
+            }
+            return taskIdToBuckets.asMap().entrySet().stream()
+                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> new ArrayList<>(entry.getValue())));
         }
     }
 

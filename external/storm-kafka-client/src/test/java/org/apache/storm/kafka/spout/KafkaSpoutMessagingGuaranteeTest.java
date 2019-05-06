@@ -212,7 +212,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
 
             spout.nextTuple();
 
-            verify(consumerMock, never()).commitSync(argThat(arg -> {
+            verify(consumerMock, never()).commitSync(argThat((Map<TopicPartition, OffsetAndMetadata> arg) -> {
                 return !arg.containsKey(partition);
             }));
         }

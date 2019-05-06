@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 public class StormServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
-    private static final Set<Class> ALLOWED_EXCEPTIONS = new HashSet<>(Arrays.asList(new Class[]{ IOException.class }));
+    private static final Set<Class<?>> ALLOWED_EXCEPTIONS = new HashSet<>(Arrays.asList(new Class<?>[]{ IOException.class }));
     private final IServer server;
     private final AtomicInteger failure_count;
 

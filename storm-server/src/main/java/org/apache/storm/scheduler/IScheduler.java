@@ -38,4 +38,10 @@ public interface IScheduler {
      * @return The scheduler's configuration.
      */
     Map config();
+
+    /**
+     * called once when the system is shutting down, should be idempotent.
+     */
+    default void cleanup() {
+    }
 }

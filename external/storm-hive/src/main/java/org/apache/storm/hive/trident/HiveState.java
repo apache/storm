@@ -64,6 +64,13 @@ public class HiveState implements State {
 
     @Override
     public void commit(Long txId) {
+        try {
+            flushAllWriters();
+            currentBatchSize = 0;
+        } catch (HiveWriter.TxnFailure | InterruptedException | HiveWriter.CommitFailure | HiveWriter.TxnBatchFailure ex) {
+            LOG.warn("Commit failed. Failing the batch.", ex);
+            throw new FailedException(ex);
+        }
     }
 
     public void prepare(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {

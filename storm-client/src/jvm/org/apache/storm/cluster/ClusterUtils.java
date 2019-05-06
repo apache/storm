@@ -14,8 +14,6 @@ package org.apache.storm.cluster;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -186,11 +184,7 @@ public class ClusterUtils {
     }
 
     public static String errorPath(String stormId, String componentId) {
-        try {
-            return errorStormRoot(stormId) + ZK_SEPERATOR + URLEncoder.encode(componentId, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw Utils.wrapInRuntime(e);
-        }
+        return errorStormRoot(stormId) + ZK_SEPERATOR + Utils.urlEncodeUtf8(componentId);
     }
 
     public static String lastErrorPath(String stormId, String componentId) {

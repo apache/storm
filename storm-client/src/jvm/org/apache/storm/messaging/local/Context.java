@@ -15,6 +15,7 @@ package org.apache.storm.messaging.local;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -37,22 +38,22 @@ import org.slf4j.LoggerFactory;
 
 public class Context implements IContext {
     private static final Logger LOG = LoggerFactory.getLogger(Context.class);
-    private static ConcurrentHashMap<String, LocalServer> _registry = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, LocalServer> _registry = new ConcurrentHashMap<>();
 
-    private static LocalServer getLocalServer(String nodeId, int port) {
-        String key = nodeId + "-" + port;
-        LocalServer ret = _registry.get(key);
-        if (ret == null) {
-            ret = new LocalServer(port);
-            LocalServer tmp = _registry.putIfAbsent(key, ret);
-            if (tmp != null) {
-                ret = tmp;
-            }
+    private static String getNodeKey(String nodeId, int port) {
+        return nodeId + "-" + port;
+    }
+    
+    private LocalServer createLocalServer(String nodeId, int port, IConnectionCallback cb) {
+        String key = getNodeKey(nodeId, port);
+        LocalServer ret = new LocalServer(port, cb);
+        LocalServer existing = _registry.put(key, ret);
+        if (existing != null) {
+            //Can happen if worker is restarted in the same topology, e.g. due to blob update
+            LOG.info("Replacing existing server for key {}", existing, ret, key);
         }
         return ret;
     }
-
-    ;
 
     @Override
     public void prepare(Map<String, Object> topoConf) {
@@ -60,13 +61,13 @@ public class Context implements IContext {
     }
 
     @Override
-    public IConnection bind(String storm_id, int port) {
-        return getLocalServer(storm_id, port);
+    public IConnection bind(String storm_id, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
+        return createLocalServer(storm_id, port, cb);
     }
 
     @Override
     public IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus) {
-        return new LocalClient(getLocalServer(storm_id, port));
+        return new LocalClient(storm_id, port);
     }
 
     @Override
@@ -74,25 +75,16 @@ public class Context implements IContext {
         //NOOP
     }
 
-    private static class LocalServer implements IConnection {
+    private class LocalServer implements IConnection {
         final ConcurrentHashMap<Integer, Double> _load = new ConcurrentHashMap<>();
         final int port;
-        volatile IConnectionCallback _cb;
+        final IConnectionCallback _cb;
 
-        public LocalServer(int port) {
+        public LocalServer(int port, IConnectionCallback cb) {
             this.port = port;
+            this._cb = cb;
         }
-
-        @Override
-        public void registerRecv(IConnectionCallback cb) {
-            _cb = cb;
-        }
-
-        @Override
-        public void registerNewConnectionResponse(Supplier<Object> cb) {
-            return;
-        }
-
+        
         @Override
         public void send(Iterator<TaskMessage> msgs) {
             throw new IllegalArgumentException("SHOULD NOT HAPPEN");
@@ -131,14 +123,16 @@ public class Context implements IContext {
         }
     }
 
-    private static class LocalClient implements IConnection {
-        private final LocalServer _server;
+    private class LocalClient implements IConnection {
         //Messages sent before the server registered a callback
         private final LinkedBlockingQueue<TaskMessage> _pendingDueToUnregisteredServer;
         private final ScheduledExecutorService _pendingFlusher;
+        private final int port;
+        private final String registryKey;
 
-        public LocalClient(LocalServer server) {
-            _server = server;
+        public LocalClient(String stormId, int port) {
+            this.port = port;
+            this.registryKey = getNodeKey(stormId, port);
             _pendingDueToUnregisteredServer = new LinkedBlockingQueue<>();
             _pendingFlusher = Executors.newScheduledThreadPool(1, new ThreadFactory() {
                 @Override
@@ -163,35 +157,26 @@ public class Context implements IContext {
             }, 5, 5, TimeUnit.SECONDS);
         }
 
-        @Override
-        public void registerRecv(IConnectionCallback cb) {
-            throw new IllegalArgumentException("SHOULD NOT HAPPEN");
-        }
-
-        @Override
-        public void registerNewConnectionResponse(Supplier<Object> cb) {
-            throw new IllegalArgumentException("SHOULD NOT HAPPEN");
-        }
-
         private void flushPending() {
-            IConnectionCallback serverCb = _server._cb;
-            if (serverCb != null && !_pendingDueToUnregisteredServer.isEmpty()) {
+            //Can't cache server in client, server can change when workers restart.
+            LocalServer server = _registry.get(registryKey);
+            if (server != null && !_pendingDueToUnregisteredServer.isEmpty()) {
                 ArrayList<TaskMessage> ret = new ArrayList<>();
                 _pendingDueToUnregisteredServer.drainTo(ret);
-                serverCb.recv(ret);
+                server._cb.recv(ret);
             }
         }
 
         @Override
         public void send(Iterator<TaskMessage> msgs) {
-            IConnectionCallback serverCb = _server._cb;
-            if (serverCb != null) {
+            LocalServer server = _registry.get(registryKey);
+            if (server != null) {
                 flushPending();
                 ArrayList<TaskMessage> ret = new ArrayList<>();
                 while (msgs.hasNext()) {
                     ret.add(msgs.next());
                 }
-                serverCb.recv(ret);
+                server._cb.recv(ret);
             } else {
                 while (msgs.hasNext()) {
                     _pendingDueToUnregisteredServer.add(msgs.next());
@@ -201,12 +186,19 @@ public class Context implements IContext {
 
         @Override
         public Map<Integer, Load> getLoad(Collection<Integer> tasks) {
-            return _server.getLoad(tasks);
+            LocalServer server = _registry.get(registryKey);
+            if (server != null) {
+                return server.getLoad(tasks);
+            }
+            return Collections.emptyMap();
         }
 
         @Override
         public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
-            _server.sendLoadMetrics(taskToLoad);
+            LocalServer server = _registry.get(registryKey);
+            if (server != null) {
+                server.sendLoadMetrics(taskToLoad);
+            }
         }
 
         @Override
@@ -216,7 +208,7 @@ public class Context implements IContext {
 
         @Override
         public int getPort() {
-            return _server.getPort();
+            return port;
         }
 
         @Override

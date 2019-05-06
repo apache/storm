@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,7 +80,7 @@ public class LogviewerResponseBuilder {
     public static Response buildDownloadFile(File file, Meter numFileDownloadExceptions) throws IOException {
         try {
             // do not close this InputStream in method: it will be used from jetty server
-            InputStream is = new FileInputStream(file);
+            InputStream is = Files.newInputStream(file.toPath());
             return Response.status(OK)
                     .entity(wrapWithStreamingOutput(is))
                     .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)

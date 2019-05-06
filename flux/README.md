@@ -17,36 +17,7 @@ order to change configuration.
 Flux is a framework and set of utilities that make defining and deploying Apache Storm topologies less painful and
 deveoper-intensive.
 
-Have you ever found yourself repeating this pattern?:
-
-```java
-
-public static void main(String[] args) throws Exception {
-    // logic to determine if we're running locally or not...
-    // create necessary config options...
-    boolean runLocal = shouldRunLocal();
-    if(runLocal){
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology(name, conf, topology);
-    } else {
-        StormSubmitter.submitTopology(name, conf, topology);
-    }
-}
-```
-
-Wouldn't something like this be easier:
-
-```bash
-storm jar mytopology.jar org.apache.storm.flux.Flux --local config.yaml
-```
-
-or:
-
-```bash
-storm jar mytopology.jar org.apache.storm.flux.Flux --remote config.yaml
-```
-
-Another pain point often mentioned is the fact that the wiring for a Topology graph is often tied up in Java code,
+A Major pain point often mentioned is the fact that the wiring for a Topology graph is often tied up in Java code,
 and that any changes require recompilation and repackaging of the topology jar file. Flux aims to alleviate that
 pain by allowing you to package all your Storm components in a single jar, and use an external text file to define
 the layout and configuration of your topologies.
@@ -202,13 +173,13 @@ The example below illustrates Flux usage with the Maven shade plugin:
  ```
 
 ### Deploying and Running a Flux Topology
-Once your topology components are packaged with the Flux dependency, you can run different topologies either locally
-or remotely using the `storm jar` command. For example, if your fat jar is named `myTopology-0.1.0-SNAPSHOT.jar` you
+Once your topology components are packaged with the Flux dependency, you can run different topologies either locally using the `storm local` command
+or remotely using `storm jar`. For example, if your fat jar is named `myTopology-0.1.0-SNAPSHOT.jar` you
 could run it locally with the command:
 
 
 ```bash
-storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --local my_config.yaml
+storm local myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux my_config.yaml
 
 ```
 
@@ -228,20 +199,22 @@ usage: storm jar <my_topology_uber_jar.jar> org.apache.storm.flux.Flux
                               and replace keys identified with {$[property
                               name]} with the value defined in the
                               properties file.
+ -h,--help                    Print this help message
  -i,--inactive                Deploy the topology, but do not activate it.
- -l,--local                   Run the topology in local mode.
+ -l,--local                   Ignored: to run in local mode use `storm
+                              local` instead of `storm jar`
  -n,--no-splash               Suppress the printing of the splash screen.
  -q,--no-detail               Suppress the printing of topology details.
- -r,--remote                  Deploy the topology to a remote cluster.
+ -r,--remote                  Ignored: to run on a remote cluster launch
+                              using `storm jar` to run in a local cluster
+                              use `storm local`
  -R,--resource                Treat the supplied path as a classpath
                               resource instead of a file.
- -s,--sleep <ms>              When running locally, the amount of time to
-                              sleep (in ms.) before killing the topology
-                              and shutting down the local cluster.
- -z,--zookeeper <host:port>   When running in local mode, use the
-                              ZooKeeper at the specified <host>:<port>
-                              instead of the in-process ZooKeeper.
-                              (requires Storm 0.9.3 or later)
+ -s,--sleep <ms>              Ignored: to set cluster run time use
+                              `--local-ttl` with `storm local` instead.
+ -z,--zookeeper <host:port>   Ignored, if you want to set the zookeeper
+                              host/port in local mode use
+                              `--local-zookeeper` instead
 ```
 
 **NOTE:** Flux tries to avoid command line switch collision with the `storm` command, and allows any other command line
@@ -251,7 +224,7 @@ For example, you can use the `storm` command switch `-c` to override a topology 
 example command will run Flux and override the `nimus.host` configuration:
 
 ```bash
-storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --remote my_config.yaml -c nimbus.host=localhost
+storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux my_config.yaml -c nimbus.host=localhost
 ```
 
 ### Sample output
@@ -279,7 +252,6 @@ sentence-spout --SHUFFLE--> splitsentence
 splitsentence --FIELDS--> count
 count --SHUFFLE--> log
 --------------------------------------
-Submitting topology: 'shell-topology' to remote cluster...
 ```
 
 ## YAML Configuration

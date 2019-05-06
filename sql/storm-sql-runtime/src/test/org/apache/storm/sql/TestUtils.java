@@ -39,22 +39,23 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class TestUtils {
-  public static final ExternalResource mockInsertBoltValueResource = new ExternalResource() {
-    @Override
-    protected void before() throws Throwable {
-      MockInsertBolt.getCollectedValues().clear();
+    public static final class MockInsertBoltExtension implements BeforeEachCallback {
+        @Override
+        public void beforeEach(ExtensionContext ctx) throws Exception {
+            MockInsertBolt.getCollectedValues().clear();
+        }
     }
-  };
 
-  public static final ExternalResource mockBoltValueResource = new ExternalResource() {
-    @Override
-    protected void before() throws Throwable {
-      MockBolt.getCollectedValues().clear();
+    public static final class MockBoltExtension implements BeforeEachCallback {
+        @Override
+        public void beforeEach(ExtensionContext arg0) throws Exception {
+            MockBolt.getCollectedValues().clear();
+        }
     }
-  };
 
   public static class MyPlus {
     public static Integer evaluate(Integer x, Integer y) {

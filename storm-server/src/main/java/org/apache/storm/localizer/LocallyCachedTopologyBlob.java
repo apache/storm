@@ -183,22 +183,8 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
             Files.createDirectories(dest);
         }
         try (JarFile jarFile = new JarFile(jarpath)) {
-            String toRemove = dir + '/';
-            Enumeration<JarEntry> jarEnums = jarFile.entries();
-            while (jarEnums.hasMoreElements()) {
-                JarEntry entry = jarEnums.nextElement();
-                String name = entry.getName();
-                if (!entry.isDirectory() && name.startsWith(toRemove)) {
-                    String shortenedName = name.replace(toRemove, "");
-                    Path targetFile = dest.resolve(shortenedName);
-                    LOG.debug("EXTRACTING {} SHORTENED to {} into {}", name, shortenedName, targetFile);
-                    fsOps.forceMkdir(targetFile.getParent());
-                    try (FileOutputStream out = new FileOutputStream(targetFile.toFile());
-                         InputStream in = jarFile.getInputStream(entry)) {
-                        IOUtils.copy(in, out);
-                    }
-                }
-            }
+            String prefix = dir + '/';
+            ServerUtils.extractZipFile(jarFile, dest.toFile(), prefix);
         }
     }
 
@@ -218,7 +204,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     }
 
     @Override
-    public void commitNewVersion(long newVersion) throws IOException {
+    protected void commitNewVersion(long newVersion) throws IOException {
         //This is not atomic (so if something bad happens in the middle we need to be able to recover
         Path tempLoc = topologyBasicBlobsRootDir.resolve(type.getTempFileName(newVersion));
         Path dest = topologyBasicBlobsRootDir.resolve(type.getFileName());

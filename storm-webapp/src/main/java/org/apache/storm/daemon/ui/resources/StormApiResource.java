@@ -19,7 +19,7 @@
 package org.apache.storm.daemon.ui.resources;
 
 import com.codahale.metrics.Meter;
-import java.net.URLDecoder;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +40,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -309,14 +310,14 @@ public class StormApiResource {
     @AuthNimbusOp(value = "getTopology", needsTopoId = true)
     @Produces("application/json")
     public Response getTopologyWorkers(@PathParam("id") String id,
-                                       @QueryParam(callbackParameterName) String callback) throws TException {
+        @QueryParam(callbackParameterName) String callback) throws TException {
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
-            id = URLDecoder.decode(id);
+            id = Utils.urlDecodeUtf8(id);
             return UIHelpers.makeStandardResponse(
-                    UIHelpers.getTopologyWorkers(
-                            nimbusClient.getClient().getTopologyInfo(id), config
-                    ),
-                    callback
+                UIHelpers.getTopologyWorkers(
+                    nimbusClient.getClient().getTopologyInfo(id), config
+                ),
+                callback
             );
         }
     }
@@ -459,10 +460,6 @@ public class StormApiResource {
     public Response putTopologyLogconfig(@PathParam("id") String id, String body,
                                          @QueryParam(callbackParameterName) String callback) throws TException {
         topologyOpResponseMeter.mark();
-        LOG.info("HELLISh");
-        LOG.info(body);
-        LOG.info(id);
-        LOG.info(callback);
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.putTopologyLogLevel(nimbusClient.getClient(),
@@ -583,14 +580,14 @@ public class StormApiResource {
     @AuthNimbusOp(value = "killTopology", needsTopoId = true)
     @Produces("application/json")
     public Response putTopologyKill(
-            @PathParam("id") String id,
-            @PathParam("wait-time") String waitTime,
-            @QueryParam(callbackParameterName) String callback) throws TException {
-            topologyOpResponseMeter.mark();
+        @PathParam("id") String id,
+        @PathParam("wait-time") String waitTime,
+        @QueryParam(callbackParameterName) String callback) throws TException {
+        topologyOpResponseMeter.mark();
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
-                    UIHelpers.putTopologyKill(nimbusClient.getClient(), id, waitTime),
-                    callback
+                UIHelpers.putTopologyKill(nimbusClient.getClient(), id, waitTime),
+                callback
             );
         }
     }

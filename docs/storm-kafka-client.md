@@ -8,7 +8,7 @@ This includes the new Apache Kafka consumer API.
 
 ## Compatibility
 
-Apache Kafka versions 0.10 onwards
+Apache Kafka versions 0.10.1.0 onwards. Please be aware that [KAFKA-7044](https://issues.apache.org/jira/browse/KAFKA-7044) can cause crashes in the spout, so you should upgrade Kafka if you are using an affected version (1.1.0, 1.1.1 or 2.0.0).
 
 ## Writing to Kafka as part of your topology
 You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you
@@ -245,9 +245,13 @@ streams.  If you are doing this for Trident a value must be in the List returned
 otherwise trident can throw exceptions.
 
 
-### Manual Partition Assigment (ADVANCED)
+### Manual Partition Assignment (ADVANCED)
 
-By default the KafkaSpout instances will be assigned partitions using a round robin strategy. If you need to customize partition assignment, you must implement the `ManualPartitioner` interface. The implementation can be passed to the `ManualPartitionSubscription` constructor, and the `Subscription` can then be set in the `KafkaSpoutConfig` via the `KafkaSpoutConfig.Builder` constructor. Please take care when supplying a custom implementation, since an incorrect `ManualPartitioner` implementation could leave some partitions unread, or concurrently read by multiple spout instances. See the `RoundRobinManualPartitioner` for an example of how to implement this functionality.
+By default the KafkaSpout instances will be assigned partitions using a round robin strategy. If you need to customize partition assignment, you must implement the `ManualPartitioner` interface. You can pass your implementation to the `KafkaSpoutConfig.Builder` constructor. Please take care when supplying a custom implementation, since an incorrect `ManualPartitioner` implementation could leave some partitions unread, or concurrently read by multiple spout instances. See the `RoundRobinManualPartitioner` for an example of how to implement this functionality.
+
+### Manual partition discovery
+
+You can customize how the spout discovers existing partitions, by implementing the `TopicFilter` interface. Storm-kafka-client ships with a few implementations. Like `ManualPartitioner`, you can pass your implementation to the `KafkaSpoutConfig.Builder` constructor. Note that the `TopicFilter` is only responsible for discovering partitions, deciding which of the discovered partitions to subscribe to is the responsibility of `ManualPartitioner`.
 
 ## Using storm-kafka-client with different versions of kafka
 

@@ -15,31 +15,31 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import print_function
 
-import os
-import random
-import re
-import shlex
-import tempfile
-import uuid
-import subprocess as sub
+
+import argparse
 import json
-
+import os
+import shlex
+import subprocess
 import sys
+from random import randint
 
-try:
-    # python 3
-    from urllib.parse import quote_plus
-except ImportError:
-    # python 2
-    from urllib import quote_plus
-try:
-    # python 3
-    import configparser
-except ImportError:
-    # python 2
+from argparse import HelpFormatter
+from operator import attrgetter
+
+class SortingHelpFormatter(HelpFormatter):
+
+    def add_arguments(self, actions):
+        actions = sorted(actions, key=attrgetter('option_strings'))
+        super(SortingHelpFormatter, self).add_arguments(actions)
+
+if sys.version_info[0] == 2:
     import ConfigParser as configparser
+    from urllib import quote_plus
+else:
+    import configparser
+    from urllib.parse import quote_plus
 
 def is_windows():
     return sys.platform.startswith('win')
@@ -49,81 +49,13 @@ def identity(x):
 
 def cygpath(x):
     command = ["cygpath", "-wp", x]
-    p = sub.Popen(command,stdout=sub.PIPE)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE)
     output, errors = p.communicate()
     lines = output.split(os.linesep)
     return lines[0]
 
-def init_storm_env():
-    global CLUSTER_CONF_DIR
-    ini_file = os.path.join(CLUSTER_CONF_DIR, 'storm_env.ini')
-    if not os.path.isfile(ini_file):
-        return
-    config = configparser.ConfigParser()
-    config.optionxform = str
-    config.read(ini_file)
-    options = config.options('environment')
-    for option in options:
-        value = config.get('environment', option)
-        os.environ[option] = value
-        
-def get_java_cmd():
-    cmd = 'java' if not is_windows() else 'java.exe'
-    if JAVA_HOME:
-        cmd = os.path.join(JAVA_HOME, 'bin', cmd)
-    return cmd
-
-normclasspath = cygpath if sys.platform == 'cygwin' else identity
-STORM_DIR = os.sep.join(os.path.realpath( __file__ ).split(os.sep)[:-2])
-USER_CONF_DIR = os.path.expanduser("~" + os.sep + ".storm")
-STORM_CONF_DIR = os.getenv('STORM_CONF_DIR', None)
-
-if STORM_CONF_DIR == None:
-    CLUSTER_CONF_DIR = os.path.join(STORM_DIR, "conf")
-else:
-    CLUSTER_CONF_DIR = STORM_CONF_DIR
-
-if (not os.path.isfile(os.path.join(USER_CONF_DIR, "storm.yaml"))):
-    USER_CONF_DIR = CLUSTER_CONF_DIR
-
-STORM_WORKER_LIB_DIR = os.path.join(STORM_DIR, "lib-worker")
-STORM_LIB_DIR = os.path.join(STORM_DIR, "lib")
-STORM_TOOLS_LIB_DIR = os.path.join(STORM_DIR, "lib-tools")
-STORM_WEBAPP_LIB_DIR = os.path.join(STORM_DIR, "lib-webapp")
-STORM_BIN_DIR = os.path.join(STORM_DIR, "bin")
-STORM_LOG4J2_CONF_DIR = os.path.join(STORM_DIR, "log4j2")
-STORM_SUPERVISOR_LOG_FILE = os.getenv('STORM_SUPERVISOR_LOG_FILE', "supervisor.log")
-
-init_storm_env()
-
-CONFIG_OPTS = []
-CONFFILE = ""
-JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
-JAVA_HOME = os.getenv('JAVA_HOME', None)
-JAVA_CMD = get_java_cmd(); 
-if JAVA_HOME and not os.path.exists(JAVA_CMD):
-    print("ERROR:  JAVA_HOME is invalid.  Could not find bin/java at %s." % JAVA_HOME)
-    sys.exit(1)
-STORM_EXT_CLASSPATH = os.getenv('STORM_EXT_CLASSPATH', None)
-STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
-DEP_JARS_OPTS = []
-DEP_ARTIFACTS_OPTS = []
-DEP_ARTIFACTS_REPOSITORIES_OPTS = []
-DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY = None
-DEP_PROXY_URL = None
-DEP_PROXY_USERNAME = None
-DEP_PROXY_PASSWORD = None
-
-def get_config_opts():
-    global CONFIG_OPTS
-    return "-Dstorm.options=" + ','.join(map(quote_plus,CONFIG_OPTS))
-
-if not os.path.exists(STORM_LIB_DIR):
-    print("******************************************")
-    print("The storm client can only be run from within a release. You appear to be trying to run the client from a checkout of Storm's source code.")
-    print("\nYou can download a Storm release at http://storm.apache.org/downloads.html")
-    print("******************************************")
-    sys.exit(1)
+def get_config_opts(storm_config_opts):
+    return "-Dstorm.options=" + ','.join([quote_plus(s) for s in storm_config_opts])
 
 def get_jars_full(adir):
     files = []
@@ -132,11 +64,7 @@ def get_jars_full(adir):
     elif os.path.exists(adir):
         files = [adir]
 
-    ret = []
-    for f in files:
-        if f.endswith(".jar"):
-            ret.append(os.path.join(adir, f))
-    return ret
+    return [os.path.join(adir, f) for f in files if f.endswith(".jar")]
 
 # If given path is a dir, make it a wildcard so the JVM will include all JARs in the directory.
 def get_wildcard_dir(path):
@@ -147,30 +75,18 @@ def get_wildcard_dir(path):
         ret = [path]
     return ret
 
-def get_classpath(extrajars, daemon=True, client=False):
-    ret = get_wildcard_dir(STORM_DIR)
-    if client:
-        ret.extend(get_wildcard_dir(STORM_WORKER_LIB_DIR))
-    else :
-        ret.extend(get_wildcard_dir(STORM_LIB_DIR))
-    ret.extend(get_wildcard_dir(os.path.join(STORM_DIR, "extlib")))
-    if daemon:
-        ret.extend(get_wildcard_dir(os.path.join(STORM_DIR, "extlib-daemon")))
-    if STORM_EXT_CLASSPATH != None:
-        ret.append(STORM_EXT_CLASSPATH)
-    if daemon and STORM_EXT_CLASSPATH_DAEMON != None:
-        ret.append(STORM_EXT_CLASSPATH_DAEMON)
-    ret.extend(extrajars)
-    return normclasspath(os.pathsep.join(ret))
+def get_java_cmd():
+    cmd = 'java' if not is_windows() else 'java.exe'
+    if JAVA_HOME:
+        cmd = os.path.join(JAVA_HOME, 'bin', cmd)
+    return cmd
 
-def confvalue(name, extrapaths, daemon=True):
-    global CONFFILE
+def confvalue(name, storm_config_opts, extrapaths, daemon=True):
     command = [
-        JAVA_CMD, "-client", get_config_opts(), "-Dstorm.conf.file=" + CONFFILE,
-        "-cp", get_classpath(extrapaths, daemon), "org.apache.storm.command.ConfigValue", name
+        JAVA_CMD, "-client", get_config_opts(storm_config_opts), "-Dstorm.conf.file=" + CONF_FILE,
+        "-cp", get_classpath(extrajars=extrapaths, daemon=daemon), "org.apache.storm.command.ConfigValue", name
     ]
-    p = sub.Popen(command, stdout=sub.PIPE)
-    output, errors = p.communicate()
+    output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
     # python 3
     if not isinstance(output, str):
         output = output.decode('utf-8')
@@ -182,41 +98,119 @@ def confvalue(name, extrapaths, daemon=True):
     return ""
 
 
-def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir, proxy_url, proxy_username, proxy_password):
-    if len(artifacts) == 0:
+def get_classpath(extrajars, daemon=True, client=False):
+    ret = get_wildcard_dir(STORM_DIR)
+    if client:
+        ret.extend(get_wildcard_dir(STORM_WORKER_LIB_DIR))
+    else :
+        ret.extend(get_wildcard_dir(STORM_LIB_DIR))
+    ret.extend(get_wildcard_dir(os.path.join(STORM_DIR, "extlib")))
+    if daemon:
+        ret.extend(get_wildcard_dir(os.path.join(STORM_DIR, "extlib-daemon")))
+    if STORM_EXT_CLASSPATH:
+        ret.append(STORM_EXT_CLASSPATH)
+    if daemon and STORM_EXT_CLASSPATH_DAEMON:
+        ret.append(STORM_EXT_CLASSPATH_DAEMON)
+    ret.extend(extrajars)
+    return NORMAL_CLASS_PATH(os.pathsep.join(ret))
+
+
+def init_storm_env():
+
+    global NORMAL_CLASS_PATH, STORM_DIR, USER_CONF_DIR, STORM_CONF_DIR, STORM_WORKER_LIB_DIR, STORM_LIB_DIR,\
+        STORM_TOOLS_LIB_DIR, STORM_WEBAPP_LIB_DIR, STORM_BIN_DIR, STORM_LOG4J2_CONF_DIR, STORM_SUPERVISOR_LOG_FILE,\
+        CLUSTER_CONF_DIR, JAR_JVM_OPTS, JAVA_HOME, JAVA_CMD, CONF_FILE, STORM_EXT_CLASSPATH, \
+        STORM_EXT_CLASSPATH_DAEMON, LOCAL_TTL_DEFAULT
+
+    NORMAL_CLASS_PATH = cygpath if sys.platform == 'cygwin' else identity
+    STORM_DIR = os.sep.join(os.path.realpath( __file__ ).split(os.sep)[:-2])
+    USER_CONF_DIR = os.path.expanduser("~" + os.sep + ".storm")
+    STORM_CONF_DIR = os.getenv('STORM_CONF_DIR', None)
+
+    CLUSTER_CONF_DIR = STORM_CONF_DIR if STORM_CONF_DIR else os.path.join(STORM_DIR, "conf")
+
+    if (not os.path.isfile(os.path.join(USER_CONF_DIR, "storm.yaml"))):
+        USER_CONF_DIR = CLUSTER_CONF_DIR
+
+    STORM_WORKER_LIB_DIR = os.path.join(STORM_DIR, "lib-worker")
+    STORM_LIB_DIR = os.path.join(STORM_DIR, "lib")
+
+    STORM_TOOLS_LIB_DIR = os.path.join(STORM_DIR, "lib-tools")
+    STORM_WEBAPP_LIB_DIR = os.path.join(STORM_DIR, "lib-webapp")
+    STORM_BIN_DIR = os.path.join(STORM_DIR, "bin")
+    STORM_LOG4J2_CONF_DIR = os.path.join(STORM_DIR, "log4j2")
+    STORM_SUPERVISOR_LOG_FILE = os.getenv('STORM_SUPERVISOR_LOG_FILE', "supervisor.log")
+
+    CONF_FILE = ""
+    JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
+    JAVA_HOME = os.getenv('JAVA_HOME', None)
+    JAVA_CMD = get_java_cmd()
+
+    if JAVA_HOME and not os.path.exists(JAVA_CMD):
+        print("ERROR:  JAVA_HOME is invalid.  Could not find bin/java at %s." % JAVA_HOME)
+        sys.exit(1)
+
+    if not os.path.exists(STORM_LIB_DIR):
+        print("*" * 20)
+        print('''The storm client can only be run from within a release. 
+You appear to be trying to run the client from a checkout of Storm's source code.
+You can download a Storm release at https://storm.apache.org/downloads.html")''')
+        print("*" * 20)
+        sys.exit(1)
+
+
+    STORM_EXT_CLASSPATH = os.getenv('STORM_EXT_CLASSPATH', None)
+    STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
+    LOCAL_TTL_DEFAULT = "20"
+
+    ini_file = os.path.join(CLUSTER_CONF_DIR, 'storm_env.ini')
+    if not os.path.isfile(ini_file):
+        return
+    config = configparser.ConfigParser()
+    config.optionxform = str
+    config.read(ini_file)
+    options = config.options('environment')
+    for option in options:
+        value = config.get('environment', option)
+        os.environ[option] = value
+
+
+def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir,
+                         proxy_url, proxy_username, proxy_password):
+    if not artifacts:
         return {}
 
     print("Resolving dependencies on demand: artifacts (%s) with repositories (%s)" % (artifacts, artifact_repositories))
 
-    if maven_local_repos_dir is not None:
+    if maven_local_repos_dir:
         print("Local repository directory: %s" % maven_local_repos_dir)
 
-    if proxy_url is not None:
+    if proxy_url:
         print("Proxy information: url (%s) username (%s)" % (proxy_url, proxy_username))
 
     sys.stdout.flush()
 
     # storm-submit module doesn't rely on storm-core and relevant libs
     extrajars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "submit-tools"))
-    classpath = normclasspath(os.pathsep.join(extrajars))
+    classpath = NORMAL_CLASS_PATH(os.pathsep.join(extrajars))
 
     command = [
         JAVA_CMD, "-client", "-cp", classpath, "org.apache.storm.submit.command.DependencyResolverMain"
     ]
 
-    command.extend(["--artifacts", ",".join(artifacts)])
-    command.extend(["--artifactRepositories", ",".join(artifact_repositories)])
+    command.extend(["--artifacts", artifacts])
+    command.extend(["--artifactRepositories", artifact_repositories])
 
     if maven_local_repos_dir is not None:
         command.extend(["--mavenLocalRepositoryDirectory", maven_local_repos_dir])
 
-    if proxy_url is not None:
+    if proxy_url:
         command.extend(["--proxyUrl", proxy_url])
-        if proxy_username is not None:
+        if proxy_username:
             command.extend(["--proxyUsername", proxy_username])
             command.extend(["--proxyPassword", proxy_password])
 
-    p = sub.Popen(command, stdout=sub.PIPE)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE)
     output, errors = p.communicate()
     if p.returncode != 0:
         raise RuntimeError("dependency handler returns non-zero code: code<%s> syserr<%s>" % (p.returncode, errors))
@@ -234,59 +228,20 @@ def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir
     except:
         raise RuntimeError("dependency handler returns non-json response: sysout<%s>", output)
 
-def print_localconfvalue(name):
-    """Syntax: [storm localconfvalue conf-name]
 
-    Prints out the value for conf-name in the local Storm configs.
-    The local Storm configs are the ones in ~/.storm/storm.yaml merged
-    in with the configs in defaults.yaml.
-    """
-    print(name + ": " + confvalue(name, [USER_CONF_DIR]))
-
-def print_remoteconfvalue(name):
-    """Syntax: [storm remoteconfvalue conf-name]
-
-    Prints out the value for conf-name in the cluster's Storm configs.
-    The cluster's Storm configs are the ones in $STORM-PATH/conf/storm.yaml
-    merged in with the configs in defaults.yaml.
-
-    This command must be run on a cluster machine.
-    """
-    print(name + ": " + confvalue(name, [CLUSTER_CONF_DIR]))
-
-def parse_args(string):
-    """Takes a string of whitespace-separated tokens and parses it into a list.
-    Whitespace inside tokens may be quoted with single quotes, double quotes or
-    backslash (similar to command-line arguments in bash).
-
-    >>> parse_args(r'''"a a" 'b b' c\ c "d'd" 'e"e' 'f\'f' "g\"g" "i""i" 'j''j' k" "k l' l' mm n\\n''')
-    ['a a', 'b b', 'c c', "d'd", 'e"e', "f'f", 'g"g', 'ii', 'jj', 'k k', 'l l', 'mm', r'n\n']
-    """
-    re_split = re.compile(r'''((?:
-        [^\s"'\\] |
-        "(?: [^"\\] | \\.)*" |
-        '(?: [^'\\] | \\.)*' |
-        \\.
-    )+)''', re.VERBOSE)
-    args = re_split.split(string)[1::2]
-    args = [re.compile(r'"((?:[^"\\]|\\.)*)"').sub('\\1', x) for x in args]
-    args = [re.compile(r"'((?:[^'\\]|\\.)*)'").sub('\\1', x) for x in args]
-    return [re.compile(r'\\(.)').sub('\\1', x) for x in args]
-
-def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[], fork=False, daemon=True, client=False, daemonName=""):
-    global CONFFILE
-    storm_log_dir = confvalue("storm.log.dir",[CLUSTER_CONF_DIR])
+def exec_storm_class(klass, storm_config_opts, jvmtype="-server", jvmopts=[], extrajars=[], args=[], fork=False, daemon=True, client=False, daemonName=""):
+    storm_log_dir = confvalue("storm.log.dir", storm_config_opts=storm_config_opts, extrapaths=[CLUSTER_CONF_DIR])
     if(storm_log_dir == None or storm_log_dir == "null"):
         storm_log_dir = os.path.join(STORM_DIR, "logs")
     all_args = [
         JAVA_CMD, jvmtype,
         "-Ddaemon.name=" + daemonName,
-        get_config_opts(),
-        "-Dstorm.home=" + STORM_DIR,
-        "-Dstorm.log.dir=" + storm_log_dir,
-        "-Djava.library.path=" + confvalue("java.library.path", extrajars, daemon),
-        "-Dstorm.conf.file=" + CONFFILE,
-        "-cp", get_classpath(extrajars, daemon, client=client),
+        get_config_opts(storm_config_opts),
+       "-Dstorm.home=" + STORM_DIR,
+       "-Dstorm.log.dir=" + storm_log_dir,
+       "-Djava.library.path=" + confvalue("java.library.path", storm_config_opts, extrajars, daemon=daemon),
+       "-Dstorm.conf.file=" + CONF_FILE,
+       "-cp", get_classpath(extrajars, daemon, client=client),
     ] + jvmopts + [klass] + list(args)
     print("Running: " + " ".join(all_args))
     sys.stdout.flush()
@@ -296,234 +251,443 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     elif is_windows():
         # handling whitespaces in JAVA_CMD
         try:
-            ret = sub.check_output(all_args, stderr=sub.STDOUT)
+            ret = subprocess.check_output(all_args, stderr=subprocess.STDOUT)
             print(ret)
-        except sub.CalledProcessError as e:
+        except subprocess.CalledProcessError as e:
             print(e.output)
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
     return exit_code
 
-def run_client_jar(jarfile, klass, args, daemon=False, client=True, extrajvmopts=[]):
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
 
-    local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
+def run_client_jar(klass, args, daemon=False, client=True, extrajvmopts=[]):
+    local_jars = args.jars.split(",")
+    jarfile = args.topology_jar_path
 
-    extra_jars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR]
+    artifact_to_file_jars = resolve_dependencies(
+        args.artifacts, args.artifactRepositories,
+        args.mavenLocalRepositoryDirectory, args.proxyUrl,
+        args.proxyUsername, args.proxyPassword
+    )
+
+    extra_jars = [jarfile, USER_CONF_DIR, STORM_BIN_DIR]
     extra_jars.extend(local_jars)
     extra_jars.extend(artifact_to_file_jars.values())
     exec_storm_class(
-        klass,
+        klass, args.storm_config_opts,
         jvmtype="-client",
         extrajars=extra_jars,
-        args=args,
+        args=args.topology_main_args,
         daemon=False,
         jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
                 ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
                 ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
 
-def local(jarfile, klass, *args):
-    """Syntax: [storm local topology-jar-path class ...]
 
-    Runs the main method of class with the specified arguments but pointing to a local cluster
-    The storm jars and configs in ~/.storm are put on the classpath.
-    The process is configured so that StormSubmitter
-    (http://storm.apache.org/releases/current/javadocs/org/apache/storm/StormSubmitter.html)
-    and others will interact with a local cluster instead of the one configured by default.
+def print_localconfvalue(args):
+    print(args.conf_name + ": " + confvalue(args.conf_name, args.storm_config_opts, [USER_CONF_DIR]))
 
-    Most options should work just like with the storm jar command.
 
-    local also adds in the option --local-ttl which sets the number of seconds the
-    local cluster will run for before it shuts down.
+def print_remoteconfvalue(args):
+    print(args.conf_name + ": " + confvalue(args.conf_name, args.storm_config_opts, [CLUSTER_CONF_DIR]))
 
-    --java-debug lets you turn on java debugging and set the parameters passed to -agentlib:jdwp on the JDK
-    --java-debug transport=dt_socket,address=localhost:8000
-    will open up a debugging server on port 8000.
-    """
-    [ttl, debug_args, args] = parse_local_opts(args)
-    extrajvmopts = ["-Dstorm.local.sleeptime=" + ttl]
-    if debug_args != None:
-        extrajvmopts = extrajvmopts + ["-agentlib:jdwp=" + debug_args]
-    run_client_jar(jarfile, "org.apache.storm.LocalCluster", [klass] + list(args), client=False, daemon=False, extrajvmopts=extrajvmopts)
 
-def jar(jarfile, klass, *args):
-    """Syntax: [storm jar topology-jar-path class ...]
+def initialize_main_command():
+    main_parser = argparse.ArgumentParser(prog="storm", formatter_class=SortingHelpFormatter)
+    add_common_options(main_parser)
 
-    Runs the main method of class with the specified arguments.
-    The storm worker dependencies and configs in ~/.storm are put on the classpath.
-    The process is configured so that StormSubmitter
-    (http://storm.apache.org/releases/current/javadocs/org/apache/storm/StormSubmitter.html)
-    will upload the jar at topology-jar-path when the topology is submitted.
+    subparsers = main_parser.add_subparsers(help="")
 
-    When you want to ship other jars which is not included to application jar, you can pass them to --jars option with comma-separated string.
+    initialize_jar_subcommand(subparsers)
+    initialize_localconfvalue_subcommand(subparsers)
+    initialize_remoteconfvalue_subcommand(subparsers)
+    initialize_local_subcommand(subparsers)
+    initialize_sql_subcommand(subparsers)
+    initialize_kill_subcommand(subparsers)
+    initialize_upload_credentials_subcommand(subparsers)
+    initialize_blobstore_subcommand(subparsers)
+    initialize_heartbeats_subcommand(subparsers)
+    initialize_activate_subcommand(subparsers)
+    initialize_set_log_level_subcommand(subparsers)
+    initialize_listtopos_subcommand(subparsers)
+    initialize_deactivate_subcommand(subparsers)
+    initialize_rebalance_subcommand(subparsers)
+    initialize_get_errors_subcommand(subparsers)
+    initialize_healthcheck_subcommand(subparsers)
+    initialize_kill_workers_subcommand(subparsers)
+    initialize_admin_subcommand(subparsers)
+    initialize_shell_subcommand(subparsers)
+    initialize_repl_subcommand(subparsers)
+    initialize_nimbus_subcommand(subparsers)
+    initialize_pacemaker_subcommand(subparsers)
+    initialize_supervisor_subcommand(subparsers)
+    initialize_ui_subcommand(subparsers)
+    initialize_logviewer_subcommand(subparsers)
+    initialize_drpc_client_subcommand(subparsers)
+    initialize_drpc_subcommand(subparsers)
+    initialize_dev_zookeeper_subcommand(subparsers)
+    initialize_version_subcommand(subparsers)
+    initialize_classpath_subcommand(subparsers)
+    initialize_server_classpath_subcommand(subparsers)
+    initialize_monitor_subcommand(subparsers)
+
+    return main_parser
+
+
+def initialize_localconfvalue_subcommand(subparsers):
+    command_help = '''Prints out the value for conf-name in the local Storm configs.
+    The local Storm configs are the ones in ~/.storm/storm.yaml merged
+    in with the configs in defaults.yaml.'''
+
+    sub_parser = subparsers.add_parser("localconfvalue", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.add_argument("conf_name")
+    sub_parser.set_defaults(func=print_localconfvalue)
+    add_common_options(sub_parser)
+
+
+
+def initialize_remoteconfvalue_subcommand(subparsers):
+    command_help = '''Prints out the value for conf-name in the cluster's Storm configs.
+    The cluster's Storm configs are the ones in $STORM-PATH/conf/storm.yaml
+    merged in with the configs in defaults.yaml.
+
+    This command must be run on a cluster machine.'''
+
+    sub_parser = subparsers.add_parser("remoteconfvalue", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.add_argument("conf_name")
+    sub_parser.set_defaults(func=print_remoteconfvalue)
+    add_common_options(sub_parser)
+
+
+def add_common_options(parser):
+    parser.add_argument("--config", default=None, help="Override default storm conf file")
+    parser.add_argument(
+        "-storm_config_opts", "-c", action="append", default=[],
+        help="Override storm conf properties , e.g. nimbus.ui.port=4443"
+    )
+
+def add_topology_jar_options(parser):
+    parser.add_argument(
+        "topology_jar_path", metavar="topology-jar-path",
+        help="will upload the jar at topology-jar-path when the topology is submitted."
+    )
+    parser.add_argument(
+        "topology_main_class", metavar="topology-main-class",
+    help="main class of the topology jar being submitted"
+    )
+    parser.add_argument(
+        "topology_main_args", metavar="topology_main_args",
+        nargs='*', help="Runs the main method with the specified arguments."
+    )
+
+
+def add_client_jar_options(parser):
+
+    parser.add_argument("--jars", help='''
+    When you want to ship other jars which are not included to application jar, you can pass them to --jars option with comma-separated string.
     For example, --jars "your-local-jar.jar,your-local-jar2.jar" will load your-local-jar.jar and your-local-jar2.jar.
-    And when you want to ship maven artifacts and its transitive dependencies, you can pass them to --artifacts with comma-separated string.
+    ''', default="")
+
+    parser.add_argument("--artifacts", help='''
+     When you want to ship maven artifacts and its transitive dependencies, you can pass them to --artifacts with comma-separated string.
     You can also exclude some dependencies like what you're doing in maven pom.
     Please add exclusion artifacts with '^' separated string after the artifact.
     For example, -artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka-clients:1.0.0^org.slf4j:slf4j-api" will load jedis and kafka-clients artifact and all of transitive dependencies but exclude slf4j-api from kafka.
+        ''', default="")
 
-    When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with comma-separated string.
+
+    parser.add_argument("--artifactRepositories", help='''
+    When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with a comma-separated string.
     Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters.
     For example, --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/" will add JBoss and HDP repositories for dependency resolver.
-    You can provide local maven repository directory via --mavenLocalRepositoryDirectory if you would like to use specific directory. It might help when you don't have '.m2/repository' directory in home directory, because CWD is sometimes non-deterministic (fragile).
+    ''', default="")
 
-    You can also provide proxy information to let dependency resolver utilizing proxy if needed. There're three parameters for proxy:
-    --proxyUrl: URL representation of proxy ('http://host:port')
-    --proxyUsername: username of proxy if it requires basic auth
-    --proxyPassword: password of proxy if it requires basic auth
+    parser.add_argument("--mavenLocalRepositoryDirectory", help="You can provide local maven repository directory via --mavenLocalRepositoryDirectory if you would like to use specific directory. It might help when you don't have '.m2/repository' directory in home directory, because CWD is sometimes non-deterministic (fragile).", default="")
 
-    Complete example of options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka-client/storm-kafka-client-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka-clients:1.0.0^org.slf4j:slf4j-api" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
+
+    parser.add_argument("--proxyUrl", help="You can also provide proxy information to let dependency resolver utilizing proxy if needed. URL representation of proxy ('http://host:port')", default="")
+    parser.add_argument("--proxyUsername", help="username of proxy if it requires basic auth", default="")
+    parser.add_argument("--proxyPassword", help="password of proxy if it requires basic auth", default="")
+
+
+def initialize_jar_subcommand(subparsers):
+    jar_help = """Runs the main method of class with the specified arguments.
+    The storm worker dependencies and configs in ~/.storm are put on the classpath.
+    The process is configured so that StormSubmitter
+    (https://storm.apache.org/releases/current/javadocs/org/apache/storm/StormSubmitter.html)
+    will upload the jar at topology-jar-path when the topology is submitted.
 
     When you pass jars and/or artifacts options, StormSubmitter will upload them when the topology is submitted, and they will be included to classpath of both the process which runs the class, and also workers for that topology.
-
-    If for some reason you need to have the full storm classpath, not just the one for the worker you may include the command line option `--storm-server-classpath`.  Please be careful because this will add things to the classpath that will not be on the worker classpath and could result in the worker not running.
     """
-    [server_class_path, args] = parse_jar_opts(args) 
-    run_client_jar(jarfile, klass, list(args), client=not server_class_path, daemon=False)
+    jar_parser = subparsers.add_parser("jar", help=jar_help, formatter_class=SortingHelpFormatter)
 
-def sql(sql_file, topology_name):
-    """Syntax: [storm sql sql-file topology-name], or [storm sql sql-file --explain] when activating explain mode
+    add_topology_jar_options(jar_parser)
+    add_client_jar_options(jar_parser)
 
-    Compiles the SQL statements into a Trident topology and submits it to Storm.
-    If user activates explain mode, SQL Runner analyzes each query statement and shows query plan instead of submitting topology.
+    jar_parser.add_argument(
+        "--storm-server-classpath",
+        action='store_true',
+        help='''
+        If for some reason you need to have the full storm classpath,
+        not just the one for the worker you may include the command line option `--storm-server-classpath`.
+        Please be careful because this will add things to the classpath
+        that will not be on the worker classpath
+        and could result in the worker not running.'''
+    )
 
-    --jars and --artifacts, and --artifactRepositories, --mavenLocalRepositoryDirectory, --proxyUrl, --proxyUsername, --proxyPassword options available for jar are also applied to sql command.
-    Please refer "help jar" to see how to use --jars and --artifacts, and --artifactRepositories, --proxyUrl, --proxyUsername, --proxyPassword options.
-    You normally want to pass these options since you need to set data source to your sql which is an external storage in many cases.
+    jar_parser.set_defaults(func=jar)
+    add_common_options(jar_parser)
+
+
+def initialize_local_subcommand(subparsers):
+    command_help = """Runs the main method of class with the specified arguments but pointing to a local cluster
+    The storm jars and configs in ~/.storm are put on the classpath.
+    The process is configured so that StormSubmitter
+    (https://storm.apache.org/releases/current/javadocs/org/apache/storm/StormSubmitter.html)
+    and others will interact with a local cluster instead of the one configured by default.
+
+    Most options should work just like with the storm jar command.
     """
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
+    sub_parser = subparsers.add_parser("local", help=command_help, formatter_class=SortingHelpFormatter)
 
-    local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
+    add_topology_jar_options(sub_parser)
+    add_client_jar_options(sub_parser)
 
-    # include storm-sql-runtime jar(s) to local jar list
-    # --jars doesn't support wildcard so it should call get_jars_full
-    sql_runtime_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
-    local_jars.extend(sql_runtime_jars)
+    sub_parser.add_argument(
+        "--local-ttl",
+        help="sets the number of seconds the local cluster will run for before it shuts down",
+        default=LOCAL_TTL_DEFAULT
+    )
 
-    extrajars=[USER_CONF_DIR, STORM_BIN_DIR]
-    extrajars.extend(local_jars)
-    extrajars.extend(artifact_to_file_jars.values())
+    sub_parser.add_argument(
+        "--java-debug",
+        help="lets you turn on java debugging and set the parameters passed to -agentlib:jdwp on the JDK" +
+             "e.g transport=dt_socket,address=localhost:8000 will open up a debugging server on port 8000",
+        default=None
+    )
 
-    # include this for running StormSqlRunner, but not for generated topology
-    sql_core_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
-    extrajars.extend(sql_core_jars)
+    sub_parser.add_argument(
+        "--local-zookeeper",
+        help="""if using an external zookeeper sets the connection string to use for it.""",
+        default=None
+    )
 
-    if topology_name == "--explain":
-        args = ["--file", sql_file, "--explain"]
-    else:
-        args = ["--file", sql_file, "--topology", topology_name]
+    sub_parser.set_defaults(func=local)
+    add_common_options(sub_parser)
 
-    exec_storm_class(
-        "org.apache.storm.sql.StormSqlRunner",
-        jvmtype="-client",
-        extrajars=extrajars,
-        args=args,
-        daemon=False,
-        jvmopts=["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
 
-def kill(*args):
-    """Syntax: [storm kill topology-name [-w wait-time-secs]]
-
-    Kills the topology with the name topology-name. Storm will
+def initialize_kill_subcommand(subparsers):
+    command_help = """Kills the topology with the name topology-name. Storm will
     first deactivate the topology's spouts for the duration of
     the topology's message timeout to allow all messages currently
     being processed to finish processing. Storm will then shutdown
-    the workers and clean up their state. You can override the length
-    of time Storm waits between deactivation and shutdown with the -w flag.
+    the workers and clean up their state.
     """
-    if not args:
-        print_usage(command="kill")
-        sys.exit(2)
-    exec_storm_class(
-        "org.apache.storm.command.KillTopology",
-        args=args,
-        jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+    sub_parser = subparsers.add_parser("kill", help=command_help, formatter_class=SortingHelpFormatter)
+
+    sub_parser.add_argument("topology-name")
+
+    sub_parser.add_argument(
+        "-w", "--wait-time-secs",
+        help="""override the length of time Storm waits between deactivation and shutdown""",
+        default=None, type=check_non_negative
+    )
+
+    sub_parser.set_defaults(func=kill)
+    add_common_options(sub_parser)
 
 
-def upload_credentials(*args):
-    """Syntax: [storm upload-credentials topology-name [options] [credkey credvalue]*]
+def check_non_negative(value):
+    ivalue = int(value)
+    if ivalue < 0:
+        raise argparse.ArgumentTypeError("%s is not a non-zero integer" % value)
+    return ivalue
 
-    Uploads a new set of credentials to a running topology.
+def check_positive(value):
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError("%s is not a positive integer" % value)
+    return ivalue
 
-    -f --file <FILE>: provide a properties file with credentials in it to be uploaded
-    -u --user <USER_NAME>: give the name of the owner of the topology (security precaution).
+def check_even_list(cred_list):
+    if not (len(cred_list) % 2):
+        raise argparse.ArgumentTypeError("please provide a list of cred key and value pairs")
+    return cred_list
+
+
+def initialize_upload_credentials_subcommand(subparsers):
+    command_help = """Uploads a new set of credentials to a running topology."""
+    sub_parser = subparsers.add_parser("upload-credentials", help=command_help, formatter_class=SortingHelpFormatter)
+
+    sub_parser.add_argument("topology-name")
+
+    sub_parser.add_argument(
+        "-f", "--file", default=None,
+        help="""provide a properties file with credentials in it to be uploaded"""
+    )
+
+    sub_parser.add_argument(
+        "-u", "--user", default=None,
+        help="""name of the owner of the topology (security precaution)"""
+    )
+
+    sub_parser.add_argument(
+        "cred_list", nargs='*', help="List of credkeys and their values [credkey credvalue]*",
+        type=check_even_list
+    )
+
+    sub_parser.set_defaults(func=upload_credentials)
+    add_common_options(sub_parser)
+
+
+def initialize_sql_subcommand(subparsers):
+    command_help = """Compiles the SQL statements into a Trident topology and submits it to Storm.
+    If user activates explain mode, SQL Runner analyzes each query statement
+    and shows query plan instead of submitting topology.
     """
-    if not args:
-        print_usage(command="upload-credentials")
-        sys.exit(2)
-    exec_storm_class(
-        "org.apache.storm.command.UploadCredentials",
-        args=args,
-        jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
-def blobstore(*args):
-    """Syntax: [storm blobstore cmd]
+    sub_parser = subparsers.add_parser("sql", help=command_help, formatter_class=SortingHelpFormatter)
 
-    list [KEY...] - lists blobs currently in the blob store
-    cat [-f FILE] KEY - read a blob and then either write it to a file, or STDOUT (requires read access).
-    create [-f FILE] [-a ACL ...] [--replication-factor NUMBER] KEY - create a new blob. Contents comes from a FILE
-         or STDIN. ACL is in the form [uo]:[username]:[r-][w-][a-] can be comma separated list.
-    update [-f FILE] KEY - update the contents of a blob.  Contents comes from
-         a FILE or STDIN (requires write access).
-    delete KEY - delete an entry from the blob store (requires write access).
-    set-acl [-s ACL] KEY - ACL is in the form [uo]:[username]:[r-][w-][a-] can be comma
-         separated list (requires admin access).
-    replication --read KEY - Used to read the replication factor of the blob.
-    replication --update --replication-factor NUMBER KEY where NUMBER > 0. It is used to update the
-        replication factor of a blob.
+    add_client_jar_options(sub_parser)
+
+
+    sub_parser.add_argument("sql_file", metavar="sql-file")
+
+    group = sub_parser.add_mutually_exclusive_group(required=True)
+
+    group.add_argument(
+        "topology_name", metavar="topology-name",nargs='?'
+    )
+
+    group.add_argument("--explain", action="store_true", help="activate explain mode")
+
+    sub_parser.set_defaults(func=sql)
+    add_common_options(sub_parser)
+
+
+def initialize_blobstore_subcommand(subparsers):
+    sub_parser = subparsers.add_parser("blobstore", formatter_class=SortingHelpFormatter)
+    command_help = """
     For example, the following would create a mytopo:data.tgz key using the data
     stored in data.tgz.  User alice would have full access, bob would have
     read/write access and everyone else would have read access.
     storm blobstore create mytopo:data.tgz -f data.tgz -a u:alice:rwa,u:bob:rw,o::r
     """
-    exec_storm_class(
-        "org.apache.storm.command.Blobstore",
-        args=args,
-        jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+    sub_sub_parsers = sub_parser.add_subparsers(help=command_help)
 
-def heartbeats(*args):
-    """Syntax: [storm heartbeats [cmd]]
+    list_parser = sub_sub_parsers.add_parser(
+        "list", help="lists blobs currently in the blob store", formatter_class=SortingHelpFormatter
+    )
+    list_parser.add_argument(
+        "keys", nargs='+')
+    add_common_options(list_parser)
 
-    list PATH - lists heartbeats nodes under PATH currently in the ClusterState.
-    get  PATH - Get the heartbeat data at PATH
-    """
-    exec_storm_class(
-        "org.apache.storm.command.Heartbeats",
-        args=args,
-        jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+    cat_parser = sub_sub_parsers.add_parser(
+        "cat", help="read a blob and then either write it to a file, or STDOUT (requires read access).", formatter_class=SortingHelpFormatter
+    )
+    cat_parser.add_argument("KEY")
+    cat_parser.add_argument("-f", '--FILE', default=None)
+    add_common_options(cat_parser)
 
-def activate(*args):
-    """Syntax: [storm activate topology-name]
 
-    Activates the specified topology's spouts.
-    """
-    if not args:
-        print_usage(command="activate")
-        sys.exit(2)
-    exec_storm_class(
-        "org.apache.storm.command.Activate",
-        args=args,
-        jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+    create_parser = sub_sub_parsers.add_parser(
+        "create", help="create a new blob. Contents comes from a FILE or STDIN", formatter_class=SortingHelpFormatter
+    )
+    create_parser.add_argument("KEY")
+    create_parser.add_argument("-f", '--file', default=None)
+    create_parser.add_argument(
+        "-a", '--acl', default=None,
+        help="ACL is in the form [uo]:[username]:[r-][w-][a-] can be comma separated list."
+    )
+    create_parser.add_argument("-r", "--replication-factor", default=None, type=check_positive)
+    add_common_options(create_parser)
 
-def set_log_level(*args):
-    """
-    Dynamically change topology log levels
+    update_parser = sub_sub_parsers.add_parser(
+        "update", help="update the contents of a blob.  Contents comes from a FILE or STDIN (requires write access).", formatter_class=SortingHelpFormatter,
+    )
+    update_parser.add_argument("KEY")
+    update_parser.add_argument("-f", '--FILE', default=None)
+    add_common_options(update_parser)
 
-    Syntax: [storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name] topology-name]
-    where log level is one of:
-        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
-    and timeout is integer seconds.
+    delete_parser = sub_sub_parsers.add_parser(
+        "delete", help="delete an entry from the blob store (requires write access).", formatter_class=SortingHelpFormatter
+    )
+    delete_parser.add_argument("KEY")
+    add_common_options(delete_parser)
 
-    e.g.
+    set_acl_parser = sub_sub_parsers.add_parser(
+        "set-acl", help="set acls for the given key", formatter_class=SortingHelpFormatter
+    )
+    set_acl_parser.add_argument("KEY")
+    set_acl_parser.add_argument(
+        "-s", '--set', default=None,
+        help="""ACL is in the form [uo]:[username]:[r-][w-][a-] 
+        can be comma separated list (requires admin access)."""
+    )
+    add_common_options(set_acl_parser)
+
+    replication_parser = sub_sub_parsers.add_parser(
+        "replication", formatter_class=SortingHelpFormatter
+    )
+    replication_parser.add_argument("KEY")
+    replication_parser.add_argument(
+        "--read", action="store_true", help="Used to read the replication factor of the blob",
+        default=None
+    )
+    replication_parser.add_argument(
+        "--update", action="store_true", help=" It is used to update the replication factor of a blob.",
+        default=None
+    )
+    replication_parser.add_argument("-r", "--replication-factor", default=None, type=check_positive)
+    add_common_options(replication_parser)
+
+    sub_parser.set_defaults(func=blob)
+    add_common_options(sub_parser)
+
+
+def initialize_heartbeats_subcommand(subparsers):
+    sub_parser = subparsers.add_parser("heartbeats")
+    sub_sub_parsers = sub_parser.add_subparsers()
+
+    list_parser = sub_sub_parsers.add_parser(
+        "PATH", help="lists heartbeats nodes under PATH currently in the ClusterState", formatter_class=SortingHelpFormatter
+    )
+    list_parser.add_argument("PATH")
+
+    get_parser = sub_sub_parsers.add_parser(
+        "get", help="Get the heartbeat data at PATH", formatter_class=SortingHelpFormatter
+    )
+    get_parser.add_argument("PATH")
+    sub_parser.set_defaults(func=heartbeats)
+    add_common_options(sub_parser)
+
+
+def initialize_activate_subcommand(subparsers):
+    sub_parser = subparsers.add_parser(
+        "activate", help="Activates the specified topology's spouts.", formatter_class=SortingHelpFormatter
+    )
+
+    sub_parser.add_argument("topology-name")
+
+    sub_parser.set_defaults(func=activate)
+    add_common_options(sub_parser)
+
+
+def initialize_listtopos_subcommand(subparsers):
+    sub_parser = subparsers.add_parser(
+        "list", help="List the running topologies and their statuses.", formatter_class=SortingHelpFormatter
+    )
+
+    sub_parser.set_defaults(func=listtopos)
+    add_common_options(sub_parser)
+
+
+def initialize_set_log_level_subcommand(subparsers):
+    sub_parser = subparsers.add_parser(
+        "set_log_level", help="""
+        Dynamically change topology log levels
+        e.g.
         ./bin/storm set_log_level -l ROOT=DEBUG:30 topology-name
 
         Set the root logger's level to DEBUG for 30 seconds
@@ -534,47 +698,41 @@ def set_log_level(*args):
 
         ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123 topology-name
 
-        Set the com.myapp logger's level to WARN indifinitely, and com.myOtherLogger
+        Set the com.myapp logger's level to WARN indefinitely, and com.myOtherLogger
         to ERROR for 123 seconds
 
         ./bin/storm set_log_level -r com.myOtherLogger topology-name
 
         Clears settings, resetting back to the original level
-    """
-    exec_storm_class(
-        "org.apache.storm.command.SetLogLevel",
-        args=args,
-        jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        """, formatter_class=SortingHelpFormatter
+    )
 
-def listtopos(*args):
-    """Syntax: [storm list]
+    sub_parser.add_argument("-l", action="append", default=[], help="""
+    -l [logger name]=[log level][:optional timeout] where log level is one of:
+        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
+    """)
+    sub_parser.add_argument("-r", action="append", default=[], help="""
+    -r [logger name]
+    """)
+    sub_parser.add_argument("topology-name")
 
-    List the running topologies and their statuses.
-    """
-    exec_storm_class(
-        "org.apache.storm.command.ListTopologies",
-        args=args,
-        jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+    sub_parser.set_defaults(func=set_log_level)
+    add_common_options(sub_parser)
 
-def deactivate(*args):
-    """Syntax: [storm deactivate topology-name]
 
-    Deactivates the specified topology's spouts.
-    """
-    if not args:
-        print_usage(command="deactivate")
-        sys.exit(2)
-    exec_storm_class(
-        "org.apache.storm.command.Deactivate",
-        args=args,
-        jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+def initialize_deactivate_subcommand(subparsers):
+    sub_parser = subparsers.add_parser(
+        "deactivate", help="Deactivates the specified topology's spouts.", formatter_class=SortingHelpFormatter
+    )
 
-def rebalance(*args):
-    """Syntax: [storm rebalance topology-name [-w wait-time-secs] [-n new-num-workers] [-e component=parallelism]*  [-r '{"component1": {"resource1": new_amount, "resource2": new_amount, ... }*}'] [-t '{"conf1": newValue, *}']]
+    sub_parser.add_argument("topology-name")
 
+    sub_parser.set_defaults(func=deactivate)
+    add_common_options(sub_parser)
+
+
+def initialize_rebalance_subcommand(subparsers):
+    command_help = """
     Sometimes you may wish to spread out the workers for a running topology.
     For example, let's say you have a 10 node cluster running
     4 workers per node, and then let's say you add another 10 nodes to
@@ -589,487 +747,698 @@ def rebalance(*args):
     new situation. The topology will then return to its previous state of activation
     (so a deactivated topology will still be deactivated and an activated
     topology will go back to being activated).
-
-    Some of what you can change about a topology includes the number of requested workers (-n flag)
-    The number of executors for a given component (-e flag) the resources each component is
-    requesting as used by the resource aware scheduler (-r flag) and configs (-t flag).
     """
-    if not args:
-        print_usage(command="rebalance")
-        sys.exit(2)
+    sub_parser = subparsers.add_parser(
+        "rebalance", help=command_help, formatter_class=SortingHelpFormatter
+    )
+
+    sub_parser.add_argument(
+        "-w", "--wait-time-secs",
+        help="time to wait before starting to rebalance",
+        default=None, type=check_non_negative
+    )
+
+    sub_parser.add_argument(
+        "-n", "--num-workers", default=None,
+        help="change the number of requested workers", type=check_positive
+    )
+
+    sub_parser.add_argument(
+        "-e", "--executors", action="append", default=[],
+        help="change the number of executors for a given component e.g component_name:5"
+    )
+
+    sub_parser.add_argument(
+        "-r", "--resources", default=None,
+        help="""
+        change the resources each component is requesting as used by the resource aware scheduler
+        e.g '{"component1": {"resource1": new_amount, "resource2": new_amount, ... }*}'
+        """
+    )
+
+    sub_parser.add_argument(
+        "-t", "--topology-conf", default=None,
+        help="change the topology conf"
+    )
+
+    sub_parser.add_argument("topology-name")
+
+    sub_parser.set_defaults(func=rebalance)
+    add_common_options(sub_parser)
+
+
+def initialize_get_errors_subcommand(subparsers):
+    sub_parser = subparsers.add_parser(
+        "get-errors", help="""Get the latest error from the running topology. The returned result contains
+    the key value pairs for component-name and component-error for the components in error.
+    The result is returned in json format.""", formatter_class=SortingHelpFormatter
+    )
+
+    sub_parser.add_argument("topology-name")
+
+    sub_parser.set_defaults(func=get_errors)
+    add_common_options(sub_parser)
+
+
+def initialize_healthcheck_subcommand(subparsers):
+    sub_parser = subparsers.add_parser(
+        "node-health-check", help="""Run health checks on the local supervisor.""", formatter_class=SortingHelpFormatter
+    )
+
+    sub_parser.set_defaults(func=healthcheck)
+    add_common_options(sub_parser)
+
+
+def initialize_kill_workers_subcommand(subparsers):
+    sub_parser = subparsers.add_parser(
+        "kill_workers", help="""Kill the workers running on this supervisor. This command should be run
+    on a supervisor node. If the cluster is running in secure mode, then user needs
+    to have admin rights on the node to be able to successfully kill all workers.""", formatter_class=SortingHelpFormatter
+    )
+
+    sub_parser.set_defaults(func=kill_workers)
+    add_common_options(sub_parser)
+
+
+def initialize_admin_subcommand(subparsers):
+    sub_parser = subparsers.add_parser("admin", help="""The storm admin command provides access to several operations that can help
+    an administrator debug or fix a cluster.""", formatter_class=SortingHelpFormatter)
+    sub_sub_parsers = sub_parser.add_subparsers()
+
+    remove_sub_sub_parser = sub_sub_parsers.add_parser(
+        "remove_corrupt_topologies", help="""This command should be run on a nimbus node as
+    the same user nimbus runs as.  It will go directly to zookeeper + blobstore
+    and find topologies that appear to be corrupted because of missing blobs.
+    It will kill those topologies.""", formatter_class=SortingHelpFormatter
+    )
+
+    add_common_options(remove_sub_sub_parser)
+
+    zk_cli_parser = sub_sub_parsers.add_parser(
+        "zk_cli", help="""This command will launch a zookeeper cli pointing to the
+    storm zookeeper instance logged in as the nimbus user.  It should be run on
+    a nimbus server as the user nimbus runs as.""", formatter_class=SortingHelpFormatter
+    )
+
+    zk_cli_parser.add_argument(
+        "-s", "--server", default=None, help="""Set the connection string to use,
+        defaults to storm connection string"""
+    )
+
+    zk_cli_parser.add_argument(
+        "-t", "--time-out", default=None, help="""Set the timeout in seconds to use, defaults to storm
+            zookeeper timeout.""", type=check_non_negative
+    )
+
+    zk_cli_parser.add_argument(
+        "-w", "--write", default=None, action="store_true",
+        help="""Allow for writes, defaults to read only, we don't want to
+            cause problems."""
+    )
+
+    zk_cli_parser.add_argument(
+        "-n", "--no-root", default=None, action="store_true",
+        help="""Don't include the storm root on the default connection string."""
+    )
+
+    zk_cli_parser.add_argument(
+        "-j", "--jaas", default=None, help="""Include a jaas file that should be used when
+            authenticating with ZK defaults to the
+            java.security.auth.login.config conf"""
+    )
+
+    add_common_options(zk_cli_parser)
+
+    creds_parser = sub_sub_parsers.add_parser(
+        "creds", help="""Print the credential keys for a topology.""", formatter_class=SortingHelpFormatter
+    )
+
+    creds_parser.add_argument("topology_id")
+    add_common_options(creds_parser)
+
+    sub_parser.set_defaults(func=admin)
+    add_common_options(sub_parser)
+
+
+def initialize_shell_subcommand(subparsers):
+    command_help = """
+    Archives resources to jar and uploads jar to Nimbus, and executes following arguments on "local". Useful for non JVM languages.
+    eg: `storm shell resources/ python topology.py arg1 arg2`"""
+
+    sub_parser = subparsers.add_parser("shell", help=command_help, formatter_class=SortingHelpFormatter)
+
+    sub_parser.add_argument("resourcesdir")
+    sub_parser.add_argument("command")
+    sub_parser.add_argument("args", nargs='*', default=[])
+
+    sub_parser.set_defaults(func=shell)
+    add_common_options(sub_parser)
+
+
+def initialize_repl_subcommand(subparsers):
+    command_help = """
+       DEPRECATED: This subcommand may be removed in a future release.
+    Opens up a Clojure REPL with the storm jars and configuration
+    on the classpath. Useful for debugging."""
+    sub_parser = subparsers.add_parser("repl", help=command_help, formatter_class=SortingHelpFormatter)
+
+    sub_parser.set_defaults(func=repl)
+    add_common_options(sub_parser)
+
+
+def initialize_nimbus_subcommand(subparsers):
+    command_help = """
+    Launches the nimbus daemon. This command should be run under
+    supervision with a tool like daemontools or monit.
+
+    See Setting up a Storm cluster for more information.
+    (https://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
+    """
+    sub_parser = subparsers.add_parser("nimbus", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=nimbus)
+    add_common_options(sub_parser)
+
+
+def initialize_pacemaker_subcommand(subparsers):
+    command_help = """
+    Launches the Pacemaker daemon. This command should be run under
+    supervision with a tool like daemontools or monit.
+
+    See Setting up a Storm cluster for more information.
+    (https://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
+    """
+    sub_parser = subparsers.add_parser("pacemaker", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=pacemaker)
+    add_common_options(sub_parser)
+
+
+def initialize_supervisor_subcommand(subparsers):
+    command_help = """
+    Launches the supervisor daemon. This command should be run
+    under supervision with a tool like daemontools or monit.
+
+    See Setting up a Storm cluster for more information.
+    (https://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
+    """
+    sub_parser = subparsers.add_parser("supervisor", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=supervisor)
+    add_common_options(sub_parser)
+
+def initialize_ui_subcommand(subparsers):
+    command_help = """
+    Launches the UI daemon. The UI provides a web interface for a Storm
+    cluster and shows detailed stats about running topologies. This command
+    should be run under supervision with a tool like daemontools or monit.
+
+    See Setting up a Storm cluster for more information.
+    (https://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
+    """
+    sub_parser = subparsers.add_parser("ui", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=ui)
+    add_common_options(sub_parser)
+
+
+def initialize_logviewer_subcommand(subparsers):
+    command_help = """
+    Launches the log viewer daemon. It provides a web interface for viewing
+    storm log files. This command should be run under supervision with a
+    tool like daemontools or monit.
+
+    See Setting up a Storm cluster for more information.
+    (https://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
+    """
+    sub_parser = subparsers.add_parser("logviewer", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=logviewer)
+    add_common_options(sub_parser)
+
+
+def initialize_drpc_client_subcommand(subparsers):
+    command_help = """
+    Provides a very simple way to send DRPC requests. The server and port are picked from the configs.
+    """
+
+    sub_parser = subparsers.add_parser("drpc-client", help=command_help, formatter_class=SortingHelpFormatter)
+
+    sub_parser.add_argument(
+        "-f", "--function", default=None, help="""If the -f argument is supplied to set the function name all of the arguments are treated
+    as arguments to the function.  If no function is given the arguments must
+    be pairs of function argument."""
+    )
+    sub_parser.add_argument("function_arguments", nargs='*', default=[])
+
+    sub_parser.set_defaults(func=drpc_client)
+    add_common_options(sub_parser)
+
+
+def initialize_drpc_subcommand(subparsers):
+    command_help = """
+    Launches a DRPC daemon. This command should be run under supervision
+    with a tool like daemontools or monit.
+
+    See Distributed RPC for more information.
+    (https://storm.apache.org/documentation/Distributed-RPC)
+    """
+    sub_parser = subparsers.add_parser("drpc", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=drpc)
+    add_common_options(sub_parser)
+
+
+def initialize_dev_zookeeper_subcommand(subparsers):
+    command_help = """
+    Launches a fresh Zookeeper server using "dev.zookeeper.path" as its local dir and
+    "storm.zookeeper.port" as its port. This is only intended for development/testing, the
+    Zookeeper instance launched is not configured to be used in production.
+    """
+    sub_parser = subparsers.add_parser("dev-zookeeper", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=dev_zookeeper)
+    add_common_options(sub_parser)
+
+
+def initialize_version_subcommand(subparsers):
+    command_help = """Prints the version number of this Storm release."""
+    sub_parser = subparsers.add_parser("version", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=version)
+    add_common_options(sub_parser)
+
+
+def initialize_classpath_subcommand(subparsers):
+    command_help = """Prints the classpath used by the storm client when running commands."""
+    sub_parser = subparsers.add_parser("classpath", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=print_classpath)
+    add_common_options(sub_parser)
+
+
+def initialize_server_classpath_subcommand(subparsers):
+    command_help = """Prints the classpath used by the storm servers when running commands."""
+    sub_parser = subparsers.add_parser("server_classpath", help=command_help, formatter_class=SortingHelpFormatter)
+    sub_parser.set_defaults(func=print_server_classpath)
+    add_common_options(sub_parser)
+
+
+def initialize_monitor_subcommand(subparsers):
+    command_help = """Monitor given topology's throughput interactively."""
+    sub_parser = subparsers.add_parser("monitor", help=command_help, formatter_class=SortingHelpFormatter)
+
+    sub_parser.add_argument("topology-name")
+    sub_parser.add_argument(
+        "-i", "--interval", type=check_positive, default=None,
+        help="""By default, poll-interval is 4 seconds"""
+    )
+    sub_parser.add_argument("-m", "--component", type=check_positive, default=None)
+    sub_parser.add_argument("-s", "--stream", default=None)
+    sub_parser.add_argument("-w", "--watch", default=None)
+    sub_parser.set_defaults(func=monitor)
+    add_common_options(sub_parser)
+
+
+def jar(args):
+    run_client_jar(
+        args.topology_main_class, args,
+        client=not args.storm_server_classpath, daemon=False)
+
+
+def local(args):
+    extrajvmopts = ["-Dstorm.local.sleeptime=" + args.local_ttl]
+    if args.java_debug:
+        extrajvmopts += ["-agentlib:jdwp=" + args.java_debug]
+    args.topology_main_args = [args.topology_main_class] + args.topology_main_args
+    run_client_jar(
+        "org.apache.storm.LocalCluster", args,
+        client=False, daemon=False, extrajvmopts=extrajvmopts)
+
+
+def sql(args):
+    local_jars = [arg for arg in args.jars.split(",") if arg]
+
+    artifact_to_file_jars = resolve_dependencies(
+        args.artifacts, args.artifactRepositories,
+        args.mavenLocalRepositoryDirectory, args.proxyUrl,
+        args.proxyUsername, args.proxyPassword
+    )
+
+    # include storm-sql-runtime jar(s) to local jar list
+    # --jars doesn't support wildcard so it should call get_jars_full
+    sql_runtime_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
+    local_jars.extend(sql_runtime_jars)
+
+    extra_jars = [USER_CONF_DIR, STORM_BIN_DIR]
+    extra_jars.extend(local_jars)
+    extra_jars.extend(artifact_to_file_jars.values())
+
+    # include this for running StormSqlRunner, but not for generated topology
+    sql_core_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
+    extra_jars.extend(sql_core_jars)
+
+    if args.explain:
+        sql_args = ["--file", args.sql_file, "--explain"]
+    else:
+        sql_args = ["--file", args.sql_file, "--topology", args.topology_name]
+
     exec_storm_class(
-        "org.apache.storm.command.Rebalance",
-        args=args,
+        "org.apache.storm.sql.StormSqlRunner", storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=extra_jars,
+        args=sql_args,
+        daemon=False,
+        jvmopts=["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
+                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
+
+
+def kill(args):
+    exec_storm_class(
+        "org.apache.storm.command.KillTopology",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
-def get_errors(*args):
-    """Syntax: [storm get-errors topology-name]
 
-    Get the latest error from the running topology. The returned result contains
-    the key value pairs for component-name and component-error for the components in error.
-    The result is returned in json format.
-    """
-    if not args:
-        print_usage(command="get-errors")
-        sys.exit(2)
+def upload_credentials(args):
+    exec_storm_class(
+        "org.apache.storm.command.UploadCredentials",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+
+def blob(args):
+    if hasattr(args, "update") and args.update and not args.replication_factor:
+        raise argparse.ArgumentTypeError("Replication factor needed when doing blob update")
+    exec_storm_class(
+        "org.apache.storm.command.Blobstore",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+
+def heartbeats(args):
+    exec_storm_class(
+        "org.apache.storm.command.Heartbeats",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+
+def activate(args):
+    exec_storm_class(
+        "org.apache.storm.command.Activate",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+def listtopos(args):
+    exec_storm_class(
+        "org.apache.storm.command.ListTopologies",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+def set_log_level(args):
+    for log_level in args.l:
+        try:
+            _, new_value = log_level.split("=")
+            if ":" in new_value:
+                _, timeout = new_value.split(":")
+                int(timeout)
+        except:
+            raise argparse.ArgumentTypeError("Should be in the form[logger name]=[log level][:optional timeout]")
+    exec_storm_class(
+        "org.apache.storm.command.SetLogLevel",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+def deactivate(args):
+    exec_storm_class(
+        "org.apache.storm.command.Deactivate",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+
+def rebalance(args):
+    for executor in args.executors:
+        try:
+            _, new_value = executor.split("=")
+            new_value = int(new_value)
+            if new_value < 0:
+                raise argparse.ArgumentTypeError("Executor count should be > 0")
+        except:
+            raise argparse.ArgumentTypeError("Should be in the form component_name:new_executor_count")
+    exec_storm_class(
+        "org.apache.storm.command.Rebalance",
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+
+def get_errors(args):
     exec_storm_class(
         "org.apache.storm.command.GetErrors",
-        args=args,
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
-def healthcheck(*args):
-    """Syntax: [storm node-health-check]
 
-    Run health checks on the local supervisor.
-    """
+def healthcheck(args):
     exec_storm_class(
         "org.apache.storm.command.HealthCheck",
-        args=args,
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
-def kill_workers(*args):
-    """Syntax: [storm kill_workers]
 
-    Kill the workers running on this supervisor. This command should be run
-    on a supervisor node. If the cluster is running in secure mode, then user needs
-    to have admin rights on the node to be able to successfully kill all workers.
-    """
+def kill_workers(args):
     exec_storm_class(
         "org.apache.storm.command.KillWorkers",
-        args=args,
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
-def admin(*args):
-    """Syntax: [storm admin cmd [options]]
 
-    The storm admin command provides access to several operations that can help
-    an administrator debug or fix a cluster.
-
-    remove_corrupt_topologies - This command should be run on a nimbus node as
-    the same user nimbus runs as.  It will go directly to zookeeper + blobstore
-    and find topologies that appear to be corrupted because of missing blobs.
-    It will kill those topologies.
-
-    zk_cli [options] - This command will launch a zookeeper cli pointing to the
-    storm zookeeper instance logged in as the nimbus user.  It should be run on
-    a nimbus server as the user nimbus runs as.
-        -s --server <connection string>: Set the connection string to use,
-            defaults to storm connection string.
-        -t --time-out <timeout>:  Set the timeout to use, defaults to storm
-            zookeeper timeout.
-        -w --write: Allow for writes, defaults to read only, we don't want to
-            cause problems.
-        -n --no-root: Don't include the storm root on the default connection string.
-        -j --jaas <jaas_file>: Include a jaas file that should be used when
-            authenticating with ZK defaults to the
-            java.security.auth.login.config conf.
-
-    creds topology_id - Print the credential keys for a topology.
-    """
+def admin(args):
     exec_storm_class(
         "org.apache.storm.command.AdminCommands",
-        args=args,
+        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 
-def shell(resourcesdir, command, *args):
-    """Syntax: [storm shell resourcesdir command args]
-
-    Archives resources to jar and uploads jar to Nimbus, and executes following arguments on "local". Useful for non JVM languages.
-    eg: `storm shell resources/ python topology.py arg1 arg2`
-    """
-    tmpjarpath = "stormshell" + str(random.randint(0, 10000000)) + ".jar"
-    os.system("jar cf %s %s" % (tmpjarpath, resourcesdir))
-    runnerargs = [tmpjarpath, command]
-    runnerargs.extend(args)
+def shell(args):
+    tmpjarpath = "stormshell" + str(randint(0, 10000000)) + ".jar"
+    os.system("jar cf %s %s" % (tmpjarpath, args.resourcesdir))
+    runnerargs = [tmpjarpath, args.command]
+    runnerargs.extend(args.args)
     exec_storm_class(
-        "org.apache.storm.command.ShellSubmission",
+        "org.apache.storm.command.ShellSubmission", storm_config_opts=args.storm_config_opts,
         args=runnerargs,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR],
         fork=True)
     os.system("rm " + tmpjarpath)
 
-def repl():
-    """DEPRECATED: This subcommand may be removed in a future release.
-    Syntax: [storm repl]
 
-    Opens up a Clojure REPL with the storm jars and configuration
-    on the classpath. Useful for debugging.
-    """
+def repl(args):
     cppaths = [CLUSTER_CONF_DIR]
-    exec_storm_class("clojure.main", jvmtype="-client", extrajars=cppaths)
+    exec_storm_class(
+        "clojure.main", storm_config_opts=args.storm_config_opts, jvmtype="-client", extrajars=cppaths
+    )
 
-def get_log4j2_conf_dir():
+
+def get_log4j2_conf_dir(storm_config_opts):
     cppaths = [CLUSTER_CONF_DIR]
-    storm_log4j2_conf_dir = confvalue("storm.log4j2.conf.dir", cppaths)
-    if(storm_log4j2_conf_dir == None or storm_log4j2_conf_dir == "null"):
+    storm_log4j2_conf_dir = confvalue(
+        "storm.log4j2.conf.dir", storm_config_opts=storm_config_opts, extrapaths=cppaths
+    )
+    if(not storm_log4j2_conf_dir or storm_log4j2_conf_dir == "null"):
         storm_log4j2_conf_dir = STORM_LOG4J2_CONF_DIR
     elif(not os.path.isabs(storm_log4j2_conf_dir)):
         storm_log4j2_conf_dir = os.path.join(STORM_DIR, storm_log4j2_conf_dir)
     return storm_log4j2_conf_dir
 
-def nimbus(klass="org.apache.storm.daemon.nimbus.Nimbus"):
-    """Syntax: [storm nimbus]
 
-    Launches the nimbus daemon. This command should be run under
-    supervision with a tool like daemontools or monit.
-
-    See Setting up a Storm cluster for more information.
-    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
-    """
+def nimbus(args):
     cppaths = [CLUSTER_CONF_DIR]
-    jvmopts = parse_args(confvalue("nimbus.childopts", cppaths)) + [
-        "-Djava.deserialization.disabled=true",
-        "-Dlogfile.name=nimbus.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
-    ]
+    storm_config_opts = get_config_opts(args.storm_config_opts)
+    jvmopts = shlex.split(confvalue(
+        "nimbus.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths
+        )) + [
+            "-Djava.deserialization.disabled=true",
+            "-Dlogfile.name=nimbus.log",
+            "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml"),
+        ]
     exec_storm_class(
-        klass,
+        "org.apache.storm.daemon.nimbus.Nimbus", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="nimbus",
         extrajars=cppaths,
         jvmopts=jvmopts)
 
-def pacemaker(klass="org.apache.storm.pacemaker.Pacemaker"):
-    """Syntax: [storm pacemaker]
 
-    Launches the Pacemaker daemon. This command should be run under
-    supervision with a tool like daemontools or monit.
-
-    See Setting up a Storm cluster for more information.
-    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
-    """
+def pacemaker(args):
     cppaths = [CLUSTER_CONF_DIR]
-    jvmopts = parse_args(confvalue("pacemaker.childopts", cppaths)) + [
+    storm_config_opts = get_config_opts(args.storm_config_opts)
+
+    jvmopts = shlex.split(confvalue(
+        "pacemaker.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths)
+    ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=pacemaker.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
-    ]
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml"),
+        ]
     exec_storm_class(
-        klass,
+        "org.apache.storm.pacemaker.Pacemaker", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="pacemaker",
         extrajars=cppaths,
         jvmopts=jvmopts)
 
-def supervisor(klass="org.apache.storm.daemon.supervisor.Supervisor"):
-    """Syntax: [storm supervisor]
 
-    Launches the supervisor daemon. This command should be run
-    under supervision with a tool like daemontools or monit.
-
-    See Setting up a Storm cluster for more information.
-    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
-    """
+def supervisor(args):
     cppaths = [CLUSTER_CONF_DIR]
-    jvmopts = parse_args(confvalue("supervisor.childopts", cppaths)) + [
+    storm_config_opts = get_config_opts(args.storm_config_opts)
+    jvmopts = shlex.split(confvalue(
+        "supervisor.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths)
+    ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=" + STORM_SUPERVISOR_LOG_FILE,
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
-    ]
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml"),
+        ]
     exec_storm_class(
-        klass,
+        "org.apache.storm.daemon.supervisor.Supervisor", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="supervisor",
         extrajars=cppaths,
         jvmopts=jvmopts)
 
-def ui():
-    """Syntax: [storm ui]
 
-    Launches the UI daemon. The UI provides a web interface for a Storm
-    cluster and shows detailed stats about running topologies. This command
-    should be run under supervision with a tool like daemontools or monit.
-
-    See Setting up a Storm cluster for more information.
-    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
-    """
+def ui(args):
     cppaths = [CLUSTER_CONF_DIR]
-    jvmopts = parse_args(confvalue("ui.childopts", cppaths)) + [
+    storm_config_opts = get_config_opts(args.storm_config_opts)
+    jvmopts = shlex.split(confvalue(
+        "ui.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths)
+    ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=ui.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml")
     ]
 
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
     allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.daemon.ui.UIServer",
+        "org.apache.storm.daemon.ui.UIServer", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="ui",
         jvmopts=jvmopts,
         extrajars=allextrajars)
 
-def logviewer():
-    """Syntax: [storm logviewer]
 
-    Launches the log viewer daemon. It provides a web interface for viewing
-    storm log files. This command should be run under supervision with a
-    tool like daemontools or monit.
-
-    See Setting up a Storm cluster for more information.
-    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
-    """
+def logviewer(args):
     cppaths = [CLUSTER_CONF_DIR]
-    jvmopts = parse_args(confvalue("logviewer.childopts", cppaths)) + [
+    storm_config_opts = get_config_opts(args.storm_config_opts)
+    jvmopts = shlex.split(
+        confvalue(
+            "logviewer.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths
+        )
+    ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=logviewer.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml")
     ]
 
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
     allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.daemon.logviewer.LogviewerServer",
+        "org.apache.storm.daemon.logviewer.LogviewerServer", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="logviewer",
         jvmopts=jvmopts,
         extrajars=allextrajars)
 
 
-def drpcclient(*args):
-    """Syntax: [storm drpc-client [options] ([function argument]*)|(argument*)]
+def drpc_client(args):
+    if not args.function and not (len(args.function_arguments) % 2):
+        raise argparse.ArgumentTypeError(
+            "If no -f is supplied arguments need to be in the form [function arg]. " +
+            "This has {} args".format(
+                len(args.function_arguments)
+            )
+        )
 
-    Provides a very simple way to send DRPC requests.
-    If a -f argument is supplied to set the function name all of the arguments are treated
-    as arguments to the function.  If no function is given the arguments must
-    be pairs of function argument.
-
-    The server and port are picked from the configs.
-    """
-    if not args:
-        print_usage(command="drpc-client")
-        sys.exit(2)
     exec_storm_class(
         "org.apache.storm.command.BasicDrpcClient",
-        args=args,
+        args=sys.argv[2],
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
-def drpc():
-    """Syntax: [storm drpc]
 
-    Launches a DRPC daemon. This command should be run under supervision
-    with a tool like daemontools or monit.
-
-    See Distributed RPC for more information.
-    (http://storm.apache.org/documentation/Distributed-RPC)
-    """
+def drpc(args):
     cppaths = [CLUSTER_CONF_DIR]
-    jvmopts = parse_args(confvalue("drpc.childopts", cppaths)) + [
+    storm_config_opts = get_config_opts(args.storm_config_opts)
+    jvmopts = shlex.split(
+        confvalue(
+            "drpc.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths
+        )
+    ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=drpc.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml")
     ]
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
     allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.daemon.drpc.DRPCServer",
+        "org.apache.storm.daemon.drpc.DRPCServer", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="drpc",
         jvmopts=jvmopts,
         extrajars=allextrajars)
 
-def dev_zookeeper():
-    """Syntax: [storm dev-zookeeper]
 
-    Launches a fresh Zookeeper server using "dev.zookeeper.path" as its local dir and
-    "storm.zookeeper.port" as its port. This is only intended for development/testing, the
-    Zookeeper instance launched is not configured to be used in production.
-    """
+def dev_zookeeper(args):
+    storm_config_opts = get_config_opts(args.storm_config_opts)
     jvmopts = [
         "-Dlogfile.name=dev-zookeeper.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml")
     ]
-    cppaths = [CLUSTER_CONF_DIR]
     exec_storm_class(
-        "org.apache.storm.command.DevZookeeper",
+        "org.apache.storm.command.DevZookeeper", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="dev_zookeeper",
         jvmopts=jvmopts,
         extrajars=[CLUSTER_CONF_DIR])
 
-def version():
-  """Syntax: [storm version]
 
-  Prints the version number of this Storm release.
-  """
-  cppaths = [CLUSTER_CONF_DIR]
-  exec_storm_class(
-       "org.apache.storm.utils.VersionInfo",
-       jvmtype="-client",
-       extrajars=[CLUSTER_CONF_DIR])
+def version(args):
+    exec_storm_class(
+        "org.apache.storm.utils.VersionInfo", storm_config_opts=args.storm_config_opts,
+        jvmtype="-client",
+        extrajars=[CLUSTER_CONF_DIR])
 
-def print_classpath():
-    """Syntax: [storm classpath]
 
-    Prints the classpath used by the storm client when running commands.
-    """
+def print_classpath(args):
     print(get_classpath([], client=True))
 
-def print_server_classpath():
-    """Syntax: [storm server_classpath]
 
-    Prints the classpath used by the storm servers when running commands.
-    """
+def print_server_classpath(args):
     print(get_classpath([], daemon=True))
 
-def monitor(*args):
-    """Syntax: [storm monitor topology-name [-i interval-secs] [-m component-id] [-s stream-id] [-w [emitted | transferred]]]
 
-    Monitor given topology's throughput interactively.
-    One can specify poll-interval, component-id, stream-id, watch-item[emitted | transferred]
-    By default,
-        poll-interval is 4 seconds;
-        all component-ids will be list;
-        stream-id is 'default';
-        watch-item is 'emitted';
-    """
+def monitor(args):
     exec_storm_class(
-        "org.apache.storm.command.Monitor",
-        args=args,
+        "org.apache.storm.command.Monitor", storm_config_opts=args.storm_config_opts,
+        args=sys.argv[2],
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 
-def print_commands():
-    """Print all client commands and link to documentation"""
-    print("Commands:\n\t" +  "\n\t".join(sorted(COMMANDS.keys())))
-    print("\nHelp: \n\thelp \n\thelp <command>")
-    print("\nDocumentation for the storm client can be found at http://storm.apache.org/documentation/Command-line-client.html\n")
-    print("Configs can be overridden using one or more -c flags, e.g. \"storm list -c nimbus.host=nimbus.mycompany.com\"\n")
-
-def print_usage(command=None):
-    """Print one help message or list of available commands"""
-    if command != None:
-        if command in COMMANDS:
-            print(COMMANDS[command].__doc__ or
-                  "No documentation provided for <%s>" % command)
-        else:
-           print("<%s> is not a valid command" % command)
-    else:
-        print_commands()
-
-def unknown_command(*args):
-    print("Unknown command: [storm %s]" % ' '.join(sys.argv[1:]))
-    print_usage()
-    sys.exit(254)
-
-COMMANDS = {"local": local, "jar": jar, "kill": kill, "shell": shell, "nimbus": nimbus, "ui": ui, "logviewer": logviewer,
-            "drpc": drpc, "drpc-client": drpcclient, "supervisor": supervisor, "localconfvalue": print_localconfvalue,
-            "remoteconfvalue": print_remoteconfvalue, "repl": repl, "classpath": print_classpath, "server_classpath": print_server_classpath,
-            "activate": activate, "deactivate": deactivate, "rebalance": rebalance, "help": print_usage,
-            "list": listtopos, "dev-zookeeper": dev_zookeeper, "version": version, "monitor": monitor,
-            "upload-credentials": upload_credentials, "pacemaker": pacemaker, "heartbeats": heartbeats, "blobstore": blobstore,
-            "get-errors": get_errors, "set_log_level": set_log_level, "kill_workers": kill_workers,
-            "node-health-check": healthcheck, "sql": sql, "admin": admin}
-
-def parse_config(config_list):
-    global CONFIG_OPTS
-    if len(config_list) > 0:
-        for config in config_list:
-            CONFIG_OPTS.append(config)
-
-def parse_local_opts(args):
-    curr = list(args[:])
-    curr.reverse()
-    ttl = "20"
-    debug_args = None
-    args_list = []
-
-    while len(curr) > 0:
-        token = curr.pop()
-        if token == "--local-ttl":
-            ttl = curr.pop()
-        elif token == "--java-debug":
-            debug_args = curr.pop()
-        else:
-            args_list.append(token)
-
-    return ttl, debug_args, args_list
-
-
-def parse_jar_opts(args):
-    curr = list(args[:])
-    curr.reverse()
-    server_class_path = False
-    args_list = []
-
-    while len(curr) > 0:
-        token = curr.pop()
-        if token == "--storm-server-classpath":
-            server_class_path = True
-        else:
-            args_list.append(token)
-
-    return server_class_path, args_list
-
-def parse_config_opts(args):
-    curr = args[:]
-    curr.reverse()
-    config_list = []
-    args_list = []
-    jars_list = []
-    artifacts_list = []
-    artifact_repositories_list = []
-    maven_local_repository_dir = None
-    proxy_url = None
-    proxy_username = None
-    proxy_password = None
-
-    while len(curr) > 0:
-        token = curr.pop()
-        if token == "-c":
-            config_list.append(curr.pop())
-        elif token == "--config":
-            global CONFFILE
-            CONFFILE = curr.pop()
-        elif token == "--jars":
-            jars_list.extend(curr.pop().split(','))
-        elif token == "--artifacts":
-            artifacts_list.extend(curr.pop().split(','))
-        elif token == "--artifactRepositories":
-            artifact_repositories_list.extend(curr.pop().split(','))
-        elif token == "--mavenLocalRepositoryDirectory":
-            maven_local_repository_dir = curr.pop()
-        elif token == "--proxyUrl":
-            proxy_url = curr.pop()
-        elif token == "--proxyUsername":
-            proxy_username = curr.pop()
-        elif token == "--proxyPassword":
-            proxy_password = curr.pop()
-        else:
-            args_list.append(token)
-
-    return config_list, jars_list, artifacts_list, artifact_repositories_list, maven_local_repository_dir, \
-           proxy_url, proxy_username, proxy_password, args_list
-
 def main():
-    if len(sys.argv) <= 1:
-        print_usage()
-        sys.exit(-1)
-    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, \
-        DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY, DEP_PROXY_URL, \
-        DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
-    config_list, jars_list, artifacts_list, artifact_repositories_list, maven_local_directory, proxy_url, \
-        proxy_username, proxy_password, args = parse_config_opts(sys.argv[1:])
-    parse_config(config_list)
-    DEP_JARS_OPTS = jars_list
-    DEP_ARTIFACTS_OPTS = artifacts_list
-    DEP_ARTIFACTS_REPOSITORIES_OPTS = artifact_repositories_list
-    DEP_MAVEN_LOCAL_REPOSITORY_DIRECTORY = maven_local_directory
-    DEP_PROXY_URL = proxy_url
-    DEP_PROXY_USERNAME = proxy_username
-    DEP_PROXY_PASSWORD = proxy_password
-    COMMAND = args[0]
-    ARGS = args[1:]
-    (COMMANDS.get(COMMAND, unknown_command))(*ARGS)
+    init_storm_env()
+    storm_parser = initialize_main_command()
+    if len(sys.argv) == 1:
+        storm_parser.print_help(sys.stderr)
+        sys.exit(1)
+    raw_args = storm_parser.parse_args()
+    raw_args.func(raw_args)
+
 
 if __name__ == "__main__":
     main()

@@ -20,10 +20,8 @@ package org.apache.storm.daemon.utils;
 
 import static java.util.stream.Collectors.joining;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import org.apache.storm.utils.Utils;
 
 /**
  * Convenient utility class to build the URL.
@@ -48,14 +46,9 @@ public class UrlBuilder {
 
             String queryParam = parameters.entrySet().stream()
                 .map(entry -> {
-                    try {
-                        return URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name())
-                            + "="
-                            + URLEncoder.encode(entry.getValue().toString(), StandardCharsets.UTF_8.name());
-                    } catch (UnsupportedEncodingException e) {
-                        //This can't happen, UTF-8 is always available
-                        throw new RuntimeException(e);
-                    }
+                    return Utils.urlEncodeUtf8(entry.getKey())
+                        + "="
+                        + Utils.urlEncodeUtf8(entry.getValue().toString());
                 })
                 .collect(joining("&"));
             sb.append(queryParam);

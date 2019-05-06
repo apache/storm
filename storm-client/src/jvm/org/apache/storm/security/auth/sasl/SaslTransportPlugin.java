@@ -12,6 +12,7 @@
 
 package org.apache.storm.security.auth.sasl;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
@@ -45,7 +46,7 @@ import org.apache.storm.utils.ExtendedThreadPoolExecutor;
 /**
  * Base class for SASL authentication plugin.
  */
-public abstract class SaslTransportPlugin implements ITransportPlugin {
+public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable {
     protected ThriftConnectionType type;
     protected Map<String, Object> conf;
     protected Configuration loginConf;
@@ -82,14 +83,18 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         if (serverTransportFactory != null) {
             serverArgs.transportFactory(serverTransportFactory);
         }
-        BlockingQueue workQueue = new SynchronousQueue();
+        BlockingQueue<Runnable> workQueue = new SynchronousQueue<>();
         if (queueSize != null) {
-            workQueue = new ArrayBlockingQueue(queueSize);
+            workQueue = new ArrayBlockingQueue<>(queueSize);
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
                                                                             60, TimeUnit.SECONDS, workQueue);
         serverArgs.executorService(executorService);
         return new TThreadPoolServer(serverArgs);
+    }
+
+    @Override
+    public void close() {
     }
 
     /**

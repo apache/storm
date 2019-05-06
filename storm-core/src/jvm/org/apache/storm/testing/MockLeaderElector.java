@@ -15,6 +15,7 @@ package org.apache.storm.testing;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 
@@ -46,12 +47,17 @@ public class MockLeaderElector implements ILeaderElector {
     }
 
     @Override
-    public void removeFromLeaderLockQueue() throws Exception {
+    public void quitElectionFor(int delayMs) throws Exception {
         //NOOP
     }
 
     @Override
     public boolean isLeader() throws Exception {
+        return isLeader;
+    }
+
+    @Override
+    public boolean awaitLeadership(long timeout, TimeUnit timeUnit) throws InterruptedException {
         return isLeader;
     }
 

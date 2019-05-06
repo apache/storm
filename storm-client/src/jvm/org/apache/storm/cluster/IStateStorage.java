@@ -12,6 +12,7 @@
 
 package org.apache.storm.cluster;
 
+import java.io.Closeable;
 import java.util.List;
 import org.apache.storm.callback.ZKStateChangedCallback;
 import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
@@ -27,7 +28,7 @@ import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
  * For example, performing these two calls: set_data("/path", data, acls); void set_worker_hb("/path", heartbeat, acls); may or may not
  * cause a collision in "/path". Never use the same paths with the *_hb* methods as you do with the others.
  */
-public interface IStateStorage {
+public interface IStateStorage extends Closeable {
 
     /**
      * Registers a callback function that gets called when CuratorEvents happen.
@@ -115,6 +116,7 @@ public interface IStateStorage {
     /**
      * Close the connection to the data store.
      */
+    @Override
     void close();
 
     /**

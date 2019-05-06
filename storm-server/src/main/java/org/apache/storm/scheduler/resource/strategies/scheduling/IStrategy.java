@@ -19,7 +19,6 @@ import org.apache.storm.scheduler.resource.SchedulingResult;
 
 /**
  * An interface to for implementing different scheduling strategies for the resource aware scheduling.
- * In the future strategies will be pluggable
  */
 public interface IStrategy {
 
@@ -32,6 +31,10 @@ public interface IStrategy {
     /**
      * This method is invoked to calculate a scheduling for topology td.  Cluster will reject any changes that are
      * not for the given topology.  Any changes made to the cluster will be committed if the scheduling is successful.
+     * <P></P>
+     * NOTE: scheduling occurs as a runnable in an interruptible thread.  Scheduling should consider being interrupted if
+     * long running.
+     *
      * @param schedulingState the current state of the cluster
      * @param td the topology to schedule for
      * @return returns a SchedulingResult object containing SchedulingStatus object to indicate whether scheduling is

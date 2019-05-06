@@ -82,7 +82,7 @@ public class MaxUncommittedOffsetTest {
         //The spout must be able to reemit all retriable tuples, even if the maxPollRecords is set to a low value compared to maxUncommittedOffsets.
         assertThat("Current tests require maxPollRecords < maxUncommittedOffsets", maxPollRecords, lessThanOrEqualTo(maxUncommittedOffsets));
         spout = new KafkaSpout<>(spoutConfig);
-        new ConsumerFactoryDefault<String, String>().createConsumer(spoutConfig);
+        new ConsumerFactoryDefault<String, String>().createConsumer(spoutConfig.getKafkaProps());
     }
 
     private void prepareSpout(int msgCount) throws Exception {

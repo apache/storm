@@ -17,8 +17,8 @@
 package org.apache.storm.kafka.spout.trident.internal;
 
 import java.io.Serializable;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.RecordTranslator;
+import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutConfig;
 import org.apache.storm.tuple.Fields;
 
 public class OutputFieldsExtractor implements Serializable {
@@ -28,7 +28,7 @@ public class OutputFieldsExtractor implements Serializable {
      * Extract the output fields from the config.
      * Throws an error if there are multiple declared output streams, since Trident only supports one output stream per spout.
      */
-    public <K, V> Fields getOutputFields(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
+    public <K, V> Fields getOutputFields(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig) {
         RecordTranslator<K, V> translator = kafkaSpoutConfig.getTranslator();
         int numStreams = translator.streams().size();
         if (numStreams > 1) {

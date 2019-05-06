@@ -23,8 +23,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
@@ -44,11 +46,10 @@ public abstract class LocallyCachedBlob {
     // A callback that does nothing.
     private static final BlobChangingCallback NOOP_CB = (assignment, port, resource, go) -> {
     };
-    private final Map<PortAndAssignment, BlobChangingCallback> references = new HashMap<>();
+    private final ConcurrentHashMap<PortAndAssignment, BlobChangingCallback> references = new ConcurrentHashMap<>();
     private final String blobDescription;
     private final String blobKey;
-    private long lastUsed = Time.currentTimeMillis();
-    private CompletableFuture<Void> doneUpdating = null;
+    private AtomicLong lastUsed = new AtomicLong(Time.currentTimeMillis());
 
     private final Histogram fetchingRate;
 
@@ -144,7 +145,7 @@ public abstract class LocallyCachedBlob {
      * PRECONDITION: this can only be called with a lock on this instance held.
      * @param version the version of the blob to commit.
      */
-    public abstract void commitNewVersion(long version) throws IOException;
+    protected abstract void commitNewVersion(long version) throws IOException;
 
     /**
      * Clean up any temporary files.  This will be called after updating a blob, either successfully or if an error has occured.
@@ -195,22 +196,22 @@ public abstract class LocallyCachedBlob {
     /**
      * Updates the last updated time.  This should be called when references are added or removed.
      */
-    protected synchronized void touch() {
-        lastUsed = Time.currentTimeMillis();
-        LOG.debug("Setting {} ts to {}", blobKey, lastUsed);
+    protected void touch() {
+        lastUsed.set(Time.currentTimeMillis());
+        LOG.debug("Setting {} ts to {}", blobKey, lastUsed.get());
     }
 
     /**
      * Get the last time that this used for LRU calculations.
      */
-    public synchronized long getLastUsed() {
-        return lastUsed;
+    public long getLastUsed() {
+        return lastUsed.get();
     }
 
     /**
      * Return true if this blob is actively being used, else false (meaning it can be deleted, but might not be).
      */
-    public synchronized boolean isUsed() {
+    public boolean isUsed() {
         return !references.isEmpty();
     }
 
@@ -219,7 +220,7 @@ public abstract class LocallyCachedBlob {
      * @param pna the slot and assignment that are using this blob.
      * @param cb an optional callback indicating that they want to know/synchronize when a blob is updated.
      */
-    public synchronized void addReference(final PortAndAssignment pna, BlobChangingCallback cb) {
+    public void addReference(final PortAndAssignment pna, BlobChangingCallback cb) {
         LOG.debug("Adding reference {}", pna);
         if (cb == null) {
             cb = NOOP_CB;
@@ -233,7 +234,7 @@ public abstract class LocallyCachedBlob {
      * Removes a reservation for this blob from a given slot and assignemnt.
      * @param pna the slot + assignment that no longer needs this blob.
      */
-    public synchronized void removeReference(final PortAndAssignment pna) {
+    public void removeReference(final PortAndAssignment pna) {
         LOG.debug("Removing reference {}", pna);
         if (references.remove(pna) == null) {
             LOG.warn("{} had no reservation for {}", pna, blobDescription);
@@ -242,13 +243,26 @@ public abstract class LocallyCachedBlob {
     }
 
     /**
+     * Inform all of the callbacks that a change is going to happen and then wait for them to all get back that it is OK to make that
+     * change. Commit the new version once all callbacks are ready. Finally inform all callbacks that the commit is complete.
+     */
+    public synchronized void informReferencesAndCommitNewVersion(long newVersion) throws IOException {
+        CompletableFuture<Void> doneUpdating = informAllOfChangeAndWaitForConsensus();
+        commitNewVersion(newVersion);
+        doneUpdating.complete(null);
+    }
+    
+    /**
      * Inform all of the callbacks that a change is going to happen and then wait for
      * them to all get back that it is OK to make that change.
+     * 
+     * @return A future to complete when the change is committed
      */
-    public synchronized void informAllOfChangeAndWaitForConsensus() {
-        CountDownLatch cdl = new CountDownLatch(references.size());
-        doneUpdating = new CompletableFuture<>();
-        for (Map.Entry<PortAndAssignment, BlobChangingCallback> entry : references.entrySet()) {
+    private CompletableFuture<Void> informAllOfChangeAndWaitForConsensus() {
+        HashMap<PortAndAssignment, BlobChangingCallback> refsCopy = new HashMap<>(references);
+        CountDownLatch cdl = new CountDownLatch(refsCopy.size());
+        CompletableFuture<Void> doneUpdating = new CompletableFuture<>();
+        for (Map.Entry<PortAndAssignment, BlobChangingCallback> entry : refsCopy.entrySet()) {
             GoodToGo gtg = new GoodToGo(cdl, doneUpdating);
             try {
                 PortAndAssignment pna = entry.getKey();
@@ -264,13 +278,7 @@ public abstract class LocallyCachedBlob {
             //Interrupted is thrown when we are shutting down.
             // So just ignore it for now...
         }
-    }
-
-    /**
-     * Inform all of the callbacks that the change to the blob is complete.
-     */
-    public synchronized void informAllChangeComplete() {
-        doneUpdating.complete(null);
+        return doneUpdating;
     }
 
     /**

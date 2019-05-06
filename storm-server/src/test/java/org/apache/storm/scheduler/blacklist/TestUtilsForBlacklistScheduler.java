@@ -83,6 +83,22 @@ public class TestUtilsForBlacklistScheduler {
         return retList;
     }
 
+    public static Map<String, SupervisorDetails> addPortToSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap, String supervisor, int port) {
+        Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
+        for (Map.Entry<String, SupervisorDetails> supervisorDetailsEntry : supervisorDetailsMap.entrySet()) {
+            String supervisorKey = supervisorDetailsEntry.getKey();
+            SupervisorDetails supervisorDetails = supervisorDetailsEntry.getValue();
+            Set<Integer> ports = new HashSet<>();
+            ports.addAll(supervisorDetails.getAllPorts());
+            if (supervisorKey.equals(supervisor)) {
+                ports.add(port);
+            }
+            SupervisorDetails sup = new SupervisorDetails(supervisorDetails.getId(), supervisorDetails.getHost(), null, (HashSet) ports, null);
+            retList.put(sup.getId(), sup);
+        }
+        return retList;
+    }
+
     public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts) {
         Map<String, SupervisorDetails> retList = new HashMap<>();
         for (int i = 0; i < numSup; i++) {

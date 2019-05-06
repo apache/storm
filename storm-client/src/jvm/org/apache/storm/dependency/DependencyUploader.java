@@ -154,11 +154,23 @@ public class DependencyUploader {
             acls.add(new AccessControl(AccessControlType.OTHER,
                                        BlobStoreAclHandler.READ));
 
-            AtomicOutputStream blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
-            Files.copy(dependency.toPath(), blob);
-            blob.close();
+            AtomicOutputStream blob = null;
+            try {
+                blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
+                Files.copy(dependency.toPath(), blob);
+                blob.close();
+                blob = null;
 
-            uploadNew = true;
+                uploadNew = true;
+            } finally {
+                try {
+                    if (blob != null) {
+                        blob.cancel();
+                    }
+                } catch (IOException throwaway) {
+                    // Ignore.
+                }
+            }
         }
 
         return uploadNew;

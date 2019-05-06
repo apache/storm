@@ -14,6 +14,7 @@ package org.apache.storm.daemon.worker;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -45,6 +47,7 @@ import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.Supervisor;
 import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
@@ -61,6 +64,7 @@ import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.SupervisorClient;
+import org.apache.storm.utils.SupervisorIfaceFactory;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -78,7 +82,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     private final int port;
     private final String workerId;
     private final LogConfigManager logConfigManager;
-
+    private final StormMetricRegistry metricRegistry;
 
     private WorkerState workerState;
     private AtomicReference<List<IRunningExecutor>> executorsAtom;
@@ -87,6 +91,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     private AtomicReference<Credentials> credentialsAtom;
     private Subject subject;
     private Collection<IAutoCredentials> autoCreds;
+    private final Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier;
 
 
     /**
@@ -103,7 +108,7 @@ public class Worker implements Shutdownable, DaemonCommon {
      */
 
     public Worker(Map<String, Object> conf, IContext context, String topologyId, String assignmentId,
-                  int supervisorPort, int port, String workerId) {
+                  int supervisorPort, int port, String workerId, Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier) {
         this.conf = conf;
         this.context = context;
         this.topologyId = topologyId;
@@ -112,6 +117,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         this.port = port;
         this.workerId = workerId;
         this.logConfigManager = new LogConfigManager();
+        this.metricRegistry = new StormMetricRegistry();
+        this.supervisorIfaceSupplier = supervisorIfaceSupplier;
     }
 
     public static void main(String[] args) throws Exception {
@@ -124,10 +131,20 @@ public class Worker implements Shutdownable, DaemonCommon {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
         Utils.setupDefaultUncaughtExceptionHandler();
         StormCommon.validateDistributedMode(conf);
-        Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(supervisorPort),
-                                   Integer.parseInt(portStr), workerId);
+        int supervisorPortInt = Integer.parseInt(supervisorPort);
+        Supplier<SupervisorIfaceFactory> supervisorIfaceSuppler = () -> {
+            try {
+                return SupervisorClient.getConfiguredClient(conf, Utils.hostname(), supervisorPortInt);
+            } catch (UnknownHostException e) {
+                throw Utils.wrapInRuntime(e);
+            }
+        };
+        Worker worker = new Worker(conf, null, stormId, assignmentId, supervisorPortInt,
+                                   Integer.parseInt(portStr), workerId, supervisorIfaceSuppler);
         worker.start();
-        Utils.addShutdownHookWithForceKillIn1Sec(worker::shutdown);
+        int workerShutdownSleepSecs = ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS));
+        LOG.info("Adding shutdown hook with kill in {} secs", workerShutdownSleepSecs);
+        Utils.addShutdownHookWithDelayedForceKill(worker::shutdown, workerShutdownSleepSecs);
     }
 
     public void start() throws Exception {
@@ -150,7 +167,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         IStateStorage stateStorage = ClusterUtils.mkStateStorage(conf, topologyConf, csContext);
         IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, null, csContext);
 
-        StormMetricRegistry.start(conf, DaemonType.WORKER);
+        metricRegistry.start(conf, DaemonType.WORKER);
 
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();
@@ -169,8 +186,8 @@ public class Worker implements Shutdownable, DaemonCommon {
     private Object loadWorker(Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState,
                               Map<String, String> initCreds, Credentials initialCredentials)
         throws Exception {
-        workerState = new WorkerState(conf, context, topologyId, assignmentId, supervisorPort, port, workerId,
-                                      topologyConf, stateStorage, stormClusterState, autoCreds);
+        workerState = new WorkerState(conf, context, topologyId, assignmentId, supervisorIfaceSupplier, port, workerId,
+                                      topologyConf, stateStorage, stormClusterState, autoCreds, metricRegistry);
 
         // Heartbeat here so that worker process dies if this fails
         // it's important that worker heartbeat to supervisor ASAP so that supervisor knows
@@ -194,9 +211,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             .scheduleRecurring(0, (Integer) conf.get(Config.EXECUTOR_METRICS_FREQUENCY_SECS),
                                Worker.this::doExecutorHeartbeats);
 
-        workerState.registerCallbacks();
-
-        workerState.refreshConnections(null);
+        workerState.refreshConnections();
 
         workerState.activateWorkerWhenAllConnectionsReady();
 
@@ -424,8 +439,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         SupervisorWorkerHeartbeat workerHeartbeat = new SupervisorWorkerHeartbeat(lsWorkerHeartbeat.get_topology_id(),
                                                                                   lsWorkerHeartbeat.get_executors(),
                                                                                   lsWorkerHeartbeat.get_time_secs());
-        try (SupervisorClient client = SupervisorClient.getConfiguredClient(conf, Utils.hostname(), supervisorPort)) {
-            client.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
+        try (SupervisorIfaceFactory fac = supervisorIfaceSupplier.get()) {
+            fac.getIface().sendSupervisorWorkerHeartbeat(workerHeartbeat);
         } catch (Exception tr1) {
             //If any error/exception thrown, report directly to nimbus.
             LOG.warn("Exception when send heartbeat to local supervisor", tr1.getMessage());
@@ -482,7 +497,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             
             workerState.closeResources();
 
-            StormMetricRegistry.stop();
+            metricRegistry.stop();
 
             LOG.info("Trigger any worker shutdown hooks");
             workerState.runWorkerShutdownHooks();

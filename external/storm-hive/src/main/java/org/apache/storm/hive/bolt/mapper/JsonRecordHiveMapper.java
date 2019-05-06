@@ -119,7 +119,6 @@ public class JsonRecordHiveMapper implements HiveMapper {
     }
 
     private String getPartitionsByTimeFormat() {
-        Date d = new Date();
-        return parseDate.format(d.getTime());
+        return parseDate.format(System.currentTimeMillis());
     }
 }

@@ -29,7 +29,13 @@ limitations under the License.
     <packaging>jar</packaging>
 
     <name>blobstore-migrator</name>
-    <url>http://maven.apache.org</url>
+    <url>https://maven.apache.org</url>
+    
+    <properties>
+        <!-- Required downgrade by hadoop-hdfs 2.8.5 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -72,12 +78,16 @@ limitations under the License.
             <groupId>org.apache.hadoop</groupId>
             <version>${hadoop.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -97,7 +107,6 @@ limitations under the License.
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>

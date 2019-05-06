@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig.ProcessingGuarantee;
@@ -72,7 +73,7 @@ public class KafkaClientSpoutNullBoltTopo {
                                                                             .setProcessingGuarantee(processingGuarantee)
                                                                             .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
                                                                             .setFirstPollOffsetStrategy(
-                                                                                KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST)
+                                                                                FirstPollOffsetStrategy.EARLIEST)
                                                                             .setTupleTrackingEnforced(true)
                                                                             .build();
 
