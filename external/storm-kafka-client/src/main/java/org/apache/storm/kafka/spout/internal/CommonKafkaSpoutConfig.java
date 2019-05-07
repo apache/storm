@@ -77,7 +77,6 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
         this.pollTimeoutMs = builder.pollTimeoutMs;
         this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
         this.startTimeStamp = builder.startTimeStamp;
-
     }
 
     public abstract static class Builder<K, V, T extends Builder<K, V, T>> {

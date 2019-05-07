@@ -36,12 +36,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.UnsupportedVersionException;
 import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.RecordTranslator;
 import org.apache.storm.kafka.spout.TopicPartitionComparator;
@@ -49,7 +50,6 @@ import org.apache.storm.kafka.spout.internal.ConsumerFactory;
 import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.ReportedFailedException;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.slf4j.Logger;
@@ -298,16 +298,9 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
      */
     private void seekOffsetByStartTimeStamp(TopicPartition tp) {
         long startTimeStampOffset;
-        try {
-            startTimeStampOffset =
-                    consumer.offsetsForTimes(Collections.singletonMap(tp, startTimeStamp)).get(tp).offset();
-        } catch (IllegalArgumentException e) {
-            LOG.error("Illegal timestamp {} provided for tp {} ", startTimeStamp, tp.toString());
-            throw new ReportedFailedException();
-        } catch (UnsupportedVersionException e) {
-            LOG.error("Kafka Server do not support offsetsForTimes(), probably < 0.10.1", e);
-            throw new ReportedFailedException();
-        }
+        Map<TopicPartition, OffsetAndTimestamp> map = consumer.offsetsForTimes(Collections.singletonMap(tp, startTimeStamp));
+        OffsetAndTimestamp startOffsetAndTimeStamp = map.get(tp);
+        startTimeStampOffset = startOffsetAndTimeStamp.offset();
         LOG.debug("First poll for topic partition [{}], seeking to partition from startTimeStamp [{}]", tp, startTimeStamp);
         consumer.seek(tp, startTimeStampOffset);
     }
