@@ -26,16 +26,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.MockConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.SpoutWithMockedConsumerSetupHelper;
@@ -88,8 +84,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         records.forEach(record -> consumer.addRecord(record));
     }
 
-    private KafkaTridentSpoutEmitter<String, String> createEmitter(Consumer kafkaConsumer, FirstPollOffsetStrategy firstPollOffsetStrategy) {
-        return new KafkaTridentSpoutEmitter<String, String>(
+    private KafkaTridentSpoutEmitter<String, String> createEmitter(Consumer<String,String> kafkaConsumer, FirstPollOffsetStrategy firstPollOffsetStrategy) {
+        return new KafkaTridentSpoutEmitter<>(
                 SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
                         .setRecordTranslator(r -> new Values(r.offset()), new Fields("offset"))
                         .setFirstPollOffsetStrategy(firstPollOffsetStrategy)
@@ -327,22 +323,25 @@ public class KafkaTridentSpoutEmitterEmitTest {
         long pollTimeout = 1L;
         KafkaTridentSpoutBatchMetadata preExecutorRestartLastMeta = new KafkaTridentSpoutBatchMetadata(preRestartEmittedOffset, preRestartEmittedOffset + preRestartEmittedRecords - 1, "Some older topology");
 
-        Consumer kafkaConsumer = Mockito.mock(Consumer.class);
+
+        KafkaConsumer<String, String> kafkaConsumer = Mockito.mock(KafkaConsumer.class);
         when(kafkaConsumer.assignment()).thenReturn(Collections.singleton(partition));
         OffsetAndTimestamp offsetAndTimestamp = new OffsetAndTimestamp(timeStampStartOffset, startTimeStamp);
-        HashedMap map = new HashedMap();
-        map.put(partition,offsetAndTimestamp);
+        HashMap<TopicPartition, OffsetAndTimestamp> map = new HashMap<>();
+        map.put(partition, offsetAndTimestamp);
         when(kafkaConsumer.offsetsForTimes(Collections.singletonMap(partition, startTimeStamp))).thenReturn(map);
-        HashedMap topicPartitionMap = new HashedMap();
+        HashMap<TopicPartition, List<ConsumerRecord<String, String>>> topicPartitionMap = new HashMap<>();
         List<ConsumerRecord<String, String>> newRecords = SpoutWithMockedConsumerSetupHelper.createRecords(partition, timeStampStartOffset, recordsInKafka);
-        topicPartitionMap.put(partition,newRecords);
-        when(kafkaConsumer.poll(pollTimeout)).thenReturn(new ConsumerRecords<String,String>(topicPartitionMap));
+        topicPartitionMap.put(partition, newRecords);
+        when(kafkaConsumer.poll(pollTimeout)).thenReturn(new ConsumerRecords<>(topicPartitionMap));
+
         KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(kafkaConsumer, FirstPollOffsetStrategy.TIMESTAMP);
         TransactionAttempt txid = new TransactionAttempt(0L, 0);
         KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(partition);
         Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());
 
         verify(collectorMock, times(recordsInKafka)).emit(emitCaptor.capture());
+        verify(kafkaConsumer, times(1)).seek(partition, timeStampStartOffset);
         List<List<Object>> emits = emitCaptor.getAllValues();
         assertThat(emits.get(0).get(0), is(timeStampStartOffset));
         KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(meta);
