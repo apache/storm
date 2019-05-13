@@ -246,7 +246,6 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
      * @return the offset of the next fetch
      */
     private long seek(TopicPartition tp, KafkaTridentSpoutBatchMetadata lastBatchMeta) {
-
         if (isFirstPollSinceExecutorStarted(tp)) {
             boolean isFirstPollSinceTopologyWasDeployed = lastBatchMeta == null 
                 || !topologyContext.getStormId().equals(lastBatchMeta.getTopologyId());

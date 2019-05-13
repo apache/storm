@@ -33,7 +33,7 @@ public enum FirstPollOffsetStrategy {
     LATEST,
     /**
      * The kafka spout polls records starting at the earliest offset whose timestamp is greater than or equal to the given startTimestamp.
-     * This setting only takes effect on topology deployment
+     * This setting only takes effect on topology deployment. This option is currently available only for the Trident Spout
      */
     TIMESTAMP,
     /**
@@ -45,7 +45,8 @@ public enum FirstPollOffsetStrategy {
      */
     UNCOMMITTED_LATEST,
     /**
-     * The kafka spout polls records from the last committed offset, if any. If no offset has been committed it behaves as TIMESTAMP
+     * The kafka spout polls records from the last committed offset, if any. If no offset has been committed it behaves as TIMESTAMP.
+     * This option is currently available only for the Trident Spout
      */
     UNCOMMITTED_TIMESTAMP;
 }

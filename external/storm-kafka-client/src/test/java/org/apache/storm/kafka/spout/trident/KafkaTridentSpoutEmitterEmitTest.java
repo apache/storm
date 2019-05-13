@@ -322,8 +322,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         long timeStampStartOffset = 2L;
         long pollTimeout = 1L;
         KafkaTridentSpoutBatchMetadata preExecutorRestartLastMeta = new KafkaTridentSpoutBatchMetadata(preRestartEmittedOffset, preRestartEmittedOffset + preRestartEmittedRecords - 1, "Some older topology");
-
-
+        
         KafkaConsumer<String, String> kafkaConsumer = Mockito.mock(KafkaConsumer.class);
         when(kafkaConsumer.assignment()).thenReturn(Collections.singleton(partition));
         OffsetAndTimestamp offsetAndTimestamp = new OffsetAndTimestamp(timeStampStartOffset, startTimeStamp);

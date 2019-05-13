@@ -369,7 +369,6 @@ public class KafkaSpoutConfig<K, V> extends CommonKafkaSpoutConfig<K, V> {
 
     @Override
     public String toString() {
-
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
             .append("offsetCommitPeriodMs", offsetCommitPeriodMs)
             .append("maxUncommittedOffsets", maxUncommittedOffsets)
