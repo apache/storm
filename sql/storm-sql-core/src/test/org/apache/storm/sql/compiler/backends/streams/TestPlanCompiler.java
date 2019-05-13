@@ -33,35 +33,31 @@ import org.apache.storm.sql.planner.streams.QueryPlanner;
 import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.tuple.Values;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExternalResource;
 
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Assert;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(TestUtils.MockBoltExtension.class)
+@ExtendWith(TestUtils.MockInsertBoltExtension.class)
 public class TestPlanCompiler {
+
     private static LocalCluster cluster;
 
-    @Rule
-    public ExternalResource mockBoltValues = TestUtils.mockBoltValueResource;
-
-    @Rule
-    public ExternalResource mockInsertBoltValues = TestUtils.mockInsertBoltValueResource;
-
-    @BeforeClass
+    @BeforeAll
     public static void staticSetup() throws Exception {
         cluster = new LocalCluster();
     }
 
-    @AfterClass
+    @AfterAll
     public static void staticCleanup() {
-        if (cluster!= null) {
+        if (cluster != null) {
             cluster.shutdown();
             cluster = null;
         }
@@ -82,7 +78,7 @@ public class TestPlanCompiler {
         final StormTopology topo = proc.build();
 
         SqlTestUtil.runStormTopology(cluster, TestUtils.MockBolt.getCollectedValues(), EXPECTED_VALUE_SIZE, proc, topo);
-        Assert.assertArrayEquals(new Values[] { new Values(3), new Values(4)}, TestUtils.MockBolt.getCollectedValues().toArray());
+        Assert.assertArrayEquals(new Values[]{new Values(3), new Values(4)}, TestUtils.MockBolt.getCollectedValues().toArray());
     }
 
     @Test
@@ -99,15 +95,15 @@ public class TestPlanCompiler {
         final StormTopology topo = proc.build();
 
         SqlTestUtil.runStormTopology(cluster, TestUtils.MockInsertBolt.getCollectedValues(), EXPECTED_VALUE_SIZE, proc, topo);
-        Assert.assertArrayEquals(new Pair[] { Pair.of(4, new Values(4, "abcde", "y")) }, TestUtils.MockInsertBolt.getCollectedValues().toArray());
+        Assert.assertArrayEquals(new Pair[]{Pair.of(4, new Values(4, "abcde", "y"))}, TestUtils.MockInsertBolt.getCollectedValues().toArray());
     }
 
     @Test
     public void testUdf() throws Exception {
         int EXPECTED_VALUE_SIZE = 1;
-        String sql = "SELECT MYPLUS(ID, 3)" +
-                "FROM FOO " +
-                "WHERE ID = 2";
+        String sql = "SELECT MYPLUS(ID, 3)"
+            + "FROM FOO "
+            + "WHERE ID = 2";
         TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
         Map<String, ISqlStreamsDataSource> data = new HashMap<>();
         data.put("FOO", new TestUtils.MockSqlStreamsDataSource());
@@ -119,15 +115,15 @@ public class TestPlanCompiler {
         final StormTopology topo = proc.build();
 
         SqlTestUtil.runStormTopology(cluster, TestUtils.MockBolt.getCollectedValues(), EXPECTED_VALUE_SIZE, proc, topo);
-        Assert.assertArrayEquals(new Values[] { new Values(5) }, TestUtils.MockBolt.getCollectedValues().toArray());
+        Assert.assertArrayEquals(new Values[]{new Values(5)}, TestUtils.MockBolt.getCollectedValues().toArray());
     }
 
     @Test
     public void testNested() throws Exception {
         int EXPECTED_VALUE_SIZE = 1;
-        String sql = "SELECT ID, MAPFIELD['c'], NESTEDMAPFIELD, ARRAYFIELD " +
-                "FROM FOO " +
-                "WHERE NESTEDMAPFIELD['a']['b'] = 2 AND ARRAYFIELD[2] = 200";
+        String sql = "SELECT ID, MAPFIELD['c'], NESTEDMAPFIELD, ARRAYFIELD "
+            + "FROM FOO "
+            + "WHERE NESTEDMAPFIELD['a']['b'] = 2 AND ARRAYFIELD[2] = 200";
         TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverNestedTable(sql);
 
         final Map<String, ISqlStreamsDataSource> data = new HashMap<>();
@@ -144,23 +140,23 @@ public class TestPlanCompiler {
         Map<String, Integer> map = ImmutableMap.of("b", 2, "c", 4);
         Map<String, Map<String, Integer>> nestedMap = ImmutableMap.of("a", map);
         Assert.assertArrayEquals(new Values[]{new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300))},
-                TestUtils.MockBolt.getCollectedValues().toArray());
+            TestUtils.MockBolt.getCollectedValues().toArray());
     }
 
     /**
-     * All the binary literal tests are done here, because Avatica converts the result to byte[]
-     * whereas Stream provides the result to ByteString which makes different semantic from Stream implementation.
+     * All the binary literal tests are done here, because Avatica converts the result to byte[] whereas Stream provides the result to
+     * ByteString which makes different semantic from Stream implementation.
      */
     @Test
     public void testBinaryStringFunctions() throws Exception {
         int EXPECTED_VALUE_SIZE = 1;
-        String sql = "SELECT x'45F0AB' || x'45F0AB', " +
-                "POSITION(x'F0' IN x'453423F0ABBC'), " +
-                "OVERLAY(x'453423F0ABBC45' PLACING x'4534' FROM 3), " +
-                "SUBSTRING(x'453423F0ABBC' FROM 3), " +
-                "SUBSTRING(x'453423F0ABBC453423F0ABBC' FROM 3 FOR 4) " +
-                "FROM FOO " +
-                "WHERE ID > 0 AND ID < 2";
+        String sql = "SELECT x'45F0AB' || x'45F0AB', "
+            + "POSITION(x'F0' IN x'453423F0ABBC'), "
+            + "OVERLAY(x'453423F0ABBC45' PLACING x'4534' FROM 3), "
+            + "SUBSTRING(x'453423F0ABBC' FROM 3), "
+            + "SUBSTRING(x'453423F0ABBC453423F0ABBC' FROM 3 FOR 4) "
+            + "FROM FOO "
+            + "WHERE ID > 0 AND ID < 2";
 
         TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
         final Map<String, ISqlStreamsDataSource> data = new HashMap<>();
@@ -190,19 +186,19 @@ public class TestPlanCompiler {
     @Test
     public void testDateKeywordsAndFunctions() throws Exception {
         int EXPECTED_VALUE_SIZE = 1;
-        String sql = "SELECT " +
-                "LOCALTIME, CURRENT_TIME, LOCALTIMESTAMP, CURRENT_TIMESTAMP, CURRENT_DATE, " +
-                "DATE '1970-05-15' AS datefield, TIME '00:00:00' AS timefield, TIMESTAMP '2016-01-01 00:00:00' as timestampfield, " +
-                "EXTRACT(MONTH FROM TIMESTAMP '2010-01-23 12:34:56')," +
-                "FLOOR(DATE '2016-01-23' TO MONTH)," +
-                "CEIL(TIME '12:34:56' TO MINUTE)," +
-                "{fn CURDATE()} = CURRENT_DATE, {fn CURTIME()} = LOCALTIME, {fn NOW()} = LOCALTIMESTAMP," +
-                "{fn QUARTER(DATE '2016-10-07')}, {fn TIMESTAMPADD(MINUTE, 15, TIMESTAMP '2016-10-07 00:00:00')}," +
-                "{fn TIMESTAMPDIFF(SECOND, TIMESTAMP '2016-10-06 00:00:00', TIMESTAMP '2016-10-07 00:00:00')}," +
-                "INTERVAL '1-5' YEAR TO MONTH AS intervalfield, " +
-                "(DATE '1970-01-01', DATE '1970-01-15') AS anchoredinterval_field "   +
-                "FROM FOO " +
-                "WHERE ID > 0 AND ID < 2";
+        String sql = "SELECT "
+            + "LOCALTIME, CURRENT_TIME, LOCALTIMESTAMP, CURRENT_TIMESTAMP, CURRENT_DATE, "
+            + "DATE '1970-05-15' AS datefield, TIME '00:00:00' AS timefield, TIMESTAMP '2016-01-01 00:00:00' as timestampfield, "
+            + "EXTRACT(MONTH FROM TIMESTAMP '2010-01-23 12:34:56'),"
+            + "FLOOR(DATE '2016-01-23' TO MONTH),"
+            + "CEIL(TIME '12:34:56' TO MINUTE),"
+            + "{fn CURDATE()} = CURRENT_DATE, {fn CURTIME()} = LOCALTIME, {fn NOW()} = LOCALTIMESTAMP,"
+            + "{fn QUARTER(DATE '2016-10-07')}, {fn TIMESTAMPADD(MINUTE, 15, TIMESTAMP '2016-10-07 00:00:00')},"
+            + "{fn TIMESTAMPDIFF(SECOND, TIMESTAMP '2016-10-06 00:00:00', TIMESTAMP '2016-10-07 00:00:00')},"
+            + "INTERVAL '1-5' YEAR TO MONTH AS intervalfield, "
+            + "(DATE '1970-01-01', DATE '1970-01-15') AS anchoredinterval_field "
+            + "FROM FOO "
+            + "WHERE ID > 0 AND ID < 2";
         TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
 
         final Map<String, ISqlStreamsDataSource> data = new HashMap<>();
@@ -229,7 +225,7 @@ public class TestPlanCompiler {
         int currentTimeInt = (int) (currentTimestamp % DateTimeUtils.MILLIS_PER_DAY);
 
         Assert.assertArrayEquals(new Values[]{new Values(localTimeInt, currentTimeInt, localTimestamp, currentTimestamp, dateInt,
-                        134, 0, 1451606400000L, 1L, 0L, 45300000, true, true, true, 4L, 1475799300000L, 86400, 17, 0, 14)},
-                TestUtils.MockBolt.getCollectedValues().toArray());
+            134, 0, 1451606400000L, 1L, 0L, 45300000, true, true, true, 4L, 1475799300000L, 86400, 17, 0, 14)},
+            TestUtils.MockBolt.getCollectedValues().toArray());
     }
 }

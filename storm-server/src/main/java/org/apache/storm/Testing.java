@@ -668,22 +668,23 @@ public class Testing {
         compToStreamToFields.put(component, streamToFields);
 
         TopologyContext context = new TopologyContext(null,
-                                                      ConfigUtils.readStormConfig(),
-                                                      taskToComp,
-                                                      null,
-                                                      compToStreamToFields,
-                                                      null,
-                                                      "test-storm-id",
-                                                      null,
-                                                      null,
-                                                      1,
-                                                      null,
-                                                      null,
-                                                      new HashMap<>(),
-                                                      new HashMap<>(),
-                                                      new HashMap<>(),
-                                                      new HashMap<>(),
-                                                      new AtomicBoolean(false));
+            ConfigUtils.readStormConfig(),
+            taskToComp,
+            null,
+            compToStreamToFields,
+            null,
+            "test-storm-id",
+            null,
+            null,
+            1,
+            null,
+            null,
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            new AtomicBoolean(false),
+            null);
         return new TupleImpl(context, values, component, 1, stream);
     }
 

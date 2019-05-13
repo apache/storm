@@ -94,11 +94,13 @@ public class SpoutExecutor extends Executor {
         return stats;
     }
 
-    public void init(final ArrayList<Task> idToTask, int idToTaskBase) {
+    public void init(final ArrayList<Task> idToTask, int idToTaskBase) throws InterruptedException {
         this.threadId = Thread.currentThread().getId();
         executorTransfer.initLocalRecvQueues();
+        workerReady.await();
         while (!stormActive.get()) {
-            Utils.sleep(100);
+            //Topology may be deployed in deactivated mode, wait for activation
+            Utils.sleepNoSimulation(100);
         }
 
         LOG.info("Opening spout {}:{}", componentId, taskIds);

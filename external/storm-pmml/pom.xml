@@ -30,6 +30,11 @@
     <name>storm-pmml</name>
 
     <packaging>jar</packaging>
+    
+    <properties>
+        <!-- Required downgrade by pmml-evaluator 1.0.22 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
 
     <developers>
         <developer>
@@ -73,6 +78,11 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
     </dependencies>
 

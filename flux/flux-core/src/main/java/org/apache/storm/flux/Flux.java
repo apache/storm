@@ -52,17 +52,22 @@ import org.slf4j.LoggerFactory;
 public class Flux {
     private static final Logger LOG = LoggerFactory.getLogger(Flux.class);
 
+    @Deprecated
     private static final String OPTION_LOCAL = "local";
+    @Deprecated
     private static final String OPTION_REMOTE = "remote";
     private static final String OPTION_RESOURCE = "resource";
+    @Deprecated
     private static final String OPTION_SLEEP = "sleep";
     private static final String OPTION_DRY_RUN = "dry-run";
     private static final String OPTION_NO_DETAIL = "no-detail";
     private static final String OPTION_NO_SPLASH = "no-splash";
     private static final String OPTION_INACTIVE = "inactive";
+    @Deprecated
     private static final String OPTION_ZOOKEEPER = "zookeeper";
     private static final String OPTION_FILTER = "filter";
     private static final String OPTION_ENV_FILTER = "env-filter";
+    private static final String OPTION_HELP = "help";
 
     /**
      * Flux main entry point.
@@ -72,14 +77,18 @@ public class Flux {
     public static void main(String[] args) throws Exception {
         Options options = new Options();
 
-        options.addOption(option(0, "l", OPTION_LOCAL, "Run the topology in local mode."));
+        options.addOption(option(0, "h", OPTION_HELP, "Print this help message"));
 
-        options.addOption(option(0, "r", OPTION_REMOTE, "Deploy the topology to a remote cluster."));
+        options.addOption(option(0, "l", OPTION_LOCAL, "Ignored: to run in local mode use `storm local`"
+            + " instead of `storm jar`"));
+
+        options.addOption(option(0, "r", OPTION_REMOTE, "Ignored: to run on a remote cluster launch"
+            + " using `storm jar` to run in a local cluster use `storm local`"));
 
         options.addOption(option(0, "R", OPTION_RESOURCE, "Treat the supplied path as a classpath resource instead of a file."));
 
-        options.addOption(option(1, "s", OPTION_SLEEP, "ms", "When running locally, the amount of time to sleep (in ms.) "
-                + "before killing the topology and shutting down the local cluster."));
+        options.addOption(option(1, "s", OPTION_SLEEP, "ms", "Ignored: to set cluster run time"
+            + " use `--local-ttl` with `storm local` instead."));
 
         options.addOption(option(0, "d", OPTION_DRY_RUN, "Do not run or deploy the topology. Just build, validate, "
                 + "and print information about the topology."));
@@ -90,20 +99,20 @@ public class Flux {
 
         options.addOption(option(0, "i", OPTION_INACTIVE, "Deploy the topology, but do not activate it."));
 
-        options.addOption(option(1, "z", OPTION_ZOOKEEPER, "host:port", "When running in local mode, use the ZooKeeper at the "
-                + "specified <host>:<port> instead of the in-process ZooKeeper. (requires Storm 0.9.3 or later)"));
+        options.addOption(option(1, "z", OPTION_ZOOKEEPER, "host:port", "Ignored, if you want to"
+            + " set the zookeeper host/port in local mode use `--local-zookeeper` instead"));
 
         options.addOption(option(1, "f", OPTION_FILTER, "file", "Perform property substitution. Use the specified file "
                 + "as a source of properties, and replace keys identified with {$[property name]} with the value defined "
                 + "in the properties file."));
 
         options.addOption(option(0, "e", OPTION_ENV_FILTER, "Perform environment variable substitution. Replace keys"
-                + "identified with `${ENV-[NAME]}` will be replaced with the corresponding `NAME` environment value"));
+                + " identified with `${ENV-[NAME]}` will be replaced with the corresponding `NAME` environment value"));
 
         CommandLineParser parser = new BasicParser();
         CommandLine cmd = parser.parse(options, args);
 
-        if (cmd.getArgs().length != 1) {
+        if (cmd.getArgs().length != 1 || cmd.hasOption(OPTION_HELP)) {
             usage(options);
             System.exit(1);
         }
@@ -169,22 +178,16 @@ public class Flux {
         }
 
         if (!cmd.hasOption(OPTION_DRY_RUN)) {
-            if (cmd.hasOption(OPTION_REMOTE)) {
-                LOG.info("Running remotely...");
-                // should the topology be active or inactive
-                SubmitOptions submitOptions = null;
-                if (cmd.hasOption(OPTION_INACTIVE)) {
-                    LOG.info("Deploying topology in an INACTIVE state...");
-                    submitOptions = new SubmitOptions(TopologyInitialStatus.INACTIVE);
-                } else {
-                    LOG.info("Deploying topology in an ACTIVE state...");
-                    submitOptions = new SubmitOptions(TopologyInitialStatus.ACTIVE);
-                }
-                StormSubmitter.submitTopology(topologyName, conf, topology, submitOptions, null);
+            // should the topology be active or inactive
+            SubmitOptions submitOptions = null;
+            if (cmd.hasOption(OPTION_INACTIVE)) {
+                LOG.info("Deploying topology in an INACTIVE state...");
+                submitOptions = new SubmitOptions(TopologyInitialStatus.INACTIVE);
             } else {
-                LOG.error("To run in local mode run with 'storm local' instead of 'storm jar'");
-                return;
+                LOG.info("Deploying topology in an ACTIVE state...");
+                submitOptions = new SubmitOptions(TopologyInitialStatus.ACTIVE);
             }
+            StormSubmitter.submitTopology(topologyName, conf, topology, submitOptions, null);
         }
     }
 

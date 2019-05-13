@@ -111,7 +111,6 @@
     <dependency>
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>
-      <version>3.2.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -217,34 +216,22 @@
           </execution>
         </executions>
       </plugin>
-        <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <executable>java</executable>
-          <includeProjectDependencies>true</includeProjectDependencies>
-          <includePluginDependencies>false</includePluginDependencies>
-          <classpathScope>compile</classpathScope>
-          <!-- allows you to specify which topology class to run by specifying -Dstorm.topology= on the command line -->
-          <mainClass>${storm.topology}</mainClass>
-        </configuration>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+              <!-- TestNG provider does not understand the JUnit 5 groups syntax used in the rest of the project, make sure to override it -->
+              <excludedGroups>none</excludedGroups>
+          </configuration>
       </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-checkstyle-plugin</artifactId>
-            <!--Note - the version would be inherited-->
-            <configuration>
-                <maxAllowedViolations>263</maxAllowedViolations>
-            </configuration>
-        </plugin>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <!--Note - the version would be inherited-->
+          <configuration>
+              <maxAllowedViolations>263</maxAllowedViolations>
+          </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>

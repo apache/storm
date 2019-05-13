@@ -20,7 +20,7 @@ package org.apache.storm.elasticsearch.trident;
 import com.google.common.testing.NullPointerTester;
 
 import org.apache.storm.elasticsearch.common.EsConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EsStateFactoryTest {
 

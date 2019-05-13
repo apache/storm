@@ -97,10 +97,12 @@ public class BoltExecutor extends Executor {
         return stats;
     }
 
-    public void init(ArrayList<Task> idToTask, int idToTaskBase) {
+    public void init(ArrayList<Task> idToTask, int idToTaskBase) throws InterruptedException {
         executorTransfer.initLocalRecvQueues();
+        workerReady.await();
         while (!stormActive.get()) {
-            Utils.sleep(100);
+            //Topology may be deployed in deactivated mode, wait for activation
+            Utils.sleepNoSimulation(100);
         }
 
         if (!componentId.equals(StormCommon.SYSTEM_STREAM_ID)) { // System bolt doesn't call reportError()

@@ -26,6 +26,11 @@
     </parent>
 
     <artifactId>storm-sql-runtime</artifactId>
+    
+    <properties>
+        <!-- Required downgrade by calcite-core 1.15.0 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
 
     <developers>
         <developer>
@@ -115,6 +120,11 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>java-hamcrest</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
@@ -133,23 +143,6 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>appassembler-maven-plugin</artifactId>
-                <version>1.9</version>
-                <executions>
-                    <execution>
-                        <id>create-repo</id>
-                        <goals>
-                            <goal>create-repository</goal>
-                        </goals>
-                        <configuration>
-                            <assembleDirectory>${project.build.directory}/app-assembler</assembleDirectory>
-                            <repositoryLayout>flat</repositoryLayout>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

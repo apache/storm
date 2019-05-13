@@ -123,7 +123,7 @@ GitHub.
 
 Unit tests and Integration tests are an essential part of code contributions.
 
-To mark a Java test as a Java integration test, add the annotation `@Category(IntegrationTest.class)` to the test class definition as well as to its hierarchy of superclasses. Java integration tests can be in the same package as Java unit tests.
+To mark a Java test as a Java integration test, add the annotation `@IntegrationTest` to the test class definition or test method. Make sure the test is a JUnit 5 test. Java integration tests can be in the same package as Java unit tests.
  
 ```java
     @Category(IntegrationTest.class)
@@ -254,6 +254,12 @@ nvm use 8.9.3
 
 in order to get started as fast as possible. Users can still install a specific version of `ruby` and/or `node` manually.
 
+You will also need the [mock](https://docs.python.org/3/library/unittest.mock.html) Python testing library (as well as [Python 2.7.x and Python 3.x](https://github.com/pyenv/pyenv)). With [pip](https://pip.pypa.io/en/stable/installing/) installed you can run
+
+```
+pip install mock
+```
+
 ## Building
 
 The following commands must be run from the top-level directory.
@@ -300,9 +306,27 @@ You can also run tests selectively with `-Dtest=<test_name>`.  This works for bo
 
 Unfortunately you might experience failures in clojure tests which are wrapped in the `maven-clojure-plugin` and thus doesn't provide too much useful output at first sight - you might end up with a maven test failure with an error message as unhelpful as `Clojure failed.`. In this case it's recommended to look into `target/test-reports` of the failed project to see what actual tests have failed or scroll through the maven output looking for obvious issues like missing binaries.
 
-By default integration tests are not run in the test phase. To run Java and Clojure integration tests you must enable the profile
+By default integration tests are not run in the test phase. To run Java and Clojure integration tests you must enable the profile `integration-tests-only`, or `all-tests`.
  
+## Listing dependency licenses
 
+You can generate a list of dependencies and their licenses by running `mvn generate-resources -Dlicense.skipAggregateAddThirdParty=false` in the project root.
+The list will be put in DEPENDENCY_LICENSES.
+
+The license aggregation plugin will use the license listed in a dependency's POM. If the license is missing, or incomplete (e.g. due to multiple licenses), you can override the license by describing the dependency in the THIRD-PARTY.properties file in the project root.
+
+## Auditing licenses for LICENSE/NOTICE
+The LICENSE and NOTICE files contain licenses and notices for source distribution content. The LICENSE-binary and NOTICE-binary apply to the binary distributions.
+
+When auditing the binary LICENSE-binary and NOTICE-binary, there are a couple of helper scripts available in dev-tools. `collect_license_files` can create an aggregate NOTICE from the libraries in an extracted distribution. The aggregate NOTICE should be adjusted to remove Storm notices and duplicates, and added to the NOTICE-binary.
+
+`list_jars` can list the jars in an extracted binary distribution. Note that while listing all the jars in the binary distribution is helpful, special attention must be paid to shaded jars, as they may contain shaded dependencies that must be listed in LICENSE-binary separately.
+
+The license plugin can generate a list of dependencies with licenses for the binary distribution with the following command: `mvn generate-resources -Dlicense.skipAggregateAddThirdParty=false` in the storm-dist/binary directory. 
+
+The generated list in target/generated-sources/license/THIRD-PARTY.txt is mostly complete, and a good input to the LICENSE-binary file. The major omission in it is the storm-shaded-deps dependencies, as they are shaded. These dependencies can be manually listed with `mvn dependency:list` in the storm-shaded-deps project, and then manually added. 
+
+You can download the dependency licenses by running `mvn package -Dlicense.skipAggregateDownloadLicenses=false -DskipTests` in the project root. This will put the licenses in target/generated-resources. Keep an eye on the Maven output, as some dependencies may not have licenses configured correctly. These will have to be downloaded manually.
 
 <a name="packaging"></a>
 

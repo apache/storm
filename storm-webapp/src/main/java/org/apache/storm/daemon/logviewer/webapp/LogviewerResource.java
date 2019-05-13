@@ -22,7 +22,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,6 +44,7 @@ import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.daemon.ui.resources.StormApiResource;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,7 +133,7 @@ public class LogviewerResource {
             String user = httpCredsHandler.getUserName(request);
             Integer start = request.getParameter("start") != null ? parseIntegerFromMap(request.getParameterMap(), "start") : null;
             Integer length = request.getParameter("length") != null ? parseIntegerFromMap(request.getParameterMap(), "length") : null;
-            String decodedFileName = URLDecoder.decode(request.getParameter("file"));
+            String decodedFileName = Utils.urlDecodeUtf8(request.getParameter("file"));
             String grep = request.getParameter("grep");
             return logviewer.logPage(decodedFileName, start, length, grep, user);
         } catch (InvalidRequestException e) {
@@ -157,7 +157,7 @@ public class LogviewerResource {
             String user = httpCredsHandler.getUserName(request);
             Integer start = request.getParameter("start") != null ? parseIntegerFromMap(request.getParameterMap(), "start") : null;
             Integer length = request.getParameter("length") != null ? parseIntegerFromMap(request.getParameterMap(), "length") : null;
-            String decodedFileName = URLDecoder.decode(request.getParameter("file"));
+            String decodedFileName = Utils.urlDecodeUtf8(request.getParameter("file"));
             String grep = request.getParameter("grep");
             return logviewer.daemonLogPage(decodedFileName, start, length, grep, user);
         } catch (InvalidRequestException e) {
@@ -248,7 +248,7 @@ public class LogviewerResource {
 
         String user = httpCredsHandler.getUserName(request);
         String file = request.getParameter("file");
-        String decodedFileName = URLDecoder.decode(file);
+        String decodedFileName = Utils.urlDecodeUtf8(file);
         try {
             return logDownloadHandler.downloadLogFile(decodedFileName, user);
         } catch (IOException e) {
@@ -267,7 +267,7 @@ public class LogviewerResource {
 
         String user = httpCredsHandler.getUserName(request);
         String file = request.getParameter("file");
-        String decodedFileName = URLDecoder.decode(file);
+        String decodedFileName = Utils.urlDecodeUtf8(file);
         try {
             return logDownloadHandler.downloadDaemonLogFile(decodedFileName, user);
         } catch (IOException e) {
@@ -287,7 +287,7 @@ public class LogviewerResource {
         String user = httpCredsHandler.getUserName(request);
         boolean isDaemon = StringUtils.equals(request.getParameter("is-daemon"), "yes");
         String file = request.getParameter("file");
-        String decodedFileName = URLDecoder.decode(file);
+        String decodedFileName = Utils.urlDecodeUtf8(file);
         String searchString = request.getParameter("search-string");
         String numMatchesStr = request.getParameter("num-matches");
         String startByteOffset = request.getParameter("start-byte-offset");
@@ -314,7 +314,7 @@ public class LogviewerResource {
     @GET
     @Path("/deepSearch/{topoId}")
     public Response deepSearch(@PathParam("topoId") String topologyId,
-                               @Context HttpServletRequest request) {
+                               @Context HttpServletRequest request) throws IOException {
         String user = httpCredsHandler.getUserName(request);
         String searchString = request.getParameter("search-string");
         String numMatchesStr = request.getParameter("num-matches");

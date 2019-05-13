@@ -26,6 +26,11 @@
     </parent>
 
     <artifactId>storm-hdfs</artifactId>
+    
+    <properties>
+        <!-- Required downgrade by hadoop-hdfs 2.8.5 -->
+        <guava.version>16.0.1</guava.version>
+    </properties>
 
     <developers>
         <developer>
@@ -38,7 +43,7 @@
     <repositories>
         <repository>
             <id>confluent</id>
-            <url>http://packages.confluent.io/maven</url>
+            <url>https://packages.confluent.io/maven</url>
         </repository>
     </repositories>
 
@@ -218,6 +223,11 @@
             <artifactId>storm-autocreds</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -232,7 +242,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.2</version>
                 <executions>
                     <execution>
                         <goals>
@@ -243,7 +252,6 @@
             </plugin>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>2.5</version>
                 <executions>
                     <execution>
                         <id>cleanup</id>

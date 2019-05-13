@@ -116,7 +116,7 @@ public class WorkerTokenManager {
         WorkerToken ret = new WorkerToken(serviceType, ByteBuffer.wrap(serializedInfo), ByteBuffer.wrap(signature));
         PrivateWorkerKey key = new PrivateWorkerKey(ByteBuffer.wrap(topoSecret.getEncoded()), user, expirationTimeMillis);
         state.addPrivateWorkerKey(serviceType, topologyId, nextVersion, key);
-        LOG.info("Created new WorkerToken for user {} on service {}", user, serviceType);
+        LOG.info("Created new WorkerToken for user {} topology {} on service {}", user, topologyId, serviceType);
         return ret;
     }
 

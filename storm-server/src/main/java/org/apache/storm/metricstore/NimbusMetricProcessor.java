@@ -15,6 +15,7 @@ import java.util.Map;
 import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.NimbusLeaderNotFoundException;
 
 /**
  * Implementation of WorkerMetricsProcessor that sends metric data to Nimbus for processing.
@@ -24,7 +25,7 @@ public class NimbusMetricProcessor implements WorkerMetricsProcessor {
     public void processWorkerMetrics(Map<String, Object> conf, WorkerMetrics metrics) throws MetricException {
         try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
             client.getClient().processWorkerMetrics(metrics);
-        } catch (TException e) {
+        } catch (TException | NimbusLeaderNotFoundException e) {
             throw new MetricException("Failed to process metrics", e);
         }
     }

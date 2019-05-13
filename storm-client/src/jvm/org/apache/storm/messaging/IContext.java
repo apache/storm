@@ -14,6 +14,7 @@ package org.apache.storm.messaging;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 /**
  * This interface needs to be implemented for messaging plugin.
@@ -41,9 +42,11 @@ public interface IContext {
      *
      * @param storm_id topology ID
      * @param port     port #
+     * @param cb The callback to deliver received messages to
+     * @param newConnectionResponse Supplier of the initial message to send to new client connections
      * @return server side connection
      */
-    IConnection bind(String storm_id, int port);
+    IConnection bind(String storm_id, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse);
 
     /**
      * This method establish a client side connection to a remote server

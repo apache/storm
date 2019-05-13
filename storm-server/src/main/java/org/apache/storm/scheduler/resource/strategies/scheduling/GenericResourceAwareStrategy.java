@@ -86,7 +86,7 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         }
         Collection<ExecutorDetails> unassignedExecutors =
             new HashSet<>(this.cluster.getUnassignedExecutors(td));
-        LOG.debug("Num ExecutorsNeedScheduling: {}", unassignedExecutors.size());
+        LOG.debug("{} Num ExecutorsNeedScheduling: {}", td.getId(), unassignedExecutors.size());
         Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
         List<Component> spouts = this.getSpouts(td);
 
@@ -103,6 +103,9 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         List<String> unFavoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES));
 
         for (ExecutorDetails exec : orderedExecutors) {
+            if (Thread.currentThread().isInterrupted()) {
+                return null;
+            }
             LOG.debug(
                 "Attempting to schedule: {} of component {}[ REQ {} ]",
                 exec,
@@ -120,6 +123,9 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
             LOG.warn("Scheduling {} left over task (most likely sys tasks)", executorsNotScheduled);
             // schedule left over system tasks
             for (ExecutorDetails exec : executorsNotScheduled) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return null;
+                }
                 final Iterable<String> sortedNodes = sortAllNodes(td, exec, favoredNodeIds, unFavoredNodeIds);
                 if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
                     return mkNotEnoughResources(td);

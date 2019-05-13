@@ -28,7 +28,7 @@
     </parent>
 
     <groupId>org.apache.storm</groupId>
-    <artifactId>shaded-deps</artifactId>
+    <artifactId>storm-shaded-deps</artifactId>
     <packaging>jar</packaging>
     <name>Shaded Deps for Storm Client</name>
     <description>Shaded version of dependencies used only for internal storm code.</description>
@@ -75,6 +75,10 @@
                     <!-- Annotations are not needed for runtime operation.-->
                     <groupId>org.apache.yetus</groupId>
                     <artifactId>audience-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-annotations</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -177,7 +181,7 @@
                     <minimizeJar>false</minimizeJar>
                     <artifactSet>
                         <includes>
-                            <include>com.google.guava:guava</include>
+                            <include>com.google.guava:*</include>
                             <include>com.googlecode.json-simple:json-simple</include>
                             <include>commons-codec:commons-codec</include>
                             <include>commons-collections:commons-collections</include>
@@ -203,12 +207,8 @@
                             <shadedPattern>org.apache.storm.thrift</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>com.google.common</pattern>
-                            <shadedPattern>org.apache.storm.shade.com.google.common</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.google.thirdparty</pattern>
-                            <shadedPattern>org.apache.storm.shade.com.google.thirdparty</shadedPattern>
+                            <pattern>com.google</pattern>
+                            <shadedPattern>org.apache.storm.shade.com.google</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.apache.curator</pattern>

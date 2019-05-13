@@ -55,19 +55,6 @@ public class KafkaTridentSpoutBatchMetadata implements Serializable {
         this.firstOffset = firstOffset;
         this.lastOffset = lastOffset;
         this.topologyId = topologyId;
-    }
-
-    /**
-     * Builds a metadata object from a non-empty set of records.
-     *
-     * @param consumerRecords The non-empty set of records.
-     */
-    public <K, V> KafkaTridentSpoutBatchMetadata(List<ConsumerRecord<K, V>> consumerRecords, String topologyId) {
-        Validate.isTrue(!consumerRecords.isEmpty(), "There must be at least one record in order to build metadata");
-
-        firstOffset = consumerRecords.get(0).offset();
-        lastOffset = consumerRecords.get(consumerRecords.size() - 1).offset();
-        this.topologyId = topologyId;
         LOG.debug("Created {}", this.toString());
     }
 

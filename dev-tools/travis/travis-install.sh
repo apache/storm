@@ -12,13 +12,21 @@
 #  limitations under the License.
 
 echo "Python version :  " `python -V 2>&1`
+echo "Python3 version :  " `python3 -V 2>&1`
+echo "Pip version :  " `pip --version 2>&1`
+echo "Pip3 version :  " `pip3 --version 2>&1`
+
+
 echo "Maven version  :  " `mvn -v`
 
 STORM_SRC_ROOT_DIR=$1
 
 TRAVIS_SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-cd ${STORM_SRC_ROOT_DIR}/shaded-deps/
+pip install --user -r ${TRAVIS_SCRIPT_DIR}/requirements.txt
+pip3 install --user -r ${TRAVIS_SCRIPT_DIR}/requirements.txt
+
+cd ${STORM_SRC_ROOT_DIR}/storm-shaded-deps/
 python ${TRAVIS_SCRIPT_DIR}/save-logs.py "install-shade.txt" mvn clean install --batch-mode
 BUILD_RET_VAL=$?
 if [[ "$BUILD_RET_VAL" != "0" ]];
@@ -40,5 +48,6 @@ then
     python ${TRAVIS_SCRIPT_DIR}/ratprint.py "${rat}"
   done
 fi
+
 
 exit ${BUILD_RET_VAL}

@@ -23,17 +23,19 @@ public class TaskMetrics {
     private static final String METRIC_NAME_EMITTED = "emitted";
     private static final String METRIC_NAME_TRANSFERRED = "transferred";
 
-    private ConcurrentMap<String, Counter> ackedByStream = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Counter> failedByStream = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Counter> emittedByStream = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Counter> transferredByStream = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Counter> ackedByStream = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Counter> failedByStream = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Counter> emittedByStream = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Counter> transferredByStream = new ConcurrentHashMap<>();
 
-    private String topologyId;
-    private String componentId;
-    private Integer taskId;
-    private Integer workerPort;
+    private final String topologyId;
+    private final String componentId;
+    private final Integer taskId;
+    private final Integer workerPort;
+    private final StormMetricRegistry metricRegistry;
 
-    public TaskMetrics(WorkerTopologyContext context, String componentId, Integer taskid) {
+    public TaskMetrics(WorkerTopologyContext context, String componentId, Integer taskid, StormMetricRegistry metricRegistry) {
+        this.metricRegistry = metricRegistry;
         this.topologyId = context.getStormId();
         this.componentId = componentId;
         this.taskId = taskid;
@@ -43,7 +45,7 @@ public class TaskMetrics {
     public Counter getAcked(String streamId) {
         Counter c = this.ackedByStream.get(streamId);
         if (c == null) {
-            c = StormMetricRegistry.counter(METRIC_NAME_ACKED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
+            c = metricRegistry.counter(METRIC_NAME_ACKED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
             this.ackedByStream.put(streamId, c);
         }
         return c;
@@ -52,7 +54,7 @@ public class TaskMetrics {
     public Counter getFailed(String streamId) {
         Counter c = this.failedByStream.get(streamId);
         if (c == null) {
-            c = StormMetricRegistry.counter(METRIC_NAME_FAILED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
+            c = metricRegistry.counter(METRIC_NAME_FAILED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
             this.failedByStream.put(streamId, c);
         }
         return c;
@@ -61,7 +63,7 @@ public class TaskMetrics {
     public Counter getEmitted(String streamId) {
         Counter c = this.emittedByStream.get(streamId);
         if (c == null) {
-            c = StormMetricRegistry.counter(METRIC_NAME_EMITTED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
+            c = metricRegistry.counter(METRIC_NAME_EMITTED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
             this.emittedByStream.put(streamId, c);
         }
         return c;
@@ -70,7 +72,7 @@ public class TaskMetrics {
     public Counter getTransferred(String streamId) {
         Counter c = this.transferredByStream.get(streamId);
         if (c == null) {
-            c = StormMetricRegistry.counter(
+            c = metricRegistry.counter(
                 METRIC_NAME_TRANSFERRED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
             this.transferredByStream.put(streamId, c);
         }

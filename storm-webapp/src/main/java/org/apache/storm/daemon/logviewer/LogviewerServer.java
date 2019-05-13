@@ -166,11 +166,11 @@ public class LogviewerServer implements AutoCloseable {
         String logRoot = ConfigUtils.workerArtifactsRoot(conf);
         File logRootDir = new File(logRoot);
         logRootDir.mkdirs();
-        WorkerLogs workerLogs = new WorkerLogs(conf, logRootDir, metricsRegistry);
+        WorkerLogs workerLogs = new WorkerLogs(conf, logRootDir.toPath(), metricsRegistry);
         DirectoryCleaner directoryCleaner = new DirectoryCleaner(metricsRegistry);
 
         try (LogviewerServer server = new LogviewerServer(conf, metricsRegistry);
-             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir, metricsRegistry)) {
+             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir.toPath(), metricsRegistry)) {
             metricsRegistry.startMetricsReporters(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(() -> {
                 server.meterShutdownCalls.mark();

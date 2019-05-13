@@ -34,11 +34,15 @@ import org.slf4j.LoggerFactory;
 public class DigestSaslTransportPlugin extends SaslTransportPlugin {
     public static final String DIGEST = "DIGEST-MD5";
     private static final Logger LOG = LoggerFactory.getLogger(DigestSaslTransportPlugin.class);
+    private WorkerTokenAuthorizer workerTokenAuthorizer;
 
     protected TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException {
+        if (workerTokenAuthorizer == null) {
+            workerTokenAuthorizer = new WorkerTokenAuthorizer(conf, type);
+        }
         //create an authentication callback handler
         CallbackHandler serverCallbackHandler = new SimpleSaslServerCallbackHandler(impersonationAllowed,
-                                                                                    new WorkerTokenAuthorizer(conf, type),
+                                                                                    workerTokenAuthorizer,
                                                                                     new JassPasswordProvider(loginConf));
 
         //create a transport factory that will invoke our auth callback for digest
@@ -92,5 +96,10 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
     @Override
     public boolean areWorkerTokensSupported() {
         return true;
+    }
+
+    @Override
+    public void close() {
+        workerTokenAuthorizer.close();
     }
 }

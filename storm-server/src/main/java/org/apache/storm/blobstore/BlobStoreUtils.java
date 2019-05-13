@@ -157,7 +157,6 @@ public class BlobStoreUtils {
         throws TTransportException {
         ReadableBlobMeta rbm;
         ClientBlobStore remoteBlobStore;
-        InputStreamWithMeta in;
         boolean isSuccess = false;
         LOG.debug("Download blob NimbusInfos {}", nimbusInfos);
         for (NimbusInfo nimbusInfo : nimbusInfos) {
@@ -169,8 +168,9 @@ public class BlobStoreUtils {
                 rbm = client.getClient().getBlobMeta(key);
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
-                in = remoteBlobStore.getBlob(key);
-                blobStore.createBlob(key, in, rbm.get_settable(), getNimbusSubject());
+                try (InputStreamWithMeta in = remoteBlobStore.getBlob(key)) {
+                    blobStore.createBlob(key, in, rbm.get_settable(), getNimbusSubject());
+                }
                 // if key already exists while creating the blob else update it
                 Iterator<String> keyIterator = blobStore.listKeys();
                 while (keyIterator.hasNext()) {
@@ -213,8 +213,7 @@ public class BlobStoreUtils {
     public static boolean downloadUpdatedBlob(Map<String, Object> conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
         throws TTransportException {
         ClientBlobStore remoteBlobStore;
-        InputStreamWithMeta in;
-        AtomicOutputStream out;
+        AtomicOutputStream out = null;
         boolean isSuccess = false;
         LOG.debug("Download blob NimbusInfos {}", nimbusInfos);
         for (NimbusInfo nimbusInfo : nimbusInfos) {
@@ -224,15 +223,15 @@ public class BlobStoreUtils {
             try (NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
-                in = remoteBlobStore.getBlob(key);
-                out = blobStore.updateBlob(key, getNimbusSubject());
-                byte[] buffer = new byte[2048];
-                int len = 0;
-                while ((len = in.read(buffer)) > 0) {
-                    out.write(buffer, 0, len);
-                }
-                if (out != null) {
+                try (InputStreamWithMeta in = remoteBlobStore.getBlob(key)) {
+                    out = blobStore.updateBlob(key, getNimbusSubject());
+                    byte[] buffer = new byte[2048];
+                    int len = 0;
+                    while ((len = in.read(buffer)) > 0) {
+                        out.write(buffer, 0, len);
+                    }
                     out.close();
+                    out = null;
                 }
                 isSuccess = true;
             } catch(FileNotFoundException fnf) {
@@ -247,6 +246,14 @@ public class BlobStoreUtils {
             } catch (Exception exp) {
                 // Logging an exception while client is connecting
                 LOG.error("Exception", exp);
+            } finally {
+                if (out != null) {
+                    try {
+                        out.cancel();
+                    } catch (IOException e) {
+                        // Ignore.
+                    }
+                }
             }
         }
 

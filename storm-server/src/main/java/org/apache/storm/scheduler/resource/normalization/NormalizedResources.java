@@ -224,6 +224,19 @@ public class NormalizedResources {
         if (this.cpu < other.getTotalCpu()) {
             return false;
         }
+        return couldHoldIgnoringSharedMemoryAndCpu(other, thisTotalMemoryMb, otherTotalMemoryMb);
+    }
+
+    /**
+     * A simple sanity check to see if all of the resources in this would be large enough to hold the resources in other ignoring memory. It
+     * does not check memory because with shared memory it is beyond the scope of this.  It also does not check CPU.
+     *
+     * @param other              the resources that we want to check if they would fit in this.
+     * @param thisTotalMemoryMb  The total memory in MB of this
+     * @param otherTotalMemoryMb The total memory in MB of other
+     * @return true if it might fit, else false if it could not possibly fit.
+     */
+    public boolean couldHoldIgnoringSharedMemoryAndCpu(NormalizedResources other, double thisTotalMemoryMb, double otherTotalMemoryMb) {
         int length = Math.max(this.otherResources.length, other.otherResources.length);
         for (int i = 0; i < length; i++) {
             if (getResourceAt(i) < other.getResourceAt(i)) {

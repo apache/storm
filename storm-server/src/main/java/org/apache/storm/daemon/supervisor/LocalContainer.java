@@ -29,15 +29,18 @@ import org.slf4j.LoggerFactory;
 public class LocalContainer extends Container {
     private static final Logger LOG = LoggerFactory.getLogger(LocalContainer.class);
     private final IContext _sharedContext;
+    private final org.apache.storm.generated.Supervisor.Iface localSupervisor;
     private volatile boolean _isAlive = false;
 
     public LocalContainer(Map<String, Object> conf, String supervisorId, int supervisorPort, int port,
                           LocalAssignment assignment, IContext sharedContext, StormMetricsRegistry metricsRegistry,
-                          ContainerMemoryTracker containerMemoryTracker) throws IOException {
+                          ContainerMemoryTracker containerMemoryTracker,
+                          org.apache.storm.generated.Supervisor.Iface localSupervisor) throws IOException {
         super(ContainerType.LAUNCH, conf, supervisorId, supervisorPort, port, assignment, null, null, null, null, metricsRegistry, 
             containerMemoryTracker);
         _sharedContext = sharedContext;
         _workerId = Utils.uuid();
+        this.localSupervisor = localSupervisor;
     }
 
     @Override
@@ -57,7 +60,10 @@ public class LocalContainer extends Container {
         if (numaId != null) {
             supervisorId +=  Constants.NUMA_ID_SEPARATOR + _supervisorId;
         }
-        Worker worker = new Worker(_conf, _sharedContext, _topologyId, supervisorId, _supervisorPort, _port, _workerId);
+        Worker worker = new Worker(_conf, _sharedContext, _topologyId, supervisorId, _supervisorPort, _port, _workerId,
+            () -> {
+                return () -> localSupervisor;
+            });
         try {
             worker.start();
         } catch (Exception e) {

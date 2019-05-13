@@ -455,7 +455,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private MetricStore metricsStore;
     private IAuthorizer authorizationHandler;
     //Cached CuratorFramework, mainly used for BlobStore.
-    private CuratorFramework zkClient;
+    private final CuratorFramework zkClient;
     //Cached topology -> executor ids, used for deciding timeout workers of heartbeatsCache.
     private AtomicReference<Map<String, Set<List<Integer>>>> idToExecutors;
     //May be null if worker tokens are not supported by the thrift transport.
@@ -1018,7 +1018,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         long topologyDeletionDelay = ObjectReader.getInt(
                 conf.get(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS), 5 * 60 * 1000);
         for (String topologyId : toposToClean) {
-            if (Time.currentTimeMillis() - getTopologyCleanupDetectedTime(topologyId) >= topologyDeletionDelay) {
+            if (Math.max(0, Time.currentTimeMillis() - getTopologyCleanupDetectedTime(topologyId)) >= topologyDeletionDelay) {
                 idleTopologies.add(topologyId);
             }
         }
@@ -1682,9 +1682,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                    && codeCount < minReplicationCount
                    && confCount < minReplicationCount) {
                 if (maxWaitTime > 0 && totalWaitTime > maxWaitTime) {
-                    LOG.info("desired replication count of {} not achieved but we have hit the max wait time {}"
+                    LOG.info("desired replication count of {} not achieved for {} but we have hit the max wait time {}"
                              + " so moving on with replication count for conf key = {} for code key = {} for jar key = ",
-                             minReplicationCount, maxWaitTime, confCount, codeCount, jarCount);
+                             minReplicationCount, topoId, maxWaitTime, confCount, codeCount, jarCount);
                     return;
                 }
                 LOG.debug("Checking if I am still the leader");
@@ -1700,9 +1700,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 confCount = getBlobReplicationCount(ConfigUtils.masterStormConfKey(topoId));
             }
         }
-        LOG.info("desired replication count {} achieved, current-replication-count for conf key = {},"
+        LOG.info("desired replication count {} achieved for topology {}, current-replication-count for conf key = {},"
                  + " current-replication-count for code key = {}, current-replication-count for jar key = {}",
-                 minReplicationCount, confCount, codeCount, jarCount);
+                 minReplicationCount, topoId, confCount, codeCount, jarCount);
     }
 
     private TopologyDetails readTopologyDetails(String topoId, StormBase base) throws KeyNotFoundException,
@@ -2446,7 +2446,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
 
         if (context.isImpersonating()) {
-            LOG.warn("principal: {} is trying to impersonate principal: {}", context.realPrincipal(), context.principal());
+            LOG.info("principal: {} is trying to impersonate principal: {}", context.realPrincipal(), context.principal());
             if (impersonationAuthorizer == null) {
                 LOG.warn("impersonation attempt but {} has no authorizer configured. potential security risk, "
                          + "please see SECURITY.MD to learn how to configure impersonation authorizer.",
@@ -2835,7 +2835,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @VisibleForTesting
     public void launchServer() throws Exception {
         try {
-            BlobStore store = blobStore;
             IStormClusterState state = stormClusterState;
             NimbusInfo hpi = nimbusHostPortInfo;
 
@@ -2956,6 +2955,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             LOG.error("Error on initialization of nimbus", e);
             Utils.exitProcess(13, "Error on initialization of nimbus");
         }
+    }
+    
+    @VisibleForTesting
+    public boolean awaitLeadership(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        return leaderElector.awaitLeadership(timeout, timeUnit);
     }
 
     @Override
@@ -3109,7 +3113,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 if (creds != null) {
                     state.setCredentials(topoId, new Credentials(creds), topoConf);
                 }
-                LOG.info("uploadedJar {}", uploadedJarLocation);
+                LOG.info("uploadedJar {} for {}", uploadedJarLocation, topoName);
                 setupStormCode(conf, topoId, uploadedJarLocation, totalConfToSave, topology);
                 waitForDesiredCodeReplication(totalConf, topoId);
                 state.setupHeatbeats(topoId, topoConf);
@@ -4613,6 +4617,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             blobDownloaders.cleanup();
             blobUploaders.cleanup();
             blobListers.cleanup();
+            scheduler.cleanup();
             blobStore.shutdown();
             leaderElector.close();
             assignmentsDistributer.close();
@@ -4620,9 +4625,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (actionNotifier != null) {
                 actionNotifier.cleanup();
             }
-            if (zkClient != null) {
-                zkClient.close();
-            }
+            zkClient.close();
             if (metricsStore != null) {
                 metricsStore.close();
             }

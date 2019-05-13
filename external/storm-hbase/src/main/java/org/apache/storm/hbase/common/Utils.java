@@ -16,7 +16,9 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.PrivilegedExceptionAction;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -31,7 +33,7 @@ public class Utils {
 
     private Utils() {}
 
-    public static HTable getTable(UserProvider provider, Configuration config, String tableName)
+    public static Table getTable(UserProvider provider, Configuration config, String tableName)
         throws IOException, InterruptedException {
         UserGroupInformation ugi;
         if (provider != null) {
@@ -74,10 +76,10 @@ public class Utils {
             }
         }
 
-        return ugi.doAs(new PrivilegedExceptionAction<HTable>() {
+        return ugi.doAs(new PrivilegedExceptionAction<Table>() {
             @Override
-            public HTable run() throws IOException {
-                return new HTable(config, tableName);
+            public Table run() throws IOException {
+                return ConnectionFactory.createConnection(config).getTable(TableName.valueOf(tableName));
             }
         });
     }

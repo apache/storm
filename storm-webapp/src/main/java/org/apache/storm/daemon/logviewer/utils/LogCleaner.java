@@ -19,7 +19,6 @@
 package org.apache.storm.daemon.logviewer.utils;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS;
@@ -33,15 +32,13 @@ import com.codahale.metrics.Timer;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.Closeable;
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,10 +46,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BinaryOperator;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.storm.StormTimer;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
@@ -76,7 +74,7 @@ public class LogCleaner implements Runnable, Closeable {
     
     private final Map<String, Object> stormConf;
     private final Integer intervalSecs;
-    private final File logRootDir;
+    private final Path logRootDir;
     private final DirectoryCleaner directoryCleaner;
     private final WorkerLogs workerLogs;
 
@@ -94,7 +92,7 @@ public class LogCleaner implements Runnable, Closeable {
      * @param metricsRegistry The logviewer metrics registry
      */
     public LogCleaner(Map<String, Object> stormConf, WorkerLogs workerLogs, DirectoryCleaner directoryCleaner,
-                      File logRootDir, StormMetricsRegistry metricsRegistry) {
+                      Path logRootDir, StormMetricsRegistry metricsRegistry) {
         this.stormConf = stormConf;
         this.intervalSecs = ObjectReader.getInt(stormConf.get(LOGVIEWER_CLEANUP_INTERVAL_SECS), null);
         this.logRootDir = logRootDir;
@@ -108,12 +106,25 @@ public class LogCleaner implements Runnable, Closeable {
         LOG.info("configured max total size of worker logs: {} MB, max total size of worker logs per directory: {} MB",
             maxSumWorkerLogsSizeMb, maxPerWorkerLogsSizeMb);
         //Switch to CachedGauge if this starts to hurt performance
-        metricsRegistry.registerGauge("logviewer:worker-log-dir-size", () -> FileUtils.sizeOf(logRootDir));
+        metricsRegistry.registerGauge("logviewer:worker-log-dir-size", () -> sizeOfDir(logRootDir));
         this.cleanupRoutineDuration = metricsRegistry.registerTimer("logviewer:cleanup-routine-duration-ms");
         this.numFilesCleanedUp = metricsRegistry.registerHistogram("logviewer:num-files-cleaned-up");
         this.diskSpaceFreed = metricsRegistry.registerHistogram("logviewer:disk-space-freed-in-bytes");
         this.numFileRemovalExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_REMOVAL_EXCEPTIONS);
         this.numCleanupExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_CLEANUP_EXCEPTIONS);
+    }
+    
+    private long sizeOfDir(Path dir) {
+        try {
+            return Files.walk(dir)
+                .filter(Files::isRegularFile)
+                .mapToLong(p -> p.toFile().length())
+                .sum();
+        } catch (IOException e) {
+            //This is only used for logging/metrics. Don't crash the process over it.
+            LOG.debug("Failed to get size of directory {}", dir);
+            return 0;
+        }
     }
 
     /**
@@ -154,22 +165,22 @@ public class LogCleaner implements Runnable, Closeable {
         long diskSpaceCleaned = 0L;
         try (Timer.Context t = cleanupRoutineDuration.time()) {
             final long nowMills = Time.currentTimeMillis();
-            Set<File> oldLogDirs = selectDirsForCleanup(nowMills);
+            Set<Path> oldLogDirs = selectDirsForCleanup(nowMills);
 
             final long nowSecs = TimeUnit.MILLISECONDS.toSeconds(nowMills);
-            SortedSet<File> deadWorkerDirs = getDeadWorkerDirs((int) nowSecs, oldLogDirs);
+            SortedSet<Path> deadWorkerDirs = getDeadWorkerDirs((int) nowSecs, oldLogDirs);
 
             LOG.debug("log cleanup: now={} old log dirs {} dead worker dirs {}", nowSecs,
-                    oldLogDirs.stream().map(File::getName).collect(joining(",")),
-                    deadWorkerDirs.stream().map(File::getName).collect(joining(",")));
+                    oldLogDirs.stream().map(p -> p.getFileName().toString()).collect(joining(",")),
+                    deadWorkerDirs.stream().map(p -> p.getFileName().toString()).collect(joining(",")));
 
-            for (File dir : deadWorkerDirs) {
-                String path = dir.getCanonicalPath();
-                long sizeInBytes = FileUtils.sizeOf(dir);
+            for (Path dir : deadWorkerDirs) {
+                Path path = dir.toAbsolutePath().normalize();
+                long sizeInBytes = sizeOfDir(dir);
                 LOG.info("Cleaning up: Removing {}, {} KB", path, sizeInBytes * 1e-3);
 
                 try {
-                    Utils.forceDelete(path);
+                    Utils.forceDelete(path.toString());
                     cleanupEmptyTopoDirectory(dir);
                     numFilesCleaned++;
                     diskSpaceCleaned += sizeInBytes;
@@ -209,8 +220,8 @@ public class LogCleaner implements Runnable, Closeable {
      */
     @VisibleForTesting
     DeletionMeta globalLogCleanup(long size) throws Exception {
-        List<File> workerDirs = new ArrayList<>(workerLogs.getAllWorkerDirs());
-        Set<File> aliveWorkerDirs = workerLogs.getAliveWorkerDirs();
+        List<Path> workerDirs = new ArrayList<>(workerLogs.getAllWorkerDirs());
+        Set<Path> aliveWorkerDirs = workerLogs.getAliveWorkerDirs();
 
         return directoryCleaner.deleteOldestWhileTooLarge(workerDirs, size, false, aliveWorkerDirs);
     }
@@ -219,18 +230,20 @@ public class LogCleaner implements Runnable, Closeable {
      * Delete the topo dir if it contains zero port dirs.
      */
     @VisibleForTesting
-    void cleanupEmptyTopoDirectory(File dir) throws IOException {
-        File topoDir = dir.getParentFile();
-        if (topoDir.listFiles().length == 0) {
-            Utils.forceDelete(topoDir.getCanonicalPath());
+    void cleanupEmptyTopoDirectory(Path dir) throws IOException {
+        Path topoDir = dir.getParent();
+        try (Stream<Path> topoDirContent = Files.list(topoDir)) {
+            if (!topoDirContent.findAny().isPresent()) {
+                Utils.forceDelete(topoDir.toAbsolutePath().normalize().toString());
+            }
         }
     }
 
     /**
-     * Return a sorted set of java.io.Files that were written by workers that are now dead.
+     * Return a sorted set of paths that were written by workers that are now dead.
      */
     @VisibleForTesting
-    SortedSet<File> getDeadWorkerDirs(int nowSecs, Set<File> logDirs) throws Exception {
+    SortedSet<Path> getDeadWorkerDirs(int nowSecs, Set<Path> logDirs) throws Exception {
         if (logDirs.isEmpty()) {
             return new TreeSet<>();
         } else {
@@ -240,50 +253,44 @@ public class LogCleaner implements Runnable, Closeable {
     }
 
     @VisibleForTesting
-    Set<File> selectDirsForCleanup(long nowMillis) {
-        FileFilter fileFilter = mkFileFilterForLogCleanup(nowMillis);
-
-        return Arrays.stream(logRootDir.listFiles())
-                .flatMap(topoDir -> Arrays.stream(topoDir.listFiles(fileFilter)))
-                .collect(toCollection(TreeSet::new));
+    Set<Path> selectDirsForCleanup(long nowMillis) {
+        Predicate<Path> fileFilter = mkFileFilterForLogCleanup(nowMillis);
+        try (Stream<Path> fileList = Files.list(logRootDir)) {
+            return fileList
+                .flatMap(Unchecked.function(Files::list))
+                .filter(fileFilter)
+                .collect(Collectors.toCollection(TreeSet::new));
+        } catch (IOException e) {
+            throw Utils.wrapInRuntime(e);
+        }
     }
 
     @VisibleForTesting
-    FileFilter mkFileFilterForLogCleanup(long nowMillis) {
-        //Doesn't it make more sense to do file.isDirectory here?
-        return file -> !file.isFile() && lastModifiedTimeWorkerLogdir(file) <= cleanupCutoffAgeMillis(nowMillis);
+    Predicate<Path> mkFileFilterForLogCleanup(long nowMillis) {
+        //It seems safer not to follow symlinks, since we don't expect them here
+        return file -> Files.isDirectory(file, LinkOption.NOFOLLOW_LINKS)
+            && lastModifiedTimeWorkerLogdir(file) <= cleanupCutoffAgeMillis(nowMillis);
     }
 
     /**
-     * Return the last modified time for all log files in a worker's log dir.
+     * Return the most recent last modified time for all log files in a worker's log dir.
      * Using stream rather than File.listFiles is to avoid large mem usage
      * when a directory has too many files.
      */
-    private long lastModifiedTimeWorkerLogdir(File logDir) {
-        long dirModified = logDir.lastModified();
-
-        DirectoryStream<Path> dirStream;
+    private long lastModifiedTimeWorkerLogdir(Path logDir) {
         try {
-            dirStream = directoryCleaner.getStreamForDirectory(logDir);
+            long dirModified = Files.getLastModifiedTime(logDir).toMillis();
+            
+            try (DirectoryStream<Path> dirStream = directoryCleaner.getStreamForDirectory(logDir)) {
+                return StreamSupport.stream(dirStream.spliterator(), false)
+                    .map(Unchecked.function(p -> Files.getLastModifiedTime(p).toMillis()))
+                    .reduce(dirModified, BinaryOperator.maxBy(Long::compareTo));
+            } catch (IOException e) {
+                LOG.error(e.getMessage(), e);
+                return dirModified;
+            }
         } catch (IOException e) {
-            return dirModified;
-        }
-
-        if (dirStream == null) {
-            return dirModified;
-        }
-
-        try {
-            return StreamSupport.stream(dirStream.spliterator(), false)
-                    .reduce(dirModified, (maximum, path) -> {
-                        long curr = path.toFile().lastModified();
-                        return curr > maximum ? curr : maximum;
-                    }, BinaryOperator.maxBy(Long::compareTo));
-        } catch (Exception ex) {
-            LOG.error(ex.getMessage(), ex);
-            return dirModified;
-        } finally {
-            IOUtils.closeQuietly(dirStream);
+            throw Utils.wrapInRuntime(e);
         }
     }
 

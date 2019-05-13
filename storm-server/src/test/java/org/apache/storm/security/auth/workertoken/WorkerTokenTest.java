@@ -81,10 +81,11 @@ public class WorkerTokenTest {
             assertEquals(ONE_DAY_MILLIS, info.get_expirationTimeMillis());
             assertEquals(versionNumber, info.get_secretVersion());
 
-            //Verify the signature...
-            WorkerTokenAuthorizer wta = new WorkerTokenAuthorizer(type, mockState);
-            byte[] signature = wta.getSignedPasswordFor(wt.get_info(), info);
-            assertArrayEquals(wt.get_signature(), signature);
+            try (WorkerTokenAuthorizer wta = new WorkerTokenAuthorizer(type, mockState)) {
+                //Verify the signature...
+                byte[] signature = wta.getSignedPasswordFor(wt.get_info(), info);
+                assertArrayEquals(wt.get_signature(), signature);
+            }
         }
     }
 
@@ -135,13 +136,14 @@ public class WorkerTokenTest {
             //Expire the token
             Time.advanceTime(ONE_DAY_MILLIS + 1);
 
-            //Verify the signature...
-            WorkerTokenAuthorizer wta = new WorkerTokenAuthorizer(type, mockState);
-            try {
-                wta.getSignedPasswordFor(wt.get_info(), info);
-                fail("Expected an expired token to not be signed!!!");
-            } catch (IllegalArgumentException ia) {
-                //What we want...
+            try (WorkerTokenAuthorizer wta = new WorkerTokenAuthorizer(type, mockState)) {
+                try {
+                    //Verify the signature...
+                    wta.getSignedPasswordFor(wt.get_info(), info);
+                    fail("Expected an expired token to not be signed!!!");
+                } catch (IllegalArgumentException ia) {
+                    //What we want...
+                }
             }
 
             //Verify if WorkerTokenManager recognizes the expired WorkerToken.

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>18</version>
+        <version>21</version>
     </parent>
 
     <groupId>org.apache.storm</groupId>
@@ -30,11 +30,11 @@
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
-    <url>http://storm.apache.org</url>
+    <url>https://storm.apache.org</url>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
 
@@ -227,6 +227,15 @@
             </roles>
             <timezone>-6</timezone>
         </developer>
+        <developer>
+            <id>govind-menon</id>
+            <name>Govind Menon</name>
+            <email>govind@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
 
     </developers>
 
@@ -245,10 +254,12 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <test.extra.args>-Djava.net.preferIPv4Stack=true</test.extra.args>
+        <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
+        <license.skipAggregateDownloadLicenses>true</license.skipAggregateDownloadLicenses>
 
         <!-- dependency versions -->
-        <clojure.version>1.7.0</clojure.version>
-        <commons-compress.version>1.16.1</commons-compress.version>
+        <clojure.version>1.10.0</clojure.version>
+        <commons-compress.version>1.18</commons-compress.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-exec.version>1.3</commons-exec.version>
@@ -256,65 +267,61 @@
         <commons-fileupload.version>1.3.3</commons-fileupload.version>
         <commons-codec.version>1.11</commons-codec.version>
         <commons-cli.version>1.4</commons-cli.version>
-        <curator.version>4.0.1</curator.version>
-        <curator-test.version>2.12.0</curator-test.version>
+        <curator.version>4.2.0</curator.version>
+        <curator-test.version>2.13.0</curator-test.version>
         <json-simple.version>1.1</json-simple.version>
-        <jetty.version>9.4.7.v20170914</jetty.version>
+        <jetty.version>9.4.14.v20181114</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.5.0</carbonite.version>
         <snakeyaml.version>1.11</snakeyaml.version>
         <httpclient.version>4.5.6</httpclient.version>
         <jctools.version>2.0.1</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
-        <guava.version>16.0.1</guava.version>
-        <auto-service.version>1.0-rc3</auto-service.version>
-        <netty.version>4.1.25.Final</netty.version>
+        <guava.version>27.0.1-jre</guava.version>
+        <auto-service.version>1.0-rc4</auto-service.version>
+        <netty.version>4.1.30.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
-        <log4j.version>2.11.1</log4j.version>
-        <slf4j.version>1.7.21</slf4j.version>
+        <log4j.version>2.11.2</log4j.version>
+        <slf4j.version>1.7.26</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
         <mockito.version>2.19.0</mockito.version>
-        <zookeeper.version>3.4.6</zookeeper.version>
+        <zookeeper.version>3.4.14</zookeeper.version>
         <jline.version>0.9.94</jline.version>
-        <hive.version>2.3.3</hive.version>
-        <hadoop.version>2.6.1</hadoop.version>
+        <hive.version>2.3.4</hive.version>
+        <hadoop.version>2.8.5</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
-        <hbase.version>1.4.4</hbase.version>
+        <hbase.version>2.1.3</hbase.version>
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>
-        <thrift.version>0.11.0</thrift.version>
-        <junit.jupiter.version>5.2.0</junit.jupiter.version>
-        <surefire.version>2.22.0</surefire.version>
+        <thrift.version>0.12.0</thrift.version>
+        <junit.jupiter.version>5.3.2</junit.jupiter.version>
+        <surefire.version>2.22.1</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
         <hamcrest.version>2.0.0.0</hamcrest.version>
         <cassandra.version>2.1.7</cassandra.version>
-        <druid.version>0.8.2</druid.version>
         <elasticsearch.version>5.2.2</elasticsearch.version>
         <calcite.version>1.14.0</calcite.version>
         <mongodb.version>3.2.0</mongodb.version>
         <solr.version>5.2.1</solr.version>
         <jpmml.version>1.0.22</jpmml.version>
         <jedis.version>2.9.0</jedis.version>
-        <activemq.version>5.15.3</activemq.version>
+        <activemq.version>5.15.8</activemq.version>
         <rocketmq.version>4.2.0</rocketmq.version>
 
-        <jackson.version>2.9.4</jackson.version>
+        <jackson.version>2.9.8</jackson.version>
         
-        <storm.kafka.client.version>0.10.1.0</storm.kafka.client.version>
+        <storm.kafka.client.version>0.11.0.3</storm.kafka.client.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
-        <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest, org.apache.storm.testing.PerformanceTest</java.unit.test.exclude>
-        <java.unit.test.include>**/Test*.java, **/*Test.java, **/*TestCase.java</java.unit.test.include>    <!--maven surefire plugin default test list-->
-        <java.integration.test.include>no.tests</java.integration.test.include>
+        <java.unit.test.exclude.groups>PerformanceTest</java.unit.test.exclude.groups>
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
+        <skipITs>true</skipITs>
 
-        <aetherVersion>1.1.0</aetherVersion>
-        <mavenVersion>3.1.0</mavenVersion>
-        <wagonVersion>1.0</wagonVersion>
+        <maven-resolver.version>1.3.3</maven-resolver.version>
+        <maven.version>3.6.0</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>2.27</jersey.version>
         <dropwizard.version>1.3.5</dropwizard.version>
@@ -377,7 +384,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
-                <module>shaded-deps</module>
+                <module>storm-shaded-deps</module>
             </modules>
         </profile>
         <profile>
@@ -426,12 +433,17 @@
                                 <exclude>SECURITY.md</exclude>
                                 <exclude>VERSION</exclude>
                                 <exclude>TODO</exclude>
+                                <exclude>DEPENDENCY-LICENSES</exclude>
+                                <exclude>LICENSE-binary</exclude>
+                                <exclude>NOTICE-binary</exclude>
+                                <!-- Exclude dependency license files -->
+                                <exclude>licenses/**</exclude>
                                 <!-- thrift-generated code -->
                                 <exclude>**/src/py/**</exclude>
 
                                 <!-- Used as part of travis-ci build -->
                                 <exclude>install.txt</exclude>
-                                <exclude>shaded-deps/install-shade.txt</exclude>
+                                <exclude>storm-shaded-deps/install-shade.txt</exclude>
                                 <!-- the following are in the LICENSE file -->
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.dataTables.1.10.4.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jquery.dataTables.1.10.4.min.css</exclude>
@@ -570,29 +582,41 @@
         <profile>
             <id>all-tests</id>
             <properties>
-                <java.integration.test.include>**/*.java</java.integration.test.include>
                 <!-- add perf tests back in -->
-                <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
+                <java.unit.test.exclude.groups>nothing</java.unit.test.exclude.groups>
                 <clojure.test.set>*.*</clojure.test.set>
+                <skipITs>false</skipITs>
             </properties>
         </profile>
         <profile>
             <id>performance-tests</id>
             <properties>
                 <!-- add perf tests back in -->
-                <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
+                <java.unit.test.exclude.groups>nothing</java.unit.test.exclude.groups>
             </properties>
         </profile> 
         <profile>
             <id>integration-tests-only</id>
             <properties>
                 <!--Java-->
-                <java.unit.test.include>no.unit.tests</java.unit.test.include>
-                <java.integration.test.include>**/*.java</java.integration.test.include>
+                <skipITs>false</skipITs>
                 <!--Clojure-->
                 <clojure.test.set>integration.*</clojure.test.set>
                 <clojure.test.declared.namespace.only>true</clojure.test.declared.namespace.only>
             </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <skipTests>true</skipTests>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
         <profile>
             <id>externals</id>
@@ -731,6 +755,12 @@
                 <groupId>jline</groupId>
                 <artifactId>jline</artifactId>
                 <version>${jline.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
@@ -760,6 +790,10 @@
                     <exclusion>
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-annotations</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -901,33 +935,27 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
+                <artifactId>log4j-bom</artifactId>
                 <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-slf4j-impl</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-                <version>${log4j-over-slf4j.version}</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>log4j-over-slf4j</artifactId>
-                <version>${log4j-over-slf4j.version}</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-all</artifactId>
+                <artifactId>netty-bom</artifactId>
                 <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
@@ -1009,6 +1037,11 @@
                 <version>1.1.1</version>
             </dependency>
             <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>1.3.2</version>
+            </dependency>
+            <dependency>
                 <groupId>org.rocksdb</groupId>
                 <artifactId>rocksdbjni</artifactId>
                 <version>${rocksdb-version}</version>
@@ -1058,6 +1091,62 @@
                    </exclusion>
                 </exclusions>
            </dependency>
+           <!-- Hadoop dependencies. Specified here so HDFS/HBase don't import older versions of these jars in their projects-->
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-auth</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-hdfs</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-common</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-annotations</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-mapreduce-client-core</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-yarn-common</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-yarn-server-resourcemanager</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-yarn-server-applicationhistoryservice</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-yarn-server-web-proxy</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-yarn-registry</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.hadoop</groupId>
+               <artifactId>hadoop-archives</artifactId>
+               <version>${hadoop.version}</version>
+           </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1070,7 +1159,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>central</id>
-            <url>http://repo1.maven.org/maven2/</url>
+            <url>https://repo1.maven.org/maven2/</url>
         </repository>
         <repository>
             <releases>
@@ -1093,10 +1182,7 @@
                     <version>${surefire.version}</version>
                     <configuration>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                        <excludedGroups>${java.unit.test.exclude}</excludedGroups>
-                        <includes>
-                            <include>${java.unit.test.include}</include>
-                        </includes>
+                        <excludedGroups>IntegrationTest | ${java.unit.test.exclude.groups}</excludedGroups>
                         <argLine>-Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
                         <trimStackTrace>false</trimStackTrace>
                         <forkCount>1.0C</forkCount>
@@ -1113,9 +1199,9 @@
                     <configuration>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <includes>
-                            <include>${java.integration.test.include}</include>
+                            <include>**/*.java</include>
                         </includes>
-                        <groups>org.apache.storm.testing.IntegrationTest</groups>
+                        <groups>IntegrationTest</groups>
                         <argLine>-Xmx1536m</argLine>
                     </configuration>
                     <executions>
@@ -1192,9 +1278,103 @@
                     <extensions>true</extensions>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>2.4.1</version>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.6.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>1.19</version>
+                    <configuration>
+                        <useMissingFile>true</useMissingFile>
+                        <failOnMissing>true</failOnMissing>
+                        <includeTransitiveDependencies>true</includeTransitiveDependencies>
+                        <fileTemplate>/org/codehaus/mojo/license/third-party-file-groupByMultiLicense.ftl</fileTemplate>
+                        <excludedScopes>system,test</excludedScopes>
+                        <licenseMerges>
+                            <licenseMerge>
+                                Apache License, Version 2.0 |
+                                Apache License, version 2.0 |
+                                Apache License Version 2 |
+                                Apache License Version 2.0 |
+                                Apache License version 2.0 |
+                                Apache 2 |
+                                Apache 2.0 |
+                                Apache License, 2.0 |
+                                Apache License 2 |
+                                Apache License 2.0 |
+                                Apache Public License 2.0 |
+                                Apache Software License - Version 2.0 |
+                                Apache v2 |
+                                ASL, version 2 |
+                                The Apache License, Version 2.0 |
+                                The Apache Software License, Version 2.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                Apache License | 
+                                Apache Software Licenses
+                            </licenseMerge>
+                            <licenseMerge>
+                                BSD License |
+                                BSD license |
+                                BSD |
+                                The BSD License
+                            </licenseMerge>
+                            <licenseMerge>
+                                BSD 3-Clause License |
+                                BSD 3-Clause |
+                                BSD 3-clause |
+                                The BSD 3-Clause License |
+                                New BSD License |
+                                New BSD license
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Development and Distribution License (CDDL) v1.0 |
+                                COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 |
+                                CDDL 1.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Development and Distribution License (CDDL) v1.1 | 
+                                COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1 |
+                                CDDL 1.1 |
+                                Common Development and Distribution License (CDDL), Version 1.1
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Development and Distribution License | 
+                                <!-- Multilicense, choosing CDDL -->
+                                CDDL+GPL |
+                                CDDL+GPL License |
+                                CDDL + GPLv2 with classpath exception
+                            </licenseMerge>
+                            <licenseMerge>
+                                Eclipse Public License, Version 1.0 |
+                                Eclipse Public License 1.0 |
+                                Eclipse Public License - v 1.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                MIT License |
+                                The MIT License |
+                                MIT license |
+                                MIT X11 License |
+                                MIT
+                            </licenseMerge>
+                            <licenseMerge>
+                                The GNU General Public License (GPL), Version 2, With Classpath Exception |
+                                GPL2 w/ CPE
+                            </licenseMerge>
+                            <licenseMerge>
+                                GNU Lesser General Public License (LGPL), Version 2.1 |
+                                LGPL, version 2.1 |
+                                GNU Lesser General Public License Version 2.1 |
+                                GNU Lesser General Public License, version 2.1
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Public License Version 1.0 |
+                                Common Public License - v 1.0
+                            </licenseMerge>
+                        </licenseMerges>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1247,7 +1427,7 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <version>3.0</version>
+                                    <version>3.5</version>
                                 </requireMavenVersion>
                                 <bannedDependencies>
                                     <excludes>
@@ -1257,6 +1437,31 @@
                                 </bannedDependencies>
                             </rules>    
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <thirdPartyFilename>DEPENDENCY-LICENSES</thirdPartyFilename>
+                    <outputDirectory>${project.basedir}</outputDirectory>
+                    <missingFile>${project.basedir}/THIRD-PARTY.properties</missingFile>
+                    <aggregateMissingLicensesFile>${project.basedir}/THIRD-PARTY.properties</aggregateMissingLicensesFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-and-check-licenses</id>
+                        <goals>
+                            <goal>aggregate-add-third-party</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>download-licenses</id>
+                        <goals>
+                            <goal>aggregate-download-licenses</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

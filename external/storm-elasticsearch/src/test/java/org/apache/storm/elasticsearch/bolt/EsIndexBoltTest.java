@@ -21,15 +21,12 @@ import static org.mockito.Mockito.verify;
 
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
-import org.apache.storm.testing.IntegrationTest;
 import org.apache.storm.tuple.Tuple;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
-@Category(IntegrationTest.class)
 public class EsIndexBoltTest extends AbstractEsBoltIntegrationTest<EsIndexBolt> {
 
     @Test

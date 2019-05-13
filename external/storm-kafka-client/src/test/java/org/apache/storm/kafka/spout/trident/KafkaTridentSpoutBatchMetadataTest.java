@@ -19,11 +19,7 @@ package org.apache.storm.kafka.spout.trident;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.util.List;
 import java.util.Map;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.storm.kafka.spout.SpoutWithMockedConsumerSetupHelper;
 import org.json.simple.JSONValue;
 import org.junit.Test;
 
@@ -49,19 +45,6 @@ public class KafkaTridentSpoutBatchMetadataTest {
         assertThat(deserializedMetadata.getFirstOffset(), is(metadata.getFirstOffset()));
         assertThat(deserializedMetadata.getLastOffset(), is(metadata.getLastOffset()));
         assertThat(deserializedMetadata.getTopologyId(), is(metadata.getTopologyId()));
-    }
-
-    @Test
-    public void testCreateMetadataFromRecords() {
-        long firstOffset = 15;
-        long lastOffset = 55;
-        String topologyId = "topologyId";
-        List<ConsumerRecord<String, String>> records = SpoutWithMockedConsumerSetupHelper.createRecords(new TopicPartition("test", 0), firstOffset, (int) (lastOffset - firstOffset + 1));
-
-        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(records, topologyId);
-        assertThat("The first offset should be the first offset in the record set", metadata.getFirstOffset(), is(firstOffset));
-        assertThat("The last offset should be the last offset in the record set", metadata.getLastOffset(), is(lastOffset));
-        assertThat(metadata.getTopologyId(), is(topologyId));
     }
 
 }

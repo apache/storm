@@ -22,13 +22,13 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Increment;
 import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.security.HBaseSecurityUtil;
@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 public class HBaseClient implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseClient.class);
 
-    private HTable table;
+    private Table table;
 
     public HBaseClient(Map<String, Object> map, final Configuration configuration, final String tableName) {
         try {
@@ -60,14 +60,14 @@ public class HBaseClient implements Closeable {
             put.setDurability(durability);
             for (ColumnList.Column col : cols.getColumns()) {
                 if (col.getTs() > 0) {
-                    put.add(
+                    put.addColumn(
                         col.getFamily(),
                         col.getQualifier(),
                         col.getTs(),
                         col.getValue()
                     );
                 } else {
-                    put.add(
+                    put.addColumn(
                         col.getFamily(),
                         col.getQualifier(),
                         col.getValue()
@@ -82,9 +82,9 @@ public class HBaseClient implements Closeable {
             inc.setDurability(durability);
             for (ColumnList.Counter cnt : cols.getCounters()) {
                 inc.addColumn(
-                    cnt.getFamily(),
-                    cnt.getQualifier(),
-                    cnt.getIncrement()
+                        cnt.getFamily(),
+                        cnt.getQualifier(),
+                        cnt.getIncrement()
                 );
             }
             mutations.add(inc);

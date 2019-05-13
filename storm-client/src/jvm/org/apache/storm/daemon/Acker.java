@@ -78,9 +78,10 @@ public class Acker implements IBolt {
             pending.put(id, curr);
         } else if (ACKER_RESET_TIMEOUT_STREAM_ID.equals(streamId)) {
             resetTimeout = true;
-            if (curr != null) {
-                pending.put(id, curr);
-            } //else if it has not been added yet, there is no reason time it out later on
+            if (curr == null) {
+                curr = new AckObject();
+            }
+            pending.put(id, curr);
         } else if (Constants.SYSTEM_FLUSH_STREAM_ID.equals(streamId)) {
             collector.flush();
             return;

@@ -631,7 +631,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     /**
      * a class to contain individual object resources as well as cumulative stats.
      */
-    static class AllResources {
+    protected static class AllResources {
         List<ObjectResources> objectResources = new LinkedList<>();
         final NormalizedResourceOffer availableResourcesOverall;
         final NormalizedResourceOffer totalResourcesOverall;
@@ -667,7 +667,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     /**
      * class to keep track of resources on a rack or node.
      */
-    static class ObjectResources {
+    protected static class ObjectResources {
         public final String id;
         public NormalizedResourceOffer availableResources;
         public NormalizedResourceOffer totalResources;

@@ -51,7 +51,7 @@ public class JCQueue implements IStatefulObject, Closeable {
     private final MpscArrayQueue<Object> recvQueue;
     // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
     private final MpscUnboundedArrayQueue<Object> overflowQ;
-    private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow.
+    private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow limiting.
     private final int producerBatchSz;
     private final DirectInserter directInserter = new DirectInserter(this);
     private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
@@ -60,14 +60,14 @@ public class JCQueue implements IStatefulObject, Closeable {
     private final String queueName;
 
     public JCQueue(String queueName, int size, int overflowLimit, int producerBatchSz, IWaitStrategy backPressureWaitStrategy,
-                   String topologyId, String componentId, Integer taskId, int port) {
+                   String topologyId, String componentId, Integer taskId, int port, StormMetricRegistry metricRegistry) {
         this.queueName = queueName;
         this.overflowLimit = overflowLimit;
         this.recvQueue = new MpscArrayQueue<>(size);
         this.overflowQ = new MpscUnboundedArrayQueue<>(size);
 
         this.metrics = new JCQueue.QueueMetrics();
-        this.jcMetrics = StormMetricRegistry.jcMetrics(queueName, topologyId, componentId, taskId, port);
+        this.jcMetrics = metricRegistry.jcMetrics(queueName, topologyId, componentId, taskId, port);
 
         //The batch size can be no larger than half the full recvQueue size, to avoid contention issues.
         this.producerBatchSz = Math.max(1, Math.min(producerBatchSz, size / 2));

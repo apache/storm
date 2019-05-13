@@ -1060,6 +1060,13 @@ public class Config extends HashMap<String, Object> {
     public static final String SUPERVISOR_NUMA_META = "supervisor.numa.meta";
 
     /**
+     * How many seconds to allow for graceful worker shutdown when killing workers before resorting to force kill.
+     * If a worker fails to shut down gracefully within this delay, it will either suicide or be forcibly killed by the supervisor.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS = "supervisor.worker.shutdown.sleep.secs";
+    /**
      * A list of hosts of ZooKeeper servers used to manage the cluster.
      */
     @isStringList

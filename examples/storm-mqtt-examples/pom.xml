@@ -29,6 +29,11 @@
     <version>2.0.1-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
+  
+  <properties>
+      <!-- Required downgrade by activemq-broker 5.15.3 -->
+      <guava.version>16.0.1</guava.version>
+  </properties>
 
   <dependencies>
    <dependency>
@@ -50,7 +55,7 @@
     <dependency>
       <groupId>org.fusesource.mqtt-client</groupId>
       <artifactId>mqtt-client</artifactId>
-      <version>1.10</version>
+      <version>1.14</version>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
@@ -64,6 +69,11 @@
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-kahadb-store</artifactId>
     </dependency>
+    <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -71,7 +81,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>1.4</version>
         <configuration>
           <createDependencyReducedPom>true</createDependencyReducedPom>
           <filters>

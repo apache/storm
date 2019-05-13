@@ -18,6 +18,7 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesRule;
 import java.util.Collections;
 import org.apache.storm.Config;
@@ -41,6 +42,7 @@ import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,6 +71,7 @@ public class TestDefaultResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestDefaultResourceAwareStrategy.class);
 
     private static final int CURRENT_TIME = 1450418597;
+    private static IScheduler scheduler = null;
 
     private static class TestDNSToSwitchMapping implements DNSToSwitchMapping {
         private final Map<String, String> result;
@@ -92,6 +95,14 @@ public class TestDefaultResourceAwareStrategy {
 
     @Rule
     public NormalizedResourcesRule nrRule = new NormalizedResourcesRule();
+
+    @After
+    public void cleanup() {
+        if (scheduler != null) {
+            scheduler.cleanup();
+            scheduler = null;
+        }
+    }
 
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
@@ -132,10 +143,10 @@ public class TestDefaultResourceAwareStrategy {
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
-        ResourceAwareScheduler rs = new ResourceAwareScheduler();
+        scheduler = new ResourceAwareScheduler();
 
-        rs.prepare(conf);
-        rs.schedule(topologies, cluster);
+        scheduler.prepare(conf);
+        scheduler.schedule(topologies, cluster);
         
         for (Entry<String, SupervisorResources> entry: cluster.getSupervisorsResourcesMap().entrySet()) {
             String supervisorId = entry.getKey();
@@ -199,10 +210,10 @@ public class TestDefaultResourceAwareStrategy {
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
-        ResourceAwareScheduler rs = new ResourceAwareScheduler();
+        scheduler = new ResourceAwareScheduler();
 
-        rs.prepare(conf);
-        rs.schedule(topologies, cluster);
+        scheduler.prepare(conf);
+        scheduler.schedule(topologies, cluster);
 
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
         expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(0, 0)))); //Spout

@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 public class KafkaSpoutConfig<K, V> extends CommonKafkaSpoutConfig<K, V> {
 
     private static final long serialVersionUID = 141902646130682494L;
-    // 30s
     public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 30_000;
     // Retry forever
     public static final int DEFAULT_MAX_RETRIES = Integer.MAX_VALUE;

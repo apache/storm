@@ -44,7 +44,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>${storm.kafka.client.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -70,71 +70,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <configuration>
-                    <createDependencyReducedPom>true</createDependencyReducedPom>
-                    <filters>
-                        <filter>
-                            <artifact>*:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/*.SF</exclude>
-                                <exclude>META-INF/*.sf</exclude>
-                                <exclude>META-INF/*.DSA</exclude>
-                                <exclude>META-INF/*.dsa</exclude>
-                                <exclude>META-INF/*.RSA</exclude>
-                                <exclude>META-INF/*.rsa</exclude>
-                                <exclude>META-INF/*.EC</exclude>
-                                <exclude>META-INF/*.ec</exclude>
-                                <exclude>META-INF/MSFTSIG.SF</exclude>
-                                <exclude>META-INF/MSFTSIG.RSA</exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <relocations>
-                                <relocation>
-                                    <pattern>org.apache.kafka</pattern>
-                                    <shadedPattern>org.apache.kafka.shaded</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>kafka</pattern>
-                                    <shadedPattern>kafka.shaded</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>other.kafka</pattern>
-                                    <shadedPattern>other.kafka.shaded</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.slf4j.impl</pattern>
-                                    <shadedPattern>org.slf4j.impl.shaded</shadedPattern>
-                                </relocation>
-
-                                <relocation>
-                                    <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>org.apache.curator.shaded</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.json.simple</pattern>
-                                    <shadedPattern>org.json.simple.shaded</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.commons.cli</pattern>
-                                    <shadedPattern>org.apache.commons.cli.shaded</shadedPattern>
-                                </relocation>
-                           </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>

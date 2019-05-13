@@ -309,7 +309,7 @@ public abstract class Container implements Killable {
         }
         return ret;
     }
-
+    
     @Override
     public boolean areAllProcessesDead() throws IOException {
         Set<Long> pids = getAllPids();
@@ -325,7 +325,7 @@ public abstract class Container implements Killable {
                 break;
             }
         }
-
+        
         if (allDead && shutdownTimer != null) {
             shutdownTimer.stop();
             shutdownTimer = null;

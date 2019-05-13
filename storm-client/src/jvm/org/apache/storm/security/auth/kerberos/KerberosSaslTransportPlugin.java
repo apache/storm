@@ -50,9 +50,13 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(KerberosSaslTransportPlugin.class);
     private static final String DISABLE_LOGIN_CACHE = "disableLoginCache";
     private static Map<LoginCacheKey, Login> loginCache = new ConcurrentHashMap<>();
+    private WorkerTokenAuthorizer workerTokenAuthorizer;
 
     @Override
     public TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException {
+        if (workerTokenAuthorizer == null) {
+            workerTokenAuthorizer = new WorkerTokenAuthorizer(conf, type);
+        }
         //create an authentication callback handler
         CallbackHandler server_callback_handler = new ServerCallbackHandler(loginConf, impersonationAllowed);
 
@@ -91,7 +95,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
         //Also add in support for worker tokens
         factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, hostName, null,
-                                    new SimpleSaslServerCallbackHandler(impersonationAllowed, new WorkerTokenAuthorizer(conf, type)));
+                                    new SimpleSaslServerCallbackHandler(impersonationAllowed, workerTokenAuthorizer));
 
         //create a wrap transport factory so that we could apply user credential during connections
         TUGIAssumingTransportFactory wrapFactory = new TUGIAssumingTransportFactory(factory, subject);
@@ -232,6 +236,11 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     @Override
     public boolean areWorkerTokensSupported() {
         return true;
+    }
+
+    @Override
+    public void close() {
+        workerTokenAuthorizer.close();
     }
 
     /**

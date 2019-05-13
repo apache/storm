@@ -22,7 +22,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
 
 import static org.apache.storm.utils.Utils.get;
 
@@ -131,8 +130,6 @@ public class FixedTupleSpout implements IRichSpout, CompletableSpout {
             String id = UUID.randomUUID().toString();
             _pending.put(id, ft);
             _collector.emit(ft.stream, ft.values, id);
-        } else {
-            Utils.sleep(100);
         }
     }
 
