@@ -296,10 +296,9 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
      * Seek the consumer to offset corresponding to startTimeStamp.
      */
     private void seekOffsetByStartTimeStamp(TopicPartition tp) {
-        long startTimeStampOffset;
         Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes = consumer.offsetsForTimes(Collections.singletonMap(tp, startTimeStamp));
         OffsetAndTimestamp startOffsetAndTimeStamp = offsetsForTimes.get(tp);
-        startTimeStampOffset = startOffsetAndTimeStamp.offset();
+        long startTimeStampOffset = startOffsetAndTimeStamp.offset();
         LOG.debug("First poll for topic partition [{}], seeking to partition from startTimeStamp [{}]", tp, startTimeStamp);
         consumer.seek(tp, startTimeStampOffset);
     }
