@@ -4182,7 +4182,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         if (topoPageInfo.get_id_to_bolt_agg_stats().isEmpty()) {
             Map<String, Bolt> bolts = topology.get_bolts();
             for (String boltName : bolts.keySet()) {
-                if (!includeSys && Utils.isSystemId(boltName) || boltName.equals("__system")) {
+                if ((!includeSys && Utils.isSystemId(boltName)) || boltName.equals("__system")) {
                     continue;
                 }
 
