@@ -4144,19 +4144,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      */
     private void maybeAddPlaceholderSpoutAggStats(TopologyPageInfo topoPageInfo, StormTopology topology) {
         if (topoPageInfo.get_id_to_spout_agg_stats().isEmpty()) {
-            Map<String, SpoutSpec> spouts = topology.get_spouts();
-            for (String spoutName : spouts.keySet()) {
+            for (Entry<String, SpoutSpec> entry : topology.get_spouts().entrySet()) {
                 // component
                 ComponentAggregateStats placeholderComponentStats = new ComponentAggregateStats();
                 placeholderComponentStats.set_type(ComponentType.SPOUT);
 
                 // common aggregate
-                CommonAggregateStats commonStats = new CommonAggregateStats();
-                commonStats.set_num_executors(0);
-                commonStats.set_num_tasks(0);
-                commonStats.set_emitted(0);
-                commonStats.set_transferred(0);
-                commonStats.set_acked(0);
+                CommonAggregateStats commonStats = getPlaceholderCommonAggregateStats(entry.getValue());
                 placeholderComponentStats.set_common_stats(commonStats);
 
                 // spout aggregate
@@ -4166,7 +4160,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 specificStats.set_spout(spoutAggStats);
                 placeholderComponentStats.set_specific_stats(specificStats);
 
-                topoPageInfo.get_id_to_spout_agg_stats().put(spoutName, placeholderComponentStats);
+                topoPageInfo.get_id_to_spout_agg_stats().put(entry.getKey(), placeholderComponentStats);
             }
         }
     }
@@ -4180,8 +4174,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      */
     private void maybeAddPlaceholderBoltAggStats(TopologyPageInfo topoPageInfo, StormTopology topology, boolean includeSys) {
         if (topoPageInfo.get_id_to_bolt_agg_stats().isEmpty()) {
-            Map<String, Bolt> bolts = topology.get_bolts();
-            for (String boltName : bolts.keySet()) {
+            for (Entry<String, Bolt> entry : topology.get_bolts().entrySet()) {
+                String boltName = entry.getKey();
                 if ((!includeSys && Utils.isSystemId(boltName)) || boltName.equals(Constants.SYSTEM_COMPONENT_ID)) {
                     continue;
                 }
@@ -4191,12 +4185,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 placeholderComponentStats.set_type(ComponentType.BOLT);
 
                 // common aggregate
-                CommonAggregateStats commonStats = new CommonAggregateStats();
-                commonStats.set_num_executors(0);
-                commonStats.set_num_tasks(0);
-                commonStats.set_emitted(0);
-                commonStats.set_transferred(0);
-                commonStats.set_acked(0);
+                CommonAggregateStats commonStats = getPlaceholderCommonAggregateStats(entry.getValue());
                 placeholderComponentStats.set_common_stats(commonStats);
 
                 // bolt aggregate
@@ -4212,6 +4201,31 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoPageInfo.get_id_to_bolt_agg_stats().put(boltName, placeholderComponentStats);
             }
         }
+    }
+
+    private CommonAggregateStats getPlaceholderCommonAggregateStats(Object component) {
+        // common aggregate
+        CommonAggregateStats commonStats = new CommonAggregateStats();
+
+        // get num_executors
+        int numExecutors = 0;
+        try {
+            numExecutors = StormCommon.numStartExecutors(component);
+        } catch (InvalidTopologyException e) {
+            // ignore
+        }
+
+        // get num_tasks
+        Map<String, Object> jsonMap = StormCommon.componentConf(component);
+        int numTasks = ObjectReader.getInt(jsonMap.getOrDefault(Config.TOPOLOGY_TASKS, numExecutors));
+
+        commonStats.set_num_executors(numExecutors);
+        commonStats.set_num_tasks(numTasks);
+        commonStats.set_emitted(0);
+        commonStats.set_transferred(0);
+        commonStats.set_acked(0);
+
+        return commonStats;
     }
 
     @Override
