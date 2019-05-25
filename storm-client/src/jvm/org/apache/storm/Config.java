@@ -1411,6 +1411,12 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     public static final String STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES = "storm.blobstore.inputstream.buffer.size.bytes";
     /**
+     * What chuck size to use for storm client to upload dependency jars.
+     */
+    @isPositiveNumber
+    @isInteger
+    public static final String STORM_BLOBSTORE_DEPENDENCY_JAR_UPLOAD_CHUCK_SIZE_BYTES = "storm.blobstore.dependency.jar.upload.chuck.size.bytes";
+    /**
      * FQCN of a class that implements {@code ISubmitterHook} @see ISubmitterHook for details.
      */
     @isString
