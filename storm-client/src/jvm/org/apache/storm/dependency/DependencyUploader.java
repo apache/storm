@@ -20,11 +20,13 @@ package org.apache.storm.dependency;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.Config;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -35,18 +37,22 @@ import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.storm.shade.org.apache.commons.io.IOUtils;
 
 public class DependencyUploader {
     public static final Logger LOG = LoggerFactory.getLogger(DependencyUploader.class);
 
     private final Map<String, Object> conf;
     private ClientBlobStore blobStore;
+    private int uploadChuckSize;
 
     public DependencyUploader() {
         conf = Utils.readStormConfig();
+        this.uploadChuckSize = ObjectReader.getInt(conf.get(Config.STORM_BLOBSTORE_DEPENDENCY_JAR_UPLOAD_CHUCK_SIZE_BYTES), 1024 * 1024);
     }
 
     public void init() {
@@ -157,7 +163,9 @@ public class DependencyUploader {
             AtomicOutputStream blob = null;
             try {
                 blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
-                Files.copy(dependency.toPath(), blob);
+                try(InputStream in = Files.newInputStream(dependency.toPath())) {
+                    IOUtils.copy(in, blob, this.uploadChuckSize);
+                }
                 blob.close();
                 blob = null;
 
