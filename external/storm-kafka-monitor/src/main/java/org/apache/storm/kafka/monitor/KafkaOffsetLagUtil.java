@@ -214,8 +214,12 @@ public class KafkaOffsetLagUtil {
             props.put("session.timeout.ms", "30000");
             props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
             if (newKafkaSpoutOffsetQuery.getSecurityProtocol() != null) {
                 props.put("security.protocol", newKafkaSpoutOffsetQuery.getSecurityProtocol());
+                if (newKafkaSpoutOffsetQuery.getSecurityProtocol().contains("PLAIN")){
+                    props.put("sasl.mechanism", "PLAIN");
+                }
             }
             List<TopicPartition> topicPartitionList = new ArrayList<>();
             consumer = new KafkaConsumer<>(props);
