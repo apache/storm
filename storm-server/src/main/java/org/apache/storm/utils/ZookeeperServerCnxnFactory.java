@@ -35,14 +35,7 @@ public class ZookeeperServerCnxnFactory {
             max = port;
         }
 
-        try {
-            _factory = new NIOServerCnxnFactory();
-        } catch (IOException e) {
-            _port = 0;
-            _factory = null;
-            e.printStackTrace();
-            throw new RuntimeException(e.getMessage());
-        }
+        _factory = new NIOServerCnxnFactory();
 
         //look for available port
         for (; _port <= max; _port++) {
