@@ -12,6 +12,10 @@
 
 package org.apache.storm.windowing;
 
+import static org.apache.storm.windowing.EvictionPolicy.Action.EXPIRE;
+import static org.apache.storm.windowing.EvictionPolicy.Action.PROCESS;
+import static org.apache.storm.windowing.EvictionPolicy.Action.STOP;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -27,10 +31,6 @@ import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.windowing.EvictionPolicy.Action;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.windowing.EvictionPolicy.Action.EXPIRE;
-import static org.apache.storm.windowing.EvictionPolicy.Action.PROCESS;
-import static org.apache.storm.windowing.EvictionPolicy.Action.STOP;
 
 /**
  * Tracks a window of events and fires {@link WindowLifecycleListener} callbacks on expiry of events or activation of the window due to

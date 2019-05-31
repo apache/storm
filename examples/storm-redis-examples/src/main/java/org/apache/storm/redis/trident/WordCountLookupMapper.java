@@ -17,15 +17,14 @@
  */
 package org.apache.storm.redis.trident;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
+import org.apache.storm.redis.common.mapper.RedisLookupMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
-import org.apache.storm.redis.common.mapper.RedisLookupMapper;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class WordCountLookupMapper implements RedisLookupMapper {
     @Override

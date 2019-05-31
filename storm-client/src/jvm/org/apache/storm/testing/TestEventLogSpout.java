@@ -12,6 +12,8 @@
 
 package org.apache.storm.testing;
 
+import static org.apache.storm.utils.Utils.get;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -23,8 +25,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.utils.Utils.get;
 
 public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout {
     private static final Map<String, Integer> acked = new HashMap<String, Integer>();

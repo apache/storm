@@ -20,7 +20,6 @@ package org.apache.storm.elasticsearch.trident;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import org.apache.storm.elasticsearch.common.DefaultEsTupleMapper;
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTestUtil;

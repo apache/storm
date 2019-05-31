@@ -18,6 +18,9 @@
 
 package org.apache.storm.security.auth.workertoken;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -30,9 +33,6 @@ import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.utils.Time;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 public class WorkerTokenTest {
     public static final long ONE_DAY_MILLIS = TimeUnit.HOURS.toMillis(24);

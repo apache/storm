@@ -17,8 +17,9 @@
  */
 package org.apache.storm.flux;
 
-import org.junit.Test;
 import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 public class FluxBuilderTest {
 

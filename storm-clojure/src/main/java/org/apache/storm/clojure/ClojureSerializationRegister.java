@@ -17,11 +17,9 @@
  */
 package org.apache.storm.clojure;
 
-import org.apache.storm.serialization.SerializationRegister;
-
-import com.esotericsoftware.kryo.Kryo;
-
 import carbonite.JavaBridge;
+import com.esotericsoftware.kryo.Kryo;
+import org.apache.storm.serialization.SerializationRegister;
 
 public class ClojureSerializationRegister implements SerializationRegister {
 

@@ -19,12 +19,10 @@
 package org.apache.storm.sql.runtime.serde.tsv;
 
 import com.google.common.base.Preconditions;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;

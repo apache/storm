@@ -17,12 +17,11 @@
 
 package org.apache.storm.debug;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.URL;
-import java.net.URLClassLoader;
 
 public class DebugHelper {
     private static final Logger LOG = LoggerFactory.getLogger(DebugHelper.class);

@@ -18,12 +18,11 @@
 
 package org.apache.storm.hive.security;
 
-import org.apache.storm.common.AbstractHadoopAutoCreds;
-
-import java.util.Map;
-
 import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_CREDENTIALS;
 import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_CREDENTIALS_CONFIG_KEYS;
+
+import java.util.Map;
+import org.apache.storm.common.AbstractHadoopAutoCreds;
 
 /**
  * Auto credentials plugin for Hive implementation. This class provides a way to automatically

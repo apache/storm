@@ -17,8 +17,8 @@
  */
 package org.apache.storm.metrics.hdrhistogram;
 
-import org.apache.storm.metric.api.IMetric;
 import org.HdrHistogram.Histogram;
+import org.apache.storm.metric.api.IMetric;
 
 /**
  * A metric wrapping an HdrHistogram.

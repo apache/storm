@@ -12,6 +12,10 @@
 
 package org.apache.storm.topology;
 
+import static org.hamcrest.Matchers.contains;
+import static org.junit.Assert.assertThat;
+import static org.mockito.AdditionalAnswers.returnsArgAt;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,10 +51,6 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-
-import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertThat;
-import static org.mockito.AdditionalAnswers.returnsArgAt;
 
 /**
  * Unit tests for {@link PersistentWindowedBoltExecutor}

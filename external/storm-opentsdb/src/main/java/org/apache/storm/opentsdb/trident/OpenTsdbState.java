@@ -18,6 +18,9 @@
  */
 package org.apache.storm.opentsdb.trident;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.apache.storm.opentsdb.bolt.ITupleOpenTsdbDatapointMapper;
 import org.apache.storm.opentsdb.client.ClientResponse;
@@ -28,10 +31,6 @@ import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Trident {@link State} implementation for OpenTSDB.

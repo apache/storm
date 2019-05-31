@@ -19,7 +19,6 @@
 package org.apache.calcite.interpreter;
 
 import java.io.Serializable;
-
 import org.apache.calcite.DataContext;
 
 /**

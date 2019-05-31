@@ -18,18 +18,17 @@
 
 package org.apache.storm.solr.spout;
 
+import com.google.common.collect.Lists;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import org.apache.storm.solr.util.TestUtil;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import com.google.common.collect.Lists;
-import org.apache.storm.solr.util.TestUtil;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 public class SolrFieldsSpout extends BaseRichSpout {
     private SpoutOutputCollector collector;

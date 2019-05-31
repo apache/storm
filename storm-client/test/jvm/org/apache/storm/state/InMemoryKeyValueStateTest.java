@@ -12,11 +12,11 @@
 
 package org.apache.storm.state;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Unit tests for {@link InMemoryKeyValueState}

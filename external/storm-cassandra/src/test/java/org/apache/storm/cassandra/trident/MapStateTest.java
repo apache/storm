@@ -12,6 +12,8 @@
 
 package org.apache.storm.cassandra.trident;
 
+import static org.junit.Assert.assertEquals;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Session;
@@ -45,8 +47,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.assertEquals;
 
 public class MapStateTest {
 

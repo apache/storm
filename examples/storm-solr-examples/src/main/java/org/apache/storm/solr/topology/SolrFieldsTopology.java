@@ -18,18 +18,17 @@
 
 package org.apache.storm.solr.topology;
 
+import java.io.IOException;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.solr.config.SolrConfig;
-import org.apache.storm.solr.schema.builder.RestJsonSchemaBuilderV2;
-import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.solr.bolt.SolrUpdateBolt;
 import org.apache.storm.solr.config.CountBasedCommit;
 import org.apache.storm.solr.config.SolrCommitStrategy;
+import org.apache.storm.solr.config.SolrConfig;
 import org.apache.storm.solr.mapper.SolrFieldsMapper;
 import org.apache.storm.solr.mapper.SolrMapper;
+import org.apache.storm.solr.schema.builder.RestJsonSchemaBuilderV2;
 import org.apache.storm.solr.spout.SolrFieldsSpout;
-
-import java.io.IOException;
+import org.apache.storm.topology.TopologyBuilder;
 
 public class SolrFieldsTopology extends SolrTopology {
         public static void main(String[] args) throws Exception {

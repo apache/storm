@@ -29,22 +29,21 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
+import org.apache.storm.validation.ConfigValidationAnnotations.Password;
+import org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
+import org.apache.storm.validation.ConfigValidationAnnotations.isImplementationOfClass;
+import org.apache.storm.validation.ConfigValidationAnnotations.isInteger;
+import org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
+import org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
+import org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
+import org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplicateInList;
+import org.apache.storm.validation.ConfigValidationAnnotations.isNumber;
+import org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
+import org.apache.storm.validation.ConfigValidationAnnotations.isString;
+import org.apache.storm.validation.ConfigValidationAnnotations.isStringList;
+import org.apache.storm.validation.ConfigValidationAnnotations.isStringOrStringList;
 import org.apache.storm.validation.Validated;
-
-import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isImplementationOfClass;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isInteger;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplicateInList;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isNumber;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isString;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isStringList;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isStringOrStringList;
-import static org.apache.storm.validation.ConfigValidationAnnotations.Password;
 
 /**
  * Storm configs are specified as a plain old map. This class provides constants for all the configurations possible on a Storm cluster.

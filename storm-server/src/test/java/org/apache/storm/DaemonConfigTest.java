@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.validation.ConfigValidation;
 import org.junit.Assert;

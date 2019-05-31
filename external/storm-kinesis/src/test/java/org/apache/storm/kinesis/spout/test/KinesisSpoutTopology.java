@@ -20,6 +20,7 @@ package org.apache.storm.kinesis.spout.test;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
+import java.util.Date;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -33,8 +34,6 @@ import org.apache.storm.kinesis.spout.KinesisSpout;
 import org.apache.storm.kinesis.spout.RecordToTupleMapper;
 import org.apache.storm.kinesis.spout.ZkInfo;
 import org.apache.storm.topology.TopologyBuilder;
-
-import java.util.Date;
 
 public class KinesisSpoutTopology {
     public static void main (String args[]) throws InvalidTopologyException, AuthorizationException, AlreadyAliveException {

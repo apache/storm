@@ -20,7 +20,6 @@
 package org.apache.storm.sql.planner.streams.rules;
 
 import java.util.List;
-
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;

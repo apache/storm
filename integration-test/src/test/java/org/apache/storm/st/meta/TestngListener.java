@@ -17,6 +17,7 @@
 
 package org.apache.storm.st.meta;
 
+import java.util.Arrays;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
@@ -25,8 +26,6 @@ import org.testng.IExecutionListener;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
-
-import java.util.Arrays;
 
 /**
  * Testng listener class. This is useful for things that are applicable to all the tests as well

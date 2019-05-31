@@ -18,13 +18,11 @@
 package org.apache.storm.elasticsearch.bolt;
 
 import com.google.common.testing.NullPointerTester;
-
 import java.lang.reflect.Method;
 import java.util.UUID;
-
 import org.apache.storm.Config;
-import org.apache.storm.task.OutputCollector;
 import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.task.OutputCollector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

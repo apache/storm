@@ -18,20 +18,18 @@
 package org.apache.storm.flux;
 
 import static org.hamcrest.CoreMatchers.is;
-
-import org.apache.storm.Config;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.flux.model.ExecutionContext;
-import org.apache.storm.flux.model.TopologyDef;
-import org.apache.storm.flux.parser.FluxParser;
-import org.apache.storm.flux.test.TestBolt;
-import org.junit.Test;
-
 import static org.junit.Assert.*;
 
 import java.util.Collections;
 import java.util.Properties;
+import org.apache.storm.Config;
+import org.apache.storm.flux.model.ExecutionContext;
+import org.apache.storm.flux.model.TopologyDef;
+import org.apache.storm.flux.parser.FluxParser;
+import org.apache.storm.flux.test.TestBolt;
+import org.apache.storm.generated.StormTopology;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 public class TCKTest {

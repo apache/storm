@@ -12,12 +12,12 @@
 
 package org.apache.storm.serialization;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.Serializable;
 import org.apache.storm.generated.ErrorInfo;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class ThriftBridgeSerializationDelegateTest {

@@ -19,7 +19,6 @@
 package org.apache.storm.elasticsearch.common;
 
 import java.io.Serializable;
-
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 

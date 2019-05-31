@@ -18,9 +18,9 @@
 
 package org.apache.storm.loadgen;
 
-import org.junit.Test;
-
 import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 public class NormalDistStatsTest {
     public static void assertNDSEquals(NormalDistStats a, NormalDistStats b) {

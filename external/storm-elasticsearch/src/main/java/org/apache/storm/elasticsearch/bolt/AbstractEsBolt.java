@@ -22,9 +22,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.http.util.Args.notBlank;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.util.Map;
-
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.StormElasticSearchClient;
 import org.apache.storm.task.OutputCollector;

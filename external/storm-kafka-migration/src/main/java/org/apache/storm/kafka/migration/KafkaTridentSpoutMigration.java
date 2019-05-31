@@ -30,7 +30,6 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.PathAndBytesable;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.kafka.common.TopicPartition;
-
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -17,17 +17,16 @@
  */
 package org.apache.storm.scheduler.blacklist;
 
-import org.apache.storm.scheduler.Cluster;
-import org.apache.storm.scheduler.INimbus;
-import org.apache.storm.scheduler.SchedulerAssignmentImpl;
-import org.apache.storm.scheduler.SupervisorDetails;
-import org.apache.storm.scheduler.Topologies;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.INimbus;
+import org.apache.storm.scheduler.SchedulerAssignmentImpl;
+import org.apache.storm.scheduler.SupervisorDetails;
+import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class FaultGenerateUtils {

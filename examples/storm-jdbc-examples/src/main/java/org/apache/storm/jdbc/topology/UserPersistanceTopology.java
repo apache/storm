@@ -17,17 +17,16 @@
  */
 package org.apache.storm.jdbc.topology;
 
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.topology.TopologyBuilder;
 import com.google.common.collect.Lists;
+import java.sql.Types;
+import java.util.List;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.jdbc.bolt.JdbcInsertBolt;
 import org.apache.storm.jdbc.bolt.JdbcLookupBolt;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.mapper.JdbcMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
-
-import java.sql.Types;
-import java.util.List;
+import org.apache.storm.topology.TopologyBuilder;
 
 
 public class UserPersistanceTopology extends AbstractUserTopology {

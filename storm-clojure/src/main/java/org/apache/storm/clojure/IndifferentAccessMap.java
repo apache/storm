@@ -19,15 +19,15 @@ package org.apache.storm.clojure;
 
 
 import clojure.lang.ILookup;
-import clojure.lang.ISeq;
-import clojure.lang.IPersistentMap;
-import clojure.lang.PersistentArrayMap;
 import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentCollection;
+import clojure.lang.IPersistentMap;
+import clojure.lang.ISeq;
 import clojure.lang.Keyword;
+import clojure.lang.PersistentArrayMap;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Collection;
 import java.util.Set;
 
 public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {

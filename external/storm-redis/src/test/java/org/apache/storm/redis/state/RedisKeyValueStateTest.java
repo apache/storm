@@ -12,6 +12,9 @@
 
 package org.apache.storm.redis.state;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import com.google.common.primitives.UnsignedBytes;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,9 +32,6 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import redis.clients.util.SafeEncoder;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link RedisKeyValueState}

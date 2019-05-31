@@ -19,11 +19,9 @@
 package org.apache.storm.elasticsearch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-
 import org.apache.storm.elasticsearch.response.LookupResponse;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;

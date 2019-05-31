@@ -17,15 +17,14 @@
  */
 package org.apache.storm.flux.test;
 
+import java.io.Serializable;
+import java.time.Duration;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.time.Duration;
 
 
 public class TestBolt extends BaseBasicBolt {

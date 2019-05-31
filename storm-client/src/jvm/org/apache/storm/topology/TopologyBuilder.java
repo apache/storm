@@ -12,6 +12,10 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
+import static org.apache.storm.utils.Utils.parseJson;
+
 import java.io.NotSerializableException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -49,10 +53,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.windowing.TupleWindow;
-
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
-import static org.apache.storm.utils.Utils.parseJson;
 
 /**
  * TopologyBuilder exposes the Java API for specifying a topology for Storm to execute. Topologies are Thrift structures in the end, but

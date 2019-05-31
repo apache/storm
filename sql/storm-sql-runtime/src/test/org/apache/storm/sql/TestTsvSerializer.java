@@ -17,15 +17,14 @@
  */
 package org.apache.storm.sql;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import com.google.common.collect.Lists;
+import java.nio.ByteBuffer;
+import java.util.List;
 import org.apache.storm.sql.runtime.serde.tsv.TsvScheme;
 import org.apache.storm.sql.runtime.serde.tsv.TsvSerializer;
 import org.junit.Test;
-
-import java.nio.ByteBuffer;
-import java.util.List;
-
-import static org.junit.Assert.assertArrayEquals;
 
 public class TestTsvSerializer {
 

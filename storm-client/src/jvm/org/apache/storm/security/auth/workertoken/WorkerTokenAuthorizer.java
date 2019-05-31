@@ -13,7 +13,6 @@
 package org.apache.storm.security.auth.workertoken;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;

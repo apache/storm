@@ -17,6 +17,8 @@
  */
 package org.apache.storm.mongodb.topology;
 
+import com.google.common.collect.Maps;
+import java.util.Map;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.IBasicBolt;
@@ -24,9 +26,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import com.google.common.collect.Maps;
-
-import java.util.Map;
 
 public class WordCounter implements IBasicBolt {
     private Map<String, Integer> wordCounter = Maps.newHashMap();

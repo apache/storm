@@ -12,14 +12,13 @@
 
 package org.apache.storm.sql;
 
+import com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import com.google.common.collect.ImmutableMap;
 import org.apache.calcite.tools.ValidationException;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.sql.javac.CompilingClassLoader;

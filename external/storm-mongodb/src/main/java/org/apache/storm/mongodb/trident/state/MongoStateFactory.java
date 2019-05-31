@@ -19,7 +19,6 @@
 package org.apache.storm.mongodb.trident.state;
 
 import java.util.Map;
-
 import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.state.StateFactory;

@@ -12,12 +12,12 @@
 
 package org.apache.storm.daemon.worker;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.storm.messaging.ConnectionWithStatus;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class WorkerTest {
     @Test

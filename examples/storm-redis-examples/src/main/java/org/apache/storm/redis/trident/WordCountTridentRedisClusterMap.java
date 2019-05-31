@@ -20,7 +20,6 @@ package org.apache.storm.redis.trident;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;

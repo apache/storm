@@ -18,6 +18,8 @@
 
 package org.apache.storm.task;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,8 +50,6 @@ import org.apache.storm.utils.ShellProcess;
 import org.apache.storm.utils.ShellUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A bolt that shells out to another process to process tuples. ShellBolt communicates with that process over stdio using a special

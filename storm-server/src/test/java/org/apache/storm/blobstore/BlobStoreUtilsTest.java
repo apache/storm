@@ -12,17 +12,17 @@
 
 package org.apache.storm.blobstore;
 
-import java.util.List;
-import java.util.Map;
-import org.apache.storm.nimbus.NimbusInfo;
-import org.junit.Test;
-
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Map;
+import org.apache.storm.nimbus.NimbusInfo;
+import org.junit.Test;
 
 public class BlobStoreUtilsTest {
 

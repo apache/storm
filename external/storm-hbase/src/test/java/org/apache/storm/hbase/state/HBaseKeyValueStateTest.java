@@ -18,6 +18,9 @@
 
 package org.apache.storm.hbase.state;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import com.google.common.primitives.UnsignedBytes;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -26,9 +29,6 @@ import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.state.DefaultStateSerializer;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link HBaseKeyValueState}

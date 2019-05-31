@@ -35,10 +35,9 @@ import org.apache.storm.windowing.DefaultEvictionContext;
 import org.apache.storm.windowing.EventImpl;
 import org.apache.storm.windowing.WindowLifecycleListener;
 import org.apache.storm.windowing.persistence.WindowState;
+import org.apache.storm.windowing.persistence.WindowState.WindowPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.windowing.persistence.WindowState.WindowPartition;
 
 /**
  * Wraps a {@link IStatefulWindowedBolt} and handles the execution. Uses state and the underlying checkpointing mechanisms to save the

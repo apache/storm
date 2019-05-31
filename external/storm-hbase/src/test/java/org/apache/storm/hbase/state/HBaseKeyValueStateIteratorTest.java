@@ -16,6 +16,11 @@
 
 package org.apache.storm.hbase.state;
 
+import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.primitives.UnsignedBytes;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,11 +39,6 @@ import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.state.Serializer;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test for HBaseKeyValueStateIterator.

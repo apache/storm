@@ -17,13 +17,12 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.storm.cassandra.query.CQLStatementBuilder;
 import org.apache.storm.cassandra.query.ContextQuery;
+import org.apache.storm.cassandra.query.ContextQuery.StaticContextQuery;
 import org.apache.storm.cassandra.query.CqlMapper;
 import org.apache.storm.cassandra.query.impl.BoundCQLStatementTupleMapper;
 import org.apache.storm.cassandra.query.impl.PreparedStatementBinder;
 import org.apache.storm.cassandra.query.impl.RoutingKeyGenerator;
 import org.apache.storm.cassandra.query.selector.FieldSelector;
-
-import static org.apache.storm.cassandra.query.ContextQuery.StaticContextQuery;
 
 public class BoundCQLStatementMapperBuilder implements CQLStatementBuilder<BoundCQLStatementTupleMapper>, Serializable {
 

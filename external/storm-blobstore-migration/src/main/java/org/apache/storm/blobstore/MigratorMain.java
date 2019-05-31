@@ -18,7 +18,6 @@
 package org.apache.storm.blobstore;
 
 import java.util.Arrays;
-
 import javax.security.auth.Subject;
 
 public class MigratorMain {

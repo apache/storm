@@ -19,16 +19,15 @@
 package org.apache.storm.opentsdb;
 
 import com.google.common.collect.Lists;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Random;
 import org.apache.storm.opentsdb.bolt.TupleOpenTsdbDatapointMapper;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.Random;
 
 /**
  * Spout to generate tuples containing metric data.

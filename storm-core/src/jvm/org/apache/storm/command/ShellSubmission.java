@@ -12,6 +12,8 @@
 
 package org.apache.storm.command;
 
+import java.util.Arrays;
+import java.util.Map;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.NimbusSummary;
@@ -20,9 +22,6 @@ import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ServerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Map;
 
 public class ShellSubmission {
     private static final Logger LOG = LoggerFactory.getLogger(ShellSubmission.class);

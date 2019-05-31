@@ -17,19 +17,18 @@
  */
 package org.apache.storm.common;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.math3.util.Pair;
-import org.apache.hadoop.security.Credentials;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.bind.DatatypeConverter;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.math3.util.Pair;
+import org.apache.hadoop.security.Credentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class for getting credential for Hadoop.

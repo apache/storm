@@ -24,9 +24,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertManyOptions;
 import com.mongodb.client.model.UpdateOptions;
-
 import java.util.List;
-
 import org.bson.Document;
 import org.bson.conversions.Bson;
 

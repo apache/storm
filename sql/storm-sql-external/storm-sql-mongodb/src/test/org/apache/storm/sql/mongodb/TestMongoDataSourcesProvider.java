@@ -17,11 +17,10 @@
  */
 package org.apache.storm.sql.mongodb;
 
+import com.google.common.collect.ImmutableList;
 import java.net.URI;
 import java.util.List;
 import java.util.Properties;
-
-import com.google.common.collect.ImmutableList;
 import org.apache.storm.mongodb.bolt.MongoInsertBolt;
 import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;

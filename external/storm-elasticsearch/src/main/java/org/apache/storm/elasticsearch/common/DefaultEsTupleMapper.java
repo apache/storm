@@ -20,7 +20,6 @@ package org.apache.storm.elasticsearch.common;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.storm.tuple.ITuple;
 
 public class DefaultEsTupleMapper implements EsTupleMapper {

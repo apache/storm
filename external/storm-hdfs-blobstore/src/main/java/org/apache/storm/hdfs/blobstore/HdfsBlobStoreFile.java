@@ -17,6 +17,10 @@
  */
 package org.apache.storm.hdfs.blobstore;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.regex.Matcher;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileContext;
 import org.apache.hadoop.fs.FileSystem;
@@ -27,11 +31,6 @@ import org.apache.storm.blobstore.BlobStoreFile;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.regex.Matcher;
 
 public class HdfsBlobStoreFile extends BlobStoreFile {
     public static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStoreFile.class);

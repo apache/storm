@@ -15,7 +15,6 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.codahale.metrics.Timer;
-
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.metric.timed.TimerDecorated;
 

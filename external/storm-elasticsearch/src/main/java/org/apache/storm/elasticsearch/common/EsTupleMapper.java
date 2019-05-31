@@ -20,7 +20,6 @@ package org.apache.storm.elasticsearch.common;
 
 import java.io.Serializable;
 import java.util.Map;
-
 import org.apache.storm.tuple.ITuple;
 
 /**

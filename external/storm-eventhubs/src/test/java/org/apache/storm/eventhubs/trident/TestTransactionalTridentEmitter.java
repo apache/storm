@@ -18,6 +18,8 @@
 
 package org.apache.storm.eventhubs.trident;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.Map;
 import org.apache.storm.eventhubs.spout.EventHubReceiverMock;
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
@@ -26,8 +28,6 @@ import org.apache.storm.eventhubs.spout.IEventHubReceiverFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 public class TestTransactionalTridentEmitter {
     private final int batchSize = 32;

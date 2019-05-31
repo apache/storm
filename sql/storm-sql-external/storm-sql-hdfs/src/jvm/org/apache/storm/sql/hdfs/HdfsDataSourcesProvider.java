@@ -19,11 +19,9 @@
 package org.apache.storm.sql.hdfs;
 
 import com.google.common.base.Preconditions;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Properties;
-
 import org.apache.storm.hdfs.bolt.HdfsBolt;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.format.RecordFormat;

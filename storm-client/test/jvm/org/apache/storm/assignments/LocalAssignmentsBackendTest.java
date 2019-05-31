@@ -18,6 +18,8 @@
 
 package org.apache.storm.assignments;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,8 +31,6 @@ import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.shade.org.apache.commons.collections.map.HashedMap;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class LocalAssignmentsBackendTest {
 

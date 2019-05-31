@@ -18,11 +18,10 @@
 
 package org.apache.storm.hbase.security;
 
-import org.apache.storm.common.AbstractHadoopAutoCreds;
+import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_CREDENTIALS;
 
 import java.util.Map;
-
-import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_CREDENTIALS;
+import org.apache.storm.common.AbstractHadoopAutoCreds;
 
 /**
  * Auto credentials plugin for HBase implementation. This class provides a way to automatically

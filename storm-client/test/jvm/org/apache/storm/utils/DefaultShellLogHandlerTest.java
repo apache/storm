@@ -12,14 +12,14 @@
 
 package org.apache.storm.utils;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.multilang.ShellMsg.ShellLogLevel;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class DefaultShellLogHandlerTest {
 

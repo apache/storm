@@ -17,12 +17,12 @@
  */
 package org.apache.storm.clojure;
 
+import java.util.Map;
 import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.task.ShellBolt;
 import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
-import java.util.Map;
 
 public class RichShellBolt extends ShellBolt implements IRichBolt {
     private Map<String, StreamInfo> _outputs;

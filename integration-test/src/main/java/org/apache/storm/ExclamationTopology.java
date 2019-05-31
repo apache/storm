@@ -17,26 +17,23 @@
 
 package org.apache.storm;
 
-import com.google.common.collect.Lists;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.st.topology.TestableTopology;
+import org.apache.storm.st.utils.TimeUtil;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-
-import java.util.Map;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.st.topology.TestableTopology;
-import org.apache.storm.st.utils.TimeUtil;
-import org.apache.storm.topology.base.BaseRichSpout;
 
 /**
  * This is a basic example of a Storm topology.

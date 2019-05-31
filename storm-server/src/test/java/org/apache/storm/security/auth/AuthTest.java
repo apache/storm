@@ -12,6 +12,9 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -49,9 +52,6 @@ import org.apache.storm.utils.Utils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 public class AuthTest {
     //3 seconds in milliseconds

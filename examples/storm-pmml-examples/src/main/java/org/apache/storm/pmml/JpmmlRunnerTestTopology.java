@@ -19,7 +19,6 @@
 package org.apache.storm.pmml;
 
 import com.google.common.collect.Lists;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;

@@ -14,11 +14,17 @@
 
 package org.apache.storm.blobstore;
 
+import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
+import static org.apache.storm.daemon.nimbus.Nimbus.NIMBUS_SUBJECT;
+import static org.apache.storm.daemon.nimbus.Nimbus.getVersionForKey;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -50,13 +56,6 @@ import org.apache.storm.utils.WrappedKeyAlreadyExistsException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
-import static org.apache.storm.daemon.nimbus.Nimbus.NIMBUS_SUBJECT;
-import static org.apache.storm.daemon.nimbus.Nimbus.getVersionForKey;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Provides a local file system backed blob store implementation for Nimbus.

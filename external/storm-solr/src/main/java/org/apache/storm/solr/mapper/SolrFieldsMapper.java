@@ -22,12 +22,11 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.storm.solr.schema.FieldType;
 import org.apache.storm.solr.schema.Schema;
 import org.apache.storm.solr.schema.SolrFieldTypeFinder;
+import org.apache.storm.solr.schema.SolrFieldTypeFinder.FieldTypeWrapper;
 import org.apache.storm.solr.schema.builder.SchemaBuilder;
 import org.apache.storm.tuple.ITuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.solr.schema.SolrFieldTypeFinder.FieldTypeWrapper;
 
 public class SolrFieldsMapper implements SolrMapper {
     private static final Logger log = LoggerFactory.getLogger(SolrFieldsMapper.class);

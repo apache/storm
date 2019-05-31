@@ -12,11 +12,11 @@
 
 package org.apache.storm.streams.processors;
 
+import static org.apache.storm.streams.WindowNode.PUNCTUATION;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
-
-import static org.apache.storm.streams.WindowNode.PUNCTUATION;
 
 /**
  * Base implementation of the {@link Processor} interface that provides convenience methods {@link #execute(Object)} and {@link #finish()}.

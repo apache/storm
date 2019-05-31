@@ -18,13 +18,17 @@
 
 package org.apache.storm.rocketmq.spout;
 
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.storm.rocketmq.ConsumerBatchMessage;
@@ -34,11 +38,6 @@ import org.apache.storm.rocketmq.TestUtils;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class RocketMqSpoutTest {
     private RocketMqSpout spout;

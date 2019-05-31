@@ -12,6 +12,8 @@
 
 package org.apache.storm.topology;
 
+import static org.mockito.Mockito.mock;
+
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.GlobalStreamId;
@@ -25,8 +27,6 @@ import org.apache.storm.topology.base.BaseStatefulBolt;
 import org.apache.storm.tuple.Tuple;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
 
 public class TopologyBuilderTest {
     private final TopologyBuilder builder = new TopologyBuilder();

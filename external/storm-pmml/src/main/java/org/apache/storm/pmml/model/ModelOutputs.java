@@ -18,12 +18,11 @@
 
 package org.apache.storm.pmml.model;
 
-import org.apache.storm.pmml.PMMLPredictorBolt;
-import org.apache.storm.tuple.Fields;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import org.apache.storm.pmml.PMMLPredictorBolt;
+import org.apache.storm.tuple.Fields;
 
 /**
  * Represents the streams and output fields declared by the {@link PMMLPredictorBolt}

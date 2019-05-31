@@ -19,11 +19,9 @@
 package org.apache.storm.sql.runtime.calcite;
 
 import com.google.common.collect.ImmutableMap;
-
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.TimeZone;
-
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.linq4j.QueryProvider;

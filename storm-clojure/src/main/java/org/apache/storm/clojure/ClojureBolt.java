@@ -17,10 +17,14 @@
  */
 package org.apache.storm.clojure;
 
+import clojure.lang.IFn;
+import clojure.lang.Keyword;
+import clojure.lang.PersistentArrayMap;
+import clojure.lang.RT;
+import clojure.lang.Symbol;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.coordination.CoordinatedBolt.FinishedCallback;
 import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.task.IBolt;
@@ -30,12 +34,6 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-
-import clojure.lang.IFn;
-import clojure.lang.Keyword;
-import clojure.lang.PersistentArrayMap;
-import clojure.lang.RT;
-import clojure.lang.Symbol;
 
 public class ClojureBolt implements IRichBolt, FinishedCallback {
     Map<String, StreamInfo> _fields;

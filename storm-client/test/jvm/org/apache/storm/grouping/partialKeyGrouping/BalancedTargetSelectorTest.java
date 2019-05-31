@@ -12,15 +12,15 @@
 
 package org.apache.storm.grouping.partialKeyGrouping;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.apache.storm.grouping.PartialKeyGrouping;
 import org.apache.storm.utils.Utils;
 import org.hamcrest.Matchers;
 import org.junit.Test;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 
 public class BalancedTargetSelectorTest {
 

@@ -18,7 +18,6 @@
 
 package org.apache.storm.daemon.supervisor;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;

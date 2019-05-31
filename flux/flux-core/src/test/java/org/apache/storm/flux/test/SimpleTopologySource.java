@@ -17,13 +17,12 @@
  */
 package org.apache.storm.flux.test;
 
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.topology.TopologyBuilder;
+import java.util.Map;
 import org.apache.storm.flux.api.TopologySource;
 import org.apache.storm.flux.wrappers.bolts.LogInfoBolt;
 import org.apache.storm.flux.wrappers.spouts.FluxShellSpout;
-
-import java.util.Map;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.topology.TopologyBuilder;
 
 public class SimpleTopologySource implements TopologySource {
 

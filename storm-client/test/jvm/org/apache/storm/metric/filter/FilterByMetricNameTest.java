@@ -12,6 +12,8 @@
 
 package org.apache.storm.metric.filter;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.metric.api.IMetricsConsumer;
@@ -19,8 +21,6 @@ import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class FilterByMetricNameTest {
     @Before

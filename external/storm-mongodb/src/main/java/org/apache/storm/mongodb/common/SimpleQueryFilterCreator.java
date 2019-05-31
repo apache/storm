@@ -19,9 +19,7 @@
 package org.apache.storm.mongodb.common;
 
 import com.mongodb.client.model.Filters;
-
 import java.util.List;
-
 import org.apache.storm.tuple.ITuple;
 import org.bson.conversions.Bson;
 

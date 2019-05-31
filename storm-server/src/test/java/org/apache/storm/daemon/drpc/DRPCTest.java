@@ -18,6 +18,11 @@
 
 package org.apache.storm.daemon.drpc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +37,7 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCExceptionType;
 import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.DefaultPrincipalToLocal;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.SingleUserPrincipal;
@@ -41,13 +47,6 @@ import org.apache.storm.security.auth.authorizer.DenyAuthorizer;
 import org.apache.storm.utils.Time;
 import org.junit.AfterClass;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.apache.storm.metric.StormMetricsRegistry;
 
 public class DRPCTest {
     private static final ExecutorService exec = Executors.newCachedThreadPool();

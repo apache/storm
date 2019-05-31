@@ -12,6 +12,8 @@
 
 package org.apache.storm.testing;
 
+import static org.apache.storm.utils.Utils.tuple;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.task.OutputCollector;
@@ -22,8 +24,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.utils.Utils.tuple;
 
 
 public class TestAggregatesCounter extends BaseRichBolt {

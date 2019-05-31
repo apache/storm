@@ -12,22 +12,6 @@
 
 package org.apache.storm.scheduler.resource;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.storm.Config;
-import org.apache.storm.scheduler.Cluster;
-import org.apache.storm.scheduler.INimbus;
-import org.apache.storm.scheduler.SupervisorDetails;
-import org.apache.storm.scheduler.Topologies;
-import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
-import org.apache.storm.utils.Time;
-import org.junit.Assert;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.createClusterConfig;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
@@ -35,8 +19,23 @@ import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareSched
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userRes;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.storm.Config;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.INimbus;
+import org.apache.storm.scheduler.SupervisorDetails;
+import org.apache.storm.scheduler.Topologies;
+import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
+import org.apache.storm.utils.Time;
+import org.junit.Assert;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestUser {
     private static final Logger LOG = LoggerFactory.getLogger(TestUser.class);

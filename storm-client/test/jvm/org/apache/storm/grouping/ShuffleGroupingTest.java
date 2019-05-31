@@ -12,6 +12,11 @@
 
 package org.apache.storm.grouping;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -21,11 +26,6 @@ import java.util.concurrent.Future;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 public class ShuffleGroupingTest {
 

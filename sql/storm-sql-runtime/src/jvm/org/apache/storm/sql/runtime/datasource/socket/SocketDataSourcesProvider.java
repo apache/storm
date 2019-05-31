@@ -21,7 +21,6 @@ package org.apache.storm.sql.runtime.datasource.socket;
 import java.net.URI;
 import java.util.List;
 import java.util.Properties;
-
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.FieldInfo;

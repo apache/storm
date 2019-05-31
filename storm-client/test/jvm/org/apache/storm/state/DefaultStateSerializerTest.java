@@ -18,13 +18,13 @@
 
 package org.apache.storm.state;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.storm.spout.CheckPointState;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link DefaultStateSerializer}

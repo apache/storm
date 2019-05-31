@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
-
 import org.apache.rocketmq.common.message.Message;
 import org.apache.storm.rocketmq.spout.scheme.KeyValueScheme;
 import org.apache.storm.spout.Scheme;

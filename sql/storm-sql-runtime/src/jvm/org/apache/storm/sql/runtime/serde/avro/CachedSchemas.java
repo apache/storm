@@ -21,7 +21,6 @@ package org.apache.storm.sql.runtime.serde.avro;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.avro.Schema;
 
 // TODO this class is reserved for supporting messages with different schemas.

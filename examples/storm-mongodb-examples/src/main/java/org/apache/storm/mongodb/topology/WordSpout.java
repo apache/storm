@@ -17,16 +17,15 @@
  */
 package org.apache.storm.mongodb.topology;
 
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
 
 public class WordSpout implements IRichSpout {
     boolean isDistributed;

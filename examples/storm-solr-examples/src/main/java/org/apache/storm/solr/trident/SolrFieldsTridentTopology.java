@@ -18,16 +18,15 @@
 
 package org.apache.storm.solr.trident;
 
+import java.io.IOException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.solr.config.SolrConfig;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.solr.spout.SolrFieldsSpout;
 import org.apache.storm.solr.topology.SolrFieldsTopology;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.state.StateFactory;
-
-import java.io.IOException;
+import org.apache.storm.tuple.Fields;
 
 public class SolrFieldsTridentTopology extends SolrFieldsTopology {
     public static void main(String[] args) throws Exception {

@@ -19,7 +19,6 @@
 package org.apache.storm.mongodb.common.mapper;
 
 import java.util.List;
-
 import org.apache.storm.mongodb.common.MongoUtils;
 import org.apache.storm.tuple.ITuple;
 import org.bson.Document;

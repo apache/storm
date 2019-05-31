@@ -19,7 +19,6 @@
 package org.apache.storm.elasticsearch.response;
 
 import java.util.List;
-
 import org.apache.storm.elasticsearch.doc.IndexItemDoc;
 
 /**

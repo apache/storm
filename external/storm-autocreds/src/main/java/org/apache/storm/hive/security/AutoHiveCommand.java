@@ -17,17 +17,15 @@
  */
 package org.apache.storm.hive.security;
 
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.storm.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_KEYTAB_FILE_KEY;
 import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_PRINCIPAL_KEY;
+
+import java.util.HashMap;
+import java.util.Map;
+import javax.security.auth.Subject;
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Command tool of Hive credential renewer

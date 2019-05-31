@@ -17,15 +17,14 @@
  */
 package org.apache.storm.sql;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import com.google.common.collect.Lists;
+import java.nio.ByteBuffer;
+import java.util.List;
 import org.apache.storm.sql.runtime.serde.csv.CsvScheme;
 import org.apache.storm.sql.runtime.serde.csv.CsvSerializer;
 import org.junit.Test;
-
-import java.nio.ByteBuffer;
-import java.util.List;
-
-import static org.junit.Assert.assertArrayEquals;
 
 public class TestCsvSerializer {
 

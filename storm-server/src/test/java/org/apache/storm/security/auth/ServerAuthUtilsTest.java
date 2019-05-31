@@ -18,13 +18,13 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.Assert.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.storm.DaemonConfig;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class ServerAuthUtilsTest {
 

@@ -18,6 +18,8 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -30,8 +32,6 @@ import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class UtilsTest {
 

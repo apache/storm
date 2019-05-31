@@ -12,12 +12,18 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.spout.CheckPointState.Action.COMMIT;
+import static org.apache.storm.spout.CheckPointState.Action.INITSTATE;
+import static org.apache.storm.spout.CheckPointState.Action.PREPARE;
+import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.apache.storm.spout.CheckPointState.Action;
 import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.state.State;
 import org.apache.storm.state.StateFactory;
@@ -27,12 +33,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.spout.CheckPointState.Action;
-import static org.apache.storm.spout.CheckPointState.Action.COMMIT;
-import static org.apache.storm.spout.CheckPointState.Action.INITSTATE;
-import static org.apache.storm.spout.CheckPointState.Action.PREPARE;
-import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
 
 /**
  * Wraps a {@link IStatefulBolt} and manages the state of the bolt.

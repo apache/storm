@@ -18,16 +18,15 @@
 
 package org.apache.storm.rocketmq.spout.scheme;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import com.google.common.collect.ImmutableMap;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collections;
-
-import com.google.common.collect.ImmutableMap;
 import org.apache.storm.tuple.Fields;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class StringKeyValueSchemeTest {
 

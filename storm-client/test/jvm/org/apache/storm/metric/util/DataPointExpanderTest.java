@@ -12,6 +12,9 @@
 
 package org.apache.storm.metric.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,9 +22,6 @@ import java.util.Map;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class DataPointExpanderTest {
 

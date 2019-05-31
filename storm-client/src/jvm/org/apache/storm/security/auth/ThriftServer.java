@@ -12,7 +12,6 @@
 
 package org.apache.storm.security.auth;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import javax.security.auth.login.Configuration;

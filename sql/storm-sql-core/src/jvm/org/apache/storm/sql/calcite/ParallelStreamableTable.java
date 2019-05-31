@@ -13,7 +13,6 @@
 package org.apache.storm.sql.calcite;
 
 import org.apache.calcite.rel.stream.Delta;
-import org.apache.calcite.schema.StreamableTable;
 
 /**
  * Table that can be converted to a stream. This table also has its parallelism information.

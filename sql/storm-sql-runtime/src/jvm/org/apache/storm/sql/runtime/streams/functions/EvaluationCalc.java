@@ -20,8 +20,6 @@
 package org.apache.storm.sql.runtime.streams.functions;
 
 import java.util.Collections;
-import java.util.Map;
-
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
 import org.apache.calcite.interpreter.StormContext;

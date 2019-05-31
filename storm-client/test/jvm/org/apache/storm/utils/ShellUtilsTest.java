@@ -12,14 +12,14 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.task.TopologyContext;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 public class ShellUtilsTest {
 

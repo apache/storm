@@ -30,7 +30,6 @@ import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IStatefulObject;
-import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.shade.io.netty.bootstrap.ServerBootstrap;
 import org.apache.storm.shade.io.netty.buffer.PooledByteBufAllocator;

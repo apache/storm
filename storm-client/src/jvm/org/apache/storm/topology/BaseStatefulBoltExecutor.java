@@ -12,6 +12,11 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_ACTION;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_TXID;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,11 +30,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_ACTION;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_TXID;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
 
 /**
  * Base class that abstracts the common logic for executing bolts in a stateful topology.

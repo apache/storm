@@ -18,10 +18,9 @@
  */
 package org.apache.storm.opentsdb.client;
 
-import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
-
 import java.io.Serializable;
 import java.util.List;
+import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 
 /**
  * This class represents the response from OpenTsdb for a request sent.

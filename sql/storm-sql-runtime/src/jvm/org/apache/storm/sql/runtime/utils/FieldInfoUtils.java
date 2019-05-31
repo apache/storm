@@ -20,10 +20,8 @@ package org.apache.storm.sql.runtime.utils;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-
 import java.io.Serializable;
 import java.util.List;
-
 import org.apache.storm.sql.runtime.FieldInfo;
 
 public final class FieldInfoUtils {

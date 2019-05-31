@@ -17,15 +17,14 @@
 
 package org.apache.storm.st.wrapper;
 
-import org.apache.storm.st.utils.AssertUtil;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.lang.StringUtils;
+import org.apache.storm.st.utils.AssertUtil;
+import org.apache.storm.st.utils.StringDecorator;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.apache.storm.st.utils.StringDecorator;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Convenience class splitting log lines decorated with {@link StringDecorator}.

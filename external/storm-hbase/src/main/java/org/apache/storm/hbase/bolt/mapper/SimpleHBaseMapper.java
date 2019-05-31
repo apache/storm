@@ -12,14 +12,14 @@
 
 package org.apache.storm.hbase.bolt.mapper;
 
+import static org.apache.storm.hbase.common.Utils.toBytes;
+import static org.apache.storm.hbase.common.Utils.toLong;
+
 import org.apache.storm.hbase.common.ColumnList;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.hbase.common.Utils.toBytes;
-import static org.apache.storm.hbase.common.Utils.toLong;
 
 /**
  *

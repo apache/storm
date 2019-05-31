@@ -18,12 +18,12 @@
 
 package org.apache.storm.rocketmq.common.mapper;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import org.apache.storm.rocketmq.TestUtils;
 import org.apache.storm.tuple.Tuple;
 import org.junit.Test;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 public class FieldNameBasedTupleToMessageMapperTest {
     @Test

@@ -19,7 +19,6 @@
 package org.apache.storm.solr.topology;
 
 import java.io.IOException;
-
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.storm.Config;

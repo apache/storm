@@ -17,18 +17,17 @@
  */
 package org.apache.storm.sql;
 
-import org.apache.storm.sql.runtime.serde.json.JsonScheme;
-import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
-import org.apache.storm.utils.Utils;
-import com.google.common.collect.Lists;
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.Lists;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import org.apache.storm.sql.runtime.serde.json.JsonScheme;
+import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
+import org.apache.storm.utils.Utils;
+import org.junit.Test;
 
 public class TestJsonRepresentation {
   @Test

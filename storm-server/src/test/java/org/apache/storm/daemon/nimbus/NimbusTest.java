@@ -18,11 +18,12 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import static org.junit.Assert.fail;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.StormTopology;
@@ -33,8 +34,6 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Time;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 public class NimbusTest {
     @Test

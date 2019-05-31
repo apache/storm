@@ -20,7 +20,6 @@ package org.apache.storm.mongodb.common.mapper;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;

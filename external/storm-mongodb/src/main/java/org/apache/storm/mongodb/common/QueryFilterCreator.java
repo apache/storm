@@ -20,7 +20,6 @@ package org.apache.storm.mongodb.common;
 
 import java.io.Serializable;
 import java.util.List;
-
 import org.apache.storm.tuple.ITuple;
 import org.bson.conversions.Bson;
 

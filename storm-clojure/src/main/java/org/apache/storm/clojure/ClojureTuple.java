@@ -17,15 +17,6 @@
  */
 package org.apache.storm.clojure;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.TupleImpl;
-
 import clojure.lang.AFn;
 import clojure.lang.ASeq;
 import clojure.lang.ArityException;
@@ -44,6 +35,13 @@ import clojure.lang.Obj;
 import clojure.lang.PersistentArrayMap;
 import clojure.lang.Seqable;
 import clojure.lang.Symbol;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.TupleImpl;
 
 public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, ILookup, IPersistentMap, Map, IFn {
     private IPersistentMap _meta;

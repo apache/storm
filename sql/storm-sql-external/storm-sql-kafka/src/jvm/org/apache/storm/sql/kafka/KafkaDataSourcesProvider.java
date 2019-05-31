@@ -19,7 +19,6 @@
 package org.apache.storm.sql.kafka;
 
 import com.google.common.base.Preconditions;
-
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import org.apache.storm.kafka.bolt.mapper.TupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
 import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
-
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.FieldInfo;

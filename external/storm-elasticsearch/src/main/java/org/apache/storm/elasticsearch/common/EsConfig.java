@@ -21,7 +21,6 @@ package org.apache.storm.elasticsearch.common;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;

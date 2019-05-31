@@ -18,6 +18,19 @@
 
 package org.apache.storm.hive.security;
 
+import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_CREDENTIALS;
+import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_CREDENTIALS_CONFIG_KEYS;
+import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_KEYTAB_FILE_KEY;
+import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_PRINCIPAL_KEY;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.math3.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -29,24 +42,9 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hive.hcatalog.api.HCatClient;
 import org.apache.hive.hcatalog.common.HCatException;
-import org.apache.storm.Config;
 import org.apache.storm.common.AbstractHadoopNimbusPluginAutoCreds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_CREDENTIALS;
-import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_CREDENTIALS_CONFIG_KEYS;
-import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_KEYTAB_FILE_KEY;
-import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_PRINCIPAL_KEY;
 
 /**
  * Auto credentials nimbus plugin for Hive implementation. This class automatically

@@ -19,9 +19,8 @@ package org.apache.storm.elasticsearch.common;
 
 import static org.junit.Assert.assertEquals;
 
-import org.apache.http.HttpHost;
-
 import com.google.common.testing.NullPointerTester;
+import org.apache.http.HttpHost;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

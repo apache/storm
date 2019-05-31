@@ -18,6 +18,13 @@
  */
 package org.apache.storm.opentsdb.bolt;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.apache.storm.opentsdb.client.ClientResponse;
 import org.apache.storm.opentsdb.client.OpenTsdbClient;
@@ -30,14 +37,6 @@ import org.apache.storm.utils.BatchHelper;
 import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Basic bolt implementation for storing timeseries datapoints to OpenTSDB.

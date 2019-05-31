@@ -18,11 +18,11 @@
 
 package org.apache.storm.rocketmq.common.selector;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.storm.rocketmq.TestUtils;
 import org.apache.storm.tuple.Tuple;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class FieldNameBasedTopicSelectorTest {
     @Test

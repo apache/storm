@@ -12,6 +12,8 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +32,6 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
 
 /**
  * Cache topologies and topology confs from the blob store.

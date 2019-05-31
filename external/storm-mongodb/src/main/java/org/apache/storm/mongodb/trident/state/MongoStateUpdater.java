@@ -19,7 +19,6 @@
 package org.apache.storm.mongodb.trident.state;
 
 import java.util.List;
-
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.BaseStateUpdater;
 import org.apache.storm.trident.tuple.TridentTuple;

@@ -19,11 +19,9 @@ package org.apache.storm.jms.example;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
-
+import org.apache.storm.jms.JmsProvider;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import org.apache.storm.jms.JmsProvider;
 
 
 /**

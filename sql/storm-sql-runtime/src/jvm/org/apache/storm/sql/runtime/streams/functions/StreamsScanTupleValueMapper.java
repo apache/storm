@@ -21,7 +21,6 @@ package org.apache.storm.sql.runtime.streams.functions;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.storm.streams.operations.mappers.TupleValueMapper;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;

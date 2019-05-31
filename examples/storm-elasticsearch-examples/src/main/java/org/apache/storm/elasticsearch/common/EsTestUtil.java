@@ -20,7 +20,6 @@ package org.apache.storm.elasticsearch.common;
 
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.storm.Config;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.topology.TopologyBuilder;

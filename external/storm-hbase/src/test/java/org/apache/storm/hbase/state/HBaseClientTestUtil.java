@@ -18,8 +18,10 @@
 
 package org.apache.storm.hbase.state;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+
 import com.google.common.primitives.UnsignedBytes;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -47,9 +49,6 @@ import org.apache.storm.hbase.common.HBaseClient;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
 
 public class HBaseClientTestUtil {
     private HBaseClientTestUtil() {

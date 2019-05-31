@@ -20,7 +20,6 @@
 package org.apache.storm.sql;
 
 import java.util.List;
-
 import org.apache.calcite.DataContext;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.sql.javac.CompilingClassLoader;

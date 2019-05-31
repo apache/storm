@@ -20,7 +20,6 @@ package org.apache.storm.rocketmq;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
-
 import org.apache.storm.Testing;
 import org.apache.storm.testing.MkTupleParam;
 import org.apache.storm.tuple.Tuple;

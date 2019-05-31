@@ -17,22 +17,21 @@
  */
 package org.apache.storm.submit.dependency;
 
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.collect.Lists;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.util.artifact.JavaScopes;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.util.artifact.JavaScopes;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-
-import static org.junit.Assert.assertTrue;
 
 public class DependencyResolverTest {
     private static Path tempDirForTest;

@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.storm.elasticsearch.DefaultEsLookupResultOutput;
 import org.apache.storm.elasticsearch.EsLookupResultOutput;
 import org.apache.storm.elasticsearch.common.DefaultEsTupleMapper;

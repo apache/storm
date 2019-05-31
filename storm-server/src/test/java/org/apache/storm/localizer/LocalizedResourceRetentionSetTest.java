@@ -13,6 +13,12 @@
 package org.apache.storm.localizer;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,15 +30,8 @@ import org.apache.storm.daemon.supervisor.IAdvancedFSOps;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.junit.Test;
 
 public class LocalizedResourceRetentionSetTest {
 

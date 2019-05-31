@@ -17,6 +17,8 @@
  */
 package org.apache.storm.hdfs.blobstore;
 
+import java.util.Iterator;
+import java.util.Map;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
@@ -28,9 +30,6 @@ import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.utils.NimbusClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  *  Client to access the HDFS blobStore. At this point, this is meant to only be used by the

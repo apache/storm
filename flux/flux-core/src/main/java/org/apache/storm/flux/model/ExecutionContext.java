@@ -21,7 +21,6 @@ package org.apache.storm.flux.model;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.topology.IRichSpout;

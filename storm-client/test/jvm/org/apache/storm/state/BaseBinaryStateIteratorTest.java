@@ -12,6 +12,10 @@
 
 package org.apache.storm.state;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -20,10 +24,6 @@ import java.util.TreeMap;
 import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@link BaseBinaryStateIterator}.

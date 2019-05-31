@@ -12,14 +12,19 @@
 
 package org.apache.storm.sql.compiler;
 
+import static org.apache.calcite.rel.RelFieldCollation.Direction.ASCENDING;
+import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
+import static org.apache.calcite.sql.validate.SqlMonotonicity.INCREASING;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
-
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.calcite.rel.RelFieldCollation.Direction;
+import org.apache.calcite.rel.RelFieldCollation.NullDirection;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.Schema;
@@ -33,16 +38,9 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.util.ImmutableBitSet;
-import org.apache.calcite.util.Util;
 import org.apache.storm.sql.calcite.ParallelStreamableTable;
 import org.apache.storm.sql.calcite.ParallelTable;
 import org.apache.storm.sql.parser.ColumnConstraint;
-
-import static org.apache.calcite.sql.validate.SqlMonotonicity.INCREASING;
-import static org.apache.calcite.rel.RelFieldCollation.Direction;
-import static org.apache.calcite.rel.RelFieldCollation.Direction.ASCENDING;
-import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
-import static org.apache.calcite.rel.RelFieldCollation.NullDirection;
 
 public class CompilerUtil {
 

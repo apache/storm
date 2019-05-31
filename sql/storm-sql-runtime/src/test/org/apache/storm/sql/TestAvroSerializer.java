@@ -17,17 +17,16 @@
  */
 package org.apache.storm.sql;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.storm.sql.runtime.serde.avro.AvroScheme;
-import org.apache.storm.sql.runtime.serde.avro.AvroSerializer;
-import org.junit.Test;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertArrayEquals;
+import org.apache.storm.sql.runtime.serde.avro.AvroScheme;
+import org.apache.storm.sql.runtime.serde.avro.AvroSerializer;
+import org.junit.Test;
 
 public class TestAvroSerializer {
   private static final String schemaString = "{\"type\":\"record\"," +

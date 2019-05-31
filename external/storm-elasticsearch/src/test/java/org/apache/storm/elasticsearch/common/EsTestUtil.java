@@ -19,14 +19,12 @@ package org.apache.storm.elasticsearch.common;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.http.RequestLine;
 import org.apache.http.StatusLine;

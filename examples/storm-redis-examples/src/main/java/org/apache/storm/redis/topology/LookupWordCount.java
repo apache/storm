@@ -17,10 +17,10 @@
  */
 package org.apache.storm.redis.topology;
 
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.redis.bolt.RedisLookupBolt;
@@ -38,8 +38,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
 
 public class LookupWordCount {
     private static final String WORD_SPOUT = "WORD_SPOUT";

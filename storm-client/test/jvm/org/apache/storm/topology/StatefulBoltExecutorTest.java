@@ -12,6 +12,14 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.spout.CheckPointState.Action.COMMIT;
+import static org.apache.storm.spout.CheckPointState.Action.INITSTATE;
+import static org.apache.storm.spout.CheckPointState.Action.PREPARE;
+import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_ACTION;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_TXID;
+import static org.mockito.Mockito.mock;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,14 +33,6 @@ import org.apache.storm.tuple.Tuple;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import static org.apache.storm.spout.CheckPointState.Action.COMMIT;
-import static org.apache.storm.spout.CheckPointState.Action.INITSTATE;
-import static org.apache.storm.spout.CheckPointState.Action.PREPARE;
-import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_ACTION;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_TXID;
-import static org.mockito.Mockito.mock;
 
 /**
  * Unit tests for {@link StatefulBoltExecutor}

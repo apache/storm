@@ -21,13 +21,11 @@ package org.apache.storm.sql.runtime.utils;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
 import com.google.common.base.Preconditions;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
 import org.apache.storm.spout.Scheme;

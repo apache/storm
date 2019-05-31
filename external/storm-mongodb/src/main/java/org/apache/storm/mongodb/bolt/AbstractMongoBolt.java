@@ -19,7 +19,6 @@
 package org.apache.storm.mongodb.bolt;
 
 import java.util.Map;
-
 import org.apache.commons.lang.Validate;
 import org.apache.storm.mongodb.common.MongoDbClient;
 import org.apache.storm.task.OutputCollector;

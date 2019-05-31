@@ -18,9 +18,9 @@
 package org.apache.storm.st.tests.window;
 
 import org.apache.storm.st.helper.AbstractTest;
-import org.apache.storm.st.wrapper.TopoWrap;
 import org.apache.storm.st.topology.window.TumblingTimeCorrectness;
 import org.apache.storm.st.topology.window.TumblingWindowCorrectness;
+import org.apache.storm.st.wrapper.TopoWrap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;

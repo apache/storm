@@ -19,6 +19,12 @@
 package org.apache.storm.opentsdb.client;
 
 import com.google.common.base.Preconditions;
+import java.io.Serializable;
+import java.util.Collection;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.client.ClientConfig;
@@ -26,13 +32,6 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.RequestEntityProcessing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import java.io.Serializable;
-import java.util.Collection;
 
 /**
  * Client to connect to OpenTsdb TSD for storing timeseries datapoints.

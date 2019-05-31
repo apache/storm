@@ -20,7 +20,6 @@ package org.apache.storm.elasticsearch;
 
 import java.io.Serializable;
 import java.util.Collection;
-
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.elasticsearch.client.Response;

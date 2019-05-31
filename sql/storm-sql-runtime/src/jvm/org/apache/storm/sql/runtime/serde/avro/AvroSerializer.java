@@ -19,13 +19,11 @@
 package org.apache.storm.sql.runtime.serde.avro;
 
 import com.google.common.base.Preconditions;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.List;
-
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumWriter;

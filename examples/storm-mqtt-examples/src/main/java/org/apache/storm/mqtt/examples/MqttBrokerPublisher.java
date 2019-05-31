@@ -19,13 +19,11 @@
 package org.apache.storm.mqtt.examples;
 
 import java.util.Random;
-
 import org.apache.activemq.broker.BrokerService;
 import org.apache.storm.mqtt.MqttLogger;
 import org.fusesource.mqtt.client.BlockingConnection;
 import org.fusesource.mqtt.client.MQTT;
 import org.fusesource.mqtt.client.QoS;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -19,7 +19,6 @@ package org.apache.storm.kafka.spout.trident;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.trident.internal.OutputFieldsExtractor;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;

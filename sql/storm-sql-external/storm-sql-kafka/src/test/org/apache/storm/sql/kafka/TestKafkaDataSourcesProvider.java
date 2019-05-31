@@ -18,6 +18,8 @@
 package org.apache.storm.sql.kafka;
 
 import com.google.common.collect.ImmutableList;
+import java.net.URI;
+import java.util.*;
 import org.apache.storm.kafka.bolt.KafkaBolt;
 import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;
@@ -25,9 +27,6 @@ import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.topology.IRichBolt;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.net.URI;
-import java.util.*;
 
 public class TestKafkaDataSourcesProvider {
 

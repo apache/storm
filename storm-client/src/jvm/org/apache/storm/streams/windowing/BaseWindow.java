@@ -12,7 +12,7 @@
 
 package org.apache.storm.streams.windowing;
 
-import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+import org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
 public abstract class BaseWindow<L, I> implements Window<L, I> {
     protected String timestampField;

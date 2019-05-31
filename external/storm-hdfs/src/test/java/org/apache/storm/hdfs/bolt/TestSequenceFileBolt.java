@@ -12,6 +12,9 @@
 
 package org.apache.storm.hdfs.bolt;
 
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -51,9 +54,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestSequenceFileBolt {

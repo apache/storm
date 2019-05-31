@@ -23,15 +23,14 @@ import org.apache.storm.generated.Grouping;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.StatefulWindowedBoltExecutor.TaskStream;
+import org.apache.storm.topology.StatefulWindowedBoltExecutor.WindowState;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.windowing.TupleWindow;
 import org.apache.storm.windowing.TupleWindowImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import static org.apache.storm.topology.StatefulWindowedBoltExecutor.TaskStream;
-import static org.apache.storm.topology.StatefulWindowedBoltExecutor.WindowState;
 
 /**
  * Unit tests for {@link StatefulWindowedBoltExecutor}

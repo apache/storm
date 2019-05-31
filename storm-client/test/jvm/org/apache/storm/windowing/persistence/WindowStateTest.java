@@ -12,6 +12,8 @@
 
 package org.apache.storm.windowing.persistence;
 
+import static org.mockito.AdditionalAnswers.returnsArgAt;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -34,8 +36,6 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-
-import static org.mockito.AdditionalAnswers.returnsArgAt;
 
 /**
  * Unit tests for {@link WindowState}

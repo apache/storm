@@ -21,7 +21,6 @@ package org.apache.storm.redis.tools;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -35,7 +34,6 @@ import org.apache.storm.redis.common.container.RedisCommandsContainerBuilder;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import redis.clients.util.SafeEncoder;
 
 

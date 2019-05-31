@@ -22,7 +22,6 @@ import static org.apache.storm.rocketmq.RocketMqUtils.getInteger;
 
 import java.util.Properties;
 import java.util.UUID;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.apache.rocketmq.client.ClientConfig;

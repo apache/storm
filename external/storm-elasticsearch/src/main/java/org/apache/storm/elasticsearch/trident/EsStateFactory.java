@@ -21,7 +21,6 @@ package org.apache.storm.elasticsearch.trident;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
-
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.task.IMetricsContext;

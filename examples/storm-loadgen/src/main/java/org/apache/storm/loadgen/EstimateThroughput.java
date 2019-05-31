@@ -31,7 +31,6 @@ import org.apache.storm.Config;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.TopologySummary;
-import org.apache.storm.loadgen.CaptureLoad;
 import org.apache.storm.utils.NimbusClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

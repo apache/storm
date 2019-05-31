@@ -12,6 +12,8 @@
 
 package org.apache.storm.streams.processors;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,8 +21,6 @@ import java.util.List;
 import java.util.Set;
 import org.apache.storm.streams.Pair;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class CoGroupByKeyProcessorTest {
     private CoGroupByKeyProcessor<Integer, Integer, Integer> coGroupByKeyProcessor;

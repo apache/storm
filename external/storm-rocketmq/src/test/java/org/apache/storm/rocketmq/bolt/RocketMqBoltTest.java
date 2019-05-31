@@ -18,6 +18,10 @@
 
 package org.apache.storm.rocketmq.bolt;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.common.message.Message;
@@ -27,10 +31,6 @@ import org.apache.storm.rocketmq.common.selector.DefaultTopicSelector;
 import org.apache.storm.tuple.Tuple;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class RocketMqBoltTest {
 

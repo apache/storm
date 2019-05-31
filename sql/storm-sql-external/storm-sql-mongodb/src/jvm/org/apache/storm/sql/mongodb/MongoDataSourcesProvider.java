@@ -19,11 +19,9 @@
 package org.apache.storm.sql.mongodb;
 
 import com.google.common.base.Preconditions;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Properties;
-
 import org.apache.storm.mongodb.bolt.MongoInsertBolt;
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
@@ -36,7 +34,6 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
-
 import org.bson.Document;
 
 /**

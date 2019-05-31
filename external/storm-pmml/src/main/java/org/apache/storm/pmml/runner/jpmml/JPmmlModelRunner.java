@@ -18,6 +18,12 @@
 
 package org.apache.storm.pmml.runner.jpmml;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.pmml.model.ModelOutputs;
 import org.apache.storm.pmml.runner.PmmlModelRunner;
 import org.apache.storm.tuple.Tuple;
@@ -27,13 +33,6 @@ import org.jpmml.evaluator.EvaluatorUtil;
 import org.jpmml.evaluator.FieldValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * JPMML implementation of {@link PmmlModelRunner}. It extracts the raw inputs from the tuple for all

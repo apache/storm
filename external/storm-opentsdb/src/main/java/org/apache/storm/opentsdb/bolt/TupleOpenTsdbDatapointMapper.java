@@ -18,12 +18,11 @@
  */
 package org.apache.storm.opentsdb.bolt;
 
+import java.util.Map;
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.apache.storm.tuple.ITuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * Converts {@link org.apache.storm.tuple.ITuple} to {@link OpenTsdbMetricDatapoint}

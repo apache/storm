@@ -19,12 +19,11 @@ package org.apache.storm.st.topology.window.data;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.util.Collection;
+import java.util.Date;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-
-import java.util.Collection;
-import java.util.Date;
 
 public class TimeData implements Comparable<TimeData> {
     public static final TimeData CLS = new TimeData(-1);

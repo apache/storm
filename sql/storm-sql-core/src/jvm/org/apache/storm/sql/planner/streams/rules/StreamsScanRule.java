@@ -25,7 +25,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.schema.Table;
-import org.apache.storm.sql.calcite.ParallelStreamableTable;
 import org.apache.storm.sql.calcite.ParallelTable;
 import org.apache.storm.sql.planner.streams.rel.StreamsLogicalConvention;
 import org.apache.storm.sql.planner.streams.rel.StreamsStreamScanRel;

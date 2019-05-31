@@ -17,6 +17,14 @@
  */
 package org.apache.storm.common;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.security.auth.Subject;
+import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.util.Pair;
 import org.apache.hadoop.security.Credentials;
@@ -26,15 +34,6 @@ import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-import javax.xml.bind.DatatypeConverter;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * The base class that for auto credential plugins that abstracts out some of the common functionality.

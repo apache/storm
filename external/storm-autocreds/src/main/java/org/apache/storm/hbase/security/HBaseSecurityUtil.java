@@ -18,19 +18,18 @@
 
 package org.apache.storm.hbase.security;
 
+import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.List;
+import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.security.auth.kerberos.AutoTGT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
 
 /**
  * This class provides util methods for storm-hbase connector communicating

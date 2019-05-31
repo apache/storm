@@ -13,8 +13,7 @@
 package org.apache.storm.streams.windowing;
 
 import java.io.Serializable;
-
-import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+import org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
 /**
  * The window specification within {@link org.apache.storm.streams.Stream}.

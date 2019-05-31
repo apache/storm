@@ -20,7 +20,6 @@ package org.apache.storm.jms.example;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
-
 import org.apache.storm.jms.JmsTupleProducer;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;

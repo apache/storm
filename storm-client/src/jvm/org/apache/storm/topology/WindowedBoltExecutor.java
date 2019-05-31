@@ -29,6 +29,8 @@ import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.task.IOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.base.BaseWindowedBolt.Count;
+import org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
@@ -52,9 +54,6 @@ import org.apache.storm.windowing.WindowLifecycleListener;
 import org.apache.storm.windowing.WindowManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
-import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
 /**
  * An {@link IWindowedBolt} wrapper that does the windowing of tuples.

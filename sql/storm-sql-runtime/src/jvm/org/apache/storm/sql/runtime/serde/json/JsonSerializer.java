@@ -21,14 +21,12 @@ package org.apache.storm.sql.runtime.serde.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.base.Preconditions;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
 import org.apache.storm.sql.runtime.IOutputSerializer;
 
 public class JsonSerializer implements IOutputSerializer, Serializable {

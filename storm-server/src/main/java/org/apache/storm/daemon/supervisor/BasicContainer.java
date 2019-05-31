@@ -18,9 +18,14 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import static org.apache.storm.daemon.nimbus.Nimbus.MIN_VERSION_SUPPORT_RPC_HEARTBEAT;
+import static org.apache.storm.utils.Utils.OR;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +46,7 @@ import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.shade.com.google.common.base.Joiner;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.utils.ConfigUtils;
@@ -54,13 +60,6 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.VersionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.daemon.nimbus.Nimbus.MIN_VERSION_SUPPORT_RPC_HEARTBEAT;
-import static org.apache.storm.utils.Utils.OR;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import org.apache.storm.metric.StormMetricsRegistry;
 
 /**
  * A container that runs processes on the local box.

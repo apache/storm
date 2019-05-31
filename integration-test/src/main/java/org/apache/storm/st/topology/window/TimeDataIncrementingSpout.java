@@ -17,8 +17,6 @@
 package org.apache.storm.st.topology.window;
 
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.st.topology.TestableTopology;
 import org.apache.storm.st.topology.window.data.TimeData;

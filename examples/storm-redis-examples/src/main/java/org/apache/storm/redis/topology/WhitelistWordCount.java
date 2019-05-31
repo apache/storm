@@ -19,7 +19,6 @@ package org.apache.storm.redis.topology;
 
 import java.util.Map;
 import java.util.Random;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.redis.bolt.RedisFilterBolt;

@@ -17,13 +17,12 @@
  */
 package org.apache.storm.mongodb.trident;
 
+import java.util.Random;
 import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Random;
 
 public class PrintFunction extends BaseFunction {
 

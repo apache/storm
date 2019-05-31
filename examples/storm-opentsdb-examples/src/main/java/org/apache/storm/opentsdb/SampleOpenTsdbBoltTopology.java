@@ -19,7 +19,6 @@
 package org.apache.storm.opentsdb;
 
 import java.util.Collections;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.opentsdb.bolt.OpenTsdbBolt;

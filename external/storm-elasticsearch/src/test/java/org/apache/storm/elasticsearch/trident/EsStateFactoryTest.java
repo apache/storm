@@ -18,7 +18,6 @@
 package org.apache.storm.elasticsearch.trident;
 
 import com.google.common.testing.NullPointerTester;
-
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.junit.jupiter.api.Test;
 

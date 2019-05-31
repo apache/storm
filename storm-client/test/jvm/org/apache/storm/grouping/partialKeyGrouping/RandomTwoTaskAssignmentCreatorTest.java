@@ -12,14 +12,14 @@
 
 package org.apache.storm.grouping.partialKeyGrouping;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
+
 import org.apache.storm.grouping.PartialKeyGrouping;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.utils.Utils;
 import org.junit.Test;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 
 public class RandomTwoTaskAssignmentCreatorTest {
 

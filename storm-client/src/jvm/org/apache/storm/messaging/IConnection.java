@@ -15,7 +15,6 @@ package org.apache.storm.messaging;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.function.Supplier;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.netty.BackPressureStatus;
 

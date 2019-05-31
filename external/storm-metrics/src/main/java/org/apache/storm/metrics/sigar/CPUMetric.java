@@ -17,12 +17,10 @@
  */
 package org.apache.storm.metrics.sigar;
 
-import org.hyperic.sigar.Sigar;
-import org.hyperic.sigar.ProcCpu;
-
-import org.apache.storm.metric.api.IMetric;
-
 import java.util.HashMap;
+import org.apache.storm.metric.api.IMetric;
+import org.hyperic.sigar.ProcCpu;
+import org.hyperic.sigar.Sigar;
 
 /**
  * A metric using Sigar to get User and System CPU utilization for a worker.

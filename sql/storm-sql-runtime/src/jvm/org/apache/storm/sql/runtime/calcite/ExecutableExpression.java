@@ -19,7 +19,6 @@
 package org.apache.storm.sql.runtime.calcite;
 
 import java.io.Serializable;
-
 import org.apache.calcite.interpreter.Context;
 
 /**

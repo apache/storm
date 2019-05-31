@@ -17,10 +17,11 @@
  */
 package org.apache.storm.jdbc.topology;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
@@ -34,9 +35,6 @@ import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
 import org.apache.storm.jdbc.spout.UserSpout;
 import org.apache.storm.tuple.Fields;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 public abstract class AbstractUserTopology {
     private static final List<String> setupSqls = Lists.newArrayList(

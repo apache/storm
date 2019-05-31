@@ -18,15 +18,14 @@
 
 package org.apache.storm.kinesis.spout;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExponentialBackoffRetrier implements FailedMessageRetryHandler, Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(ExponentialBackoffRetrier.class);

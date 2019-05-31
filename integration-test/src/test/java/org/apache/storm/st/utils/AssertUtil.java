@@ -17,14 +17,13 @@
 
 package org.apache.storm.st.utils;
 
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
-
-import java.io.File;
-import java.util.Collection;
-import java.util.List;
 
 public class AssertUtil {
     private static Logger log = LoggerFactory.getLogger(AssertUtil.class);

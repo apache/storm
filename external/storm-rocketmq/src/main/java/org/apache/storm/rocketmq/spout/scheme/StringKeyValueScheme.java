@@ -19,10 +19,8 @@
 package org.apache.storm.rocketmq.spout.scheme;
 
 import com.google.common.collect.ImmutableMap;
-
 import java.nio.ByteBuffer;
 import java.util.List;
-
 import org.apache.storm.tuple.Values;
 
 public class StringKeyValueScheme extends StringScheme implements KeyValueScheme {

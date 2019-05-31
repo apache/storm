@@ -16,6 +16,7 @@
 
 package org.apache.storm.utils;
 
+import com.google.common.base.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
@@ -37,8 +37,6 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Strings;
 
 public class TopologySpoutLag {
     // FIXME: This class can be moved to webapp once UI porting is done.

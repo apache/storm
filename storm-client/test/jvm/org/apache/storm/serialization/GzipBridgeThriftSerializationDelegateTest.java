@@ -12,11 +12,11 @@
 
 package org.apache.storm.serialization;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.storm.generated.GlobalStreamId;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class GzipBridgeThriftSerializationDelegateTest {

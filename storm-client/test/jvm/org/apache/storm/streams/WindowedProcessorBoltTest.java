@@ -12,6 +12,8 @@
 
 package org.apache.storm.streams;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,8 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Unit test for {@link WindowedProcessorBolt}

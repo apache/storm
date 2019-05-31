@@ -17,20 +17,18 @@
  */
 package org.apache.storm.hdfs.security;
 
-import org.apache.storm.security.auth.kerberos.AutoTGT;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.SecurityUtil;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.storm.security.auth.kerberos.AutoTGT;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class provides util methods for storm-hdfs connector communicating

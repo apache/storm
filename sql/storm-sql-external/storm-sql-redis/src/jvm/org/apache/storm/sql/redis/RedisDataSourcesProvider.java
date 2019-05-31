@@ -19,14 +19,12 @@
 package org.apache.storm.sql.redis;
 
 import com.google.common.base.Preconditions;
-
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-
 import org.apache.storm.redis.bolt.RedisStoreBolt;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
@@ -42,7 +40,6 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
-
 import redis.clients.util.JedisURIHelper;
 
 /**

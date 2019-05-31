@@ -18,14 +18,6 @@
 
 package org.apache.storm.pmml.model.jpmml;
 
-import org.apache.storm.pmml.model.ModelOutputs;
-import org.apache.storm.pmml.runner.jpmml.JpmmlFactory;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
-import org.dmg.pmml.FieldName;
-import org.dmg.pmml.PMML;
-import org.jpmml.evaluator.Evaluator;
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -37,6 +29,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.storm.pmml.model.ModelOutputs;
+import org.apache.storm.pmml.runner.jpmml.JpmmlFactory;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.PMML;
+import org.jpmml.evaluator.Evaluator;
 
 public class JpmmlModelOutputs implements ModelOutputs {
     private final Map<String, ? extends Fields> declared;

@@ -12,6 +12,8 @@
 
 package org.apache.storm.testing;
 
+import static org.apache.storm.utils.Utils.get;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +24,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
-
-import static org.apache.storm.utils.Utils.get;
 
 public class FixedTupleSpout implements IRichSpout, CompletableSpout {
     private static final Map<String, Integer> acked = new HashMap<String, Integer>();

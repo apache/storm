@@ -21,7 +21,6 @@ package org.apache.storm.elasticsearch.bolt;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.elasticsearch.common.EsConfig;

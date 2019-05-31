@@ -12,16 +12,16 @@
 
 package org.apache.storm.windowing;
 
+import static org.apache.storm.windowing.EvictionPolicy.Action.EXPIRE;
+import static org.apache.storm.windowing.EvictionPolicy.Action.PROCESS;
+import static org.apache.storm.windowing.EvictionPolicy.Action.STOP;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.windowing.EvictionPolicy.Action.EXPIRE;
-import static org.apache.storm.windowing.EvictionPolicy.Action.PROCESS;
-import static org.apache.storm.windowing.EvictionPolicy.Action.STOP;
 
 /**
  * Window manager that handles windows with state persistence.

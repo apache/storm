@@ -17,12 +17,12 @@
  */
 package org.apache.storm.clojure;
 
+import java.util.Map;
 import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.spout.ShellSpout;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
-import java.util.Map;
 
 public class RichShellSpout extends ShellSpout implements IRichSpout {
     private Map<String, StreamInfo> _outputs;

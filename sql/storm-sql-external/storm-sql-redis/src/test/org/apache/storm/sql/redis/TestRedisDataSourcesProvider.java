@@ -18,6 +18,9 @@
 package org.apache.storm.sql.redis;
 
 import com.google.common.collect.ImmutableList;
+import java.net.URI;
+import java.util.List;
+import java.util.Properties;
 import org.apache.storm.redis.bolt.RedisStoreBolt;
 import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;
@@ -26,10 +29,6 @@ import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
 import org.apache.storm.topology.IRichBolt;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.net.URI;
-import java.util.List;
-import java.util.Properties;
 
 public class TestRedisDataSourcesProvider {
 

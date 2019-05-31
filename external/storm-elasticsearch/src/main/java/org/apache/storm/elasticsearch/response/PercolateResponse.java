@@ -19,9 +19,7 @@
 package org.apache.storm.elasticsearch.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
-
 import org.apache.storm.elasticsearch.doc.Shards;
 
 /**

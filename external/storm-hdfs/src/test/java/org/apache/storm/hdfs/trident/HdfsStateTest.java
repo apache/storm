@@ -12,6 +12,10 @@
 
 package org.apache.storm.hdfs.trident;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -35,10 +39,6 @@ import org.apache.storm.tuple.Fields;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 
 public class HdfsStateTest {

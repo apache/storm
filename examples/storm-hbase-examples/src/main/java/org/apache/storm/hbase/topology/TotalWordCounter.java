@@ -12,6 +12,8 @@
 
 package org.apache.storm.hbase.topology;
 
+import static org.apache.storm.utils.Utils.tuple;
+
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Random;
@@ -23,8 +25,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.utils.Utils.tuple;
 
 public class TotalWordCounter implements IBasicBolt {
 

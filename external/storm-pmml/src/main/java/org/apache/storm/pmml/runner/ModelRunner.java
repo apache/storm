@@ -18,11 +18,10 @@
 
 package org.apache.storm.pmml.runner;
 
-import org.apache.storm.pmml.model.ModelOutputs;
-import org.apache.storm.tuple.Tuple;
-
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.pmml.model.ModelOutputs;
+import org.apache.storm.tuple.Tuple;
 
 public interface ModelRunner {
     /**
