@@ -51,6 +51,5 @@ script:
   - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
 cache:
   directories:
-    - "$HOME/.m2/repository"
     - "$HOME/.rvm"
     - "$NVM_DIR"
