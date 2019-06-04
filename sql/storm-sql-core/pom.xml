@@ -211,6 +211,10 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <!-- Extract parser grammar template from calcite-core.jar and put
                      it under ${project.build.directory} where all freemarker templates are. -->
                 <groupId>org.apache.maven.plugins</groupId>

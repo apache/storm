@@ -100,6 +100,10 @@
                     <maxAllowedViolations>29</maxAllowedViolations>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 </project>
