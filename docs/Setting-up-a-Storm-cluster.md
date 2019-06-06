@@ -3,7 +3,7 @@ title: Setting up a Storm Cluster
 layout: documentation
 documentation: true
 ---
-This page outlines the steps for getting a Storm cluster up and running. If you're on AWS, you should check out the [storm-deploy](https://github.com/nathanmarz/storm-deploy/wiki) project. [storm-deploy](https://github.com/nathanmarz/storm-deploy/wiki) completely automates the provisioning, configuration, and installation of Storm clusters on EC2. It also sets up Ganglia for you so you can monitor CPU, disk, and network usage.
+This page outlines the steps for getting a Storm cluster up and running. 
 
 If you run into difficulties with your Storm cluster, first check for a solution is in the [Troubleshooting](Troubleshooting.html) page. Otherwise, email the mailing list.
 
@@ -37,7 +37,7 @@ These are the versions of the dependencies that have been tested with Storm. Sto
 
 ### Download and extract a Storm release to Nimbus and worker machines
 
-Next, download a Storm release and extract the zip file somewhere on Nimbus and each of the worker machines. The Storm releases can be downloaded [from here](http://github.com/apache/storm/releases).
+Next, download a Storm release and extract the zip file somewhere on Nimbus and each of the worker machines. The Storm releases can be downloaded [from here](../../downloads.html).
 
 ### Fill in mandatory configurations into storm.yaml
 
