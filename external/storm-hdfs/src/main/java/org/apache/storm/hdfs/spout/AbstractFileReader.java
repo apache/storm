@@ -16,7 +16,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 
-abstract class AbstractFileReader implements FileReader {
+public abstract class AbstractFileReader implements FileReader {
 
     private final Path file;
 
