@@ -250,10 +250,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
 
         //set max number of states to search maintaining backward compatibility for old topologies
         String stormVersionString = td.getTopology().get_storm_version();
-        boolean isNewTopology = stormVersionString != null && stormVersionString.startsWith("2");
+        boolean is2xTopology = stormVersionString != null && stormVersionString.startsWith("2");
 
         Object confMaxStateSearch = null;
-        if (isNewTopology == false) {
+        if (is2xTopology == false) {
             //backward compatibility
             confMaxStateSearch = td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_TRAVERSAL);
         }
@@ -301,7 +301,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         }
 
         //early detection/early fail
-        if (!checkSchedulingFeasibility(daemonMaxStateSearch)) {
+        if (!checkSchedulingFeasibility(maxStateSearch)) {
             //Scheduling Status set to FAIL_OTHER so no eviction policy will be attempted to make space for this topology
             return SchedulingResult.failure(SchedulingStatus.FAIL_OTHER, "Scheduling not feasible!");
         }
@@ -309,7 +309,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             .asSchedulingResult();
     }
 
-    private boolean checkSchedulingFeasibility(int daemonMaxStateSearch) {
+    private boolean checkSchedulingFeasibility(int maxStateSearch) {
         for (String comp : spreadComps) {
             int numExecs = compToExecs.get(comp).size();
             if (numExecs > nodes.size()) {
@@ -318,9 +318,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                 return false;
             }
         }
-        if (execToComp.size() >= daemonMaxStateSearch) {
+        if (execToComp.size() >= maxStateSearch) {
             LOG.error("Number of executors is greater than the maximum number of states allowed to be searched.  "
-                      + "# of executors: {} Max states to search: {}", execToComp.size(), daemonMaxStateSearch);
+                      + "# of executors: {} Max states to search: {}", execToComp.size(), maxStateSearch);
             return false;
         }
         return true;
