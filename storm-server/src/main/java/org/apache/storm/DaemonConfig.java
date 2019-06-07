@@ -936,6 +936,13 @@ public class DaemonConfig implements Validated {
     public static final String RESOURCE_AWARE_SCHEDULER_MAX_TOPOLOGY_SCHEDULING_ATTEMPTS =
         "resource.aware.scheduler.max.topology.scheduling.attempts";
 
+    /*
+     * The maximum number of states that will be searched looking for a solution in the constraint solver strategy
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH = "resource.aware.scheduler.constraint.max.state.search";
+
     /**
      * How often nimbus's background thread to sync code for missing topologies should run.
      */

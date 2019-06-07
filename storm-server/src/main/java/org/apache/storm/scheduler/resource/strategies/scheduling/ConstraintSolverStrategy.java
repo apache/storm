@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SchedulerAssignment;
@@ -42,8 +43,6 @@ import org.slf4j.LoggerFactory;
 
 public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     //hard coded max number of states to search
-    public static final int MAX_STATE_SEARCH = 100_000;
-    public static final int DEFAULT_STATE_SEARCH = 10_000;
     private static final Logger LOG = LoggerFactory.getLogger(ConstraintSolverStrategy.class);
 
     //constraints and spreads
@@ -248,10 +247,22 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         nodes = RAS_Nodes.getAllNodesFrom(cluster);
         Map<WorkerSlot, Set<String>> workerCompAssignment = new HashMap<>();
         Map<RAS_Node, Set<String>> nodeCompAssignment = new HashMap<>();
-        //set max number of states to search
-        final int maxStateSearch = Math.min(MAX_STATE_SEARCH,
-                                            ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH),
-                                                                DEFAULT_STATE_SEARCH));
+
+        //set max number of states to search maintaining backward compatibility for old topologies
+        String stormVersionString = td.getTopology().get_storm_version();
+        boolean is2xTopology = stormVersionString != null && stormVersionString.startsWith("2");
+
+        Object confMaxStateSearch = null;
+        if (is2xTopology == false) {
+            //backward compatibility
+            confMaxStateSearch = td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_TRAVERSAL);
+        }
+        if (confMaxStateSearch == null) {
+            //new topology or old topology using new config
+            confMaxStateSearch = td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH);
+        }
+        int daemonMaxStateSearch = ObjectReader.getInt(td.getConf().get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH));
+        final int maxStateSearch = Math.min(daemonMaxStateSearch, ObjectReader.getInt(confMaxStateSearch));
 
         final long maxTimeMs =
             ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS), -1).intValue() * 1000L;
@@ -290,7 +301,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         }
 
         //early detection/early fail
-        if (!checkSchedulingFeasibility()) {
+        if (!checkSchedulingFeasibility(maxStateSearch)) {
             //Scheduling Status set to FAIL_OTHER so no eviction policy will be attempted to make space for this topology
             return SchedulingResult.failure(SchedulingStatus.FAIL_OTHER, "Scheduling not feasible!");
         }
@@ -298,7 +309,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             .asSchedulingResult();
     }
 
-    private boolean checkSchedulingFeasibility() {
+    private boolean checkSchedulingFeasibility(int maxStateSearch) {
         for (String comp : spreadComps) {
             int numExecs = compToExecs.get(comp).size();
             if (numExecs > nodes.size()) {
@@ -307,9 +318,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                 return false;
             }
         }
-        if (execToComp.size() >= MAX_STATE_SEARCH) {
+        if (execToComp.size() >= maxStateSearch) {
             LOG.error("Number of executors is greater than the maximum number of states allowed to be searched.  "
-                      + "# of executors: {} Max states to search: {}", execToComp.size(), MAX_STATE_SEARCH);
+                      + "# of executors: {} Max states to search: {}", execToComp.size(), maxStateSearch);
             return false;
         }
         return true;
