@@ -1,0 +1,13 @@
+- project:
+    name: apache/storm
+    check:
+      jobs:
+        - storm-build-arm64
+
+- job:
+    name: storm-build-arm64
+    parent: init-test
+    description: |
+      The storm build in openlab cluster.
+    run: .zuul/playbooks/storm-build/run.yaml
+    nodeset: ubuntu-xenial-arm64
