@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.jms.example;
 
 import javax.jms.JMSException;
@@ -33,6 +34,9 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;
 
+/**
+ * An example JMS topology.
+ */
 public class ExampleJmsTopology {
     public static final String JMS_QUEUE_SPOUT = "JMS_QUEUE_SPOUT";
     public static final String INTERMEDIATE_BOLT = "INTERMEDIATE_BOLT";
@@ -41,6 +45,11 @@ public class ExampleJmsTopology {
     public static final String JMS_TOPIC_SPOUT = "JMS_TOPIC_SPOUT";
     public static final String ANOTHER_BOLT = "ANOTHER_BOLT";
 
+    /**
+     * The main method.
+     * @param args takes the topology name as first argument
+     * @throws Exception any expection occuring durch cluster setup or operation
+     */
     @SuppressWarnings("serial")
     public static void main(String[] args) throws Exception {
 
@@ -48,11 +57,6 @@ public class ExampleJmsTopology {
         JmsProvider jmsQueueProvider = new SpringJmsProvider(
                 "jms-activemq.xml", "jmsConnectionFactory",
                 "notificationQueue");
-
-        // JMS Topic provider
-        JmsProvider jmsTopicProvider = new SpringJmsProvider(
-                "jms-activemq.xml", "jmsConnectionFactory",
-                "notificationTopic");
 
         // JMS Producer
         JmsTupleProducer producer = new JsonTupleProducer();
@@ -67,7 +71,6 @@ public class ExampleJmsTopology {
 
         // spout with 5 parallel instances
         builder.setSpout(JMS_QUEUE_SPOUT, queueSpout, 5);
-
         // intermediate bolt, subscribes to jms spout, anchors on tuples, and auto-acks
         builder.setBolt(INTERMEDIATE_BOLT,
                 new GenericBolt("INTERMEDIATE_BOLT", true, true, new Fields("json")), 3).shuffleGrouping(
@@ -77,6 +80,11 @@ public class ExampleJmsTopology {
         // messages.
         builder.setBolt(FINAL_BOLT, new GenericBolt("FINAL_BOLT", true, true), 3).shuffleGrouping(
                 INTERMEDIATE_BOLT);
+
+        // JMS Topic provider
+        JmsProvider jmsTopicProvider = new SpringJmsProvider(
+                "jms-activemq.xml", "jmsConnectionFactory",
+                "notificationTopic");
 
         // bolt that subscribes to the intermediate bolt, and publishes to a JMS Topic
         JmsBolt jmsBolt = new JmsBolt();
