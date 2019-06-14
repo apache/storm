@@ -15,7 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.jdbc.spout;
+
+import com.google.common.collect.Lists;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -23,9 +30,6 @@ import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import com.google.common.collect.Lists;
-
-import java.util.*;
 
 public class UserSpout implements IRichSpout {
     boolean isDistributed;
