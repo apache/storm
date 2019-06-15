@@ -125,7 +125,8 @@ public class CompilingClassLoader extends ClassLoader {
     }
 
     /**
-     * @return Whether compilation was successful.
+     * Compiles source code to byte code.
+     * @return indicates whether compilation was successful
      */
     private boolean compileSourceCodeToByteCode(
         String className, String sourceCode, DiagnosticListener<JavaFileObject> diagnosticListener) {
@@ -195,7 +196,7 @@ public class CompilingClassLoader extends ClassLoader {
     /**
      * Provides an in-memory representation of JavaFileManager abstraction, so we do not need to write any files to disk.
      *
-     * When files are written to, rather than putting the bytes on disk, they are appended to buffers in byteCodeForClasses.
+     * <p>When files are written to, rather than putting the bytes on disk, they are appended to buffers in byteCodeForClasses.
      *
      * @see javax.tools.JavaFileManager
      */
