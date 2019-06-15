@@ -63,10 +63,12 @@ public class SpringJmsProvider implements JmsProvider {
 		this.destination = (Destination)context.getBean(destinationBean);
 	}
 
+	@Override
 	public ConnectionFactory connectionFactory() throws Exception {
 		return this.connectionFactory;
 	}
 
+	@Override
 	public Destination destination() throws Exception {
 		return this.destination;
 	}

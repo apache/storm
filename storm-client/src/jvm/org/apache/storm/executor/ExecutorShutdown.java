@@ -72,6 +72,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
         }
     }
 
+    @Override
     public void loadChanged(LoadMapping loadMapping) {
         executor.reflectNewLoadMapping(loadMapping);
     }

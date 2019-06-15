@@ -59,10 +59,12 @@ public class TextFileReader extends AbstractFileReader {
 
     }
 
+    @Override
     public Offset getFileOffset() {
         return offset.clone();
     }
 
+    @Override
     public List<Object> next() throws IOException, ParseException {
         String line = readLineAndTrackOffset(reader);
         if (line != null) {

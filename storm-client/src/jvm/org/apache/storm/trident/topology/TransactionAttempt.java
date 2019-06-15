@@ -34,10 +34,12 @@ public class TransactionAttempt implements IBatchID {
         return _txid;
     }
 
+    @Override
     public Object getId() {
         return _txid;
     }
 
+    @Override
     public int getAttemptId() {
         return _attemptId;
     }

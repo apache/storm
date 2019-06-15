@@ -776,6 +776,7 @@ public class TestHdfsSpout {
             this.componentId = componentId;
         }
 
+        @Override
         public String getThisComponentId() {
             return Integer.toString(componentId);
         }

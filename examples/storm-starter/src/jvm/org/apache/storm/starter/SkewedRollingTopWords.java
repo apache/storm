@@ -64,6 +64,7 @@ public class SkewedRollingTopWords extends ConfigurableTopology {
      *          locally ("-local") or remotely, i.e. on a real cluster.
      * @throws Exception
      */
+    @Override
     protected int run(String[] args) {
         String topologyName = "slidingWindowCounts";
         if (args.length >= 1) {

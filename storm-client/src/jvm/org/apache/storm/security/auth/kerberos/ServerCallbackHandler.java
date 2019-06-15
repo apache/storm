@@ -50,6 +50,7 @@ public class ServerCallbackHandler implements CallbackHandler {
         }
     }
 
+    @Override
     public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
         NameCallback nc = null;
         PasswordCallback pc = null;

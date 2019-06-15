@@ -21,6 +21,7 @@ public class ReducedShellMetric extends ReducedMetric implements IShellMetric {
         super(reducer);
     }
 
+    @Override
     public void updateMetricFromRPC(Object value) {
         update(value);
     }

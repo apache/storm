@@ -53,14 +53,17 @@ public class TridentOperationContext implements IMetricsContext {
         return _topoContext.getThisTaskIndex();
     }
 
+    @Override
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         return _topoContext.registerMetric(name, metric, timeBucketSizeInSecs);
     }
 
+    @Override
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
         return _topoContext.registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
 
+    @Override
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
         return _topoContext.registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }

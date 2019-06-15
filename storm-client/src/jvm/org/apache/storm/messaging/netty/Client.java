@@ -177,6 +177,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         // netty TimerTask is already defined and hence a fully
         // qualified name
         TIMER.schedule(new java.util.TimerTask() {
+            @Override
             public void run() {
                 try {
                     LOG.debug("running timer task, address {}", dstAddress);

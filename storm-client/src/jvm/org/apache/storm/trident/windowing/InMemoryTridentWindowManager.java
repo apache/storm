@@ -47,6 +47,7 @@ public class InMemoryTridentWindowManager extends AbstractTridentWindowManager<T
         LOG.debug("InMemoryTridentWindowManager.onTuplesExpired");
     }
 
+    @Override
     public void addTuplesBatch(Object batchId, List<TridentTuple> tuples) {
         LOG.debug("Adding tuples to window-manager for batch: [{}]", batchId);
         for (TridentTuple tridentTuple : tuples) {

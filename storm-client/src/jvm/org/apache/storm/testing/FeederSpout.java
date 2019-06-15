@@ -60,14 +60,17 @@ public class FeederSpout extends BaseRichSpout {
         InprocMessaging.waitForReader(_id);
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
     }
 
+    @Override
     public void close() {
 
     }
 
+    @Override
     public void nextTuple() {
         List<Object> toEmit = (List<Object>) InprocMessaging.pollMessage(_id);
         if (toEmit != null) {
@@ -78,18 +81,21 @@ public class FeederSpout extends BaseRichSpout {
         }
     }
 
+    @Override
     public void ack(Object msgId) {
         if (_ackFailDelegate != null) {
             _ackFailDelegate.ack(msgId);
         }
     }
 
+    @Override
     public void fail(Object msgId) {
         if (_ackFailDelegate != null) {
             _ackFailDelegate.fail(msgId);
         }
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(_outFields);
     }

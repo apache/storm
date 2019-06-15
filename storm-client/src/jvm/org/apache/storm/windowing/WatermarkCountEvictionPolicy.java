@@ -32,6 +32,7 @@ public class WatermarkCountEvictionPolicy<T> implements EvictionPolicy<T, Pair<L
         currentCount = new AtomicLong();
     }
 
+    @Override
     public Action evict(Event<T> event) {
         if (getContext() == null) {
             //It is possible to get asked about eviction before we have a context, due to WindowManager.compactWindow.

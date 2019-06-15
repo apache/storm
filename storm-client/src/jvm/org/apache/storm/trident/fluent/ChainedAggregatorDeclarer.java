@@ -41,6 +41,7 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
         _globalScheme = globalScheme;
     }
 
+    @Override
     public Stream chainEnd() {
         Fields[] inputFields = new Fields[_aggs.size()];
         Aggregator[] aggs = new Aggregator[_aggs.size()];
@@ -89,37 +90,45 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
         return _stream.toStream();
     }
 
+    @Override
     public ChainedPartitionAggregatorDeclarer partitionAggregate(Aggregator agg, Fields functionFields) {
         return partitionAggregate(null, agg, functionFields);
     }
 
+    @Override
     public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
         _type = AggType.PARTITION;
         _aggs.add(new AggSpec(inputFields, agg, functionFields));
         return this;
     }
 
+    @Override
     public ChainedPartitionAggregatorDeclarer partitionAggregate(CombinerAggregator agg, Fields functionFields) {
         return partitionAggregate(null, agg, functionFields);
     }
 
+    @Override
     public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
         initCombiner(inputFields, agg, functionFields);
         return partitionAggregate(functionFields, new CombinerAggregatorCombineImpl(agg), functionFields);
     }
 
+    @Override
     public ChainedPartitionAggregatorDeclarer partitionAggregate(ReducerAggregator agg, Fields functionFields) {
         return partitionAggregate(null, agg, functionFields);
     }
 
+    @Override
     public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, ReducerAggregator agg, Fields functionFields) {
         return partitionAggregate(inputFields, new ReducerAggregatorImpl(agg), functionFields);
     }
 
+    @Override
     public ChainedFullAggregatorDeclarer aggregate(Aggregator agg, Fields functionFields) {
         return aggregate(null, agg, functionFields);
     }
 
+    @Override
     public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
         return aggregate(inputFields, agg, functionFields, false);
     }
@@ -136,19 +145,23 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
         return this;
     }
 
+    @Override
     public ChainedFullAggregatorDeclarer aggregate(CombinerAggregator agg, Fields functionFields) {
         return aggregate(null, agg, functionFields);
     }
 
+    @Override
     public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
         initCombiner(inputFields, agg, functionFields);
         return aggregate(functionFields, new CombinerAggregatorCombineImpl(agg), functionFields, true);
     }
 
+    @Override
     public ChainedFullAggregatorDeclarer aggregate(ReducerAggregator agg, Fields functionFields) {
         return aggregate(null, agg, functionFields);
     }
 
+    @Override
     public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, ReducerAggregator agg, Fields functionFields) {
         return aggregate(inputFields, new ReducerAggregatorImpl(agg), functionFields);
     }

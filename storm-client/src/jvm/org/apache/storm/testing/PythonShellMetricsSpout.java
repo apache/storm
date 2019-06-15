@@ -46,10 +46,12 @@ public class PythonShellMetricsSpout extends ShellSpout implements IRichSpout {
         context.registerMetric("my-custom-shellspout-metric", cMetric, 5);
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("field1"));
     }
 
+    @Override
     public Map<String, Object> getComponentConfiguration() {
         return null;
     }

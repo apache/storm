@@ -26,6 +26,7 @@ public class BoltTracker extends NonRichBoltTracker implements IRichBolt {
         _richDelegate = delegate;
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         _richDelegate.declareOutputFields(declarer);
     }

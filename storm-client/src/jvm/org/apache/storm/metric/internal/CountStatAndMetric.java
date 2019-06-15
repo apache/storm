@@ -187,6 +187,7 @@ public class CountStatAndMetric implements IMetric {
     }
 
     private class Fresher extends TimerTask {
+        @Override
         public void run() {
             rotateSched(System.currentTimeMillis());
         }

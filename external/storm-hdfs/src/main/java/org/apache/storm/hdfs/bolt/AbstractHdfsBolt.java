@@ -91,6 +91,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
      * @param topologyContext
      * @param collector
      */
+    @Override
     public final void prepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) {
         this.writeLock = new Object();
         if (this.syncPolicy == null) throw new IllegalStateException("SyncPolicy must be specified.");

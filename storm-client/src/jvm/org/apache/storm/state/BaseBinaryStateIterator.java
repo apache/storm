@@ -40,6 +40,7 @@ public abstract class BaseBinaryStateIterator<K, V> extends BaseStateIterator<K,
      *
      * @return Iterator of loaded state KVs
      */
+    @Override
     protected abstract Iterator<Map.Entry<byte[], byte[]>> loadChunkFromStateStorage();
 
     /**
@@ -47,6 +48,7 @@ public abstract class BaseBinaryStateIterator<K, V> extends BaseStateIterator<K,
      *
      * @return whether end of data is reached from storage state KVs
      */
+    @Override
     protected abstract boolean isEndOfDataFromStorage();
 
     /**
@@ -55,6 +57,7 @@ public abstract class BaseBinaryStateIterator<K, V> extends BaseStateIterator<K,
      * @param key byte array encoded key
      * @return Decoded value of key
      */
+    @Override
     protected abstract K decodeKey(byte[] key);
 
     /**
@@ -63,6 +66,7 @@ public abstract class BaseBinaryStateIterator<K, V> extends BaseStateIterator<K,
      * @param value byte array encoded value
      * @return Decoded value of value
      */
+    @Override
     protected abstract V decodeValue(byte[] value);
 
     /**
@@ -71,6 +75,7 @@ public abstract class BaseBinaryStateIterator<K, V> extends BaseStateIterator<K,
      * @param value the value to check
      * @return true if the value is tombstone, false otherwise
      */
+    @Override
     protected abstract boolean isTombstoneValue(byte[] value);
 
 }

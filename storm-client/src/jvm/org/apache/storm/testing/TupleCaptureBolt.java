@@ -35,10 +35,12 @@ public class TupleCaptureBolt implements IRichBolt {
         emitted_tuples.put(_name, new HashMap<String, List<FixedTuple>>());
     }
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         _collector = collector;
     }
 
+    @Override
     public void execute(Tuple input) {
         String component = input.getSourceComponent();
         Map<String, List<FixedTuple>> captured = emitted_tuples.get(_name);
@@ -53,6 +55,7 @@ public class TupleCaptureBolt implements IRichBolt {
         return emitted_tuples.get(_name);
     }
 
+    @Override
     public void cleanup() {
     }
 

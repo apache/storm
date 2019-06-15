@@ -32,6 +32,7 @@ public class DefaultKryoFactory implements IKryoFactory {
     public void preRegister(Kryo k, Map<String, Object> conf) {
     }
 
+    @Override
     public void postRegister(Kryo k, Map<String, Object> conf) {
         ((KryoSerializableDefault) k).overrideDefault(true);
     }

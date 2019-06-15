@@ -45,14 +45,17 @@ public class WordSpout implements IRichSpout {
         return this.isDistributed;
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
     }
 
+    @Override
     public void close() {
 
     }
 
+    @Override
     public void nextTuple() {
         final Random rand = new Random();
         final String word = words[rand.nextInt(words.length)];
@@ -60,14 +63,17 @@ public class WordSpout implements IRichSpout {
         Thread.yield();
     }
 
+    @Override
     public void ack(Object msgId) {
 
     }
 
+    @Override
     public void fail(Object msgId) {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("word"));
     }

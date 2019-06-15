@@ -67,12 +67,14 @@ public class GenericBolt extends BaseRichBolt {
         this(name, autoAck, autoAnchor, null);
     }
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context,
                         OutputCollector collector) {
         this.collector = collector;
 
     }
 
+    @Override
     public void execute(Tuple input) {
         LOG.debug("[" + this.name + "] Received message: " + input);
 
@@ -94,10 +96,12 @@ public class GenericBolt extends BaseRichBolt {
 
     }
 
+    @Override
     public void cleanup() {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         if (this.declaredFields != null) {
             declarer.declare(this.declaredFields);

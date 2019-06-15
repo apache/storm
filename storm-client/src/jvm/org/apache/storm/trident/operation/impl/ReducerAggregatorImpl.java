@@ -27,24 +27,29 @@ public class ReducerAggregatorImpl implements Aggregator<Result> {
         _agg = agg;
     }
 
+    @Override
     public void prepare(Map<String, Object> conf, TridentOperationContext context) {
 
     }
 
+    @Override
     public Result init(Object batchId, TridentCollector collector) {
         Result ret = new Result();
         ret.obj = _agg.init();
         return ret;
     }
 
+    @Override
     public void aggregate(Result val, TridentTuple tuple, TridentCollector collector) {
         val.obj = _agg.reduce(val.obj, tuple);
     }
 
+    @Override
     public void complete(Result val, TridentCollector collector) {
         collector.emit(new Values(val.obj));
     }
 
+    @Override
     public void cleanup() {
 
     }

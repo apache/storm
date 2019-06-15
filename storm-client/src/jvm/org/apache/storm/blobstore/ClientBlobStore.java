@@ -171,6 +171,7 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
      */
     public abstract void createStateInZookeeper(String key);
 
+    @Override
     public abstract void close();
 
     /**

@@ -64,6 +64,7 @@ public class HdfsBlobStoreImplTest {
             super(path, conf, hconf);
         }
 
+        @Override
         protected Path getKeyDir(String key) {
             return new Path(new Path(blobDir, KEYDIR), key);
         }

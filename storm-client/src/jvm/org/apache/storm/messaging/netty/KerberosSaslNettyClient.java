@@ -107,6 +107,7 @@ public class KerberosSaslNettyClient {
             final CallbackHandler fch = ch;
             LOG.debug("Kerberos Client with principal: {}, host: {}", fPrincipalName, fHost);
             saslClient = Subject.doAs(subject, new PrivilegedExceptionAction<SaslClient>() {
+                @Override
                 public SaslClient run() {
                     try {
                         Map<String, String> props = new TreeMap<String, String>();
@@ -146,6 +147,7 @@ public class KerberosSaslNettyClient {
         try {
             final SaslMessageToken fSaslTokenMessage = saslTokenMessage;
             byte[] retval = Subject.doAs(subject, new PrivilegedExceptionAction<byte[]>() {
+                @Override
                 public byte[] run() {
                     try {
                         byte[] retval = saslClient.evaluateChallenge(fSaslTokenMessage
@@ -176,6 +178,7 @@ public class KerberosSaslNettyClient {
          * @param callbacks objects that indicate what credential information the server's SaslServer requires from the client.
          * @throws UnsupportedCallbackException
          */
+        @Override
         public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
             for (Callback callback : callbacks) {
                 LOG.info("Kerberos Client Callback Handler got callback: {}", callback.getClass());

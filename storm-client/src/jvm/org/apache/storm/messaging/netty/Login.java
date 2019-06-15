@@ -111,6 +111,7 @@ public class Login {
         // you can decrease the interval of expiration of tickets (for example, to 3 minutes) by running :
         //  "modprinc -maxlife 3mins <principal>" in kadmin.
         t = new Thread(new Runnable() {
+            @Override
             public void run() {
                 LOG.info("TGT refresh thread started.");
                 while (true) {  // renewal thread's main loop. if it exits from here, thread will exit.

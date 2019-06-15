@@ -39,6 +39,7 @@ public interface RecordTranslator<K, V> extends Serializable, Func<ConsumerRecor
      *     Return {@code null} to discard an invalid {@link ConsumerRecord}
      *     if {@link Builder#setEmitNullTuples(boolean)} is set to {@code false}.
      */
+    @Override
     List<Object> apply(ConsumerRecord<K,V> record);
     
     /**

@@ -74,6 +74,7 @@ public class Helper {
         Map<String, Object> clusterConf = Utils.readStormConfig();
         final Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
         Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
             public void run() {
                 try {
                     System.out.println("Killing...");

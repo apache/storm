@@ -64,6 +64,7 @@ public class Load {
         return connectionLoad > boltLoad ? connectionLoad : boltLoad;
     }
 
+    @Override
     public String toString() {
         return "[:load " + boltLoad + " " + connectionLoad + "]";
     }

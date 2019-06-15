@@ -30,16 +30,19 @@ public class NonRichBoltTracker implements IBolt {
         _trackId = id;
     }
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         _delegate.prepare(topoConf, context, collector);
     }
 
+    @Override
     public void execute(Tuple input) {
         _delegate.execute(input);
         Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
         ((AtomicInteger) stats.get("processed")).incrementAndGet();
     }
 
+    @Override
     public void cleanup() {
         _delegate.cleanup();
     }

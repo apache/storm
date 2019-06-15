@@ -108,6 +108,7 @@ public class SaslNettyClient {
          * @param callbacks objects that indicate what credential information the server's SaslServer requires from the client.
          * @throws UnsupportedCallbackException
          */
+        @Override
         public void handle(Callback[] callbacks)
             throws UnsupportedCallbackException {
             NameCallback nc = null;

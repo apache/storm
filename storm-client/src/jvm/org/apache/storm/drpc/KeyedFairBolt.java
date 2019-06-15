@@ -39,7 +39,7 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
         this(new BasicBoltExecutor(delegate));
     }
 
-
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         if (_delegate instanceof FinishedCallback) {
             _callback = (FinishedCallback) _delegate;
@@ -47,6 +47,7 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
         _delegate.prepare(topoConf, context, collector);
         _rrQueue = new KeyedRoundRobinQueue<Tuple>();
         _executor = new Thread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     while (true) {
@@ -61,20 +62,24 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
         _executor.start();
     }
 
+    @Override
     public void execute(Tuple input) {
         Object key = input.getValue(0);
         _rrQueue.add(key, input);
     }
 
+    @Override
     public void cleanup() {
         _executor.interrupt();
         _delegate.cleanup();
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         _delegate.declareOutputFields(declarer);
     }
 
+    @Override
     public void finishedId(Object id) {
         if (_callback != null) {
             _callback.finishedId(id);

@@ -32,11 +32,13 @@ public class TestAggregatesCounter extends BaseRichBolt {
     Map<String, Integer> _counts;
     OutputCollector _collector;
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         _collector = collector;
         _counts = new HashMap<String, Integer>();
     }
 
+    @Override
     public void execute(Tuple input) {
         String word = (String) input.getValues().get(0);
         int count = (Integer) input.getValues().get(1);
@@ -49,10 +51,12 @@ public class TestAggregatesCounter extends BaseRichBolt {
         _collector.ack(input);
     }
 
+    @Override
     public void cleanup() {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("agg-global"));
     }

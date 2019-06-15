@@ -205,6 +205,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         try {
             Subject.doAs(subject,
                          new PrivilegedExceptionAction<Void>() {
+                             @Override
                              public Void run() {
                                  try {
                                      LOG.debug("do as:" + principal);

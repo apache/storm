@@ -126,6 +126,7 @@ public class ReturnResults extends BaseRichBolt {
         }
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
     }
 }

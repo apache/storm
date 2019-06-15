@@ -62,6 +62,7 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         }
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
         this.source = context.getThisTaskId();
@@ -69,6 +70,7 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         myCount = totalCount / taskCount;
     }
 
+    @Override
     public void close() {
 
     }
@@ -101,6 +103,7 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         return false;
     }
 
+    @Override
     public void nextTuple() {
         if (eventId < myCount) {
             eventId++;
@@ -108,6 +111,7 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         }
     }
 
+    @Override
     public void ack(Object msgId) {
         synchronized (acked) {
             int curr = get(acked, uid, 0);
@@ -115,6 +119,7 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         }
     }
 
+    @Override
     public void fail(Object msgId) {
         synchronized (failed) {
             int curr = get(failed, uid, 0);
@@ -122,6 +127,7 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         }
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("source", "eventId"));
     }

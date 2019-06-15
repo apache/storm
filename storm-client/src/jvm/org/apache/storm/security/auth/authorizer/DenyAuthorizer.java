@@ -26,6 +26,7 @@ public class DenyAuthorizer implements IAuthorizer {
      *
      * @param conf Storm configuration
      */
+    @Override
     public void prepare(Map<String, Object> conf) {
     }
 
@@ -37,6 +38,7 @@ public class DenyAuthorizer implements IAuthorizer {
      * @param topoConf  configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
+    @Override
     public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
         return false;
     }

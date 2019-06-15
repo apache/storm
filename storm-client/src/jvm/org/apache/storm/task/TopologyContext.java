@@ -316,6 +316,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @return The IMetric argument unchanged.
      */
     @Deprecated
+    @Override
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         if (_openOrPrepareWasCalled.get()) {
             throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden " +
@@ -382,6 +383,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * Convenience method for registering ReducedMetric.
      */
     @Deprecated
+    @Override
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
         return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
@@ -390,6 +392,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * Convenience method for registering CombinedMetric.
      */
     @Deprecated
+    @Override
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }

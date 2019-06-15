@@ -31,6 +31,7 @@ public class TestWordCounter extends BaseBasicBolt {
 
     Map<String, Integer> _counts;
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
         _counts = new HashMap<String, Integer>();
     }
@@ -39,6 +40,7 @@ public class TestWordCounter extends BaseBasicBolt {
         return (String) t.getValues().get(idx);
     }
 
+    @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         String word = getTupleValue(input, 0);
         int count = 0;
@@ -50,10 +52,12 @@ public class TestWordCounter extends BaseBasicBolt {
         collector.emit(tuple(word, count));
     }
 
+    @Override
     public void cleanup() {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("word", "count"));
     }

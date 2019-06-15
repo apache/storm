@@ -100,16 +100,19 @@ public class HiveTopology {
         private int count = 0;
         private long total = 0L;
 
+        @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
             declarer.declare(new Fields("id","name","phone","street","city","state"));
         }
 
+        @Override
         public void open(Map<String, Object> config, TopologyContext context,
                          SpoutOutputCollector collector) {
             this.collector = collector;
             this.pending = new ConcurrentHashMap<UUID, Values>();
         }
 
+        @Override
         public void nextTuple() {
             String[] user = sentences[index].split(",");
             Values values = new Values(Integer.parseInt(user[0]),user[1],user[2],user[3],user[4],user[5]);
@@ -129,10 +132,12 @@ public class HiveTopology {
             Thread.yield();
         }
 
+        @Override
         public void ack(Object msgId) {
             this.pending.remove(msgId);
         }
 
+        @Override
         public void fail(Object msgId) {
             System.out.println("**** RESENDING FAILED TUPLE");
             this.collector.emit(this.pending.get(msgId), msgId);

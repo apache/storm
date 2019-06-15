@@ -22,6 +22,7 @@ public class KafkaSpoutTopologyMainWildcardTopicsLocal extends KafkaSpoutTopolog
         new KafkaSpoutTopologyMainWildcardTopicsLocal().runExample();
     } 
     
+    @Override
     protected KafkaSpoutTopologyMainNamedTopics getTopology() {
         return new KafkaSpoutTopologyMainWildcardTopics();
     }

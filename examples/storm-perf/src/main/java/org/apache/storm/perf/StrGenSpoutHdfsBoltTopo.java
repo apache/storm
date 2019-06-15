@@ -153,6 +153,7 @@ public class StrGenSpoutHdfsBoltTopo {
             return this;
         }
 
+        @Override
         public byte[] format(Tuple tuple) {
             return (tuple.getValueByField(fieldName).toString() + this.lineDelimiter).getBytes();
         }

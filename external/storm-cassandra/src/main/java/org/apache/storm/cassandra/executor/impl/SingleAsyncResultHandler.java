@@ -40,6 +40,7 @@ public class SingleAsyncResultHandler implements AsyncResultHandler<Tuple> {
      *
      * The default method does no-operation.
      */
+    @Override
     public void failure(Throwable t, Tuple input) {
         completed.offer(new ExecutionResultCollector.FailedCollector(input, t));
     }
@@ -49,6 +50,7 @@ public class SingleAsyncResultHandler implements AsyncResultHandler<Tuple> {
      *
      * The default method does no-operation.
      */
+    @Override
     public void success(Tuple input) {
         completed.offer(new ExecutionResultCollector.SucceedCollector(input));
     }

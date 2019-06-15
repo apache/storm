@@ -20,6 +20,7 @@ public class CountShellMetric extends CountMetric implements IShellMetric {
      *  if value is null, it will call incr()
      *  if value is long, it will call incrBy((long)params)
      * */
+    @Override
     public void updateMetricFromRPC(Object value) {
         if (value == null) {
             incr();

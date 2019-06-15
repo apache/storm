@@ -245,6 +245,7 @@ public class LatencyStatAndMetric implements IMetric {
     }
 
     private class Fresher extends TimerTask {
+        @Override
         public void run() {
             rotateSched(System.currentTimeMillis());
         }

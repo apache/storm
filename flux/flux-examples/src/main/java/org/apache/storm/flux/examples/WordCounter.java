@@ -43,6 +43,7 @@ public class WordCounter extends BaseBasicBolt {
 
 
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 
@@ -50,14 +51,17 @@ public class WordCounter extends BaseBasicBolt {
      * Just output the word value with a count of 1.
      * The HBaseBolt will handle incrementing the counter.
      */
+    @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         collector.emit(tuple(input.getValues().get(0), 1));
     }
 
+    @Override
     public void cleanup() {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("word", "count"));
     }

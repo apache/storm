@@ -19,6 +19,7 @@ public class AssignableShellMetric extends AssignableMetric implements IShellMet
         super(value);
     }
 
+    @Override
     public void updateMetricFromRPC(Object value) {
         setValue(value);
     }

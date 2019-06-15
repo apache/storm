@@ -230,6 +230,7 @@ public class HdfsSpout extends BaseRichSpout {
         return collector;
     }
 
+    @Override
     public void nextTuple() {
         LOG.trace("Next Tuple {}", spoutId);
         // 1) First re-emit any previously failed tuples (from retryList)
@@ -387,6 +388,7 @@ public class HdfsSpout extends BaseRichSpout {
     }
 
     @SuppressWarnings("deprecation")
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         LOG.info("Opening HDFS Spout");
         this.conf = conf;

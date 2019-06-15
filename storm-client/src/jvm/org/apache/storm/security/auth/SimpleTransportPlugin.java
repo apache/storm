@@ -127,6 +127,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             this.wrapped = wrapped;
         }
 
+        @Override
         public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context 
             ReqContext req_context = ReqContext.context();
@@ -152,10 +153,12 @@ public class SimpleTransportPlugin implements ITransportPlugin {
                 if (user != null) {
                     HashSet<Principal> principals = new HashSet<>();
                     principals.add(new Principal() {
+                        @Override
                         public String getName() {
                             return user;
                         }
 
+                        @Override
                         public String toString() {
                             return user;
                         }

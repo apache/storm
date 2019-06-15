@@ -124,16 +124,19 @@ public class SequenceFileTopology {
         private int count = 0;
         private long total = 0L;
 
+        @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
             declarer.declare(new Fields("sentence", "timestamp"));
         }
 
+        @Override
         public void open(Map<String, Object> config, TopologyContext context,
                          SpoutOutputCollector collector) {
             this.collector = collector;
             this.pending = new ConcurrentHashMap<UUID, Values>();
         }
 
+        @Override
         public void nextTuple() {
             Values values = new Values(sentences[index], System.currentTimeMillis());
             UUID msgId = UUID.randomUUID();
@@ -152,11 +155,13 @@ public class SequenceFileTopology {
             Thread.yield();
         }
 
+        @Override
         public void ack(Object msgId) {
             //            System.out.println("ACK");
             this.pending.remove(msgId);
         }
 
+        @Override
         public void fail(Object msgId) {
             System.out.println("**** RESENDING FAILED TUPLE");
             this.collector.emit(this.pending.get(msgId), msgId);
@@ -169,16 +174,19 @@ public class SequenceFileTopology {
         private HashMap<String, Long> counts = null;
         private OutputCollector collector;
 
+        @Override
         public void prepare(Map<String, Object> config, TopologyContext context, OutputCollector collector) {
             this.counts = new HashMap<String, Long>();
             this.collector = collector;
         }
 
+        @Override
         public void execute(Tuple tuple) {
             collector.ack(tuple);
         }
 
 
+        @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
             // this bolt does not emit anything
         }

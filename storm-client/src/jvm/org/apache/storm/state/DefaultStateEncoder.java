@@ -41,19 +41,23 @@ public class DefaultStateEncoder<K, V> implements StateEncoder<K, V, byte[], byt
         return valueSerializer;
     }
 
+    @Override
     public byte[] encodeKey(K key) {
         return keySerializer.serialize(key);
     }
 
+    @Override
     public byte[] encodeValue(V value) {
         return internalValueSerializer.serialize(
             Optional.of(valueSerializer.serialize(value)));
     }
 
+    @Override
     public K decodeKey(byte[] encodedKey) {
         return keySerializer.deserialize(encodedKey);
     }
 
+    @Override
     public V decodeValue(byte[] encodedValue) {
         Optional<byte[]> internalValue = internalValueSerializer.deserialize(encodedValue);
         if (internalValue.isPresent()) {

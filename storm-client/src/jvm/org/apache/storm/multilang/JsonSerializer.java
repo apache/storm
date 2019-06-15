@@ -39,6 +39,7 @@ public class JsonSerializer implements ISerializer {
     private transient BufferedWriter processIn;
     private transient BufferedReader processOut;
 
+    @Override
     public void initialize(OutputStream processIn, InputStream processOut) {
         try {
             this.processIn = new BufferedWriter(new OutputStreamWriter(processIn, DEFAULT_CHARSET));
@@ -48,6 +49,7 @@ public class JsonSerializer implements ISerializer {
         }
     }
 
+    @Override
     public Number connect(Map<String, Object> conf, TopologyContext context)
         throws IOException, NoOutputException {
         JSONObject setupInfo = new JSONObject();
@@ -60,6 +62,7 @@ public class JsonSerializer implements ISerializer {
         return pid;
     }
 
+    @Override
     public void writeBoltMsg(BoltMsg boltMsg) throws IOException {
         JSONObject obj = new JSONObject();
         obj.put("id", boltMsg.getId());
@@ -70,6 +73,7 @@ public class JsonSerializer implements ISerializer {
         writeMessage(obj);
     }
 
+    @Override
     public void writeSpoutMsg(SpoutMsg msg) throws IOException {
         JSONObject obj = new JSONObject();
         obj.put("command", msg.getCommand());
@@ -77,6 +81,7 @@ public class JsonSerializer implements ISerializer {
         writeMessage(obj);
     }
 
+    @Override
     public void writeTaskIds(List<Integer> taskIds) throws IOException {
         writeMessage(taskIds);
     }
@@ -91,6 +96,7 @@ public class JsonSerializer implements ISerializer {
         processIn.flush();
     }
 
+    @Override
     public ShellMsg readShellMsg() throws IOException, NoOutputException {
         JSONObject msg = (JSONObject) readMessage();
         ShellMsg shellMsg = new ShellMsg();

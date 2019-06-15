@@ -139,6 +139,7 @@ public class ClientSupervisorUtils {
         }
         if (logPrefix != null || exitCodeCallback != null) {
             Utils.asyncLoop(new Callable<Long>() {
+                @Override
                 public Long call() {
                     if (logPrefix != null) {
                         Utils.readAndLogStream(logPrefix,
