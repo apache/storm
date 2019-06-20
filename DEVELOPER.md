@@ -147,7 +147,7 @@ Documentation contributions are very welcome!
 
 You can contribute documentation by pull request, using the same process as code contribution.
 Release specific documentation can be found in `docs/` in this repository.
-The Storm website source repository can be found [here](https://github.com/apache/storm-site). Please refer to the README in that repository for how to build and test the website.
+Documentation not specific to a release, e.g. announcements, is found in the [storm-site](https://github.com/apache/storm-site) repository. If you'd like to build or test the website, refer to the README.md in the storm-site repository.
 
 <a name="pull-requests"></a>
 
