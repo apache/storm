@@ -23,6 +23,10 @@ env:
 dist: trusty
 sudo: required
 
+before_cache:
+# Never upload Storm artifacts to the build cache, ensuring a clean slate every time
+  - rm -rf $HOME/.m2/repository/org/apache/storm
+
 language: java
 jdk:
   - oraclejdk8
