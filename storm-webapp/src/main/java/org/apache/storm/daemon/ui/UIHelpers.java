@@ -1119,6 +1119,8 @@ public class UIHelpers {
         result.put("configuration", topologyConf);
         result.put("visualizationTable", new ArrayList());
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
+        result.put("bugtracker-url", config.get(DaemonConfig.UI_PROJECT_BUGTRACKER_URL));
+        result.put("central-log-url", config.get(DaemonConfig.UI_CENTRAL_LOGGING_URL));
         return result;
     }
 
