@@ -22,6 +22,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -229,9 +230,11 @@ public class LogviewerResource {
     @Path("/dumps/{topo-id}/{host-port}/{filename}")
     public Response downloadDumpFile(@PathParam("topo-id") String topologyId, @PathParam("host-port") String hostPort,
                                      @PathParam("filename") String fileName, @Context HttpServletRequest request) throws IOException {
+
         String user = httpCredsHandler.getUserName(request);
         try {
-            return profileHandler.downloadDumpFile(topologyId, hostPort, fileName, user);
+            String host = InetAddress.getLocalHost().getCanonicalHostName();
+            return profileHandler.downloadDumpFile(host, topologyId, hostPort, fileName, user);
         } catch (IOException e) {
             numDownloadDumpExceptions.mark();
             throw e;
@@ -245,12 +248,12 @@ public class LogviewerResource {
     @Path("/download")
     public Response downloadLogFile(@Context HttpServletRequest request) throws IOException {
         meterDownloadLogFileHttpRequests.mark();
-
         String user = httpCredsHandler.getUserName(request);
         String file = request.getParameter("file");
         String decodedFileName = Utils.urlDecodeUtf8(file);
         try {
-            return logDownloadHandler.downloadLogFile(decodedFileName, user);
+            String host = InetAddress.getLocalHost().getCanonicalHostName();
+            return logDownloadHandler.downloadLogFile(host, decodedFileName, user);
         } catch (IOException e) {
             numDownloadLogExceptions.mark();
             throw e;
@@ -264,12 +267,12 @@ public class LogviewerResource {
     @Path("/daemondownload")
     public Response downloadDaemonLogFile(@Context HttpServletRequest request) throws IOException {
         meterDownloadLogDaemonFileHttpRequests.mark();
-
         String user = httpCredsHandler.getUserName(request);
         String file = request.getParameter("file");
         String decodedFileName = Utils.urlDecodeUtf8(file);
         try {
-            return logDownloadHandler.downloadDaemonLogFile(decodedFileName, user);
+            String host = InetAddress.getLocalHost().getCanonicalHostName();
+            return logDownloadHandler.downloadDaemonLogFile(host, decodedFileName, user);
         } catch (IOException e) {
             numDownloadDaemonLogExceptions.mark();
             throw e;

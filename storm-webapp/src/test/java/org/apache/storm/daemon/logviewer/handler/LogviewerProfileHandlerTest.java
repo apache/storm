@@ -98,8 +98,8 @@ public class LogviewerProfileHandlerTest {
 
             LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response topoAResponse = handler.downloadDumpFile("topoA", "localhost:1111", "worker.jfr", "user");
-            Response topoBResponse = handler.downloadDumpFile("topoB", "localhost:1111", "worker.txt", "user");
+            Response topoAResponse = handler.downloadDumpFile("host","topoA", "localhost:1111", "worker.jfr", "user");
+            Response topoBResponse = handler.downloadDumpFile("host","topoB", "localhost:1111", "worker.txt", "user");
 
             Utils.forceDelete(rootPath.toString());
 
@@ -116,7 +116,7 @@ public class LogviewerProfileHandlerTest {
 
             LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response topoAResponse = handler.downloadDumpFile("../../", "localhost:logs", "daemon-dump.bin", "user");
+            Response topoAResponse = handler.downloadDumpFile("host","../../", "localhost:logs", "daemon-dump.bin", "user");
 
             Utils.forceDelete(rootPath.toString());
 
@@ -130,7 +130,7 @@ public class LogviewerProfileHandlerTest {
 
             LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response topoAResponse = handler.downloadDumpFile("../", "localhost:../logs", "daemon-dump.bin", "user");
+            Response topoAResponse = handler.downloadDumpFile("host","../", "localhost:../logs", "daemon-dump.bin", "user");
 
             Utils.forceDelete(rootPath.toString());
 
