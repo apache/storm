@@ -16,17 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.opentsdb.trident;
 
+import java.util.List;
+import java.util.Map;
+
 import org.apache.storm.opentsdb.bolt.ITupleOpenTsdbDatapointMapper;
-import org.apache.storm.opentsdb.bolt.TupleOpenTsdbDatapointMapper;
 import org.apache.storm.opentsdb.client.OpenTsdbClient;
 import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.state.StateFactory;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Trident {@link StateFactory} implementation for OpenTSDB.
@@ -36,7 +36,8 @@ public class OpenTsdbStateFactory implements StateFactory {
     private OpenTsdbClient.Builder builder;
     private final List<? extends ITupleOpenTsdbDatapointMapper> tridentTupleOpenTsdbDatapointMappers;
 
-    public OpenTsdbStateFactory(OpenTsdbClient.Builder builder, List<? extends ITupleOpenTsdbDatapointMapper> tridentTupleOpenTsdbDatapointMappers) {
+    public OpenTsdbStateFactory(OpenTsdbClient.Builder builder,
+            List<? extends ITupleOpenTsdbDatapointMapper> tridentTupleOpenTsdbDatapointMappers) {
         this.builder = builder;
         this.tridentTupleOpenTsdbDatapointMappers = tridentTupleOpenTsdbDatapointMappers;
     }

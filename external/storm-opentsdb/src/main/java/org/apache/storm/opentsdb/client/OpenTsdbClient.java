@@ -16,9 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.opentsdb.client;
 
 import com.google.common.base.Preconditions;
+
+import java.io.Serializable;
+import java.util.Collection;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.client.ClientConfig;
@@ -26,13 +35,6 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.RequestEntityProcessing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import java.io.Serializable;
-import java.util.Collection;
 
 /**
  * Client to connect to OpenTsdb TSD for storing timeseries datapoints.
@@ -84,11 +86,11 @@ public class OpenTsdbClient {
         client = ClientBuilder.newClient(clientConfig);
 
         target = client.target(urlString).path(PUT_PATH);
-        if(sync) {
+        if (sync) {
             // need to add an empty string else it is nto added as query param.
             target = target.queryParam("sync", "").queryParam("sync_timeout", syncTimeout);
         }
-        if(responseType != ResponseType.None) {
+        if (responseType != ResponseType.None) {
             // need to add an empty string else it is nto added as query param.
             target = target.queryParam(responseType.value, "");
         }

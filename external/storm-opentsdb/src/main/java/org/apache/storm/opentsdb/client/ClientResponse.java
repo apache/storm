@@ -16,12 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.storm.opentsdb.client;
 
-import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
+package org.apache.storm.opentsdb.client;
 
 import java.io.Serializable;
 import java.util.List;
+
+import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 
 /**
  * This class represents the response from OpenTsdb for a request sent.
@@ -57,13 +58,21 @@ public interface ClientResponse extends Serializable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Summary)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Summary)) {
+                return false;
+            }
 
             Summary summary = (Summary) o;
 
-            if (failed != summary.failed) return false;
-            if (success != summary.success) return false;
+            if (failed != summary.failed) {
+                return false;
+            }
+            if (success != summary.success) {
+                return false;
+            }
             return timeouts == summary.timeouts;
 
         }
@@ -78,11 +87,11 @@ public interface ClientResponse extends Serializable {
 
         @Override
         public String toString() {
-            return "Summary{" +
-                    "failed=" + failed +
-                    ", success=" + success +
-                    ", timeouts=" + timeouts +
-                    '}';
+            return "Summary{"
+                    + "failed=" + failed
+                    + ", success=" + success
+                    + ", timeouts=" + timeouts
+                    + '}';
         }
     }
 
@@ -99,9 +108,15 @@ public interface ClientResponse extends Serializable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Details)) return false;
-            if (!super.equals(o)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Details)) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
 
             Details details = (Details) o;
 
@@ -122,9 +137,10 @@ public interface ClientResponse extends Serializable {
 
         @Override
         public String toString() {
-            return "Details{" +
-                    "errors=" + errors +
-                    super.toString()+'}';
+            return "Details{"
+                    + "errors=" + errors
+                    + super.toString()
+                    + '}';
         }
 
         public static class Error implements Serializable {
@@ -149,12 +165,18 @@ public interface ClientResponse extends Serializable {
 
             @Override
             public boolean equals(Object o) {
-                if (this == o) return true;
-                if (!(o instanceof Error)) return false;
+                if (this == o) {
+                    return true;
+                }
+                if (!(o instanceof Error)) {
+                    return false;
+                }
 
                 Error error1 = (Error) o;
 
-                if (!error.equals(error1.error)) return false;
+                if (!error.equals(error1.error)) {
+                    return false;
+                }
                 return datapoint.equals(error1.datapoint);
 
             }
@@ -168,10 +190,10 @@ public interface ClientResponse extends Serializable {
 
             @Override
             public String toString() {
-                return "Error{" +
-                        "error='" + error + '\'' +
-                        ", datapoint=" + datapoint +
-                        '}';
+                return "Error{"
+                        + "error='" + error + '\''
+                        + ", datapoint=" + datapoint
+                        + '}';
             }
         }
     }
