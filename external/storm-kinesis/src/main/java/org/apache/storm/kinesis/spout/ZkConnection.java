@@ -18,31 +18,33 @@
 
 package org.apache.storm.kinesis.spout;
 
+import java.nio.charset.Charset;
+import java.util.Map;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.zookeeper.CreateMode;
 import org.json.simple.JSONValue;
 
-import java.nio.charset.Charset;
-import java.util.Map;
-
-class ZKConnection {
+class ZkConnection {
 
     private final ZkInfo zkInfo;
     private CuratorFramework curatorFramework;
 
-    ZKConnection (ZkInfo zkInfo) {
+    ZkConnection(ZkInfo zkInfo) {
         this.zkInfo = zkInfo;
     }
 
-    void initialize () {
-        curatorFramework = CuratorFrameworkFactory.newClient(zkInfo.getZkUrl(), zkInfo.getSessionTimeoutMs(), zkInfo.getConnectionTimeoutMs(), new
-                RetryNTimes(zkInfo.getRetryAttempts(), zkInfo.getRetryIntervalMs()));
+    void initialize() {
+        curatorFramework = CuratorFrameworkFactory.newClient(zkInfo.getZkUrl(),
+                zkInfo.getSessionTimeoutMs(),
+                zkInfo.getConnectionTimeoutMs(),
+                new RetryNTimes(zkInfo.getRetryAttempts(), zkInfo.getRetryIntervalMs()));
         curatorFramework.start();
     }
 
-    void commitState (String stream, String shardId, Map<Object, Object> state) {
+    void commitState(String stream, String shardId, Map<Object, Object> state) {
         byte[] bytes = JSONValue.toJSONString(state).getBytes(Charset.forName("UTF-8"));
         try {
             String path = getZkPath(stream, shardId);
@@ -59,7 +61,7 @@ class ZKConnection {
         }
     }
 
-    Map<Object, Object> readState (String stream, String shardId) {
+    Map<Object, Object> readState(String stream, String shardId) {
         try {
             String path = getZkPath(stream, shardId);
             Map<Object, Object> state = null;
@@ -76,11 +78,11 @@ class ZKConnection {
         }
     }
 
-    void shutdown () {
+    void shutdown() {
         curatorFramework.close();
     }
 
-    private String getZkPath (String stream, String shardId) {
+    private String getZkPath(String stream, String shardId) {
         String path = "";
         if (!zkInfo.getZkNode().startsWith("/")) {
             path += "/";

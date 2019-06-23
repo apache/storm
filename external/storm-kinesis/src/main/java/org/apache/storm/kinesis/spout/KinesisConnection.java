@@ -28,28 +28,30 @@ import com.amazonaws.services.kinesis.model.GetShardIteratorRequest;
 import com.amazonaws.services.kinesis.model.GetShardIteratorResult;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class KinesisConnection {
     private static final Logger LOG = LoggerFactory.getLogger(KinesisRecordsManager.class);
     private final KinesisConnectionInfo kinesisConnectionInfo;
     private AmazonKinesisClient kinesisClient;
 
-    KinesisConnection (KinesisConnectionInfo kinesisConnectionInfo) {
+    KinesisConnection(KinesisConnectionInfo kinesisConnectionInfo) {
         this.kinesisConnectionInfo = kinesisConnectionInfo;
     }
 
-    void initialize () {
-        kinesisClient = new AmazonKinesisClient(kinesisConnectionInfo.getCredentialsProvider(), kinesisConnectionInfo.getClientConfiguration());
+    void initialize() {
+        kinesisClient = new AmazonKinesisClient(kinesisConnectionInfo.getCredentialsProvider(),
+                kinesisConnectionInfo.getClientConfiguration());
         kinesisClient.setRegion(Region.getRegion(kinesisConnectionInfo.getRegion()));
     }
 
-    List<Shard> getShardsForStream (String stream) {
+    List<Shard> getShardsForStream(String stream) {
         DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest();
         describeStreamRequest.setStreamName(stream);
         List<Shard> shards = new ArrayList<>();
@@ -63,19 +65,24 @@ class KinesisConnection {
             } else {
                 exclusiveStartShardId = null;
             }
-        } while ( exclusiveStartShardId != null );
+        } while (exclusiveStartShardId != null);
         LOG.info("Number of shards for stream " + stream + " are " + shards.size());
         return shards;
     }
 
-    String getShardIterator (String stream, String shardId, ShardIteratorType shardIteratorType, String sequenceNumber, Date timestamp) {
+    String getShardIterator(String stream,
+            String shardId,
+            ShardIteratorType shardIteratorType,
+            String sequenceNumber,
+            Date timestamp) {
         String shardIterator = "";
         try {
             GetShardIteratorRequest getShardIteratorRequest = new GetShardIteratorRequest();
             getShardIteratorRequest.setStreamName(stream);
             getShardIteratorRequest.setShardId(shardId);
             getShardIteratorRequest.setShardIteratorType(shardIteratorType);
-            if (shardIteratorType.equals(ShardIteratorType.AFTER_SEQUENCE_NUMBER) || shardIteratorType.equals(ShardIteratorType.AT_SEQUENCE_NUMBER)) {
+            if (shardIteratorType.equals(ShardIteratorType.AFTER_SEQUENCE_NUMBER)
+                    || shardIteratorType.equals(ShardIteratorType.AT_SEQUENCE_NUMBER)) {
                 getShardIteratorRequest.setStartingSequenceNumber(sequenceNumber);
             } else if (shardIteratorType.equals(ShardIteratorType.AT_TIMESTAMP)) {
                 getShardIteratorRequest.setTimestamp(timestamp);
@@ -85,15 +92,21 @@ class KinesisConnection {
                 shardIterator = getShardIteratorResult.getShardIterator();
             }
         } catch (Exception e) {
-            LOG.warn("Exception occured while getting shardIterator for shard " + shardId + " shardIteratorType " + shardIteratorType + " sequence number " +
-                    sequenceNumber + " timestamp " + timestamp, e);
+            LOG.warn("Exception occured while getting shardIterator for shard " + shardId
+                    + " shardIteratorType " + shardIteratorType
+                    + " sequence number " + sequenceNumber
+                    + " timestamp " + timestamp,
+                    e);
         }
-        LOG.warn("Returning shardIterator " + shardIterator + " for shardId " + shardId + " shardIteratorType " + shardIteratorType + " sequenceNumber " +
-                sequenceNumber + " timestamp" + timestamp);
+        LOG.warn("Returning shardIterator " + shardIterator
+                + " for shardId " + shardId
+                + " shardIteratorType " + shardIteratorType
+                + " sequenceNumber " + sequenceNumber
+                + " timestamp" + timestamp);
         return shardIterator;
     }
 
-    GetRecordsResult fetchRecords (String shardIterator) {
+    GetRecordsResult fetchRecords(String shardIterator) {
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest();
         getRecordsRequest.setShardIterator(shardIterator);
         getRecordsRequest.setLimit(kinesisConnectionInfo.getRecordsLimit());
@@ -101,7 +114,7 @@ class KinesisConnection {
         return getRecordsResult;
     }
 
-    void shutdown () {
+    void shutdown() {
         kinesisClient.shutdown();
     }
 

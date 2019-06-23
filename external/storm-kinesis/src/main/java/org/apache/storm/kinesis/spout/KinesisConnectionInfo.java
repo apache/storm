@@ -24,12 +24,13 @@ import com.amazonaws.regions.Regions;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
+
+import org.objenesis.strategy.StdInstantiatorStrategy;
 
 public class KinesisConnectionInfo implements Serializable {
     private final byte[] serializedKinesisCredsProvider;
@@ -41,13 +42,16 @@ public class KinesisConnectionInfo implements Serializable {
     private transient ClientConfiguration clientConfiguration;
 
     /**
-     *
+     * Create a new Kinesis connection info.
      * @param credentialsProvider implementation to provide credentials to connect to kinesis
      * @param clientConfiguration client configuration to pass to kinesis client
      * @param region region to connect to
      * @param recordsLimit max records to be fetched in a getRecords request to kinesis
      */
-    public KinesisConnectionInfo (AWSCredentialsProvider credentialsProvider, ClientConfiguration clientConfiguration, Regions region, Integer recordsLimit) {
+    public KinesisConnectionInfo(AWSCredentialsProvider credentialsProvider,
+            ClientConfiguration clientConfiguration,
+            Regions region,
+            Integer recordsLimit) {
         if (recordsLimit == null || recordsLimit <= 0) {
             throw new IllegalArgumentException("recordsLimit has to be a positive integer");
         }
@@ -82,7 +86,7 @@ public class KinesisConnectionInfo implements Serializable {
         return region;
     }
 
-    private byte[] getKryoSerializedBytes (final Object obj) {
+    private byte[] getKryoSerializedBytes(final Object obj) {
         final Kryo kryo = new Kryo();
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         final Output output = new Output(os);
@@ -92,7 +96,7 @@ public class KinesisConnectionInfo implements Serializable {
         return os.toByteArray();
     }
 
-    private Object getKryoDeserializedObject (final byte[] ser) {
+    private Object getKryoDeserializedObject(final byte[] ser) {
         final Kryo kryo = new Kryo();
         final Input input = new Input(new ByteArrayInputStream(ser));
         kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
@@ -101,11 +105,11 @@ public class KinesisConnectionInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "KinesisConnectionInfo{" +
-                "serializedKinesisCredsProvider=" + Arrays.toString(serializedKinesisCredsProvider) +
-                ", serializedkinesisClientConfig=" + Arrays.toString(serializedkinesisClientConfig) +
-                ", region=" + region +
-                ", recordsLimit=" + recordsLimit +
-                '}';
+        return "KinesisConnectionInfo{"
+                + "serializedKinesisCredsProvider=" + Arrays.toString(serializedKinesisCredsProvider)
+                + ", serializedkinesisClientConfig=" + Arrays.toString(serializedkinesisClientConfig)
+                + ", region=" + region
+                + ", recordsLimit=" + recordsLimit
+                + '}';
     }
 }

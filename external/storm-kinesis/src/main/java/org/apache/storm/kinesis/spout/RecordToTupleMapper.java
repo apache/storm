@@ -15,24 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.kinesis.spout;
 
 import com.amazonaws.services.kinesis.model.Record;
-import org.apache.storm.tuple.Fields;
 
 import java.util.List;
 
+import org.apache.storm.tuple.Fields;
+
 public interface RecordToTupleMapper {
     /**
-     *
+     * Retrieve the names of fields.
      * @return names of fields in the emitted tuple
      */
-    Fields getOutputFields ();
+    Fields getOutputFields();
 
     /**
-     *
+     * Retrieve the tuple.
      * @param record kinesis record
      * @return storm tuple to be emitted for this record, null if no tuple should be emitted
      */
-    List<Object> getTuple (Record record);
+    List<Object> getTuple(Record record);
 }
