@@ -107,8 +107,9 @@ public class MqttSpout implements IRichSpout, Listener {
     }
 
     private void connectMqtt() throws Exception {
-        String clientId = this.topologyName + "-" + this.context.getThisComponentId() + "-" +
-                          this.context.getThisTaskId();
+        String clientId = this.topologyName + "-"
+                + this.context.getThisComponentId() + "-"
+                + this.context.getThisTaskId();
 
         MQTT client = MqttUtils.configureClient(this.options, clientId, this.keyStoreLoader);
         this.connection = client.callbackConnection();
@@ -171,7 +172,7 @@ public class MqttSpout implements IRichSpout, Listener {
      * has been fully processed. Typically, an implementation of this method will take that
      * message off the queue and prevent it from being replayed.
      *
-     * @param msgId
+     * @param msgId the id of the message to acknowledge
      */
     @Override
     public void ack(Object msgId) {
@@ -184,7 +185,7 @@ public class MqttSpout implements IRichSpout, Listener {
      * fully processed. Typically, an implementation of this method will put that
      * message back on the queue to be replayed at a later time.
      *
-     * @param msgId
+     * @param msgId the id of the failed message
      */
     @Override
     public void fail(Object msgId) {
@@ -256,7 +257,7 @@ public class MqttSpout implements IRichSpout, Listener {
     // ################# Subscribe Callback Implementation ######################
     private class DisconnectCallback implements Callback<Void> {
         @Override
-        public void onSuccess(Void aVoid) {
+        public void onSuccess(Void theVoid) {
             LOG.info("MQTT Disconnect successful.");
         }
 
