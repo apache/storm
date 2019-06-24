@@ -69,11 +69,11 @@ ConnectionProvider connectionProvider = new HikariCPConnectionProvider(hikariCon
 String tableName = "user_details";
 JdbcMapper simpleJdbcMapper = new SimpleJdbcMapper(tableName, connectionProvider);
 
-JdbcInsertBolt userPersistanceBolt = new JdbcInsertBolt(connectionProvider, simpleJdbcMapper)
+JdbcInsertBolt userPersistenceBolt = new JdbcInsertBolt(connectionProvider, simpleJdbcMapper)
                                     .withTableName("user")
                                     .withQueryTimeoutSecs(30);
                                     Or
-JdbcInsertBolt userPersistanceBolt = new JdbcInsertBolt(connectionProvider, simpleJdbcMapper)
+JdbcInsertBolt userPersistenceBolt = new JdbcInsertBolt(connectionProvider, simpleJdbcMapper)
                                     .withInsertQuery("insert into user values (?,?)")
                                     .withQueryTimeoutSecs(30);                                    
  ```
@@ -234,8 +234,8 @@ insert into user_department values (4, 4);
 select dept_name from department, user_department where department.dept_id = user_department.dept_id and user_department.user_id = ?;
 ```
 ### Execution
-Run the `org.apache.storm.jdbc.topology.UserPersistanceTopology` class using storm jar command. The class expects 5 args
-storm jar org.apache.storm.jdbc.topology.UserPersistanceTopology <dataSourceClassName> <dataSource.url> <user> <password> [topology name]
+Run the `org.apache.storm.jdbc.topology.UserPersistenceTopology` class using storm jar command. The class expects 5 args
+storm jar org.apache.storm.jdbc.topology.UserPersistenceTopology <dataSourceClassName> <dataSource.url> <user> <password> [topology name]
 
 To make it work with Mysql, you can add the following to the pom.xml
 
@@ -268,7 +268,7 @@ You can generate a single jar with dependencies using mvn assembly plugin. To us
 
 Mysql Example:
 ```
-storm jar ~/repo/incubator-storm/external/storm-jdbc/target/storm-jdbc-0.10.0-SNAPSHOT-jar-with-dependencies.jar org.apache.storm.jdbc.topology.UserPersistanceTopology  com.mysql.jdbc.jdbc2.optional.MysqlDataSource jdbc:mysql://localhost/test root password UserPersistenceTopology
+storm jar ~/repo/incubator-storm/external/storm-jdbc/target/storm-jdbc-0.10.0-SNAPSHOT-jar-with-dependencies.jar org.apache.storm.jdbc.topology.UserPersistenceTopology  com.mysql.jdbc.jdbc2.optional.MysqlDataSource jdbc:mysql://localhost/test root password UserPersistenceTopology
 ```
 
 You can execute a select query against the user table which should show newly inserted rows:
@@ -277,7 +277,7 @@ You can execute a select query against the user table which should show newly in
 select * from user;
 ```
 
-For trident you can view `org.apache.storm.jdbc.topology.UserPersistanceTridentTopology`.
+For trident you can view `org.apache.storm.jdbc.topology.UserPersistenceTridentTopology`.
 ## License
 
 Licensed to the Apache Software Foundation (ASF) under one

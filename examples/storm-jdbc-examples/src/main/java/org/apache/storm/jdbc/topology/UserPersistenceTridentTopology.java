@@ -15,11 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.jdbc.topology;
 
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
 import com.google.common.collect.Lists;
+
+import java.sql.Types;
+
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
 import org.apache.storm.jdbc.spout.UserSpout;
@@ -30,13 +33,12 @@ import org.apache.storm.jdbc.trident.state.JdbcUpdater;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
+import org.apache.storm.tuple.Fields;
 
-import java.sql.Types;
-
-public class UserPersistanceTridentTopology extends AbstractUserTopology {
+public class UserPersistenceTridentTopology extends AbstractUserTopology {
 
     public static void main(String[] args) throws Exception {
-        new UserPersistanceTridentTopology().execute(args);
+        new UserPersistenceTridentTopology().execute(args);
     }
 
     @Override
@@ -46,7 +48,8 @@ public class UserPersistanceTridentTopology extends AbstractUserTopology {
         JdbcState.Options options = new JdbcState.Options()
                 .withConnectionProvider(connectionProvider)
                 .withMapper(this.jdbcMapper)
-                .withJdbcLookupMapper(new SimpleJdbcLookupMapper(new Fields("dept_name"), Lists.newArrayList(new Column("user_id", Types.INTEGER))))
+                .withJdbcLookupMapper(new SimpleJdbcLookupMapper(new Fields("dept_name"),
+                        Lists.newArrayList(new Column("user_id", Types.INTEGER))))
                 .withTableName(TABLE_NAME)
                 .withSelectQuery(SELECT_QUERY);
 
@@ -54,8 +57,14 @@ public class UserPersistanceTridentTopology extends AbstractUserTopology {
 
         Stream stream = topology.newStream("userSpout", new UserSpout());
         TridentState state = topology.newStaticState(jdbcStateFactory);
-        stream = stream.stateQuery(state, new Fields("user_id","user_name","create_date"), new JdbcQuery(), new Fields("dept_name"));
-        stream.partitionPersist(jdbcStateFactory, new Fields("user_id","user_name","dept_name","create_date"),  new JdbcUpdater(), new Fields());
+        stream = stream.stateQuery(state,
+                new Fields("user_id","user_name","create_date"),
+                new JdbcQuery(),
+                new Fields("dept_name"));
+        stream.partitionPersist(jdbcStateFactory,
+                new Fields("user_id","user_name","dept_name","create_date"),
+                new JdbcUpdater(),
+                new Fields());
         return topology.build();
     }
 }
