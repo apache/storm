@@ -39,8 +39,8 @@ import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SchedulerAssignment;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.RASNode;
-import org.apache.storm.scheduler.resource.RASNodes;
+import org.apache.storm.scheduler.resource.RasNode;
+import org.apache.storm.scheduler.resource.RasNodes;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.SchedulingStatus;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
@@ -58,14 +58,14 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     private Map<String, List<String>> networkTopography;
     private final Map<String, String> superIdToRack = new HashMap<>();
     private final Map<String, String> superIdToHostname = new HashMap<>();
-    private final Map<String, List<RASNode>> hostnameToNodes = new HashMap<>();
-    private final Map<String, List<RASNode>> rackIdToNodes = new HashMap<>();
-    protected RASNodes nodes;
+    private final Map<String, List<RasNode>> hostnameToNodes = new HashMap<>();
+    private final Map<String, List<RasNode>> rackIdToNodes = new HashMap<>();
+    protected RasNodes nodes;
 
     @VisibleForTesting
     void prepare(Cluster cluster) {
         this.cluster = cluster;
-        nodes = new RASNodes(cluster);
+        nodes = new RasNodes(cluster);
         networkTopography = cluster.getNetworkTopography();
         Map<String, String> hostToRack = new HashMap<>();
         for (Map.Entry<String, List<String>> entry : networkTopography.entrySet()) {
@@ -74,7 +74,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                 hostToRack.put(hostName, rackId);
             }
         }
-        for (RASNode node: nodes.getNodes()) {
+        for (RasNode node: nodes.getNodes()) {
             String superId = node.getId();
             String hostName = node.getHostname();
             String rackId = hostToRack.getOrDefault(hostName, DNSToSwitchMapping.DEFAULT_RACK);
@@ -113,7 +113,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             ExecutorDetails exec, TopologyDetails td, Collection<ExecutorDetails> scheduledTasks, Iterable<String> sortedNodes) {
         WorkerSlot targetSlot = findWorkerForExec(exec, td, sortedNodes);
         if (targetSlot != null) {
-            RASNode targetNode = idToNode(targetSlot.getNodeId());
+            RasNode targetNode = idToNode(targetSlot.getNodeId());
             targetNode.assignSingleExecutor(targetSlot, exec, td);
             scheduledTasks.add(exec);
             LOG.debug(
@@ -150,7 +150,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      */
     protected WorkerSlot findWorkerForExec(ExecutorDetails exec, TopologyDetails td, Iterable<String> sortedNodes) {
         for (String id : sortedNodes) {
-            RASNode node = nodes.getNodeById(id);
+            RasNode node = nodes.getNodeById(id);
             if (node.couldEverFit(exec, td)) {
                 Collection<WorkerSlot> topologyUsedSlots = oneExecutorPerWorker ? node.getUsedSlots(td.getId()) : Collections.emptySet();
                 for (WorkerSlot ws : node.getSlotsAvailableToScheduleOn()) {
@@ -183,12 +183,12 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @return a sorted list of nodes.
      */
     protected TreeSet<ObjectResources> sortNodes(
-            List<RASNode> availNodes, ExecutorDetails exec, TopologyDetails topologyDetails, String rackId,
+            List<RasNode> availNodes, ExecutorDetails exec, TopologyDetails topologyDetails, String rackId,
             Map<String, AtomicInteger> scheduledCount) {
         AllResources allRackResources = new AllResources("RACK");
         List<ObjectResources> nodes = allRackResources.objectResources;
 
-        for (RASNode rasNode : availNodes) {
+        for (RasNode rasNode : availNodes) {
             String superId = rasNode.getId();
             ObjectResources node = new ObjectResources(superId);
 
@@ -226,9 +226,9 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         }
         List<String> ret = new ArrayList<>(hosts.size());
         for (String host: hosts) {
-            List<RASNode> nodes = hostnameToNodes.get(host);
+            List<RasNode> nodes = hostnameToNodes.get(host);
             if (nodes != null) {
-                for (RASNode node : nodes) {
+                for (RasNode node : nodes) {
                     ret.add(node.getId());
                 }
             }
@@ -365,7 +365,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             ObjectResources rack = new ObjectResources(rackId);
             racks.add(rack);
             for (String nodeHost : nodeHosts) {
-                for (RASNode node : hostnameToNodes(nodeHost)) {
+                for (RasNode node : hostnameToNodes(nodeHost)) {
                     rack.availableResources.add(node.getTotalAvailableResources());
                     rack.totalResources.add(node.getTotalAvailableResources());
                 }
@@ -438,7 +438,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @param node the node to find out which rack its on
      * @return the rack id
      */
-    protected String nodeToRack(RASNode node) {
+    protected String nodeToRack(RasNode node) {
         return superIdToRack.get(node.getId());
     }
 
@@ -586,7 +586,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                 String rackId = clusterEntry.getKey();
                 LOG.debug("Rack: {}", rackId);
                 for (String nodeHostname : clusterEntry.getValue()) {
-                    for (RASNode node : hostnameToNodes(nodeHostname)) {
+                    for (RasNode node : hostnameToNodes(nodeHostname)) {
                         LOG.debug("-> Node: {} {}", node.getHostname(), node.getId());
                         LOG.debug(
                             "--> Avail Resources: {Mem {}, CPU {} Slots: {}}",
@@ -610,7 +610,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @param hostname the hostname.
      * @return the ids n that node.
      */
-    public List<RASNode> hostnameToNodes(String hostname) {
+    public List<RasNode> hostnameToNodes(String hostname) {
         return hostnameToNodes.getOrDefault(hostname, Collections.emptyList());
     }
 
@@ -620,8 +620,8 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @param id the node/supervisor id to lookup
      * @return a RASNode object
      */
-    public RASNode idToNode(String id) {
-        RASNode ret = nodes.getNodeById(id);
+    public RasNode idToNode(String id) {
+        RasNode ret = nodes.getNodeById(id);
         if (ret == null) {
             LOG.error("Cannot find Node with Id: {}", id);
         }

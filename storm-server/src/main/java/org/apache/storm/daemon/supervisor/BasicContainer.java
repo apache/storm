@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * A container that runs processes on the local box.
  */
 public class BasicContainer extends Container {
-    static final TopoMetaLRUCache TOPO_META_CACHE = new TopoMetaLRUCache();
+    static final TopoMetaLruCache TOPO_META_CACHE = new TopoMetaLruCache();
     private static final Logger LOG = LoggerFactory.getLogger(BasicContainer.class);
     private static final Joiner CPJ = Joiner.on(File.pathSeparator).skipNulls();
     protected final LocalState localState;
@@ -919,8 +919,7 @@ public class BasicContainer extends Container {
         }
     }
 
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    static class TopoMetaLRUCache {
+    static class TopoMetaLruCache {
         public final int maxSize = 100; //We could make this configurable in the future...
 
         @SuppressWarnings("serial")

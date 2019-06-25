@@ -89,8 +89,8 @@ class PacemakerServer implements ISaslServer {
         ThreadFactory workerFactory = new NettyRenameThreadFactory("server-worker");
         this.bossEventLoopGroup = new NioEventLoopGroup(1, bossFactory);
         // 0 means DEFAULT_EVENT_LOOP_THREADS
-        // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
         int maxWorkers = (int) config.get(DaemonConfig.PACEMAKER_MAX_THREADS);
+        // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
 
         LOG.info("Create Netty Server " + name() + ", buffer_size: " + FIVE_MB_IN_BYTES + ", maxWorkers: " + maxWorkers);

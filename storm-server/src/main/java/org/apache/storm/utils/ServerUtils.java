@@ -680,8 +680,7 @@ public class ServerUtils {
      * @param conf The configuration
      * @return True if it's resource aware; false otherwise
      */
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static boolean isRAS(Map<String, Object> conf) {
+    public static boolean isRas(Map<String, Object> conf) {
         if (conf.containsKey(DaemonConfig.STORM_SCHEDULER)) {
             if (conf.get(DaemonConfig.STORM_SCHEDULER).equals("org.apache.storm.scheduler.resource.ResourceAwareScheduler")) {
                 return true;
@@ -690,8 +689,7 @@ public class ServerUtils {
         return false;
     }
 
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology)
+    public static int getEstimatedWorkerCountForRasTopo(Map<String, Object> topoConf, StormTopology topology)
         throws InvalidTopologyException {
         Double defaultWorkerMaxHeap = ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB), 768d);
         Double topologyWorkerMaxHeap = ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeap);

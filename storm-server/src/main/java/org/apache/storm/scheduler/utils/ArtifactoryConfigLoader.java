@@ -64,8 +64,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     private int lastReturnedTime = 0;
     private int timeoutSeconds = DEFAULT_TIMEOUT_SECS;
     private Map<String, Object> lastReturnedValue;
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    private URI targetURI = null;
+    private URI targetUri = null;
     private JSONParser jsonParser;
     private String scheme;
 
@@ -88,8 +87,8 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             LOG.error("No URI defined in {} configuration.", DaemonConfig.SCHEDULER_CONFIG_LOADER_URI);
         } else {
             try {
-                targetURI = new URI(uriString);
-                scheme = targetURI.getScheme().substring(ARTIFACTORY_SCHEME_PREFIX.length());
+                targetUri = new URI(uriString);
+                scheme = targetUri.getScheme().substring(ARTIFACTORY_SCHEME_PREFIX.length());
             } catch (URISyntaxException e) {
                 LOG.error("Failed to parse uri={}", uriString);
             }
@@ -104,7 +103,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
      */
     @Override
     public Map<String, Object> load(String configKey) {
-        if (targetURI == null) {
+        if (targetUri == null) {
             return null;
         }
 
@@ -117,12 +116,12 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         }
 
         try {
-            Map<String, Object> raw = loadFromURI(targetURI);
+            Map<String, Object> raw = loadFromUri(targetUri);
             if (raw != null) {
                 return (Map<String, Object>) raw.get(configKey);
             }
         } catch (Exception e) {
-            LOG.error("Failed to load from uri {}", targetURI);
+            LOG.error("Failed to load from uri {}", targetUri);
         }
         return null;
     }
@@ -197,11 +196,10 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             LOG.error("got null metadata");
             return null;
         }
-        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-        String downloadURI = (String) json.get("downloadUri");
+        String downloadUri = (String) json.get("downloadUri");
 
         // This means we are pointing at a file.
-        if (downloadURI != null) {
+        if (downloadUri != null) {
             // Then get it and return the file as string.
             String returnValue = doGet(null, location, host, port);
             saveInArtifactoryCache(returnValue);
@@ -300,8 +298,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         cacheInitialized = true;
     }
 
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    private Map<String, Object> loadFromURI(URI uri) throws IOException {
+    private Map<String, Object> loadFromUri(URI uri) throws IOException {
         String host = uri.getHost();
         Integer port = uri.getPort();
         String location = uri.getPath();

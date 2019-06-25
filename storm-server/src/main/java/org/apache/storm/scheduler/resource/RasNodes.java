@@ -30,20 +30,19 @@ import org.apache.storm.scheduler.WorkerSlot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-public class RASNodes {
+public class RasNodes {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RASNodes.class);
-    private Map<String, RASNode> nodeMap;
+    private static final Logger LOG = LoggerFactory.getLogger(RasNodes.class);
+    private Map<String, RasNode> nodeMap;
 
-    public RASNodes(Cluster cluster) {
+    public RasNodes(Cluster cluster) {
         this.nodeMap = getAllNodesFrom(cluster);
     }
 
-    public static Map<String, RASNode> getAllNodesFrom(Cluster cluster) {
+    public static Map<String, RasNode> getAllNodesFrom(Cluster cluster) {
 
         //A map of node ids to node objects
-        Map<String, RASNode> nodeIdToNode = new HashMap<>();
+        Map<String, RasNode> nodeIdToNode = new HashMap<>();
         //A map of assignments organized by node with the following format:
         //{nodeId -> {topologyId -> {workerId -> {execs}}}}
         Map<String, Map<String, Map<String, Collection<ExecutorDetails>>>> assignmentRelationshipMap = new HashMap<>();
@@ -91,7 +90,7 @@ public class RASNodes {
             }
             nodeIdToNode.put(
                 sup.getId(),
-                new RASNode(
+                new RasNode(
                     sup.getId(),
                     sup,
                     cluster,
@@ -110,7 +109,7 @@ public class RASNodes {
                     nodeId,
                     assignments);
                 nodeIdToNode.put(
-                    nodeId, new RASNode(nodeId, null, cluster, workerIdToWorker.get(nodeId), assignments));
+                    nodeId, new RasNode(nodeId, null, cluster, workerIdToWorker.get(nodeId), assignments));
             }
         }
         return nodeIdToNode;
@@ -119,7 +118,7 @@ public class RASNodes {
     /**
      * get node object from nodeId.
      */
-    public RASNode getNodeById(String nodeId) {
+    public RasNode getNodeById(String nodeId) {
         return this.nodeMap.get(nodeId);
     }
 
@@ -129,7 +128,7 @@ public class RASNodes {
      * @param workerSlots the slots to free
      */
     public void freeSlots(Collection<WorkerSlot> workerSlots) {
-        for (RASNode node : nodeMap.values()) {
+        for (RasNode node : nodeMap.values()) {
             for (WorkerSlot ws : node.getUsedSlots()) {
                 if (workerSlots.contains(ws)) {
                     LOG.debug("freeing ws {} on node {}", ws, node);
@@ -139,14 +138,14 @@ public class RASNodes {
         }
     }
 
-    public Collection<RASNode> getNodes() {
+    public Collection<RasNode> getNodes() {
         return this.nodeMap.values();
     }
 
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
-        for (RASNode node : nodeMap.values()) {
+        for (RasNode node : nodeMap.values()) {
             ret.append(node).append("\n");
         }
         return ret.toString();

@@ -1168,7 +1168,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static void validateTopologySize(Map<String, Object> topoConf, Map<String, Object> nimbusConf,
         StormTopology topology) throws InvalidTopologyException {
         // check allowedWorkers only if the scheduler is not the Resource Aware Scheduler
-        if (!ServerUtils.isRAS(nimbusConf)) {
+        if (!ServerUtils.isRas(nimbusConf)) {
             int workerCount = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKERS), 1);
             Integer allowedWorkers = ObjectReader.getInt(nimbusConf.get(DaemonConfig.NIMBUS_SLOTS_PER_TOPOLOGY), null);
             if (allowedWorkers != null && workerCount > allowedWorkers) {
@@ -3081,8 +3081,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
             // if the Resource Aware Scheduler is used,
             // we might need to set the number of acker executors and eventlogger executors to be the estimated number of workers.
-            if (ServerUtils.isRAS(conf)) {
-                int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRASTopo(totalConf, topology);
+            if (ServerUtils.isRas(conf)) {
+                int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(totalConf, topology);
                 int numAckerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_ACKER_EXECUTORS), estimatedNumWorker);
                 int numEventLoggerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS), estimatedNumWorker);
 

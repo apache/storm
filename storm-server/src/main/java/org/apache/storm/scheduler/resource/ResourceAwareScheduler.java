@@ -123,7 +123,7 @@ public class ResourceAwareScheduler implements IScheduler {
                                   List<TopologyDetails> orderedTopologies) {
         //A copy of cluster that we can modify, but does not get committed back to cluster unless scheduling succeeds
         Cluster workingState = new Cluster(cluster);
-        RASNodes nodes = new RASNodes(workingState);
+        RasNodes nodes = new RasNodes(workingState);
         IStrategy rasStrategy = null;
         String strategyConf = (String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY);
         try {

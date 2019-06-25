@@ -334,6 +334,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
      *
      * @throws Exception on any Exception.
      */
+    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
     public static <T> T withLocalModeOverride(Callable<T> c, long ttlSec, Map<String, Object> daemonConf) throws Exception {
         LOG.info("\n\n\t\tSTARTING LOCAL MODE CLUSTER\n\n");
         Builder builder = new Builder();
@@ -344,11 +345,11 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
              LocalDRPC drpc = new LocalDRPC(local.metricRegistry);
              DRPCClient.LocalOverride drpcOverride = new DRPCClient.LocalOverride(drpc)) {
 
+            T ret = c.call();
             LOG.info("\n\n\t\tRUNNING LOCAL CLUSTER for {} seconds.\n\n", ttlSec);
             Thread.sleep(ttlSec * 1000);
 
             LOG.info("\n\n\t\tSTOPPING LOCAL MODE CLUSTER\n\n");
-            T ret = c.call();
             return ret;
         }
     }

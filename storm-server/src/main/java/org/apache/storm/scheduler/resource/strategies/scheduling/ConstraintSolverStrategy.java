@@ -12,7 +12,6 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -32,10 +31,11 @@ import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SchedulerAssignment;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.RASNode;
-import org.apache.storm.scheduler.resource.RASNodes;
+import org.apache.storm.scheduler.resource.RasNode;
+import org.apache.storm.scheduler.resource.RasNodes;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.SchedulingStatus;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
@@ -49,7 +49,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     private Map<String, Map<String, Integer>> constraintMatrix;
     private HashSet<String> spreadComps = new HashSet<>();
 
-    private Map<String, RASNode> nodes;
+    private Map<String, RasNode> nodes;
     private Map<ExecutorDetails, String> execToComp;
     private Map<String, Set<ExecutorDetails>> compToExecs;
     private List<String> favoredNodeIds;
@@ -124,9 +124,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         return true;
     }
 
-    private static Map<WorkerSlot, RASNode> workerToNodes(Cluster cluster) {
-        Map<WorkerSlot, RASNode> workerToNodes = new HashMap<>();
-        for (RASNode node : RASNodes.getAllNodesFrom(cluster).values()) {
+    private static Map<WorkerSlot, RasNode> workerToNodes(Cluster cluster) {
+        Map<WorkerSlot, RasNode> workerToNodes = new HashMap<>();
+        for (RasNode node : RasNodes.getAllNodesFrom(cluster).values()) {
             for (WorkerSlot s : node.getUsedSlots()) {
                 workerToNodes.put(s, node);
             }
@@ -141,15 +141,15 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         Map<ExecutorDetails, String> execToComp = topo.getExecutorToComponent();
         Map<WorkerSlot, HashSet<ExecutorDetails>> workerExecMap = new HashMap<>();
         Map<WorkerSlot, HashSet<String>> workerCompMap = new HashMap<>();
-        Map<RASNode, HashSet<String>> nodeCompMap = new HashMap<>();
-        Map<WorkerSlot, RASNode> workerToNodes = workerToNodes(cluster);
+        Map<RasNode, HashSet<String>> nodeCompMap = new HashMap<>();
+        Map<WorkerSlot, RasNode> workerToNodes = workerToNodes(cluster);
         boolean ret = true;
 
         HashSet<String> spreadComps = getSpreadComps(topo);
         for (Map.Entry<ExecutorDetails, WorkerSlot> entry : result.entrySet()) {
             ExecutorDetails exec = entry.getKey();
             WorkerSlot worker = entry.getValue();
-            RASNode node = workerToNodes.get(worker);
+            RasNode node = workerToNodes.get(worker);
 
             if (workerExecMap.computeIfAbsent(worker, (k) -> new HashSet<>()).contains(exec)) {
                 LOG.error("Incorrect Scheduling: Found duplicate in scheduling");
@@ -177,9 +177,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         LOG.info("Checking Resources...");
         assert (cluster.getAssignmentById(topo.getId()) != null);
         Map<ExecutorDetails, WorkerSlot> result = cluster.getAssignmentById(topo.getId()).getExecutorToSlot();
-        Map<RASNode, Collection<ExecutorDetails>> nodeToExecs = new HashMap<>();
+        Map<RasNode, Collection<ExecutorDetails>> nodeToExecs = new HashMap<>();
         Map<ExecutorDetails, WorkerSlot> mergedExecToWorker = new HashMap<>();
-        Map<String, RASNode> nodes = RASNodes.getAllNodesFrom(cluster);
+        Map<String, RasNode> nodes = RasNodes.getAllNodesFrom(cluster);
         //merge with existing assignments
         if (cluster.getAssignmentById(topo.getId()) != null
             && cluster.getAssignmentById(topo.getId()).getExecutorToSlot() != null) {
@@ -190,7 +190,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         for (Map.Entry<ExecutorDetails, WorkerSlot> entry : mergedExecToWorker.entrySet()) {
             ExecutorDetails exec = entry.getKey();
             WorkerSlot worker = entry.getValue();
-            RASNode node = nodes.get(worker.getNodeId());
+            RasNode node = nodes.get(worker.getNodeId());
 
             if (node.getAvailableMemoryResources() < 0.0 && node.getAvailableCpuResources() < 0.0) {
                 LOG.error("Incorrect Scheduling: found node with negative available resources");
@@ -199,8 +199,8 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             nodeToExecs.computeIfAbsent(node, (k) -> new HashSet<>()).add(exec);
         }
 
-        for (Map.Entry<RASNode, Collection<ExecutorDetails>> entry : nodeToExecs.entrySet()) {
-            RASNode node = entry.getKey();
+        for (Map.Entry<RasNode, Collection<ExecutorDetails>> entry : nodeToExecs.entrySet()) {
+            RasNode node = entry.getKey();
             Collection<ExecutorDetails> execs = entry.getValue();
             double cpuUsed = 0.0;
             double memoryUsed = 0.0;
@@ -244,9 +244,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
         prepare(cluster);
         LOG.debug("Scheduling {}", td.getId());
-        nodes = RASNodes.getAllNodesFrom(cluster);
+        nodes = RasNodes.getAllNodesFrom(cluster);
         Map<WorkerSlot, Set<String>> workerCompAssignment = new HashMap<>();
-        Map<RASNode, Set<String>> nodeCompAssignment = new HashMap<>();
+        Map<RasNode, Set<String>> nodeCompAssignment = new HashMap<>();
 
         int confMaxStateSearch = ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH));
         int daemonMaxStateSearch = ObjectReader.getInt(cluster.getConf().get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH));
@@ -279,7 +279,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         if (existingAssignment != null) {
             existingAssignment.getExecutorToSlot().forEach((exec, ws) -> {
                 String compId = execToComp.get(exec);
-                RASNode node = nodes.get(ws.getNodeId());
+                RasNode node = nodes.get(ws.getNodeId());
                 //populate node to component Assignments
                 nodeCompAssignment.computeIfAbsent(node, (k) -> new HashSet<>()).add(compId);
                 //populate worker to comp assignments
@@ -337,7 +337,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         Iterable<String> sortedNodes = sortAllNodes(state.td, exec, favoredNodeIds, unFavoredNodeIds);
 
         for (String nodeId: sortedNodes) {
-            RASNode node = nodes.get(nodeId);
+            RasNode node = nodes.get(nodeId);
             for (WorkerSlot workerSlot : node.getSlotsAvailableToScheduleOn()) {
                 if (isExecAssignmentToWorkerValid(workerSlot, state)) {
                     state.tryToSchedule(execToComp, node, workerSlot);
@@ -374,7 +374,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     public boolean isExecAssignmentToWorkerValid(WorkerSlot worker, SearcherState state) {
         final ExecutorDetails exec = state.currentExec();
         //check resources
-        RASNode node = nodes.get(worker.getNodeId());
+        RasNode node = nodes.get(worker.getNodeId());
         if (!node.wouldFit(worker, exec, state.td)) {
             LOG.trace("{} would not fit in resources available on {}", exec, worker);
             return false;
@@ -481,7 +481,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         private final Map<WorkerSlot, Set<String>> workerCompAssignment;
         private final boolean[] okToRemoveFromWorker;
         // for the currently tested assignment a Map of the node to the components on it to be able to enforce constraints
-        private final Map<RASNode, Set<String>> nodeCompAssignment;
+        private final Map<RasNode, Set<String>> nodeCompAssignment;
         private final boolean[] okToRemoveFromNode;
         // Static State
         // The list of all executors (preferably sorted to make assignments simpler).
@@ -499,7 +499,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         // The current executor we are trying to schedule
         private int execIndex = 0;
 
-        private SearcherState(Map<WorkerSlot, Set<String>> workerCompAssignment, Map<RASNode, Set<String>> nodeCompAssignment,
+        private SearcherState(Map<WorkerSlot, Set<String>> workerCompAssignment, Map<RasNode, Set<String>> nodeCompAssignment,
                               int maxStatesSearched, long maxTimeMs, List<ExecutorDetails> execs, TopologyDetails td) {
             assert !execs.isEmpty();
             assert execs != null;
@@ -551,7 +551,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             return execs.get(execIndex);
         }
 
-        public void tryToSchedule(Map<ExecutorDetails, String> execToComp, RASNode node, WorkerSlot workerSlot) {
+        public void tryToSchedule(Map<ExecutorDetails, String> execToComp, RasNode node, WorkerSlot workerSlot) {
             ExecutorDetails exec = currentExec();
             String comp = execToComp.get(exec);
             LOG.trace("Trying assignment of {} {} to {}", exec, comp, workerSlot);
@@ -561,7 +561,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             node.assignSingleExecutor(workerSlot, exec, td);
         }
 
-        public void backtrack(Map<ExecutorDetails, String> execToComp, RASNode node, WorkerSlot workerSlot) {
+        public void backtrack(Map<ExecutorDetails, String> execToComp, RasNode node, WorkerSlot workerSlot) {
             execIndex--;
             if (execIndex < 0) {
                 throw new IllegalStateException("Internal Error: exec index became negative");
