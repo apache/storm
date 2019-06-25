@@ -52,8 +52,8 @@ public class IncrementingSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         if (currentNum >= TestableTopology.MAX_SPOUT_EMITS) {
-          //Stop emitting at a certain point, because log rolling breaks the tests.
-          return;
+            //Stop emitting at a certain point, because log rolling breaks the tests.
+            return;
         }
         //Sleep a bit to avoid hogging the CPU.
         TimeUtil.sleepMilliSec(1);

@@ -32,34 +32,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TimeDataIncrementingSpout extends BaseRichSpout {
-        private static final Logger LOG = LoggerFactory.getLogger(TimeDataIncrementingSpout.class);
-        private SpoutOutputCollector collector;
-        private int currentNum;
-        private String componentId;
+    private static final Logger LOG = LoggerFactory.getLogger(TimeDataIncrementingSpout.class);
+    private SpoutOutputCollector collector;
+    private int currentNum;
+    private String componentId;
 
-        @Override
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(TimeData.getFields());
-        }
-
-        @Override
-        public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-            componentId = context.getThisComponentId();
-            this.collector = collector;
-        }
-
-        @Override
-        public void nextTuple() {
-            if (currentNum >= TestableTopology.MAX_SPOUT_EMITS) {
-                //Stop emitting at a certain point, because log rolling breaks the tests.
-                return;
-            }
-            //Sleep a bit between emits to ensure that we don't reach the cap too quickly, since this spout is used to test time based windows
-            TimeUtil.sleepMilliSec(TestableTopology.TIMEDATA_SLEEP_BETWEEN_EMITS_MS);
-            currentNum++;
-            TimeData data = TimeData.newData(currentNum);
-            final Values tuple = data.getValues();
-            collector.emit(tuple);
-            LOG.info(StringDecorator.decorate(componentId, data.toString()));
-        }
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(TimeData.getFields());
     }
+
+    @Override
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+        componentId = context.getThisComponentId();
+        this.collector = collector;
+    }
+
+    @Override
+    public void nextTuple() {
+        if (currentNum >= TestableTopology.MAX_SPOUT_EMITS) {
+            //Stop emitting at a certain point, because log rolling breaks the tests.
+            return;
+        }
+        //Sleep a bit between emits to ensure that we don't reach the cap too quickly, since this spout is used to test time based windows
+        TimeUtil.sleepMilliSec(TestableTopology.TIMEDATA_SLEEP_BETWEEN_EMITS_MS);
+        currentNum++;
+        TimeData data = TimeData.newData(currentNum);
+        final Values tuple = data.getValues();
+        collector.emit(tuple);
+        LOG.info(StringDecorator.decorate(componentId, data.toString()));
+    }
+}
