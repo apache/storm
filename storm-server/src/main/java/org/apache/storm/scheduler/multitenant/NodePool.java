@@ -48,7 +48,7 @@ public abstract class NodePool {
 
     /**
      * Get number of available slots.
-     * @return the number of nodes that are available to be taken
+     * @return the number of slots that are available to be taken
      */
     public abstract int slotsAvailable();
 

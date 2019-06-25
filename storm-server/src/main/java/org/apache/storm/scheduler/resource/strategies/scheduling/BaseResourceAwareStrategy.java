@@ -86,13 +86,13 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         logClusterInfo();
     }
 
-    protected void setOneExecutorPerWorker(boolean oneExecutorPerWorker) {
-        this.oneExecutorPerWorker = oneExecutorPerWorker;
-    }
-
     @Override
     public void prepare(Map<String, Object> config) {
         //NOOP
+    }
+
+    protected void setOneExecutorPerWorker(boolean oneExecutorPerWorker) {
+        this.oneExecutorPerWorker = oneExecutorPerWorker;
     }
 
     protected SchedulingResult mkNotEnoughResources(TopologyDetails td) {

@@ -146,7 +146,8 @@ public class DaemonConfig implements Validated {
      * Otherwise, the scheduler will assume a supervisor is bad only when it does not receive supervisor heartbeat in time.
      */
     @IsBoolean
-    public static final String BLACKLIST_SCHEDULER_ASSUME_SUPERVISOR_BAD_BASED_ON_BAD_SLOT = "blacklist.scheduler.assume.supervisor.bad.based.on.bad.slot";
+    public static final String BLACKLIST_SCHEDULER_ASSUME_SUPERVISOR_BAD_BASED_ON_BAD_SLOT
+            = "blacklist.scheduler.assume.supervisor.bad.based.on.bad.slot";
 
     /**
      * Whether we want to display all the resource capacity and scheduled usage on the UI page. You MUST have this variable set if you are

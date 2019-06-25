@@ -1034,8 +1034,8 @@ public class Cluster implements ISchedulingState {
                 totalScheduledResources.add(req);
             }
             // shared off heap node memory
-            for (Double offHeapNodeMemory : nodeToScheduledOffHeapNodeMemoryCache.
-                    computeIfAbsent(nid, Cluster::makeMap).values()) {
+            for (Double offHeapNodeMemory
+                    : nodeToScheduledOffHeapNodeMemoryCache.computeIfAbsent(nid, Cluster::makeMap).values()) {
                 totalScheduledResources.addOffHeap(offHeapNodeMemory);
             }
 
