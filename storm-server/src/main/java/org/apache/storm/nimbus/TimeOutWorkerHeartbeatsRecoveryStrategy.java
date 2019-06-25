@@ -12,6 +12,8 @@
 
 package org.apache.storm.nimbus;
 
+import static java.util.stream.Collectors.toSet;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -20,8 +22,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Wait for a node to report worker heartbeats until a configured timeout. For cases below we have strategies:

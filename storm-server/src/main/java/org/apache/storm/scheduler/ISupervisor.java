@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Map;
 
 public interface ISupervisor {
+
     void prepare(Map<String, Object> topoConf, String schedulerLocalDir);
 
     // for mesos, this is {hostname}-{topologyid}

@@ -26,7 +26,7 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
         LoggerFactory.getLogger(DefaultHttpCredentialsPlugin.class);
 
     /**
-     * No-op
+     * No-op.
      *
      * @param topoConf Storm configuration
      */

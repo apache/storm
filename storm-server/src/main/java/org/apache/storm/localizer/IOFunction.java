@@ -17,6 +17,8 @@ package org.apache.storm.localizer;
 import java.io.IOException;
 
 @FunctionalInterface
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface IOFunction<T, R> {
+
     R apply(T t) throws IOException;
 }

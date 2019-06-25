@@ -23,23 +23,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * All of the machines that currently have nothing assigned to them
+ * All of the machines that currently have nothing assigned to them.
  */
 public class FreePool extends NodePool {
     private static final Logger LOG = LoggerFactory.getLogger(FreePool.class);
-    private Set<Node> _nodes = new HashSet<>();
-    private int _totalSlots = 0;
+    private Set<Node> nodes = new HashSet<>();
+    private int totalSlots = 0;
 
     @Override
     public void init(Cluster cluster, Map<String, Node> nodeIdToNode) {
         super.init(cluster, nodeIdToNode);
         for (Node n : nodeIdToNode.values()) {
             if (n.isTotallyFree() && n.isAlive()) {
-                _nodes.add(n);
-                _totalSlots += n.totalSlotsFree();
+                nodes.add(n);
+                totalSlots += n.totalSlotsFree();
             }
         }
-        LOG.debug("Found {} nodes with {} slots", _nodes.size(), _totalSlots);
+        LOG.debug("Found {} nodes with {} slots", nodes.size(), totalSlots);
     }
 
     @Override
@@ -56,11 +56,11 @@ public class FreePool extends NodePool {
     @Override
     public Collection<Node> takeNodes(int nodesNeeded) {
         HashSet<Node> ret = new HashSet<>();
-        Iterator<Node> it = _nodes.iterator();
+        Iterator<Node> it = nodes.iterator();
         while (it.hasNext() && nodesNeeded > ret.size()) {
             Node n = it.next();
             ret.add(n);
-            _totalSlots -= n.totalSlotsFree();
+            totalSlots -= n.totalSlotsFree();
             it.remove();
         }
         return ret;
@@ -68,22 +68,22 @@ public class FreePool extends NodePool {
 
     @Override
     public int nodesAvailable() {
-        return _nodes.size();
+        return nodes.size();
     }
 
     @Override
     public int slotsAvailable() {
-        return _totalSlots;
+        return totalSlots;
     }
 
     @Override
     public Collection<Node> takeNodesBySlots(int slotsNeeded) {
         HashSet<Node> ret = new HashSet<>();
-        Iterator<Node> it = _nodes.iterator();
+        Iterator<Node> it = nodes.iterator();
         while (it.hasNext() && slotsNeeded > 0) {
             Node n = it.next();
             ret.add(n);
-            _totalSlots -= n.totalSlotsFree();
+            totalSlots -= n.totalSlotsFree();
             slotsNeeded -= n.totalSlotsFree();
             it.remove();
         }
@@ -94,7 +94,7 @@ public class FreePool extends NodePool {
     public NodeAndSlotCounts getNodeAndSlotCountIfSlotsWereTaken(int slotsNeeded) {
         int slotsFound = 0;
         int nodesFound = 0;
-        Iterator<Node> it = _nodes.iterator();
+        Iterator<Node> it = nodes.iterator();
         while (it.hasNext() && slotsNeeded > 0) {
             Node n = it.next();
             nodesFound++;
@@ -112,6 +112,6 @@ public class FreePool extends NodePool {
 
     @Override
     public String toString() {
-        return "FreePool of " + _nodes.size() + " nodes with " + _totalSlots + " slots";
+        return "FreePool of " + nodes.size() + " nodes with " + totalSlots + " slots";
     }
 }

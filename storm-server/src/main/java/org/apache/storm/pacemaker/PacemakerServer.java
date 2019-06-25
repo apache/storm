@@ -48,13 +48,13 @@ class PacemakerServer implements ISaslServer {
     private String secret;
     private final String topologyName;
     private volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
-    private final ChannelGroup authenticated_channels = new DefaultChannelGroup("authenticated-pacemaker-channels", GlobalEventExecutor.INSTANCE);
+    private final ChannelGroup authenticatedChannels = new DefaultChannelGroup("authenticated-pacemaker-channels",
+            GlobalEventExecutor.INSTANCE);
     private final ThriftNettyServerCodec.AuthMethod authMethod;
     private final EventLoopGroup bossEventLoopGroup;
     private final EventLoopGroup workerEventLoopGroup;
 
     public PacemakerServer(IServerMessageHandler handler, Map<String, Object> config) {
-        int maxWorkers = (int) config.get(DaemonConfig.PACEMAKER_MAX_THREADS);
         int port = (int) config.get(Config.PACEMAKER_PORT);
         this.handler = handler;
         this.topologyName = "pacemaker_server";
@@ -63,9 +63,9 @@ class PacemakerServer implements ISaslServer {
         switch (auth) {
 
             case "DIGEST":
-                Configuration login_conf = ClientAuthUtils.getConfiguration(config);
+                Configuration loginConf = ClientAuthUtils.getConfiguration(config);
                 authMethod = ThriftNettyServerCodec.AuthMethod.DIGEST;
-                this.secret = ClientAuthUtils.makeDigestPayload(login_conf, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
+                this.secret = ClientAuthUtils.makeDigestPayload(loginConf, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
                 if (this.secret == null) {
                     LOG.error("Can't start pacemaker server without digest secret.");
                     throw new RuntimeException("Can't start pacemaker server without digest secret.");
@@ -90,6 +90,7 @@ class PacemakerServer implements ISaslServer {
         this.bossEventLoopGroup = new NioEventLoopGroup(1, bossFactory);
         // 0 means DEFAULT_EVENT_LOOP_THREADS
         // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
+        int maxWorkers = (int) config.get(DaemonConfig.PACEMAKER_MAX_THREADS);
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
 
         LOG.info("Create Netty Server " + name() + ", buffer_size: " + FIVE_MB_IN_BYTES + ", maxWorkers: " + maxWorkers);
@@ -121,7 +122,7 @@ class PacemakerServer implements ISaslServer {
     }
 
     public void cleanPipeline(Channel channel) {
-        boolean authenticated = authenticated_channels.contains(channel);
+        boolean authenticated = authenticatedChannels.contains(channel);
         if (!authenticated) {
             if (channel.pipeline().get(ThriftNettyServerCodec.SASL_HANDLER) != null) {
                 channel.pipeline().remove(ThriftNettyServerCodec.SASL_HANDLER);
@@ -135,7 +136,7 @@ class PacemakerServer implements ISaslServer {
     public void received(Object mesg, String remote, Channel channel) throws InterruptedException {
         cleanPipeline(channel);
 
-        boolean authenticated = (authMethod == ThriftNettyServerCodec.AuthMethod.NONE) || authenticated_channels.contains(channel);
+        boolean authenticated = (authMethod == ThriftNettyServerCodec.AuthMethod.NONE) || authenticatedChannels.contains(channel);
         HBMessage m = (HBMessage) mesg;
         LOG.debug("received message. Passing to handler. {} : {} : {}",
                   handler.toString(), m.toString(), channel.toString());
@@ -161,6 +162,6 @@ class PacemakerServer implements ISaslServer {
     @Override
     public void authenticated(Channel c) {
         LOG.debug("Pacemaker server authenticated channel: {}", c.toString());
-        authenticated_channels.add(c);
+        authenticatedChannels.add(c);
     }
 }

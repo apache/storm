@@ -41,9 +41,9 @@ public class Topologies implements Iterable<TopologyDetails> {
     }
 
     /**
-     * Create a new Topologies from a map of id to topology
+     * Create a new Topologies from a map of id to topology.
      *
-     * @param topologies a map of topology id to topology details.
+     * @param topologies a map of topology id to topology details
      */
     public Topologies(Map<String, TopologyDetails> topologies) {
         if (topologies == null) {
@@ -81,10 +81,10 @@ public class Topologies implements Iterable<TopologyDetails> {
     }
 
     /**
-     * Get a topology given an ID
+     * Get a topology given an ID.
      *
      * @param topologyId the id of the topology to get
-     * @return the topology or null if it is not found.
+     * @return the topology or null if it is not found
      */
     public TopologyDetails getById(String topologyId) {
         return topologies.get(topologyId);

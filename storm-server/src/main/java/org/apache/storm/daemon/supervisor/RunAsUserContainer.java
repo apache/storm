@@ -60,7 +60,7 @@ public class RunAsUserContainer extends BasicContainer {
         List<String> commands = Arrays.asList("signal", String.valueOf(pid), String.valueOf(signal));
         String user = getWorkerUser();
         String logPrefix = "kill -" + signal + " " + pid;
-        ClientSupervisorUtils.processLauncherAndWait(_conf, user, commands, null, logPrefix);
+        ClientSupervisorUtils.processLauncherAndWait(conf, user, commands, null, logPrefix);
     }
 
     @Override
@@ -81,15 +81,15 @@ public class RunAsUserContainer extends BasicContainer {
         LOG.info("Running as user: {} command: {}", user, command);
         String containerFile = ServerUtils.containerFilePath(td);
         if (Utils.checkFileExists(containerFile)) {
-            SupervisorUtils.rmrAsUser(_conf, containerFile, containerFile);
+            SupervisorUtils.rmrAsUser(conf, containerFile, containerFile);
         }
         String scriptFile = ServerUtils.scriptFilePath(td);
         if (Utils.checkFileExists(scriptFile)) {
-            SupervisorUtils.rmrAsUser(_conf, scriptFile, scriptFile);
+            SupervisorUtils.rmrAsUser(conf, scriptFile, scriptFile);
         }
         String script = ServerUtils.writeScript(td, command, env);
         List<String> args = Arrays.asList("profiler", td, script);
-        int ret = ClientSupervisorUtils.processLauncherAndWait(_conf, user, args, env, logPrefix);
+        int ret = ClientSupervisorUtils.processLauncherAndWait(conf, user, args, env, logPrefix);
         return ret == 0;
     }
 
@@ -100,10 +100,10 @@ public class RunAsUserContainer extends BasicContainer {
         String user = this.getWorkerUser();
         List<String> args = Arrays.asList("worker", workerDir, ServerUtils.writeScript(workerDir, command, env));
         List<String> commandPrefix = null;
-        if (_resourceIsolationManager != null) {
-            commandPrefix = _resourceIsolationManager.getLaunchCommandPrefix(_workerId);
+        if (resourceIsolationManager != null) {
+            commandPrefix = resourceIsolationManager.getLaunchCommandPrefix(workerId);
         }
-        ClientSupervisorUtils.processLauncher(_conf, user, commandPrefix, args, null, logPrefix, processExitCallback, targetDir);
+        ClientSupervisorUtils.processLauncher(conf, user, commandPrefix, args, null, logPrefix, processExitCallback, targetDir);
     }
 
     /**

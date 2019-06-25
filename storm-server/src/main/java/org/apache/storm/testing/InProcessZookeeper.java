@@ -34,6 +34,7 @@ public class InProcessZookeeper implements AutoCloseable {
     }
 
     /**
+     * Get port.
      * @return the port ZK is listening on (localhost)
      */
     public long getPort() {

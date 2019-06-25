@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 public class GoodToGo {
     private final GoodToGoLatch latch;
     private boolean gotLatch = false;
+
     public GoodToGo(CountDownLatch latch, Future<Void> doneChanging) {
         this.latch = new GoodToGoLatch(latch, doneChanging);
     }

@@ -28,8 +28,9 @@ import org.apache.storm.thrift.TException;
  * Topology.
  */
 public interface ILocalClusterTrackedTopologyAware extends ILocalCluster {
+
     /**
-     * Submit a tracked topology to be run in local mode
+     * Submit a tracked topology to be run in local mode.
      *
      * @param topologyName the name of the topology to use
      * @param conf         the config for the topology
@@ -41,7 +42,7 @@ public interface ILocalClusterTrackedTopologyAware extends ILocalCluster {
     ILocalTopology submitTopology(String topologyName, Map<String, Object> conf, TrackedTopology topology) throws TException;
 
     /**
-     * Submit a tracked topology to be run in local mode
+     * Submit a tracked topology to be run in local mode.
      *
      * @param topologyName the name of the topology to use
      * @param conf         the config for the topology

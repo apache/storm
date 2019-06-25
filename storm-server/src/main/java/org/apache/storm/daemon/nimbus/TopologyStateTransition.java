@@ -15,8 +15,9 @@ package org.apache.storm.daemon.nimbus;
 import org.apache.storm.generated.StormBase;
 
 /**
- * A transition from one state to another
+ * A transition from one state to another.
  */
 interface TopologyStateTransition {
+
     StormBase transition(Object argument, Nimbus nimbus, String topoId, StormBase base) throws Exception;
 }

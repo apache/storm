@@ -14,6 +14,12 @@
 
 package org.apache.storm.blobstore;
 
+import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
+import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
+import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
+import static org.apache.storm.daemon.nimbus.Nimbus.NIMBUS_SUBJECT;
+import static org.apache.storm.daemon.nimbus.Nimbus.getVersionForKey;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -49,25 +55,22 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyAlreadyExistsException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
-import static org.apache.storm.daemon.nimbus.Nimbus.NIMBUS_SUBJECT;
-import static org.apache.storm.daemon.nimbus.Nimbus.getVersionForKey;
 
 /**
  * Provides a local file system backed blob store implementation for Nimbus.
  *
- * For a local blob store the user and the supervisor use NimbusBlobStore Client API in order to talk to nimbus through thrift.
+ * <p>For a local blob store the user and the supervisor use NimbusBlobStore Client API in order to talk to nimbus through thrift.
  * The authentication and authorization here is based on the subject.
  * We currently have NIMBUS_ADMINS and SUPERVISOR_ADMINS configuration. NIMBUS_ADMINS are given READ, WRITE and ADMIN
  * access whereas the SUPERVISOR_ADMINS are given READ access in order to read and download the blobs form the nimbus.
  *
- * The ACLs for the blob store are validated against whether the subject is a NIMBUS_ADMIN, SUPERVISOR_ADMIN or USER
+ * <p>The ACLs for the blob store are validated against whether the subject is a NIMBUS_ADMIN, SUPERVISOR_ADMIN or USER
  * who has read, write or admin privileges in order to perform respective operations on the blob.
  *
- * For local blob store
+ * <p>For local blob store
  * 1. The USER interacts with nimbus to upload and access blobs through NimbusBlobStore Client API.
  * 2. The USER sets the ACLs, and the blob access is validated against these ACLs.
  * 3. The SUPERVISOR interacts with nimbus through the NimbusBlobStore Client API to download the blobs.
@@ -78,9 +81,9 @@ public class LocalFsBlobStore extends BlobStore {
     public static final Logger LOG = LoggerFactory.getLogger(LocalFsBlobStore.class);
     private static final String DATA_PREFIX = "data_";
     private static final String META_PREFIX = "meta_";
-    private final String BLOBSTORE_SUBTREE = "/blobstore/";
+    private static final String BLOBSTORE_SUBTREE = "/blobstore/";
     private final int allPermissions = READ | WRITE | ADMIN;
-    protected BlobStoreAclHandler _aclHandler;
+    protected BlobStoreAclHandler aclHandler;
     private NimbusInfo nimbusInfo;
     private FileBlobStoreImpl fbs;
     private Map<String, Object> conf;
@@ -103,7 +106,7 @@ public class LocalFsBlobStore extends BlobStore {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        _aclHandler = new BlobStoreAclHandler(conf);
+        aclHandler = new BlobStoreAclHandler(conf);
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
         } catch (Exception e) {
@@ -115,8 +118,6 @@ public class LocalFsBlobStore extends BlobStore {
 
     /**
      * Sets up blobstore state for all current keys.
-     * @throws KeyNotFoundException
-     * @throws AuthorizationException
      */
     private void setupBlobstore() throws AuthorizationException, KeyNotFoundException {
         IStormClusterState state = stormClusterState;
@@ -198,7 +199,7 @@ public class LocalFsBlobStore extends BlobStore {
                     throw new RuntimeException(e);
                 }
             }
-        }, 0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS))*1000);
+        }, 0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS)) * 1000);
 
     }
 
@@ -207,18 +208,18 @@ public class LocalFsBlobStore extends BlobStore {
         KeyAlreadyExistsException {
         LOG.debug("Creating Blob for key {}", key);
         validateKey(key);
-        _aclHandler.normalizeSettableBlobMeta(key, meta, who, allPermissions);
+        aclHandler.normalizeSettableBlobMeta(key, meta, who, allPermissions);
         BlobStoreAclHandler.validateSettableACLs(key, meta.get_acl());
-        _aclHandler.hasPermissions(meta.get_acl(), allPermissions, who, key);
+        aclHandler.hasPermissions(meta.get_acl(), allPermissions, who, key);
         if (fbs.exists(DATA_PREFIX + key)) {
             throw new WrappedKeyAlreadyExistsException(key);
         }
-        BlobStoreFileOutputStream mOut = null;
+        BlobStoreFileOutputStream outputStream = null;
         try {
-            mOut = new BlobStoreFileOutputStream(fbs.write(META_PREFIX + key, true));
-            mOut.write(Utils.thriftSerialize(meta));
-            mOut.close();
-            mOut = null;
+            outputStream = new BlobStoreFileOutputStream(fbs.write(META_PREFIX + key, true));
+            outputStream.write(Utils.thriftSerialize(meta));
+            outputStream.close();
+            outputStream = null;
             this.stormClusterState.setupBlob(key, this.nimbusInfo, getVersionForKey(key, this.nimbusInfo, zkClient));
             return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX + key, true));
         } catch (IOException e) {
@@ -226,9 +227,9 @@ public class LocalFsBlobStore extends BlobStore {
         } catch (KeyNotFoundException e) {
             throw new RuntimeException(e);
         } finally {
-            if (mOut != null) {
+            if (outputStream != null) {
                 try {
-                    mOut.cancel();
+                    outputStream.cancel();
                 } catch (IOException e) {
                     //Ignored
                 }
@@ -285,7 +286,7 @@ public class LocalFsBlobStore extends BlobStore {
             checkForBlobUpdate(key);
         }
         SettableBlobMeta meta = getStoredBlobMeta(key);
-        _aclHandler.validateUserCanReadMeta(meta.get_acl(), who, key);
+        aclHandler.validateUserCanReadMeta(meta.get_acl(), who, key);
         ReadableBlobMeta rbm = new ReadableBlobMeta();
         rbm.set_settable(meta);
         try {
@@ -298,9 +299,7 @@ public class LocalFsBlobStore extends BlobStore {
     }
 
     /**
-     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi
-     *
-     * @param leaderElector
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi.
      */
     @Override
     public void setLeaderElector(ILeaderElector leaderElector) {
@@ -311,22 +310,22 @@ public class LocalFsBlobStore extends BlobStore {
     public void setBlobMeta(String key, SettableBlobMeta meta, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
         checkForBlobOrDownload(key);
-        _aclHandler.normalizeSettableBlobMeta(key, meta, who, ADMIN);
+        aclHandler.normalizeSettableBlobMeta(key, meta, who, ADMIN);
         BlobStoreAclHandler.validateSettableACLs(key, meta.get_acl());
         SettableBlobMeta orig = getStoredBlobMeta(key);
-        _aclHandler.hasPermissions(orig.get_acl(), ADMIN, who, key);
-        BlobStoreFileOutputStream mOut = null;
+        aclHandler.hasPermissions(orig.get_acl(), ADMIN, who, key);
+        BlobStoreFileOutputStream outputStream = null;
         try {
-            mOut = new BlobStoreFileOutputStream(fbs.write(META_PREFIX + key, false));
-            mOut.write(Utils.thriftSerialize(meta));
-            mOut.close();
-            mOut = null;
+            outputStream = new BlobStoreFileOutputStream(fbs.write(META_PREFIX + key, false));
+            outputStream.write(Utils.thriftSerialize(meta));
+            outputStream.close();
+            outputStream = null;
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            if (mOut != null) {
+            if (outputStream != null) {
                 try {
-                    mOut.cancel();
+                    outputStream.cancel();
                 } catch (IOException e) {
                     //Ignored
                 }
@@ -338,7 +337,7 @@ public class LocalFsBlobStore extends BlobStore {
     public void deleteBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
 
-        if (!_aclHandler.checkForValidUsers(who, WRITE)) {
+        if (!aclHandler.checkForValidUsers(who, WRITE)) {
             // need to get ACL from meta
             LOG.debug("Retrieving meta to get ACL info... key: {} subject: {}", key, who);
 
@@ -368,7 +367,7 @@ public class LocalFsBlobStore extends BlobStore {
     private void checkPermission(String key, Subject who, int mask) throws KeyNotFoundException, AuthorizationException {
         checkForBlobOrDownload(key);
         SettableBlobMeta meta = getStoredBlobMeta(key);
-        _aclHandler.hasPermissions(meta.get_acl(), mask, who, key);
+        aclHandler.hasPermissions(meta.get_acl(), mask, who, key);
     }
 
     private void deleteKeyIgnoringFileNotFound(String key) throws IOException {
@@ -390,7 +389,7 @@ public class LocalFsBlobStore extends BlobStore {
             checkForBlobUpdate(key);
         }
         SettableBlobMeta meta = getStoredBlobMeta(key);
-        _aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
+        aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
         try {
             return new BlobStoreFileInputStream(fbs.read(DATA_PREFIX + key));
         } catch (IOException e) {
@@ -423,7 +422,7 @@ public class LocalFsBlobStore extends BlobStore {
         int replicationCount = 0;
         validateKey(key);
         SettableBlobMeta meta = getStoredBlobMeta(key);
-        _aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
+        aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
         if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + key) == null) {
             return 0;
         }

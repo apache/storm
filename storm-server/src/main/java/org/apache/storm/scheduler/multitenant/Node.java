@@ -42,17 +42,17 @@ public class Node {
         }
     };
     private static final Logger LOG = LoggerFactory.getLogger(Node.class);
-    private final String _nodeId;
-    private Map<String, Set<WorkerSlot>> _topIdToUsedSlots = new HashMap<>();
-    private Set<WorkerSlot> _freeSlots = new HashSet<>();
-    private boolean _isAlive;
+    private final String nodeId;
+    private Map<String, Set<WorkerSlot>> topIdToUsedSlots = new HashMap<>();
+    private Set<WorkerSlot> freeSlots = new HashSet<>();
+    private boolean isAlive;
 
     public Node(String nodeId, Set<Integer> allPorts, boolean isAlive) {
-        _nodeId = nodeId;
-        _isAlive = isAlive;
-        if (_isAlive && allPorts != null) {
+        this.nodeId = nodeId;
+        this.isAlive = isAlive;
+        if (this.isAlive && allPorts != null) {
             for (int port : allPorts) {
-                _freeSlots.add(new WorkerSlot(_nodeId, port));
+                freeSlots.add(new WorkerSlot(this.nodeId, port));
             }
         }
     }
@@ -119,8 +119,11 @@ public class Node {
                     node.addOrphanedSlot(ws);
                 }
                 if (node.assignInternal(ws, topId, true)) {
-                    LOG.warn("Bad scheduling state for topology [" + topId + "], the slot " +
-                             ws + " assigned to multiple workers, un-assigning everything...");
+                    LOG.warn("Bad scheduling state for topology ["
+                            + topId
+                            + "], the slot "
+                            + ws
+                            + " assigned to multiple workers, un-assigning everything...");
                     node.free(ws, cluster, true);
                 }
             }
@@ -130,32 +133,42 @@ public class Node {
     }
 
     public String getId() {
-        return _nodeId;
+        return nodeId;
     }
 
     public boolean isAlive() {
-        return _isAlive;
+        return isAlive;
     }
 
     /**
+     * Get running topologies.
      * @return a collection of the topology ids currently running on this node
      */
     public Collection<String> getRunningTopologies() {
-        return _topIdToUsedSlots.keySet();
+        return topIdToUsedSlots.keySet();
     }
 
     public boolean isTotallyFree() {
-        return _topIdToUsedSlots.isEmpty();
+        return topIdToUsedSlots.isEmpty();
     }
 
     public int totalSlotsFree() {
-        return _freeSlots.size();
+        return freeSlots.size();
     }
 
     public int totalSlotsUsed() {
         int total = 0;
-        for (Set<WorkerSlot> slots : _topIdToUsedSlots.values()) {
+        for (Set<WorkerSlot> slots : topIdToUsedSlots.values()) {
             total += slots.size();
+        }
+        return total;
+    }
+
+    public int totalSlotsUsed(String topId) {
+        int total = 0;
+        Set<WorkerSlot> slots = topIdToUsedSlots.get(topId);
+        if (slots != null) {
+            total = slots.size();
         }
         return total;
     }
@@ -164,61 +177,66 @@ public class Node {
         return totalSlotsFree() + totalSlotsUsed();
     }
 
-    public int totalSlotsUsed(String topId) {
-        int total = 0;
-        Set<WorkerSlot> slots = _topIdToUsedSlots.get(topId);
-        if (slots != null) {
-            total = slots.size();
-        }
-        return total;
-    }
-
     private void validateSlot(WorkerSlot ws) {
-        if (!_nodeId.equals(ws.getNodeId())) {
-            throw new IllegalArgumentException(
-                "Trying to add a slot to the wrong node " + ws +
-                " is not a part of " + _nodeId);
+        if (!nodeId.equals(ws.getNodeId())) {
+            throw new IllegalArgumentException("Trying to add a slot to the wrong node "
+                    + ws
+                    + " is not a part of "
+                    + nodeId);
         }
     }
 
     private void addOrphanedSlot(WorkerSlot ws) {
-        if (_isAlive) {
-            throw new IllegalArgumentException("Orphaned Slots " +
-                                               "only are allowed on dead nodes.");
+        if (isAlive) {
+            throw new IllegalArgumentException("Orphaned Slots only are allowed on dead nodes.");
         }
         validateSlot(ws);
-        if (_freeSlots.contains(ws)) {
+        if (freeSlots.contains(ws)) {
             return;
         }
-        for (Set<WorkerSlot> used : _topIdToUsedSlots.values()) {
+        for (Set<WorkerSlot> used : topIdToUsedSlots.values()) {
             if (used.contains(ws)) {
                 return;
             }
         }
-        _freeSlots.add(ws);
+        freeSlots.add(ws);
     }
 
     boolean assignInternal(WorkerSlot ws, String topId, boolean dontThrow) {
         validateSlot(ws);
-        if (!_freeSlots.remove(ws)) {
-            for (Entry<String, Set<WorkerSlot>> topologySetEntry : _topIdToUsedSlots.entrySet()) {
+        if (!freeSlots.remove(ws)) {
+            for (Entry<String, Set<WorkerSlot>> topologySetEntry : topIdToUsedSlots.entrySet()) {
                 if (topologySetEntry.getValue().contains(ws)) {
                     if (dontThrow) {
-                        LOG.warn("Worker slot [" + ws + "] can't be assigned to " + topId +
-                                 ". Its already assigned to " + topologySetEntry.getKey() + ".");
+                        LOG.warn("Worker slot ["
+                                + ws
+                                + "] can't be assigned to "
+                                + topId
+                                + ". Its already assigned to "
+                                + topologySetEntry.getKey()
+                                + ".");
                         return true;
                     }
-                    throw new IllegalStateException("Worker slot [" + ws + "] can't be assigned to "
-                                                    + topId + ". Its already assigned to " + topologySetEntry.getKey() + ".");
+                    throw new IllegalStateException("Worker slot ["
+                            + ws
+                            + "] can't be assigned to "
+                            + topId
+                            + ". Its already assigned to "
+                            + topologySetEntry.getKey()
+                            + ".");
                 }
             }
-            LOG.warn("Adding Worker slot [" + ws + "] that was not reported in the supervisor heartbeats," +
-                     " but the worker is already running for topology " + topId + ".");
+            LOG.warn("Adding Worker slot ["
+                    + ws
+                    + "] that was not reported in the supervisor heartbeats,"
+                    + " but the worker is already running for topology "
+                    + topId
+                    + ".");
         }
-        Set<WorkerSlot> usedSlots = _topIdToUsedSlots.get(topId);
+        Set<WorkerSlot> usedSlots = topIdToUsedSlots.get(topId);
         if (usedSlots == null) {
             usedSlots = new HashSet<>();
-            _topIdToUsedSlots.put(topId, usedSlots);
+            topIdToUsedSlots.put(topId, usedSlots);
         }
         usedSlots.add(ws);
         return false;
@@ -229,32 +247,34 @@ public class Node {
      * @param cluster the cluster to be updated
      */
     public void freeAllSlots(Cluster cluster) {
-        if (!_isAlive) {
-            LOG.warn("Freeing all slots on a dead node {} ", _nodeId);
+        if (!isAlive) {
+            LOG.warn("Freeing all slots on a dead node {} ", nodeId);
         }
-        for (Entry<String, Set<WorkerSlot>> entry : _topIdToUsedSlots.entrySet()) {
+        for (Entry<String, Set<WorkerSlot>> entry : topIdToUsedSlots.entrySet()) {
             cluster.freeSlots(entry.getValue());
-            if (_isAlive) {
-                _freeSlots.addAll(entry.getValue());
+            if (isAlive) {
+                freeSlots.addAll(entry.getValue());
             }
         }
-        _topIdToUsedSlots = new HashMap<>();
+        topIdToUsedSlots = new HashMap<>();
     }
 
     /**
-     * Frees a single slot in this node
+     * Frees a single slot in this node.
      * @param ws the slot to free
      * @param cluster the cluster to update
      */
     public void free(WorkerSlot ws, Cluster cluster, boolean forceFree) {
-        if (_freeSlots.contains(ws)) return;
+        if (freeSlots.contains(ws)) {
+            return;
+        }
         boolean wasFound = false;
-        for (Entry<String, Set<WorkerSlot>> entry : _topIdToUsedSlots.entrySet()) {
+        for (Entry<String, Set<WorkerSlot>> entry : topIdToUsedSlots.entrySet()) {
             Set<WorkerSlot> slots = entry.getValue();
             if (slots.remove(ws)) {
                 cluster.freeSlot(ws);
-                if (_isAlive) {
-                    _freeSlots.add(ws);
+                if (isAlive) {
+                    freeSlots.add(ws);
                 }
                 wasFound = true;
             }
@@ -263,10 +283,11 @@ public class Node {
             if (forceFree) {
                 LOG.info("Forcefully freeing the " + ws);
                 cluster.freeSlot(ws);
-                _freeSlots.add(ws);
+                freeSlots.add(ws);
             } else {
-                throw new IllegalArgumentException("Tried to free a slot that was not" +
-                                                   " part of this node " + _nodeId);
+                throw new IllegalArgumentException("Tried to free a slot that was not"
+                        + " part of this node "
+                        + nodeId);
             }
         }
     }
@@ -277,15 +298,17 @@ public class Node {
      * @param cluster the cluster to update
      */
     public void freeTopology(String topId, Cluster cluster) {
-        Set<WorkerSlot> slots = _topIdToUsedSlots.get(topId);
-        if (slots == null || slots.isEmpty()) return;
+        Set<WorkerSlot> slots = topIdToUsedSlots.get(topId);
+        if (slots == null || slots.isEmpty()) {
+            return;
+        }
         for (WorkerSlot ws : slots) {
             cluster.freeSlot(ws);
-            if (_isAlive) {
-                _freeSlots.add(ws);
+            if (isAlive) {
+                freeSlots.add(ws);
             }
         }
-        _topIdToUsedSlots.remove(topId);
+        topIdToUsedSlots.remove(topId);
     }
 
     /**
@@ -297,16 +320,16 @@ public class Node {
      */
     public void assign(String topId, Collection<ExecutorDetails> executors,
                        Cluster cluster) {
-        if (!_isAlive) {
-            throw new IllegalStateException("Trying to adding to a dead node " + _nodeId);
+        if (!isAlive) {
+            throw new IllegalStateException("Trying to adding to a dead node " + nodeId);
         }
-        if (_freeSlots.isEmpty()) {
-            throw new IllegalStateException("Trying to assign to a full node " + _nodeId);
+        if (freeSlots.isEmpty()) {
+            throw new IllegalStateException("Trying to assign to a full node " + nodeId);
         }
         if (executors.size() == 0) {
-            LOG.warn("Trying to assign nothing from " + topId + " to " + _nodeId + " (Ignored)");
+            LOG.warn("Trying to assign nothing from " + topId + " to " + nodeId + " (Ignored)");
         } else {
-            WorkerSlot slot = _freeSlots.iterator().next();
+            WorkerSlot slot = freeSlots.iterator().next();
             cluster.assign(slot, topId, executors);
             assignInternal(slot, topId, false);
         }
@@ -314,16 +337,16 @@ public class Node {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof Node && _nodeId.equals(((Node) other)._nodeId);
+        return other instanceof Node && nodeId.equals(((Node) other).nodeId);
     }
 
     @Override
     public int hashCode() {
-        return _nodeId.hashCode();
+        return nodeId.hashCode();
     }
 
     @Override
     public String toString() {
-        return "Node: " + _nodeId;
+        return "Node: " + nodeId;
     }
 }

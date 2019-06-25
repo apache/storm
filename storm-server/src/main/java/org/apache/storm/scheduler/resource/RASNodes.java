@@ -30,19 +30,20 @@ import org.apache.storm.scheduler.WorkerSlot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RAS_Nodes {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+public class RASNodes {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RAS_Nodes.class);
-    private Map<String, RAS_Node> nodeMap;
+    private static final Logger LOG = LoggerFactory.getLogger(RASNodes.class);
+    private Map<String, RASNode> nodeMap;
 
-    public RAS_Nodes(Cluster cluster) {
+    public RASNodes(Cluster cluster) {
         this.nodeMap = getAllNodesFrom(cluster);
     }
 
-    public static Map<String, RAS_Node> getAllNodesFrom(Cluster cluster) {
+    public static Map<String, RASNode> getAllNodesFrom(Cluster cluster) {
 
         //A map of node ids to node objects
-        Map<String, RAS_Node> nodeIdToNode = new HashMap<>();
+        Map<String, RASNode> nodeIdToNode = new HashMap<>();
         //A map of assignments organized by node with the following format:
         //{nodeId -> {topologyId -> {workerId -> {execs}}}}
         Map<String, Map<String, Map<String, Collection<ExecutorDetails>>>> assignmentRelationshipMap = new HashMap<>();
@@ -55,7 +56,6 @@ public class RAS_Nodes {
                 assignment.getSlotToExecutors().entrySet()) {
                 WorkerSlot slot = entry.getKey();
                 String nodeId = slot.getNodeId();
-                Collection<ExecutorDetails> execs = entry.getValue();
                 if (!assignmentRelationshipMap.containsKey(nodeId)) {
                     assignmentRelationshipMap.put(
                         nodeId, new HashMap<String, Map<String, Collection<ExecutorDetails>>>());
@@ -73,6 +73,7 @@ public class RAS_Nodes {
                         .get(topId)
                         .put(slot.getId(), new LinkedList<ExecutorDetails>());
                 }
+                Collection<ExecutorDetails> execs = entry.getValue();
                 assignmentRelationshipMap.get(nodeId).get(topId).get(slot.getId()).addAll(execs);
             }
         }
@@ -90,7 +91,7 @@ public class RAS_Nodes {
             }
             nodeIdToNode.put(
                 sup.getId(),
-                new RAS_Node(
+                new RASNode(
                     sup.getId(),
                     sup,
                     cluster,
@@ -109,7 +110,7 @@ public class RAS_Nodes {
                     nodeId,
                     assignments);
                 nodeIdToNode.put(
-                    nodeId, new RAS_Node(nodeId, null, cluster, workerIdToWorker.get(nodeId), assignments));
+                    nodeId, new RASNode(nodeId, null, cluster, workerIdToWorker.get(nodeId), assignments));
             }
         }
         return nodeIdToNode;
@@ -118,7 +119,7 @@ public class RAS_Nodes {
     /**
      * get node object from nodeId.
      */
-    public RAS_Node getNodeById(String nodeId) {
+    public RASNode getNodeById(String nodeId) {
         return this.nodeMap.get(nodeId);
     }
 
@@ -128,7 +129,7 @@ public class RAS_Nodes {
      * @param workerSlots the slots to free
      */
     public void freeSlots(Collection<WorkerSlot> workerSlots) {
-        for (RAS_Node node : nodeMap.values()) {
+        for (RASNode node : nodeMap.values()) {
             for (WorkerSlot ws : node.getUsedSlots()) {
                 if (workerSlots.contains(ws)) {
                     LOG.debug("freeing ws {} on node {}", ws, node);
@@ -138,14 +139,14 @@ public class RAS_Nodes {
         }
     }
 
-    public Collection<RAS_Node> getNodes() {
+    public Collection<RASNode> getNodes() {
         return this.nodeMap.values();
     }
 
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
-        for (RAS_Node node : nodeMap.values()) {
+        for (RASNode node : nodeMap.values()) {
             ret.append(node).append("\n");
         }
         return ret.toString();

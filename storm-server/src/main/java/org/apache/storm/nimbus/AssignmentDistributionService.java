@@ -186,7 +186,6 @@ public class AssignmentDistributionService implements Closeable {
      * Get an assignments from the target queue with the specific index.
      * @param queueIndex index of the queue
      * @return an {@link NodeAssignments}
-     * @throws InterruptedException
      */
     public NodeAssignments nextAssignments(Integer queueIndex) throws InterruptedException {
         NodeAssignments target = null;

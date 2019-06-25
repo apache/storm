@@ -24,10 +24,10 @@ public interface WritableStringMetadataCache extends ReadOnlyStringMetadataCache
     /**
      * Add the string metadata to the cache.
      *
-     * * NOTE: this can cause data to be evicted from the cache when full.  When this occurs, the evictionCallback() method
+     * <p>NOTE: this can cause data to be evicted from the cache when full.  When this occurs, the evictionCallback() method
      * is called to store the metadata back into the RocksDB database.
      *
-     * This method is only exposed to the WritableStringMetadataCache interface.
+     * <p>This method is only exposed to the WritableStringMetadataCache interface.
      *
      * @param s   The string to add
      * @param stringMetadata  The string's metadata

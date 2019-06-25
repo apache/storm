@@ -265,8 +265,6 @@ public class StatsUtil {
         Map win2sid2acked = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, ACKED), TO_STRING);
         Map win2sid2failed = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, FAILED), TO_STRING);
         Map win2sid2emitted = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EMITTED), TO_STRING);
-        Map win2sid2transferred = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING);
-        Map win2sid2compLat = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
 
         outputStats.put(ACKED, win2sid2acked.get(window));
         outputStats.put(FAILED, win2sid2failed.get(window));
@@ -276,6 +274,7 @@ public class StatsUtil {
         }
         outputStats.put(EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
 
+        Map win2sid2transferred = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING);
         Map<String, Long> sid2transferred = (Map) win2sid2transferred.get(window);
         if (sid2transferred == null) {
             sid2transferred = new HashMap<>();
@@ -283,6 +282,7 @@ public class StatsUtil {
         outputStats.put(TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
         outputStats = swapMapOrder(outputStats);
 
+        Map win2sid2compLat = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
         Map sid2compLat = (Map) win2sid2compLat.get(window);
         Map sid2acked = (Map) win2sid2acked.get(window);
         mergeMaps(outputStats, aggSpoutStreamsLatAndCount(sid2compLat, sid2acked));
@@ -301,8 +301,6 @@ public class StatsUtil {
      */
     public static <K, V extends Number> Map<String, Object> aggPreMergeTopoPageBolt(
         Map<String, Object> beat, String window, boolean includeSys) {
-        Map<String, Object> ret = new HashMap<>();
-
         Map<String, Object> subRet = new HashMap<>();
         subRet.put(NUM_EXECUTORS, 1);
         subRet.put(NUM_TASKS, beat.get(NUM_TASKS));
@@ -334,6 +332,7 @@ public class StatsUtil {
         subRet.putAll(aggBoltLatAndCount(
             win2sid2execLat.get(window), win2sid2procLat.get(window), win2sid2exec.get(window)));
 
+        Map<String, Object> ret = new HashMap<>();
         ret.put((String) beat.get("comp-id"), subRet);
         return ret;
     }
@@ -343,8 +342,6 @@ public class StatsUtil {
      */
     public static <K, V extends Number> Map<String, Object> aggPreMergeTopoPageSpout(
         Map<String, Object> m, String window, boolean includeSys) {
-        Map<String, Object> ret = new HashMap<>();
-
         Map<String, Object> subRet = new HashMap<>();
         subRet.put(NUM_EXECUTORS, 1);
         subRet.put(NUM_TASKS, m.get(NUM_TASKS));
@@ -372,6 +369,7 @@ public class StatsUtil {
             windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, ACKED), TO_STRING);
         subRet.putAll(aggSpoutLatAndCount(win2sid2compLat.get(window), win2sid2acked.get(window)));
 
+        Map<String, Object> ret = new HashMap<>();
         ret.put((String) m.get("comp-id"), subRet);
         return ret;
     }
@@ -522,8 +520,6 @@ public class StatsUtil {
      */
     public static Map<String, Object> aggTopoExecStats(
         String window, boolean includeSys, Map<String, Object> accStats, Map<String, Object> beat, String compType) {
-        Map<String, Object> ret = new HashMap<>();
-
         boolean isSpout = compType.equals(ClientStatsUtil.SPOUT);
         // component id -> stats
         Map<String, Object> cid2stats;
@@ -552,6 +548,7 @@ public class StatsUtil {
             w2acked = aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED));
         }
 
+        Map<String, Object> ret = new HashMap<>();
         Set workerSet = (Set) accStats.get(WORKERS_SET);
         workerSet.add(Lists.newArrayList(beat.get(HOST), beat.get(PORT)));
         ret.put(WORKERS_SET, workerSet);

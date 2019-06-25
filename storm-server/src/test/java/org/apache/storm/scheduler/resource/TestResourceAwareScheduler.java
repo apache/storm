@@ -103,9 +103,9 @@ public class TestResourceAwareScheduler {
         TopologyDetails topology2 = genTopology("topology2", config, 1, 0, 2, 0, 0, 0, "user");
         Topologies topologies = new Topologies(topology1, topology2);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
-        Map<String, RAS_Node> nodes = RAS_Nodes.getAllNodesFrom(cluster);
+        Map<String, RASNode> nodes = RASNodes.getAllNodesFrom(cluster);
         assertEquals(5, nodes.size());
-        RAS_Node node = nodes.get("r000s000");
+        RASNode node = nodes.get("r000s000");
 
         assertEquals("r000s000", node.getId());
         assertTrue(node.isAlive());
@@ -904,7 +904,7 @@ public class TestResourceAwareScheduler {
         scheduler.prepare(config);
         scheduler.schedule(topologies, cluster);
 
-        Map<String, RAS_Node> nodes = RAS_Nodes.getAllNodesFrom(cluster);
+        Map<String, RASNode> nodes = RASNodes.getAllNodesFrom(cluster);
 
         for (SchedulerAssignment assignment : cluster.getAssignments().values()) {
             for (Entry<WorkerSlot, WorkerResources> entry : new HashMap<>(assignment.getScheduledResources()).entrySet()) {

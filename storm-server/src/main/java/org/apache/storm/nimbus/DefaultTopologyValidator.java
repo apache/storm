@@ -24,7 +24,7 @@ public class DefaultTopologyValidator implements ITopologyValidator {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultTopologyValidator.class);
 
     @Override
-    public void prepare(Map<String, Object> StormConf) {
+    public void prepare(Map<String, Object> stormConf) {
     }
 
     @Override

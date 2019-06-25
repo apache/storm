@@ -36,6 +36,7 @@ public final class TopologyResources {
     private double assignedNonSharedMemOnHeap;
     private double assignedNonSharedMemOffHeap;
     private double assignedCpu;
+
     private TopologyResources(TopologyDetails td, Collection<WorkerResources> workers,
                               Map<String, Double> nodeIdToSharedOffHeapNode) {
         requestedMemOnHeap = td.getTotalRequestedMemOnHeap();
@@ -79,12 +80,15 @@ public final class TopologyResources {
             assignedMemOffHeap += sharedOff;
         }
     }
+
     public TopologyResources(TopologyDetails td, SchedulerAssignment assignment) {
         this(td, getWorkerResources(assignment), getNodeIdToSharedOffHeapNode(assignment));
     }
+
     public TopologyResources(TopologyDetails td, Assignment assignment) {
         this(td, getWorkerResources(assignment), getNodeIdToSharedOffHeapNode(assignment));
     }
+
     public TopologyResources() {
         this(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }

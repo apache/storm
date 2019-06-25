@@ -64,10 +64,7 @@ public class SupervisorUtils {
 
     /**
      * Given the blob information returns the value of the uncompress field, handling it either being a string or a boolean value, or if
-     * it's not specified then returns false
-     *
-     * @param blobInfo
-     * @return
+     * it's not specified then returns false.
      */
     public static boolean shouldUncompressBlob(Map<String, Object> blobInfo) {
         return ObjectReader.getBoolean(blobInfo.get("uncompress"), false);
@@ -85,10 +82,7 @@ public class SupervisorUtils {
     }
 
     /**
-     * Returns a list of LocalResources based on the blobstore-map passed in
-     *
-     * @param blobstoreMap
-     * @return
+     * Returns a list of LocalResources based on the blobstore-map passed in.
      */
     public static List<LocalResource> blobstoreMapToLocalresources(Map<String, Map<String, Object>> blobstoreMap) {
         List<LocalResource> localResourceList = new ArrayList<>();
@@ -109,10 +103,7 @@ public class SupervisorUtils {
     }
 
     /**
-     * map from worker id to heartbeat
-     *
-     * @param conf
-     * @return
+     * Map from worker id to heartbeat.
      *
      */
     public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map<String, Object> conf) {
@@ -120,11 +111,7 @@ public class SupervisorUtils {
     }
 
     /**
-     * get worker heartbeat by workerId.
-     *
-     * @param conf
-     * @param workerId
-     * @return
+     * Get worker heartbeat by workerId.
      */
     private static LSWorkerHeartbeat readWorkerHeartbeat(Map<String, Object> conf, String workerId) {
         return _instance.readWorkerHeartbeatImpl(conf, workerId);

@@ -64,6 +64,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     private int lastReturnedTime = 0;
     private int timeoutSeconds = DEFAULT_TIMEOUT_SECS;
     private Map<String, Object> lastReturnedValue;
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private URI targetURI = null;
     private JSONParser jsonParser;
     private String scheme;
@@ -127,14 +128,14 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     }
 
     /**
+     * Protected so we can override this in unit tests.
+     *
      * @param api null if we are trying to download artifact, otherwise a string to call REST api,
      *        e.g. "/api/storage"
      * @param artifact location of artifact
      * @param host Artifactory hostname
      * @param port Artifactory port
      * @return null on failure or the response string if return code is in 200 range
-     *
-     * <p>Protected so we can override this in unit tests
      */
     protected String doGet(String api, String artifact, String host, Integer port) {
         URIBuilder builder = new URIBuilder().setScheme(scheme).setHost(host).setPort(port);
@@ -158,7 +159,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             LOG.debug("About to issue a GET to {}", builder);
             HttpGet httpget = new HttpGet(builder.build());
             String responseBody;
-            responseBody = httpclient.execute(httpget, GETStringResponseHandler.getInstance());
+            responseBody = httpclient.execute(httpget, GetStringResponseHandler.getInstance());
             returnValue = responseBody;
         } catch (Exception e) {
             LOG.error("Received exception while connecting to Artifactory", e);
@@ -196,6 +197,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             LOG.error("got null metadata");
             return null;
         }
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         String downloadURI = (String) json.get("downloadUri");
 
         // This means we are pointing at a file.
@@ -298,6 +300,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         cacheInitialized = true;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private Map<String, Object> loadFromURI(URI uri) throws IOException {
         String host = uri.getHost();
         Integer port = uri.getPort();
@@ -342,20 +345,22 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     /**
      * A private class used to check the response coming back from httpclient.
      */
-    private static class GETStringResponseHandler implements ResponseHandler<String> {
-        private static GETStringResponseHandler singleton = null;
+    private static class GetStringResponseHandler implements ResponseHandler<String> {
+        private static GetStringResponseHandler singleton = null;
 
         /**
+         * Get instance.
          * @return a singleton httpclient GET response handler
          */
-        public static GETStringResponseHandler getInstance() {
+        public static GetStringResponseHandler getInstance() {
             if (singleton == null) {
-                singleton = new GETStringResponseHandler();
+                singleton = new GetStringResponseHandler();
             }
             return singleton;
         }
 
         /**
+         * Handle response.
          * @param response The http response to verify.
          * @return null on failure or the response string if return code is in 200 range
          */
@@ -374,6 +379,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     }
 
     private class DirEntryCompare implements Comparator<JSONObject> {
+
         @Override
         public int compare(JSONObject o1, JSONObject o2) {
             return ((String) o1.get("uri")).compareTo((String) o2.get("uri"));

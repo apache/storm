@@ -38,12 +38,13 @@ import org.slf4j.LoggerFactory;
  * Very basic blob store impl with no ACL handling.
  */
 public class FileBlobStoreImpl {
-    private static final long FULL_CLEANUP_FREQ = 60 * 60 * 1000l;
+    private static final long FULL_CLEANUP_FREQ = 60 * 60 * 1000L;
     private static final int BUCKETS = 1024;
     private static final Logger LOG = LoggerFactory.getLogger(FileBlobStoreImpl.class);
     private static final Timer timer = new Timer("FileBlobStore cleanup thread", true);
     private File fullPath;
     private TimerTask cleanup = null;
+
     public FileBlobStoreImpl(File path, Map<String, Object> conf) throws IOException {
         LOG.info("Creating new blob store based in {}", path);
         fullPath = path;
@@ -66,11 +67,20 @@ public class FileBlobStoreImpl {
     }
 
     /**
-     * @return all keys that are available for reading.
-     * @throws IOException on any error.
+     * List keys.
+     * @return all keys that are available for reading
+     * @throws IOException on any error
      */
     public Iterator<String> listKeys() throws IOException {
         return new KeyInHashDirIterator();
+    }
+
+    protected Iterator<String> listKeys(File path) throws IOException {
+        String[] files = path.list();
+        if (files != null) {
+            return Arrays.asList(files).iterator();
+        }
+        return new LinkedList<String>().iterator();
     }
 
     /**
@@ -103,7 +113,7 @@ public class FileBlobStoreImpl {
     }
 
     /**
-     * Delete a key from the blob store
+     * Delete a key from the blob store.
      * @param key the key to delete
      * @throws IOException on any error
      */
@@ -162,14 +172,6 @@ public class FileBlobStoreImpl {
             }
         }
         return ret.iterator();
-    }
-
-    protected Iterator<String> listKeys(File path) throws IOException {
-        String[] files = path.list();
-        if (files != null) {
-            return Arrays.asList(files).iterator();
-        }
-        return new LinkedList<String>().iterator();
     }
 
     protected void delete(File path) throws IOException {

@@ -21,28 +21,28 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.LocalState;
 
 public class RunAsUserContainerLauncher extends ContainerLauncher {
-    protected final ResourceIsolationInterface _resourceIsolationManager;
-    private final Map<String, Object> _conf;
-    private final String _supervisorId;
-    private final int _supervisorPort;
+    protected final ResourceIsolationInterface resourceIsolationManager;
+    private final Map<String, Object> conf;
+    private final String supervisorId;
+    private final int supervisorPort;
     private final StormMetricsRegistry metricsRegistry;
     private final ContainerMemoryTracker containerMemoryTracker;
 
     public RunAsUserContainerLauncher(Map<String, Object> conf, String supervisorId, int supervisorPort,
                                       ResourceIsolationInterface resourceIsolationManager, StormMetricsRegistry metricsRegistry, 
                                       ContainerMemoryTracker containerMemoryTracker) throws IOException {
-        _conf = conf;
-        _supervisorId = supervisorId;
-        _supervisorPort = supervisorPort;
-        _resourceIsolationManager = resourceIsolationManager;
+        this.conf = conf;
+        this.supervisorId = supervisorId;
+        this.supervisorPort = supervisorPort;
+        this.resourceIsolationManager = resourceIsolationManager;
         this.metricsRegistry = metricsRegistry;
         this.containerMemoryTracker = containerMemoryTracker;
     }
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        Container container = new RunAsUserContainer(ContainerType.LAUNCH, _conf, _supervisorId, _supervisorPort, port,
-            assignment, _resourceIsolationManager, state, null, metricsRegistry, containerMemoryTracker, null, null, null);
+        Container container = new RunAsUserContainer(ContainerType.LAUNCH, conf, supervisorId, supervisorPort, port,
+            assignment, resourceIsolationManager, state, null, metricsRegistry, containerMemoryTracker, null, null, null);
         container.setup();
         container.launch();
         return container;
@@ -50,15 +50,15 @@ public class RunAsUserContainerLauncher extends ContainerLauncher {
 
     @Override
     public Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        return new RunAsUserContainer(ContainerType.RECOVER_FULL, _conf, _supervisorId, _supervisorPort, port,
-            assignment, _resourceIsolationManager, state, null, metricsRegistry, containerMemoryTracker,
+        return new RunAsUserContainer(ContainerType.RECOVER_FULL, conf, supervisorId, supervisorPort, port,
+            assignment, resourceIsolationManager, state, null, metricsRegistry, containerMemoryTracker,
             null, null, null);
     }
 
     @Override
     public Killable recoverContainer(String workerId, LocalState localState) throws IOException {
-        return new RunAsUserContainer(ContainerType.RECOVER_PARTIAL, _conf, _supervisorId, _supervisorPort, -1, null,
-            _resourceIsolationManager, localState, workerId, metricsRegistry, containerMemoryTracker,
+        return new RunAsUserContainer(ContainerType.RECOVER_PARTIAL, conf, supervisorId, supervisorPort, -1, null,
+                resourceIsolationManager, localState, workerId, metricsRegistry, containerMemoryTracker,
             null, null, null);
     }
 

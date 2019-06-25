@@ -21,57 +21,58 @@ import org.slf4j.LoggerFactory;
 
 public class ZookeeperServerCnxnFactory {
     private static final Logger LOG = LoggerFactory.getLogger(ZookeeperServerCnxnFactory.class);
-    int _port;
-    NIOServerCnxnFactory _factory;
+    int port;
+    NIOServerCnxnFactory factory;
 
     public ZookeeperServerCnxnFactory(int port, int maxClientCnxns) {
         //port range
         int max;
         if (port <= 0) {
-            _port = 2000;
+            this.port = 2000;
             max = 65535;
         } else {
-            _port = port;
+            this.port = port;
             max = port;
         }
 
         try {
-            _factory = new NIOServerCnxnFactory();
+            factory = new NIOServerCnxnFactory();
         } catch (IOException e) {
-            _port = 0;
-            _factory = null;
+            this.port = 0;
+            factory = null;
             e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         }
 
         //look for available port
-        for (; _port <= max; _port++) {
+        for (; this.port <= max; this.port++) {
             try {
-                _factory.configure(new InetSocketAddress(_port), maxClientCnxns);
-                LOG.debug("Zookeeper server successfully binded at port " + _port);
+                factory.configure(new InetSocketAddress(this.port), maxClientCnxns);
+                LOG.debug("Zookeeper server successfully binded at port " + this.port);
                 break;
             } catch (BindException e1) {
+                //ignore
             } catch (IOException e2) {
-                _port = 0;
-                _factory = null;
+                this.port = 0;
+                factory = null;
                 e2.printStackTrace();
                 throw new RuntimeException(e2.getMessage());
             }
         }
 
-        if (_port > max) {
-            _port = 0;
-            _factory = null;
+        if (this.port > max) {
+            this.port = 0;
+            factory = null;
             LOG.error("Failed to find a port for Zookeeper");
             throw new RuntimeException("No port is available to launch an inprocess zookeeper.");
         }
     }
 
     public int port() {
-        return _port;
+        return port;
     }
 
     public NIOServerCnxnFactory factory() {
-        return _factory;
+        return factory;
     }
 }
