@@ -43,13 +43,21 @@ public class KafkaPartitionOffsetLag {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof KafkaPartitionOffsetLag)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof KafkaPartitionOffsetLag)) {
+            return false;
+        }
 
         KafkaPartitionOffsetLag that = (KafkaPartitionOffsetLag) o;
 
-        if (getConsumerCommittedOffset() != that.getConsumerCommittedOffset()) return false;
-        if (getLogHeadOffset() != that.getLogHeadOffset()) return false;
+        if (getConsumerCommittedOffset() != that.getConsumerCommittedOffset()) {
+            return false;
+        }
+        if (getLogHeadOffset() != that.getLogHeadOffset()) {
+            return false;
+        }
         return getLag() == that.getLag();
 
     }
@@ -65,8 +73,8 @@ public class KafkaPartitionOffsetLag {
     @Override
     public String toString() {
         // JSONAware not working for nested element on Map so write JSON format from here
-        return "{\"consumerCommittedOffset\": " + consumerCommittedOffset + ", " +
-               "\"logHeadOffset\": " + logHeadOffset + ", " +
-               "\"lag\": " + lag + "}";
+        return "{\"consumerCommittedOffset\": " + consumerCommittedOffset + ", "
+                + "\"logHeadOffset\": " + logHeadOffset + ", "
+                + "\"lag\": " + lag + "}";
     }
 }

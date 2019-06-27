@@ -21,7 +21,7 @@ package org.apache.storm.kafka.monitor;
 import org.json.simple.JSONAware;
 
 /**
- * Class representing the log head offsets, spout offsets and the lag for a topic
+ * Class representing the log head offsets, spout offsets and the lag for a topic.
  */
 public class KafkaOffsetLagResult implements JSONAware {
     private String topic;
@@ -60,26 +60,38 @@ public class KafkaOffsetLagResult implements JSONAware {
 
     @Override
     public String toString() {
-        return "KafkaOffsetLagResult{" +
-               "topic='" + topic + '\'' +
-               ", partition=" + partition +
-               ", consumerCommittedOffset=" + consumerCommittedOffset +
-               ", logHeadOffset=" + logHeadOffset +
-               ", lag=" + lag +
-               '}';
+        return "KafkaOffsetLagResult{"
+                + "topic='" + topic + '\''
+                + ", partition=" + partition
+                + ", consumerCommittedOffset=" + consumerCommittedOffset
+                + ", logHeadOffset=" + logHeadOffset
+                + ", lag=" + lag
+                + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         KafkaOffsetLagResult that = (KafkaOffsetLagResult) o;
 
-        if (partition != that.partition) return false;
-        if (consumerCommittedOffset != that.consumerCommittedOffset) return false;
-        if (logHeadOffset != that.logHeadOffset) return false;
-        if (lag != that.lag) return false;
+        if (partition != that.partition) {
+            return false;
+        }
+        if (consumerCommittedOffset != that.consumerCommittedOffset) {
+            return false;
+        }
+        if (logHeadOffset != that.logHeadOffset) {
+            return false;
+        }
+        if (lag != that.lag) {
+            return false;
+        }
         return !(topic != null ? !topic.equals(that.topic) : that.topic != null);
 
     }
@@ -96,7 +108,11 @@ public class KafkaOffsetLagResult implements JSONAware {
 
     @Override
     public String toJSONString() {
-        return "{\"topic\":\"" + topic + "\",\"partition\":" + partition + ",\"consumerCommittedOffset\":" + consumerCommittedOffset + "," +
-               "\"logHeadOffset\":" + logHeadOffset + ",\"lag\":" + lag + "}";
+        return "{\"topic\":\"" + topic
+                + "\",\"partition\":" + partition
+                + ",\"consumerCommittedOffset\":" + consumerCommittedOffset
+                + ",\"logHeadOffset\":" + logHeadOffset
+                + ",\"lag\":" + lag
+                + "}";
     }
 }

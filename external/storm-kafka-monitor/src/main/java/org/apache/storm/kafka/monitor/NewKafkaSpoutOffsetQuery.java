@@ -19,8 +19,8 @@
 package org.apache.storm.kafka.monitor;
 
 /**
- * Class representing information for querying kafka for log head offsets, consumer offsets and the difference for new kafka spout using new
- * consumer api
+ * Class representing information for querying kafka for log head offsets, consumer offsets and the difference for new
+ * kafka spout using new consumer api.
  */
 public class NewKafkaSpoutOffsetQuery {
     private final String topics; // comma separated list of topics
@@ -60,13 +60,13 @@ public class NewKafkaSpoutOffsetQuery {
 
     @Override
     public String toString() {
-        return "NewKafkaSpoutOffsetQuery{" +
-               "topics='" + topics + '\'' +
-               ", consumerGroupId='" + consumerGroupId + '\'' +
-               ", bootStrapBrokers='" + bootStrapBrokers + '\'' +
-               ", securityProtocol='" + securityProtocol + '\'' +
-               ", consumerPropertiesFileName='" + consumerPropertiesFileName + '\'' +
-               '}';
+        return "NewKafkaSpoutOffsetQuery{"
+                + "topics='" + topics + '\''
+                + ", consumerGroupId='" + consumerGroupId + '\''
+                + ", bootStrapBrokers='" + bootStrapBrokers + '\''
+                + ", securityProtocol='" + securityProtocol + '\''
+                + ", consumerPropertiesFileName='" + consumerPropertiesFileName + '\''
+                + '}';
     }
 
     @Override
