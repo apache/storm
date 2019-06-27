@@ -21,6 +21,7 @@ import org.apache.storm.tuple.Values;
 public class HBaseQuery extends BaseQueryFunction<HBaseState, List<Values>> {
 
     @Override
+    @SuppressWarnings("checkstyle:ParameterName")
     public List<List<Values>> batchRetrieve(HBaseState hBaseState, List<TridentTuple> tridentTuples) {
         return hBaseState.batchRetrieve(tridentTuples);
     }

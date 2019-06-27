@@ -20,19 +20,17 @@ import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
 
 public interface HBaseValueMapper extends Serializable {
+
     /**
-     * @param input  tuple.
-     * @param result HBase lookup result instance.
-     * @return list of values that should be emitted by the lookup bolt.
-     *
-     * @throws Exception
+     * Map to values.
+     * @param input tuple
+     * @param result HBase lookup result instance
+     * @return list of values that should be emitted by the lookup bolt
      */
     public List<Values> toValues(ITuple input, Result result) throws Exception;
 
     /**
      * declares the output fields for the lookup bolt.
-     *
-     * @param declarer
      */
     void declareOutputFields(OutputFieldsDeclarer declarer);
 }

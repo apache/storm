@@ -31,12 +31,14 @@ import org.slf4j.LoggerFactory;
 /**
  * Basic bolt for writing to HBase.
  *
- * Note: Each HBaseBolt defined in a topology is tied to a specific table.
+ * <p>Note: Each HBaseBolt defined in a topology is tied to a specific table.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class HBaseBolt extends AbstractHBaseBolt {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseBolt.class);
     private static final int DEFAULT_FLUSH_INTERVAL_SECS = 1;
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     boolean writeToWAL = true;
     List<Mutation> batchMutations;
     int flushIntervalSecs = DEFAULT_FLUSH_INTERVAL_SECS;
@@ -48,6 +50,7 @@ public class HBaseBolt extends AbstractHBaseBolt {
         this.batchMutations = new LinkedList<>();
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public HBaseBolt writeToWAL(boolean writeToWAL) {
         this.writeToWAL = writeToWAL;
         return this;

@@ -151,15 +151,15 @@ public class HBaseKeyValueStateProvider implements StateProvider {
 
         @Override
         public String toString() {
-            return "StateConfig{" +
-                   "keyClass='" + keyClass + '\'' +
-                   ", valueClass='" + valueClass + '\'' +
-                   ", keySerializerClass='" + keySerializerClass + '\'' +
-                   ", valueSerializerClass='" + valueSerializerClass + '\'' +
-                   ", hbaseConfigKey='" + hbaseConfigKey + '\'' +
-                   ", tableName='" + tableName + '\'' +
-                   ", columnFamily='" + columnFamily + '\'' +
-                   '}';
+            return "StateConfig{"
+                    + "keyClass='" + keyClass + '\''
+                    + ", valueClass='" + valueClass + '\''
+                    + ", keySerializerClass='" + keySerializerClass + '\''
+                    + ", valueSerializerClass='" + valueSerializerClass + '\''
+                    + ", hbaseConfigKey='" + hbaseConfigKey + '\''
+                    + ", tableName='" + tableName + '\''
+                    + ", columnFamily='" + columnFamily + '\''
+                    + '}';
         }
     }
 }

@@ -24,17 +24,11 @@ import java.util.List;
 public interface TridentHBaseMapMapper extends Serializable {
     /**
      * Given a tuple's grouped key list, return the HBase rowkey.
-     *
-     * @param keys
-     * @return
      */
     public byte[] rowKey(List<Object> keys);
 
     /**
      * Given a tuple's grouped key list, return the HBase qualifier.
-     *
-     * @param keys
-     * @return
      */
     public String qualifier(List<Object> keys);
 }
