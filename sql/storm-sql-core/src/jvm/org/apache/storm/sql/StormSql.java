@@ -19,8 +19,8 @@ import org.apache.storm.generated.SubmitOptions;
 /**
  * The StormSql class provides standalone, interactive interfaces to execute
  * SQL statements over streaming data.
- * <p>
- * The StormSql class is stateless. The user needs to submit the data
+ *
+ * <p>The StormSql class is stateless. The user needs to submit the data
  * definition language (DDL) statements and the query statements in the same
  * batch.
  */

@@ -78,14 +78,13 @@ class StormSqlImpl extends StormSql {
     @Override
     public void explain(Iterable<String> statements) throws Exception {
         for (String sql : statements) {
-            StormParser parser = new StormParser(sql);
-            SqlNode node = parser.impl().parseSqlStmtEof();
-
             System.out.println("===========================================================");
             System.out.println("query>");
             System.out.println(sql);
             System.out.println("-----------------------------------------------------------");
 
+            StormParser parser = new StormParser(sql);
+            SqlNode node = parser.impl().parseSqlStmtEof();
             if (node instanceof SqlCreateTable) {
                 sqlContext.interpretCreateTable((SqlCreateTable) node);
                 System.out.println("No plan presented on DDL");

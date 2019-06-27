@@ -52,9 +52,10 @@ import org.apache.storm.sql.runtime.calcite.ExecutableExpression;
 
 /**
  * Compiles a scalar expression ({@link org.apache.calcite.rex.RexNode}) to Java source code String.
- * <p/>
- * This code is inspired by JaninoRexCompiler in Calcite, but while it is returning {@link org.apache.calcite.interpreter.Scalar} which is
- * executable, we need to pass the source code to compile and serialize instance so that it can be executed on worker efficiently.
+ *
+ * <p>This code is inspired by JaninoRexCompiler in Calcite, but while it is returning
+ * {@link org.apache.calcite.interpreter.Scalar} which is executable, we need to pass the source code to compile and
+ * serialize instance so that it can be executed on worker efficiently.
  */
 public class RexNodeToJavaCodeCompiler {
     private final RexBuilder rexBuilder;
@@ -64,8 +65,8 @@ public class RexNodeToJavaCodeCompiler {
     }
 
     /**
-     * Given a method that implements {@link ExecutableExpression#execute(Context, Object[])}, adds a bridge method that implements {@link
-     * ExecutableExpression#execute(Context)}, and compiles.
+     * Given a method that implements {@link ExecutableExpression#execute(Context, Object[])}, adds a bridge method that
+     * implements {@link ExecutableExpression#execute(Context)}, and compiles.
      */
     static String baz(ParameterExpression context,
                       ParameterExpression outputValues, BlockStatement block, String className) {
@@ -121,6 +122,45 @@ public class RexNodeToJavaCodeCompiler {
         return compileToBlock(program, context_, outputValues_).toBlock();
     }
 
+    private BlockBuilder compileToBlock(final RexProgram program, ParameterExpression context,
+            ParameterExpression outputValues) {
+        RelDataType inputRowType = program.getInputRowType();
+        final BlockBuilder builder = new BlockBuilder();
+        final JavaTypeFactoryImpl javaTypeFactory =
+                new JavaTypeFactoryImpl(rexBuilder.getTypeFactory().getTypeSystem());
+
+        final RexToLixTranslator.InputGetter inputGetter =
+                new RexToLixTranslator.InputGetterImpl(
+                        ImmutableList.of(
+                                Pair.<Expression, PhysType>of(
+                                        Expressions.field(context,
+                                                BuiltInMethod.CONTEXT_VALUES.field),
+                                        PhysTypeImpl.of(javaTypeFactory, inputRowType,
+                                                JavaRowFormat.ARRAY, false))));
+        final Function1<String, RexToLixTranslator.InputGetter> correlates =
+            new Function1<String, RexToLixTranslator.InputGetter>() {
+                @Override
+                public RexToLixTranslator.InputGetter apply(String a0) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        final Expression root =
+                Expressions.field(context, BuiltInMethod.CONTEXT_ROOT.field);
+        final List<Expression> list =
+                RexToLixTranslator.translateProjects(program, javaTypeFactory, builder,
+                        null, root, inputGetter, correlates);
+        for (int i = 0; i < list.size(); i++) {
+            builder.add(
+                    Expressions.statement(
+                            Expressions.assign(
+                                    Expressions.arrayIndex(outputValues,
+                                            Expressions.constant(i)),
+                                    list.get(i))));
+        }
+
+        return builder;
+    }
+
     public String compile(List<RexNode> nodes, RelDataType inputRowType, String className) {
         final RexProgramBuilder programBuilder =
             new RexProgramBuilder(inputRowType, rexBuilder);
@@ -139,45 +179,6 @@ public class RexNodeToJavaCodeCompiler {
 
         BlockBuilder builder = compileToBlock(program, context_, outputValues_);
         return baz(context_, outputValues_, builder.toBlock(), className);
-    }
-
-    private BlockBuilder compileToBlock(final RexProgram program, ParameterExpression context,
-                                        ParameterExpression outputValues) {
-        RelDataType inputRowType = program.getInputRowType();
-        final BlockBuilder builder = new BlockBuilder();
-        final JavaTypeFactoryImpl javaTypeFactory =
-            new JavaTypeFactoryImpl(rexBuilder.getTypeFactory().getTypeSystem());
-
-        final RexToLixTranslator.InputGetter inputGetter =
-            new RexToLixTranslator.InputGetterImpl(
-                ImmutableList.of(
-                    Pair.<Expression, PhysType>of(
-                        Expressions.field(context,
-                                          BuiltInMethod.CONTEXT_VALUES.field),
-                        PhysTypeImpl.of(javaTypeFactory, inputRowType,
-                                        JavaRowFormat.ARRAY, false))));
-        final Function1<String, RexToLixTranslator.InputGetter> correlates =
-            new Function1<String, RexToLixTranslator.InputGetter>() {
-                @Override
-                public RexToLixTranslator.InputGetter apply(String a0) {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        final Expression root =
-            Expressions.field(context, BuiltInMethod.CONTEXT_ROOT.field);
-        final List<Expression> list =
-            RexToLixTranslator.translateProjects(program, javaTypeFactory, builder,
-                                                 null, root, inputGetter, correlates);
-        for (int i = 0; i < list.size(); i++) {
-            builder.add(
-                Expressions.statement(
-                    Expressions.assign(
-                        Expressions.arrayIndex(outputValues,
-                                               Expressions.constant(i)),
-                        list.get(i))));
-        }
-
-        return builder;
     }
 
     enum StormBuiltInMethod {
