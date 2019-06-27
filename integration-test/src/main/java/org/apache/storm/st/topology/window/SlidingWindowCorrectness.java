@@ -18,18 +18,20 @@
 package org.apache.storm.st.topology.window;
 
 import com.google.common.collect.Lists;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.topology.base.BaseWindowedBolt;
-import org.apache.storm.st.topology.TestableTopology;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.storm.st.utils.StringDecorator;
 
 import java.util.List;
 
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.st.topology.TestableTopology;
+import org.apache.storm.st.utils.StringDecorator;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.topology.base.BaseWindowedBolt;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * Computes sliding window sum
+ * Computes sliding window sum.
  */
 public class SlidingWindowCorrectness implements TestableTopology {
     private static final Logger LOG = LoggerFactory.getLogger(SlidingWindowCorrectness.class);
