@@ -18,25 +18,27 @@
 
 package org.apache.storm.pmml.model;
 
-import org.apache.storm.pmml.PMMLPredictorBolt;
-import org.apache.storm.tuple.Fields;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.storm.pmml.PMMLPredictorBolt;
+import org.apache.storm.tuple.Fields;
+
 /**
- * Represents the streams and output fields declared by the {@link PMMLPredictorBolt}
+ * Represents the streams and output fields declared by the {@link PMMLPredictorBolt}.
  */
 public interface ModelOutputs extends Serializable {
+
     /**
+     * Stream fields.
      * @return a map with the output fields declared for each stream by the {@link PMMLPredictorBolt}
      */
     Map<String, ? extends Fields> streamFields();
 
     /**
      * Convenience method that returns a set with all the streams declared by the {@link PMMLPredictorBolt}.
-     * By default this this method calls {@link #streamFields()}{@code .keySet()}
+     * By default this this method calls {@link #streamFields()}{@code .keySet()}.
      * @return The set with all declared streams
      */
     default Set<String> streams() {
