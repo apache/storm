@@ -16,7 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.opentsdb.trident;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.apache.storm.opentsdb.bolt.ITupleOpenTsdbDatapointMapper;
@@ -29,10 +34,6 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Trident {@link State} implementation for OpenTSDB.
  */
@@ -44,7 +45,9 @@ public class OpenTsdbState implements State {
     private final Iterable<? extends ITupleOpenTsdbDatapointMapper> tupleMetricPointMappers;
     private OpenTsdbClient openTsdbClient;
 
-    public OpenTsdbState(Map<String, Object> conf, OpenTsdbClient.Builder openTsdbClientBuilder, Iterable<? extends ITupleOpenTsdbDatapointMapper> tupleMetricPointMappers) {
+    public OpenTsdbState(Map<String, Object> conf,
+            OpenTsdbClient.Builder openTsdbClientBuilder,
+            Iterable<? extends ITupleOpenTsdbDatapointMapper> tupleMetricPointMappers) {
         this.conf = conf;
         this.openTsdbClientBuilder = openTsdbClientBuilder;
         this.tupleMetricPointMappers = tupleMetricPointMappers;
@@ -74,7 +77,7 @@ public class OpenTsdbState implements State {
             }
             final ClientResponse.Details details = openTsdbClient.writeMetricPoints(metricDataPoints);
 
-            if(details != null && (details.getFailed() > 0) ) {
+            if (details != null && (details.getFailed() > 0)) {
                 final String errorMsg = "Failed in writing metrics to TSDB with details: " + details;
                 LOG.error(errorMsg);
                 throw new RuntimeException(errorMsg);
