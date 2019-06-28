@@ -66,6 +66,7 @@ public class ThriftServer {
     }
 
     /**
+     * Check whether serving.
      * @return true if ThriftServer is listening to requests?
      */
     public boolean isServing() {
@@ -90,6 +91,7 @@ public class ThriftServer {
     }
 
     /**
+     * Get port.
      * @return The port this server is/will be listening on
      */
     public int getPort() {

@@ -19,10 +19,10 @@ import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.tuple.Fields;
 
 public class BatchSpoutExecutor implements ITridentSpout<Object> {
-    IBatchSpout _spout;
+    IBatchSpout spout;
 
     public BatchSpoutExecutor(IBatchSpout spout) {
-        _spout = spout;
+        this.spout = spout;
     }
 
     @Override
@@ -32,18 +32,18 @@ public class BatchSpoutExecutor implements ITridentSpout<Object> {
 
     @Override
     public Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
-        _spout.open(conf, context);
+        spout.open(conf, context);
         return new BatchSpoutEmitter();
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return _spout.getComponentConfiguration();
+        return spout.getComponentConfiguration();
     }
 
     @Override
     public Fields getOutputFields() {
-        return _spout.getOutputFields();
+        return spout.getOutputFields();
     }
 
     public static class EmptyCoordinator implements BatchCoordinator<Object> {
@@ -70,17 +70,17 @@ public class BatchSpoutExecutor implements ITridentSpout<Object> {
 
         @Override
         public void emitBatch(TransactionAttempt tx, Object coordinatorMeta, TridentCollector collector) {
-            _spout.emitBatch(tx.getTransactionId(), collector);
+            spout.emitBatch(tx.getTransactionId(), collector);
         }
 
         @Override
         public void success(TransactionAttempt tx) {
-            _spout.ack(tx.getTransactionId());
+            spout.ack(tx.getTransactionId());
         }
 
         @Override
         public void close() {
-            _spout.close();
+            spout.close();
         }
     }
 

@@ -26,39 +26,39 @@ package org.apache.storm.streams.tuple;
  * @param <T9> the type of the ninth element
  */
 public class Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
-    public final T1 _1;
-    public final T2 _2;
-    public final T3 _3;
-    public final T4 _4;
-    public final T5 _5;
-    public final T6 _6;
-    public final T7 _7;
-    public final T8 _8;
-    public final T9 _9;
+    public final T1 value1;
+    public final T2 value2;
+    public final T3 value3;
+    public final T4 value4;
+    public final T5 value5;
+    public final T6 value6;
+    public final T7 value7;
+    public final T8 value8;
+    public final T9 value9;
 
     /**
      * Constructs a new tuple.
      *
-     * @param _1 the first element
-     * @param _2 the second element
-     * @param _3 the third element
-     * @param _4 the fourth element
-     * @param _5 the fifth element
-     * @param _6 the sixth element
-     * @param _7 the seventh element
-     * @param _8 the eighth element
-     * @param _9 the ninth element
+     * @param value1  the first element
+     * @param value2  the second element
+     * @param value3  the third element
+     * @param value4  the fourth element
+     * @param value5  the fifth element
+     * @param value6  the sixth element
+     * @param value7  the seventh element
+     * @param value8  the eighth element
+     * @param value9  the ninth element
      */
-    public Tuple9(T1 _1, T2 _2, T3 _3, T4 _4, T5 _5, T6 _6, T7 _7, T8 _8, T9 _9) {
-        this._1 = _1;
-        this._2 = _2;
-        this._3 = _3;
-        this._4 = _4;
-        this._5 = _5;
-        this._6 = _6;
-        this._7 = _7;
-        this._8 = _8;
-        this._9 = _9;
+    public Tuple9(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7, T8 value8, T9 value9) {
+        this.value1 = value1;
+        this.value2 = value2;
+        this.value3 = value3;
+        this.value4 = value4;
+        this.value5 = value5;
+        this.value6 = value6;
+        this.value7 = value7;
+        this.value8 = value8;
+        this.value9 = value9;
     }
 
     @Override
@@ -72,50 +72,58 @@ public class Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
 
         Tuple9<?, ?, ?, ?, ?, ?, ?, ?, ?> tuple9 = (Tuple9<?, ?, ?, ?, ?, ?, ?, ?, ?>) o;
 
-        if (_1 != null ? !_1.equals(tuple9._1) : tuple9._1 != null) {
+        if (value1 != null ? !value1.equals(tuple9.value1) : tuple9.value1 != null) {
             return false;
         }
-        if (_2 != null ? !_2.equals(tuple9._2) : tuple9._2 != null) {
+        if (value2 != null ? !value2.equals(tuple9.value2) : tuple9.value2 != null) {
             return false;
         }
-        if (_3 != null ? !_3.equals(tuple9._3) : tuple9._3 != null) {
+        if (value3 != null ? !value3.equals(tuple9.value3) : tuple9.value3 != null) {
             return false;
         }
-        if (_4 != null ? !_4.equals(tuple9._4) : tuple9._4 != null) {
+        if (value4 != null ? !value4.equals(tuple9.value4) : tuple9.value4 != null) {
             return false;
         }
-        if (_5 != null ? !_5.equals(tuple9._5) : tuple9._5 != null) {
+        if (value5 != null ? !value5.equals(tuple9.value5) : tuple9.value5 != null) {
             return false;
         }
-        if (_6 != null ? !_6.equals(tuple9._6) : tuple9._6 != null) {
+        if (value6 != null ? !value6.equals(tuple9.value6) : tuple9.value6 != null) {
             return false;
         }
-        if (_7 != null ? !_7.equals(tuple9._7) : tuple9._7 != null) {
+        if (value7 != null ? !value7.equals(tuple9.value7) : tuple9.value7 != null) {
             return false;
         }
-        if (_8 != null ? !_8.equals(tuple9._8) : tuple9._8 != null) {
+        if (value8 != null ? !value8.equals(tuple9.value8) : tuple9.value8 != null) {
             return false;
         }
-        return _9 != null ? _9.equals(tuple9._9) : tuple9._9 == null;
-
+        return value9 != null ? value9.equals(tuple9.value9) : tuple9.value9 == null;
     }
 
     @Override
     public int hashCode() {
-        int result = _1 != null ? _1.hashCode() : 0;
-        result = 31 * result + (_2 != null ? _2.hashCode() : 0);
-        result = 31 * result + (_3 != null ? _3.hashCode() : 0);
-        result = 31 * result + (_4 != null ? _4.hashCode() : 0);
-        result = 31 * result + (_5 != null ? _5.hashCode() : 0);
-        result = 31 * result + (_6 != null ? _6.hashCode() : 0);
-        result = 31 * result + (_7 != null ? _7.hashCode() : 0);
-        result = 31 * result + (_8 != null ? _8.hashCode() : 0);
-        result = 31 * result + (_9 != null ? _9.hashCode() : 0);
+        int result = value1 != null ? value1.hashCode() : 0;
+        result = 31 * result + (value2 != null ? value2.hashCode() : 0);
+        result = 31 * result + (value3 != null ? value3.hashCode() : 0);
+        result = 31 * result + (value4 != null ? value4.hashCode() : 0);
+        result = 31 * result + (value5 != null ? value5.hashCode() : 0);
+        result = 31 * result + (value6 != null ? value6.hashCode() : 0);
+        result = 31 * result + (value7 != null ? value7.hashCode() : 0);
+        result = 31 * result + (value8 != null ? value8.hashCode() : 0);
+        result = 31 * result + (value9 != null ? value9.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "(" + _1 + "," + _2 + "," + _3 + "," + _4 + "," + _5 + "," + _6 + "," + _7 + "," + _8 + "," + _9 + ")";
+        return "(" + value1
+                + "," + value2
+                + "," + value3
+                + "," + value4
+                + "," + value5
+                + "," + value6
+                + "," + value7
+                + "," + value8
+                + "," + value9
+                + ")";
     }
 }

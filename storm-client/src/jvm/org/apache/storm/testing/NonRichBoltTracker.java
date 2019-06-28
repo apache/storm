@@ -22,28 +22,28 @@ import org.apache.storm.utils.RegisteredGlobalState;
 
 
 public class NonRichBoltTracker implements IBolt {
-    IBolt _delegate;
-    String _trackId;
+    IBolt delegate;
+    String trackId;
 
     public NonRichBoltTracker(IBolt delegate, String id) {
-        _delegate = delegate;
-        _trackId = id;
+        this.delegate = delegate;
+        trackId = id;
     }
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        _delegate.prepare(topoConf, context, collector);
+        delegate.prepare(topoConf, context, collector);
     }
 
     @Override
     public void execute(Tuple input) {
-        _delegate.execute(input);
-        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
+        delegate.execute(input);
+        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(trackId);
         ((AtomicInteger) stats.get("processed")).incrementAndGet();
     }
 
     @Override
     public void cleanup() {
-        _delegate.cleanup();
+        delegate.cleanup();
     }
 }

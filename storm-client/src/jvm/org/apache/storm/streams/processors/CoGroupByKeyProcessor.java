@@ -18,7 +18,7 @@ import org.apache.storm.shade.com.google.common.collect.Multimap;
 import org.apache.storm.streams.Pair;
 
 /**
- * co-group by key implementation
+ * co-group by key implementation.
  */
 public class CoGroupByKeyProcessor<K, V1, V2> extends BaseProcessor<Pair<K, ?>> implements BatchProcessor {
     private final String firstStream;

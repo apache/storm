@@ -12,7 +12,6 @@
 
 package org.apache.storm.trident.spout;
 
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +19,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
@@ -31,12 +31,12 @@ import org.slf4j.LoggerFactory;
 
 
 public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentSpout<Object> {
-    protected final Logger LOG = LoggerFactory.getLogger(OpaquePartitionedTridentSpoutExecutor.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(OpaquePartitionedTridentSpoutExecutor.class);
 
-    IOpaquePartitionedTridentSpout<Object, ISpoutPartition, Object> _spout;
+    IOpaquePartitionedTridentSpout<Object, ISpoutPartition, Object> spout;
 
     public OpaquePartitionedTridentSpoutExecutor(IOpaquePartitionedTridentSpout<Object, ISpoutPartition, Object> spout) {
-        _spout = spout;
+        this.spout = spout;
     }
 
     @Override
@@ -51,12 +51,12 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
 
     @Override
     public Fields getOutputFields() {
-        return _spout.getOutputFields();
+        return spout.getOutputFields();
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return _spout.getComponentConfiguration();
+        return spout.getComponentConfiguration();
     }
 
     static class EmitterPartitionState {
@@ -70,23 +70,23 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
     }
 
     public class Coordinator implements ITridentSpout.BatchCoordinator<Object> {
-        IOpaquePartitionedTridentSpout.Coordinator _coordinator;
+        IOpaquePartitionedTridentSpout.Coordinator coordinator;
 
         public Coordinator(Map<String, Object> conf, TopologyContext context) {
-            _coordinator = _spout.getCoordinator(conf, context);
+            coordinator = spout.getCoordinator(conf, context);
         }
 
         @Override
         public Object initializeTransaction(long txid, Object prevMetadata, Object currMetadata) {
             LOG.debug("Initialize Transaction. [txid = {}], [prevMetadata = {}], [currMetadata = {}]", txid, prevMetadata, currMetadata);
-            return _coordinator.getPartitionsForBatch();
+            return coordinator.getPartitionsForBatch();
         }
 
 
         @Override
         public void close() {
             LOG.debug("Closing");
-            _coordinator.close();
+            coordinator.close();
             LOG.debug("Closed");
         }
 
@@ -97,27 +97,27 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
 
         @Override
         public boolean isReady(long txid) {
-            boolean ready = _coordinator.isReady(txid);
+            boolean ready = coordinator.isReady(txid);
             LOG.debug("[isReady = {}], [txid = {}]", ready, txid);
             return ready;
         }
     }
 
     public class Emitter implements ICommitterTridentSpout.Emitter {
-        IOpaquePartitionedTridentSpout.Emitter<Object, ISpoutPartition, Object> _emitter;
-        TransactionalState _state;
-        TreeMap<Long, Map<String, Object>> _cachedMetas = new TreeMap<>();
-        Map<String, EmitterPartitionState> _partitionStates = new HashMap<>();
-        int _index;
-        int _numTasks;
-        Object _savedCoordinatorMeta = null;
-        boolean _changedMeta = false;
+        IOpaquePartitionedTridentSpout.Emitter<Object, ISpoutPartition, Object> emitter;
+        TransactionalState state;
+        TreeMap<Long, Map<String, Object>> cachedMetas = new TreeMap<>();
+        Map<String, EmitterPartitionState> partitionStates = new HashMap<>();
+        int index;
+        int numTasks;
+        Object savedCoordinatorMeta = null;
+        boolean changedMeta = false;
 
         public Emitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
-            _emitter = _spout.getEmitter(conf, context);
-            _index = context.getThisTaskIndex();
-            _numTasks = context.getComponentTasks(context.getThisComponentId()).size();
-            _state = TransactionalState.newUserState(conf, txStateId);
+            emitter = spout.getEmitter(conf, context);
+            index = context.getThisTaskIndex();
+            numTasks = context.getComponentTasks(context.getThisComponentId()).size();
+            state = TransactionalState.newUserState(conf, txStateId);
             LOG.debug("Created {}", this);
         }
 
@@ -126,23 +126,23 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
             LOG.debug("Emitting Batch. [transaction = {}], [coordinatorMeta = {}], [collector = {}], [{}]",
                       tx, coordinatorMeta, collector, this);
 
-            if (_savedCoordinatorMeta == null || !_savedCoordinatorMeta.equals(coordinatorMeta)) {
-                _partitionStates.clear();
-                final List<ISpoutPartition> sortedPartitions = _emitter.getOrderedPartitions(coordinatorMeta);
-                final List<ISpoutPartition> taskPartitions = _emitter.getPartitionsForTask(_index, _numTasks, sortedPartitions);
+            if (savedCoordinatorMeta == null || !savedCoordinatorMeta.equals(coordinatorMeta)) {
+                partitionStates.clear();
+                final List<ISpoutPartition> sortedPartitions = emitter.getOrderedPartitions(coordinatorMeta);
+                final List<ISpoutPartition> taskPartitions = emitter.getPartitionsForTask(index, numTasks, sortedPartitions);
                 for (ISpoutPartition partition : taskPartitions) {
-                    _partitionStates.put(partition.getId(),
-                                         new EmitterPartitionState(new RotatingTransactionalState(_state, partition.getId()), partition));
+                    partitionStates.put(partition.getId(),
+                                         new EmitterPartitionState(new RotatingTransactionalState(state, partition.getId()), partition));
                 }
-                _emitter.refreshPartitions(taskPartitions);
+                emitter.refreshPartitions(taskPartitions);
 
-                _savedCoordinatorMeta = coordinatorMeta;
-                _changedMeta = true;
+                savedCoordinatorMeta = coordinatorMeta;
+                changedMeta = true;
             }
             Map<String, Object> metas = new HashMap<>();
-            _cachedMetas.put(tx.getTransactionId(), metas);
+            cachedMetas.put(tx.getTransactionId(), metas);
 
-            Entry<Long, Map<String, Object>> entry = _cachedMetas.lowerEntry(tx.getTransactionId());
+            Entry<Long, Map<String, Object>> entry = cachedMetas.lowerEntry(tx.getTransactionId());
             Map<String, Object> prevCached;
             if (entry != null) {
                 prevCached = entry.getValue();
@@ -150,7 +150,7 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
                 prevCached = new HashMap<>();
             }
 
-            for (Entry<String, EmitterPartitionState> e : _partitionStates.entrySet()) {
+            for (Entry<String, EmitterPartitionState> e : partitionStates.entrySet()) {
                 String id = e.getKey();
                 EmitterPartitionState s = e.getValue();
                 s.rotatingState.removeState(tx.getTransactionId());
@@ -158,7 +158,7 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
                 if (lastMeta == null) {
                     lastMeta = s.rotatingState.getLastState();
                 }
-                Object meta = _emitter.emitPartitionBatch(tx, collector, s.partition, lastMeta);
+                Object meta = emitter.emitPartitionBatch(tx, collector, s.partition, lastMeta);
                 metas.put(id, meta);
             }
             LOG.debug("Emitted Batch. [transaction = {}], [coordinatorMeta = {}], [collector = {}], [{}]",
@@ -167,7 +167,7 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
 
         @Override
         public void success(TransactionAttempt tx) {
-            for (EmitterPartitionState state : _partitionStates.values()) {
+            for (EmitterPartitionState state : partitionStates.values()) {
                 state.rotatingState.cleanupBefore(tx.getTransactionId());
             }
             LOG.debug("Success transaction {}. [{}]", tx, this);
@@ -184,24 +184,24 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
             // because only a single commit can be happening at once. this is because in order for
             // another attempt of the batch to commit, the batch phase must have succeeded in between.
             // hence, all tasks for the prior commit must have finished committing (whether successfully or not)
-            if (_changedMeta && _index == 0) {
+            if (changedMeta && index == 0) {
                 Set<String> validIds = new HashSet<>();
-                for (ISpoutPartition p : _emitter.getOrderedPartitions(_savedCoordinatorMeta)) {
+                for (ISpoutPartition p : emitter.getOrderedPartitions(savedCoordinatorMeta)) {
                     validIds.add(p.getId());
                 }
-                for (String existingPartition : _state.list("")) {
+                for (String existingPartition : state.list("")) {
                     if (!validIds.contains(existingPartition)) {
-                        RotatingTransactionalState s = new RotatingTransactionalState(_state, existingPartition);
+                        RotatingTransactionalState s = new RotatingTransactionalState(state, existingPartition);
                         s.removeState(attempt.getTransactionId());
                     }
                 }
-                _changedMeta = false;
+                changedMeta = false;
             }
 
             Long txid = attempt.getTransactionId();
-            Map<String, Object> metas = _cachedMetas.remove(txid);
+            Map<String, Object> metas = cachedMetas.remove(txid);
             for (Entry<String, Object> entry : metas.entrySet()) {
-                _partitionStates.get(entry.getKey()).rotatingState.overrideState(txid, entry.getValue());
+                partitionStates.get(entry.getKey()).rotatingState.overrideState(txid, entry.getValue());
             }
             LOG.debug("Exiting commit method for transaction {}. [{}]", attempt, this);
         }
@@ -209,21 +209,21 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
         @Override
         public void close() {
             LOG.debug("Closing");
-            _emitter.close();
+            emitter.close();
             LOG.debug("Closed");
         }
 
         @Override
         public String toString() {
-            return "Emitter{" +
-                   ", _state=" + _state +
-                   ", _cachedMetas=" + _cachedMetas +
-                   ", _partitionStates=" + _partitionStates +
-                   ", _index=" + _index +
-                   ", _numTasks=" + _numTasks +
-                   ", _savedCoordinatorMeta=" + _savedCoordinatorMeta +
-                   ", _changedMeta=" + _changedMeta +
-                   '}';
+            return "Emitter{"
+                    + ", state=" + state
+                    + ", cachedMetas=" + cachedMetas
+                    + ", partitionStates=" + partitionStates
+                    + ", index=" + index
+                    + ", numTasks=" + numTasks
+                    + ", savedCoordinatorMeta=" + savedCoordinatorMeta
+                    + ", changedMeta=" + changedMeta
+                    + '}';
         }
     }
 

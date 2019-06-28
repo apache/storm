@@ -152,11 +152,19 @@ public class WorkerState {
     private final Collection<IAutoCredentials> autoCredentials;
     private final StormMetricRegistry metricRegistry;
 
-    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId,
-                       Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier, int port, String workerId, Map<String, Object> topologyConf, IStateStorage stateStorage,
-                       IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials,
-                       StormMetricRegistry metricRegistry) throws IOException,
-        InvalidTopologyException {
+    public WorkerState(Map<String, Object> conf,
+            IContext mqContext,
+            String topologyId,
+            String assignmentId,
+            Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier,
+            int port,
+            String workerId,
+            Map<String, Object> topologyConf,
+            IStateStorage stateStorage,
+            IStormClusterState stormClusterState,
+            Collection<IAutoCredentials> autoCredentials,
+            StormMetricRegistry metricRegistry) throws IOException,
+            InvalidTopologyException {
         this.metricRegistry = metricRegistry;
         this.autoCredentials = autoCredentials;
         this.conf = conf;
@@ -230,9 +238,9 @@ public class WorkerState {
         this.receiver = this.mqContext.bind(topologyId, port, cb, newConnectionResponse);
     }
 
-    private static double getQueueLoad(JCQueue q) {
-        JCQueue.QueueMetrics qMetrics = q.getMetrics();
-        return ((double) qMetrics.population()) / qMetrics.capacity();
+    private static double getQueueLoad(JCQueue queue) {
+        JCQueue.QueueMetrics queueMetrics = queue.getMetrics();
+        return ((double) queueMetrics.population()) / queueMetrics.capacity();
     }
 
     public static boolean isConnectionReady(IConnection connection) {
@@ -463,7 +471,6 @@ public class WorkerState {
 
     public void refreshLoad(List<IRunningExecutor> execs) {
         Set<Integer> remoteTasks = Sets.difference(new HashSet<>(outboundTasks), new HashSet<>(localTaskIds));
-        Long now = System.currentTimeMillis();
         Map<Integer, Double> localLoad = new HashMap<>();
         for (IRunningExecutor exec : execs) {
             double receiveLoad = getQueueLoad(exec.getReceiveQueue());
@@ -475,6 +482,7 @@ public class WorkerState {
         loadMapping.setLocal(localLoad);
         loadMapping.setRemote(remoteLoad);
 
+        Long now = System.currentTimeMillis();
         if (now > nextLoadUpdate.get()) {
             receiver.sendLoadMetrics(localLoad);
             nextLoadUpdate.set(now + LOAD_REFRESH_INTERVAL_MS);
@@ -498,14 +506,14 @@ public class WorkerState {
         int delaySecs = 0;
         int recurSecs = 1;
         refreshActiveTimer.schedule(delaySecs,
-                                    () -> {
-                                        if (areAllConnectionsReady()) {
-                                            LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
-                                            isWorkerActive.countDown();
-                                        } else {
-                                            refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
-                                        }
-                                    }
+            () -> {
+                if (areAllConnectionsReady()) {
+                    LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
+                    isWorkerActive.countDown();
+                } else {
+                    refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
+                }
+            }
         );
     }
 
@@ -649,7 +657,7 @@ public class WorkerState {
         try (SupervisorIfaceFactory fac = supervisorIfaceSupplier.get()) {
             return fac.getIface().getLocalAssignmentForStorm(topologyId);
         } catch (Throwable e) {
-                //if any error/exception thrown, fetch it from zookeeper
+            //if any error/exception thrown, fetch it from zookeeper
             Assignment assignment = stormClusterState.remoteAssignmentInfo(topologyId, null);
             if (assignment == null) {
                 throw new RuntimeException("Failed to read worker assignment."
@@ -666,8 +674,8 @@ public class WorkerState {
 
         if (recvBatchSize > recvQueueSize / 2) {
             throw new IllegalArgumentException(Config.TOPOLOGY_PRODUCER_BATCH_SIZE + ":" + recvBatchSize
-                                               + " is greater than half of " + Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE + ":" +
-                                               recvQueueSize);
+                    + " is greater than half of " + Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE + ":"
+                    + recvQueueSize);
         }
 
         IWaitStrategy backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
@@ -704,6 +712,7 @@ public class WorkerState {
     }
 
     /**
+     * Get worker outbound tasks.
      * @return seq of task ids that receive messages from this worker
      */
     private Set<Integer> workerOutboundTasks() {

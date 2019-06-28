@@ -36,7 +36,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
     private final Map<String, Object> conf;
     private final GeneralTopologyContext context;
 
-    private final ThreadLocal<KryoTupleDeserializer> _des =
+    private final ThreadLocal<KryoTupleDeserializer> des =
         new ThreadLocal<KryoTupleDeserializer>() {
             @Override
             protected KryoTupleDeserializer initialValue() {
@@ -60,7 +60,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
 
     @Override
     public void recv(List<TaskMessage> batch) {
-        KryoTupleDeserializer des = _des.get();
+        KryoTupleDeserializer des = this.des.get();
         ArrayList<AddressedTuple> ret = new ArrayList<>(batch.size());
         for (TaskMessage message : batch) {
             Tuple tuple = des.deserialize(message.message());

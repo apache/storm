@@ -52,16 +52,6 @@ public class ConfigValidation {
     private static final int DESIRED_FIELD_ACC = ACC_PUBLIC | ACC_STATIC | ACC_FINAL;
     private static List<Class<?>> configClasses = null;
 
-    /**
-     * Validates a field given field name as string uses Config.java as the default config class
-     *
-     * @param fieldName provided as a string
-     * @param conf      map of confs
-     */
-    public static void validateField(String fieldName, Map<String, Object> conf) {
-        validateField(fieldName, conf, getConfigClasses());
-    }
-
     public static synchronized List<Class<?>> getConfigClasses() {
         if (configClasses == null) {
             List<Class<?>> ret = new ArrayList<>();
@@ -93,6 +83,16 @@ public class ConfigValidation {
             configClasses = ret;
         }
         return configClasses;
+    }
+
+    /**
+     * Validates a field given field name as string uses Config.java as the default config class
+     *
+     * @param fieldName provided as a string
+     * @param conf      map of confs
+     */
+    public static void validateField(String fieldName, Map<String, Object> conf) {
+        validateField(fieldName, conf, getConfigClasses());
     }
 
     /**
@@ -187,12 +187,6 @@ public class ConfigValidation {
         validateFields(conf, getConfigClasses());
     }
 
-    public static boolean isFieldAllowed(Field field) {
-        return field.getAnnotation(NotConf.class) == null
-               && String.class.equals(field.getType())
-               && ((field.getModifiers() & DESIRED_FIELD_ACC) == DESIRED_FIELD_ACC) && !field.isSynthetic();
-    }
-
     /**
      * Validate all confs in map.
      *
@@ -221,6 +215,12 @@ public class ConfigValidation {
                 }
             }
         }
+    }
+
+    public static boolean isFieldAllowed(Field field) {
+        return field.getAnnotation(NotConf.class) == null
+               && String.class.equals(field.getType())
+               && ((field.getModifiers() & DESIRED_FIELD_ACC) == DESIRED_FIELD_ACC) && !field.isSynthetic();
     }
 
     private static Map<String, Object> getParamsFromAnnotation(Class<?> validatorClass, Object v)
@@ -304,7 +304,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Checks if the named type derives from the specified Class
+     * Checks if the named type derives from the specified Class.
      */
     public static class DerivedTypeValidator extends Validator {
 
@@ -586,8 +586,8 @@ public class ConfigValidation {
                         ((Validator) v).validateField(name + " list entry", entry);
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in ListEntryCustomValidator.  Individual entry validators must a instance of " +
-                            "Validator class",
+                            "validator: {} cannot be used in ListEntryCustomValidator.  Individual entry validators must a instance of "
+                                    + "Validator class",
                             validator.getName());
                     }
                 }
@@ -656,8 +656,8 @@ public class ConfigValidation {
                         ((Validator) keyValidator).validateField(name + " Map key", entry.getKey());
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in MapEntryCustomValidator to validate keys.  Individual entry validators must " +
-                            "a instance of Validator class",
+                            "validator: {} cannot be used in MapEntryCustomValidator to validate keys.  Individual entry validators must "
+                                    + "a instance of Validator class",
                             kv.getName());
                     }
                 }
@@ -667,8 +667,8 @@ public class ConfigValidation {
                         ((Validator) valueValidator).validateField(name + " Map value", entry.getValue());
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in MapEntryCustomValidator to validate values.  Individual entry validators " +
-                            "must a instance of Validator class",
+                            "validator: {} cannot be used in MapEntryCustomValidator to validate values.  Individual entry validators "
+                                    + "must a instance of Validator class",
                             vv.getName());
                     }
                 }

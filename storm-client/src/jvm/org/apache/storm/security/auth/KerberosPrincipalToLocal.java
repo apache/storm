@@ -15,12 +15,12 @@ package org.apache.storm.security.auth;
 import java.util.Map;
 
 /**
- * Map a kerberos principal to a local user
+ * Map a kerberos principal to a local user.
  */
 public class KerberosPrincipalToLocal implements IPrincipalToLocal {
 
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param topoConf Storm configuration
      */

@@ -55,10 +55,10 @@ public class AggregateProcessor<T, A, R> extends BaseProcessor<T> implements Bat
 
     @Override
     public String toString() {
-        return "AggregateProcessor{" +
-               "aggregator=" + aggregator +
-               ", emitAggregate=" + emitAggregate +
-               ", state=" + state +
-               "}";
+        return "AggregateProcessor{"
+                + "aggregator=" + aggregator
+                + ", emitAggregate=" + emitAggregate
+                + ", state=" + state
+                + "}";
     }
 }

@@ -21,10 +21,10 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
 
 public class ReducerAggregatorImpl implements Aggregator<Result> {
-    ReducerAggregator _agg;
+    ReducerAggregator agg;
 
     public ReducerAggregatorImpl(ReducerAggregator agg) {
-        _agg = agg;
+        this.agg = agg;
     }
 
     @Override
@@ -35,13 +35,13 @@ public class ReducerAggregatorImpl implements Aggregator<Result> {
     @Override
     public Result init(Object batchId, TridentCollector collector) {
         Result ret = new Result();
-        ret.obj = _agg.init();
+        ret.obj = agg.init();
         return ret;
     }
 
     @Override
     public void aggregate(Result val, TridentTuple tuple, TridentCollector collector) {
-        val.obj = _agg.reduce(val.obj, tuple);
+        val.obj = agg.reduce(val.obj, tuple);
     }
 
     @Override

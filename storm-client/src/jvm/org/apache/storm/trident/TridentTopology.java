@@ -96,11 +96,11 @@ public class TridentTopology {
     //TODO: add a method for drpc stream, needs to know how to automatically do return results, etc
     // is it too expensive to do a batch per drpc request?
 
-    final DefaultDirectedGraph<Node, IndexedEdge> _graph;
-    final Map<String, List<Node>> _colocate;
-    final UniqueIdGen _gen;
-    Map<String, Number> _resourceDefaults = new HashMap<>();
-    Map<String, Number> _masterCoordResources = new HashMap<>();
+    final DefaultDirectedGraph<Node, IndexedEdge> graph;
+    final Map<String, List<Node>> colocate;
+    final UniqueIdGen gen;
+    Map<String, Number> resourceDefaults = new HashMap<>();
+    Map<String, Number> masterCoordResources = new HashMap<>();
 
     public TridentTopology() {
         this(new DefaultDirectedGraph<Node, IndexedEdge>(new ErrorEdgeFactory()),
@@ -109,9 +109,9 @@ public class TridentTopology {
     }
 
     private TridentTopology(DefaultDirectedGraph<Node, IndexedEdge> graph, Map<String, List<Node>> colocate, UniqueIdGen gen) {
-        _graph = graph;
-        _colocate = colocate;
-        _gen = gen;
+        this.graph = graph;
+        this.colocate = colocate;
+        this.gen = gen;
     }
 
 
@@ -177,6 +177,7 @@ public class TridentTopology {
         return ret;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private static void completeDRPC(DefaultDirectedGraph<Node, IndexedEdge> graph, Map<String, List<Node>> colocate, UniqueIdGen gen) {
         List<Set<Node>> connectedComponents = new ConnectivityInspector<>(graph).connectedSets();
 
@@ -211,6 +212,7 @@ public class TridentTopology {
     }
 
     //returns null if it's not a drpc group
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private static SpoutNode getDRPCSpoutNode(Collection<Node> g) {
         for (Node n : g) {
             if (n instanceof SpoutNode) {
@@ -224,6 +226,7 @@ public class TridentTopology {
     }
 
     private static void checkValidJoins(Collection<Node> g) {
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         boolean hasDRPCSpout = false;
         boolean hasBatchSpout = false;
         for (Node n : g) {
@@ -250,9 +253,8 @@ public class TridentTopology {
         for (PartitionNode n : subscriptions) {
             PartitionNode curr = ret.get(n.streamId);
             if (curr != null && !curr.thriftGrouping.equals(n.thriftGrouping)) {
-                throw new RuntimeException(
-                    "Multiple subscriptions to the same stream with different groupings. Should be impossible since that is explicitly " +
-                    "guarded against.");
+                throw new RuntimeException("Multiple subscriptions to the same stream with different groupings. Should "
+                        + "be impossible since that is explicitly guarded against.");
             }
             ret.put(n.streamId, n);
         }
@@ -266,7 +268,7 @@ public class TridentTopology {
             if (n.type == SpoutNode.SpoutType.BATCH) { // if Batch spout then id contains txId
                 ret.put(n, "spout-" + n.txId);
             } else if (n.type == SpoutNode.SpoutType.DRPC) { //if DRPC spout then id contains function
-                ret.put(n, "spout-" + ((DRPCSpout) n.spout).get_function() + ctr);
+                ret.put(n, "spout-" + ((DRPCSpout) n.spout).getFunction() + ctr);
                 ctr++;
             } else {
                 ret.put(n, "spout" + ctr);
@@ -560,10 +562,12 @@ public class TridentTopology {
         }
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Stream newDRPCStream(String function) {
         return newDRPCStream(new DRPCSpout(function));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Stream newDRPCStream(String function, ILocalDRPC server) {
         DRPCSpout spout;
         if (server == null) {
@@ -574,6 +578,7 @@ public class TridentTopology {
         return newDRPCStream(spout);
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private Stream newDRPCStream(DRPCSpout spout) {
         // TODO: consider adding a shuffle grouping after the spout to avoid so much routing of the args/return-info all over the place
         // (at least until its possible to just pack bolt logic into the spout itself)
@@ -624,8 +629,8 @@ public class TridentTopology {
     public Stream multiReduce(List<Fields> inputFields, List<Stream> streams, MultiReducer function, Fields outputFields) {
         List<String> names = new ArrayList<>();
         for (Stream s : streams) {
-            if (s._name != null) {
-                names.add(s._name);
+            if (s.name != null) {
+                names.add(s.name);
             }
         }
         Node n = new ProcessorNode(getUniqueStreamId(), Utils.join(names, "-"), outputFields, outputFields,
@@ -735,20 +740,20 @@ public class TridentTopology {
     }
 
     public TridentTopology setResourceDefaults(DefaultResourceDeclarer defaults) {
-        _resourceDefaults = defaults.getResources();
+        resourceDefaults = defaults.getResources();
         return this;
     }
 
     public TridentTopology setMasterCoordResources(DefaultResourceDeclarer resources) {
-        _masterCoordResources = resources.getResources();
+        masterCoordResources = resources.getResources();
         return this;
     }
 
     public StormTopology build() {
-        DefaultDirectedGraph<Node, IndexedEdge> graph = (DefaultDirectedGraph) _graph.clone();
+        DefaultDirectedGraph<Node, IndexedEdge> graph = (DefaultDirectedGraph) this.graph.clone();
 
 
-        completeDRPC(graph, _colocate, _gen);
+        completeDRPC(graph, colocate, gen);
 
         List<SpoutNode> spoutNodes = new ArrayList<>();
 
@@ -764,7 +769,7 @@ public class TridentTopology {
 
 
         Set<Group> initialGroups = new LinkedHashSet<>();
-        for (List<Node> colocate : _colocate.values()) {
+        for (List<Node> colocate : colocate.values()) {
             Group g = new Group(graph, colocate);
             boltNodes.removeAll(colocate);
             initialGroups.add(g);
@@ -790,10 +795,10 @@ public class TridentTopology {
                 }
                 if (g1 == null || !g1.equals(g2)) {
                     graph.removeEdge(e);
-                    PartitionNode pNode = makeIdentityPartition(e.source);
-                    graph.addVertex(pNode);
-                    graph.addEdge(e.source, pNode, new IndexedEdge(e.source, pNode, 0));
-                    graph.addEdge(pNode, e.target, new IndexedEdge(pNode, e.target, e.index));
+                    PartitionNode partitionNode = makeIdentityPartition(e.source);
+                    graph.addVertex(partitionNode);
+                    graph.addEdge(e.source, partitionNode, new IndexedEdge(e.source, partitionNode, 0));
+                    graph.addEdge(partitionNode, e.target, new IndexedEdge(partitionNode, e.target, e.index));
                 }
             }
         }
@@ -810,14 +815,14 @@ public class TridentTopology {
             for (PartitionNode n : extraPartitionInputs(g)) {
                 Node idNode = makeIdentityNode(n.allOutputFields);
                 Node newPartitionNode = new PartitionNode(idNode.streamId, n.name, idNode.allOutputFields, n.thriftGrouping);
-                Node parentNode = TridentUtils.getParent(graph, n);
-                Set<IndexedEdge> outgoing = graph.outgoingEdgesOf(n);
                 graph.removeVertex(n);
 
                 graph.addVertex(idNode);
                 graph.addVertex(newPartitionNode);
+                Node parentNode = TridentUtils.getParent(graph, n);
                 addEdge(graph, parentNode, idNode, 0);
                 addEdge(graph, idNode, newPartitionNode, 0);
+                Set<IndexedEdge> outgoing = graph.outgoingEdgesOf(n);
                 for (IndexedEdge e : outgoing) {
                     addEdge(graph, newPartitionNode, e.target, e.index);
                 }
@@ -868,7 +873,7 @@ public class TridentTopology {
         for (SpoutNode sn : spoutNodes) {
             Integer parallelism = parallelisms.get(grouper.nodeGroup(sn));
 
-            Map<String, Number> spoutRes = new HashMap<>(_resourceDefaults);
+            Map<String, Number> spoutRes = new HashMap<>(resourceDefaults);
             spoutRes.putAll(sn.getResources());
 
             Number onHeap = spoutRes.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
@@ -911,7 +916,7 @@ public class TridentTopology {
             if (!isSpoutGroup(g)) {
                 Integer p = parallelisms.get(g);
                 Map<String, String> streamToGroup = getOutputStreamBatchGroups(g, batchGroupMap);
-                Map<String, Number> groupRes = g.getResources(_resourceDefaults);
+                Map<String, Number> groupRes = g.getResources(resourceDefaults);
 
                 Number onHeap = groupRes.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
                 Number offHeap = groupRes.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
@@ -939,14 +944,15 @@ public class TridentTopology {
                 Collection<PartitionNode> inputs = uniquedSubscriptions(externalGroupInputs(g));
                 for (PartitionNode n : inputs) {
                     Node parent = TridentUtils.getParent(graph, n);
-                    String componentId = parent instanceof SpoutNode ?
-                        spoutIds.get(parent) : boltIds.get(grouper.nodeGroup(parent));
+                    String componentId = parent instanceof SpoutNode
+                            ? spoutIds.get(parent)
+                            : boltIds.get(grouper.nodeGroup(parent));
                     d.grouping(new GlobalStreamId(componentId, n.streamId), n.thriftGrouping);
                 }
             }
         }
-        HashMap<String, Number> combinedMasterCoordResources = new HashMap<>(_resourceDefaults);
-        combinedMasterCoordResources.putAll(_masterCoordResources);
+        HashMap<String, Number> combinedMasterCoordResources = new HashMap<>(resourceDefaults);
+        combinedMasterCoordResources.putAll(masterCoordResources);
         return builder.buildTopology(combinedMasterCoordResources);
     }
 
@@ -956,25 +962,25 @@ public class TridentTopology {
     }
 
     protected String getUniqueStreamId() {
-        return _gen.getUniqueStreamId();
+        return gen.getUniqueStreamId();
     }
 
     protected String getUniqueStateId() {
-        return _gen.getUniqueStateId();
+        return gen.getUniqueStateId();
     }
 
     protected String getUniqueWindowId() {
-        return _gen.getUniqueWindowId();
+        return gen.getUniqueWindowId();
     }
 
     protected void registerNode(Node n) {
-        _graph.addVertex(n);
+        graph.addVertex(n);
         if (n.stateInfo != null) {
             String id = n.stateInfo.id;
-            if (!_colocate.containsKey(id)) {
-                _colocate.put(id, new ArrayList());
+            if (!colocate.containsKey(id)) {
+                colocate.put(id, new ArrayList());
             }
-            _colocate.get(id).add(n);
+            colocate.get(id).add(n);
         }
     }
 
@@ -987,7 +993,7 @@ public class TridentTopology {
         registerNode(newNode);
         int streamIndex = 0;
         for (Stream s : sources) {
-            _graph.addEdge(s._node, newNode, new IndexedEdge(s._node, newNode, streamIndex));
+            graph.addEdge(s.node, newNode, new IndexedEdge(s.node, newNode, streamIndex));
             streamIndex++;
         }
     }
@@ -997,13 +1003,13 @@ public class TridentTopology {
         return new Stream(this, newNode.name, newNode);
     }
 
+    protected Stream addSourcedNode(Stream source, Node newNode) {
+        return addSourcedNode(Arrays.asList(source), newNode);
+    }
+
     protected TridentState addSourcedStateNode(List<Stream> sources, Node newNode) {
         registerSourcedNode(sources, newNode);
         return new TridentState(this, newNode);
-    }
-
-    protected Stream addSourcedNode(Stream source, Node newNode) {
-        return addSourcedNode(Arrays.asList(source), newNode);
     }
 
     protected TridentState addSourcedStateNode(Stream source, Node newNode) {

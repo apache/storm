@@ -17,7 +17,7 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
 
 /**
- * A one to many transformation function
+ * A one to many transformation function.
  */
 public interface FlatMapFunction extends Serializable {
     /**

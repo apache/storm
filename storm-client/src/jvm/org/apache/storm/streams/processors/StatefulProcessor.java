@@ -22,7 +22,7 @@ import org.apache.storm.state.KeyValueState;
  */
 public interface StatefulProcessor<K, V> {
     /**
-     * Initialize the state of the processor with the given {@link KeyValueState}
+     * Initialize the state of the processor with the given {@link KeyValueState}.
      *
      * @param keyValueState the key-value state
      */

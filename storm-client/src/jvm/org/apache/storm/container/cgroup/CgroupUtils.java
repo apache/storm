@@ -48,7 +48,7 @@ public class CgroupUtils {
     }
 
     /**
-     * Get a set of SubSystemType objects from a comma delimited list of subsystem names
+     * Get a set of SubSystemType objects from a comma delimited list of subsystem names.
      */
     public static Set<SubSystemType> getSubSystemsFromString(String str) {
         Set<SubSystemType> result = new HashSet<SubSystemType>();
@@ -64,7 +64,7 @@ public class CgroupUtils {
     }
 
     /**
-     * Get a string that is a comma delimited list of subsystems
+     * Get a string that is a comma delimited list of subsystems.
      */
     public static String subSystemsToString(Set<SubSystemType> subSystems) {
         StringBuilder sb = new StringBuilder();

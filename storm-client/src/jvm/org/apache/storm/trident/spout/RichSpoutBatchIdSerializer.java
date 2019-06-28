@@ -22,7 +22,7 @@ public class RichSpoutBatchIdSerializer extends Serializer<RichSpoutBatchId> {
 
     @Override
     public void write(Kryo kryo, Output output, RichSpoutBatchId id) {
-        output.writeLong(id._id);
+        output.writeLong(id.id);
     }
 
     @Override

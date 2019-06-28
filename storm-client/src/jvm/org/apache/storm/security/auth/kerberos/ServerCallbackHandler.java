@@ -41,7 +41,7 @@ public class ServerCallbackHandler implements CallbackHandler {
             return;
         }
 
-        AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
+        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
             String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_SERVER
                                   + "' entry in this configuration: Server cannot start.";
@@ -82,6 +82,7 @@ public class ServerCallbackHandler implements CallbackHandler {
         }
 
         if (ac != null) {
+            @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
             String authenticationID = ac.getAuthenticationID();
             LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationID,
                       ac.getAuthorizationID());

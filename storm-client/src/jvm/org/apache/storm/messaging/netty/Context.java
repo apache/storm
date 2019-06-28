@@ -34,7 +34,7 @@ public class Context implements IContext {
     private HashedWheelTimer clientScheduleService;
 
     /**
-     * initialization per Storm configuration
+     * initialization per Storm configuration.
      */
     @Override
     public void prepare(Map<String, Object> topoConf) {
@@ -52,26 +52,26 @@ public class Context implements IContext {
     }
 
     /**
-     * establish a server with a binding port
+     * establish a server with a binding port.
      */
     @Override
-    public synchronized IConnection bind(String storm_id, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
+    public synchronized IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
         Server server = new Server(topoConf, port, cb, newConnectionResponse);
         serverConnections.add(server);
         return server;
     }
 
     /**
-     * establish a connection to a remote server
+     * establish a connection to a remote server.
      */
     @Override
-    public IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus) {
+    public IConnection connect(String stormId, String host, int port, AtomicBoolean[] remoteBpStatus) {
         return new Client(topoConf, remoteBpStatus, workerEventLoopGroup,
                                         clientScheduleService, host, port);
     }
 
     /**
-     * terminate this context
+     * terminate this context.
      */
     @Override
     public synchronized void term() {

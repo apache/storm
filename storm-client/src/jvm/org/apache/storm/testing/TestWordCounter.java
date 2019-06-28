@@ -12,6 +12,8 @@
 
 package org.apache.storm.testing;
 
+import static org.apache.storm.utils.Utils.tuple;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.task.TopologyContext;
@@ -23,17 +25,15 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.utils.Utils.tuple;
-
 
 public class TestWordCounter extends BaseBasicBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
 
-    Map<String, Integer> _counts;
+    Map<String, Integer> counts;
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
-        _counts = new HashMap<String, Integer>();
+        counts = new HashMap<String, Integer>();
     }
 
     protected String getTupleValue(Tuple t, int idx) {
@@ -44,11 +44,11 @@ public class TestWordCounter extends BaseBasicBolt {
     public void execute(Tuple input, BasicOutputCollector collector) {
         String word = getTupleValue(input, 0);
         int count = 0;
-        if (_counts.containsKey(word)) {
-            count = _counts.get(word);
+        if (counts.containsKey(word)) {
+            count = counts.get(word);
         }
         count++;
-        _counts.put(word, count);
+        counts.put(word, count);
         collector.emit(tuple(word, count));
     }
 

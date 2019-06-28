@@ -17,37 +17,37 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.tuple.Tuple;
 
 public class BatchOutputCollectorImpl extends BatchOutputCollector {
-    OutputCollector _collector;
+    OutputCollector collector;
 
     public BatchOutputCollectorImpl(OutputCollector collector) {
-        _collector = collector;
+        this.collector = collector;
     }
 
     @Override
     public List<Integer> emit(String streamId, List<Object> tuple) {
-        return _collector.emit(streamId, tuple);
+        return collector.emit(streamId, tuple);
     }
 
     @Override
     public void emitDirect(int taskId, String streamId, List<Object> tuple) {
-        _collector.emitDirect(taskId, streamId, tuple);
+        collector.emitDirect(taskId, streamId, tuple);
     }
 
     @Override
     public void flush() {
-        _collector.flush();
+        collector.flush();
     }
 
     @Override
     public void reportError(Throwable error) {
-        _collector.reportError(error);
+        collector.reportError(error);
     }
 
     public void ack(Tuple tup) {
-        _collector.ack(tup);
+        collector.ack(tup);
     }
 
     public void fail(Tuple tup) {
-        _collector.fail(tup);
+        collector.fail(tup);
     }
 }

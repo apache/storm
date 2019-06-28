@@ -110,7 +110,6 @@ public class WatermarkCountEvictionPolicy<T> implements EvictionPolicy<T, Pair<L
 
     @Override
     public String toString() {
-        return "WatermarkCountEvictionPolicy{" +
-               "} " + super.toString();
+        return "WatermarkCountEvictionPolicy{" + "} " + super.toString();
     }
 }

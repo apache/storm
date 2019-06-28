@@ -21,8 +21,9 @@ import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.topology.ResourceDeclarer;
 
 /**
- * @param T Must always be the type of the extending class. i.e. public class SubResourceDeclarer extends
- *          DefaultResourceDeclarer<SubResourceDeclarer> {...}
+ * Default implementation of resources declarer.
+ * @param <T> Must always be the type of the extending class. i.e. <code>public class SubResourceDeclarer extends
+ *          DefaultResourceDeclarer&lt;SubResourceDeclarer&gt; {...}</code>
  */
 public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implements ResourceDeclarer<T>, ITridentResource {
 

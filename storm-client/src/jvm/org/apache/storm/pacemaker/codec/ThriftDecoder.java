@@ -63,7 +63,7 @@ public class ThriftDecoder extends ByteToMessageDecoder {
             return;
         }
 
-        byte serialized[] = new byte[thriftLen];
+        byte[] serialized = new byte[thriftLen];
         buf.readBytes(serialized, 0, thriftLen);
         HBMessage m = (HBMessage) Utils.thriftDeserialize(HBMessage.class, serialized);
 

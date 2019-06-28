@@ -13,14 +13,14 @@
 package org.apache.storm.metric.api;
 
 public class StateMetric implements IMetric {
-    private IStatefulObject _obj;
+    private IStatefulObject obj;
 
     public StateMetric(IStatefulObject obj) {
-        _obj = obj;
+        this.obj = obj;
     }
 
     @Override
     public Object getValueAndReset() {
-        return _obj.getState();
+        return obj.getState();
     }
 }

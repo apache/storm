@@ -14,11 +14,11 @@ package org.apache.storm.hdfs.spout;
 
 import org.apache.storm.validation.ConfigValidation.Validator;
 import org.apache.storm.validation.ConfigValidationAnnotations.CustomValidator;
-import org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
-import org.apache.storm.validation.ConfigValidationAnnotations.isInteger;
-import org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
-import org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
-import org.apache.storm.validation.ConfigValidationAnnotations.isString;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsBoolean;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsInteger;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryType;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsPositiveNumber;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsString;
 import org.apache.storm.validation.NotConf;
 import org.apache.storm.validation.Validated;
 
@@ -28,7 +28,7 @@ public class Configs implements Validated {
      * @deprecated please use {@link HdfsSpout#setReaderType(String)}
      */
     @Deprecated
-    @isString
+    @IsString
     @CustomValidator(validatorClass = ReaderTypeValidator.class)
     public static final String READER_TYPE = "hdfsspout.reader.type";
     public static final String TEXT = "text";
@@ -38,67 +38,67 @@ public class Configs implements Validated {
      * @deprecated please use {@link HdfsSpout#setHdfsUri(String)}
      */
     @Deprecated
-    @isString
+    @IsString
     public static final String HDFS_URI = "hdfsspout.hdfs";
     /**
      * Required - dir from which to read files.
      * @deprecated please use {@link HdfsSpout#setSourceDir(String)}
      */
     @Deprecated
-    @isString
+    @IsString
     public static final String SOURCE_DIR = "hdfsspout.source.dir";
     /**
      * Required - completed files will be moved here.
      * @deprecated please use {@link HdfsSpout#setArchiveDir(String)}
      */
     @Deprecated
-    @isString
+    @IsString
     public static final String ARCHIVE_DIR = "hdfsspout.archive.dir";
     /**
      * Required - unparsable files will be moved here.
      * @deprecated please use {@link HdfsSpout#setBadFilesDir(String)}
      */
     @Deprecated
-    @isString
+    @IsString
     public static final String BAD_DIR = "hdfsspout.badfiles.dir";
     /**
      * Directory in which lock files will be created.
      * @deprecated please use {@link HdfsSpout#setLockDir(String)}
      */
     @Deprecated
-    @isString
+    @IsString
     public static final String LOCK_DIR = "hdfsspout.lock.dir";
     /**
      * Commit after N records. 0 disables this.
      * @deprecated please use {@link HdfsSpout#setCommitFrequencyCount(int)}
      */
     @Deprecated
-    @isInteger
-    @isPositiveNumber(includeZero = true)
+    @IsInteger
+    @IsPositiveNumber(includeZero = true)
     public static final String COMMIT_FREQ_COUNT = "hdfsspout.commit.count";
     /**
      * Commit after N secs. cannot be disabled.
      * @deprecated please use {@link HdfsSpout#setCommitFrequencySec(int)}
      */
     @Deprecated
-    @isInteger
-    @isPositiveNumber
+    @IsInteger
+    @IsPositiveNumber
     public static final String COMMIT_FREQ_SEC = "hdfsspout.commit.sec";
     /**
      * Max outstanding.
      * @deprecated please use {@link HdfsSpout#setMaxOutstanding(int)}
      */
     @Deprecated
-    @isInteger
-    @isPositiveNumber(includeZero = true)
+    @IsInteger
+    @IsPositiveNumber(includeZero = true)
     public static final String MAX_OUTSTANDING = "hdfsspout.max.outstanding";
     /**
      * Lock timeout.
      * @deprecated please use {@link HdfsSpout#setLockTimeoutSec(int)}
      */
     @Deprecated
-    @isInteger
-    @isPositiveNumber
+    @IsInteger
+    @IsPositiveNumber
     public static final String LOCK_TIMEOUT = "hdfsspout.lock.timeout.sec";
     /**
      * If clocks on machines in the Storm cluster are in sync inactivity duration after which locks are considered
@@ -107,14 +107,14 @@ public class Configs implements Validated {
      * @deprecated please use {@link HdfsSpout#setClocksInSync(boolean)}
      */
     @Deprecated
-    @isBoolean
+    @IsBoolean
     public static final String CLOCKS_INSYNC = "hdfsspout.clocks.insync";
     /**
      * Ignore suffix.
      * @deprecated please use {@link HdfsSpout#setIgnoreSuffix(String)}
      */
     @Deprecated
-    @isString
+    @IsString
     public static final String IGNORE_SUFFIX = "hdfsspout.ignore.suffix";
     /**
      * Filenames with this suffix in archive dir will be ignored by the Spout.
@@ -125,7 +125,7 @@ public class Configs implements Validated {
     public static final int DEFAULT_COMMIT_FREQ_SEC = 10;
     public static final int DEFAULT_MAX_OUTSTANDING = 10000;
     public static final int DEFAULT_LOCK_TIMEOUT = 5 * 60; // 5 min
-    @isMapEntryType(keyType = String.class, valueType = String.class)
+    @IsMapEntryType(keyType = String.class, valueType = String.class)
     public static final String DEFAULT_HDFS_CONFIG_KEY = "hdfs.config";
 
     public static class ReaderTypeValidator extends Validator {

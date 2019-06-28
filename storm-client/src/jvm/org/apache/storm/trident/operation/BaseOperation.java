@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Convenience implementation of the {@link org.apache.storm.trident.operation.Operation} interface.
  *
- * Provides no-op implementations of the `prepare()` and `cleanup()` methods.
+ * <p>Provides no-op implementations of the `prepare()` and `cleanup()` methods.
  */
 public class BaseOperation implements Operation {
 

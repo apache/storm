@@ -49,7 +49,7 @@ public class TridentTopologyBuilder {
     static final String SPOUT_COORD_PREFIX = "$spoutcoord-";
     Map<GlobalStreamId, String> batchIds = new HashMap<>();
     Map<String, TransactionalSpoutComponent> spouts = new HashMap<>();
-    Map<String, SpoutComponent> _batchPerTupleSpouts = new HashMap<>();
+    Map<String, SpoutComponent> batchPerTupleSpouts = new HashMap<>();
     Map<String, Component> bolts = new HashMap<>();
 
     public static String spoutCoordinator(String spoutId) {
@@ -65,7 +65,7 @@ public class TridentTopologyBuilder {
         batchGroups.put(streamName, batchGroup);
         markBatchGroups(id, batchGroups);
         SpoutComponent c = new SpoutComponent(spout, streamName, parallelism, batchGroup);
-        _batchPerTupleSpouts.put(id, c);
+        batchPerTupleSpouts.put(id, c);
         return new SpoutDeclarerImpl(c);
     }
 
@@ -121,7 +121,7 @@ public class TridentTopologyBuilder {
         //this takes care of setting up coord streams for spouts and bolts
         for (GlobalStreamId s : batchIds.keySet()) {
             String b = batchIds.get(s);
-            ret.put(new GlobalStreamId(s.get_componentId(), TridentBoltExecutor.COORD_STREAM(b)), b);
+            ret.put(new GlobalStreamId(s.get_componentId(), TridentBoltExecutor.coordStream(b)), b);
         }
 
         return ret;
@@ -183,8 +183,8 @@ public class TridentTopologyBuilder {
             }
         }
 
-        for (String id : _batchPerTupleSpouts.keySet()) {
-            SpoutComponent c = _batchPerTupleSpouts.get(id);
+        for (String id : batchPerTupleSpouts.keySet()) {
+            SpoutComponent c = batchPerTupleSpouts.get(id);
             SpoutDeclarer d =
                 builder.setSpout(id, new RichSpoutBatchTriggerer((IRichSpout) c.spout, c.streamName, c.batchGroupId), c.parallelism);
 
@@ -225,7 +225,7 @@ public class TridentTopologyBuilder {
                 }
                 CoordSpec spec = specs.get(batch);
                 CoordType ct;
-                if (_batchPerTupleSpouts.containsKey(s.get_componentId())) {
+                if (batchPerTupleSpouts.containsKey(s.get_componentId())) {
                     ct = CoordType.single();
                 } else {
                     ct = CoordType.all();
@@ -250,7 +250,7 @@ public class TridentTopologyBuilder {
             Map<String, Set<String>> batchToComponents = getBoltBatchToComponentSubscriptions(id);
             for (Map.Entry<String, Set<String>> entry : batchToComponents.entrySet()) {
                 for (String comp : entry.getValue()) {
-                    d.directGrouping(comp, TridentBoltExecutor.COORD_STREAM(entry.getKey()));
+                    d.directGrouping(comp, TridentBoltExecutor.coordStream(entry.getKey()));
                 }
             }
 

@@ -38,6 +38,7 @@ import org.apache.storm.zookeeper.ClientZookeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class ZKStateStorage implements IStateStorage {
 
     private static Logger LOG = LoggerFactory.getLogger(ZKStateStorage.class);

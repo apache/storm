@@ -23,14 +23,14 @@ import org.apache.storm.trident.tuple.TridentTupleView.OperationOutputFactory;
 
 
 public class AppendCollector implements TridentCollector {
-    OperationOutputFactory _factory;
-    TridentContext _triContext;
+    OperationOutputFactory factory;
+    TridentContext triContext;
     TridentTuple tuple;
     ProcessorContext context;
 
     public AppendCollector(TridentContext context) {
-        _triContext = context;
-        _factory = new OperationOutputFactory(context.getParentTupleFactories().get(0), context.getSelfOutputFields());
+        triContext = context;
+        factory = new OperationOutputFactory(context.getParentTupleFactories().get(0), context.getSelfOutputFields());
     }
 
     public void setContext(ProcessorContext pc, TridentTuple t) {
@@ -40,25 +40,25 @@ public class AppendCollector implements TridentCollector {
 
     @Override
     public void emit(List<Object> values) {
-        TridentTuple toEmit = _factory.create((TridentTupleView) tuple, values);
-        for (TupleReceiver r : _triContext.getReceivers()) {
-            r.execute(context, _triContext.getOutStreamId(), toEmit);
+        TridentTuple toEmit = factory.create((TridentTupleView) tuple, values);
+        for (TupleReceiver r : triContext.getReceivers()) {
+            r.execute(context, triContext.getOutStreamId(), toEmit);
         }
     }
 
     @Override
     public void flush() {
-        for (TupleReceiver r : _triContext.getReceivers()) {
+        for (TupleReceiver r : triContext.getReceivers()) {
             r.flush();
         }
     }
 
     @Override
     public void reportError(Throwable t) {
-        _triContext.getDelegateCollector().reportError(t);
+        triContext.getDelegateCollector().reportError(t);
     }
 
     public Factory getOutputFactory() {
-        return _factory;
+        return factory;
     }
 }

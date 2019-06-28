@@ -16,13 +16,13 @@ import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.utils.Utils;
 
 /**
- * A request for a shared memory region off heap between workers on a node
+ * A request for a shared memory region off heap between workers on a node.
  */
 public class SharedOffHeapWithinNode extends SharedMemory {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Create a new request for a shared memory region off heap between workers on a node
+     * Create a new request for a shared memory region off heap between workers on a node.
      *
      * @param amount the number of MB to share
      * @param name   the name of the shared region (for tracking purposes)

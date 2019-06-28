@@ -27,32 +27,32 @@ import org.apache.storm.tuple.Tuple;
 public class TupleCaptureBolt implements IRichBolt {
     public static final transient Map<String, Map<String, List<FixedTuple>>> emitted_tuples = new HashMap<>();
 
-    private String _name;
-    private OutputCollector _collector;
+    private String name;
+    private OutputCollector collector;
 
     public TupleCaptureBolt() {
-        _name = UUID.randomUUID().toString();
-        emitted_tuples.put(_name, new HashMap<String, List<FixedTuple>>());
+        name = UUID.randomUUID().toString();
+        emitted_tuples.put(name, new HashMap<String, List<FixedTuple>>());
     }
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        _collector = collector;
+        this.collector = collector;
     }
 
     @Override
     public void execute(Tuple input) {
         String component = input.getSourceComponent();
-        Map<String, List<FixedTuple>> captured = emitted_tuples.get(_name);
+        Map<String, List<FixedTuple>> captured = emitted_tuples.get(name);
         if (!captured.containsKey(component)) {
             captured.put(component, new ArrayList<FixedTuple>());
         }
         captured.get(component).add(new FixedTuple(input.getSourceStreamId(), input.getValues()));
-        _collector.ack(input);
+        collector.ack(input);
     }
 
     public Map<String, List<FixedTuple>> getResults() {
-        return emitted_tuples.get(_name);
+        return emitted_tuples.get(name);
     }
 
     @Override
@@ -60,12 +60,12 @@ public class TupleCaptureBolt implements IRichBolt {
     }
 
     public Map<String, List<FixedTuple>> getAndRemoveResults() {
-        return emitted_tuples.remove(_name);
+        return emitted_tuples.remove(name);
     }
 
     public Map<String, List<FixedTuple>> getAndClearResults() {
-        Map<String, List<FixedTuple>> ret = new HashMap<>(emitted_tuples.get(_name));
-        emitted_tuples.get(_name).clear();
+        Map<String, List<FixedTuple>> ret = new HashMap<>(emitted_tuples.get(name));
+        emitted_tuples.get(name).clear();
         return ret;
     }
 

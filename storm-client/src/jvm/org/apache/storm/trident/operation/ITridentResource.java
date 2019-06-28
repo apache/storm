@@ -23,11 +23,13 @@ import org.apache.storm.generated.SharedMemory;
  */
 public interface ITridentResource {
     /**
+     * Get resource.
      * @return a name of resource name -> amount of that resource. *Return should never be null!*
      */
     Map<String, Number> getResources();
 
     /**
+     * Get shared memory.
      * @return the shared memory region requests
      */
     Set<SharedMemory> getSharedMemory();

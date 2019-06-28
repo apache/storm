@@ -325,20 +325,20 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
             StormTimer timerTask = workerData.getUserTimer();
             timerTask.scheduleRecurring(interval, interval,
-                                        () -> {
-                                            TupleImpl tuple =
-                                                new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
-                                                              (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                                            AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                                            try {
-                                                receiveQueue.publish(metricsTickTuple);
-                                                receiveQueue.flush();  // avoid buffering
-                                            } catch (InterruptedException e) {
-                                                LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
-                                                Thread.currentThread().interrupt();
-                                                return;
-                                            }
-                                        }
+                () -> {
+                    TupleImpl tuple =
+                        new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
+                                      (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
+                    AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                    try {
+                        receiveQueue.publish(metricsTickTuple);
+                        receiveQueue.flush();  // avoid buffering
+                    } catch (InterruptedException e) {
+                        LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
             );
         }
     }
@@ -355,21 +355,21 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             } else {
                 StormTimer timerTask = workerData.getUserTimer();
                 timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs,
-                                            () -> {
-                                                TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
-                                                                                Constants.SYSTEM_COMPONENT_ID,
-                                                                                (int) Constants.SYSTEM_TASK_ID,
-                                                                                Constants.SYSTEM_TICK_STREAM_ID);
-                                                AddressedTuple tickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                                                try {
-                                                    receiveQueue.publish(tickTuple);
-                                                    receiveQueue.flush(); // avoid buffering
-                                                } catch (InterruptedException e) {
-                                                    LOG.warn("Thread interrupted when emitting tick tuple. Setting interrupt flag.");
-                                                    Thread.currentThread().interrupt();
-                                                    return;
-                                                }
-                                            }
+                    () -> {
+                        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
+                                                        Constants.SYSTEM_COMPONENT_ID,
+                                                        (int) Constants.SYSTEM_TASK_ID,
+                                                        Constants.SYSTEM_TICK_STREAM_ID);
+                        AddressedTuple tickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                        try {
+                            receiveQueue.publish(tickTuple);
+                            receiveQueue.flush(); // avoid buffering
+                        } catch (InterruptedException e) {
+                            LOG.warn("Thread interrupted when emitting tick tuple. Setting interrupt flag.");
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                    }
                 );
             }
         }

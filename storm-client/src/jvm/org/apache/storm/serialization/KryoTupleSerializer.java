@@ -19,26 +19,26 @@ import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.Tuple;
 
 public class KryoTupleSerializer implements ITupleSerializer {
-    KryoValuesSerializer _kryo;
-    SerializationFactory.IdDictionary _ids;
-    Output _kryoOut;
+    KryoValuesSerializer kryo;
+    SerializationFactory.IdDictionary ids;
+    Output kryoOut;
 
     public KryoTupleSerializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
-        _kryo = new KryoValuesSerializer(conf);
-        _kryoOut = new Output(2000, 2000000000);
-        _ids = new SerializationFactory.IdDictionary(context.getRawTopology());
+        kryo = new KryoValuesSerializer(conf);
+        kryoOut = new Output(2000, 2000000000);
+        ids = new SerializationFactory.IdDictionary(context.getRawTopology());
     }
 
     @Override
     public byte[] serialize(Tuple tuple) {
         try {
 
-            _kryoOut.clear();
-            _kryoOut.writeInt(tuple.getSourceTask(), true);
-            _kryoOut.writeInt(_ids.getStreamId(tuple.getSourceComponent(), tuple.getSourceStreamId()), true);
-            tuple.getMessageId().serialize(_kryoOut);
-            _kryo.serializeInto(tuple.getValues(), _kryoOut);
-            return _kryoOut.toBytes();
+            kryoOut.clear();
+            kryoOut.writeInt(tuple.getSourceTask(), true);
+            kryoOut.writeInt(ids.getStreamId(tuple.getSourceComponent(), tuple.getSourceStreamId()), true);
+            tuple.getMessageId().serialize(kryoOut);
+            kryo.serializeInto(tuple.getValues(), kryoOut);
+            return kryoOut.toBytes();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -47,7 +47,7 @@ public class KryoTupleSerializer implements ITupleSerializer {
     //    public long crc32(Tuple tuple) {
     //        try {
     //            CRC32OutputStream hasher = new CRC32OutputStream();
-    //            _kryo.serializeInto(tuple.getValues(), hasher);
+    //            kryo.serializeInto(tuple.getValues(), hasher);
     //            return hasher.getValue();
     //        } catch (IOException e) {
     //            throw new RuntimeException(e);

@@ -203,6 +203,10 @@ public class Utils {
         }
     }
 
+    public static Map<String, Object> findAndReadConfigFile(String name) {
+        return findAndReadConfigFile(name, true);
+    }
+
     private static InputStream getConfigFileInputStream(String configFilePath)
         throws IOException {
         if (null == configFilePath) {
@@ -360,7 +364,7 @@ public class Utils {
      * Creates a thread that calls the given code repeatedly, sleeping for an interval of seconds equal to the return value of the previous
      * call.
      *
-     * The given afn may be a callable that returns the number of seconds to sleep, or it may be a Callable that returns another Callable
+     * <p>The given afn may be a callable that returns the number of seconds to sleep, or it may be a Callable that returns another Callable
      * that in turn returns the number of seconds to sleep. In the latter case isFactory.
      *
      * @param afn              the code to call on each iteration
@@ -587,6 +591,7 @@ public class Utils {
      * @param conf the config to get the super User ACL from
      * @return the super user ACL.
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static ACL getSuperUserAcl(Map<String, Object> conf) {
         String stormZKUser = (String) conf.get(Config.STORM_ZOOKEEPER_SUPERACL);
         if (stormZKUser == null) {
@@ -601,6 +606,7 @@ public class Utils {
      * @param conf the config for the topology.
      * @return the ACLs
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static List<ACL> getWorkerACL(Map<String, Object> conf) {
         if (!isZkAuthenticationConfiguredTopology(conf)) {
             return null;
@@ -712,12 +718,13 @@ public class Utils {
     }
 
     /**
-     * "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
+     * <code>"{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"</code>.
      *
-     * Example usage in java: Map<Integer, String> tasks; Map<String, List<Integer>> componentTasks = Utils.reverse_map(tasks);
+     * <p>Example usage in java:
+     * <code>Map&lt;Integer, String&gt; tasks; Map&lt;String, List&lt;Integer&gt;&gt; componentTasks = Utils.reverse_map(tasks);</code>
      *
-     * The order of he resulting list values depends on the ordering properties of the Map passed in. The caller is responsible for passing
-     * an ordered map if they expect the result to be consistently ordered as well.
+     * <p>The order of he resulting list values depends on the ordering properties of the Map passed in. The caller is
+     * responsible for passing an ordered map if they expect the result to be consistently ordered as well.
      *
      * @param map to reverse
      * @return a reversed map
@@ -734,6 +741,30 @@ public class Utils {
             if (list == null) {
                 list = new ArrayList<K>();
                 rtn.put(entry.getValue(), list);
+            }
+            list.add(key);
+        }
+        return rtn;
+    }
+
+    /**
+     * "[[:a 1] [:b 1] [:c 2]} -> {1 [:a :b] 2 :c}" Reverses an assoc-list style Map like reverseMap(Map...)
+     *
+     * @param listSeq to reverse
+     * @return a reversed map
+     */
+    public static Map<Object, List<Object>> reverseMap(List<List<Object>> listSeq) {
+        Map<Object, List<Object>> rtn = new HashMap<>();
+        if (listSeq == null) {
+            return rtn;
+        }
+        for (List<Object> listEntry : listSeq) {
+            Object key = listEntry.get(0);
+            Object val = listEntry.get(1);
+            List<Object> list = rtn.get(val);
+            if (list == null) {
+                list = new ArrayList<>();
+                rtn.put(val, list);
             }
             list.add(key);
         }
@@ -933,6 +964,7 @@ public class Utils {
     }
 
     /**
+     * Get process PID.
      * @return the pid of this JVM, because Java doesn't provide a real way to do this.
      */
     public static String processPid() {
@@ -991,39 +1023,9 @@ public class Utils {
         Thread.setDefaultUncaughtExceptionHandler(createDefaultUncaughtExceptionHandler());
     }
 
-    public static Map<String, Object> findAndReadConfigFile(String name) {
-        return findAndReadConfigFile(name, true);
-    }
-
-    /**
-     * "[[:a 1] [:b 1] [:c 2]} -> {1 [:a :b] 2 :c}" Reverses an assoc-list style Map like reverseMap(Map...)
-     *
-     * @param listSeq to reverse
-     * @return a reversed map
-     */
-    public static Map<Object, List<Object>> reverseMap(List<List<Object>> listSeq) {
-        Map<Object, List<Object>> rtn = new HashMap<>();
-        if (listSeq == null) {
-            return rtn;
-        }
-        for (List<Object> listEntry : listSeq) {
-            Object key = listEntry.get(0);
-            Object val = listEntry.get(1);
-            List<Object> list = rtn.get(val);
-            if (list == null) {
-                list = new ArrayList<>();
-                rtn.put(val, list);
-            }
-            list.add(key);
-        }
-        return rtn;
-    }
-
     /**
      * parses the arguments to extract jvm heap memory size in MB.
      *
-     * @param options
-     * @param defaultValue
      * @return the value of the JVM heap memory setting (in MB) in a java command.
      */
     public static Double parseJvmHeapMemByChildOpts(List<String> options, Double defaultValue) {
@@ -1168,8 +1170,6 @@ public class Utils {
      * Validate topology blobstore map.
      *
      * @param topoConf Topology configuration
-     * @throws InvalidTopologyException
-     * @throws AuthorizationException
      */
     public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf) throws InvalidTopologyException, AuthorizationException {
         try (NimbusBlobStore client = new NimbusBlobStore()) {
@@ -1183,8 +1183,6 @@ public class Utils {
      *
      * @param topoConf Topology configuration
      * @param client   The NimbusBlobStore client. It must call prepare() before being used here.
-     * @throws InvalidTopologyException
-     * @throws AuthorizationException
      */
     public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, NimbusBlobStore client)
         throws InvalidTopologyException, AuthorizationException {
@@ -1205,11 +1203,6 @@ public class Utils {
 
     /**
      * Validate topology blobstore map.
-     *
-     * @param topoConf  Topology configuration
-     * @param blobStore The BlobStore
-     * @throws InvalidTopologyException
-     * @throws AuthorizationException
      */
     public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, BlobStore blobStore)
         throws InvalidTopologyException, AuthorizationException {
@@ -1234,6 +1227,7 @@ public class Utils {
      */
     public static String threadDump() {
         final StringBuilder dump = new StringBuilder();
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         final java.lang.management.ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         final java.lang.management.ThreadInfo[] threadInfos = threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds(), 100);
         for (Entry<Thread, StackTraceElement[]> entry: Thread.getAllStackTraces().entrySet()) {
@@ -1321,7 +1315,7 @@ public class Utils {
      * @param b something else
      * @return a or b the first one that is not null
      */
-    public static <V> V OR(V a, V b) {
+    public static <V> V or(V a, V b) {
         return a == null ? b : a;
     }
 
@@ -1338,9 +1332,9 @@ public class Utils {
     }
 
     /**
-     * Fills up chunks out of a collection (given a maximum amount of chunks)
+     * Fills up chunks out of a collection (given a maximum amount of chunks).
      *
-     * i.e. partitionFixed(5, [1,2,3]) -> [[1,2,3]] partitionFixed(5, [1..9]) -> [[1,2], [3,4], [5,6], [7,8], [9]] partitionFixed(3,
+     * <p>i.e. partitionFixed(5, [1,2,3]) -> [[1,2,3]] partitionFixed(5, [1..9]) -> [[1,2], [3,4], [5,6], [7,8], [9]] partitionFixed(3,
      * [1..10]) -> [[1,2,3,4], [5,6,7], [8,9,10]]
      *
      * @param maxNumChunks the maximum number of chunks to return
@@ -1398,7 +1392,6 @@ public class Utils {
      * Gets an available port. Consider if it is possible to pass port 0 to the server instead of using this method, since there is no
      * guarantee that the port returned by this method will remain free.
      *
-     * @param preferredPort
      * @return The preferred port if available, or a random available port
      */
     public static int getAvailablePort(int preferredPort) {
@@ -1414,7 +1407,7 @@ public class Utils {
     }
 
     /**
-     * Shortcut to calling {@link #getAvailablePort(int) } with 0 as the preferred port
+     * Shortcut to calling {@link #getAvailablePort(int) } with 0 as the preferred port.
      *
      * @return A random available port
      */
@@ -1492,18 +1485,18 @@ public class Utils {
      * Get a map of version to classpath from the conf Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP
      *
      * @param conf      what to read it out of
-     * @param currentCP the current classpath for this version of storm (not included in the conf, but returned by this)
+     * @param currentClassPath the current classpath for this version of storm (not included in the conf, but returned by this)
      * @return the map
      */
     public static NavigableMap<SimpleVersion, List<String>> getConfiguredClasspathVersions(Map<String, Object> conf,
-                                                                                           List<String> currentCP) {
+                                                                                           List<String> currentClassPath) {
         TreeMap<SimpleVersion, List<String>> ret = new TreeMap<>();
         Map<String, String> fromConf =
             (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections.emptyMap());
         for (Map.Entry<String, String> entry : fromConf.entrySet()) {
             ret.put(new SimpleVersion(entry.getKey()), Arrays.asList(entry.getValue().split(File.pathSeparator)));
         }
-        ret.put(VersionInfo.OUR_VERSION, currentCP);
+        ret.put(VersionInfo.OUR_VERSION, currentClassPath);
         return ret;
     }
 
@@ -1734,6 +1727,7 @@ public class Utils {
             try {
                 FileUtils.forceDelete(new File(path));
             } catch (FileNotFoundException ignored) {
+                //ignore
             }
         }
     }
@@ -1804,13 +1798,13 @@ public class Utils {
         private Yaml yaml;
         private Map<String, Object> defaultsConf;
         private Map<String, Object> stormConf;
-        private File f;
+        private File file;
 
-        public JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, File f) {
+        public JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, File file) {
             this.yaml = yaml;
             this.defaultsConf = defaultsConf;
             this.stormConf = stormConf;
-            this.f = f;
+            this.file = file;
         }
 
         public Map<String, Object> getDefaultsConf() {
@@ -1822,14 +1816,14 @@ public class Utils {
         }
 
         public JarConfigReader readZip() throws IOException {
-            try (ZipFile zipFile = new ZipFile(f)) {
+            try (ZipFile zipFile = new ZipFile(file)) {
                 readArchive(zipFile);
             }
             return this;
         }
 
         public JarConfigReader readJar() throws IOException {
-            try (JarFile jarFile = new JarFile(f)) {
+            try (JarFile jarFile = new JarFile(file)) {
                 readArchive(jarFile);
             }
             return this;

@@ -35,18 +35,19 @@ import org.apache.storm.utils.ReflectionUtils;
 // TaskID is always -1, therefore you can only send-unanchored tuples to co-located SystemBolt.
 // This bolt was conceived to export worker stats via metrics api.
 public class SystemBolt implements IBolt {
-    private static boolean _prepareWasCalled = false;
+    private static boolean prepareWasCalled = false;
 
     @SuppressWarnings({ "unchecked" })
     @Override
     public void prepare(final Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        if (_prepareWasCalled && !"local".equals(topoConf.get(Config.STORM_CLUSTER_MODE))) {
+        if (prepareWasCalled && !"local".equals(topoConf.get(Config.STORM_CLUSTER_MODE))) {
             throw new RuntimeException("A single worker should have 1 SystemBolt instance.");
         }
-        _prepareWasCalled = true;
+        prepareWasCalled = true;
 
         int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         final RuntimeMXBean jvmRT = ManagementFactory.getRuntimeMXBean();
         context.registerMetric("uptimeSecs", () -> jvmRT.getUptime() / 1000.0, bucketSize);
         context.registerMetric("startTimeSecs", () -> jvmRT.getStartTime() / 1000.0, bucketSize);
@@ -68,6 +69,7 @@ public class SystemBolt implements IBolt {
             }
         }, bucketSize);
 
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         final MemoryMXBean jvmMemRT = ManagementFactory.getMemoryMXBean();
 
         context.registerMetric("memory/heap", new MemoryUsageMetric(jvmMemRT::getHeapMemoryUsage), bucketSize);
@@ -104,15 +106,15 @@ public class SystemBolt implements IBolt {
     }
 
     private static class MemoryUsageMetric implements IMetric {
-        Supplier<MemoryUsage> _getUsage;
+        Supplier<MemoryUsage> getUsage;
 
         public MemoryUsageMetric(Supplier<MemoryUsage> getUsage) {
-            _getUsage = getUsage;
+            this.getUsage = getUsage;
         }
 
         @Override
         public Object getValueAndReset() {
-            MemoryUsage memUsage = _getUsage.get();
+            MemoryUsage memUsage = getUsage.get();
             HashMap<String, Object> m = new HashMap<>();
             m.put("maxBytes", memUsage.getMax());
             m.put("committedBytes", memUsage.getCommitted());
@@ -127,28 +129,28 @@ public class SystemBolt implements IBolt {
     // canonically the metrics data exported is time bucketed when doing counts.
     // convert the absolute values here into time buckets.
     private static class GarbageCollectorMetric implements IMetric {
-        GarbageCollectorMXBean _gcBean;
-        Long _collectionCount;
-        Long _collectionTime;
+        GarbageCollectorMXBean gcBean;
+        Long collectionCount;
+        Long collectionTime;
 
         public GarbageCollectorMetric(GarbageCollectorMXBean gcBean) {
-            _gcBean = gcBean;
+            this.gcBean = gcBean;
         }
 
         @Override
         public Object getValueAndReset() {
-            Long collectionCountP = _gcBean.getCollectionCount();
-            Long collectionTimeP = _gcBean.getCollectionTime();
+            Long collectionCountP = gcBean.getCollectionCount();
+            Long collectionTimeP = gcBean.getCollectionTime();
 
             Map<String, Object> ret = null;
-            if (_collectionCount != null && _collectionTime != null) {
+            if (collectionCount != null && collectionTime != null) {
                 ret = new HashMap<>();
-                ret.put("count", collectionCountP - _collectionCount);
-                ret.put("timeMs", collectionTimeP - _collectionTime);
+                ret.put("count", collectionCountP - collectionCount);
+                ret.put("timeMs", collectionTimeP - collectionTime);
             }
 
-            _collectionCount = collectionCountP;
-            _collectionTime = collectionTimeP;
+            collectionCount = collectionCountP;
+            collectionTime = collectionTimeP;
             return ret;
         }
     }

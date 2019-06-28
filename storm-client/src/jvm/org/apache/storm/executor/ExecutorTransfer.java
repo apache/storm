@@ -36,7 +36,7 @@ public class ExecutorTransfer {
     private int indexingBase = 0;
     private ArrayList<JCQueue> localReceiveQueues; // [taskId-indexingBase] => queue : List of all recvQs local to this worker
     private AtomicReferenceArray<JCQueue> queuesToFlush;
-        // [taskId-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
+    // [taskId-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
 
 
     public ExecutorTransfer(WorkerState workerData, Map<String, Object> topoConf) {

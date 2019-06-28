@@ -21,11 +21,11 @@ import org.apache.storm.thrift.transport.TTransport;
 import org.apache.storm.thrift.transport.TTransportException;
 
 /**
- * Interface for Thrift Transport plugin
+ * Interface for Thrift Transport plugin.
  */
 public interface ITransportPlugin {
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param type      the type of connection this will process.
      * @param topoConf  Storm configuration
@@ -34,7 +34,7 @@ public interface ITransportPlugin {
     void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration loginConf);
 
     /**
-     * Create a server associated with a given port, service handler, and purpose
+     * Create a server associated with a given port, service handler, and purpose.
      *
      * @param processor service handler
      * @return server
@@ -42,7 +42,7 @@ public interface ITransportPlugin {
     public TServer getServer(TProcessor processor) throws IOException, TTransportException;
 
     /**
-     * Connect to the specified server via framed transport
+     * Connect to the specified server via framed transport.
      *
      * @param transport  The underlying Thrift transport.
      * @param serverHost server host
@@ -52,7 +52,9 @@ public interface ITransportPlugin {
     public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException;
 
     /**
-     * @return The port this transport is using. This is not known until {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called.
+     * Get port.
+     * @return The port this transport is using. This is not known until
+     * {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called
      */
     public int getPort();
 

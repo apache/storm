@@ -50,9 +50,9 @@ public class RefCountedTuple {
 
     @Override
     public String toString() {
-        return "RefCountedTuple{" +
-               "count=" + count +
-               ", tuple=" + tuple +
-               '}';
+        return "RefCountedTuple{"
+                + "count=" + count
+                + ", tuple=" + tuple
+                + '}';
     }
 }

@@ -73,7 +73,7 @@ public class TridentUtils {
     }
 
     /**
-     * Assumes edge contains an index
+     * Assumes edge contains an index.
      */
     public static <T> List<T> getParents(DirectedGraph g, T n) {
         List<IndexedEdge> incoming = new ArrayList(g.incomingEdgesOf(n));

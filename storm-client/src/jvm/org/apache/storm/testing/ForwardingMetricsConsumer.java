@@ -61,16 +61,18 @@ public class ForwardingMetricsConsumer implements IMetricsConsumer {
     @Override
     public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
         StringBuilder sb = new StringBuilder();
-        String header = taskInfo.timestamp + "\t" +
-                        taskInfo.srcWorkerHost + ":" + taskInfo.srcWorkerPort + "\t" +
-                        taskInfo.srcTaskId + "\t" + taskInfo.srcComponentId + "\t";
+        String header = taskInfo.timestamp + "\t"
+                + taskInfo.srcWorkerHost + ":"
+                + taskInfo.srcWorkerPort + "\t"
+                + taskInfo.srcTaskId + "\t"
+                + taskInfo.srcComponentId + "\t";
         sb.append(header);
         for (DataPoint p : dataPoints) {
             sb.delete(header.length(), sb.length());
             sb.append(p.name)
-              .append("\t")
-              .append(p.value)
-              .append("\n");
+                    .append("\t")
+                    .append(p.value)
+                    .append("\n");
             try {
                 out.write(sb.toString().getBytes());
                 out.flush();

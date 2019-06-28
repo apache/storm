@@ -37,11 +37,11 @@ import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.org.apache.commons.io.IOUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.storm.shade.org.apache.commons.io.IOUtils;
 
 public class DependencyUploader {
     public static final Logger LOG = LoggerFactory.getLogger(DependencyUploader.class);
@@ -163,7 +163,7 @@ public class DependencyUploader {
             AtomicOutputStream blob = null;
             try {
                 blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
-                try(InputStream in = Files.newInputStream(dependency.toPath())) {
+                try (InputStream in = Files.newInputStream(dependency.toPath())) {
                     IOUtils.copy(in, blob, this.uploadChuckSize);
                 }
                 blob.close();

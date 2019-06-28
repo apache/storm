@@ -28,11 +28,11 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
     private static final Set<Class<?>> ALLOWED_EXCEPTIONS = new HashSet<>(Arrays.asList(new Class<?>[]{ IOException.class }));
     private final IServer server;
-    private final AtomicInteger failure_count;
+    private final AtomicInteger failureCount;
 
     public StormServerHandler(IServer server) {
         this.server = server;
-        failure_count = new AtomicInteger(0);
+        failureCount = new AtomicInteger(0);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
             server.received(msg, channel.remoteAddress().toString(), channel);
         } catch (InterruptedException e) {
             LOG.info("failed to enqueue a request message", e);
-            failure_count.incrementAndGet();
+            failureCount.incrementAndGet();
         }
     }
 

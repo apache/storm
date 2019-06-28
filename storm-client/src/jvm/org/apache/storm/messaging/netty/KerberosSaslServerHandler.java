@@ -30,14 +30,14 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
      * Used for client or server's token to send or receive from each other.
      */
     private final Map<String, Object> topoConf;
-    private final String jaas_section;
+    private final String jaasSection;
     private final List<String> authorizedUsers;
 
-    public KerberosSaslServerHandler(ISaslServer server, Map<String, Object> topoConf, String jaas_section,
+    public KerberosSaslServerHandler(ISaslServer server, Map<String, Object> topoConf, String jaasSection,
                                      List<String> authorizedUsers) throws IOException {
         this.server = server;
         this.topoConf = topoConf;
-        this.jaas_section = jaas_section;
+        this.jaasSection = jaasSection;
         this.authorizedUsers = authorizedUsers;
     }
 
@@ -60,7 +60,7 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
                 if (saslNettyServer == null) {
                     LOG.debug("No saslNettyServer for {}  yet; creating now, with topology token: ", channel);
                     try {
-                        saslNettyServer = new KerberosSaslNettyServer(topoConf, jaas_section, authorizedUsers);
+                        saslNettyServer = new KerberosSaslNettyServer(topoConf, jaasSection, authorizedUsers);
                         channel.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).set(saslNettyServer);
                     } catch (RuntimeException ioe) {
                         LOG.error("Error occurred while creating saslNettyServer on server {} for client {}",

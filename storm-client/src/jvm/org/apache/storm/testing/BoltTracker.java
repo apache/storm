@@ -19,16 +19,16 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 
 
 public class BoltTracker extends NonRichBoltTracker implements IRichBolt {
-    IRichBolt _richDelegate;
+    IRichBolt richDelegate;
 
     public BoltTracker(IRichBolt delegate, String id) {
         super(delegate, id);
-        _richDelegate = delegate;
+        richDelegate = delegate;
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        _richDelegate.declareOutputFields(declarer);
+        richDelegate.declareOutputFields(declarer);
     }
 
     @Override

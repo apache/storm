@@ -19,10 +19,10 @@ import org.apache.storm.trident.operation.TridentCollector;
 public class CaptureCollector implements TridentCollector {
     public List<List<Object>> captured = new ArrayList();
 
-    TridentCollector _coll;
+    TridentCollector coll;
 
     public void setCollector(TridentCollector coll) {
-        _coll = coll;
+        this.coll = coll;
     }
 
     @Override
@@ -32,11 +32,11 @@ public class CaptureCollector implements TridentCollector {
 
     @Override
     public void flush() {
-        _coll.flush();
+        coll.flush();
     }
 
     @Override
     public void reportError(Throwable t) {
-        _coll.reportError(t);
+        coll.reportError(t);
     }
 }

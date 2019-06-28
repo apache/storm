@@ -23,17 +23,17 @@ import org.slf4j.LoggerFactory;
 /**
  * Listens for all metrics, dumps them to log
  *
- * To use, add this to your topology's configuration:
+ * <p>To use, add this to your topology's configuration:
  *
- * ```java conf.registerMetricsConsumer(org.apache.storm.metrics.LoggingMetricsConsumer.class, 1); ```
+ * <p>```java conf.registerMetricsConsumer(org.apache.storm.metrics.LoggingMetricsConsumer.class, 1); ```
  *
- * Or edit the storm.yaml config file:
+ * <p>Or edit the storm.yaml config file:
  *
- * ```yaml topology.metrics.consumer.register: - class: "org.apache.storm.metrics.LoggingMetricsConsumer" parallelism.hint: 1 ```
+ * <p>```yaml topology.metrics.consumer.register: - class: "org.apache.storm.metrics.LoggingMetricsConsumer" parallelism.hint: 1 ```
  */
 public class LoggingMetricsConsumer implements IMetricsConsumer {
     public static final Logger LOG = LoggerFactory.getLogger(LoggingMetricsConsumer.class);
-    static private String padding = "                       ";
+    private static String padding = "                       ";
 
     @Override
     public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
@@ -51,8 +51,10 @@ public class LoggingMetricsConsumer implements IMetricsConsumer {
         for (DataPoint p : dataPoints) {
             sb.delete(header.length(), sb.length());
             sb.append(p.name)
-              .append(padding).delete(header.length() + 23, sb.length()).append("\t")
-              .append(p.value);
+                    .append(padding)
+                    .delete(header.length() + 23, sb.length())
+                    .append("\t")
+                    .append(p.value);
             LOG.info(sb.toString());
         }
     }

@@ -23,7 +23,7 @@ import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 public class VersionedStore {
     private static final String FINISHED_VERSION_SUFFIX = ".version";
 
-    private String _root;
+    private String root;
 
     /**
      * Creates a store at the given path.
@@ -32,18 +32,18 @@ public class VersionedStore {
      * @param createRootDir option to create the path directory
      */
     public VersionedStore(String path, boolean createRootDir) throws IOException {
-        _root = path;
+        root = path;
         if (createRootDir) {
-            mkdirs(_root);
+            mkdirs(root);
         }
     }
 
     public String getRoot() {
-        return _root;
+        return root;
     }
 
     public String versionPath(long version) {
-        return new File(_root, "" + version).getAbsolutePath();
+        return new File(root, "" + version).getAbsolutePath();
     }
 
     public String mostRecentVersionPath() throws IOException {
@@ -132,7 +132,7 @@ public class VersionedStore {
         }
         HashSet<Long> keepers = new HashSet<Long>(versions);
 
-        for (String p : listDir(_root)) {
+        for (String p : listDir(root)) {
             Long v = parseVersion(p);
             if (v != null && !keepers.contains(v)) {
                 deleteVersion(v);
@@ -145,7 +145,7 @@ public class VersionedStore {
      */
     public List<Long> getAllVersions() throws IOException {
         List<Long> ret = new ArrayList<Long>();
-        for (String s : listDir(_root)) {
+        for (String s : listDir(root)) {
 
             if (s.endsWith(FINISHED_VERSION_SUFFIX) && new File(s.substring(0, s.length() - FINISHED_VERSION_SUFFIX.length())).exists()) {
                 ret.add(validateAndGetVersion(s));
@@ -157,7 +157,7 @@ public class VersionedStore {
     }
 
     private String tokenPath(long version) {
-        return new File(_root, "" + version + FINISHED_VERSION_SUFFIX).getAbsolutePath();
+        return new File(root, "" + version + FINISHED_VERSION_SUFFIX).getAbsolutePath();
     }
 
     private long validateAndGetVersion(String path) {

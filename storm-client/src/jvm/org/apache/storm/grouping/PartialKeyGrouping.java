@@ -25,14 +25,14 @@ import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
 
 /**
- * A variation on FieldGrouping. This grouping operates on a partitioning of the incoming tuples (like a FieldGrouping), but it can send
- * Tuples from a given partition to multiple downstream tasks.
+ * A variation on FieldGrouping. This grouping operates on a partitioning of the incoming tuples (like a FieldGrouping),
+ * but it can send Tuples from a given partition to multiple downstream tasks.
  *
- * Given a total pool of target tasks, this grouping will always send Tuples with a given key to one member of a subset of those tasks. Each
- * key is assigned a subset of tasks. Each tuple is then sent to one task from that subset.
+ * <p>Given a total pool of target tasks, this grouping will always send Tuples with a given key to one member of a
+ * subset of those tasks. Each key is assigned a subset of tasks. Each tuple is then sent to one task from that subset.
  *
- * Notes: - the default TaskSelector ensures each task gets as close to a balanced number of Tuples as possible - the default
- * AssignmentCreator hashes the key and produces an assignment of two tasks
+ * <p>Notes: - the default TaskSelector ensures each task gets as close to a balanced number of Tuples as possible - the
+ * default AssignmentCreator hashes the key and produces an assignment of two tasks
  */
 public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     private static final long serialVersionUID = -1672360572274911808L;
@@ -133,8 +133,8 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     /**
      * This interface is responsible for choosing a subset of the target tasks to use for a given key.
      *
-     * NOTE: whatever scheme you use to create the assignment should be deterministic. This may be executed on multiple Storm Workers, thus
-     * each of them needs to come up with the same assignment for a given key.
+     * <p>NOTE: whatever scheme you use to create the assignment should be deterministic. This may be executed on
+     * multiple Storm Workers, thus each of them needs to come up with the same assignment for a given key.
      */
     public interface AssignmentCreator extends Serializable {
         int[] createAssignment(List<Integer> targetTasks, byte[] key);

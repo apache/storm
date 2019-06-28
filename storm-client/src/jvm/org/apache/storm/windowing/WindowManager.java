@@ -12,6 +12,10 @@
 
 package org.apache.storm.windowing;
 
+import static org.apache.storm.windowing.EvictionPolicy.Action.EXPIRE;
+import static org.apache.storm.windowing.EvictionPolicy.Action.PROCESS;
+import static org.apache.storm.windowing.EvictionPolicy.Action.STOP;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -28,10 +32,6 @@ import org.apache.storm.windowing.EvictionPolicy.Action;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.windowing.EvictionPolicy.Action.EXPIRE;
-import static org.apache.storm.windowing.EvictionPolicy.Action.PROCESS;
-import static org.apache.storm.windowing.EvictionPolicy.Action.STOP;
-
 /**
  * Tracks a window of events and fires {@link WindowLifecycleListener} callbacks on expiry of events or activation of the window due to
  * {@link TriggerPolicy}.
@@ -42,7 +42,7 @@ public class WindowManager<T> implements TriggerHandler {
     /**
      * Expire old events every EXPIRE_EVENTS_THRESHOLD to keep the window size in check.
      *
-     * Note that if the eviction policy is based on watermarks, events will not be evicted until a new watermark would cause them to be
+     * <p>Note that if the eviction policy is based on watermarks, events will not be evicted until a new watermark would cause them to be
      * considered expired anyway, regardless of this limit
      */
     public static final int EXPIRE_EVENTS_THRESHOLD = 100;
@@ -63,7 +63,7 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Constructs a {@link WindowManager}
+     * Constructs a {@link WindowManager}.
      *
      * @param lifecycleListener the {@link WindowLifecycleListener}
      * @param queue             a collection where the events in the window can be enqueued. <br/>
@@ -107,7 +107,7 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Tracks a window event
+     * Tracks a window event.
      *
      * @param windowEvent the window event to track
      */
@@ -225,7 +225,7 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Scans the event queue and returns the next earliest event ts between the startTs and endTs
+     * Scans the event queue and returns the next earliest event ts between the startTs and endTs.
      *
      * @param startTs the start ts (exclusive)
      * @param endTs   the end ts (inclusive)
@@ -285,10 +285,10 @@ public class WindowManager<T> implements TriggerHandler {
 
     @Override
     public String toString() {
-        return "WindowManager{" +
-               "evictionPolicy=" + evictionPolicy +
-               ", triggerPolicy=" + triggerPolicy +
-               '}';
+        return "WindowManager{"
+                + "evictionPolicy=" + evictionPolicy
+                + ", triggerPolicy=" + triggerPolicy
+                + '}';
     }
 
     public void restoreState(Map<String, Optional<?>> state) {

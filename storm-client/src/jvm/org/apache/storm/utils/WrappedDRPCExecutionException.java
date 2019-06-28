@@ -23,7 +23,9 @@ import org.apache.storm.generated.DRPCExecutionException;
 /**
  * Wraps the generated TException to allow getMessage() to return a valid string.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class WrappedDRPCExecutionException extends DRPCExecutionException {
+
     public WrappedDRPCExecutionException(String msg) {
         super(msg);
     }

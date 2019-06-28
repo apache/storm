@@ -16,6 +16,7 @@ import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.topology.ComponentConfigurationDeclarer;
 import org.apache.storm.tuple.Fields;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface LinearDRPCInputDeclarer extends ComponentConfigurationDeclarer<LinearDRPCInputDeclarer> {
     public LinearDRPCInputDeclarer fieldsGrouping(Fields fields);
 

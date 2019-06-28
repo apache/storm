@@ -36,7 +36,7 @@ import org.apache.storm.utils.ServiceRegistry;
 public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
     boolean local;
     Map<String, Object> conf;
-    Map<List, DRPCInvocationsClient> _clients = new HashMap<>();
+    Map<List, DRPCInvocationsClient> clients = new HashMap<>();
 
     @Override
     public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
@@ -77,19 +77,21 @@ public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
             if (local) {
                 client = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(host);
             } else {
-                List server = new ArrayList() {{
-                    add(host);
-                    add(port);
-                }};
+                List server = new ArrayList() {
+                    {
+                        add(host);
+                        add(port);
+                    }
+                };
 
-                if (!_clients.containsKey(server)) {
+                if (!clients.containsKey(server)) {
                     try {
-                        _clients.put(server, new DRPCInvocationsClient(conf, host, port));
+                        clients.put(server, new DRPCInvocationsClient(conf, host, port));
                     } catch (TTransportException ex) {
                         throw new RuntimeException(ex);
                     }
                 }
-                client = _clients.get(server);
+                client = clients.get(server);
             }
 
             try {
@@ -104,7 +106,7 @@ public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
 
     @Override
     public void cleanup() {
-        for (DRPCInvocationsClient c : _clients.values()) {
+        for (DRPCInvocationsClient c : clients.values()) {
             c.close();
         }
     }

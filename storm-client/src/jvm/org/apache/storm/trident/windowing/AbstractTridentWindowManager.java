@@ -102,8 +102,6 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
     /**
      * Handle expired tuple events which can be removing from cache or store.
-     *
-     * @param expiredEvents
      */
     protected abstract void onTuplesExpired(List<T> expiredEvents);
 
@@ -132,9 +130,6 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
     /**
      * Return {@code TridentTuple}s from given {@code tupleEvents}.
-     *
-     * @param tupleEvents
-     * @return
      */
     protected abstract List<TridentTuple> getTridentTuples(List<T> tupleEvents);
 
@@ -214,10 +209,10 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
         @Override
         public String toString() {
-            return "TriggerResult{" +
-                   "id=" + id +
-                   ", result=" + result +
-                   '}';
+            return "TriggerResult{"
+                    + "id=" + id
+                    + ", result=" + result
+                    + '}';
         }
     }
 

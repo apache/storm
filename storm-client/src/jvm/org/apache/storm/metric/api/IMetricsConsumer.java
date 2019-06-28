@@ -48,8 +48,10 @@ public interface IMetricsConsumer {
 
         @Override
         public String toString() {
-            return "TASK_INFO: { host: " + srcWorkerHost + ":" + srcWorkerPort +
-                   " comp: " + srcComponentId + "[" + srcTaskId + "]}";
+            return "TASK_INFO: { host: " + srcWorkerHost
+                    + ":" + srcWorkerPort
+                    + " comp: " + srcComponentId
+                    + "[" + srcTaskId + "]}";
         }
     }
 

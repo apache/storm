@@ -18,6 +18,7 @@ import javax.security.auth.kerberos.KerberosTicket;
 /**
  * Custom LoginModule extended for testing.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class AutoTGTKrb5LoginModuleTest extends AutoTGTKrb5LoginModule {
 
     public Principal client = null;

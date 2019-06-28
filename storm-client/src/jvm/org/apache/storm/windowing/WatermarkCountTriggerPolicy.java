@@ -85,10 +85,10 @@ public class WatermarkCountTriggerPolicy<T> implements TriggerPolicy<T, Long> {
 
     @Override
     public String toString() {
-        return "WatermarkCountTriggerPolicy{" +
-               "count=" + count +
-               ", lastProcessedTs=" + lastProcessedTs +
-               ", started=" + started +
-               '}';
+        return "WatermarkCountTriggerPolicy{"
+                + "count=" + count
+                + ", lastProcessedTs=" + lastProcessedTs
+                + ", started=" + started
+                + '}';
     }
 }

@@ -21,7 +21,7 @@ public class Load {
     private double connectionLoad = 0.0; //0 no load to 1 fully loaded
 
     /**
-     * Create a new load
+     * Create a new load.
      *
      * @param hasMetrics     have metrics been reported yet?
      * @param boltLoad       the load as reported by the bolt 0.0 no load 1.0 fully loaded
@@ -34,6 +34,7 @@ public class Load {
     }
 
     /**
+     * Check whether has metrics.
      * @return true if metrics have been reported so far.
      */
     public boolean hasMetrics() {
@@ -41,6 +42,7 @@ public class Load {
     }
 
     /**
+     * Get bolt load.
      * @return the load as reported by the bolt.
      */
     public double getBoltLoad() {
@@ -48,6 +50,7 @@ public class Load {
     }
 
     /**
+     * Get connection load.
      * @return the load as reported by the connection
      */
     public double getConnectionLoad() {
@@ -55,6 +58,7 @@ public class Load {
     }
 
     /**
+     * Get load.
      * @return the load that is a combination of sub loads.
      */
     public double getLoad() {

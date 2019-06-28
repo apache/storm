@@ -33,7 +33,7 @@ import org.apache.storm.hooks.info.BoltExecuteInfo;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.metric.api.IMetricsRegistrant;
 import org.apache.storm.policy.IWaitStrategy;
-import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
+import org.apache.storm.policy.IWaitStrategy.WaitSituation;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
@@ -75,10 +75,10 @@ public class BoltExecutor extends Executor {
             this.consumeWaitStrategy = makeSystemBoltWaitStrategy();
         } else {
             this.consumeWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
-            this.consumeWaitStrategy.prepare(topoConf, WAIT_SITUATION.BOLT_WAIT);
+            this.consumeWaitStrategy.prepare(topoConf, WaitSituation.BOLT_WAIT);
         }
         this.backPressureWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
-        this.backPressureWaitStrategy.prepare(topoConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
+        this.backPressureWaitStrategy.prepare(topoConf, WaitSituation.BACK_PRESSURE_WAIT);
         this.stats = new BoltExecutorStats(ConfigUtils.samplingRate(this.getTopoConf()),
                                            ObjectReader.getInt(this.getTopoConf().get(Config.NUM_STAT_BUCKETS)));
         this.builtInMetrics = new BuiltinBoltMetrics(stats);
@@ -88,7 +88,7 @@ public class BoltExecutor extends Executor {
         WaitStrategyPark ws = new WaitStrategyPark();
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 5000);
-        ws.prepare(conf, WAIT_SITUATION.BOLT_WAIT);
+        ws.prepare(conf, WaitSituation.BOLT_WAIT);
         return ws;
     }
 
@@ -239,8 +239,8 @@ public class BoltExecutor extends Executor {
                 LOG.info("Execute done TUPLE {} TASK: {} DELTA: {}", tuple, taskId, delta);
             }
             TopologyContext topologyContext = idToTask.get(taskId - idToTaskBase).getUserContext();
-            if (!topologyContext.getHooks().isEmpty()) // perf critical check to avoid unnecessary allocation
-            {
+            if (!topologyContext.getHooks().isEmpty()) {
+                // perf critical check to avoid unnecessary allocation
                 new BoltExecuteInfo(tuple, taskId, delta).applyOn(topologyContext);
             }
             if (delta >= 0) {

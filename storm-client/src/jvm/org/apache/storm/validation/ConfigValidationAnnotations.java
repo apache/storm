@@ -26,11 +26,11 @@ import java.lang.annotation.Target;
  */
 public class ConfigValidationAnnotations {
     /**
-     * Validators with fields: validatorClass and type
+     * Validators with fields: validatorClass and type.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isType {
+    public @interface IsType {
         Class<?> validatorClass() default ConfigValidation.SimpleTypeValidator.class;
 
         Class<?> type();
@@ -38,7 +38,7 @@ public class ConfigValidationAnnotations {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isDerivedFrom {
+    public @interface IsDerivedFrom {
         Class<?> validatorClass() default ConfigValidation.DerivedTypeValidator.class;
 
         Class<?> baseType();
@@ -46,29 +46,29 @@ public class ConfigValidationAnnotations {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isStringList {
+    public @interface IsStringList {
         Class<?> validatorClass() default ConfigValidation.ListEntryTypeValidator.class;
 
         Class<?> type() default String.class;
     }
 
     /**
-     * validates each entry in a list is of a certain type
+     * validates each entry in a list is of a certain type.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isListEntryType {
+    public @interface IsListEntryType {
         Class<?> validatorClass() default ConfigValidation.ListEntryTypeValidator.class;
 
         Class<?> type();
     }
 
     /**
-     * Validators with fields: validatorClass
+     * Validators with fields: validatorClass.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isString {
+    public @interface IsString {
         Class<?> validatorClass() default ConfigValidation.StringValidator.class;
 
         String[] acceptedValues() default "";
@@ -76,24 +76,24 @@ public class ConfigValidationAnnotations {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isNumber {
+    public @interface IsNumber {
         Class<?> validatorClass() default ConfigValidation.NumberValidator.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isBoolean {
+    public @interface IsBoolean {
         Class<?> validatorClass() default ConfigValidation.BooleanValidator.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isInteger {
+    public @interface IsInteger {
         Class<?> validatorClass() default ConfigValidation.IntegerValidator.class;
     }
 
     /**
-     * Validates on object is not null
+     * Validates on object is not null.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -102,31 +102,31 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * Validates that there are no duplicates in a list
+     * Validates that there are no duplicates in a list.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isNoDuplicateInList {
+    public @interface IsNoDuplicateInList {
         Class<?> validatorClass() default ConfigValidation.NoDuplicateInListValidator.class;
     }
 
     /**
-     * Validates each entry in a list with a list of validators Validators with fields: validatorClass and entryValidatorClass
+     * Validates each entry in a list with a list of validators Validators with fields: validatorClass and entryValidatorClass.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isListEntryCustom {
+    public @interface IsListEntryCustom {
         Class<?> validatorClass() default ConfigValidation.ListEntryCustomValidator.class;
 
         Class<?>[] entryValidatorClasses();
     }
 
     /**
-     * Validates the type of each key and value in a map Validator with fields: validatorClass, keyValidatorClass, valueValidatorClass
+     * Validates the type of each key and value in a map Validator with fields: validatorClass, keyValidatorClass, valueValidatorClass.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isMapEntryType {
+    public @interface IsMapEntryType {
         Class<?> validatorClass() default ConfigValidation.MapEntryTypeValidator.class;
 
         Class<?> keyType();
@@ -136,11 +136,11 @@ public class ConfigValidationAnnotations {
 
     /**
      * Validates a each key and value in a Map with a list of validators Validator with fields: validatorClass, keyValidatorClasses,
-     * valueValidatorClasses
+     * valueValidatorClasses.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isMapEntryCustom {
+    public @interface IsMapEntryCustom {
         Class<?> validatorClass() default ConfigValidation.MapEntryCustomValidator.class;
 
         Class<?>[] keyValidatorClasses();
@@ -149,11 +149,11 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * Checks if a number is positive and whether zero inclusive Validator with fields: validatorClass, includeZero
+     * Checks if a number is positive and whether zero inclusive Validator with fields: validatorClass, includeZero.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isPositiveNumber {
+    public @interface IsPositiveNumber {
         Class<?> validatorClass() default ConfigValidation.PositiveNumberValidator.class;
 
         boolean includeZero() default false;
@@ -161,35 +161,35 @@ public class ConfigValidationAnnotations {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isImplementationOfClass {
+    public @interface IsImplementationOfClass {
         Class<?> validatorClass() default ConfigValidation.ImplementsClassValidator.class;
 
         Class<?> implementsClass();
     }
 
     /**
-     * Complex/custom type validators
+     * Complex/custom type validators.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isStringOrStringList {
+    public @interface IsStringOrStringList {
         Class<?> validatorClass() default ConfigValidation.StringOrStringListValidator.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isKryoReg {
+    public @interface IsKryoReg {
         Class<?> validatorClass() default ConfigValidation.KryoRegValidator.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
-    public @interface isPowerOf2 {
+    public @interface IsPowerOf2 {
         Class<?> validatorClass() default ConfigValidation.PowerOf2Validator.class;
     }
 
     /**
-     * For custom validators
+     * For custom validators.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -204,7 +204,7 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * Field names for annotations
+     * Field names for annotations.
      */
     public static class ValidatorParams {
         static final String VALIDATOR_CLASS = "validatorClass";

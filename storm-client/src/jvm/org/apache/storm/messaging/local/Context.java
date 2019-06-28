@@ -13,7 +13,6 @@
 package org.apache.storm.messaging.local;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +37,7 @@ import org.slf4j.LoggerFactory;
 
 public class Context implements IContext {
     private static final Logger LOG = LoggerFactory.getLogger(Context.class);
-    private final ConcurrentHashMap<String, LocalServer> _registry = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, LocalServer> registry = new ConcurrentHashMap<>();
 
     private static String getNodeKey(String nodeId, int port) {
         return nodeId + "-" + port;
@@ -47,7 +46,7 @@ public class Context implements IContext {
     private LocalServer createLocalServer(String nodeId, int port, IConnectionCallback cb) {
         String key = getNodeKey(nodeId, port);
         LocalServer ret = new LocalServer(port, cb);
-        LocalServer existing = _registry.put(key, ret);
+        LocalServer existing = registry.put(key, ret);
         if (existing != null) {
             //Can happen if worker is restarted in the same topology, e.g. due to blob update
             LOG.info("Replacing existing server for key {}", existing, ret, key);
@@ -61,13 +60,13 @@ public class Context implements IContext {
     }
 
     @Override
-    public IConnection bind(String storm_id, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
-        return createLocalServer(storm_id, port, cb);
+    public IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
+        return createLocalServer(stormId, port, cb);
     }
 
     @Override
-    public IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus) {
-        return new LocalClient(storm_id, port);
+    public IConnection connect(String stormId, String host, int port, AtomicBoolean[] remoteBpStatus) {
+        return new LocalClient(stormId, port);
     }
 
     @Override
@@ -76,13 +75,13 @@ public class Context implements IContext {
     }
 
     private class LocalServer implements IConnection {
-        final ConcurrentHashMap<Integer, Double> _load = new ConcurrentHashMap<>();
+        final ConcurrentHashMap<Integer, Double> load = new ConcurrentHashMap<>();
         final int port;
-        final IConnectionCallback _cb;
+        final IConnectionCallback cb;
 
         public LocalServer(int port, IConnectionCallback cb) {
             this.port = port;
-            this._cb = cb;
+            this.cb = cb;
         }
         
         @Override
@@ -94,7 +93,7 @@ public class Context implements IContext {
         public Map<Integer, Load> getLoad(Collection<Integer> tasks) {
             Map<Integer, Load> ret = new HashMap<>();
             for (Integer task : tasks) {
-                Double found = _load.get(task);
+                Double found = load.get(task);
                 if (found != null) {
                     ret.put(task, new Load(true, found, 0));
                 }
@@ -104,7 +103,7 @@ public class Context implements IContext {
 
         @Override
         public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
-            _load.putAll(taskToLoad);
+            load.putAll(taskToLoad);
         }
 
         @Override
@@ -125,16 +124,16 @@ public class Context implements IContext {
 
     private class LocalClient implements IConnection {
         //Messages sent before the server registered a callback
-        private final LinkedBlockingQueue<TaskMessage> _pendingDueToUnregisteredServer;
-        private final ScheduledExecutorService _pendingFlusher;
+        private final LinkedBlockingQueue<TaskMessage> pendingDueToUnregisteredServer;
+        private final ScheduledExecutorService pendingFlusher;
         private final int port;
         private final String registryKey;
 
         public LocalClient(String stormId, int port) {
             this.port = port;
             this.registryKey = getNodeKey(stormId, port);
-            _pendingDueToUnregisteredServer = new LinkedBlockingQueue<>();
-            _pendingFlusher = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+            pendingDueToUnregisteredServer = new LinkedBlockingQueue<>();
+            pendingFlusher = Executors.newScheduledThreadPool(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable runnable) {
                     Thread thread = new Thread(runnable);
@@ -143,7 +142,7 @@ public class Context implements IContext {
                     return thread;
                 }
             });
-            _pendingFlusher.scheduleAtFixedRate(new Runnable() {
+            pendingFlusher.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -159,34 +158,34 @@ public class Context implements IContext {
 
         private void flushPending() {
             //Can't cache server in client, server can change when workers restart.
-            LocalServer server = _registry.get(registryKey);
-            if (server != null && !_pendingDueToUnregisteredServer.isEmpty()) {
+            LocalServer server = registry.get(registryKey);
+            if (server != null && !pendingDueToUnregisteredServer.isEmpty()) {
                 ArrayList<TaskMessage> ret = new ArrayList<>();
-                _pendingDueToUnregisteredServer.drainTo(ret);
-                server._cb.recv(ret);
+                pendingDueToUnregisteredServer.drainTo(ret);
+                server.cb.recv(ret);
             }
         }
 
         @Override
         public void send(Iterator<TaskMessage> msgs) {
-            LocalServer server = _registry.get(registryKey);
+            LocalServer server = registry.get(registryKey);
             if (server != null) {
                 flushPending();
                 ArrayList<TaskMessage> ret = new ArrayList<>();
                 while (msgs.hasNext()) {
                     ret.add(msgs.next());
                 }
-                server._cb.recv(ret);
+                server.cb.recv(ret);
             } else {
                 while (msgs.hasNext()) {
-                    _pendingDueToUnregisteredServer.add(msgs.next());
+                    pendingDueToUnregisteredServer.add(msgs.next());
                 }
             }
         }
 
         @Override
         public Map<Integer, Load> getLoad(Collection<Integer> tasks) {
-            LocalServer server = _registry.get(registryKey);
+            LocalServer server = registry.get(registryKey);
             if (server != null) {
                 return server.getLoad(tasks);
             }
@@ -195,7 +194,7 @@ public class Context implements IContext {
 
         @Override
         public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
-            LocalServer server = _registry.get(registryKey);
+            LocalServer server = registry.get(registryKey);
             if (server != null) {
                 server.sendLoadMetrics(taskToLoad);
             }
@@ -213,9 +212,9 @@ public class Context implements IContext {
 
         @Override
         public void close() {
-            _pendingFlusher.shutdown();
+            pendingFlusher.shutdown();
             try {
-                _pendingFlusher.awaitTermination(5, TimeUnit.SECONDS);
+                pendingFlusher.awaitTermination(5, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Interrupted while awaiting flusher shutdown", e);
             }

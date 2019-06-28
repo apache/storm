@@ -24,22 +24,22 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory
         .getLogger(KerberosSaslClientHandler.class);
-    private final long start_time;
+    private final long startTime;
     private final ISaslClient client;
     /**
      * Used for client or server's token to send or receive from each other.
      */
     private final Map<String, Object> topoConf;
-    private final String jaas_section;
+    private final String jaasSection;
     private final String host;
 
-    public KerberosSaslClientHandler(ISaslClient client, Map<String, Object> topoConf, String jaas_section, String host) throws
+    public KerberosSaslClientHandler(ISaslClient client, Map<String, Object> topoConf, String jaasSection, String host) throws
         IOException {
         this.client = client;
         this.topoConf = topoConf;
-        this.jaas_section = jaas_section;
+        this.jaasSection = jaasSection;
         this.host = host;
-        start_time = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
     }
 
     @Override
@@ -56,7 +56,7 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
             if (saslNettyClient == null) {
                 LOG.debug("Creating saslNettyClient now for channel: {}",
                           channel);
-                saslNettyClient = new KerberosSaslNettyClient(topoConf, jaas_section, host);
+                saslNettyClient = new KerberosSaslNettyClient(topoConf, jaasSection, host);
                 channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).set(saslNettyClient);
             }
             LOG.debug("Going to initiate Kerberos negotiations.");
@@ -71,7 +71,7 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object message) throws Exception {
-        LOG.debug("send/recv time (ms): {}", (System.currentTimeMillis() - start_time));
+        LOG.debug("send/recv time (ms): {}", (System.currentTimeMillis() - startTime));
 
         // examine the response message from server
         if (message instanceof ControlMessage) {

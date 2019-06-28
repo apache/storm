@@ -29,20 +29,20 @@ import org.slf4j.LoggerFactory;
 
 public class TestWordSpout extends BaseRichSpout {
     public static Logger LOG = LoggerFactory.getLogger(TestWordSpout.class);
-    boolean _isDistributed;
-    SpoutOutputCollector _collector;
+    boolean isDistributed;
+    SpoutOutputCollector collector;
 
     public TestWordSpout() {
         this(true);
     }
 
     public TestWordSpout(boolean isDistributed) {
-        _isDistributed = isDistributed;
+        this.isDistributed = isDistributed;
     }
 
     @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        _collector = collector;
+        this.collector = collector;
     }
 
     @Override
@@ -56,7 +56,7 @@ public class TestWordSpout extends BaseRichSpout {
         final String[] words = new String[]{ "nathan", "mike", "jackson", "golda", "bertels" };
         final Random rand = new Random();
         final String word = words[rand.nextInt(words.length)];
-        _collector.emit(new Values(word));
+        collector.emit(new Values(word));
     }
 
     @Override
@@ -76,7 +76,7 @@ public class TestWordSpout extends BaseRichSpout {
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        if (!_isDistributed) {
+        if (!isDistributed) {
             Map<String, Object> ret = new HashMap<String, Object>();
             ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 1);
             return ret;

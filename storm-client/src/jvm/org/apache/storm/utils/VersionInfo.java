@@ -100,10 +100,10 @@ public final class VersionInfo {
 
         @Override
         public String getBuildVersion() {
-            return this.getVersion() +
-                " from " + getRevision() +
-                " by " + getUser() +
-                " source checksum " + getSrcChecksum();
+            return this.getVersion()
+                    + " from " + getRevision()
+                    + " by " + getUser()
+                    + " source checksum " + getSrcChecksum();
         }
     }
 

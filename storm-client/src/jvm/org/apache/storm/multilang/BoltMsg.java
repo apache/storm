@@ -18,8 +18,9 @@ import java.util.List;
  * BoltMsg is an object that represents the data sent from a shell component to a bolt process that implements a multi-language protocol. It
  * is the union of all data types that a bolt can receive from Storm.
  *
- * BoltMsgs are objects sent to the ISerializer interface, for serialization according to the wire protocol implemented by the serializer.
- * The BoltMsg class allows for a decoupling between the serialized representation of the data and the data itself.
+ * <p>BoltMsgs are objects sent to the ISerializer interface, for serialization according to the wire protocol
+ * implemented by the serializer. The BoltMsg class allows for a decoupling between the serialized representation of the
+ * data and the data itself.
  */
 public class BoltMsg {
     private String id;

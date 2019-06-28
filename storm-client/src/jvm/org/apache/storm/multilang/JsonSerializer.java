@@ -123,8 +123,8 @@ public class JsonSerializer implements ISerializer {
             shellMsg.setTask(0);
         }
 
-        Object need_task_ids = msg.get("need_task_ids");
-        if (need_task_ids == null || ((Boolean) need_task_ids).booleanValue()) {
+        Object needTaskIds = msg.get("need_task_ids");
+        if (needTaskIds == null || ((Boolean) needTaskIds).booleanValue()) {
             shellMsg.setNeedTaskIds(true);
         } else {
             shellMsg.setNeedTaskIds(false);

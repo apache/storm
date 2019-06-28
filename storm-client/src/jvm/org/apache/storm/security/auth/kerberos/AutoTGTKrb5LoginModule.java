@@ -25,8 +25,9 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Custom LoginModule to enable Auto Login based on cached ticket
+ * Custom LoginModule to enable Auto Login based on cached ticket.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class AutoTGTKrb5LoginModule implements LoginModule {
     private static final Logger LOG = LoggerFactory.getLogger(AutoTGTKrb5LoginModule.class);
     protected KerberosTicket kerbTicket = null;

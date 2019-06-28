@@ -19,13 +19,13 @@ import org.apache.storm.tuple.Fields;
 
 
 public class TridentMultiReducerContext {
-    List<TridentTuple.Factory> _factories;
+    List<TridentTuple.Factory> factories;
 
     public TridentMultiReducerContext(List<TridentTuple.Factory> factories) {
-        _factories = factories;
+        this.factories = factories;
     }
 
     public ProjectionFactory makeProjectionFactory(int streamIndex, Fields fields) {
-        return new ProjectionFactory(_factories.get(streamIndex), fields);
+        return new ProjectionFactory(factories.get(streamIndex), fields);
     }
 }

@@ -19,10 +19,10 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
 public class IdentityBolt extends BaseBasicBolt {
-    Fields _fields;
+    Fields fields;
 
     public IdentityBolt(Fields fields) {
-        _fields = fields;
+        this.fields = fields;
     }
 
     @Override
@@ -32,6 +32,6 @@ public class IdentityBolt extends BaseBasicBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(_fields);
+        declarer.declare(fields);
     }
 }

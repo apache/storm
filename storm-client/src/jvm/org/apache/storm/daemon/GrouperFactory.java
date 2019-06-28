@@ -121,7 +121,7 @@ public class GrouperFactory {
     }
 
     /**
-     * A bridge between CustomStreamGrouping and LoadAwareCustomStreamGrouping
+     * A bridge between CustomStreamGrouping and LoadAwareCustomStreamGrouping.
      */
     public static class BasicLoadAwareCustomStreamGrouping implements LoadAwareCustomStreamGrouping {
 

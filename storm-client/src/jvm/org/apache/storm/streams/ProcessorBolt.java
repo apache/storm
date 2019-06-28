@@ -23,7 +23,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 
 /**
- * Stream bolt that executes the different processors (except windowed and stateful operations)
+ * Stream bolt that executes the different processors (except windowed and stateful operations).
  */
 class ProcessorBolt extends BaseRichBolt implements StreamBolt {
     private final ProcessorBoltDelegate delegate;

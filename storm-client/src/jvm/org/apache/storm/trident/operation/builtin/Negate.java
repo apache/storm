@@ -20,44 +20,44 @@ import org.apache.storm.trident.tuple.TridentTuple;
 /**
  * A `Filter` implementation that inverts another delegate `Filter`.
  *
- * The `Negate.isKeep()` method simply returns the opposite of the delegate's `isKeep()` method:
+ * <p>The `Negate.isKeep()` method simply returns the opposite of the delegate's `isKeep()` method:
  *
- * ```java public boolean isKeep(TridentTuple tuple) { return !this.delegate.isKeep(tuple); } ```
+ * <p>```java public boolean isKeep(TridentTuple tuple) { return !this.delegate.isKeep(tuple); } ```
  *
- * The `Negate` filter is useful for dividing a Stream in two based on some boolean condition.
+ * <p>The `Negate` filter is useful for dividing a Stream in two based on some boolean condition.
  *
- * Suppose we had a Stream named `userStream` containing information about users, and a custom `Filter` implementation,
+ * <p>Suppose we had a Stream named `userStream` containing information about users, and a custom `Filter` implementation,
  * `RegisteredUserFilter` that filtered out unregistered users. We could divide the `userStream` Stream into two separate Streams -- one for
  * registered users, and one for unregistered users -- by doing the following:
  *
- * ```java Stream userStream = ...
+ * <p>```java Stream userStream = ...
  *
- * Filter registeredFilter = new ResisteredUserFilter(); Filter unregisteredFilter = new Negate(registeredFilter);
+ * <p>Filter registeredFilter = new ResisteredUserFilter(); Filter unregisteredFilter = new Negate(registeredFilter);
  *
- * Stream registeredUserStream = userStream.each(userStream.getOutputFields(), registeredFilter); Stream unregisteredUserStream =
+ * <p>Stream registeredUserStream = userStream.each(userStream.getOutputFields(), registeredFilter); Stream unregisteredUserStream =
  * userStream.each(userStream.getOutputFields(), unregisteredFilter); ```
  */
 public class Negate implements Filter {
 
-    Filter _delegate;
+    Filter delegate;
 
     public Negate(Filter delegate) {
-        _delegate = delegate;
+        this.delegate = delegate;
     }
 
     @Override
     public boolean isKeep(TridentTuple tuple) {
-        return !_delegate.isKeep(tuple);
+        return !delegate.isKeep(tuple);
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TridentOperationContext context) {
-        _delegate.prepare(conf, context);
+        delegate.prepare(conf, context);
     }
 
     @Override
     public void cleanup() {
-        _delegate.cleanup();
+        delegate.cleanup();
     }
 
 }

@@ -18,44 +18,44 @@ import org.apache.storm.trident.planner.Node;
 
 
 public class TridentState implements ResourceDeclarer<TridentState> {
-    TridentTopology _topology;
-    Node _node;
+    TridentTopology topology;
+    Node node;
 
     protected TridentState(TridentTopology topology, Node node) {
-        _topology = topology;
-        _node = node;
+        this.topology = topology;
+        this.node = node;
     }
 
     public Stream newValuesStream() {
-        return new Stream(_topology, _node.name, _node);
+        return new Stream(topology, node.name, node);
     }
 
     public TridentState parallelismHint(int parallelism) {
-        _node.parallelismHint = parallelism;
+        node.parallelismHint = parallelism;
         return this;
     }
 
     @Override
     public TridentState setCPULoad(Number load) {
-        _node.setCPULoad(load);
+        node.setCPULoad(load);
         return this;
     }
 
     @Override
     public TridentState setMemoryLoad(Number onHeap) {
-        _node.setMemoryLoad(onHeap);
+        node.setMemoryLoad(onHeap);
         return this;
     }
 
     @Override
     public TridentState setMemoryLoad(Number onHeap, Number offHeap) {
-        _node.setMemoryLoad(onHeap, offHeap);
+        node.setMemoryLoad(onHeap, offHeap);
         return this;
     }
 
     @Override
     public TridentState addSharedMemory(SharedMemory request) {
-        _node.addSharedMemory(request);
+        node.addSharedMemory(request);
         return this;
     }
 }

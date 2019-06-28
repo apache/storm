@@ -24,12 +24,12 @@ import org.apache.storm.tuple.Fields;
 
 
 public class ProjectedProcessor implements TridentProcessor {
-    Fields _projectFields;
-    ProjectionFactory _factory;
-    TridentContext _context;
+    Fields projectFields;
+    ProjectionFactory factory;
+    TridentContext context;
 
     public ProjectedProcessor(Fields projectFields) {
-        _projectFields = projectFields;
+        this.projectFields = projectFields;
     }
 
     @Override
@@ -37,8 +37,8 @@ public class ProjectedProcessor implements TridentProcessor {
         if (tridentContext.getParentTupleFactories().size() != 1) {
             throw new RuntimeException("Projection processor can only have one parent");
         }
-        _context = tridentContext;
-        _factory = new ProjectionFactory(tridentContext.getParentTupleFactories().get(0), _projectFields);
+        this.context = tridentContext;
+        factory = new ProjectionFactory(tridentContext.getParentTupleFactories().get(0), projectFields);
     }
 
     @Override
@@ -51,15 +51,15 @@ public class ProjectedProcessor implements TridentProcessor {
 
     @Override
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
-        TridentTuple toEmit = _factory.create(tuple);
-        for (TupleReceiver r : _context.getReceivers()) {
-            r.execute(processorContext, _context.getOutStreamId(), toEmit);
+        TridentTuple toEmit = factory.create(tuple);
+        for (TupleReceiver r : context.getReceivers()) {
+            r.execute(processorContext, context.getOutStreamId(), toEmit);
         }
     }
 
     @Override
     public void flush() {
-        for (TupleReceiver r : _context.getReceivers()) {
+        for (TupleReceiver r : context.getReceivers()) {
             r.flush();
         }
     }
@@ -70,6 +70,6 @@ public class ProjectedProcessor implements TridentProcessor {
 
     @Override
     public Factory getOutputFactory() {
-        return _factory;
+        return factory;
     }
 }

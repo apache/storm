@@ -12,6 +12,8 @@
 
 package org.apache.storm.streams.processors;
 
+import static org.apache.storm.streams.WindowNode.PUNCTUATION;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,8 +29,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.streams.WindowNode.PUNCTUATION;
 
 /**
  * A context that emits the results to downstream processors which are in another bolt.

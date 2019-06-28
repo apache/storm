@@ -22,12 +22,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SaslMessageToken implements INettySerializable {
     public static final short IDENTIFIER = -500;
-
-    /**
-     * Class logger
-     */
-    private static final Logger LOG = LoggerFactory
-        .getLogger(SaslMessageToken.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SaslMessageToken.class);
 
     /**
      * Used for client or server's token to send or receive from each other.
@@ -50,23 +45,23 @@ public class SaslMessageToken implements INettySerializable {
     }
 
     public static SaslMessageToken read(byte[] serial) {
-        ByteBuf sm_buffer = Unpooled.wrappedBuffer(serial);
+        ByteBuf smBuffer = Unpooled.wrappedBuffer(serial);
         try {
-        short identifier = sm_buffer.readShort();
-        int payload_len = sm_buffer.readInt();
-        if (identifier != IDENTIFIER) {
-            return null;
-        }
-        byte token[] = new byte[payload_len];
-        sm_buffer.readBytes(token, 0, payload_len);
-        return new SaslMessageToken(token);
+            short identifier = smBuffer.readShort();
+            int payloadLen = smBuffer.readInt();
+            if (identifier != IDENTIFIER) {
+                return null;
+            }
+            byte[] token = new byte[payloadLen];
+            smBuffer.readBytes(token, 0, payloadLen);
+            return new SaslMessageToken(token);
         } finally {
-            sm_buffer.release();
+            smBuffer.release();
         }
     }
 
     /**
-     * Read accessor for SASL token
+     * Read accessor for SASL token.
      *
      * @return saslToken SASL token
      */
@@ -75,7 +70,7 @@ public class SaslMessageToken implements INettySerializable {
     }
 
     /**
-     * Write accessor for SASL token
+     * Write accessor for SASL token.
      *
      * @param token SASL token
      */
@@ -96,15 +91,15 @@ public class SaslMessageToken implements INettySerializable {
      */
     @Override
     public void write(ByteBuf dest) {
-        int payload_len = 0;
+        int payloadLen = 0;
         if (token != null) {
-            payload_len = token.length;
+            payloadLen = token.length;
         }
 
         dest.writeShort(IDENTIFIER);
-        dest.writeInt(payload_len);
+        dest.writeInt(payloadLen);
 
-        if (payload_len > 0) {
+        if (payloadLen > 0) {
             dest.writeBytes(token);
         }
     }

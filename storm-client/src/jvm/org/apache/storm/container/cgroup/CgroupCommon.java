@@ -45,9 +45,6 @@ public class CgroupCommon implements CgroupCommonOperation {
         this.isRoot = false;
     }
 
-    /**
-     * rootCgroup
-     */
     public CgroupCommon(Hierarchy hierarchy, String dir) {
         this.name = "";
         this.hierarchy = hierarchy;

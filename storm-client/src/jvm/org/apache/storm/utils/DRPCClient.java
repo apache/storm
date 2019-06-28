@@ -29,9 +29,10 @@ import org.apache.storm.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCClient.class);
-    private static volatile ILocalDRPC _localOverrideClient = null;
+    private static volatile ILocalDRPC localOverrideClient = null;
     private DistributedRPC.Iface client;
     private String host;
     private int port;
@@ -46,38 +47,40 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
 
     public DRPCClient(Map<String, Object> conf, String host, int port) throws TTransportException {
         this(conf, host, port, null);
-        _retryForever = true;
+        retryForever = true;
     }
 
     public DRPCClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
-        super(conf, _localOverrideClient != null ? ThriftConnectionType.LOCAL_FAKE : ThriftConnectionType.DRPC,
+        super(conf, localOverrideClient != null ? ThriftConnectionType.LOCAL_FAKE : ThriftConnectionType.DRPC,
               host, port, timeout, null);
         this.host = host;
         this.port = port;
-        if (_localOverrideClient != null) {
-            this.client = _localOverrideClient;
+        if (localOverrideClient != null) {
+            this.client = localOverrideClient;
         } else {
-            this.client = new DistributedRPC.Client(_protocol);
+            this.client = new DistributedRPC.Client(protocol);
         }
-        _retryForever = true;
+        retryForever = true;
     }
 
     /**
-     * @return true of new clients will be overridden to connect to a local cluster and not the configured remote cluster.
+     * Check local override.
+     * @return true of new clients will be overridden to connect to a local cluster and not the configured remote cluster
      */
     public static boolean isLocalOverride() {
-        return _localOverrideClient != null;
+        return localOverrideClient != null;
     }
 
     /**
+     * Get override service ID.
      * @return the service ID of the local override DRPC instance
      */
     public static String getOverrideServiceId() {
-        return _localOverrideClient.getServiceId();
+        return localOverrideClient.getServiceId();
     }
 
     public static DRPCClient getConfiguredClient(Map<String, Object> conf) throws TTransportException {
-        DistributedRPC.Iface override = _localOverrideClient;
+        DistributedRPC.Iface override = localOverrideClient;
         if (override != null) {
             return new DRPCClient(override);
         }
@@ -134,12 +137,12 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
 
     public static class LocalOverride implements AutoCloseable {
         public LocalOverride(ILocalDRPC client) {
-            _localOverrideClient = client;
+            localOverrideClient = client;
         }
 
         @Override
         public void close() throws Exception {
-            _localOverrideClient = null;
+            localOverrideClient = null;
         }
     }
 }

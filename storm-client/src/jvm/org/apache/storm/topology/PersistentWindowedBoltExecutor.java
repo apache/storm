@@ -12,6 +12,8 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.windowing.persistence.WindowState.WindowPartition;
+
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
@@ -37,8 +39,6 @@ import org.apache.storm.windowing.WindowLifecycleListener;
 import org.apache.storm.windowing.persistence.WindowState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.windowing.persistence.WindowState.WindowPartition;
 
 /**
  * Wraps a {@link IStatefulWindowedBolt} and handles the execution. Uses state and the underlying checkpointing mechanisms to save the

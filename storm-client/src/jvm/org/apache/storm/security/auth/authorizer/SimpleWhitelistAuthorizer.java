@@ -22,12 +22,13 @@ import org.apache.storm.security.auth.ReqContext;
 /**
  * An authorization implementation that simply checks a whitelist of users that are allowed to use the cluster.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class SimpleWhitelistAuthorizer implements IAuthorizer {
     public static final String WHITELIST_USERS_CONF = "storm.auth.simple-white-list.users";
     protected Set<String> users;
 
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param conf Storm configuration
      */
@@ -40,7 +41,7 @@ public class SimpleWhitelistAuthorizer implements IAuthorizer {
     }
 
     /**
-     * `permit()` method is invoked for each incoming Thrift request
+     * `permit()` method is invoked for each incoming Thrift request.
      *
      * @param context   request context includes info about
      * @param operation operation name

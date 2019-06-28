@@ -40,19 +40,21 @@ public class Login {
     // and try to renew the ticket.
     private static final float TICKET_RENEW_WINDOW = 0.80f;
     /**
-     * Percentage of random jitter added to the renewal time
+     * Percentage of random jitter added to the renewal time.
      */
     private static final float TICKET_RENEW_JITTER = 0.05f;
     // Regardless of TICKET_RENEW_WINDOW setting above and the ticket expiry time,
     // thread will not sleep between refresh attempts any less than 1 minute (60*1000 milliseconds = 1 minute).
     // Change the '1' to e.g. 5, to change this to 5 minutes.
     private static final long MIN_TIME_BEFORE_RELOGIN = 1 * 60 * 1000L;
-    /** Random number generator */
+    /**
+     * Random number generator.
+     */
     private static Random rng = new Random();
     public CallbackHandler callbackHandler;
-    Logger LOG = Logger.getLogger(Login.class);
+    static final Logger LOG = Logger.getLogger(Login.class);
     private Subject subject = null;
-    private Thread t = null;
+    private Thread thread = null;
     private boolean isKrbTicket = false;
     private boolean isUsingTicketCache = false;
     private boolean isUsingKeytab = false;
@@ -82,7 +84,7 @@ public class Login {
         this.loginContextName = loginContextName;
         subject = login.getSubject();
         isKrbTicket = !subject.getPrivateCredentials(KerberosTicket.class).isEmpty();
-        AppConfigurationEntry entries[] = Configuration.getConfiguration().getAppConfigurationEntry(loginContextName);
+        AppConfigurationEntry[] entries = Configuration.getConfiguration().getAppConfigurationEntry(loginContextName);
         for (AppConfigurationEntry entry : entries) {
             // there will only be a single entry, so this for() loop will only be iterated through once.
             if (entry.getOptions().get("useTicketCache") != null) {
@@ -110,7 +112,7 @@ public class Login {
         // TGT's existing expiry date and the configured MIN_TIME_BEFORE_RELOGIN. For testing and development,
         // you can decrease the interval of expiration of tickets (for example, to 3 minutes) by running :
         //  "modprinc -maxlife 3mins <principal>" in kadmin.
-        t = new Thread(new Runnable() {
+        thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 LOG.info("TGT refresh thread started.");
@@ -128,21 +130,21 @@ public class Login {
                         long expiry = tgt.getEndTime().getTime();
                         Date expiryDate = new Date(expiry);
                         if ((isUsingTicketCache) && (tgt.getEndTime().equals(tgt.getRenewTill()))) {
-                            LOG.error("The TGT cannot be renewed beyond the next expiry date: " + expiryDate + "." +
-                                      "This process will not be able to authenticate new SASL connections after that " +
-                                      "time (for example, it will not be authenticate a new connection with a Zookeeper " +
-                                      "Quorum member).  Ask your system administrator to either increase the " +
-                                      "'renew until' time by doing : 'modprinc -maxrenewlife " + principal + "' within " +
-                                      "kadmin, or instead, to generate a keytab for " + principal + ". Because the TGT's " +
-                                      "expiry cannot be further extended by refreshing, exiting refresh thread now.");
+                            LOG.error("The TGT cannot be renewed beyond the next expiry date: " + expiryDate + "."
+                                    + "This process will not be able to authenticate new SASL connections after that "
+                                    + "time (for example, it will not be authenticate a new connection with a Zookeeper "
+                                    + "Quorum member).  Ask your system administrator to either increase the "
+                                    + "'renew until' time by doing : 'modprinc -maxrenewlife " + principal + "' within "
+                                    + "kadmin, or instead, to generate a keytab for " + principal + ". Because the TGT's "
+                                    + "expiry cannot be further extended by refreshing, exiting refresh thread now.");
                             return;
                         }
                         // determine how long to sleep from looking at ticket's expiry.
                         // We should not allow the ticket to expire, but we should take into consideration
                         // MIN_TIME_BEFORE_RELOGIN. Will not sleep less than MIN_TIME_BEFORE_RELOGIN, unless doing so
                         // would cause ticket expiration.
-                        if ((nextRefresh > expiry) ||
-                            ((now + MIN_TIME_BEFORE_RELOGIN) > expiry)) {
+                        if ((nextRefresh > expiry)
+                                || ((now + MIN_TIME_BEFORE_RELOGIN) > expiry)) {
                             // expiry is before next scheduled refresh).
                             nextRefresh = now;
                         } else {
@@ -160,8 +162,9 @@ public class Login {
                     if (tgt != null && now > tgt.getEndTime().getTime()) {
                         if ((now - tgt.getEndTime().getTime()) < (10 * MIN_TIME_BEFORE_RELOGIN)) {
                             Date until = new Date(now + MIN_TIME_BEFORE_RELOGIN);
-                            LOG.info("TGT already expired but giving additional 10 minutes past TGT expiry, refresh sleeping until: " +
-                                     until.toString());
+                            LOG.info("TGT already expired but giving additional 10 minutes past TGT expiry, refresh "
+                                    + "sleeping until: "
+                                    + until.toString());
                             try {
                                 Thread.sleep(MIN_TIME_BEFORE_RELOGIN);
                             } catch (InterruptedException ie) {
@@ -244,22 +247,22 @@ public class Login {
                 }
             }
         });
-        t.setName("Refresh-TGT");
-        t.setDaemon(true);
+        thread.setName("Refresh-TGT");
+        thread.setDaemon(true);
     }
 
     public void startThreadIfNeeded() {
-        // thread object 't' will be null if a refresh thread is not needed.
-        if (t != null) {
-            t.start();
+        // thread object 'thread' will be null if a refresh thread is not needed.
+        if (thread != null) {
+            thread.start();
         }
     }
 
     public void shutdown() {
-        if ((t != null) && (t.isAlive())) {
-            t.interrupt();
+        if ((thread != null) && (thread.isAlive())) {
+            thread.interrupt();
             try {
-                t.join();
+                thread.join();
             } catch (InterruptedException e) {
                 LOG.warn("error while waiting for Login thread to shutdown: " + e);
             }
@@ -276,11 +279,11 @@ public class Login {
 
     private synchronized LoginContext login(final String loginContextName) throws LoginException {
         if (loginContextName == null) {
-            throw new LoginException("loginContext name (JAAS file section header) was null. " +
-                                     "Please check your java.security.login.auth.config (=" +
-                                     System.getProperty("java.security.login.auth.config") +
-                                     ") and your " + ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY + "(=" +
-                                     System.getProperty(ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY, "Client") + ")");
+            throw new LoginException("loginContext name (JAAS file section header) was null. "
+                    + "Please check your java.security.login.auth.config (="
+                    + System.getProperty("java.security.login.auth.config")
+                    + ") and your " + ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY + "(="
+                    + System.getProperty(ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY, "Client") + ")");
         }
         LoginContext loginContext = new LoginContext(loginContextName, callbackHandler);
         loginContext.login();
@@ -294,8 +297,8 @@ public class Login {
         long expires = tgt.getEndTime().getTime();
         LOG.info("TGT valid starting at:        " + tgt.getStartTime().toString());
         LOG.info("TGT expires:                  " + tgt.getEndTime().toString());
-        long proposedRefresh = start + (long) ((expires - start) *
-                                               (TICKET_RENEW_WINDOW + (TICKET_RENEW_JITTER * rng.nextDouble())));
+        long proposedRefresh = start + (long) ((expires - start)
+                * (TICKET_RENEW_WINDOW + (TICKET_RENEW_JITTER * rng.nextDouble())));
         if (proposedRefresh > expires) {
             // proposedRefresh is too far in the future: it's after ticket expires: simply return now.
             return System.currentTimeMillis();
@@ -304,6 +307,7 @@ public class Login {
         }
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private synchronized KerberosTicket getTGT() {
         Set<KerberosTicket> tickets = subject.getPrivateCredentials(KerberosTicket.class);
         for (KerberosTicket ticket : tickets) {
@@ -319,9 +323,8 @@ public class Login {
     private void sleepUntilSufficientTimeElapsed() {
         long now = System.currentTimeMillis();
         if (now - getLastLogin() < MIN_TIME_BEFORE_RELOGIN) {
-            LOG.warn("Not attempting to re-login since the last re-login was " +
-                     "attempted less than " + (MIN_TIME_BEFORE_RELOGIN / 1000) + " seconds" +
-                     " before.");
+            LOG.warn("Not attempting to re-login since the last re-login was "
+                    + "attempted less than " + (MIN_TIME_BEFORE_RELOGIN / 1000) + " seconds before.");
             try {
                 Thread.sleep(MIN_TIME_BEFORE_RELOGIN - (now - getLastLogin()));
             } catch (InterruptedException e) {
@@ -334,7 +337,7 @@ public class Login {
     }
 
     /**
-     * Returns login object
+     * Returns login object.
      * @return login
      */
     private LoginContext getLogin() {
@@ -342,8 +345,7 @@ public class Login {
     }
 
     /**
-     * Set the login object
-     * @param login
+     * Set the login object.
      */
     private void setLogin(LoginContext login) {
         this.login = login;

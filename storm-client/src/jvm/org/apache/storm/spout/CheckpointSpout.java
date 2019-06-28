@@ -18,6 +18,9 @@
 
 package org.apache.storm.spout;
 
+import static org.apache.storm.spout.CheckPointState.Action;
+import static org.apache.storm.spout.CheckPointState.State.COMMITTED;
+
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.state.KeyValueState;
@@ -31,9 +34,6 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.spout.CheckPointState.Action;
-import static org.apache.storm.spout.CheckPointState.State.COMMITTED;
 
 /**
  * Emits checkpoint tuples which is used to save the state of the {@link org.apache.storm.topology.IStatefulComponent} across the topology.
@@ -161,8 +161,9 @@ public class CheckpointSpout extends BaseRichSpout {
     }
 
     private boolean shouldCheckpoint() {
-        return !recovering && !checkpointStepInProgress &&
-               (curTxState.getState() != COMMITTED || checkpointIntervalElapsed());
+        return !recovering
+                && !checkpointStepInProgress
+                && (curTxState.getState() != COMMITTED || checkpointIntervalElapsed());
     }
 
     private boolean checkpointIntervalElapsed() {

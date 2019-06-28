@@ -27,7 +27,7 @@ public class InprocMessaging {
     private static ConcurrentMap<Integer, AtomicBoolean> _hasReader = new ConcurrentHashMap<>();
     private static int port = 1;
 
-    public synchronized static int acquireNewPort() {
+    public static synchronized int acquireNewPort() {
         int ret = port;
         port++;
         return ret;
@@ -84,7 +84,7 @@ public class InprocMessaging {
         getHasReader(port).set(true);
     }
 
-    private synchronized static LinkedBlockingQueue<Object> getQueue(int port) {
+    private static synchronized LinkedBlockingQueue<Object> getQueue(int port) {
         if (!_queues.containsKey(port)) {
             _queues.put(port, new LinkedBlockingQueue<Object>());
         }

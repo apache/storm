@@ -22,19 +22,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
 import org.apache.storm.messaging.netty.BackPressureStatus;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.storm.utils.JCQueue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import java.util.stream.Collectors;
-import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
-
-/***
- *   Tracks the BackPressure status.
+/**
+ * Tracks the BackPressure status.
  */
 public class BackPressureTracker {
     static final Logger LOG = LoggerFactory.getLogger(BackPressureTracker.class);
@@ -53,9 +53,11 @@ public class BackPressureTracker {
         tasks.get(taskId).backpressure.set(false);
     }
 
-    /***
+    /**
      * Record BP for a task.
-     * This is called by transferLocalBatch() on NettyWorker thread
+     *
+     * <p>This is called by transferLocalBatch() on NettyWorker thread
+     *
      * @return true if an update was recorded, false if taskId is already under BP
      */
     public boolean recordBackPressure(Integer taskId) {

@@ -56,7 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.daemon.nimbus.Nimbus.MIN_VERSION_SUPPORT_RPC_HEARTBEAT;
-import static org.apache.storm.utils.Utils.OR;
+import static org.apache.storm.utils.Utils.or;
 
 import org.apache.storm.metric.StormMetricsRegistry;
 
@@ -560,9 +560,9 @@ public class BasicContainer extends Container {
         String stormLogDir = ConfigUtils.getLogDir();
         
         List<String> commonParams = new ArrayList<>();
-        commonParams.add("-Dlogging.sensitivity=" + OR((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
+        commonParams.add("-Dlogging.sensitivity=" + or((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
         commonParams.add("-Dlogfile.name=worker.log");
-        commonParams.add("-Dstorm.home=" + OR(_stormHome, ""));
+        commonParams.add("-Dstorm.home=" + or(_stormHome, ""));
         commonParams.add("-Dworkers.artifacts=" + workersArtifacts);
         commonParams.add("-Dstorm.id=" + _topologyId);
         commonParams.add("-Dworker.id=" + _workerId);
@@ -657,7 +657,7 @@ public class BasicContainer extends Container {
         commandList.add("-Dlog4j.configurationFile=" + workerLog4jConfig);
         commandList.addAll(substituteChildopts(_conf.get(Config.WORKER_CHILDOPTS), memOnheap));
         commandList.addAll(substituteChildopts(_topoConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS), memOnheap));
-        commandList.addAll(substituteChildopts(Utils.OR(
+        commandList.addAll(substituteChildopts(Utils.or(
             _topoConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS),
             _conf.get(Config.WORKER_GC_CHILDOPTS)), memOnheap));
         commandList.addAll(getWorkerProfilerChildOpts(memOnheap));

@@ -35,65 +35,65 @@ import org.apache.storm.tuple.Values;
 
 public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, MapState<T>, RemovableMapState<T> {
 
-    static ConcurrentHashMap<String, Map<List<Object>, Object>> _dbs = new ConcurrentHashMap<String, Map<List<Object>, Object>>();
-    MemoryMapStateBacking<OpaqueValue> _backing;
-    SnapshottableMap<T> _delegate;
-    List<List<Object>> _removed = new ArrayList();
-    Long _currTx = null;
+    static ConcurrentHashMap<String, Map<List<Object>, Object>> dbs = new ConcurrentHashMap<String, Map<List<Object>, Object>>();
+    MemoryMapStateBacking<OpaqueValue> backing;
+    SnapshottableMap<T> delegate;
+    List<List<Object>> removed = new ArrayList();
+    Long currTx = null;
 
     public MemoryMapState(String id) {
-        _backing = new MemoryMapStateBacking(id);
-        _delegate = new SnapshottableMap(OpaqueMap.build(_backing), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
+        backing = new MemoryMapStateBacking(id);
+        delegate = new SnapshottableMap(OpaqueMap.build(backing), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
     }
 
     @Override
     public T update(ValueUpdater updater) {
-        return _delegate.update(updater);
+        return delegate.update(updater);
     }
 
     @Override
     public void set(T o) {
-        _delegate.set(o);
+        delegate.set(o);
     }
 
     @Override
     public T get() {
-        return _delegate.get();
+        return delegate.get();
     }
 
     @Override
     public void beginCommit(Long txid) {
-        _delegate.beginCommit(txid);
-        if (txid == null || !txid.equals(_currTx)) {
-            _backing.multiRemove(_removed);
+        delegate.beginCommit(txid);
+        if (txid == null || !txid.equals(currTx)) {
+            backing.multiRemove(removed);
         }
-        _removed = new ArrayList();
-        _currTx = txid;
+        removed = new ArrayList();
+        currTx = txid;
     }
 
     @Override
     public void commit(Long txid) {
-        _delegate.commit(txid);
+        delegate.commit(txid);
     }
 
     @Override
     public Iterator<List<Object>> getTuples() {
-        return _backing.getTuples();
+        return backing.getTuples();
     }
 
     @Override
     public List<T> multiUpdate(List<List<Object>> keys, List<ValueUpdater> updaters) {
-        return _delegate.multiUpdate(keys, updaters);
+        return delegate.multiUpdate(keys, updaters);
     }
 
     @Override
     public void multiPut(List<List<Object>> keys, List<T> vals) {
-        _delegate.multiPut(keys, vals);
+        delegate.multiPut(keys, vals);
     }
 
     @Override
     public List<T> multiGet(List<List<Object>> keys) {
-        return _delegate.multiGet(keys);
+        return delegate.multiGet(keys);
     }
 
     @Override
@@ -105,20 +105,20 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
         // first just set the keys to null, then flag to remove them at beginning of next commit when we know the current and last value
         // are both null
         multiPut(keys, nulls);
-        _removed.addAll(keys);
+        removed.addAll(keys);
     }
 
     public static class Factory implements StateFactory {
 
-        String _id;
+        String id;
 
         public Factory() {
-            _id = UUID.randomUUID().toString();
+            id = UUID.randomUUID().toString();
         }
 
         @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-            return new MemoryMapState(_id + partitionIndex);
+            return new MemoryMapState(id + partitionIndex);
         }
     }
 
@@ -128,14 +128,14 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
         Long currTx;
 
         public MemoryMapStateBacking(String id) {
-            if (!_dbs.containsKey(id)) {
-                _dbs.put(id, new HashMap());
+            if (!dbs.containsKey(id)) {
+                dbs.put(id, new HashMap());
             }
-            this.db = (Map<List<Object>, T>) _dbs.get(id);
+            this.db = (Map<List<Object>, T>) dbs.get(id);
         }
 
         public static void clearAll() {
-            _dbs.clear();
+            dbs.clear();
         }
 
         public void multiRemove(List<List<Object>> keys) {

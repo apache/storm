@@ -15,26 +15,26 @@ package org.apache.storm.messaging;
 import java.nio.ByteBuffer;
 
 public class TaskMessage {
-    private int _task;
-    private byte[] _message;
+    private int task;
+    private byte[] message;
 
     public TaskMessage(int task, byte[] message) {
-        _task = task;
-        _message = message;
+        this.task = task;
+        this.message = message;
     }
 
     public int task() {
-        return _task;
+        return task;
     }
 
     public byte[] message() {
-        return _message;
+        return message;
     }
 
     public ByteBuffer serialize() {
-        ByteBuffer bb = ByteBuffer.allocate(_message.length + 2);
-        bb.putShort((short) _task);
-        bb.put(_message);
+        ByteBuffer bb = ByteBuffer.allocate(message.length + 2);
+        bb.putShort((short) task);
+        bb.put(message);
         return bb;
     }
 
@@ -42,9 +42,9 @@ public class TaskMessage {
         if (packet == null) {
             return;
         }
-        _task = packet.getShort();
-        _message = new byte[packet.limit() - 2];
-        packet.get(_message);
+        task = packet.getShort();
+        message = new byte[packet.limit() - 2];
+        packet.get(message);
     }
 
 }

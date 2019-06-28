@@ -22,7 +22,7 @@ import org.apache.storm.security.auth.ReqContext;
 public class NoopAuthorizer implements IAuthorizer {
 
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param conf Storm configuration
      */
@@ -31,7 +31,7 @@ public class NoopAuthorizer implements IAuthorizer {
     }
 
     /**
-     * permit() method is invoked for each incoming Thrift request
+     * permit() method is invoked for each incoming Thrift request.
      *
      * @param context   request context includes info about
      * @param operation operation name

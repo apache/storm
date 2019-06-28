@@ -14,9 +14,6 @@ package org.apache.storm.trident.windowing;
 
 import org.apache.storm.trident.tuple.TridentTuple;
 
-/**
- *
- */
 public class TridentBatchTuple {
     final String effectiveBatchId;
     final long timeStamp;

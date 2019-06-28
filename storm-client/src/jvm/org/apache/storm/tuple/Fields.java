@@ -21,33 +21,33 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Collection of unique named fields using in an ITuple
+ * Collection of unique named fields using in an ITuple.
  */
 public class Fields implements Iterable<String>, Serializable {
     private static final long serialVersionUID = -3377931843059975424L;
-    private List<String> _fields;
-    private Map<String, Integer> _index = new HashMap<>();
+    private List<String> fields;
+    private Map<String, Integer> index = new HashMap<>();
 
     public Fields(String... fields) {
         this(Arrays.asList(fields));
     }
 
     public Fields(List<String> fields) {
-        _fields = new ArrayList<>(fields.size());
+        this.fields = new ArrayList<>(fields.size());
         for (String field : fields) {
-            if (_fields.contains(field)) {
+            if (this.fields.contains(field)) {
                 throw new IllegalArgumentException(
                     String.format("duplicate field '%s'", field)
                 );
             }
-            _fields.add(field);
+            this.fields.add(field);
         }
         index();
     }
 
     /**
      * Select values out of tuple given a Fields selector Note that this function can throw a NullPointerException if the fields in selector
-     * are not found in the _index
+     * are not found in the index.
      *
      * @param selector Fields to select
      * @param tuple    tuple to select from
@@ -61,14 +61,14 @@ public class Fields implements Iterable<String>, Serializable {
     }
 
     public List<String> toList() {
-        return new ArrayList<>(_fields);
+        return new ArrayList<>(fields);
     }
 
     /**
      * Returns the number of fields in this collection.
      */
     public int size() {
-        return _fields.size();
+        return fields.size();
     }
 
     /**
@@ -78,12 +78,12 @@ public class Fields implements Iterable<String>, Serializable {
      * @throws IndexOutOfBoundsException - if the index is out of range (index < 0 || index >= size())
      */
     public String get(int index) {
-        return _fields.get(index);
+        return fields.get(index);
     }
 
     @Override
     public Iterator<String> iterator() {
-        return _fields.iterator();
+        return fields.iterator();
     }
 
     /**
@@ -93,7 +93,7 @@ public class Fields implements Iterable<String>, Serializable {
      * @throws IllegalArgumentException - if field does not exist
      */
     public int fieldIndex(String field) {
-        Integer ret = _index.get(field);
+        Integer ret = index.get(field);
         if (ret == null) {
             throw new IllegalArgumentException(field + " does not exist");
         }
@@ -101,21 +101,22 @@ public class Fields implements Iterable<String>, Serializable {
     }
 
     /**
+     * Check contains.
      * @return true if this contains the specified name of the field.
      */
     public boolean contains(String field) {
-        return _index.containsKey(field);
+        return index.containsKey(field);
     }
 
     private void index() {
-        for (int i = 0; i < _fields.size(); i++) {
-            _index.put(_fields.get(i), i);
+        for (int i = 0; i < fields.size(); i++) {
+            index.put(fields.get(i), i);
         }
     }
 
     @Override
     public String toString() {
-        return _fields.toString();
+        return fields.toString();
     }
 
     @Override
@@ -125,13 +126,13 @@ public class Fields implements Iterable<String>, Serializable {
         }
         if (other instanceof Fields) {
             Fields of = (Fields) other;
-            return _fields.equals(of._fields);
+            return fields.equals(of.fields);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return _fields.hashCode();
+        return fields.hashCode();
     }
 }

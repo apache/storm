@@ -36,6 +36,7 @@ public class InMemoryWindowsStore implements WindowsStore, Serializable {
     }
 
     /**
+     * Creates a new in-memory window store.
      * @param maxSize      maximum size of inmemory store
      * @param backingStore backing store containing the entries
      */
@@ -99,14 +100,14 @@ public class InMemoryWindowsStore implements WindowsStore, Serializable {
 
     @Override
     public void put(String key, Object value) {
-        _put(key, value);
+        put0(key, value);
 
         if (backingStore != null) {
             backingStore.put(key, value);
         }
     }
 
-    private void _put(String key, Object value) {
+    private void put0(String key, Object value) {
         if (!canAdd()) {
             return;
         }
@@ -128,7 +129,7 @@ public class InMemoryWindowsStore implements WindowsStore, Serializable {
     @Override
     public void putAll(Collection<Entry> entries) {
         for (Entry entry : entries) {
-            _put(entry.key, entry.value);
+            put0(entry.key, entry.value);
         }
         if (backingStore != null) {
             backingStore.putAll(entries);
@@ -137,14 +138,14 @@ public class InMemoryWindowsStore implements WindowsStore, Serializable {
 
     @Override
     public void remove(String key) {
-        _remove(key);
+        remove0(key);
 
         if (backingStore != null) {
             backingStore.remove(key);
         }
     }
 
-    private void _remove(String key) {
+    private void remove0(String key) {
         Object oldValue = store.remove(key);
 
         if (oldValue != null) {
@@ -165,7 +166,7 @@ public class InMemoryWindowsStore implements WindowsStore, Serializable {
     @Override
     public void removeAll(Collection<String> keys) {
         for (String key : keys) {
-            _remove(key);
+            remove0(key);
         }
 
         if (backingStore != null) {
@@ -184,9 +185,9 @@ public class InMemoryWindowsStore implements WindowsStore, Serializable {
 
     @Override
     public String toString() {
-        return "InMemoryWindowsStore{" +
-               " store:size = " + store.size() +
-               " backingStore = " + backingStore +
-               '}';
+        return "InMemoryWindowsStore{"
+                + " store:size = " + store.size()
+                + " backingStore = " + backingStore
+                + '}';
     }
 }

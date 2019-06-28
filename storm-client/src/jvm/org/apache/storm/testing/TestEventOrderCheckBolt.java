@@ -26,14 +26,14 @@ import org.slf4j.LoggerFactory;
 
 public class TestEventOrderCheckBolt extends BaseRichBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestEventOrderCheckBolt.class);
-    OutputCollector _collector;
+    OutputCollector collector;
     Map<Integer, Long> recentEventId = new HashMap<Integer, Long>();
-    private int _count;
+    private int count;
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        _collector = collector;
-        _count = 0;
+        this.collector = collector;
+        count = 0;
     }
 
     @Override
@@ -46,11 +46,11 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
             String error = "Error: event id is not in strict order! event source Id: "
                            + sourceId + ", last event Id: " + recentEvent + ", current event Id: " + eventId;
 
-            _collector.emit(input, new Values(error));
+            collector.emit(input, new Values(error));
         }
         recentEventId.put(sourceId, eventId);
 
-        _collector.ack(input);
+        collector.ack(input);
     }
 
     @Override

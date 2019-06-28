@@ -12,7 +12,6 @@
 
 package org.apache.storm.state;
 
-
 import java.util.Optional;
 
 /**
@@ -21,9 +20,9 @@ import java.util.Optional;
  */
 public class DefaultStateEncoder<K, V> implements StateEncoder<K, V, byte[], byte[]> {
 
-    public static final Serializer<Optional<byte[]>> internalValueSerializer = new DefaultStateSerializer<>();
+    public static final Serializer<Optional<byte[]>> INTERNAL_VALUE_SERIALIZER = new DefaultStateSerializer<>();
 
-    public static final byte[] TOMBSTONE = internalValueSerializer.serialize(Optional.<byte[]>empty());
+    public static final byte[] TOMBSTONE = INTERNAL_VALUE_SERIALIZER.serialize(Optional.<byte[]>empty());
 
     private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
@@ -48,7 +47,7 @@ public class DefaultStateEncoder<K, V> implements StateEncoder<K, V, byte[], byt
 
     @Override
     public byte[] encodeValue(V value) {
-        return internalValueSerializer.serialize(
+        return INTERNAL_VALUE_SERIALIZER.serialize(
             Optional.of(valueSerializer.serialize(value)));
     }
 
@@ -59,7 +58,7 @@ public class DefaultStateEncoder<K, V> implements StateEncoder<K, V, byte[], byt
 
     @Override
     public V decodeValue(byte[] encodedValue) {
-        Optional<byte[]> internalValue = internalValueSerializer.deserialize(encodedValue);
+        Optional<byte[]> internalValue = INTERNAL_VALUE_SERIALIZER.deserialize(encodedValue);
         if (internalValue.isPresent()) {
             return valueSerializer.deserialize(internalValue.get());
         }

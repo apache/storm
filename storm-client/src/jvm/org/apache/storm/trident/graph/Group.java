@@ -62,6 +62,7 @@ public class Group {
     }
 
     /**
+     * Get shared memory.
      * @return the shared memory requests for the entire group
      */
     public Set<SharedMemory> getSharedMemory() {
@@ -90,42 +91,42 @@ public class Group {
                 resources = new HashMap<>(defaults);
                 resources.putAll(n.getResources());
             } else {
-                Map<String, Number> node_res = new HashMap<>(defaults);
-                node_res.putAll(n.getResources());
+                Map<String, Number> nodeRes = new HashMap<>(defaults);
+                nodeRes.putAll(n.getResources());
 
-                if (!node_res.keySet().equals(resources.keySet())) {
+                if (!nodeRes.keySet().equals(resources.keySet())) {
                     StringBuilder ops = new StringBuilder();
 
                     for (Node nod : nodes) {
-                        Set<String> resource_keys = new HashSet<>(defaults.keySet());
-                        resource_keys.addAll(nod.getResources().keySet());
-                        ops.append("\t[ " + nod.shortString() + ", Resources Set: " + resource_keys + " ]\n");
+                        Set<String> resourceKeys = new HashSet<>(defaults.keySet());
+                        resourceKeys.addAll(nod.getResources().keySet());
+                        ops.append("\t[ " + nod.shortString() + ", Resources Set: " + resourceKeys + " ]\n");
                     }
 
-                    if (node_res.keySet().containsAll(resources.keySet())) {
-                        Set<String> diffset = new HashSet<>(node_res.keySet());
+                    if (nodeRes.keySet().containsAll(resources.keySet())) {
+                        Set<String> diffset = new HashSet<>(nodeRes.keySet());
                         diffset.removeAll(resources.keySet());
                         throw new RuntimeException(
-                            "Found an operation with resources set which are not set in other operations in the group:\n" +
-                            "\t[ " + n.shortString() + " ]: " + diffset + "\n" +
-                            "Either set these resources in all other operations in the group, add a default setting, or remove the " +
-                            "setting from this operation.\n" +
-                            "The group at fault:\n" +
-                            ops);
-                    } else if (resources.keySet().containsAll(node_res.keySet())) {
+                            "Found an operation with resources set which are not set in other operations in the group:\n"
+                                    + "\t[ " + n.shortString() + " ]: " + diffset + "\n"
+                                    + "Either set these resources in all other operations in the group, add a default "
+                                    + "setting, or remove the setting from this operation.\n"
+                                    + "The group at fault:\n"
+                                    + ops);
+                    } else if (resources.keySet().containsAll(nodeRes.keySet())) {
                         Set<String> diffset = new HashSet<>(resources.keySet());
-                        diffset.removeAll(node_res.keySet());
+                        diffset.removeAll(nodeRes.keySet());
                         throw new RuntimeException(
-                            "Found an operation with resources unset which are set in other operations in the group:\n" +
-                            "\t[ " + n.shortString() + " ]: " + diffset + "\n" +
-                            "Either set these resources in all other operations in the group, add a default setting, or remove the " +
-                            "setting from all other operations.\n" +
-                            "The group at fault:\n" +
-                            ops);
+                            "Found an operation with resources unset which are set in other operations in the group:\n"
+                                    + "\t[ " + n.shortString() + " ]: " + diffset + "\n"
+                                    + "Either set these resources in all other operations in the group, add a default "
+                                    + "setting, or remove the setting from all other operations.\n"
+                                    + "The group at fault:\n"
+                                    + ops);
                     }
                 }
 
-                for (Map.Entry<String, Number> kv : node_res.entrySet()) {
+                for (Map.Entry<String, Number> kv : nodeRes.entrySet()) {
                     String key = kv.getKey();
                     Number val = kv.getValue();
 

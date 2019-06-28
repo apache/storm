@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * An assignment backend which will keep all assignments and id-info in memory. Only used if no backend is specified internal.
+ *
  * <p>About thread safe: idToAssignment,idToName,nameToId are all memory cache in nimbus local, for
  * <ul>
  * <li>idToAssignment: nimbus will modify it and supervisors will sync it at fixed interval,

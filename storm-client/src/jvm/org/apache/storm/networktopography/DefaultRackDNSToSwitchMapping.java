@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * This class implements the {@link DNSToSwitchMapping} interface It returns the DEFAULT_RACK for every host.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public final class DefaultRackDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
 
     private Map<String, String> mappingCache = new ConcurrentHashMap<>();

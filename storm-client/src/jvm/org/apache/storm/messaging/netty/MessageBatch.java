@@ -18,14 +18,14 @@ import org.apache.storm.shade.io.netty.buffer.ByteBuf;
 
 class MessageBatch implements INettySerializable {
 
-    private final int buffer_size;
+    private final int bufferSize;
     private final ArrayList<TaskMessage> msgs;
-    private int encoded_length;
+    private int encodedLength;
 
-    MessageBatch(int buffer_size) {
-        this.buffer_size = buffer_size;
+    MessageBatch(int bufferSize) {
+        this.bufferSize = bufferSize;
         msgs = new ArrayList<>();
-        encoded_length = ControlMessage.EOB_MESSAGE.encodeLength();
+        encodedLength = ControlMessage.EOB_MESSAGE.encodeLength();
     }
 
     void add(TaskMessage msg) {
@@ -34,7 +34,7 @@ class MessageBatch implements INettySerializable {
         }
 
         msgs.add(msg);
-        encoded_length += msgEncodeLength(msg);
+        encodedLength += msgEncodeLength(msg);
     }
 
     private int msgEncodeLength(TaskMessage taskMsg) {
@@ -50,13 +50,15 @@ class MessageBatch implements INettySerializable {
     }
 
     /**
+     * Check whether full.
      * @return true if this batch used up allowed buffer size
      */
     boolean isFull() {
-        return encoded_length >= buffer_size;
+        return encodedLength >= bufferSize;
     }
 
     /**
+     * Check whether empty.
      * @return true if this batch doesn't have any messages
      */
     boolean isEmpty() {
@@ -64,6 +66,7 @@ class MessageBatch implements INettySerializable {
     }
 
     /**
+     * Get size.
      * @return number of msgs in this batch
      */
     int size() {
@@ -72,11 +75,11 @@ class MessageBatch implements INettySerializable {
 
     @Override
     public int encodeLength() {
-        return encoded_length;
+        return encodedLength;
     }
     
     /**
-     * create a buffer containing the encoding of this batch
+     * create a buffer containing the encoding of this batch.
      */
     @Override
     public void write(ByteBuf dest) {
@@ -89,24 +92,24 @@ class MessageBatch implements INettySerializable {
     }
 
     /**
-     * write a TaskMessage into a buffer
+     * write a TaskMessage into a buffer.
      *
-     * Each TaskMessage is encoded as: task ... short(2) len ... int(4) payload ... byte[]     *
+     * <p>Each TaskMessage is encoded as: task ... short(2) len ... int(4) payload ... byte[]     *
      */
     private void writeTaskMessage(ByteBuf buf, TaskMessage message) {
-        int payload_len = 0;
+        int payloadLen = 0;
         if (message.message() != null) {
-            payload_len = message.message().length;
+            payloadLen = message.message().length;
         }
 
-        int task_id = message.task();
-        if (task_id > Short.MAX_VALUE) {
+        int taskId = message.task();
+        if (taskId > Short.MAX_VALUE) {
             throw new RuntimeException("Task ID should not exceed " + Short.MAX_VALUE);
         }
 
-        buf.writeShort((short) task_id);
-        buf.writeInt(payload_len);
-        if (payload_len > 0) {
+        buf.writeShort((short) taskId);
+        buf.writeInt(payloadLen);
+        if (payloadLen > 0) {
             buf.writeBytes(message.message());
         }
     }

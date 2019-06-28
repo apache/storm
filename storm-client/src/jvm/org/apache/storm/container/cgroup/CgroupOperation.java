@@ -23,52 +23,52 @@ import java.util.Set;
 public interface CgroupOperation {
 
     /**
-     * Get a list of hierarchies
+     * Get a list of hierarchies.
      */
     public List<Hierarchy> getHierarchies();
 
     /**
-     * get a list of available subsystems
+     * get a list of available subsystems.
      */
     public Set<SubSystem> getSubSystems();
 
     /**
-     * Check if a subsystem is enabled
+     * Check if a subsystem is enabled.
      */
     public boolean isSubSystemEnabled(SubSystemType subsystem);
 
     /**
-     * get the first hierarchy that has a certain subsystem isMounted
+     * get the first hierarchy that has a certain subsystem isMounted.
      */
     public Hierarchy getHierarchyWithSubSystem(SubSystemType subsystem);
 
     /**
-     * get the first hierarchy that has a certain list of subsystems isMounted
+     * get the first hierarchy that has a certain list of subsystems isMounted.
      */
     public Hierarchy getHierarchyWithSubSystems(List<SubSystemType> subSystems);
 
     /**
-     * check if a hiearchy is mounted
+     * check if a hiearchy is mounted.
      */
     public boolean isMounted(Hierarchy hierarchy);
 
     /**
-     * mount a hierarchy
+     * mount a hierarchy.
      */
     public void mount(Hierarchy hierarchy) throws IOException;
 
     /**
-     * umount a heirarchy
+     * umount a heirarchy.
      */
     public void umount(Hierarchy hierarchy) throws IOException;
 
     /**
-     * create a cgroup
+     * create a cgroup.
      */
     public void createCgroup(CgroupCommon cgroup) throws SecurityException;
 
     /**
-     * delete a cgroup
+     * delete a cgroup.
      */
     public void deleteCgroup(CgroupCommon cgroup) throws IOException;
 }

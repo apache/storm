@@ -148,7 +148,7 @@ public class Stream<T> {
      *
      * // time duration based tumbling window
      * stream.window(TumblingWindows.of(Duration.seconds(10));
-     * </p>
+     * </pre>
      *
      * @see org.apache.storm.streams.windowing.SlidingWindows
      * @see org.apache.storm.streams.windowing.TumblingWindows
@@ -381,18 +381,6 @@ public class Stream<T> {
         return addNode(node, child);
     }
 
-    Node addProcessorNode(Processor<?> processor, Fields outputFields) {
-        return addNode(makeProcessorNode(processor, outputFields));
-    }
-
-    Node addProcessorNode(Processor<?> processor, Fields outputFields, boolean preservesKey) {
-        return addNode(makeProcessorNode(processor, outputFields, preservesKey));
-    }
-
-    String getStream() {
-        return stream;
-    }
-
     private Node addNode(Node parent, Node child) {
         return streamBuilder.addNode(parent, child);
     }
@@ -403,6 +391,18 @@ public class Stream<T> {
 
     private Node addNode(Node parent, Node child, String parentStreamId, int parallelism) {
         return streamBuilder.addNode(parent, child, parentStreamId, parallelism);
+    }
+
+    Node addProcessorNode(Processor<?> processor, Fields outputFields) {
+        return addNode(makeProcessorNode(processor, outputFields));
+    }
+
+    Node addProcessorNode(Processor<?> processor, Fields outputFields, boolean preservesKey) {
+        return addNode(makeProcessorNode(processor, outputFields, preservesKey));
+    }
+
+    String getStream() {
+        return stream;
     }
 
     private ProcessorNode makeProcessorNode(Processor<?> processor, Fields outputFields) {
