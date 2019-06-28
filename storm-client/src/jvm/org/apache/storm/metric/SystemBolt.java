@@ -30,7 +30,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
 
-
 // There is one task inside one executor for each worker of the topology.
 // TaskID is always -1, therefore you can only send-unanchored tuples to co-located SystemBolt.
 // This bolt was conceived to export worker stats via metrics api.
@@ -47,10 +46,9 @@ public class SystemBolt implements IBolt {
 
         int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 
-        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-        final RuntimeMXBean jvmRT = ManagementFactory.getRuntimeMXBean();
-        context.registerMetric("uptimeSecs", () -> jvmRT.getUptime() / 1000.0, bucketSize);
-        context.registerMetric("startTimeSecs", () -> jvmRT.getStartTime() / 1000.0, bucketSize);
+        final RuntimeMXBean jvmRt = ManagementFactory.getRuntimeMXBean();
+        context.registerMetric("uptimeSecs", () -> jvmRt.getUptime() / 1000.0, bucketSize);
+        context.registerMetric("startTimeSecs", () -> jvmRt.getStartTime() / 1000.0, bucketSize);
 
         final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         context.registerMetric("threadCount", threadBean::getThreadCount, bucketSize);

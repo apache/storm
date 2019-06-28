@@ -142,7 +142,7 @@ public interface IStormClusterState {
     List<String> errorTopologies();
 
     /**
-     * Get backpressue topologies.
+     * Get backpressure topologies.
      * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
     @Deprecated

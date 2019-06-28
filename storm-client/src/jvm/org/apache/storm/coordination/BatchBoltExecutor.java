@@ -29,11 +29,11 @@ import org.slf4j.LoggerFactory;
 public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCallback {
     public static final Logger LOG = LoggerFactory.getLogger(BatchBoltExecutor.class);
 
-    byte[] boltSer;
-    Map<Object, IBatchBolt> openTransactions;
-    Map conf;
-    TopologyContext context;
-    BatchOutputCollectorImpl collector;
+    private byte[] boltSer;
+    private Map<Object, IBatchBolt> openTransactions;
+    private Map conf;
+    private TopologyContext context;
+    private BatchOutputCollectorImpl collector;
 
     public BatchBoltExecutor(IBatchBolt bolt) {
         boltSer = Utils.javaSerialize(bolt);

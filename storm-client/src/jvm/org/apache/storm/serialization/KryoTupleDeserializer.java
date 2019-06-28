@@ -21,10 +21,10 @@ import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 
 public class KryoTupleDeserializer implements ITupleDeserializer {
-    GeneralTopologyContext context;
-    KryoValuesDeserializer kryo;
-    SerializationFactory.IdDictionary ids;
-    Input kryoInput;
+    private GeneralTopologyContext context;
+    private KryoValuesDeserializer kryo;
+    private SerializationFactory.IdDictionary ids;
+    private Input kryoInput;
 
     public KryoTupleDeserializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
         kryo = new KryoValuesDeserializer(conf);

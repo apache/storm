@@ -53,13 +53,13 @@ import org.slf4j.LoggerFactory;
 public class DRPCSpout extends BaseRichSpout {
     public static final Logger LOG = LoggerFactory.getLogger(DRPCSpout.class);
     //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
-    static final long serialVersionUID = 2387848310969237877L;
-    final String function;
-    final String localDrpcId;
-    SpoutOutputCollector collector;
-    List<DRPCInvocationsClient> clients = new ArrayList<>();
-    transient LinkedList<Future<Void>> futures = null;
-    transient ExecutorService backround = null;
+    private static final long serialVersionUID = 2387848310969237877L;
+    private final String function;
+    private final String localDrpcId;
+    private SpoutOutputCollector collector;
+    private List<DRPCInvocationsClient> clients = new ArrayList<>();
+    private transient LinkedList<Future<Void>> futures = null;
+    private transient ExecutorService background = null;
 
     public DRPCSpout(String function) {
         this.function = function;
@@ -76,12 +76,12 @@ public class DRPCSpout extends BaseRichSpout {
         localDrpcId = drpc.getServiceId();
     }
 
-    public String getFunction() {
+    public String get_function() {
         return function;
     }
 
     private void reconnectAsync(final DRPCInvocationsClient client) {
-        futures.add(backround.submit(new Callable<Void>() {
+        futures.add(background.submit(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 client.reconnectClient();
@@ -118,7 +118,7 @@ public class DRPCSpout extends BaseRichSpout {
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
         if (localDrpcId == null) {
-            backround = new ExtendedThreadPoolExecutor(0, Integer.MAX_VALUE,
+            background = new ExtendedThreadPoolExecutor(0, Integer.MAX_VALUE,
                                                         60L, TimeUnit.SECONDS,
                                                         new SynchronousQueue<Runnable>());
             futures = new LinkedList<>();
@@ -134,11 +134,11 @@ public class DRPCSpout extends BaseRichSpout {
 
             if (numTasks < servers.size()) {
                 for (String s : servers) {
-                    futures.add(backround.submit(new Adder(s, port, conf)));
+                    futures.add(background.submit(new Adder(s, port, conf)));
                 }
             } else {
                 int i = index % servers.size();
-                futures.add(backround.submit(new Adder(servers.get(i), port, conf)));
+                futures.add(background.submit(new Adder(servers.get(i), port, conf)));
             }
         }
 

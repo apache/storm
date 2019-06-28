@@ -17,7 +17,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.tuple.Tuple;
 
 public class BatchOutputCollectorImpl extends BatchOutputCollector {
-    OutputCollector collector;
+    private OutputCollector collector;
 
     public BatchOutputCollectorImpl(OutputCollector collector) {
         this.collector = collector;

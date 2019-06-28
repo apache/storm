@@ -19,9 +19,9 @@ import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.Tuple;
 
 public class KryoTupleSerializer implements ITupleSerializer {
-    KryoValuesSerializer kryo;
-    SerializationFactory.IdDictionary ids;
-    Output kryoOut;
+    private KryoValuesSerializer kryo;
+    private SerializationFactory.IdDictionary ids;
+    private Output kryoOut;
 
     public KryoTupleSerializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
         kryo = new KryoValuesSerializer(conf);
@@ -43,14 +43,4 @@ public class KryoTupleSerializer implements ITupleSerializer {
             throw new RuntimeException(e);
         }
     }
-
-    //    public long crc32(Tuple tuple) {
-    //        try {
-    //            CRC32OutputStream hasher = new CRC32OutputStream();
-    //            kryo.serializeInto(tuple.getValues(), hasher);
-    //            return hasher.getValue();
-    //        } catch (IOException e) {
-    //            throw new RuntimeException(e);
-    //        }
-    //    }
 }

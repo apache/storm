@@ -217,7 +217,6 @@ public class Thrift {
         return component;
     }
 
-    @SuppressWarnings("checkstyle:OverloadMethodsDeclarationOrder")
     public static SpoutSpec prepareSerializedSpoutDetails(IRichSpout spout, Map<String, StreamInfo> outputs) {
         return new SpoutSpec(ComponentObject.serialized_java(Utils.javaSerialize(spout)),
                 prepareComponentCommon(new HashMap<>(), outputs, null, null));
@@ -257,18 +256,17 @@ public class Thrift {
         return details;
     }
 
-    public static StormTopology buildTopology(HashMap<String, SpoutDetails> spoutMap,
-                                              HashMap<String, BoltDetails> boltMap, HashMap<String, StateSpoutSpec> stateMap) {
-        return buildTopology(spoutMap, boltMap);
-    }
-
     private static void addInputs(BoltDeclarer declarer, Map<GlobalStreamId, Grouping> inputs) {
         for (Entry<GlobalStreamId, Grouping> entry : inputs.entrySet()) {
             declarer.grouping(entry.getKey(), entry.getValue());
         }
     }
 
-    @SuppressWarnings("checkstyle:OverloadMethodsDeclarationOrder")
+    public static StormTopology buildTopology(HashMap<String, SpoutDetails> spoutMap,
+                                              HashMap<String, BoltDetails> boltMap, HashMap<String, StateSpoutSpec> stateMap) {
+        return buildTopology(spoutMap, boltMap);
+    }
+
     public static StormTopology buildTopology(Map<String, SpoutDetails> spoutMap, Map<String, BoltDetails> boltMap) {
         TopologyBuilder builder = new TopologyBuilder();
         for (Entry<String, SpoutDetails> entry : spoutMap.entrySet()) {

@@ -1227,12 +1227,11 @@ public class Utils {
      */
     public static String threadDump() {
         final StringBuilder dump = new StringBuilder();
-        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-        final java.lang.management.ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        final java.lang.management.ThreadInfo[] threadInfos = threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds(), 100);
+        final java.lang.management.ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+        final java.lang.management.ThreadInfo[] threadInfos = threadMxBean.getThreadInfo(threadMxBean.getAllThreadIds(), 100);
         for (Entry<Thread, StackTraceElement[]> entry: Thread.getAllStackTraces().entrySet()) {
             Thread t = entry.getKey();
-            ThreadInfo threadInfo = threadMXBean.getThreadInfo(t.getId());
+            ThreadInfo threadInfo = threadMxBean.getThreadInfo(t.getId());
             if (threadInfo == null) {
                 //Thread died before we could get the info, skip
                 continue;
@@ -1315,7 +1314,8 @@ public class Utils {
      * @param b something else
      * @return a or b the first one that is not null
      */
-    public static <V> V or(V a, V b) {
+    @SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "checkstyle:MethodName"})
+    public static <V> V OR(V a, V b) {
         return a == null ? b : a;
     }
 

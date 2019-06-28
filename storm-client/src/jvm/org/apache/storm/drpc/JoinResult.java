@@ -30,10 +30,10 @@ import org.slf4j.LoggerFactory;
 public class JoinResult extends BaseRichBolt {
     public static final Logger LOG = LoggerFactory.getLogger(JoinResult.class);
 
-    String returnComponent;
-    Map<Object, Tuple> returns = new HashMap<>();
-    Map<Object, Tuple> results = new HashMap<>();
-    OutputCollector collector;
+    private String returnComponent;
+    private Map<Object, Tuple> returns = new HashMap<>();
+    private Map<Object, Tuple> results = new HashMap<>();
+    private OutputCollector collector;
 
     public JoinResult(String returnComponent) {
         this.returnComponent = returnComponent;

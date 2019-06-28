@@ -18,8 +18,8 @@ import org.apache.storm.utils.RegisteredGlobalState;
 
 public class AckFailMapTracker implements AckFailDelegate {
 
-    String acked;
-    String failed;
+    private String acked;
+    private String failed;
 
     public AckFailMapTracker() {
         acked = RegisteredGlobalState.registerState(new HashSet());

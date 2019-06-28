@@ -177,8 +177,7 @@ public class TridentTopology {
         return ret;
     }
 
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    private static void completeDRPC(DefaultDirectedGraph<Node, IndexedEdge> graph, Map<String, List<Node>> colocate, UniqueIdGen gen) {
+    private static void completeDrpc(DefaultDirectedGraph<Node, IndexedEdge> graph, Map<String, List<Node>> colocate, UniqueIdGen gen) {
         List<Set<Node>> connectedComponents = new ConnectivityInspector<>(graph).connectedSets();
 
         for (Set<Node> g : connectedComponents) {
@@ -187,7 +186,7 @@ public class TridentTopology {
 
         TridentTopology helper = new TridentTopology(graph, colocate, gen);
         for (Set<Node> g : connectedComponents) {
-            SpoutNode drpcNode = getDRPCSpoutNode(g);
+            SpoutNode drpcNode = getDrpcSpoutNode(g);
             if (drpcNode != null) {
                 Stream lastStream = new Stream(helper, null, getLastAddedNode(g));
                 Stream s = new Stream(helper, null, drpcNode);
@@ -212,8 +211,7 @@ public class TridentTopology {
     }
 
     //returns null if it's not a drpc group
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    private static SpoutNode getDRPCSpoutNode(Collection<Node> g) {
+    private static SpoutNode getDrpcSpoutNode(Collection<Node> g) {
         for (Node n : g) {
             if (n instanceof SpoutNode) {
                 SpoutNode.SpoutType type = ((SpoutNode) n).type;
@@ -226,8 +224,7 @@ public class TridentTopology {
     }
 
     private static void checkValidJoins(Collection<Node> g) {
-        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-        boolean hasDRPCSpout = false;
+        boolean hasDrpcSpout = false;
         boolean hasBatchSpout = false;
         for (Node n : g) {
             if (n instanceof SpoutNode) {
@@ -235,11 +232,11 @@ public class TridentTopology {
                 if (type == SpoutNode.SpoutType.BATCH) {
                     hasBatchSpout = true;
                 } else if (type == SpoutNode.SpoutType.DRPC) {
-                    hasDRPCSpout = true;
+                    hasDrpcSpout = true;
                 }
             }
         }
-        if (hasBatchSpout && hasDRPCSpout) {
+        if (hasBatchSpout && hasDrpcSpout) {
             throw new RuntimeException("Cannot join DRPC stream with streams originating from other spouts");
         }
     }
@@ -268,7 +265,7 @@ public class TridentTopology {
             if (n.type == SpoutNode.SpoutType.BATCH) { // if Batch spout then id contains txId
                 ret.put(n, "spout-" + n.txId);
             } else if (n.type == SpoutNode.SpoutType.DRPC) { //if DRPC spout then id contains function
-                ret.put(n, "spout-" + ((DRPCSpout) n.spout).getFunction() + ctr);
+                ret.put(n, "spout-" + ((DRPCSpout) n.spout).get_function() + ctr);
                 ctr++;
             } else {
                 ret.put(n, "spout" + ctr);
@@ -753,7 +750,7 @@ public class TridentTopology {
         DefaultDirectedGraph<Node, IndexedEdge> graph = (DefaultDirectedGraph) this.graph.clone();
 
 
-        completeDRPC(graph, colocate, gen);
+        completeDrpc(graph, colocate, gen);
 
         List<SpoutNode> spoutNodes = new ArrayList<>();
 

@@ -170,8 +170,12 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
      */
     public Stream project(Fields keepFields) {
         projectionValidation(keepFields);
-        return topology.addSourcedNode(this, new ProcessorNode(topology.getUniqueStreamId(), name, keepFields, new Fields(),
-                                                                new ProjectedProcessor(keepFields)));
+        return topology.addSourcedNode(this,
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        keepFields,
+                        new Fields(),
+                        new ProjectedProcessor(keepFields)));
     }
 
     /**
@@ -280,11 +284,11 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     public Stream each(Fields inputFields, Function function, Fields functionFields) {
         projectionValidation(inputFields);
         return topology.addSourcedNode(this,
-                                        new ProcessorNode(topology.getUniqueStreamId(),
-                                                name,
-                                                          TridentUtils.fieldsConcat(getOutputFields(), functionFields),
-                                                          functionFields,
-                                                          new EachProcessor(inputFields, function)));
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        TridentUtils.fieldsConcat(getOutputFields(), functionFields),
+                        functionFields,
+                        new EachProcessor(inputFields, function)));
     }
 
     public Stream each(Function function, Fields functionFields) {
@@ -300,11 +304,11 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     public Stream partitionAggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
         projectionValidation(inputFields);
         return topology.addSourcedNode(this,
-                                        new ProcessorNode(topology.getUniqueStreamId(),
-                                                name,
-                                                          functionFields,
-                                                          functionFields,
-                                                          new AggregateProcessor(inputFields, agg)));
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        functionFields,
+                        functionFields,
+                        new AggregateProcessor(inputFields, agg)));
     }
 
     public Stream partitionAggregate(Aggregator agg, Fields functionFields) {
@@ -338,9 +342,9 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
         String stateId = state.node.stateInfo.id;
         Node n = new ProcessorNode(topology.getUniqueStreamId(),
                 name,
-                                   TridentUtils.fieldsConcat(getOutputFields(), functionFields),
-                                   functionFields,
-                                   new StateQueryProcessor(stateId, inputFields, function));
+                TridentUtils.fieldsConcat(getOutputFields(), functionFields),
+                functionFields,
+                new StateQueryProcessor(stateId, inputFields, function));
         topology.colocate.get(stateId).add(n);
         return topology.addSourcedNode(this, n);
     }
@@ -358,9 +362,9 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
         String id = topology.getUniqueStateId();
         ProcessorNode n = new ProcessorNode(topology.getUniqueStreamId(),
                 name,
-                                            functionFields,
-                                            functionFields,
-                                            new PartitionPersistProcessor(id, inputFields, updater));
+                functionFields,
+                functionFields,
+                new PartitionPersistProcessor(id, inputFields, updater));
         n.committer = true;
         n.stateInfo = new NodeStateInfo(id, stateSpec);
         return topology.addSourcedStateNode(this, n);
@@ -420,12 +424,11 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     public Stream map(MapFunction function) {
         projectionValidation(getOutputFields());
         return topology.addSourcedNode(this,
-                                        new ProcessorNode(
-                                            topology.getUniqueStreamId(),
-                                                name,
-                                            getOutputFields(),
-                                            getOutputFields(),
-                                            new MapProcessor(getOutputFields(), new MapFunctionExecutor(function))));
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        getOutputFields(),
+                        getOutputFields(),
+                        new MapProcessor(getOutputFields(), new MapFunctionExecutor(function))));
     }
 
     /**
@@ -439,12 +442,11 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     public Stream map(MapFunction function, Fields outputFields) {
         projectionValidation(getOutputFields());
         return topology.addSourcedNode(this,
-                                        new ProcessorNode(
-                                            topology.getUniqueStreamId(),
-                                                name,
-                                            outputFields,
-                                            outputFields,
-                                            new MapProcessor(getOutputFields(), new MapFunctionExecutor(function))));
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        outputFields,
+                        outputFields,
+                        new MapProcessor(getOutputFields(), new MapFunctionExecutor(function))));
     }
 
     /**
@@ -458,12 +460,11 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     public Stream flatMap(FlatMapFunction function) {
         projectionValidation(getOutputFields());
         return topology.addSourcedNode(this,
-                                        new ProcessorNode(
-                                            topology.getUniqueStreamId(),
-                                                name,
-                                            getOutputFields(),
-                                            getOutputFields(),
-                                            new MapProcessor(getOutputFields(), new FlatMapFunctionExecutor(function))));
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        getOutputFields(),
+                        getOutputFields(),
+                        new MapProcessor(getOutputFields(), new FlatMapFunctionExecutor(function))));
     }
 
     /**
@@ -479,12 +480,11 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     public Stream flatMap(FlatMapFunction function, Fields outputFields) {
         projectionValidation(getOutputFields());
         return topology.addSourcedNode(this,
-                                        new ProcessorNode(
-                                            topology.getUniqueStreamId(),
-                                                name,
-                                            outputFields,
-                                            outputFields,
-                                            new MapProcessor(getOutputFields(), new FlatMapFunctionExecutor(function))));
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        outputFields,
+                        outputFields,
+                        new MapProcessor(getOutputFields(), new FlatMapFunctionExecutor(function))));
     }
 
     /**
@@ -498,12 +498,11 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     public Stream peek(Consumer action) {
         projectionValidation(getOutputFields());
         return topology.addSourcedNode(this,
-                                        new ProcessorNode(
-                                            topology.getUniqueStreamId(),
-                                                name,
-                                            getOutputFields(),
-                                            getOutputFields(),
-                                            new MapProcessor(getOutputFields(), new ConsumerExecutor(action))));
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        getOutputFields(),
+                        getOutputFields(),
+                        new MapProcessor(getOutputFields(), new ConsumerExecutor(action))));
     }
 
     public ChainedAggregatorDeclarer chainedAgg() {
@@ -736,14 +735,15 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
         // when storeTuplesInStore is false then the given windowStoreFactory is only used to store triggers and
         // that store is passed to WindowStateUpdater to remove them after committing the batch.
         Stream stream = topology.addSourcedNode(this,
-                                                 new ProcessorNode(topology.getUniqueStreamId(),
-                                                         name,
-                                                                   fields,
-                                                                   fields,
-                                                                   new WindowTridentProcessor(windowConfig, topology.getUniqueWindowId(),
-                                                                                              windowStoreFactory,
-                                                                                              inputFields, aggregator,
-                                                                                              storeTuplesInStore)));
+                new ProcessorNode(topology.getUniqueStreamId(),
+                        name,
+                        fields,
+                        fields,
+                        new WindowTridentProcessor(windowConfig,
+                                topology.getUniqueWindowId(),
+                                windowStoreFactory,
+                                inputFields, aggregator,
+                                storeTuplesInStore)));
 
         Stream effectiveStream = stream.project(functionFields);
 

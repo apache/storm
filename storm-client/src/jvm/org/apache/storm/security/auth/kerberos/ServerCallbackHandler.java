@@ -82,14 +82,13 @@ public class ServerCallbackHandler implements CallbackHandler {
         }
 
         if (ac != null) {
-            @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-            String authenticationID = ac.getAuthenticationID();
-            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationID,
+            String authenticationId = ac.getAuthenticationID();
+            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationId,
                       ac.getAuthorizationID());
 
             //if authorizationId is not set, set it to authenticationId.
             if (ac.getAuthorizationID() == null) {
-                ac.setAuthorizedID(authenticationID);
+                ac.setAuthorizedID(authenticationId);
             }
 
             //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We

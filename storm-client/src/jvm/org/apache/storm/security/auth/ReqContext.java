@@ -42,22 +42,21 @@ public class ReqContext {
         ThreadLocal.withInitial(() -> new ReqContext(AccessController.getContext()));
     private Subject subject;
     private InetAddress remoteAddr;
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    private final int reqID;
+    private final int reqId;
     private Principal realPrincipal;
 
     //private constructor
     @VisibleForTesting
     public ReqContext(AccessControlContext aclCtxt) {
         subject = Subject.getSubject(aclCtxt);
-        reqID = uniqueId.incrementAndGet();
+        reqId = uniqueId.incrementAndGet();
     }
 
     //private constructor
     @VisibleForTesting
     public ReqContext(Subject sub) {
         subject = sub;
-        reqID = uniqueId.incrementAndGet();
+        reqId = uniqueId.incrementAndGet();
     }
 
     /**
@@ -67,7 +66,7 @@ public class ReqContext {
     public ReqContext(ReqContext other) {
         subject = other.subject;
         remoteAddr = other.remoteAddr;
-        reqID = other.reqID;
+        reqId = other.reqId;
         realPrincipal = other.realPrincipal;
     }
 
@@ -90,7 +89,7 @@ public class ReqContext {
     public String toString() {
         return "ReqContext{"
                 + "realPrincipal=" + ((realPrincipal != null) ? realPrincipal.getName() : "null")
-                + ", reqID=" + reqID
+                + ", reqId=" + reqId
                 + ", remoteAddr=" + remoteAddr
                 + ", authZPrincipal=" + ((principal() != null) ? principal().getName() : "null")
                 + ", ThreadId=" + Thread.currentThread().toString()
@@ -160,6 +159,6 @@ public class ReqContext {
      */
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public int requestID() {
-        return reqID;
+        return reqId;
     }
 }

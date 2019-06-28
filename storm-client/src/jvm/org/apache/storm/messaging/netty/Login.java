@@ -52,7 +52,7 @@ public class Login {
      */
     private static Random rng = new Random();
     public CallbackHandler callbackHandler;
-    static final Logger LOG = Logger.getLogger(Login.class);
+    private static final Logger LOG = Logger.getLogger(Login.class);
     private Subject subject = null;
     private Thread thread = null;
     private boolean isKrbTicket = false;

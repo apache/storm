@@ -73,12 +73,15 @@ public class JoinBolt extends BaseWindowedBolt {
     }
 
     /**
-     * Performs inner Join with the newStream. SQL:
-     * <code>from priorStream inner join newStream on newStream.field = priorStream.field1 same
-     * as:   new WindowedQueryBolt(priorStream,field1). join(newStream, field, priorStream);</code>
+     * Performs inner Join with the newStream.
+     * SQL:
+     * <code>from priorStream inner join newStream on newStream.field = priorStream.field1</code>
+     * same as:
+     * <code>new WindowedQueryBolt(priorStream,field1). join(newStream, field, priorStream);</code>
      * Note: priorStream must be previously joined. Valid ex:
      * <code>new WindowedQueryBolt(s1,k1). join(s2,k2, s1). join(s3,k3, s2);</code>
-     * Invalid ex:<code>new WindowedQueryBolt(s1,k1). join(s3,k3, s2). join(s2,k2, s1);</code>
+     * Invalid ex:
+     * <code>new WindowedQueryBolt(s1,k1). join(s3,k3, s2). join(s2,k2, s1);</code>
      *
      * @param newStream Either stream name or name of upstream component
      * @param field     the field on which to perform the join

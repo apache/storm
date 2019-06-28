@@ -1033,13 +1033,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @VisibleForTesting
     public static Set<String> topoIdsToClean(IStormClusterState state, BlobStore store, Map<String, Object> conf) {
         Set<String> ret = new HashSet<>();
-        ret.addAll(Utils.or(state.heartbeatStorms(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.or(state.errorTopologies(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.or(store.storedTopoIds(), EMPTY_STRING_SET));
-        ret.addAll(Utils.or(state.backpressureTopologies(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.or(state.idsOfTopologiesWithPrivateWorkerKeys(), EMPTY_STRING_SET));
+        ret.addAll(Utils.OR(state.heartbeatStorms(), EMPTY_STRING_LIST));
+        ret.addAll(Utils.OR(state.errorTopologies(), EMPTY_STRING_LIST));
+        ret.addAll(Utils.OR(store.storedTopoIds(), EMPTY_STRING_SET));
+        ret.addAll(Utils.OR(state.backpressureTopologies(), EMPTY_STRING_LIST));
+        ret.addAll(Utils.OR(state.idsOfTopologiesWithPrivateWorkerKeys(), EMPTY_STRING_SET));
         ret = getExpiredTopologyIds(ret, conf);
-        ret.removeAll(Utils.or(state.activeStorms(), EMPTY_STRING_LIST));
+        ret.removeAll(Utils.OR(state.activeStorms(), EMPTY_STRING_LIST));
         return ret;
     }
 
@@ -3029,9 +3029,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             topoAcl.add(submitterPrincipal);
             topoAcl.add(submitterUser);
 
-            String topologyPrincipal = Utils.or(submitterPrincipal, "");
+            String topologyPrincipal = Utils.OR(submitterPrincipal, "");
             topoConf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, topologyPrincipal);
-            String topologyOwner = Utils.or(submitterUser, systemUser);
+            String topologyOwner = Utils.OR(submitterUser, systemUser);
             topoConf.put(Config.TOPOLOGY_SUBMITTER_USER, topologyOwner); //Don't let the user set who we launch as
             topoConf.put(Config.TOPOLOGY_USERS, new ArrayList<>(topoAcl));
             topoConf.put(Config.STORM_ZOOKEEPER_SUPERACL, conf.get(Config.STORM_ZOOKEEPER_SUPERACL));
@@ -3925,7 +3925,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 throw new WrappedNotAliveException(topoId);
             }
             IStormClusterState state = stormClusterState;
-            NumErrorsChoice numErrChoice = Utils.or(options.get_num_err_choice(), NumErrorsChoice.ALL);
+            NumErrorsChoice numErrChoice = Utils.OR(options.get_num_err_choice(), NumErrorsChoice.ALL);
             Map<String, List<ErrorInfo>> errors = new HashMap<>();
             for (String component : common.allComponents) {
                 switch (numErrChoice) {

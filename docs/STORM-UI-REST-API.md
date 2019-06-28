@@ -743,7 +743,7 @@ Sample response:
         "java.library.path": "/usr/local/lib:/opt/local/lib:/usr/lib",
         "topology.executor.send.buffer.size": 1024,
         "storm.local.dir": "storm-local",
-        "storm.messaging.netty.bufferSize": 5242880,
+        "storm.messaging.netty.buffer_size": 5242880,
         "supervisor.worker.start.timeout.secs": 120,
         "topology.enable.message.timeouts": true,
         "nimbus.cleanup.inbox.freq.secs": 600,

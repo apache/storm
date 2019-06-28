@@ -311,7 +311,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
-     * Store topology IDs.
+     * Get IDs stored in blob store.
      * @return a set of all of the topology ids with special data stored in the blob store.
      */
     public Set<String> storedTopoIds() {

@@ -29,11 +29,11 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.validation.ConfigValidation;
-import org.apache.storm.validation.ConfigValidationAnnotations;
 import org.apache.storm.validation.Validated;
 
 import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
 import static org.apache.storm.validation.ConfigValidationAnnotations.IsBoolean;
+import static org.apache.storm.validation.ConfigValidationAnnotations.IsImplementationOfClass;
 import static org.apache.storm.validation.ConfigValidationAnnotations.IsInteger;
 import static org.apache.storm.validation.ConfigValidationAnnotations.IsListEntryCustom;
 import static org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryCustom;
@@ -124,7 +124,7 @@ public class DaemonConfig implements Validated {
      * The class that the blacklist scheduler will report the blacklist.
      */
     @NotNull
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = IReporter.class)
+    @IsImplementationOfClass(implementsClass = IReporter.class)
     public static final String BLACKLIST_SCHEDULER_REPORTER = "blacklist.scheduler.reporter";
 
     /**
@@ -134,7 +134,7 @@ public class DaemonConfig implements Validated {
      * get odd behavior when the cluster is full and there are blacklisted nodes.
      */
     @NotNull
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = IBlacklistStrategy.class)
+    @IsImplementationOfClass(implementsClass = IBlacklistStrategy.class)
     public static final String BLACKLIST_SCHEDULER_STRATEGY = "blacklist.scheduler.strategy";
 
     /**
@@ -250,7 +250,7 @@ public class DaemonConfig implements Validated {
     /**
      * Class name for authorization plugin for supervisor.
      */
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = IAuthorizer.class)
+    @IsImplementationOfClass(implementsClass = IAuthorizer.class)
     @IsString
     public static final String SUPERVISOR_AUTHORIZER = "supervisor.authorizer";
 
@@ -270,7 +270,7 @@ public class DaemonConfig implements Validated {
     /**
      * FQCN of a class that implements {@code I} @see org.apache.storm.nimbus.ITopologyActionNotifierPlugin for details.
      */
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = ITopologyActionNotifierPlugin.class)
+    @IsImplementationOfClass(implementsClass = ITopologyActionNotifierPlugin.class)
     public static final String NIMBUS_TOPOLOGY_ACTION_NOTIFIER_PLUGIN = "nimbus.topology.action.notifier.plugin.class";
 
     /**
@@ -925,7 +925,7 @@ public class DaemonConfig implements Validated {
      * the class that specifies the scheduling priority strategy to use in ResourceAwareScheduler.
      */
     @NotNull
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = ISchedulingPriorityStrategy.class)
+    @IsImplementationOfClass(implementsClass = ISchedulingPriorityStrategy.class)
     public static final String RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY = "resource.aware.scheduler.priority.strategy";
 
     /**
@@ -939,8 +939,8 @@ public class DaemonConfig implements Validated {
     /*
      * The maximum number of states that will be searched looking for a solution in the constraint solver strategy
      */
-    @isInteger
-    @isPositiveNumber
+    @IsInteger
+    @IsPositiveNumber
     public static final String RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH = "resource.aware.scheduler.constraint.max.state.search";
 
     /**
@@ -952,7 +952,7 @@ public class DaemonConfig implements Validated {
     /**
      * The plugin to be used for resource isolation.
      */
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = ResourceIsolationInterface.class)
+    @IsImplementationOfClass(implementsClass = ResourceIsolationInterface.class)
     public static final String STORM_RESOURCE_ISOLATION_PLUGIN = "storm.resource.isolation.plugin";
 
     /**
@@ -1038,19 +1038,19 @@ public class DaemonConfig implements Validated {
     /**
      * Server side validation that @{see Config#TOPOLOGY_SCHEDULER_STRATEGY} is set ot a subclass of IStrategy.
      */
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = IStrategy.class)
+    @IsImplementationOfClass(implementsClass = IStrategy.class)
     public static final String VALIDATE_TOPOLOGY_SCHEDULER_STRATEGY = Config.TOPOLOGY_SCHEDULER_STRATEGY;
 
     /**
      * Class name of the HTTP credentials plugin for the UI.
      */
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = IHttpCredentialsPlugin.class)
+    @IsImplementationOfClass(implementsClass = IHttpCredentialsPlugin.class)
     public static final String UI_HTTP_CREDS_PLUGIN = "ui.http.creds.plugin";
 
     /**
      * Class name of the HTTP credentials plugin for DRPC.
      */
-    @ConfigValidationAnnotations.IsImplementationOfClass(implementsClass = IHttpCredentialsPlugin.class)
+    @IsImplementationOfClass(implementsClass = IHttpCredentialsPlugin.class)
     public static final String DRPC_HTTP_CREDS_PLUGIN = "drpc.http.creds.plugin";
 
     /**

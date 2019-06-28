@@ -122,10 +122,8 @@ public class CoordinatedBolt implements IRichBolt {
                             collector.fail(t);
                         }
                         tracked.remove(id);
-                    } else if (track.receivedId
-                            && (sourceArgs.isEmpty()
-                                    || track.reportCount == numSourceReports
-                                            && track.expectedTupleCount == track.receivedTuples)) {
+                    } else if (track.receivedId && (sourceArgs.isEmpty()
+                            || track.reportCount == numSourceReports && track.expectedTupleCount == track.receivedTuples)) {
                         if (delegate instanceof FinishedCallback) {
                             ((FinishedCallback) delegate).finishedId(id);
                         }

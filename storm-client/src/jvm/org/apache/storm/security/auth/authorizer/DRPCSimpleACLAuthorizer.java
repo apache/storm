@@ -126,13 +126,11 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
                 if (value == null) {
                     LOG.warn("Configuration for function '" + function + "' is "
                             + "invalid: it should have both an invocation user and a list of client users defined.");
-                } else if (value instanceof Set
-                        && (((Set<String>) value).contains(principal)
-                                || ((Set<String>) value).contains(user))) {
+                } else if (value instanceof Set && (((Set<String>) value).contains(principal)
+                        || ((Set<String>) value).contains(user))) {
                     return true;
-                } else if (value instanceof String
-                        && (value.equals(principal)
-                                || value.equals(user))) {
+                } else if (value instanceof String && (value.equals(principal)
+                        || value.equals(user))) {
                     return true;
                 }
             }
