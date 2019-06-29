@@ -149,6 +149,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             info.setTaskId(this.taskId);
             info.setStream(stream);
             info.setMessageId(messageId);
+            info.setRootId(rootId);
             if (isDebug) {
                 info.setValues(values);
             }
@@ -172,7 +173,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             globalTupleInfo.setValues(values);
             globalTupleInfo.setMessageId(messageId);
             globalTupleInfo.setTimestamp(0);
-            globalTupleInfo.setId("0:");
+            globalTupleInfo.setRootId(rootId);
             Long timeDelta = 0L;
             executor.ackSpoutMsg(executor, taskData, timeDelta, globalTupleInfo);
         }
