@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
  * Main class.
  *
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class UIServer {
 
     public static final Logger LOG = LoggerFactory.getLogger(UIServer.class);
@@ -103,9 +104,6 @@ public class UIServer {
         UIHelpers.configSsl(jettyServer, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
                 httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
 
-
-        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         jettyServer.setHandler(context);
@@ -119,6 +117,7 @@ public class UIServer {
 
         UIHelpers.configFilters(context, filterConfigurationList);
 
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         ResourceConfig resourceConfig =
             new ResourceConfig()
                 .packages("org.apache.storm.daemon.ui.resources")
