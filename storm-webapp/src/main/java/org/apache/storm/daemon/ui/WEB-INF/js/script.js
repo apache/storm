@@ -333,6 +333,14 @@ var makeWorkerStatsTable = function (response, elId, parentId, type) {
             }
         },
         {
+            data: 'owner',
+            render: function(data, type, row) {
+                return type === 'display' ?
+                    ('<a href="/owner.html?id=' + data + '">' + data + '</a>') :
+                    data;
+            }
+        },
+        {
             data: 'port',
             render: function (data, type, row) {
                 var logLink = row.workerLogLink;

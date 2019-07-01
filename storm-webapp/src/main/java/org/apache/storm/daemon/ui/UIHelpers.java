@@ -986,6 +986,7 @@ public class UIHelpers {
         result.put("uptimeSeconds", workerSummary.get_uptime_secs());
         result.put("workerLogLink", getWorkerLogLink(workerSummary.get_host(),
                 workerSummary.get_port(), config, workerSummary.get_topology_id()));
+        result.put("owner", workerSummary.get_owner());
         return result;
     }
 

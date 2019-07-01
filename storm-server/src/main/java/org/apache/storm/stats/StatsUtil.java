@@ -1222,6 +1222,7 @@ public class StatsUtil {
      * @param includeSys       whether to include system streams
      * @param userAuthorized   whether the user is authorized to view topology info
      * @param filterSupervisor if not null, only return WorkerSummaries for that supervisor
+     * @param owner            owner of the topology
      */
     public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName,
                                                      Map<Integer, String> task2Component,
@@ -1229,7 +1230,10 @@ public class StatsUtil {
                                                      Map<List<Long>, List<Object>> exec2NodePort,
                                                      Map<String, String> nodeHost,
                                                      Map<WorkerSlot, WorkerResources> worker2Resources,
-                                                     boolean includeSys, boolean userAuthorized, String filterSupervisor) {
+                                                     boolean includeSys,
+                                                     boolean userAuthorized,
+                                                     String filterSupervisor,
+                                                     String owner) {
 
         // host,port => WorkerSummary
         HashMap<WorkerSlot, WorkerSummary> workerSummaryMap = new HashMap<>();
@@ -1255,6 +1259,7 @@ public class StatsUtil {
                         ws.set_topology_id(stormId);
                         ws.set_topology_name(stormName);
                         ws.set_num_executors(0);
+                        ws.set_owner(owner);
                         if (resources != null) {
                             ws.set_assigned_memonheap(resources.get_mem_on_heap());
                             ws.set_assigned_memoffheap(resources.get_mem_off_heap());
@@ -1331,7 +1336,7 @@ public class StatsUtil {
                                                      boolean includeSys, boolean userAuthorized) {
         return aggWorkerStats(stormId, stormName,
                               task2Component, beats, exec2NodePort, nodeHost, worker2Resources,
-                              includeSys, userAuthorized, null);
+                              includeSys, userAuthorized, null, null);
     }
 
     // =====================================================================================
