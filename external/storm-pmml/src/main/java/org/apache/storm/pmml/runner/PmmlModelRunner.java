@@ -21,7 +21,7 @@ package org.apache.storm.pmml.runner;
 import org.apache.storm.tuple.Tuple;
 
 /**
- * Runner for models defined using PMML
+ * Runner for models defined using PMML.
  *
  * @param <I> type of the input source.  For Storm it is typically a {@link Tuple}
  * @param <R> the type of extracted raw input
@@ -29,6 +29,7 @@ import org.apache.storm.tuple.Tuple;
  * @param <S> the type of predicted scores
  */
 public interface PmmlModelRunner<I, R, P, S> extends ModelRunner {
+
     /**
      * Extracts from the tuple the raw inputs that are to be scored according to the predictive model.
      *
@@ -46,7 +47,7 @@ public interface PmmlModelRunner<I, R, P, S> extends ModelRunner {
     P preProcessInputs(R rawInputs);
 
     /**
-     * Compute the predicted scores from the pre-processed inputs in the step above
+     * Compute the predicted scores from the pre-processed inputs in the step above.
      *
      * @param preProcInputs that are to be preprocessed
      * @return predicted scores
