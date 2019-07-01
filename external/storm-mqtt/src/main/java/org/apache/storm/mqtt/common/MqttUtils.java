@@ -12,8 +12,8 @@
 
 package org.apache.storm.mqtt.common;
 
-
 import java.net.URI;
+
 import org.apache.storm.mqtt.MqttLogger;
 import org.apache.storm.mqtt.ssl.KeyStoreLoader;
 import org.fusesource.mqtt.client.MQTT;

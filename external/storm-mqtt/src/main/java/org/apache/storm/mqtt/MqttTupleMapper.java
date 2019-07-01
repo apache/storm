@@ -12,8 +12,8 @@
 
 package org.apache.storm.mqtt;
 
-
 import java.io.Serializable;
+
 import org.apache.storm.tuple.ITuple;
 
 /**
@@ -22,7 +22,7 @@ import org.apache.storm.tuple.ITuple;
 public interface MqttTupleMapper extends Serializable {
 
     /**
-     * Converts a Tuple to a MqttMessage
+     * Converts a Tuple to a MqttMessage.
      * @param tuple the incoming tuple
      * @return the message to publish
      */
