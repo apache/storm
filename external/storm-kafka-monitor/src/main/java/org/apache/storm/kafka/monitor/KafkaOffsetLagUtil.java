@@ -37,7 +37,7 @@ import org.apache.kafka.common.utils.Utils;
 import org.json.simple.JSONValue;
 
 /**
- * Utility class for querying offset lag for kafka spout
+ * Utility class for querying offset lag for kafka spout.
  */
 public class KafkaOffsetLagUtil {
     private static final String OPTION_TOPIC_SHORT = "t";
@@ -51,7 +51,7 @@ public class KafkaOffsetLagUtil {
     private static final String OPTION_CONSUMER_CONFIG_SHORT = "c";
     private static final String OPTION_CONSUMER_CONFIG_LONG = "consumer-config";
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         try {
             Options options = buildOptions();
             CommandLineParser parser = new DefaultParser();
@@ -106,20 +106,28 @@ public class KafkaOffsetLagUtil {
 
     private static Options buildOptions() {
         Options options = new Options();
-        options.addOption(OPTION_TOPIC_SHORT, OPTION_TOPIC_LONG, true,
-                          "REQUIRED Topics (comma separated list) for fetching log head and spout committed " +
-                          "offset");
-        options.addOption(OPTION_BOOTSTRAP_BROKERS_SHORT, OPTION_BOOTSTRAP_BROKERS_LONG, true,
-                          "Comma separated list of bootstrap broker hosts for new " +
-                          "consumer/spout e.g. hostname1:9092,hostname2:9092");
+        options.addOption(OPTION_TOPIC_SHORT, OPTION_TOPIC_LONG,
+                true,
+                "REQUIRED Topics (comma separated list) for fetching log head and spout committed "
+                      + "offset");
+        options.addOption(OPTION_BOOTSTRAP_BROKERS_SHORT, OPTION_BOOTSTRAP_BROKERS_LONG,
+                true,
+                "Comma separated list of bootstrap broker hosts for new "
+                        + "consumer/spout e.g. hostname1:9092,hostname2:9092");
         options.addOption(OPTION_GROUP_ID_SHORT, OPTION_GROUP_ID_LONG, true, "Group id of consumer");
-        options.addOption(OPTION_SECURITY_PROTOCOL_SHORT, OPTION_SECURITY_PROTOCOL_LONG, true, "Security protocol to connect to kafka");
-        options.addOption(OPTION_CONSUMER_CONFIG_SHORT, OPTION_CONSUMER_CONFIG_LONG, true, "Properties file with additional " +
-                "Kafka consumer properties");
+        options.addOption(OPTION_SECURITY_PROTOCOL_SHORT,
+                OPTION_SECURITY_PROTOCOL_LONG,
+                true,
+                "Security protocol to connect to kafka");
+        options.addOption(OPTION_CONSUMER_CONFIG_SHORT,
+                OPTION_CONSUMER_CONFIG_LONG,
+                true,
+                "Properties file with additional Kafka consumer properties");
         return options;
     }
 
     /**
+     * Get offset lags.
      * @param newKafkaSpoutOffsetQuery represents the information needed to query kafka for log head and spout offsets
      * @return log head offset, spout offset and lag for each partition
      */
@@ -168,9 +176,11 @@ public class KafkaOffsetLagUtil {
     }
 
     private static Collection<TopicPartition> toArrayList(final TopicPartition tp) {
-        return new ArrayList<TopicPartition>(1) {{
-            add(tp);
-        }};
+        return new ArrayList<TopicPartition>(1) {
+            {
+                add(tp);
+            }
+        };
     }
 
 }
