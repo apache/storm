@@ -39,7 +39,7 @@ import org.apache.storm.tuple.Values;
 
 public class WordCountTrident {
 
-    public static StormTopology buildTopology(String nameserverAddr, String topic){
+    public static StormTopology buildTopology(String nameserverAddr, String topic) {
         Fields fields = new Fields("word", "count");
         FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
                 new Values("storm", 1),
