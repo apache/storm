@@ -70,6 +70,7 @@ public class TestConstraintSolverStrategy {
         spread.add("spout-0");
 
         Map<String, Object> config = Utils.readDefaultConfig();
+        config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
         config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spread);
         config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
         config.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
@@ -206,6 +207,7 @@ public class TestConstraintSolverStrategy {
 
         Map<String, Object> config = Utils.readDefaultConfig();
         config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, DefaultSchedulingPriorityStrategy.class.getName());
+        config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
         config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, ConstraintSolverStrategy.class.getName());
         config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spread);
         config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
