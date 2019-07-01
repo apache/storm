@@ -12,9 +12,5 @@
 
 package org.apache.storm.planner;
 
-
-public class CompoundSpout
-    //implements ISpout
-{
-
+public class CompoundSpout {
 }

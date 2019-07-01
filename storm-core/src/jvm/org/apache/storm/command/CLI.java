@@ -23,6 +23,7 @@ import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class CLI {
     /**
      * Parse function to return an Integer.
@@ -250,6 +251,7 @@ public class CLI {
         }
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static class CLIBuilder {
         private final ArrayList<Opt> opts = new ArrayList<>();
         private final ArrayList<Arg> args = new ArrayList<>();

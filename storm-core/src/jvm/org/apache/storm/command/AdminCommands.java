@@ -72,7 +72,8 @@ public class AdminCommands {
         @Override
         public void run(String[] args, Map<String, Object> conf, String command) throws Exception {
             try (BlobStore nimbusBlobStore = ServerUtils.getNimbusBlobStore(conf, NimbusInfo.fromConf(conf), null)) {
-                IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
+                IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf,
+                        new ClusterStateContext(DaemonType.NIMBUS, conf));
 
                 Set<String> blobStoreTopologyIds = nimbusBlobStore.filterAndListKeys(key -> ConfigUtils.getIdFromBlobKey(key));
                 Set<String> activeTopologyIds = new HashSet<>(stormClusterState.activeStorms());
@@ -126,14 +127,6 @@ public class AdminCommands {
         return builder.toString();
     }
 
-    private static void println(StringBuilder out, int depth, Object value) {
-        for (int i = 0; i < depth; i++) {
-            out.append("\t");
-        }
-        out.append(value);
-        out.append("\n");
-    }
-
     private static void prettyPrint(TBase value, int depth, StringBuilder out) {
         if (value == null) {
             println(out, depth,"null");
@@ -142,6 +135,14 @@ public class AdminCommands {
         println(out, depth, "{");
         prettyPrintFields(value, depth + 1, out);
         println(out, depth, "}");
+    }
+
+    private static void println(StringBuilder out, int depth, Object value) {
+        for (int i = 0; i < depth; i++) {
+            out.append("\t");
+        }
+        out.append(value);
+        out.append("\n");
     }
 
     private static void prettyPrintFields(TBase value, int depth, StringBuilder out) {

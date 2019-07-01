@@ -31,7 +31,14 @@ public class ListTopologies {
                 if (topologies == null || topologies.isEmpty()) {
                     System.out.println("No topologies running.");
                 } else {
-                    System.out.printf(MSG_FORMAT, "Topology_name", "Status", "Num_tasks", "Num_workers", "Uptime_secs", "Topology_Id", "Owner");
+                    System.out.printf(MSG_FORMAT,
+                            "Topology_name",
+                            "Status",
+                            "Num_tasks",
+                            "Num_workers",
+                            "Uptime_secs",
+                            "Topology_Id",
+                            "Owner");
                     System.out.println("----------------------------------------------------------------------------------------");
                     for (TopologySummary topology : topologies) {
                         System.out.printf(MSG_FORMAT, topology.get_name(), topology.get_status(),
