@@ -24,6 +24,7 @@ public class HiveOptions implements Serializable {
     protected HiveMapper mapper;
     protected String databaseName;
     protected String tableName;
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     protected String metaStoreURI;
     protected Integer txnsPerBatch = 100;
     protected Integer maxOpenConnections = 10;
@@ -36,8 +37,8 @@ public class HiveOptions implements Serializable {
     protected String kerberosKeytab;
     protected Integer tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
 
-    public HiveOptions(String metaStoreURI, String databaseName, String tableName, HiveMapper mapper) {
-        this.metaStoreURI = metaStoreURI;
+    public HiveOptions(String metaStoreUri, String databaseName, String tableName, HiveMapper mapper) {
+        this.metaStoreURI = metaStoreUri;
         this.databaseName = databaseName;
         this.tableName = tableName;
         this.mapper = mapper;
@@ -93,6 +94,7 @@ public class HiveOptions implements Serializable {
         return this;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public String getMetaStoreURI() {
         return metaStoreURI;
     }

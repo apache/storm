@@ -12,7 +12,6 @@
 
 package org.apache.storm.hive.bolt.mapper;
 
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
@@ -31,9 +30,6 @@ public interface HiveMapper extends Serializable {
 
     /**
      * Given a endPoint, returns a RecordWriter with columnNames.
-     *
-     * @param endPoint
-     * @return
      */
 
     RecordWriter createRecordWriter(HiveEndPoint endPoint)
@@ -44,31 +40,21 @@ public interface HiveMapper extends Serializable {
 
     /**
      * Given a tuple, return a hive partition values list.
-     *
-     * @param tuple
-     * @return List<String>
      */
     List<String> mapPartitions(Tuple tuple);
 
     /**
-     * Given a tuple, maps to a HiveRecord based on columnFields
-     * @Param Tuple
-     * @return byte[]
-     */
-    byte[] mapRecord(Tuple tuple);
-
-    /**
      * Given a TridetnTuple, return a hive partition values list.
-     *
-     * @param tuple
-     * @return List<String>
      */
     List<String> mapPartitions(TridentTuple tuple);
 
     /**
-     * Given a TridentTuple, maps to a HiveRecord based on columnFields
-     * @Param TridentTuple
-     * @return byte[]
+     * Given a tuple, maps to a HiveRecord based on columnFields.
+     */
+    byte[] mapRecord(Tuple tuple);
+
+    /**
+     * Given a TridentTuple, maps to a HiveRecord based on columnFields.
      */
     byte[] mapRecord(TridentTuple tuple);
 

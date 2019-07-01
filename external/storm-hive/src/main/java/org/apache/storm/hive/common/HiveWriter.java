@@ -84,7 +84,6 @@ public class HiveWriter {
     /**
      * If the current thread has been interrupted, then throws an
      * exception.
-     * @throws InterruptedException
      */
     private static void checkAndThrowInterruptedException()
         throws InterruptedException {
@@ -114,13 +113,13 @@ public class HiveWriter {
         }
     }
 
-    private HiveConf createHiveConf(String metaStoreURI, boolean tokenAuthEnabled) {
+    private HiveConf createHiveConf(String metaStoreUri, boolean tokenAuthEnabled) {
         if (!tokenAuthEnabled) {
             return null;
         }
 
         HiveConf hcatConf = new HiveConf();
-        hcatConf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
+        hcatConf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreUri);
         hcatConf.setBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_SASL, true);
         return hcatConf;
     }
@@ -133,16 +132,14 @@ public class HiveWriter {
     }
 
     /**
-     * Write data <br />
-     *
-     * @throws IOException
-     * @throws InterruptedException
+     * Write data.
      */
     public synchronized void write(final byte[] record)
         throws WriteFailure, SerializationError, InterruptedException {
         if (closed) {
-            throw new IllegalStateException("This hive streaming writer was closed " +
-                                            "and thus no longer able to write : " + endPoint);
+            throw new IllegalStateException("This hive streaming writer was closed "
+                    + "and thus no longer able to write : "
+                    + endPoint);
         }
         // write the tuple
         try {
@@ -172,7 +169,9 @@ public class HiveWriter {
     public void flush(boolean rollToNext)
         throws CommitFailure, TxnBatchFailure, TxnFailure, InterruptedException {
         // if there are no records do not call flush
-        if (totalRecords <= 0) return;
+        if (totalRecords <= 0) {
+            return;
+        }
         try {
             synchronized (txnBatchLock) {
                 commitTxn();
@@ -186,7 +185,7 @@ public class HiveWriter {
     }
 
     /** Queues up a heartbeat request on the current and remaining txns using the
-     *  heartbeatThdPool and returns immediately
+     *  heartbeatThdPool and returns immediately.
      */
     public void heartBeat() throws InterruptedException {
         // 1) schedule the heartbeat on one thread in pool
@@ -214,8 +213,7 @@ public class HiveWriter {
     }
 
     /**
-     * returns totalRecords written so far in a transaction
-     * @returns totalRecords
+     * returns totalRecords written so far in a transaction.
      */
     public int getTotalRecords() {
         return totalRecords;
@@ -231,9 +229,7 @@ public class HiveWriter {
     }
 
     /**
-     * Close the Transaction Batch and connection
-     * @throws IOException
-     * @throws InterruptedException
+     * Close the Transaction Batch and connection.
      */
     public void close() throws IOException, InterruptedException {
         closeTxnBatch();
@@ -369,7 +365,6 @@ public class HiveWriter {
     /**
      * if there are remainingTransactions in current txnBatch, begins nextTransactions
      * otherwise creates new txnBatch.
-     * @param rollToNext
      */
     private void nextTxn(boolean rollToNext) throws StreamingException, InterruptedException, TxnBatchFailure {
         if (txnBatch.remainingTransactions() == 0) {
@@ -403,9 +398,9 @@ public class HiveWriter {
             } else {
                 return future.get();
             }
-        } catch (TimeoutException eT) {
+        } catch (TimeoutException timeoutException) {
             future.cancel(true);
-            throw eT;
+            throw timeoutException;
         } catch (ExecutionException e1) {
             Throwable cause = e1.getCause();
             if (cause instanceof IOException) {
@@ -441,7 +436,6 @@ public class HiveWriter {
      * Simple interface whose <tt>call</tt> method is called by
      * {#callWithTimeout} in a new thread inside a
      * {@linkplain java.security.PrivilegedExceptionAction#run()} call.
-     * @param <T>
      */
     private interface CallRunner<T> {
         T call() throws Exception;
@@ -460,8 +454,8 @@ public class HiveWriter {
     }
 
     public static class CommitFailure extends Failure {
-        public CommitFailure(HiveEndPoint endPoint, Long txnID, Throwable cause) {
-            super("Commit of Txn " + txnID + " failed on EndPoint: " + endPoint, cause);
+        public CommitFailure(HiveEndPoint endPoint, Long txnId, Throwable cause) {
+            super("Commit of Txn " + txnId + " failed on EndPoint: " + endPoint, cause);
         }
     }
 
