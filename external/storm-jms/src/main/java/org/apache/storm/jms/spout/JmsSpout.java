@@ -19,9 +19,9 @@
 package org.apache.storm.jms.spout;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Collections;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
