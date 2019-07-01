@@ -4555,11 +4555,12 @@ class WorkerSummary(object):
      - assigned_memonheap
      - assigned_memoffheap
      - assigned_cpu
+     - owner
 
     """
 
 
-    def __init__(self, supervisor_id=None, host=None, port=None, topology_id=None, topology_name=None, num_executors=None, component_to_num_tasks=None, time_secs=None, uptime_secs=None, requested_memonheap=None, requested_memoffheap=None, requested_cpu=None, assigned_memonheap=None, assigned_memoffheap=None, assigned_cpu=None,):
+    def __init__(self, supervisor_id=None, host=None, port=None, topology_id=None, topology_name=None, num_executors=None, component_to_num_tasks=None, time_secs=None, uptime_secs=None, requested_memonheap=None, requested_memoffheap=None, requested_cpu=None, assigned_memonheap=None, assigned_memoffheap=None, assigned_cpu=None, owner=None,):
         self.supervisor_id = supervisor_id
         self.host = host
         self.port = port
@@ -4575,6 +4576,7 @@ class WorkerSummary(object):
         self.assigned_memonheap = assigned_memonheap
         self.assigned_memoffheap = assigned_memoffheap
         self.assigned_cpu = assigned_cpu
+        self.owner = owner
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -4666,6 +4668,11 @@ class WorkerSummary(object):
                     self.assigned_cpu = iprot.readDouble()
                 else:
                     iprot.skip(ftype)
+            elif fid == 527:
+                if ftype == TType.STRING:
+                    self.owner = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -4739,6 +4746,10 @@ class WorkerSummary(object):
         if self.assigned_cpu is not None:
             oprot.writeFieldBegin('assigned_cpu', TType.DOUBLE, 526)
             oprot.writeDouble(self.assigned_cpu)
+            oprot.writeFieldEnd()
+        if self.owner is not None:
+            oprot.writeFieldBegin('owner', TType.STRING, 527)
+            oprot.writeString(self.owner.encode('utf-8') if sys.version_info[0] == 2 else self.owner)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -12094,6 +12105,7 @@ WorkerSummary.thrift_spec = (
     (524, TType.DOUBLE, 'assigned_memonheap', None, None, ),  # 524
     (525, TType.DOUBLE, 'assigned_memoffheap', None, None, ),  # 525
     (526, TType.DOUBLE, 'assigned_cpu', None, None, ),  # 526
+    (527, TType.STRING, 'owner', 'UTF8', None, ),  # 527
 )
 all_structs.append(SupervisorPageInfo)
 SupervisorPageInfo.thrift_spec = (

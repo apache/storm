@@ -114,7 +114,7 @@ public class TestStatsUtil {
         List<WorkerSummary> summaries =
             StatsUtil.aggWorkerStats("my-storm-id", "my-storm-name",
                                      task2Component, beats, exec2NodePort, nodeHost, worker2Resources,
-                                     includeSys, userAuthorized, filterSupervisor);
+                                     includeSys, userAuthorized, filterSupervisor, null);
         for (WorkerSummary ws : summaries) {
             String host = ws.get_host();
             int port = ws.get_port();

@@ -347,6 +347,7 @@ struct WorkerSummary {
 524: optional double assigned_memonheap;
 525: optional double assigned_memoffheap;
 526: optional double assigned_cpu;
+527: optional string owner;
 }
 
 struct SupervisorPageInfo {
