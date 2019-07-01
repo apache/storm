@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.clojure;
 
-import org.apache.storm.serialization.SerializationRegister;
+import carbonite.JavaBridge;
 
 import com.esotericsoftware.kryo.Kryo;
 
-import carbonite.JavaBridge;
+import org.apache.storm.serialization.SerializationRegister;
 
 public class ClojureSerializationRegister implements SerializationRegister {
 

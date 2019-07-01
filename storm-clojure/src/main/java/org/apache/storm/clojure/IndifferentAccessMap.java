@@ -15,37 +15,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.clojure;
 
-
 import clojure.lang.ILookup;
-import clojure.lang.ISeq;
-import clojure.lang.IPersistentMap;
-import clojure.lang.PersistentArrayMap;
 import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentCollection;
+import clojure.lang.IPersistentMap;
+import clojure.lang.ISeq;
 import clojure.lang.Keyword;
+import clojure.lang.PersistentArrayMap;
+
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Collection;
 import java.util.Set;
 
 public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {
 
-    protected IPersistentMap _map;
-
+    protected IPersistentMap map;
 
     public IndifferentAccessMap(IPersistentMap map) {
         setMap(map);
     }
 
     public IPersistentMap getMap() {
-        return _map;
+        return map;
     }
 
     public IPersistentMap setMap(IPersistentMap map) {
-        _map = map;
-        return _map;
+        this.map = map;
+        return this.map;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {
 
     @Override
     public Object valAt(Object o) {
-        if(o instanceof Keyword) {
+        if (o instanceof Keyword) {
             return valAt(((Keyword) o).getName());
         }
         return getMap().valAt(o);
@@ -74,7 +74,9 @@ public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {
     @Override
     public Object valAt(Object o, Object def) {
         Object ret = valAt(o);
-        if(ret==null) ret = def;
+        if (ret == null) {
+            ret = def;
+        }
         return ret;
     }
 
@@ -82,35 +84,41 @@ public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {
     /* Naive implementation, but it might be good enough */
     @Override
     public IPersistentMap assoc(Object k, Object v) {
-        if(k instanceof Keyword) return assoc(((Keyword) k).getName(), v);
-        
+        if (k instanceof Keyword) {
+            return assoc(((Keyword) k).getName(), v);
+        }
         return new IndifferentAccessMap(getMap().assoc(k, v));
     }
 
     @Override
     public IPersistentMap assocEx(Object k, Object v) {
-        if(k instanceof Keyword) return assocEx(((Keyword) k).getName(), v);
-
+        if (k instanceof Keyword) {
+            return assocEx(((Keyword) k).getName(), v);
+        }
         return new IndifferentAccessMap(getMap().assocEx(k, v));
     }
 
     @Override
     public IPersistentMap without(Object k) {
-        if(k instanceof Keyword) return without(((Keyword) k).getName());
-
+        if (k instanceof Keyword) {
+            return without(((Keyword) k).getName());
+        }
         return new IndifferentAccessMap(getMap().without(k));
     }
 
     @Override
     public boolean containsKey(Object k) {
-        if(k instanceof Keyword) return containsKey(((Keyword) k).getName());
+        if (k instanceof Keyword) {
+            return containsKey(((Keyword) k).getName());
+        }
         return getMap().containsKey(k);
     }
 
     @Override
     public IMapEntry entryAt(Object k) {
-        if(k instanceof Keyword) return entryAt(((Keyword) k).getName());
-
+        if (k instanceof Keyword) {
+            return entryAt(((Keyword) k).getName());
+        }
         return getMap().entryAt(k);
     }
 
@@ -170,14 +178,17 @@ public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {
     public void clear() {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public Object put(Object k, Object v) {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public void putAll(Map m) {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public Object remove(Object k) {
         throw new UnsupportedOperationException();

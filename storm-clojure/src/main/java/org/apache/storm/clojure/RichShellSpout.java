@@ -15,28 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.clojure;
+
+import java.util.Map;
 
 import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.spout.ShellSpout;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
-import java.util.Map;
 
 public class RichShellSpout extends ShellSpout implements IRichSpout {
-    private Map<String, StreamInfo> _outputs;
+    private Map<String, StreamInfo> outputs;
 
     public RichShellSpout(String[] command, Map<String, StreamInfo> outputs) {
         super(command);
-        _outputs = outputs;
+        this.outputs = outputs;
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        for(String stream: _outputs.keySet()) {
-            StreamInfo def = _outputs.get(stream);
-            if(def.is_direct()) {
+        for (String stream: outputs.keySet()) {
+            StreamInfo def = outputs.get(stream);
+            if (def.is_direct()) {
                 declarer.declareStream(stream, true, new Fields(def.get_output_fields()));
             } else {
                 declarer.declareStream(stream, new Fields(def.get_output_fields()));
