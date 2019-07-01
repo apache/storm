@@ -125,7 +125,7 @@ public class WorkerLogs {
     }
 
     /**
-     * Return a set of all worker directories in root log directory.
+     * Return a set of all worker directories in all topology directories in root log directory.
      */
     public Set<Path> getAllWorkerDirs() {
         try (Stream<Path> topoDirs = Files.list(logRootDir)) {
