@@ -15,46 +15,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.metrics.sigar;
 
-import org.hyperic.sigar.Sigar;
-import org.hyperic.sigar.ProcCpu;
+import java.util.HashMap;
 
 import org.apache.storm.metric.api.IMetric;
 
-import java.util.HashMap;
+import org.hyperic.sigar.ProcCpu;
+import org.hyperic.sigar.Sigar;
 
 /**
  * A metric using Sigar to get User and System CPU utilization for a worker.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class CPUMetric implements IMetric {
-    private long _prevUser = 0;
-    private long _prevSys = 0;
-    private final Sigar _sigar;
-    private final long _pid;
+    private long prevUser = 0;
+    private long prevSys = 0;
+    private final Sigar sigar;
+    private final long pid;
 
     public CPUMetric() {
-        _sigar = new Sigar();
-        _pid = _sigar.getPid();
+        sigar = new Sigar();
+        pid = sigar.getPid();
     }
 
     @Override
     public Object getValueAndReset() {
         try {
-          ProcCpu cpu = _sigar.getProcCpu(_pid);
-          long userTotal = cpu.getUser();
-          long sysTotal = cpu.getSys();
-          long user = userTotal - _prevUser;
-          long sys = sysTotal - _prevSys;
-          _prevUser = userTotal;
-          _prevSys = sysTotal;
+            ProcCpu cpu = sigar.getProcCpu(pid);
+            long userTotal = cpu.getUser();
+            long sysTotal = cpu.getSys();
+            long user = userTotal - prevUser;
+            @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
+            long sys = sysTotal - prevSys;
+            prevUser = userTotal;
+            prevSys = sysTotal;
 
-          HashMap<String, Long> ret = new HashMap<String, Long>();
-          ret.put("user-ms", user);
-          ret.put("sys-ms", sys);
-          return ret;
-      } catch (Exception e) {
-          throw new RuntimeException(e);
-      }
+            HashMap<String, Long> ret = new HashMap<String, Long>();
+            ret.put("user-ms", user);
+            ret.put("sys-ms", sys);
+            return ret;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
