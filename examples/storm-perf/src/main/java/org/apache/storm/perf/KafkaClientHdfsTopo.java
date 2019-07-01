@@ -38,12 +38,13 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 
-/***
+/**
  * This topo helps measure speed of reading from Kafka and writing to Hdfs.
- *  Spout Reads from Kafka.
- *  Bolt writes to Hdfs
+ *
+ * <p>Spout Reads from Kafka.
+ *
+ * <p>Bolt writes to Hdfs.
  */
-
 public class KafkaClientHdfsTopo {
 
     // configs - topo parallelism
@@ -123,7 +124,7 @@ public class KafkaClientHdfsTopo {
 
 
     /**
-     * Copies text file content from sourceDir to destinationDir. Moves source files into sourceDir after its done consuming
+     * Copies text file content from sourceDir to destinationDir. Moves source files into sourceDir after its done consuming.
      */
     public static void main(String[] args) throws Exception {
 
@@ -132,7 +133,6 @@ public class KafkaClientHdfsTopo {
             return;
         }
 
-        Integer durationSec = Integer.parseInt(args[0]);
         String confFile = args[1];
         Map<String, Object> topoConf = Utils.findAndReadConfigFile(confFile);
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
@@ -143,6 +143,7 @@ public class KafkaClientHdfsTopo {
 
         topoConf.putAll(Utils.readCommandLineOpts());
         //  Submit topology to Storm cluster
+        Integer durationSec = Integer.parseInt(args[0]);
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }
 
@@ -156,9 +157,6 @@ public class KafkaClientHdfsTopo {
 
         /**
          * Overrides the default record delimiter.
-         *
-         * @param delimiter
-         * @return
          */
         public LineWriter withLineDelimiter(String delimiter) {
             this.lineDelimiter = delimiter;

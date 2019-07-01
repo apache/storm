@@ -28,13 +28,13 @@ import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
-/***
+/**
  * This topo helps measure speed of reading from Hdfs.
- *  Spout Reads from Hdfs.
- *  Bolt acks and discards tuples
+ *
+ * <p>Spout Reads from Hdfs.
+ *
+ * <p>Bolt acks and discards tuples.
  */
-
-
 public class HdfsSpoutNullBoltTopo {
     public static final int DEFAULT_SPOUT_NUM = 1;
     public static final int DEFAULT_BOLT_NUM = 1;

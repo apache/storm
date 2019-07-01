@@ -16,12 +16,11 @@
  * limitations under the License
  */
 
-package org.apache.storm.perf;
+package org.apache.storm.perf.toolstest;
 
-import java.util.concurrent.locks.LockSupport;
-import org.apache.storm.utils.MutableLong;
 import org.jctools.queues.MpscArrayQueue;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class JCToolsPerfTest {
     public static void main(String[] args) throws Exception {
         //        oneProducer1Consumer();
@@ -120,107 +119,4 @@ public class JCToolsPerfTest {
 }
 
 
-abstract class MyThd extends Thread {
-    public long count = 0;
-    public long runTime = 0;
-    public boolean halt = false;
 
-    public MyThd(String thdName) {
-        super(thdName);
-    }
-
-    public long throughput() {
-        return getCount() / (runTime / 1000);
-    }
-
-    public long getCount() {
-        return count;
-    }
-}
-
-class Prod extends MyThd {
-    private final MpscArrayQueue<Object> q;
-
-    public Prod(MpscArrayQueue<Object> q) {
-        super("Producer");
-        this.q = q;
-    }
-
-    @Override
-    public void run() {
-        long start = System.currentTimeMillis();
-
-        while (!halt) {
-            ++count;
-            while (!q.offer(count)) {
-                if (Thread.interrupted()) {
-                    return;
-                }
-            }
-        }
-        runTime = System.currentTimeMillis() - start;
-    }
-
-}
-
-// writes to two queues
-class Prod2 extends MyThd {
-    private final MpscArrayQueue<Object> q1;
-    private final MpscArrayQueue<Object> q2;
-
-    public Prod2(MpscArrayQueue<Object> q1, MpscArrayQueue<Object> q2) {
-        super("Producer2");
-        this.q1 = q1;
-        this.q2 = q2;
-    }
-
-    @Override
-    public void run() {
-        long start = System.currentTimeMillis();
-
-        while (!halt) {
-            q1.offer(++count);
-            q2.offer(count);
-        }
-        runTime = System.currentTimeMillis() - start;
-    }
-}
-
-
-class Cons extends MyThd {
-    public final MutableLong counter = new MutableLong(0);
-    private final MpscArrayQueue<Object> q;
-
-    public Cons(MpscArrayQueue<Object> q) {
-        super("Consumer");
-        this.q = q;
-    }
-
-    @Override
-    public void run() {
-        Handler handler = new Handler();
-        long start = System.currentTimeMillis();
-
-        while (!halt) {
-            int x = q.drain(handler);
-            if (x == 0) {
-                LockSupport.parkNanos(1);
-            } else {
-                counter.increment();
-            }
-        }
-        runTime = System.currentTimeMillis() - start;
-    }
-
-    @Override
-    public long getCount() {
-        return counter.get();
-    }
-
-    private class Handler implements org.jctools.queues.MessagePassingQueue.Consumer<Object> {
-        @Override
-        public void accept(Object event) {
-            counter.increment();
-        }
-    }
-}

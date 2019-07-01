@@ -36,12 +36,13 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 
-/***
- * This topo helps measure speed of writing to Hdfs
- *  Spout generates fixed length random strings.
- *  Bolt writes to Hdfs
+/**
+ * This topo helps measure speed of writing to Hdfs.
+ *
+ * <p>Spout generates fixed length random strings.
+ *
+ * <p>Bolt writes to Hdfs.
  */
-
 public class StrGenSpoutHdfsBoltTopo {
 
     // configs - topo parallelism
@@ -71,7 +72,7 @@ public class StrGenSpoutHdfsBoltTopo {
 
 
         // 2 -  Setup HFS Bolt   --------
-        String Hdfs_url = Helper.getStr(topoConf, HDFS_URI);
+        String hdfsUrl = Helper.getStr(topoConf, HDFS_URI);
         RecordFormat format = new LineWriter("str");
         SyncPolicy syncPolicy = new CountSyncPolicy(hdfsBatch);
         FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(1.0f, FileSizeRotationPolicy.Units.GB);
@@ -83,7 +84,7 @@ public class StrGenSpoutHdfsBoltTopo {
 
         // Instantiate the HdfsBolt
         HdfsBolt bolt = new HdfsBolt()
-            .withFsUrl(Hdfs_url)
+            .withFsUrl(hdfsUrl)
             .withFileNameFormat(fileNameFormat)
             .withRecordFormat(format)
             .withRotationPolicy(rotationPolicy)
@@ -102,7 +103,7 @@ public class StrGenSpoutHdfsBoltTopo {
 
 
     /**
-     * Spout generates random strings and HDFS bolt writes them to a text file
+     * Spout generates random strings and HDFS bolt writes them to a text file.
      */
     public static void main(String[] args) throws Exception {
         String confFile = "conf/HdfsSpoutTopo.yaml";
@@ -144,9 +145,6 @@ public class StrGenSpoutHdfsBoltTopo {
 
         /**
          * Overrides the default record delimiter.
-         *
-         * @param delimiter
-         * @return
          */
         public LineWriter withLineDelimiter(String delimiter) {
             this.lineDelimiter = delimiter;
