@@ -15,7 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.common;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.security.auth.Subject;
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.util.Pair;
@@ -26,15 +36,6 @@ import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-import javax.xml.bind.DatatypeConverter;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * The base class that for auto credential plugins that abstracts out some of the common functionality.
@@ -62,7 +63,7 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
     @Override
     public void populateSubject(Subject subject, Map<String, String> credentials) {
         addCredentialToSubject(subject, credentials);
-        addTokensToUGI(subject);
+        addTokensToUgi(subject);
     }
 
     /**
@@ -71,7 +72,7 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
     @Override
     public void updateSubject(Subject subject, Map<String, String> credentials) {
         addCredentialToSubject(subject, credentials);
-        addTokensToUGI(subject);
+        addTokensToUgi(subject);
     }
 
     public Set<Pair<String, Credentials>> getCredentials(Map<String, String> credentials) {
@@ -79,14 +80,14 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
     }
 
     /**
-     * Prepare the plugin
+     * Prepare the plugin.
      *
      * @param topoConf the topology conf
      */
     protected abstract void doPrepare(Map<String, Object> topoConf);
 
     /**
-     * The lookup key for the config key string
+     * The lookup key for the config key string.
      *
      * @return the config key string
      */
@@ -104,7 +105,7 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
         }
     }
 
-    private void addTokensToUGI(Subject subject) {
+    private void addTokensToUgi(Subject subject) {
         if (subject != null) {
             Set<Credentials> privateCredentials = subject.getPrivateCredentials(Credentials.class);
             if (privateCredentials != null) {

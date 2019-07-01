@@ -18,16 +18,17 @@
 
 package org.apache.storm.hdfs.security;
 
-import org.apache.storm.common.AbstractHadoopAutoCreds;
+import static org.apache.storm.hdfs.security.HdfsSecurityUtil.HDFS_CREDENTIALS;
 
 import java.util.Map;
 
-import static org.apache.storm.hdfs.security.HdfsSecurityUtil.HDFS_CREDENTIALS;
+import org.apache.storm.common.AbstractHadoopAutoCreds;
 
 /**
  * Auto credentials plugin for HDFS implementation. This class provides a way to automatically
  * push credentials to a topology and to retrieve them in the worker.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class AutoHDFS extends AbstractHadoopAutoCreds {
     @Override
     public void doPrepare(Map<String, Object> conf) {
