@@ -32,7 +32,7 @@ public interface JedisCommandsInstanceContainer extends Closeable {
     void returnInstance(JedisCommands jedisCommands);
 
     /**
-     * Release Container
+     * Release Container.
      */
     @Override
     public void close();

@@ -32,7 +32,7 @@ public class RedisContainer implements RedisCommandsInstanceContainer {
     private JedisPool jedisPool;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param jedisPool JedisPool which actually manages Jedis instances
      */

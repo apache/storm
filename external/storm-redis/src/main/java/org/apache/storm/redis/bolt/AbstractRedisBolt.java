@@ -24,12 +24,12 @@ import redis.clients.jedis.JedisCommands;
 
 /**
  * AbstractRedisBolt class is for users to implement custom bolts which makes interaction with Redis.
- * <p/>
- * Due to environment abstraction, AbstractRedisBolt provides JedisCommands which contains only single key operations.
- * <p/>
- * Custom Bolts may want to follow this pattern:
- * <p/>
- * <blockquote><pre>
+ *
+ * <p>Due to environment abstraction, AbstractRedisBolt provides JedisCommands which contains only single key operations.
+ *
+ * <p>Custom Bolts may want to follow this pattern:
+ *
+ * <p><blockquote><pre>
  * JedisCommands jedisCommands = null;
  * try {
  *     jedisCommand = getInstance();

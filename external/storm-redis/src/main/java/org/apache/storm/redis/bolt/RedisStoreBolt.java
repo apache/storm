@@ -21,9 +21,9 @@ import org.apache.storm.tuple.Tuple;
 import redis.clients.jedis.JedisCommands;
 
 /**
- * Basic bolt for writing to Redis
- * <p/>
- * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
+ * Basic bolt for writing to Redis.
+ *
+ * <p>Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
  */
 public class RedisStoreBolt extends AbstractRedisBolt {
     private final RedisStoreMapper storeMapper;
@@ -31,7 +31,7 @@ public class RedisStoreBolt extends AbstractRedisBolt {
     private final String additionalKey;
 
     /**
-     * Constructor for single Redis environment (JedisPool)
+     * Constructor for single Redis environment (JedisPool).
      * @param config configuration for initializing JedisPool
      * @param storeMapper mapper containing which datatype, storing value's key that Bolt uses
      */
@@ -45,7 +45,7 @@ public class RedisStoreBolt extends AbstractRedisBolt {
     }
 
     /**
-     * Constructor for Redis Cluster environment (JedisCluster)
+     * Constructor for Redis Cluster environment (JedisCluster).
      * @param config configuration for initializing JedisCluster
      * @param storeMapper mapper containing which datatype, storing value's key that Bolt uses
      */

@@ -23,7 +23,7 @@ import redis.clients.jedis.Jedis;
  */
 public class RedisStateQuerier extends AbstractRedisStateQuerier<RedisState> {
     /**
-     * Constructor
+     * Constructor.
      *
      * @param lookupMapper mapper for querying
      */
