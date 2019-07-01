@@ -30,6 +30,7 @@ import org.apache.storm.generated.DRPCExecutionException;
 import org.json.simple.JSONValue;
 
 @Provider
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCExceptionMapper implements ExceptionMapper<DRPCExecutionException> {
 
     @Override

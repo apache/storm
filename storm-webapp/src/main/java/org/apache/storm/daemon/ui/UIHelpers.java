@@ -111,6 +111,7 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class UIHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(UIHelpers.class);
     private static final Object[][] PRETTY_SEC_DIVIDERS = {
@@ -548,36 +549,6 @@ public class UIHelpers {
     public static Map<String, Object> getClusterSummary(ClusterSummary clusterSummary, String user,
                                                         Map<String, Object> conf) {
         Map<String, Object> result = new HashMap();
-        List<SupervisorSummary> supervisorSummaries = clusterSummary.get_supervisors();
-        List<TopologySummary> topologySummaries = clusterSummary.get_topologies();
-
-        int usedSlots =
-            supervisorSummaries.stream().mapToInt(
-                SupervisorSummary::get_num_used_workers).sum();
-        int totalSlots =
-            supervisorSummaries.stream().mapToInt(
-                SupervisorSummary::get_num_workers).sum();
-
-        int totalTasks =
-            topologySummaries.stream().mapToInt(
-                TopologySummary::get_num_tasks).sum();
-        int totalExecutors =
-            topologySummaries.stream().mapToInt(
-                TopologySummary::get_num_executors).sum();
-
-        double supervisorTotalMemory =
-            supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
-                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
-                x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
-                )
-            ).sum();
-
-        double supervisorTotalCpu =
-            supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
-                Constants.COMMON_CPU_RESOURCE_NAME,
-                x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
-                )
-            ).sum();
 
         if (MEMORIZED_VERSIONS.get() == null) {
             //Races are okay this is just to avoid extra work for each page load.
@@ -602,15 +573,47 @@ public class UIHelpers {
         result.put("user", user);
         result.put("stormVersion", VersionInfo.getVersion());
         result.put("stormVersionInfo", MEMORIZED_FULL_VERSION.get());
+        List<SupervisorSummary> supervisorSummaries = clusterSummary.get_supervisors();
         result.put("supervisors", supervisorSummaries.size());
         result.put("topologies", clusterSummary.get_topologies_size());
+
+        int usedSlots =
+                supervisorSummaries.stream().mapToInt(
+                        SupervisorSummary::get_num_used_workers).sum();
         result.put("slotsUsed", usedSlots);
+
+        int totalSlots =
+                supervisorSummaries.stream().mapToInt(
+                        SupervisorSummary::get_num_workers).sum();
         result.put("slotsTotal", totalSlots);
         result.put("slotsFree", totalSlots - usedSlots);
+
+        List<TopologySummary> topologySummaries = clusterSummary.get_topologies();
+        int totalTasks =
+                topologySummaries.stream().mapToInt(
+                        TopologySummary::get_num_tasks).sum();
         result.put("tasksTotal", totalTasks);
+
+        int totalExecutors =
+                topologySummaries.stream().mapToInt(
+                        TopologySummary::get_num_executors).sum();
         result.put("executorsTotal", totalExecutors);
 
+
+        double supervisorTotalMemory =
+                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                        Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
+                        x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
+                        )
+                ).sum();
         result.put("totalMem", supervisorTotalMemory);
+
+        double supervisorTotalCpu =
+                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                        Constants.COMMON_CPU_RESOURCE_NAME,
+                        x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
+                        )
+                ).sum();
         result.put("totalCpu", supervisorTotalCpu);
 
         double supervisorUsedMemory =
