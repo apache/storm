@@ -28,7 +28,7 @@ public class JedisContainer implements JedisCommandsInstanceContainer {
     private JedisPool jedisPool;
 
     /**
-     * Constructor
+     * Constructor.
      * @param jedisPool JedisPool which actually manages Jedis instances
      */
     public JedisContainer(JedisPool jedisPool) {

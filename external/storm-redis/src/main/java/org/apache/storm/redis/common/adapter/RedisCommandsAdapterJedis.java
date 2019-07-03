@@ -47,12 +47,27 @@ public class RedisCommandsAdapterJedis implements RedisCommands, Closeable {
     }
 
     @Override
+    public boolean exists(String key) {
+        return jedis.exists(key);
+    }
+
+    @Override
     public String hmset(byte[] key, Map<byte[], byte[]> fieldValues) {
         return jedis.hmset(key, fieldValues);
     }
 
     @Override
+    public String hmset(String key, Map<String, String> fieldValues) {
+        return jedis.hmset(key, fieldValues);
+    }
+
+    @Override
     public Map<byte[], byte[]> hgetAll(byte[] key) {
+        return jedis.hgetAll(key);
+    }
+
+    @Override
+    public Map<String, String> hgetAll(String key) {
         return jedis.hgetAll(key);
     }
 
@@ -84,21 +99,6 @@ public class RedisCommandsAdapterJedis implements RedisCommands, Closeable {
     @Override
     public ScanResult<Map.Entry<byte[], byte[]>> hscan(byte[] key, byte[] cursor, ScanParams params) {
         return jedis.hscan(key, cursor, params);
-    }
-
-    @Override
-    public boolean exists(String key) {
-        return jedis.exists(key);
-    }
-
-    @Override
-    public Map<String, String> hgetAll(String key) {
-        return jedis.hgetAll(key);
-    }
-
-    @Override
-    public String hmset(String key, Map<String, String> fieldValues) {
-        return jedis.hmset(key, fieldValues);
     }
 
     @Override

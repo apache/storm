@@ -24,7 +24,7 @@ import redis.clients.jedis.JedisCluster;
  */
 public class RedisClusterStateUpdater extends AbstractRedisStateUpdater<RedisClusterState> {
     /**
-     * Constructor
+     * Constructor.
      *
      * @param storeMapper mapper for storing
      */
@@ -74,8 +74,8 @@ public class RedisClusterStateUpdater extends AbstractRedisStateUpdater<RedisClu
 
             // send expire command for hash only once
             // it expires key itself entirely, so use it with caution
-            if (dataType == RedisDataTypeDescription.RedisDataType.HASH &&
-                this.expireIntervalSec > 0) {
+            if (dataType == RedisDataTypeDescription.RedisDataType.HASH
+                    && this.expireIntervalSec > 0) {
                 jedisCluster.expire(additionalKey, expireIntervalSec);
             }
         } finally {

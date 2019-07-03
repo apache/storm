@@ -20,8 +20,9 @@ import java.io.Serializable;
 public class RedisDataTypeDescription implements Serializable {
     private RedisDataType dataType;
     private String additionalKey;
+
     /**
-     * Constructor
+     * Constructor.
      * @param dataType data type
      */
     public RedisDataTypeDescription(RedisDataType dataType) {
@@ -29,7 +30,7 @@ public class RedisDataTypeDescription implements Serializable {
     }
 
     /**
-     * Constructor
+     * Constructor.
      * @param dataType data type
      * @param additionalKey additional key for hash and sorted set
      */
@@ -37,8 +38,9 @@ public class RedisDataTypeDescription implements Serializable {
         this.dataType = dataType;
         this.additionalKey = additionalKey;
 
-        if (dataType == RedisDataType.HASH ||
-            dataType == RedisDataType.SORTED_SET || dataType == RedisDataType.GEO) {
+        if (dataType == RedisDataType.HASH
+                || dataType == RedisDataType.SORTED_SET
+                || dataType == RedisDataType.GEO) {
             if (additionalKey == null) {
                 throw new IllegalArgumentException("Hash, Sorted Set and GEO should have additional key");
             }
@@ -61,5 +63,5 @@ public class RedisDataTypeDescription implements Serializable {
         return additionalKey;
     }
 
-    public enum RedisDataType {STRING, HASH, LIST, SET, SORTED_SET, HYPER_LOG_LOG, GEO}
+    public enum RedisDataType { STRING, HASH, LIST, SET, SORTED_SET, HYPER_LOG_LOG, GEO }
 }

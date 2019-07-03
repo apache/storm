@@ -47,7 +47,7 @@ public class RedisMapState<T> extends AbstractRedisMapState<T> {
     private KeyFactory keyFactory;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param jedisPool JedisPool
      * @param options options of State
@@ -317,7 +317,7 @@ public class RedisMapState<T> extends AbstractRedisMapState<T> {
         Options options;
 
         /**
-         * Constructor
+         * Constructor.
          *
          * @param jedisPoolConfig configuration for JedisPool
          * @param type StateType

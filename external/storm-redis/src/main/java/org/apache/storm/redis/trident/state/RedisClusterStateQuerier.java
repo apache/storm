@@ -24,7 +24,7 @@ import redis.clients.jedis.JedisCluster;
  */
 public class RedisClusterStateQuerier extends AbstractRedisStateQuerier<RedisClusterState> {
     /**
-     * Constructor
+     * Constructor.
      *
      * @param lookupMapper mapper for querying
      */

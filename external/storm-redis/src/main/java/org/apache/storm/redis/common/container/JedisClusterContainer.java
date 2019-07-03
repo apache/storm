@@ -26,7 +26,7 @@ public class JedisClusterContainer implements JedisCommandsInstanceContainer {
     private JedisCluster jedisCluster;
 
     /**
-     * Constructor
+     * Constructor.
      * @param jedisCluster JedisCluster instance
      */
     public JedisClusterContainer(JedisCluster jedisCluster) {
