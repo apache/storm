@@ -43,19 +43,19 @@ public class WorkerCtx implements Serializable {
 
     /**
      * Return an instance provider of the specified type.
-     * @throws RuntimeException if no bean provider can be resolve for the given class.
-     * @return
+     * @throws RuntimeException if no bean provider can be resolve for the given class
      */
     protected <T> BeanFactory<T> getBeanfactory(Class<T> clazz) {
         BeanFactory<T> factory = (BeanFactory<T>) this.componentCtx.get(clazz);
-        if (factory == null) throw new RuntimeException("Cannot resolve bean factory for class : " + clazz.getCanonicalName());
+        if (factory == null) {
+            throw new RuntimeException("Cannot resolve bean factory for class : " + clazz.getCanonicalName());
+        }
         factory.setStormContext(this);
         return factory;
     }
 
     /**
      * Return an instance, which is shared (within a Worker), of the specified type.
-     * @return
      */
     public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> topoConf) {
         return getWorkerBean(clazz, topoConf, false);
@@ -71,7 +71,9 @@ public class WorkerCtx implements Serializable {
      * @return a instance of type {@link T}.
      */
     public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> topoConf, boolean force) {
-        if (force) workerCtx.remove(clazz);
+        if (force) {
+            workerCtx.remove(clazz);
+        }
         BeanFactory<T> factory = (BeanFactory<T>) this.workerCtx.get(clazz);
         if (factory == null) {
             BeanFactory<T> instance = getBeanfactory(clazz).newInstance();

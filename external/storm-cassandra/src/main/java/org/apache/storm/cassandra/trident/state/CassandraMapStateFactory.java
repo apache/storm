@@ -29,9 +29,8 @@ import org.apache.storm.trident.state.map.TransactionalMap;
 /**
  * A StateFactory implementation that creates a MapState backed by CassandraBackingMap.
  *
- * The statefactory supports opaque, transactional and non-transactional configurations.
+ * <p>The statefactory supports opaque, transactional and non-transactional configurations.
  * Optionally, the backing map can be wrapped in a {@link CachedMap} by specifying {@link #withCache} (off by default).
- *
  */
 public class CassandraMapStateFactory implements StateFactory {
 

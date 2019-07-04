@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A base cassandra bolt.
  *
- * Default {@link org.apache.storm.topology.base.BaseTickTupleAwareRichBolt}
+ * <p>Default {@link org.apache.storm.topology.base.BaseTickTupleAwareRichBolt}
  */
 public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
 
@@ -59,12 +59,11 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
     private CQLStatementTupleMapper mapper;
     private ExecutionResultHandler resultHandler;
 
-    transient private Map<String, Fields> outputsFields = new HashMap<>();
+    private transient Map<String, Fields> outputsFields = new HashMap<>();
     private Map<String, Object> cassandraConfig;
 
     /**
      * Creates a new {@link CassandraWriterBolt} instance.
-     * @param mapper
      */
     public BaseCassandraBolt(CQLStatementTupleMapper mapper, SimpleClientProvider clientProvider) {
         this.mapper = mapper;
@@ -73,7 +72,6 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
 
     /**
      * Creates a new {@link CassandraWriterBolt} instance.
-     * @param tupleMapper
      */
     public BaseCassandraBolt(CQLStatementTupleMapper tupleMapper) {
         this(tupleMapper, new CassandraContext());
@@ -106,7 +104,7 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
     }
 
     /**
-     * Configures this bolt with the given {@code fields} as outputfields with stream id as {@link Utils#DEFAULT_STREAM_ID}
+     * Configures this bolt with the given {@code fields} as outputfields with stream id as {@link Utils#DEFAULT_STREAM_ID}.
      *
      * @param fields outputfields
      */
@@ -118,12 +116,11 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
 
     /**
      * Configures this bolt given {@code fields} as outputfields for the given {@code stream}.
-     *
-     * @param stream
-     * @param fields
      */
     public BaseCassandraBolt withStreamOutputFields(String stream, Fields fields) {
-        if (stream == null || stream.length() == 0) throw new IllegalArgumentException("'stream' should not be null");
+        if (stream == null || stream.length() == 0) {
+            throw new IllegalArgumentException("'stream' should not be null");
+        }
         this.outputsFields.put(stream, fields);
         return this;
     }
@@ -131,8 +128,6 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
     /**
      * Takes the given {@code config} for creating cassandra client.
      * {@link CassandraConf} contains all the properties that can be configured.
-     *
-     * @param config
      */
     public BaseCassandraBolt withCassandraConfig(Map<String, Object> config) {
         if (config == null) {
@@ -143,7 +138,9 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
     }
 
     protected ExecutionResultHandler getResultHandler() {
-        if (resultHandler == null) resultHandler = new BaseExecutionResultHandler();
+        if (resultHandler == null) {
+            resultHandler = new BaseExecutionResultHandler();
+        }
         return resultHandler;
     }
 
@@ -151,7 +148,7 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
         return mapper;
     }
 
-    abstract protected AsyncResultHandler<T> getAsyncHandler();
+    protected abstract AsyncResultHandler<T> getAsyncHandler();
 
     protected AsyncExecutor<T> getAsyncExecutor() {
         return AsyncExecutorProvider.getLocal(session, getAsyncHandler());
@@ -176,7 +173,9 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
         // outputsFields can be empty if this bolt acts like a sink in topology.
         if (!outputsFields.isEmpty()) {
             Fields fields = outputsFields.remove(Utils.DEFAULT_STREAM_ID);
-            if (fields != null) declarer.declare(fields);
+            if (fields != null) {
+                declarer.declare(fields);
+            }
             for (Map.Entry<String, Fields> entry : outputsFields.entrySet()) {
                 declarer.declareStream(entry.getKey(), entry.getValue());
             }

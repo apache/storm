@@ -26,8 +26,6 @@ public class PairStatementTuple {
 
     /**
      * Creates a new {@link PairStatementTuple} instance.
-     * @param tuple
-     * @param statement
      */
     public PairStatementTuple(Tuple tuple, Statement statement) {
         this.tuple = tuple;

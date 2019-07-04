@@ -25,7 +25,7 @@ public class FieldSelector implements Serializable {
 
     /**
      * Creates a new {@link FieldSelector} instance.
-     * @param field the name of value.
+     * @param field the name of value
      */
     public FieldSelector(String field) {
         this.field = field;
@@ -36,8 +36,8 @@ public class FieldSelector implements Serializable {
     }
 
     /**
-     * @param tuple
-     * @return Compute the value of this field from given {@code tuple}.
+     * Get field value.
+     * @return Compute the value of this field from given {@code tuple}
      */
     protected Object getFieldValue(ITuple tuple) {
         return tuple.getValueByField(field);
@@ -45,7 +45,7 @@ public class FieldSelector implements Serializable {
 
     /**
      * Sets the fields as an automatically generated TimeUUID.
-     * @return this.
+     * @return this
      */
     public FieldSelector now() {
         this.isNow = true;
@@ -55,8 +55,8 @@ public class FieldSelector implements Serializable {
     /**
      * Sets an alias for this field.
      *
-     * @param as the alias name.
-     * @return this.
+     * @param as the alias name
+     * @return this
      */
     public FieldSelector as(String as) {
         this.as = as;

@@ -20,9 +20,6 @@ import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.state.StateFactory;
 
-/**
- *
- */
 public class CassandraStateFactory implements StateFactory {
     private final CassandraState.Options options;
 

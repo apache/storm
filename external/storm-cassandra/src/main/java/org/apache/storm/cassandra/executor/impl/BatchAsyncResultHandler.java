@@ -20,7 +20,6 @@ import org.apache.storm.cassandra.executor.ExecutionResultCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.tuple.Tuple;
 
-
 public class BatchAsyncResultHandler implements AsyncResultHandler<List<Tuple>> {
 
     private ConcurrentLinkedQueue<ExecutionResultCollector> completed;
@@ -29,7 +28,6 @@ public class BatchAsyncResultHandler implements AsyncResultHandler<List<Tuple>> 
 
     /**
      * Creates a new {@link BatchAsyncResultHandler} instance.
-     * @param handler
      */
     public BatchAsyncResultHandler(ExecutionResultHandler handler) {
         this.handler = handler;
@@ -39,7 +37,7 @@ public class BatchAsyncResultHandler implements AsyncResultHandler<List<Tuple>> 
     /**
      * This method is responsible for failing specified inputs.
      *
-     * The default method does no-operation.
+     * <p>The default method does no-operation.
      */
     @Override
     public void failure(Throwable t, List<Tuple> input) {
@@ -49,7 +47,7 @@ public class BatchAsyncResultHandler implements AsyncResultHandler<List<Tuple>> 
     /**
      * This method is responsible for acknowledging specified inputs.
      *
-     * The default method does no-operation.
+     * <p>The default method does no-operation.
      */
     @Override
     public void success(List<Tuple> input) {

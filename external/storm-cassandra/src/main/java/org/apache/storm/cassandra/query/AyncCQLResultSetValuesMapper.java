@@ -20,8 +20,9 @@ import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
 
 /**
- * A resultset mapper that
+ * A resultset mapper that.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface AyncCQLResultSetValuesMapper extends Serializable {
 
     List<List<Values>> map(Session session, List<Statement> statements, List<ITuple> tuples);

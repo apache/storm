@@ -19,9 +19,7 @@ import java.util.List;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
 
-/**
- *
- */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface CQLResultSetValuesMapper extends Serializable {
 
     List<List<Values>> map(Session session, Statement statement, ITuple tuple);

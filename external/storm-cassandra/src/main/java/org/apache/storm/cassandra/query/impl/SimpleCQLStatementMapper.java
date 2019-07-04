@@ -25,9 +25,7 @@ import org.apache.storm.cassandra.query.Column;
 import org.apache.storm.cassandra.query.CqlMapper;
 import org.apache.storm.tuple.ITuple;
 
-/**
- *
- */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class SimpleCQLStatementMapper implements CQLStatementTupleMapper {
 
     private final String queryString;
