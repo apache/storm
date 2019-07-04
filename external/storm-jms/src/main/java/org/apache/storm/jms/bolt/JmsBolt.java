@@ -33,23 +33,23 @@ import org.slf4j.LoggerFactory;
 /**
  * A JmsBolt receives <code>org.apache.storm.tuple.Tuple</code> objects from a Storm
  * topology and publishes JMS Messages to a destination (topic or queue).
- * <p>
- * To use a JmsBolt in a topology, the following must be supplied:
+ *
+ * <p>To use a JmsBolt in a topology, the following must be supplied:
  * <ol>
  * <li>A <code>JmsProvider</code> implementation.</li>
  * <li>A <code>JmsMessageProducer</code> implementation.</li>
  * </ol>
  * The <code>JmsProvider</code> provides the JMS <code>javax.jms.ConnectionFactory</code>
  * and <code>javax.jms.Destination</code> objects requied to publish JMS messages.
- * <p>
- * The JmsBolt uses a <code>JmsMessageProducer</code> to translate
+ *
+ * <p>The JmsBolt uses a <code>JmsMessageProducer</code> to translate
  * <code>org.apache.storm.tuple.Tuple</code> objects into
  * <code>javax.jms.Message</code> objects for publishing.
- * <p>
- * Both JmsProvider and JmsMessageProducer must be set, or the bolt will
+ *
+ * <p>Both JmsProvider and JmsMessageProducer must be set, or the bolt will
  * fail upon deployment to a cluster.
- * <p>
- * The JmsBolt is typically an endpoint in a topology -- in other words
+ *
+ * <p>The JmsBolt is typically an endpoint in a topology -- in other words
  * it does not emit any tuples.
  */
 public class JmsBolt extends BaseTickTupleAwareRichBolt {
@@ -74,9 +74,7 @@ public class JmsBolt extends BaseTickTupleAwareRichBolt {
     private OutputCollector collector;
 
     /**
-     * Set the JmsProvider used to connect to the JMS destination topic/queue
-     *
-     * @param provider
+     * Set the JmsProvider used to connect to the JMS destination topic/queue.
      */
     public void setJmsProvider(JmsProvider provider) {
         this.jmsProvider = provider;
@@ -85,8 +83,6 @@ public class JmsBolt extends BaseTickTupleAwareRichBolt {
     /**
      * Set the JmsMessageProducer used to convert tuples
      * into JMS messages.
-     *
-     * @param producer
      */
     public void setJmsMessageProducer(JmsMessageProducer producer) {
         this.producer = producer;
@@ -95,8 +91,8 @@ public class JmsBolt extends BaseTickTupleAwareRichBolt {
     /**
      * Sets the JMS acknowledgement mode for JMS messages sent
      * by this bolt.
-     * <p>
-     * Possible values:
+     *
+     * <p>Possible values:
      * <ul>
      * <li>javax.jms.Session.AUTO_ACKNOWLEDGE</li>
      * <li>javax.jms.Session.CLIENT_ACKNOWLEDGE</li>
@@ -110,33 +106,20 @@ public class JmsBolt extends BaseTickTupleAwareRichBolt {
     }
 
     /**
-     * Set the JMS transactional setting for the JMS session.
-     *
-     * @param transactional
-     */
-    //	public void setJmsTransactional(boolean transactional){
-    //		this.jmsTransactional = transactional;
-    //	}
-
-    /**
      * Sets whether or not tuples should be acknowledged by this
      * bolt.
-     * <p>
-     *
-     * @param autoAck
      */
     public void setAutoAck(boolean autoAck) {
         this.autoAck = autoAck;
     }
 
-
     /**
      * Consumes a tuple and sends a JMS message.
-     * <p>
-     * If autoAck is true, the tuple will be acknowledged
+     *
+     * <p>If autoAck is true, the tuple will be acknowledged
      * after the message is sent.
-     * <p>
-     * If JMS sending fails, the tuple will be failed.
+     *
+     * <p>If JMS sending fails, the tuple will be failed.
      */
     @Override
     protected void process(Tuple input) {
