@@ -15,7 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.common;
+
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.util.Pair;
@@ -28,14 +37,6 @@ import org.apache.storm.security.auth.ICredentialsRenewer;
 import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.xml.bind.DatatypeConverter;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * The base class that for auto credential plugins that abstracts out some of the common functionality.
@@ -51,7 +52,9 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
     }
 
     @Override
-    public void populateCredentials(Map<String, String> credentials, Map<String, Object> topologyConf, final String topologyOwnerPrincipal) {
+    public void populateCredentials(Map<String, String> credentials,
+            Map<String, Object> topologyConf,
+            final String topologyOwnerPrincipal) {
         try {
             List<String> configKeys = getConfigKeys(topologyConf);
             if (!configKeys.isEmpty()) {
@@ -103,14 +106,14 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
     }
 
     /**
-     * Prepare the plugin
+     * Prepare the plugin.
      *
      * @param conf the storm cluster conf set via storm.yaml
      */
     protected abstract void doPrepare(Map<String, Object> conf);
 
     /**
-     * The lookup key for the config key string
+     * The lookup key for the config key string.
      *
      * @return the config key string
      */
