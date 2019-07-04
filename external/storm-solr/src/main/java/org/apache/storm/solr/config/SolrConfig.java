@@ -25,6 +25,7 @@ public class SolrConfig implements Serializable {
     private final boolean enableKerberos;
 
     /**
+     * Constructor.
      * @param zkHostString Zookeeper host string as defined in the {@link CloudSolrClient} constructor
      * */
     public SolrConfig(String zkHostString) {
@@ -32,6 +33,7 @@ public class SolrConfig implements Serializable {
     }
 
     /**
+     * Constructor.
      * @param zkHostString Zookeeper host string as defined in the {@link CloudSolrClient} constructor
      * @param tickTupleInterval interval for tick tuples
      * */
@@ -40,6 +42,7 @@ public class SolrConfig implements Serializable {
     }
 
     /**
+     * Constructor.
      * @param zkHostString Zookeeper host string as defined in the {@link CloudSolrClient} constructor
      * @param tickTupleInterval interval for tick tuples
      * @param enableKerberos true to enable kerberos else false

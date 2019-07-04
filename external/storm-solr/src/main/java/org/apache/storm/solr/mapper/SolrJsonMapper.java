@@ -44,9 +44,7 @@ public class SolrJsonMapper implements SolrMapper {
     }
 
     /**
-     *
-     * @param tuples
-     * @return
+     * Maps to Solr request.
      * @throws SolrMapperException if the tuple does not contain the
      */
     @Override

@@ -12,6 +12,8 @@
 
 package org.apache.storm.solr.mapper;
 
+import static org.apache.storm.solr.schema.SolrFieldTypeFinder.FieldTypeWrapper;
+
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.solr.client.solrj.SolrClient;
@@ -26,8 +28,6 @@ import org.apache.storm.solr.schema.builder.SchemaBuilder;
 import org.apache.storm.tuple.ITuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.solr.schema.SolrFieldTypeFinder.FieldTypeWrapper;
 
 public class SolrFieldsMapper implements SolrMapper {
     private static final Logger log = LoggerFactory.getLogger(SolrFieldsMapper.class);
@@ -119,11 +119,11 @@ public class SolrFieldsMapper implements SolrMapper {
 
     @Override
     public String toString() {
-        return "SolrFieldsMapper{" +
-               "collection='" + collection + '\'' +
-               ", typeFinder=" + typeFinder +
-               ", multiValueFieldToken='" + multiValueFieldToken + '\'' +
-               '}';
+        return "SolrFieldsMapper{"
+                + "collection='" + collection + '\''
+                + ", typeFinder=" + typeFinder
+                + ", multiValueFieldToken='" + multiValueFieldToken + '\''
+                + '}';
     }
 
     public static class Builder {
