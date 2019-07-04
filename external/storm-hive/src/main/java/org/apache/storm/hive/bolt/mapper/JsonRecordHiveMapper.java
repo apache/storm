@@ -12,7 +12,6 @@
 
 package org.apache.storm.hive.bolt.mapper;
 
-
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -83,17 +82,6 @@ public class JsonRecordHiveMapper implements HiveMapper {
     }
 
     @Override
-    public byte[] mapRecord(Tuple tuple) {
-        JSONObject obj = new JSONObject();
-        if (this.columnFields != null) {
-            for (String field : this.columnFields) {
-                obj.put(field, tuple.getValueByField(field));
-            }
-        }
-        return obj.toJSONString().getBytes();
-    }
-
-    @Override
     public List<String> mapPartitions(TridentTuple tuple) {
         List<String> partitionList = new ArrayList<String>();
         if (this.partitionFields != null) {
@@ -105,6 +93,17 @@ public class JsonRecordHiveMapper implements HiveMapper {
             partitionList.add(getPartitionsByTimeFormat());
         }
         return partitionList;
+    }
+
+    @Override
+    public byte[] mapRecord(Tuple tuple) {
+        JSONObject obj = new JSONObject();
+        if (this.columnFields != null) {
+            for (String field : this.columnFields) {
+                obj.put(field, tuple.getValueByField(field));
+            }
+        }
+        return obj.toJSONString().getBytes();
     }
 
     @Override
