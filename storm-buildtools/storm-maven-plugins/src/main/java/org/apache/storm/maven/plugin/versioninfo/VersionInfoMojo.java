@@ -89,7 +89,7 @@ public class VersionInfoMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException {
         try {
-            SCM scm = determineSCM();
+            SCM scm = determineScm();
             project.getProperties().setProperty(buildTimeProperty, getBuildTime());
             project.getProperties().setProperty(scmUriProperty, getSCMUri(scm));
             project.getProperties().setProperty(scmBranchProperty, getSCMBranch(scm));
@@ -113,7 +113,7 @@ public class VersionInfoMojo extends AbstractMojo {
      * @return SCM in use for this build
      * @throws Exception if any error occurs attempting to determine SCM
      */
-    private SCM determineSCM() throws Exception {
+    private SCM determineScm() throws Exception {
         CommandExec exec = new CommandExec(this);
         SCM scm = SCM.NONE;
         scmOut = new ArrayList<String>();
@@ -172,6 +172,7 @@ public class VersionInfoMojo extends AbstractMojo {
         return res;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private String getSCMUri(SCM scm) {
         String uri = "Unknown";
         switch (scm) {
@@ -193,10 +194,14 @@ public class VersionInfoMojo extends AbstractMojo {
                     }
                 }
                 break;
+            default:
+                throw new IllegalArgumentException(String.format("SCM %s is not supported",
+                        scm));
         }
         return uri.trim();
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private String getSCMCommit(SCM scm) {
         String commit = "Unknown";
         switch (scm) {
@@ -216,10 +221,14 @@ public class VersionInfoMojo extends AbstractMojo {
                     }
                 }
                 break;
+            default:
+                throw new IllegalArgumentException(String.format("SCM %s is not supported",
+                        scm));
         }
         return commit.trim();
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private String getSCMBranch(SCM scm) {
         String branch = "Unknown";
         switch (scm) {
@@ -240,6 +249,9 @@ public class VersionInfoMojo extends AbstractMojo {
                     }
                 }
                 break;
+            default:
+                throw new IllegalArgumentException(String.format("SCM %s is not supported",
+                        scm));
         }
         return branch.trim();
     }
@@ -260,14 +272,6 @@ public class VersionInfoMojo extends AbstractMojo {
             md5.update(readFile(file));
         }
         return md5.digest();
-    }
-
-    private String byteArrayToString(byte[] array) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : array) {
-            sb.append(Integer.toHexString(0xff & b));
-        }
-        return sb.toString();
     }
 
     private String computeMD5() throws Exception {
@@ -291,6 +295,15 @@ public class VersionInfoMojo extends AbstractMojo {
         return md5str;
     }
 
+    private String byteArrayToString(byte[] array) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : array) {
+            sb.append(Integer.toHexString(0xff & b));
+        }
+        return sb.toString();
+    }
+
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private enum SCM {
         NONE, SVN, GIT
     }
