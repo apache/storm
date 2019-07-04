@@ -85,8 +85,6 @@ public class TransactionalTridentEventHubEmitter
 
     /**
      * Check if partition manager for a given partiton is created if not, create it.
-     *
-     * @param partition
      */
     private ITridentPartitionManager getOrCreatePartitionManager(Partition partition) {
         ITridentPartitionManager pm;

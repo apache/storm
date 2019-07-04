@@ -18,7 +18,7 @@ package org.apache.storm.eventhubs.spout;
 import java.io.Serializable;
 
 /**
- * An abstract factory to generate EventHubReceiver
+ * An abstract factory to generate EventHubReceiver.
  */
 public interface IEventHubReceiverFactory extends Serializable {
     IEventHubReceiver create(EventHubSpoutConfig config, String partitionId);

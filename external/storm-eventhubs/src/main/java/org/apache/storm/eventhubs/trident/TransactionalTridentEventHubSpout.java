@@ -26,7 +26,7 @@ import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import org.apache.storm.tuple.Fields;
 
 /**
- * Transactional Trident EventHub Spout
+ * Transactional Trident EventHub Spout.
  */
 public class TransactionalTridentEventHubSpout implements
                                                IPartitionedTridentSpout<Partitions, Partition, Map<String, Object>> {

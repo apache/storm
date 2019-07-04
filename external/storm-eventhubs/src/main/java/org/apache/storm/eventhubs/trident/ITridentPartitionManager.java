@@ -27,7 +27,7 @@ public interface ITridentPartitionManager {
     void close();
 
     /**
-     * receive a batch of messages from EvenHub up to "count" messages
+     * receive a batch of messages from EvenHub up to "count" messages.
      *
      * @param offset the starting offset
      * @param count  max number of messages in this batch
