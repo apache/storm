@@ -27,32 +27,22 @@ import org.apache.storm.trident.tuple.TridentTuple;
  */
 public interface SequenceFormat extends Serializable {
     /**
-     * Key class used by implementation (e.g. IntWritable.class, etc.)
-     *
-     * @return
+     * Key class used by implementation (e.g. IntWritable.class, etc.).
      */
     Class keyClass();
 
     /**
-     * Value class used by implementation (e.g. Text.class, etc.)
-     *
-     * @return
+     * Value class used by implementation (e.g. Text.class, etc.).
      */
     Class valueClass();
 
     /**
      * Given a tuple, return the key that should be written to the sequence file.
-     *
-     * @param tuple
-     * @return
      */
     Writable key(TridentTuple tuple);
 
     /**
      * Given a tuple, return the value that should be written to the sequence file.
-     *
-     * @param tuple
-     * @return
      */
     Writable value(TridentTuple tuple);
 }

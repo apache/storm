@@ -12,7 +12,6 @@
 
 package org.apache.storm.hdfs.spout;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -38,7 +37,7 @@ public class FileLock {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileLock.class);
     private final FileSystem fs;
-    private final String componentID;
+    private final String componentId;
     private final Path lockFile;
     private final FSDataOutputStream lockFileStream;
     private LogEntry lastEntry;
@@ -48,7 +47,7 @@ public class FileLock {
         this.fs = fs;
         this.lockFile = lockFile;
         this.lockFileStream = lockFileStream;
-        this.componentID = spoutId;
+        this.componentId = spoutId;
         logProgress("0", false);
     }
 
@@ -57,12 +56,14 @@ public class FileLock {
         this.fs = fs;
         this.lockFile = lockFile;
         this.lockFileStream = fs.append(lockFile);
-        this.componentID = spoutId;
+        this.componentId = spoutId;
         LOG.info("Acquired abandoned lockFile {}, Spout {}", lockFile, spoutId);
         logProgress(entry.fileOffset, true);
     }
 
-    /** returns lock on file or null if file is already locked. throws if unexpected problem */
+    /**
+     * returns lock on file or null if file is already locked. throws if unexpected problem
+     */
     public static FileLock tryLock(FileSystem fs, Path fileToLock, Path lockDirPath, String spoutId)
         throws IOException {
         Path lockFile = new Path(lockDirPath, fileToLock.getName());
@@ -86,11 +87,9 @@ public class FileLock {
      * checks if lockFile is older than 'olderThan' UTC time by examining the modification time
      * on file and (if necessary) the timestamp in last log entry in the file. If its stale, then
      * returns the last log entry, else returns null.
-     * @param fs
-     * @param lockFile
+     *
      * @param olderThan  time (millis) in UTC.
      * @return the last entry in the file if its too old. null if last entry is not too old
-     * @throws IOException
      */
     public static LogEntry getLastEntryIfStale(FileSystem fs, Path lockFile, long olderThan)
         throws IOException {
@@ -117,11 +116,7 @@ public class FileLock {
     }
 
     /**
-     * returns the last log entry
-     * @param fs
-     * @param lockFile
-     * @return
-     * @throws IOException
+     * returns the last log entry.
      */
     public static LogEntry getLastEntry(FileSystem fs, Path lockFile)
         throws IOException {
@@ -136,14 +131,13 @@ public class FileLock {
 
     /**
      * Takes ownership of the lock file if possible.
-     * @param lockFile
      * @param lastEntry   last entry in the lock file. this param is an optimization.
      *                    we dont scan the lock file again to find its last entry here since
      *                    its already been done once by the logic used to check if the lock
      *                    file is stale. so this value comes from that earlier scan.
      * @param spoutId     spout id
-     * @throws IOException if unable to acquire
      * @return null if lock File is not recoverable
+     * @throws IOException if unable to acquire
      */
     public static FileLock takeOwnership(FileSystem fs, Path lockFile, LogEntry lastEntry, String spoutId)
         throws IOException {
@@ -158,11 +152,12 @@ public class FileLock {
             }
             return new FileLock(fs, lockFile, spoutId, lastEntry);
         } catch (IOException e) {
-            if (e instanceof RemoteException &&
-                ((RemoteException) e).unwrapRemoteException() instanceof AlreadyBeingCreatedException) {
+            if (e instanceof RemoteException
+                    && ((RemoteException) e).unwrapRemoteException() instanceof AlreadyBeingCreatedException) {
                 LOG.warn(
-                    "Lock file " + lockFile + "is currently open. Cannot transfer ownership now. Will need to try later. Spout= " + spoutId,
-                    e);
+                        "Lock file " + lockFile + "is currently open. Cannot transfer ownership now. Will need to try later. Spout= "
+                            + spoutId,
+                        e);
                 return null;
             } else { // unexpected error
                 LOG.warn("Cannot transfer ownership now for lock file " + lockFile + ". Will need to try later. Spout =" + spoutId, e);
@@ -173,13 +168,9 @@ public class FileLock {
 
     /**
      * Finds a oldest expired lock file (using modification timestamp), then takes
-     * ownership of the lock file
+     * ownership of the lock file.
      * Impt: Assumes access to lockFilesDir has been externally synchronized such that
      *       only one thread accessing the same thread
-     * @param fs
-     * @param lockFilesDir
-     * @param locktimeoutSec
-     * @return
      */
     public static FileLock acquireOldestExpiredLock(FileSystem fs, Path lockFilesDir, int locktimeoutSec, String spoutId)
         throws IOException {
@@ -209,14 +200,11 @@ public class FileLock {
 
     /**
      * Finds oldest expired lock file (using modification timestamp), then takes
-     * ownership of the lock file
+     * ownership of the lock file.
      * Impt: Assumes access to lockFilesDir has been externally synchronized such that
      *       only one thread accessing the same thread
-     * @param fs
-     * @param lockFilesDir
-     * @param locktimeoutSec
-     * @return a Pair<lock file path, last entry in lock file> .. if expired lock file found
-     * @throws IOException
+     *
+     * @return a Pair&lt;lock file path, last entry in lock file&gt; .. if expired lock file found
      */
     public static HdfsUtils.Pair<Path, LogEntry> locateOldestExpiredLock(FileSystem fs, Path lockFilesDir, int locktimeoutSec)
         throws IOException {
@@ -248,7 +236,7 @@ public class FileLock {
     private void logProgress(String fileOffset, boolean prefixNewLine)
         throws IOException {
         long now = System.currentTimeMillis();
-        LogEntry entry = new LogEntry(now, componentID, fileOffset);
+        LogEntry entry = new LogEntry(now, componentId, fileOffset);
         String line = entry.toString();
         if (prefixNewLine) {
             lockFileStream.writeBytes(System.lineSeparator() + line);
@@ -260,16 +248,17 @@ public class FileLock {
         lastEntry = entry; // update this only after writing to hdfs
     }
 
-    /** Release lock by deleting file
+    /**
+     * Release lock by deleting file.
      * @throws IOException if lock file could not be deleted
      */
     public void release() throws IOException {
         lockFileStream.close();
         if (!fs.delete(lockFile, false)) {
-            LOG.warn("Unable to delete lock file, Spout = {}", componentID);
+            LOG.warn("Unable to delete lock file, Spout = {}", componentId);
             throw new IOException("Unable to delete lock file");
         }
-        LOG.debug("Released lock file {}. Spout {}", lockFile, componentID);
+        LOG.debug("Released lock file {}. Spout {}", lockFile, componentId);
     }
 
     // For testing only.. invoked via reflection
@@ -288,12 +277,12 @@ public class FileLock {
     public static class LogEntry {
         private static final int NUM_FIELDS = 3;
         public final long eventTime;
-        public final String componentID;
+        public final String componentId;
         public final String fileOffset;
 
-        public LogEntry(long eventtime, String componentID, String fileOffset) {
+        public LogEntry(long eventtime, String componentId, String fileOffset) {
             this.eventTime = eventtime;
-            this.componentID = componentID;
+            this.componentId = componentId;
             this.fileOffset = fileOffset;
         }
 
@@ -304,7 +293,7 @@ public class FileLock {
 
         @Override
         public String toString() {
-            return eventTime + "," + componentID + "," + fileOffset;
+            return eventTime + "," + componentId + "," + fileOffset;
         }
 
         @Override
@@ -321,7 +310,7 @@ public class FileLock {
             if (eventTime != logEntry.eventTime) {
                 return false;
             }
-            if (!componentID.equals(logEntry.componentID)) {
+            if (!componentId.equals(logEntry.componentId)) {
                 return false;
             }
             return fileOffset.equals(logEntry.fileOffset);
@@ -331,7 +320,7 @@ public class FileLock {
         @Override
         public int hashCode() {
             int result = (int) (eventTime ^ (eventTime >>> 32));
-            result = 31 * result + componentID.hashCode();
+            result = 31 * result + componentId.hashCode();
             result = 31 * result + fileOffset.hashCode();
             return result;
         }

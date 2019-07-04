@@ -23,12 +23,12 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-
 public class TimedRotationPolicy implements FileRotationPolicy {
 
     private long interval;
     private Timer rotationTimer;
     private AtomicBoolean rotationTimerTriggered = new AtomicBoolean();
+
     public TimedRotationPolicy(float count, TimeUnit units) {
         this.interval = (long) (count * units.getMilliSeconds());
     }

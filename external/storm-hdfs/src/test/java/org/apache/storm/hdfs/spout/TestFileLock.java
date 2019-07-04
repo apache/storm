@@ -245,7 +245,7 @@ public class TestFileLock {
 
             expired = FileLock.locateOldestExpiredLock(fs, locksDir, LOCK_EXPIRY_SEC);
             Assert.assertNotNull(expired);
-            Assert.assertEquals("spout3", expired.getValue().componentID);
+            Assert.assertEquals("spout3", expired.getValue().componentId);
         } finally {
             lock1.release();
             lock2.release();
