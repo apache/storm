@@ -21,14 +21,15 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class HikariCPConnectionProvider implements ConnectionProvider {
     private static final Logger LOG = LoggerFactory.getLogger(HikariCPConnectionProvider.class);
 
     private Map<String, Object> configMap;
     private transient HikariDataSource dataSource;
 
-    public HikariCPConnectionProvider(Map<String, Object> hikariCPConfigMap) {
-        this.configMap = hikariCPConfigMap;
+    public HikariCPConnectionProvider(Map<String, Object> configMap) {
+        this.configMap = configMap;
     }
 
     @Override
