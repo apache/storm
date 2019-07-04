@@ -26,12 +26,12 @@ import org.apache.storm.topology.base.BaseWindowedBolt;
 /**
  * A stateful word count that uses {@link PairStream#updateStateByKey(StateUpdater)} to
  * save the counts in a key value state. This example uses Redis state store.
- * <p>
- * You should start a local redis instance before running the 'storm jar' command. By default
+ *
+ * <p>You should start a local redis instance before running the 'storm jar' command. By default
  * the connection will be attempted at localhost:6379. The default
  * RedisKeyValueStateProvider parameters can be overridden in conf/storm.yaml, for e.g.
- * <p/>
- * <pre>
+ *
+ * <p><pre>
  * topology.state.provider.config: '{"keyClass":"...", "valueClass":"...",
  *  "keySerializerClass":"...", "valueSerializerClass":"...",
  *  "jedisPoolConfig":{"host":"localhost", "port":6379,

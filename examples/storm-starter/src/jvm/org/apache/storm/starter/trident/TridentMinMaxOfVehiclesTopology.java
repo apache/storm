@@ -50,8 +50,9 @@ public class TridentMinMaxOfVehiclesTopology {
         spout.setCycle(true);
 
         TridentTopology topology = new TridentTopology();
-        Stream vehiclesStream = topology.newStream("spout1", spout).
-            each(allFields, new Debug("##### vehicles"));
+        Stream vehiclesStream = topology
+                .newStream("spout1", spout)
+                .each(allFields, new Debug("##### vehicles"));
 
         Stream slowVehiclesStream =
             vehiclesStream
@@ -64,18 +65,18 @@ public class TridentMinMaxOfVehiclesTopology {
                 .each(driverField, new Debug("##### slowest driver"));
 
         vehiclesStream
-            .max(new SpeedComparator())
-            .each(vehicleField, new Debug("#### fastest vehicle"))
-            .project(driverField)
-            .each(driverField, new Debug("##### fastest driver"));
+                .max(new SpeedComparator())
+                .each(vehicleField, new Debug("#### fastest vehicle"))
+                .project(driverField)
+                .each(driverField, new Debug("##### fastest driver"));
 
         vehiclesStream
-            .minBy(Vehicle.FIELD_NAME, new EfficiencyComparator()).
-            each(vehicleField, new Debug("#### least efficient vehicle"));
+                .minBy(Vehicle.FIELD_NAME, new EfficiencyComparator())
+                .each(vehicleField, new Debug("#### least efficient vehicle"));
 
         vehiclesStream
-            .maxBy(Vehicle.FIELD_NAME, new EfficiencyComparator()).
-            each(vehicleField, new Debug("#### most efficient vehicle"));
+                .maxBy(Vehicle.FIELD_NAME, new EfficiencyComparator())
+                .each(vehicleField, new Debug("#### most efficient vehicle"));
 
         return topology.build();
     }
@@ -120,10 +121,10 @@ public class TridentMinMaxOfVehiclesTopology {
 
         @Override
         public String toString() {
-            return "Driver{" +
-                   "name='" + name + '\'' +
-                   ", id=" + id +
-                   '}';
+            return "Driver{"
+                    + "name='" + name + '\''
+                    + ", id=" + id
+                    + '}';
         }
     }
 
@@ -155,11 +156,11 @@ public class TridentMinMaxOfVehiclesTopology {
 
         @Override
         public String toString() {
-            return "Vehicle{" +
-                   "name='" + name + '\'' +
-                   ", maxSpeed=" + maxSpeed +
-                   ", efficiency=" + efficiency +
-                   '}';
+            return "Vehicle{"
+                    + "name='" + name + '\''
+                    + ", maxSpeed=" + maxSpeed
+                    + ", efficiency=" + efficiency
+                    + '}';
         }
     }
 }

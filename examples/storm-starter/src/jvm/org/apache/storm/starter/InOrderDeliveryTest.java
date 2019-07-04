@@ -38,6 +38,7 @@ import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 
 public class InOrderDeliveryTest {
+
     public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
         ClusterSummary summary = client.getClusterInfo();
         String id = null;
@@ -75,8 +76,10 @@ public class InOrderDeliveryTest {
             }
         }
         double avgLatency = weightedAvgTotal / acked;
-        System.out.println("uptime: " + uptime + " acked: " + acked + " avgLatency: " + avgLatency + " acked/sec: " +
-                           (((double) acked) / uptime + " failed: " + failed));
+        System.out.println("uptime: " + uptime
+                + " acked: " + acked
+                + " avgLatency: " + avgLatency
+                + " acked/sec: " + (((double) acked) / uptime + " failed: " + failed));
     }
 
     public static void kill(Nimbus.Iface client, String name) throws Exception {
@@ -116,21 +119,21 @@ public class InOrderDeliveryTest {
     }
 
     public static class InOrderSpout extends BaseRichSpout {
-        SpoutOutputCollector _collector;
-        int _base = 0;
-        int _i = 0;
+        SpoutOutputCollector collector;
+        int base = 0;
+        int count = 0;
 
         @Override
         public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-            _collector = collector;
-            _base = context.getThisTaskIndex();
+            this.collector = collector;
+            base = context.getThisTaskIndex();
         }
 
         @Override
         public void nextTuple() {
-            Values v = new Values(_base, _i);
-            _collector.emit(v, "ACK");
-            _i++;
+            Values v = new Values(base, count);
+            collector.emit(v, "ACK");
+            count++;
         }
 
         @Override
@@ -157,7 +160,9 @@ public class InOrderDeliveryTest {
             Integer c1 = tuple.getInteger(0);
             Integer c2 = tuple.getInteger(1);
             Integer exp = expected.get(c1);
-            if (exp == null) exp = 0;
+            if (exp == null) {
+                exp = 0;
+            }
             if (c2.intValue() != exp.intValue()) {
                 System.out.println(c1 + " " + c2 + " != " + exp);
                 throw new FailedException(c1 + " " + c2 + " != " + exp);

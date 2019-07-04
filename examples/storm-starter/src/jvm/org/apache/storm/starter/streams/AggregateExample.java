@@ -23,7 +23,7 @@ import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.topology.base.BaseWindowedBolt;
 
 /**
- * An example that illustrates the global aggregate
+ * An example that illustrates the global aggregate.
  */
 public class AggregateExample {
     @SuppressWarnings("unchecked")

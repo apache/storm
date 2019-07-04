@@ -74,6 +74,7 @@ public class RankableObjectWithFields implements Rankable, Serializable {
     }
 
     /**
+     * Get fields.
      * @return an immutable list of any additional data fields of the object (may be empty but will never be null)
      */
     public List<Object> getFields() {
@@ -131,8 +132,6 @@ public class RankableObjectWithFields implements Rankable, Serializable {
     /**
      * Note: We do not defensively copy the wrapped object and any accompanying fields.  We do guarantee, however,
      * do return a defensive (shallow) copy of the List object that is wrapping any accompanying fields.
-     *
-     * @return
      */
     @Override
     public Rankable copy() {

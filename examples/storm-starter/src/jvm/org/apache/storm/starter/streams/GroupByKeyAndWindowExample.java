@@ -34,7 +34,7 @@ import org.apache.storm.utils.Utils;
 
 /**
  * An example that shows the usage of {@link PairStream#groupByKeyAndWindow(Window)}
- * and {@link PairStream#reduceByKeyAndWindow(Reducer, Window)}
+ * and {@link PairStream#reduceByKeyAndWindow(Reducer, Window)}.
  */
 public class GroupByKeyAndWindowExample {
     public static void main(String[] args) throws Exception {
