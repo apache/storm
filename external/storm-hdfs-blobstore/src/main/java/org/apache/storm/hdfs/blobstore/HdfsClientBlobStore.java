@@ -15,7 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.blobstore;
+
+import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -29,53 +33,50 @@ import org.apache.storm.utils.NimbusClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
-import java.util.Map;
-
 /**
- *  Client to access the HDFS blobStore. At this point, this is meant to only be used by the
- *  supervisor.  Don't trust who the client says they are so pass null for all Subjects.
+ * Client to access the HDFS blobStore. At this point, this is meant to only be used by the
+ * supervisor.  Don't trust who the client says they are so pass null for all Subjects.
  *
- *  The HdfsBlobStore implementation takes care of the null Subjects. It assigns Subjects
- *  based on what hadoop says who the users are. These users must be configured accordingly
- *  in the SUPERVISOR_ADMINS for ACL validation and for the supervisors to download the blobs.
- *  This API is only used by the supervisor in order to talk directly to HDFS.
+ * <p>The HdfsBlobStore implementation takes care of the null Subjects. It assigns Subjects
+ * based on what hadoop says who the users are. These users must be configured accordingly
+ * in the SUPERVISOR_ADMINS for ACL validation and for the supervisors to download the blobs.
+ * This API is only used by the supervisor in order to talk directly to HDFS.
  */
 public class HdfsClientBlobStore extends ClientBlobStore {
     private static final Logger LOG = LoggerFactory.getLogger(HdfsClientBlobStore.class);
-    private HdfsBlobStore _blobStore;
-    private Map _conf;
+    private HdfsBlobStore blobStore;
+    private Map conf;
     private NimbusClient client;
 
     @Override
     public void prepare(Map<String, Object> conf) {
-        this._conf = conf;
-        _blobStore = new HdfsBlobStore();
-        _blobStore.prepare(conf, null, null, null);
+        this.conf = conf;
+        blobStore = new HdfsBlobStore();
+        blobStore.prepare(conf, null, null, null);
     }
 
     @Override
     public AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta)
             throws AuthorizationException, KeyAlreadyExistsException {
-        return _blobStore.createBlob(key, meta, null);
+        return blobStore.createBlob(key, meta, null);
     }
 
     @Override
     public AtomicOutputStream updateBlob(String key)
             throws AuthorizationException, KeyNotFoundException {
-        return _blobStore.updateBlob(key, null);
+        return blobStore.updateBlob(key, null);
     }
 
     @Override
     public ReadableBlobMeta getBlobMeta(String key)
             throws AuthorizationException, KeyNotFoundException {
-        return _blobStore.getBlobMeta(key, null);
+        return blobStore.getBlobMeta(key, null);
     }
 
     @Override
     public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
         try {
-            _blobStore.getBlob(blobKey, null);
+            blobStore.getBlob(blobKey, null);
         } catch (KeyNotFoundException e) {
             return false;
         }
@@ -85,33 +86,33 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     @Override
     public void setBlobMetaToExtend(String key, SettableBlobMeta meta)
             throws AuthorizationException, KeyNotFoundException {
-        _blobStore.setBlobMeta(key, meta, null);
+        blobStore.setBlobMeta(key, meta, null);
     }
 
     @Override
     public void deleteBlob(String key) throws AuthorizationException, KeyNotFoundException {
-        _blobStore.deleteBlob(key, null);
+        blobStore.deleteBlob(key, null);
     }
 
     @Override
     public InputStreamWithMeta getBlob(String key)
             throws AuthorizationException, KeyNotFoundException {
-        return _blobStore.getBlob(key, null);
+        return blobStore.getBlob(key, null);
     }
 
     @Override
     public Iterator<String> listKeys() {
-        return _blobStore.listKeys();
+        return blobStore.listKeys();
     }
 
     @Override
     public int getBlobReplication(String key) throws AuthorizationException, KeyNotFoundException {
-        return _blobStore.getBlobReplication(key, null);
+        return blobStore.getBlobReplication(key, null);
     }
 
     @Override
     public int updateBlobReplication(String key, int replication) throws AuthorizationException, KeyNotFoundException {
-        return _blobStore.updateBlobReplication(key, replication, null);
+        return blobStore.updateBlobReplication(key, replication, null);
     }
 
     @Override
@@ -132,7 +133,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
 
     @Override
     public void close() {
-        if(client != null) {
+        if (client != null) {
             client.close();
             client = null;
         }

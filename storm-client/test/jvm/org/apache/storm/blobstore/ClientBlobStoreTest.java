@@ -111,7 +111,6 @@ public class ClientBlobStoreTest {
 
         @Override
         public void prepare(Map<String, Object> conf) {
-            this.conf = conf;
             allBlobs = new HashMap<String, SettableBlobMeta>();
         }
 

@@ -18,6 +18,10 @@
 
 package org.apache.storm.hdfs.blobstore;
 
+import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
+import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
+import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -50,20 +54,18 @@ import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
-
 /**
  * Provides a HDFS file system backed blob store implementation.
  * Note that this provides an api for having HDFS be the backing store for the blobstore,
  * it is not a service/daemon.
  *
- * We currently have NIMBUS_ADMINS and SUPERVISOR_ADMINS configuration. NIMBUS_ADMINS are given READ, WRITE and ADMIN
+ * <p>We currently have NIMBUS_ADMINS and SUPERVISOR_ADMINS configuration. NIMBUS_ADMINS are given READ, WRITE and ADMIN
  * access whereas the SUPERVISOR_ADMINS are given READ access in order to read and download the blobs form the nimbus.
  *
- * The ACLs for the blob store are validated against whether the subject is a NIMBUS_ADMIN, SUPERVISOR_ADMIN or USER
+ * <p>The ACLs for the blob store are validated against whether the subject is a NIMBUS_ADMIN, SUPERVISOR_ADMIN or USER
  * who has read, write or admin privileges in order to perform respective operations on the blob.
  *
- * For hdfs blob store
+ * <p>For hdfs blob store
  * 1. The USER interacts with nimbus to upload and access blobs through NimbusBlobStore Client API. Here, unlike
  * local blob store which stores the blobs locally, the nimbus talks to HDFS to upload the blobs.
  * 2. The USER sets the ACLs, and the blob access is validated against these ACLs.
@@ -191,23 +193,23 @@ public class HdfsBlobStore extends BlobStore {
         if (hbs.exists(DATA_PREFIX + key)) {
             throw new WrappedKeyAlreadyExistsException(key);
         }
-        BlobStoreFileOutputStream mOut = null;
+        BlobStoreFileOutputStream outputStream = null;
         try {
             BlobStoreFile metaFile = hbs.write(META_PREFIX + key, true);
             metaFile.setMetadata(meta);
-            mOut = new BlobStoreFileOutputStream(metaFile);
-            mOut.write(Utils.thriftSerialize(meta));
-            mOut.close();
-            mOut = null;
+            outputStream = new BlobStoreFileOutputStream(metaFile);
+            outputStream.write(Utils.thriftSerialize(meta));
+            outputStream.close();
+            outputStream = null;
             BlobStoreFile dataFile = hbs.write(DATA_PREFIX + key, true);
             dataFile.setMetadata(meta);
             return new BlobStoreFileOutputStream(dataFile);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            if (mOut != null) {
+            if (outputStream != null) {
                 try {
-                    mOut.cancel();
+                    outputStream.cancel();
                 } catch (IOException e) {
                     //Ignored
                 }
@@ -281,9 +283,9 @@ public class HdfsBlobStore extends BlobStore {
     }
 
     /**
-     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi.
      *
-     * @param leaderElector
+     * @param leaderElector the leader elector
      */
     @Override
     public void setLeaderElector(ILeaderElector leaderElector) {
@@ -302,7 +304,6 @@ public class HdfsBlobStore extends BlobStore {
         BlobStoreAclHandler.validateSettableACLs(key, meta.get_acl());
         SettableBlobMeta orig = getStoredBlobMeta(key);
         aclHandler.hasPermissions(orig.get_acl(), ADMIN, who, key);
-        BlobStoreFileOutputStream mOut = null;
         writeMetadata(key, meta);
     }
 
@@ -379,20 +380,20 @@ public class HdfsBlobStore extends BlobStore {
 
     public void writeMetadata(String key, SettableBlobMeta meta)
             throws AuthorizationException, KeyNotFoundException {
-        BlobStoreFileOutputStream mOut = null;
+        BlobStoreFileOutputStream outputStream = null;
         try {
             BlobStoreFile hdfsFile = hbs.write(META_PREFIX + key, false);
             hdfsFile.setMetadata(meta);
-            mOut = new BlobStoreFileOutputStream(hdfsFile);
-            mOut.write(Utils.thriftSerialize(meta));
-            mOut.close();
-            mOut = null;
+            outputStream = new BlobStoreFileOutputStream(hdfsFile);
+            outputStream.write(Utils.thriftSerialize(meta));
+            outputStream.close();
+            outputStream = null;
         } catch (IOException exp) {
             throw new RuntimeException(exp);
         } finally {
-            if (mOut != null) {
+            if (outputStream != null) {
                 try {
-                    mOut.cancel();
+                    outputStream.cancel();
                 } catch (IOException e) {
                     //Ignored
                 }
