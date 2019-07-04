@@ -27,25 +27,24 @@ public class Monitor {
                                     .parse(args);
         final org.apache.storm.utils.Monitor monitor = new org.apache.storm.utils.Monitor();
         Integer interval = (Integer) cl.get("i");
-        String component = (String) cl.get("m");
-        String stream = (String) cl.get("s");
-        String watch = (String) cl.get("w");
-        String topologyName = (String) cl.get("topologyName");
-
         if (null != interval) {
-            monitor.set_interval(interval);
+            monitor.setInterval(interval);
         }
+        String component = (String) cl.get("m");
         if (null != component) {
-            monitor.set_component(component);
+            monitor.setComponent(component);
         }
+        String stream = (String) cl.get("s");
         if (null != stream) {
-            monitor.set_stream(stream);
+            monitor.setStream(stream);
         }
+        String watch = (String) cl.get("w");
         if (null != watch) {
-            monitor.set_watch(watch);
+            monitor.setWatch(watch);
         }
+        String topologyName = (String) cl.get("topologyName");
         if (null != topologyName) {
-            monitor.set_topology(topologyName);
+            monitor.setTopology(topologyName);
         }
 
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
