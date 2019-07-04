@@ -12,18 +12,15 @@
 
 package org.apache.storm.hbase.trident.mapper;
 
+import static org.apache.storm.hbase.common.Utils.toBytes;
+import static org.apache.storm.hbase.common.Utils.toLong;
+
 import org.apache.storm.hbase.common.ColumnList;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.hbase.common.Utils.toBytes;
-import static org.apache.storm.hbase.common.Utils.toLong;
-
-/**
- *
- */
 public class SimpleTridentHBaseMapper implements TridentHBaseMapper {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleTridentHBaseMapper.class);
 

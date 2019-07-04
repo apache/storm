@@ -26,7 +26,7 @@ public class HBaseStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map<String, Object> map, IMetricsContext iMetricsContext, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> map, IMetricsContext metricsContext, int partitionIndex, int numPartitions) {
         HBaseState state = new HBaseState(map, partitionIndex, numPartitions, options);
         state.prepare();
         return state;
