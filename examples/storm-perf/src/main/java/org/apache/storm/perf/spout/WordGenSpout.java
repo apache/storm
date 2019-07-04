@@ -63,8 +63,9 @@ public class WordGenSpout extends BaseRichSpout {
             try {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    for (String word : line.split("\\s+"))
+                    for (String word : line.split("\\s+")) {
                         lines.add(word);
+                    }
                 }
             } catch (IOException e) {
                 throw new RuntimeException("Reading file failed", e);

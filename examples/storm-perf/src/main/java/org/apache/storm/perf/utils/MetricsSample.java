@@ -82,8 +82,6 @@ public class MetricsSample {
         // number of spout executors
         int spoutExecCount = 0;
         double spoutLatencySum = 0.0;
-
-        long spoutEmitted = 0L;
         long spoutTransferred = 0L;
 
         // Executor summaries
@@ -156,6 +154,8 @@ public class MetricsSample {
         ret.totalAcked = totalAcked;
         ret.totalFailed = totalFailed;
         ret.totalLatency = spoutLatencySum / spoutExecCount;
+
+        long spoutEmitted = 0L;
         ret.spoutEmitted = spoutEmitted;
         ret.spoutTransferred = spoutTransferred;
         ret.sampleTime = System.currentTimeMillis();

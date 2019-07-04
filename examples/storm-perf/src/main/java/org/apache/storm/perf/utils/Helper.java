@@ -68,7 +68,7 @@ public class Helper {
     }
 
     /**
-     * Kill topo on Ctrl-C
+     * Kill topo on Ctrl-C.
      */
     public static void setupShutdownHook(final String topoName) {
         Map<String, Object> clusterConf = Utils.readStormConfig();
