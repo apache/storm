@@ -23,7 +23,7 @@ import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
 /**
- * A windowed word count example
+ * A windowed word count example.
  */
 public class WindowedWordCount {
     public static void main(String[] args) throws Exception {

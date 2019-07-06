@@ -28,12 +28,13 @@ import org.apache.storm.topology.base.BaseWindowedBolt.Count;
  * An example that illustrates the usage of typed tuples (TupleN<..>) and {@link TupleValueMappers}.
  */
 public class TypedTupleExample {
+
+    /**
+     * The spout emits sequences of (Integer, Long, Long). TupleValueMapper can be used to extract fields
+     * from the values and produce a stream of typed tuple (Tuple3&lt;Integer, Long, Long&gt; in this case.
+     */
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
-        /**
-         * The spout emits sequences of (Integer, Long, Long). TupleValueMapper can be used to extract fields
-         * from the values and produce a stream of typed tuple (Tuple3<Integer, Long, Long> in this case.
-         */
         Stream<Tuple3<Integer, Long, Long>> stream = builder.newStream(new RandomIntegerSpout(), TupleValueMappers.of(0, 1, 2));
 
         PairStream<Long, Integer> pairs = stream.mapToPair(t -> Pair.of(t._2 / 10000, t._1));

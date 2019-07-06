@@ -33,17 +33,17 @@ public class BranchExample {
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
         Stream<Integer>[] evenAndOdd = builder
-            /*
-             * Create a stream of random numbers from a spout that
-             * emits random integers by extracting the tuple value at index 0.
-             */
-            .newStream(new RandomIntegerSpout(), new ValueMapper<Integer>(0))
-            /*
-             * Split the stream of numbers into streams of
-             * even and odd numbers. The first stream contains even
-             * and the second contains odd numbers.
-             */
-            .branch(x -> (x % 2) == 0,
+                /*
+                 * Create a stream of random numbers from a spout that
+                 * emits random integers by extracting the tuple value at index 0.
+                 */
+                .newStream(new RandomIntegerSpout(), new ValueMapper<Integer>(0))
+                /*
+                 * Split the stream of numbers into streams of
+                 * even and odd numbers. The first stream contains even
+                 * and the second contains odd numbers.
+                 */
+                .branch(x -> (x % 2) == 0,
                     x -> (x % 2) == 1);
 
         evenAndOdd[0].forEach(x -> LOG.info("EVEN> " + x));

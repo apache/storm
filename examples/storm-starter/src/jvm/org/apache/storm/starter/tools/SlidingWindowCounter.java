@@ -95,6 +95,7 @@ public final class SlidingWindowCounter<T> implements Serializable {
      * @return The current (total) counts of all tracked objects.
      */
     public Map<T, Long> getCountsThenAdvanceWindow() {
+        @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
         Map<T, Long> counts = objCounter.getCounts();
         objCounter.wipeZeros();
         objCounter.wipeSlot(tailSlot);

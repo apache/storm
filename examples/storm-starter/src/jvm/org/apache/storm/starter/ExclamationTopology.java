@@ -54,17 +54,17 @@ public class ExclamationTopology extends ConfigurableTopology {
     }
 
     public static class ExclamationBolt extends BaseRichBolt {
-        OutputCollector _collector;
+        OutputCollector collector;
 
         @Override
         public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
-            _collector = collector;
+            this.collector = collector;
         }
 
         @Override
         public void execute(Tuple tuple) {
-            _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
-            _collector.ack(tuple);
+            collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
+            collector.ack(tuple);
         }
 
         @Override

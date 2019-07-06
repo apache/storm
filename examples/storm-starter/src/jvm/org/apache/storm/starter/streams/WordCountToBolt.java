@@ -27,7 +27,7 @@ import org.apache.storm.tuple.ITuple;
 
 /**
  * An example that computes word counts and finally emits the results to an
- * external bolt (sink)
+ * external bolt (sink).
  */
 public class WordCountToBolt {
     public static void main(String[] args) throws Exception {

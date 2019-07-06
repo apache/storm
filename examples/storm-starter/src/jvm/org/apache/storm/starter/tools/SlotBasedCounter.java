@@ -75,8 +75,6 @@ public final class SlotBasedCounter<T> implements Serializable {
 
     /**
      * Reset the slot count of any tracked objects to zero for the given slot.
-     *
-     * @param slot
      */
     public void wipeSlot(int slot) {
         for (T obj : objToCounts.keySet()) {
