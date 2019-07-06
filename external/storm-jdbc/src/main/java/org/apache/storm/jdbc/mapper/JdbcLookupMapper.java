@@ -31,7 +31,6 @@ public interface JdbcLookupMapper extends JdbcMapper {
 
     /**
      * declare what are the fields that this code will output.
-     * @param declarer
      */
     void declareOutputFields(OutputFieldsDeclarer declarer);
 }

@@ -19,8 +19,7 @@ import org.apache.storm.tuple.ITuple;
 
 public interface JdbcMapper extends Serializable {
     /**
-     *
-     * @param tuple
+     * Get columns.
      * @return list of columns that represents one row in a DB table.
      */
     List<Column> getColumns(ITuple tuple);

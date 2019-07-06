@@ -25,7 +25,7 @@ public interface ConnectionProvider extends Serializable {
     void prepare();
 
     /**
-     *
+     * Get connection.
      * @return a DB connection over which the queries can be executed.
      */
     Connection getConnection();

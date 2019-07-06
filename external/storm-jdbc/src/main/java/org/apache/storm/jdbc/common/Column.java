@@ -12,7 +12,6 @@
 
 package org.apache.storm.jdbc.common;
 
-
 import java.io.Serializable;
 
 /**
@@ -27,18 +26,16 @@ import java.io.Serializable;
  *  ----------------------------
  * </pre>
  *
- * The following class can be used to represent the data in the table as
- * <pre>
+ * <p>The following class can be used to represent the data in the table as
+ * <pre><![CDATA[
  * List<List<Column>> rows = new ArrayList<List<Column>>();
  * List<Column> row1 = Lists.newArrayList(new Column("UserId", 1, Types.INTEGER), new Column("UserName", "Foo", Types.VARCHAR))
  * List<Column> row1 = Lists.newArrayList(new Column("UserId", 2, Types.INTEGER), new Column("UserName", "Bar", Types.VARCHAR))
  *
  * rows.add(row1)
  * rows.add(row2)
- *
+ * ]]>
  * </pre>
- *
- * @param <T>
  */
 public class Column<T> implements Serializable {
 
@@ -76,13 +73,21 @@ public class Column<T> implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Column)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Column)) {
+            return false;
+        }
 
         Column<?> column = (Column<?>) o;
 
-        if (sqlType != column.sqlType) return false;
-        if (!columnName.equals(column.columnName)) return false;
+        if (sqlType != column.sqlType) {
+            return false;
+        }
+        if (!columnName.equals(column.columnName)) {
+            return false;
+        }
         return val != null ? val.equals(column.val) : column.val == null;
 
     }
@@ -97,10 +102,10 @@ public class Column<T> implements Serializable {
 
     @Override
     public String toString() {
-        return "Column{" +
-               "columnName='" + columnName + '\'' +
-               ", val=" + val +
-               ", sqlType=" + sqlType +
-               '}';
+        return "Column{"
+                + "columnName='" + columnName + '\''
+                + ", val=" + val
+                + ", sqlType=" + sqlType
+                + '}';
     }
 }
