@@ -12,7 +12,6 @@
 
 package org.apache.storm.hbase.topology;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.hadoop.hbase.Cell;
@@ -26,15 +25,15 @@ import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
 
 /**
- * Takes a Hbase result and returns a value list that has a value instance for each column and corresponding value. So if the result from
- * Hbase was
+ * Takes a Hbase result and returns a value list that has a value instance for each column and corresponding value. So
+ * if the result from Hbase was
  * <pre>
  * WORD, COUNT
  * apple, 10
  * bannana, 20
  * </pre>
  *
- * this will return
+ * <p>this will return
  * <pre>
  *     [WORD, apple]
  *     [COUNT, 10]

@@ -12,6 +12,8 @@
 
 package org.apache.storm.hbase.topology;
 
+import static org.apache.storm.utils.Utils.tuple;
+
 import java.util.Map;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
@@ -19,8 +21,6 @@ import org.apache.storm.topology.IBasicBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-
-import static org.apache.storm.utils.Utils.tuple;
 
 public class WordCounter implements IBasicBolt {
 
