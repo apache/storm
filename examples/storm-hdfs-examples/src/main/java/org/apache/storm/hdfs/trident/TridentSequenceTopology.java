@@ -41,11 +41,11 @@ import org.yaml.snakeyaml.Yaml;
 public class TridentSequenceTopology {
 
     public static StormTopology buildTopology(String hdfsUrl) {
-        FixedBatchSpout spout = new FixedBatchSpout(new Fields("sentence", "key"), 1000, new Values("the cow jumped over the moon", 1l),
-                                                    new Values("the man went to the store and bought some candy", 2l),
-                                                    new Values("four score and seven years ago", 3l),
-                                                    new Values("how many apples can you eat", 4l),
-                                                    new Values("to be or not to be the person", 5l));
+        FixedBatchSpout spout = new FixedBatchSpout(new Fields("sentence", "key"), 1000, new Values("the cow jumped over the moon", 1L),
+                                                    new Values("the man went to the store and bought some candy", 2L),
+                                                    new Values("four score and seven years ago", 3L),
+                                                    new Values("how many apples can you eat", 4L),
+                                                    new Values("to be or not to be the person", 5L));
         spout.setCycle(true);
 
         TridentTopology topology = new TridentTopology();
