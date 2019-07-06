@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.blobstore;
 
 import java.util.Arrays;
@@ -22,10 +23,10 @@ import java.util.Arrays;
 import javax.security.auth.Subject;
 
 public class MigratorMain {
-	
-	public static void listBlobStoreKeys(BlobStore bs, Subject who) {
+
+    public static void listBlobStoreKeys(BlobStore bs, Subject who) {
         Iterable<String> bsKeys = () -> bs.listKeys();
-        for(String key : bsKeys) {
+        for (String key : bsKeys) {
             System.out.println(key);
         }
     }
@@ -38,20 +39,17 @@ public class MigratorMain {
     }
     
     public static void main(String[] args) throws Exception {
-        if(args.length == 0) {
+        if (args.length == 0) {
             usage();
         }
         
-        if(args[0].equals("listHDFS")) {
+        if (args[0].equals("listHDFS")) {
             ListHDFS.main(Arrays.copyOfRange(args, 1, args.length));
-        }
-        else if(args[0].equals("listLocalFs")) {
+        } else if (args[0].equals("listLocalFs")) {
             ListLocalFs.main(Arrays.copyOfRange(args, 1, args.length));
-        }
-        else if(args[0].equals("migrate")) {
+        } else if (args[0].equals("migrate")) {
             MigrateBlobs.main(Arrays.copyOfRange(args, 1, args.length));
-        }
-        else {
+        } else {
             System.out.println("Not recognized: " + args[0]);
             usage();
         }
