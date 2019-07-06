@@ -18,7 +18,7 @@ package org.apache.storm.eventhubs.spout;
 import java.io.Serializable;
 
 /**
- * An interface of factory method to create IPartitionManager
+ * An interface of factory method to create IPartitionManager.
  */
 public interface IPartitionManagerFactory extends Serializable {
     IPartitionManager create(EventHubSpoutConfig spoutConfig,

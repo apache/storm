@@ -29,9 +29,9 @@ import org.slf4j.LoggerFactory;
  * An Event Data Scheme which deserializes message payload into the Strings. No encoding is assumed. The receiver will need to handle
  * parsing of the string data in appropriate encoding.
  *
- * Note: Unlike other schemes provided, this scheme does not include any metadata.
+ * <p>Note: Unlike other schemes provided, this scheme does not include any metadata.
  *
- * For metadata please refer to {@link BinaryEventDataScheme}, {@link EventDataScheme}
+ * <p>For metadata please refer to {@link BinaryEventDataScheme}, {@link EventDataScheme}
  */
 public class StringEventDataScheme implements IEventDataScheme {
 
@@ -44,9 +44,8 @@ public class StringEventDataScheme implements IEventDataScheme {
         String messageData = "";
         if (eventData.getBytes() != null) {
             messageData = new String(eventData.getBytes());
-        }
-        /*Will only serialize AMQPValue type*/
-        else if (eventData.getObject() != null) {
+        } else if (eventData.getObject() != null) {
+            /*Will only serialize AMQPValue type*/
             try {
                 if (!(eventData.getObject() instanceof List)) {
                     messageData = eventData.getObject().toString();

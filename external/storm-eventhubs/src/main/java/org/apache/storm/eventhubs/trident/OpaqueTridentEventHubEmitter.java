@@ -27,7 +27,7 @@ import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
 
 /**
- * A thin wrapper of TransactionalTridentEventHubEmitter for OpaqueTridentEventHubSpout
+ * A thin wrapper of TransactionalTridentEventHubEmitter for OpaqueTridentEventHubSpout.
  */
 public class OpaqueTridentEventHubEmitter implements IOpaquePartitionedTridentSpout.Emitter<Partitions, Partition, Map> {
     private final TransactionalTridentEventHubEmitter transactionalEmitter;
