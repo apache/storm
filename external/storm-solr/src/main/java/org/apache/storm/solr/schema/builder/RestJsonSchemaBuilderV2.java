@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Class that builds the {@link Schema} object from the schema returned by the SchemaRequest
+ * Class that builds the {@link Schema} object from the schema returned by the SchemaRequest.
  */
 public class RestJsonSchemaBuilderV2 implements SchemaBuilder {
     private static final Logger logger = LoggerFactory.getLogger(RestJsonSchemaBuilderV2.class);

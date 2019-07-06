@@ -47,10 +47,10 @@ public class SolrState implements State {
     }
 
     @Override
-    public void beginCommit(Long aLong) { }
+    public void beginCommit(Long someLong) { }
 
     @Override
-    public void commit(Long aLong) { }
+    public void commit(Long someLong) { }
 
     public void updateState(List<TridentTuple> tuples) {
         try {

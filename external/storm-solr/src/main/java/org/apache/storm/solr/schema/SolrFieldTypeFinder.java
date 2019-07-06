@@ -157,7 +157,7 @@ public class SolrFieldTypeFinder implements Serializable {
     }
 
     /**
-     * Class wrapping all the information for fields and types
+     * Class wrapping all the information for fields and types.
      * */
     public static class FieldTypeWrapper implements Serializable {
         Field field;
@@ -178,10 +178,10 @@ public class SolrFieldTypeFinder implements Serializable {
 
         @Override
         public String toString() {
-            return "FieldTypeWrapper{" +
-                   "field=" + field +
-                   ", type=" + type +
-                   '}';
+            return "FieldTypeWrapper{"
+                    + "field=" + field
+                    + ", type=" + type
+                    + '}';
         }
     }
 }

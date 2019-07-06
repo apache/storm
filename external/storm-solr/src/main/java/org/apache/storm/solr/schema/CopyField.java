@@ -36,9 +36,9 @@ public class CopyField implements Serializable {
 
     @Override
     public String toString() {
-        return "CopyField{" +
-               "source='" + source + '\'' +
-               ", dest='" + dest + '\'' +
-               '}';
+        return "CopyField{"
+                + "source='" + source + '\''
+                + ", dest='" + dest + '\''
+                + '}';
     }
 }

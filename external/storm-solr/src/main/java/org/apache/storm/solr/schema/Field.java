@@ -36,9 +36,9 @@ public class Field implements Serializable {
 
     @Override
     public String toString() {
-        return "Field{" +
-               "name='" + name + '\'' +
-               ", type='" + type + '\'' +
-               '}';
+        return "Field{"
+                + "name='" + name + '\''
+                + ", type='" + type + '\''
+                + '}';
     }
 }
