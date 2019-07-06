@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.topology;
 
 import org.apache.storm.Config;
@@ -37,8 +38,6 @@ public class UpdateWordCount {
     
 
     public static void main(String[] args) throws Exception {
-        Config config = new Config();
-
         String url = TEST_MONGODB_URL;
         String collectionName = TEST_MONGODB_COLLECTION_NAME;
 
@@ -78,6 +77,7 @@ public class UpdateWordCount {
             System.out.println("Usage: UpdateWordCount <mongodb url> <mongodb collection> [topology name]");
             return;
         }
+        Config config = new Config();
         StormSubmitter.submitTopology(topoName, config, builder.createTopology());
     }
 }
