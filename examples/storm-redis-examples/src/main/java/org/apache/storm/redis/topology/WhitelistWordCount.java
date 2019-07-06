@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.topology;
 
 import java.util.Map;
@@ -62,7 +63,7 @@ public class WhitelistWordCount {
             String countStr = input.getStringByField("count");
 
             // print lookup result with low probability
-            if(RANDOM.nextInt(1000) > 995) {
+            if (RANDOM.nextInt(1000) > 995) {
                 int count = 0;
                 if (countStr != null) {
                     count = Integer.parseInt(countStr);
@@ -79,8 +80,6 @@ public class WhitelistWordCount {
     }
 
     public static void main(String[] args) throws Exception {
-        Config config = new Config();
-
         String host = TEST_REDIS_HOST;
         int port = TEST_REDIS_PORT;
 
@@ -96,12 +95,12 @@ public class WhitelistWordCount {
         RedisFilterMapper filterMapper = setupWhitelistMapper();
         RedisFilterBolt whitelistBolt = new RedisFilterBolt(poolConfig, filterMapper);
         WordCounter wordCounterBolt = new WordCounter();
-        PrintWordTotalCountBolt printBolt = new PrintWordTotalCountBolt();
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(WORD_SPOUT, spout, 1);
         builder.setBolt(WHITELIST_BOLT, whitelistBolt, 1).shuffleGrouping(WORD_SPOUT);
         builder.setBolt(COUNT_BOLT, wordCounterBolt, 1).fieldsGrouping(WHITELIST_BOLT, new Fields("word"));
+        PrintWordTotalCountBolt printBolt = new PrintWordTotalCountBolt();
         builder.setBolt(PRINT_BOLT, printBolt, 1).shuffleGrouping(COUNT_BOLT);
 
         String topoName = "test";
@@ -111,6 +110,7 @@ public class WhitelistWordCount {
             System.out.println("Usage: WhitelistWordCount <redis host> <redis port> [topology name]");
             return;
         }
+        Config config = new Config();
         StormSubmitter.submitTopology(topoName, config, builder.createTopology());
     }
 

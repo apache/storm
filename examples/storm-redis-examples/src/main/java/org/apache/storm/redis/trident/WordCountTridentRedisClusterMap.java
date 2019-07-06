@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.trident;
 
 import java.net.InetSocketAddress;
@@ -38,7 +39,8 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 public class WordCountTridentRedisClusterMap {
-    public static StormTopology buildTopology(String redisHostPort){
+
+    public static StormTopology buildTopology(String redisHostPort) {
         Fields fields = new Fields("word", "count");
         FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
                 new Values("storm", 1),
@@ -50,8 +52,8 @@ public class WordCountTridentRedisClusterMap {
 
         Set<InetSocketAddress> nodes = new HashSet<InetSocketAddress>();
         for (String hostPort : redisHostPort.split(",")) {
-            String[] host_port = hostPort.split(":");
-            nodes.add(new InetSocketAddress(host_port[0], Integer.valueOf(host_port[1])));
+            String[] hostPortSplit = hostPort.split(":");
+            nodes.add(new InetSocketAddress(hostPortSplit[0], Integer.valueOf(hostPortSplit[1])));
         }
         JedisClusterConfig clusterConfig = new JedisClusterConfig.Builder().setNodes(nodes)
                                         .build();

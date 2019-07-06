@@ -15,15 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.trident;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Random;
+
 import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PrintFunction extends BaseFunction {
 
@@ -33,7 +35,7 @@ public class PrintFunction extends BaseFunction {
 
     @Override
     public void execute(TridentTuple tuple, TridentCollector tridentCollector) {
-        if(RANDOM.nextInt(1000) > 995) {
+        if (RANDOM.nextInt(1000) > 995) {
             LOG.info(tuple.toString());
         }
     }

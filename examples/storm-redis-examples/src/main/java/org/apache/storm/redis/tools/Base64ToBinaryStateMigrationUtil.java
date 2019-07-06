@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import redis.clients.util.SafeEncoder;
 
-
 public class Base64ToBinaryStateMigrationUtil {
     private static final Logger LOG = LoggerFactory.getLogger(Base64ToBinaryStateMigrationUtil.class);
     private static final String OPTION_REDIS_HOST_SHORT = "h";

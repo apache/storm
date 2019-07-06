@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.trident;
 
 import org.apache.storm.Config;
@@ -34,7 +35,8 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 public class WordCountTridentRedisMap {
-    public static StormTopology buildTopology(String redisHost, Integer redisPort){
+
+    public static StormTopology buildTopology(String redisHost, Integer redisPort) {
         Fields fields = new Fields("word", "count");
         FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
                 new Values("storm", 1),
