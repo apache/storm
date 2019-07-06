@@ -32,9 +32,6 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- */
 public class CassandraState implements State {
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraState.class);
@@ -131,11 +128,13 @@ public class CassandraState implements State {
             this.clientProvider = clientProvider;
         }
 
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         public Options withCQLStatementTupleMapper(CQLStatementTupleMapper cqlStatementTupleMapper) {
             this.cqlStatementTupleMapper = cqlStatementTupleMapper;
             return this;
         }
 
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         public Options withCQLResultSetValuesMapper(CQLResultSetValuesMapper cqlResultSetValuesMapper) {
             this.cqlResultSetValuesMapper = cqlResultSetValuesMapper;
             return this;

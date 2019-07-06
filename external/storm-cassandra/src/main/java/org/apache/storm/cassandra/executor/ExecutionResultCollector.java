@@ -51,8 +51,12 @@ public interface ExecutionResultCollector {
          */
         @Override
         public void handle(OutputCollector collector, ExecutionResultHandler handler) {
-            for (Tuple t : inputs) handler.onQuerySuccess(collector, t);
-            for (Tuple t : inputs) collector.ack(t);
+            for (Tuple t : inputs) {
+                handler.onQuerySuccess(collector, t);
+            }
+            for (Tuple t : inputs) {
+                collector.ack(t);
+            }
         }
     }
 

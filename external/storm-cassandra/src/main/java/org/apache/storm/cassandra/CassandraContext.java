@@ -24,9 +24,6 @@ import org.apache.storm.cassandra.context.WorkerCtx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- */
 public class CassandraContext extends WorkerCtx implements SimpleClientProvider {
 
     /**

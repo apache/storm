@@ -48,6 +48,8 @@ public abstract class AbstractExecutionResultHandler implements ExecutionResultH
 
     @Override
     public void onThrowable(Throwable t, OutputCollector collector, List<Tuple> tl) {
-        for (Tuple i : tl) onThrowable(t, collector, i);
+        for (Tuple i : tl) {
+            onThrowable(t, collector, i);
+        }
     }
 }

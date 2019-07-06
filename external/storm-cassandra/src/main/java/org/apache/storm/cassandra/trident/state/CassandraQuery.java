@@ -18,9 +18,6 @@ import org.apache.storm.trident.state.BaseQueryFunction;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
 
-/**
- *
- */
 public class CassandraQuery extends BaseQueryFunction<CassandraState, List<Values>> {
 
     @Override

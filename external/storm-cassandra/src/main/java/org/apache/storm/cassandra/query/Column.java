@@ -16,9 +16,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- */
 public class Column<T> implements Serializable {
 
     private final String columnName;
@@ -31,8 +28,9 @@ public class Column<T> implements Serializable {
 
     public static Object[] getVals(List<Column> columns) {
         List<Object> vals = new ArrayList<>(columns.size());
-        for (Column c : columns)
+        for (Column c : columns) {
             vals.add(c.getVal());
+        }
         return vals.toArray();
     }
 
@@ -44,17 +42,27 @@ public class Column<T> implements Serializable {
         return val;
     }
 
-    public boolean isNull() { return val == null;}
+    public boolean isNull() {
+        return val == null;
+    }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Column column = (Column) o;
 
-        if (columnName != null ? !columnName.equals(column.columnName) : column.columnName != null) return false;
-        if (val != null ? !val.equals(column.val) : column.val != null) return false;
+        if (columnName != null ? !columnName.equals(column.columnName) : column.columnName != null) {
+            return false;
+        }
+        if (val != null ? !val.equals(column.val) : column.val != null) {
+            return false;
+        }
 
         return true;
     }

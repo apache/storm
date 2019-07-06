@@ -49,8 +49,9 @@ public interface CqlMapper extends Serializable {
         @Override
         public List<Column> map(ITuple tuple) {
             List<Column> columns = new ArrayList<>(selectors.size());
-            for (FieldSelector selector : selectors)
+            for (FieldSelector selector : selectors) {
                 columns.add(selector.select(tuple));
+            }
             return columns;
         }
     }
@@ -71,8 +72,9 @@ public interface CqlMapper extends Serializable {
         @Override
         public List<Column> map(ITuple tuple) {
             List<Column> columns = new ArrayList<>(tuple.size());
-            for (String name : tuple.getFields())
+            for (String name : tuple.getFields()) {
                 columns.add(new Column(name, tuple.getValueByField(name)));
+            }
             return columns;
         }
     }

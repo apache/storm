@@ -93,8 +93,9 @@ public class DynamicStatementBuilder implements Serializable {
 
     private static BatchCQLStatementTupleMapper newBatchStatementBuilder(BatchStatement.Type type, CQLStatementBuilder[] builders) {
         List<CQLStatementTupleMapper> mappers = new ArrayList<>(builders.length);
-        for (CQLStatementBuilder b : Arrays.asList(builders))
+        for (CQLStatementBuilder b : Arrays.asList(builders)) {
             mappers.add(b.build());
+        }
         return new BatchCQLStatementTupleMapper(type, mappers);
     }
 
@@ -136,8 +137,9 @@ public class DynamicStatementBuilder implements Serializable {
     public static final FieldSelector[] fields(final String... fields) {
         int size = fields.length;
         List<FieldSelector> fl = new ArrayList<>(size);
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < size; i++) {
             fl.add(new FieldSelector(fields[i]));
+        }
         return fl.toArray(new FieldSelector[size]);
     }
 

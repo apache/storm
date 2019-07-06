@@ -27,6 +27,7 @@ import org.apache.storm.cassandra.query.ContextQuery;
 import org.apache.storm.cassandra.query.CqlMapper;
 import org.apache.storm.tuple.ITuple;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class BoundCQLStatementTupleMapper implements CQLStatementTupleMapper {
 
     private final ContextQuery contextQuery;
@@ -38,12 +39,6 @@ public class BoundCQLStatementTupleMapper implements CQLStatementTupleMapper {
 
     /**
      * Creates a new {@link BoundCQLStatementTupleMapper} instance.
-     *
-     * @param contextQuery
-     * @param mapper
-     * @param mapper
-     * @param rkGenerator
-     * @param binder
      */
     public BoundCQLStatementTupleMapper(ContextQuery contextQuery, CqlMapper mapper, RoutingKeyGenerator rkGenerator,
                                         PreparedStatementBinder binder) {

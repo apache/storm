@@ -27,7 +27,6 @@ public class RoutingKeyGenerator implements Serializable {
 
     /**
      * Creates a new {@link RoutingKeyGenerator} instance.
-     * @param routingKeys
      */
     public RoutingKeyGenerator(List<String> routingKeys) {
         Preconditions.checkNotNull(routingKeys);

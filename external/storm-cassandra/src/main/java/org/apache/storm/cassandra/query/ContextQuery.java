@@ -19,7 +19,6 @@ import org.apache.storm.tuple.ITuple;
 /**
  * This interface may be used to retrieve a cassandra bound query either from storm config
  * or the tuple being proceed.
- *
  */
 public interface ContextQuery extends Serializable {
 
@@ -41,7 +40,6 @@ public interface ContextQuery extends Serializable {
 
         /**
          * Creates a new {@link StaticContextQuery} instance.
-         * @param value
          */
         public StaticContextQuery(String value) {
             this.value = value;
@@ -66,7 +64,9 @@ public interface ContextQuery extends Serializable {
 
         @Override
         public String resolves(Map<String, Object> config, ITuple tuple) {
-            if (config.containsKey(key)) return (String) config.get(key);
+            if (config.containsKey(key)) {
+                return (String) config.get(key);
+            }
 
             throw new IllegalArgumentException("Bound query '" + key + "' does not exist in configuration");
         }
@@ -87,7 +87,9 @@ public interface ContextQuery extends Serializable {
         @Override
         public String resolves(Map<String, Object> config, ITuple tuple) {
             String name = tuple.getStringByField(fieldName);
-            if (config.containsKey(name)) return (String) config.get(name);
+            if (config.containsKey(name)) {
+                return (String) config.get(name);
+            }
             throw new IllegalArgumentException("Bound query '" + name + "' does not exist in configuration");
         }
     }
