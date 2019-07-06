@@ -12,7 +12,6 @@
 
 package org.apache.storm.hdfs.common;
 
-
 import java.io.IOException;
 import java.util.EnumSet;
 import org.apache.avro.Schema;
@@ -28,6 +27,7 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class AvroGenericRecordHDFSWriter extends AbstractHDFSWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger(AvroGenericRecordHDFSWriter.class);

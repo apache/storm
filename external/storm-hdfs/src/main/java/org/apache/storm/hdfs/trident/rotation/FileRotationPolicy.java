@@ -18,11 +18,11 @@ import org.apache.storm.trident.tuple.TridentTuple;
 /**
  * Used by the HdfsBolt to decide when to rotate files.
  *
- * The HdfsBolt will call the <code>mark()</code> method for every
+ * <p>The HdfsBolt will call the <code>mark()</code> method for every
  * tuple received. If the <code>mark()</code> method returns
  * <code>true</code> the HdfsBolt will perform a file rotation.
  *
- * After file rotation, the HdfsBolt will call the <code>reset()</code>
+ * <p>After file rotation, the HdfsBolt will call the <code>reset()</code>
  * method.
  */
 public interface FileRotationPolicy extends Serializable {

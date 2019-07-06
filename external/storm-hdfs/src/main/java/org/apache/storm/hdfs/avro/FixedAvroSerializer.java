@@ -30,7 +30,7 @@ import org.apache.commons.codec.binary.Base64;
  */
 public class FixedAvroSerializer extends AbstractAvroSerializer {
 
-    private final static String FP_ALGO = "CRC-64-AVRO";
+    private static final String FP_ALGO = "CRC-64-AVRO";
     final Map<String, Schema> fingerprint2schemaMap = new HashMap<>();
     final Map<Schema, String> schema2fingerprintMap = new HashMap<>();
 

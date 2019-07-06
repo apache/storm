@@ -18,7 +18,6 @@
 
 package org.apache.storm.hdfs.common.rotation;
 
-
 import java.io.IOException;
 import java.io.Serializable;
 import org.apache.hadoop.fs.FileSystem;

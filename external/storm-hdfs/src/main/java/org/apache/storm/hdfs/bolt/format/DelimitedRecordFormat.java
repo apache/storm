@@ -20,7 +20,7 @@ import org.apache.storm.tuple.Tuple;
  * By default uses a comma (",") as the field delimiter and a
  * newline ("\n") as the record delimiter.
  *
- * Also by default, this implementation will output all the
+ * <p>Also by default, this implementation will output all the
  * field values in the tuple in the order they were declared. To
  * override this behavior, call <code>withFields()</code> to
  * specify which tuple fields to output.
@@ -35,9 +35,6 @@ public class DelimitedRecordFormat implements RecordFormat {
 
     /**
      * Only output the specified fields.
-     *
-     * @param fields
-     * @return
      */
     public DelimitedRecordFormat withFields(Fields fields) {
         this.fields = fields;
@@ -46,9 +43,6 @@ public class DelimitedRecordFormat implements RecordFormat {
 
     /**
      * Overrides the default field delimiter.
-     *
-     * @param delimiter
-     * @return
      */
     public DelimitedRecordFormat withFieldDelimiter(String delimiter) {
         this.fieldDelimiter = delimiter;
@@ -57,9 +51,6 @@ public class DelimitedRecordFormat implements RecordFormat {
 
     /**
      * Overrides the default record delimiter.
-     *
-     * @param delimiter
-     * @return
      */
     public DelimitedRecordFormat withRecordDelimiter(String delimiter) {
         this.recordDelimiter = delimiter;

@@ -26,10 +26,9 @@ interface FileReader {
     FileOffset getFileOffset();
 
     /**
-     * Get the next tuple from the file
+     * Get the next tuple from the file.
      *
      * @return null if no more data
-     * @throws IOException
      */
     List<Object> next() throws IOException, ParseException;
 

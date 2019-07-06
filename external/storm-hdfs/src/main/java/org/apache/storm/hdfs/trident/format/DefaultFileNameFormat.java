@@ -25,7 +25,7 @@ import java.util.Map;
  *     MyBolt-5-7-1390579837830.txt
  * </pre>
  *
- * By default, prefix is empty and extenstion is ".txt".
+ * <p>By default, prefix is empty and extenstion is ".txt".
  *
  */
 public class DefaultFileNameFormat implements FileNameFormat {
@@ -36,9 +36,6 @@ public class DefaultFileNameFormat implements FileNameFormat {
 
     /**
      * Overrides the default prefix.
-     *
-     * @param prefix
-     * @return
      */
     public DefaultFileNameFormat withPrefix(String prefix) {
         this.prefix = prefix;
@@ -47,9 +44,6 @@ public class DefaultFileNameFormat implements FileNameFormat {
 
     /**
      * Overrides the default file extension.
-     *
-     * @param extension
-     * @return
      */
     public DefaultFileNameFormat withExtension(String extension) {
         this.extension = extension;

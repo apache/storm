@@ -12,7 +12,6 @@
 
 package org.apache.storm.hdfs.bolt.rotation;
 
-
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * File rotation policy that will rotate files when a certain
  * file size is reached.
  *
- * For example:
+ * <p>For example:
  * <pre>
  *     // rotate when files reach 5MB
  *     FileSizeRotationPolicy policy =
@@ -34,6 +33,7 @@ public class FileSizeRotationPolicy implements FileRotationPolicy {
     private long maxBytes;
     private long lastOffset = 0;
     private long currentBytesWritten = 0;
+
     public FileSizeRotationPolicy(float count, Units units) {
         this.maxBytes = (long) (count * units.getByteCount());
     }

@@ -21,10 +21,9 @@ public interface Partitioner extends Serializable {
      * Return a relative path that the tuple should be written to. For example, if an HdfsBolt were configured to write
      * to /common/output and a partitioner returned "/foo" then the bolt should open a file in "/common/output/foo"
      *
-     * A best practice is to use Path.SEPARATOR instead of a literal "/"
+     * <p>A best practice is to use Path.SEPARATOR instead of a literal "/"
      *
      * @param tuple The tuple for which the relative path is being calculated.
-     * @return
      */
     public String getPartitionPath(final Tuple tuple);
 }

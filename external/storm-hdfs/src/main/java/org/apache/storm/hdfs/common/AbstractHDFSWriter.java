@@ -18,9 +18,10 @@ import org.apache.storm.hdfs.bolt.Writer;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.tuple.Tuple;
 
-abstract public class AbstractHDFSWriter implements Writer {
-    final protected Path filePath;
-    final protected FileRotationPolicy rotationPolicy;
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+public abstract class AbstractHDFSWriter implements Writer {
+    protected final Path filePath;
+    protected final FileRotationPolicy rotationPolicy;
     protected long lastUsedTime;
     protected long offset;
     protected boolean needsRotation;
@@ -32,7 +33,7 @@ abstract public class AbstractHDFSWriter implements Writer {
     }
 
     @Override
-    final public long write(Tuple tuple) throws IOException {
+    public final long write(Tuple tuple) throws IOException {
         doWrite(tuple);
         this.needsRotation = rotationPolicy.mark(tuple, offset);
 
@@ -40,12 +41,12 @@ abstract public class AbstractHDFSWriter implements Writer {
     }
 
     @Override
-    final public void sync() throws IOException {
+    public final void sync() throws IOException {
         doSync();
     }
 
     @Override
-    final public void close() throws IOException {
+    public final void close() throws IOException {
         doClose();
     }
 
@@ -59,10 +60,10 @@ abstract public class AbstractHDFSWriter implements Writer {
         return this.filePath;
     }
 
-    abstract protected void doWrite(Tuple tuple) throws IOException;
+    protected abstract void doWrite(Tuple tuple) throws IOException;
 
-    abstract protected void doSync() throws IOException;
+    protected abstract void doSync() throws IOException;
 
-    abstract protected void doClose() throws IOException;
+    protected abstract void doClose() throws IOException;
 
 }

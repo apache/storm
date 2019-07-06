@@ -12,14 +12,11 @@
 
 package org.apache.storm.hdfs.bolt.format;
 
-
 import java.io.Serializable;
 import org.apache.storm.tuple.Tuple;
 
 /**
- * Formats a Tuple object into a byte array
- * that will be written to HDFS.
- *
+ * Formats a Tuple object into a byte array that will be written to HDFS.
  */
 public interface RecordFormat extends Serializable {
     byte[] format(Tuple tuple);

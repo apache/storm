@@ -27,7 +27,7 @@ import org.apache.avro.Schema;
  */
 public class ConfluentAvroSerializer extends AbstractAvroSerializer {
 
-    final private String url;
+    private final String url;
     private SchemaRegistryClient theClient;
 
     /**
