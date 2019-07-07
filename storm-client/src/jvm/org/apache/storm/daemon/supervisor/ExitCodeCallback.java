@@ -18,7 +18,7 @@ package org.apache.storm.daemon.supervisor;
 public interface ExitCodeCallback {
 
     /**
-     * The process finished
+     * The process finished.
      *
      * @param exitCode the exit code of the finished process.
      */

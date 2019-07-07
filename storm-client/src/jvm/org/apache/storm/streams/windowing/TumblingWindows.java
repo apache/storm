@@ -12,10 +12,10 @@
 
 package org.apache.storm.streams.windowing;
 
-import org.apache.storm.topology.base.BaseWindowedBolt;
-
 import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
 import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+
+import org.apache.storm.topology.base.BaseWindowedBolt;
 
 /**
  * A tumbling window specification. The window tumbles after the specified window length.

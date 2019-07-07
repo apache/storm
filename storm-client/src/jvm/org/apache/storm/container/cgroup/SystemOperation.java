@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A class that implements system operations for using cgroups
+ * A class that implements system operations for using cgroups.
  */
 public class SystemOperation {
 
@@ -33,13 +33,13 @@ public class SystemOperation {
     public static void mount(String name, String target, String type, String options) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append("mount -t ")
-          .append(type)
-          .append(" -o ")
-          .append(options)
-          .append(" ")
-          .append(name)
-          .append(" ")
-          .append(target);
+                .append(type)
+                .append(" -o ")
+                .append(options)
+                .append(" ")
+                .append(name)
+                .append(" ")
+                .append(target);
         SystemOperation.exec(sb.toString());
     }
 

@@ -19,13 +19,13 @@ import java.util.Map;
 import org.apache.storm.trident.state.map.IBackingMap;
 
 public class MemoryBackingMap implements IBackingMap<Object> {
-    Map _vals = new HashMap();
+    Map vals = new HashMap();
 
     @Override
     public List<Object> multiGet(List<List<Object>> keys) {
         List ret = new ArrayList();
         for (List key : keys) {
-            ret.add(_vals.get(key));
+            ret.add(vals.get(key));
         }
         return ret;
     }
@@ -35,7 +35,7 @@ public class MemoryBackingMap implements IBackingMap<Object> {
         for (int i = 0; i < keys.size(); i++) {
             List key = keys.get(i);
             Object val = vals.get(i);
-            _vals.put(key, val);
+            this.vals.put(key, val);
         }
     }
 }

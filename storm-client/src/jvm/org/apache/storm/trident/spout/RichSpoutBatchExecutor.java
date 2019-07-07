@@ -29,20 +29,20 @@ import org.apache.storm.utils.RotatingMap;
 public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
     public static final String MAX_BATCH_SIZE_CONF = "topology.spout.max.batch.size";
 
-    IRichSpout _spout;
+    IRichSpout spout;
 
     public RichSpoutBatchExecutor(IRichSpout spout) {
-        _spout = spout;
+        this.spout = spout;
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return _spout.getComponentConfiguration();
+        return spout.getComponentConfiguration();
     }
 
     @Override
     public Fields getOutputFields() {
-        return TridentUtils.getSingleOutputStreamFields(_spout);
+        return TridentUtils.getSingleOutputStreamFields(spout);
 
     }
 
@@ -81,16 +81,16 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
         public List<Object> ids;
         public int numEmitted;
         public long pendingCount;
-        TridentCollector _collector;
+        TridentCollector collector;
 
         public void reset(TridentCollector c) {
-            _collector = c;
+            collector = c;
             ids = new ArrayList<>();
         }
 
         @Override
         public void reportError(Throwable t) {
-            _collector.reportError(t);
+            collector.reportError(t);
         }
 
         @Override
@@ -99,7 +99,7 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
                 ids.add(id);
             }
             numEmitted++;
-            _collector.emit(values);
+            collector.emit(values);
             return null;
         }
 
@@ -110,7 +110,7 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
 
         @Override
         public void flush() {
-            _collector.flush();
+            collector.flush();
         }
 
         @Override
@@ -120,24 +120,24 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
     }
 
     class RichSpoutEmitter implements ITridentSpout.Emitter<Object> {
-        int _maxBatchSize;
+        int maxBatchSize;
         boolean prepared = false;
-        CaptureCollector _collector;
+        CaptureCollector collector;
         RotatingMap<Long, List<Object>> idsMap;
-        Map _conf;
-        TopologyContext _context;
+        Map conf;
+        TopologyContext context;
         long lastRotate = System.currentTimeMillis();
         long rotateTime;
 
         public RichSpoutEmitter(Map<String, Object> conf, TopologyContext context) {
-            _conf = conf;
-            _context = context;
+            this.conf = conf;
+            this.context = context;
             Number batchSize = (Number) conf.get(MAX_BATCH_SIZE_CONF);
             if (batchSize == null) {
                 batchSize = 1000;
             }
-            _maxBatchSize = batchSize.intValue();
-            _collector = new CaptureCollector();
+            maxBatchSize = batchSize.intValue();
+            collector = new CaptureCollector();
             idsMap = new RotatingMap<>(3);
             rotateTime = 1000L * ((Number) conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)).intValue();
         }
@@ -160,19 +160,19 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
                 fail(txid);
             }
 
-            _collector.reset(collector);
+            this.collector.reset(collector);
             if (!prepared) {
-                _spout.open(_conf, _context, new SpoutOutputCollector(_collector));
+                spout.open(conf, context, new SpoutOutputCollector(this.collector));
                 prepared = true;
             }
-            for (int i = 0; i < _maxBatchSize; i++) {
-                _spout.nextTuple();
-                if (_collector.numEmitted < i) {
+            for (int i = 0; i < maxBatchSize; i++) {
+                spout.nextTuple();
+                if (this.collector.numEmitted < i) {
                     break;
                 }
             }
-            idsMap.put(txid, _collector.ids);
-            _collector.pendingCount = idsMap.size();
+            idsMap.put(txid, this.collector.ids);
+            this.collector.pendingCount = idsMap.size();
 
         }
 
@@ -185,7 +185,7 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
             List<Object> ids = (List<Object>) idsMap.remove(batchId);
             if (ids != null) {
                 for (Object id : ids) {
-                    _spout.ack(id);
+                    spout.ack(id);
                 }
             }
         }
@@ -194,14 +194,14 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
             List<Object> ids = (List<Object>) idsMap.remove(batchId);
             if (ids != null) {
                 for (Object id : ids) {
-                    _spout.fail(id);
+                    spout.fail(id);
                 }
             }
         }
 
         @Override
         public void close() {
-            _spout.close();
+            spout.close();
         }
 
     }

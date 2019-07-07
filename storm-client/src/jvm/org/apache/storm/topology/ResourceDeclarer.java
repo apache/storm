@@ -20,7 +20,7 @@ import org.apache.storm.generated.SharedMemory;
  */
 public interface ResourceDeclarer<T extends ResourceDeclarer> {
     /**
-     * Set the amount of on heap memory for this component
+     * Set the amount of on heap memory for this component.
      *
      * @param onHeap the amount of on heap memory
      * @return this for chaining
@@ -28,7 +28,7 @@ public interface ResourceDeclarer<T extends ResourceDeclarer> {
     T setMemoryLoad(Number onHeap);
 
     /**
-     * Set the amount of memory for this component on and off heap
+     * Set the amount of memory for this component on and off heap.
      *
      * @param onHeap  the amount of on heap memory
      * @param offHeap the amount of off heap memory
@@ -37,11 +37,12 @@ public interface ResourceDeclarer<T extends ResourceDeclarer> {
     T setMemoryLoad(Number onHeap, Number offHeap);
 
     /**
-     * Set the amount of CPU load for this component
+     * Set the amount of CPU load for this component.
      *
      * @param amount the amount of CPU
      * @return this for chaining
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     T setCPULoad(Number amount);
 
     /**

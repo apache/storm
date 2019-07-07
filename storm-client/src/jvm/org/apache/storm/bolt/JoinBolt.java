@@ -12,7 +12,6 @@
 
 package org.apache.storm.bolt;
 
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +27,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.windowing.TimestampExtractor;
 import org.apache.storm.windowing.TupleWindow;
-
 
 public class JoinBolt extends BaseWindowedBolt {
 
@@ -75,11 +73,15 @@ public class JoinBolt extends BaseWindowedBolt {
     }
 
     /**
-     * Performs inner Join with the newStream. SQL    :   from priorStream inner join newStream on newStream.field = priorStream.field1 same
-     * as:   new WindowedQueryBolt(priorStream,field1). join(newStream, field, priorStream);
-     *
-     * Note: priorStream must be previously joined. Valid ex:    new WindowedQueryBolt(s1,k1). join(s2,k2, s1). join(s3,k3, s2); Invalid ex:
-     * new WindowedQueryBolt(s1,k1). join(s3,k3, s2). join(s2,k2, s1);
+     * Performs inner Join with the newStream.
+     * SQL:
+     * <code>from priorStream inner join newStream on newStream.field = priorStream.field1</code>
+     * same as:
+     * <code>new WindowedQueryBolt(priorStream,field1). join(newStream, field, priorStream);</code>
+     * Note: priorStream must be previously joined. Valid ex:
+     * <code>new WindowedQueryBolt(s1,k1). join(s2,k2, s1). join(s3,k3, s2);</code>
+     * Invalid ex:
+     * <code>new WindowedQueryBolt(s1,k1). join(s3,k3, s2). join(s2,k2, s1);</code>
      *
      * @param newStream Either stream name or name of upstream component
      * @param field     the field on which to perform the join
@@ -92,7 +94,7 @@ public class JoinBolt extends BaseWindowedBolt {
      * Performs left Join with the newStream. SQL    :   from stream1  left join stream2  on stream2.field = stream1.field1 same as:   new
      * WindowedQueryBolt(stream1, field1). leftJoin(stream2, field, stream1);
      *
-     * Note: priorStream must be previously joined Valid ex:    new WindowedQueryBolt(s1,k1). leftJoin(s2,k2, s1). leftJoin(s3,k3, s2);
+     * <p>Note: priorStream must be previously joined Valid ex:    new WindowedQueryBolt(s1,k1). leftJoin(s2,k2, s1). leftJoin(s3,k3, s2);
      * Invalid ex:  new WindowedQueryBolt(s1,k1). leftJoin(s3,k3, s2). leftJoin(s2,k2, s1);
      *
      * @param newStream Either a name of a stream or an upstream component
@@ -122,9 +124,6 @@ public class JoinBolt extends BaseWindowedBolt {
      * Key names are supported for nested types: e.g: .select("outerKey1.innerKey1, outerKey1.innerKey2, stream3:outerKey2.innerKey3)" Inner
      * types (non leaf) must be Map<> in order to support nested lookup using this dot notation This selected fields implicitly declare the
      * output fieldNames for the bolt based.
-     *
-     * @param commaSeparatedKeys
-     * @return
      */
     public JoinBolt select(String commaSeparatedKeys) {
         String[] fieldNames = commaSeparatedKeys.split(",");
@@ -339,8 +338,8 @@ public class JoinBolt extends BaseWindowedBolt {
     protected Object lookupField(FieldSelector fieldSelector, Tuple tuple) {
 
         // very stream name matches, it stream name was specified
-        if (fieldSelector.streamName != null &&
-            !fieldSelector.streamName.equalsIgnoreCase(getStreamSelector(tuple))) {
+        if (fieldSelector.streamName != null
+                && !fieldSelector.streamName.equalsIgnoreCase(getStreamSelector(tuple))) {
             return null;
         }
 
@@ -435,13 +434,18 @@ public class JoinBolt extends BaseWindowedBolt {
         STREAM, SOURCE
     }
 
-    protected enum JoinType {INNER, LEFT, RIGHT, OUTER}
+    protected enum JoinType {
+        INNER,
+        LEFT,
+        RIGHT,
+        OUTER
+    }
 
     /**
-     * Describes how to join the other stream with the current stream
+     * Describes how to join the other stream with the current stream.
      */
     protected static class JoinInfo implements Serializable {
-        final static long serialVersionUID = 1L;
+        static final long serialVersionUID = 1L;
 
         private JoinType joinType;        // nature of join
         private FieldSelector field;           // field for the current stream
@@ -505,6 +509,8 @@ public class JoinBolt extends BaseWindowedBolt {
         }
 
         /**
+         * Constructor.
+         *
          * @param stream          name of stream
          * @param fieldDescriptor Simple fieldDescriptor like "x.y.z" and w/o a 'stream1:' stream qualifier.
          */

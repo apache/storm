@@ -17,12 +17,12 @@ import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
 
 /**
- * An authorization implementation that denies everything, for testing purposes
+ * An authorization implementation that denies everything, for testing purposes.
  */
 public class DenyAuthorizer implements IAuthorizer {
 
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param conf Storm configuration
      */
@@ -31,7 +31,7 @@ public class DenyAuthorizer implements IAuthorizer {
     }
 
     /**
-     * permit() method is invoked for each incoming Thrift request
+     * permit() method is invoked for each incoming Thrift request.
      *
      * @param context   request context
      * @param operation operation name

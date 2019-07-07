@@ -23,24 +23,26 @@ import org.apache.storm.metric.api.IMetric;
  * the same keys
  */
 public class MultiLatencyStatAndMetric<T> implements IMetric {
-    private final int _numBuckets;
-    private ConcurrentHashMap<T, LatencyStatAndMetric> _lat = new ConcurrentHashMap<>();
+    private final int numBuckets;
+    private ConcurrentHashMap<T, LatencyStatAndMetric> lat = new ConcurrentHashMap<>();
 
     /**
+     * Constructor.
+     *
      * @param numBuckets the number of buckets to divide the time periods into.
      */
     public MultiLatencyStatAndMetric(int numBuckets) {
-        _numBuckets = numBuckets;
+        this.numBuckets = numBuckets;
     }
 
     LatencyStatAndMetric get(T key) {
-        LatencyStatAndMetric c = _lat.get(key);
+        LatencyStatAndMetric c = lat.get(key);
         if (c == null) {
             synchronized (this) {
-                c = _lat.get(key);
+                c = lat.get(key);
                 if (c == null) {
-                    c = new LatencyStatAndMetric(_numBuckets);
-                    _lat.put(key, c);
+                    c = new LatencyStatAndMetric(numBuckets);
+                    lat.put(key, c);
                 }
             }
         }
@@ -48,7 +50,7 @@ public class MultiLatencyStatAndMetric<T> implements IMetric {
     }
 
     /**
-     * Record a latency value
+     * Record a latency value.
      *
      * @param latency the measurement to record
      */
@@ -69,7 +71,7 @@ public class MultiLatencyStatAndMetric<T> implements IMetric {
     @Override
     public Object getValueAndReset() {
         Map<String, Double> ret = new HashMap<String, Double>();
-        for (Map.Entry<T, LatencyStatAndMetric> entry : _lat.entrySet()) {
+        for (Map.Entry<T, LatencyStatAndMetric> entry : lat.entrySet()) {
             String key = keyToString(entry.getKey());
             Double val = (Double) entry.getValue().getValueAndReset();
             ret.put(key, val);
@@ -79,7 +81,7 @@ public class MultiLatencyStatAndMetric<T> implements IMetric {
 
     public Map<String, Map<T, Double>> getTimeLatAvg() {
         Map<String, Map<T, Double>> ret = new HashMap<>();
-        for (Map.Entry<T, LatencyStatAndMetric> entry : _lat.entrySet()) {
+        for (Map.Entry<T, LatencyStatAndMetric> entry : lat.entrySet()) {
             T key = entry.getKey();
             Map<String, Double> toFlip = entry.getValue().getTimeLatAvg();
             for (Map.Entry<String, Double> subEntry : toFlip.entrySet()) {
@@ -96,7 +98,7 @@ public class MultiLatencyStatAndMetric<T> implements IMetric {
     }
 
     public void close() {
-        for (LatencyStatAndMetric l : _lat.values()) {
+        for (LatencyStatAndMetric l : lat.values()) {
             l.close();
         }
     }

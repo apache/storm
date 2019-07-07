@@ -37,15 +37,15 @@ public class ReturnResults extends BaseRichBolt {
     public static final Logger LOG = LoggerFactory.getLogger(ReturnResults.class);
     //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
     static final long serialVersionUID = -774882142710631591L;
-    OutputCollector _collector;
+    OutputCollector collector;
     boolean local;
-    Map<String, Object> _conf;
-    Map<List, DRPCInvocationsClient> _clients = new HashMap<List, DRPCInvocationsClient>();
+    Map<String, Object> conf;
+    Map<List, DRPCInvocationsClient> clients = new HashMap<List, DRPCInvocationsClient>();
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        _conf = topoConf;
-        _collector = collector;
+        conf = topoConf;
+        this.collector = collector;
         local = topoConf.get(Config.STORM_CLUSTER_MODE).equals("local");
     }
 
@@ -59,7 +59,7 @@ public class ReturnResults extends BaseRichBolt {
                 retMap = (Map<String, Object>) JSONValue.parseWithException(returnInfo);
             } catch (ParseException e) {
                 LOG.error("Parseing returnInfo failed", e);
-                _collector.fail(input);
+                collector.fail(input);
                 return;
             }
             final String host = (String) retMap.get("host");
@@ -69,19 +69,21 @@ public class ReturnResults extends BaseRichBolt {
             if (local) {
                 client = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(host);
             } else {
-                List server = new ArrayList() {{
-                    add(host);
-                    add(port);
-                }};
+                List server = new ArrayList() {
+                    {
+                        add(host);
+                        add(port);
+                    }
+                };
 
-                if (!_clients.containsKey(server)) {
+                if (!clients.containsKey(server)) {
                     try {
-                        _clients.put(server, new DRPCInvocationsClient(_conf, host, port));
+                        clients.put(server, new DRPCInvocationsClient(conf, host, port));
                     } catch (TTransportException ex) {
                         throw new RuntimeException(ex);
                     }
                 }
-                client = _clients.get(server);
+                client = clients.get(server);
             }
 
 
@@ -91,16 +93,16 @@ public class ReturnResults extends BaseRichBolt {
                 retryCnt++;
                 try {
                     client.result(id, result);
-                    _collector.ack(input);
+                    collector.ack(input);
                     break;
                 } catch (AuthorizationException aze) {
                     LOG.error("Not authorized to return results to DRPC server", aze);
-                    _collector.fail(input);
+                    collector.fail(input);
                     throw new RuntimeException(aze);
                 } catch (TException tex) {
                     if (retryCnt >= maxRetries) {
                         LOG.error("Failed to return results to DRPC server", tex);
-                        _collector.fail(input);
+                        collector.fail(input);
                     }
                     reconnectClient((DRPCInvocationsClient) client);
                 }
@@ -121,7 +123,7 @@ public class ReturnResults extends BaseRichBolt {
 
     @Override
     public void cleanup() {
-        for (DRPCInvocationsClient c : _clients.values()) {
+        for (DRPCInvocationsClient c : clients.values()) {
             c.close();
         }
     }

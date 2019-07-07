@@ -107,8 +107,6 @@ public class WindowTridentProcessor implements TridentProcessor {
             throw new RuntimeException("Aggregation related operation can only have one parent");
         }
 
-        Long maxTuplesCacheSize = getWindowTuplesCacheSize(topoConf);
-
         this.tridentContext = tridentContext;
         collector = new FreshCollector(tridentContext);
         projection = new TridentTupleView.ProjectionFactory(parents.get(0), inputFields);
@@ -117,10 +115,20 @@ public class WindowTridentProcessor implements TridentProcessor {
         windowTaskId = windowId + WindowsStore.KEY_SEPARATOR + topologyContext.getThisTaskId() + WindowsStore.KEY_SEPARATOR;
         windowTriggerInprocessId = getWindowTriggerInprocessIdPrefix(windowTaskId);
 
-        tridentWindowManager = storeTuplesInStore ?
-            new StoreBasedTridentWindowManager(windowConfig, windowTaskId, windowStore, aggregator, tridentContext.getDelegateCollector(),
-                                               maxTuplesCacheSize, inputFields)
-            : new InMemoryTridentWindowManager(windowConfig, windowTaskId, windowStore, aggregator, tridentContext.getDelegateCollector());
+        Long maxTuplesCacheSize = getWindowTuplesCacheSize(topoConf);
+        tridentWindowManager = storeTuplesInStore
+                ? new StoreBasedTridentWindowManager(windowConfig,
+                        windowTaskId,
+                        windowStore,
+                        aggregator,
+                        tridentContext.getDelegateCollector(),
+                        maxTuplesCacheSize,
+                        inputFields)
+                : new InMemoryTridentWindowManager(windowConfig,
+                        windowTaskId,
+                        windowStore,
+                        aggregator,
+                        tridentContext.getDelegateCollector());
 
         tridentWindowManager.prepare();
     }
@@ -250,10 +258,10 @@ public class WindowTridentProcessor implements TridentProcessor {
 
         @Override
         public String toString() {
-            return "TriggerInfo{" +
-                   "windowTaskId='" + windowTaskId + '\'' +
-                   ", triggerId=" + triggerId +
-                   '}';
+            return "TriggerInfo{"
+                    + "windowTaskId='" + windowTaskId + '\''
+                    + ", triggerId=" + triggerId
+                    + '}';
         }
     }
 

@@ -29,22 +29,22 @@ import org.slf4j.LoggerFactory;
 public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCallback {
     public static final Logger LOG = LoggerFactory.getLogger(BatchBoltExecutor.class);
 
-    byte[] _boltSer;
-    Map<Object, IBatchBolt> _openTransactions;
-    Map _conf;
-    TopologyContext _context;
-    BatchOutputCollectorImpl _collector;
+    private byte[] boltSer;
+    private Map<Object, IBatchBolt> openTransactions;
+    private Map conf;
+    private TopologyContext context;
+    private BatchOutputCollectorImpl collector;
 
     public BatchBoltExecutor(IBatchBolt bolt) {
-        _boltSer = Utils.javaSerialize(bolt);
+        boltSer = Utils.javaSerialize(bolt);
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
-        _conf = conf;
-        _context = context;
-        _collector = new BatchOutputCollectorImpl(collector);
-        _openTransactions = new HashMap<>();
+        this.conf = conf;
+        this.context = context;
+        this.collector = new BatchOutputCollectorImpl(collector);
+        openTransactions = new HashMap<>();
     }
 
     @Override
@@ -53,10 +53,10 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
         IBatchBolt bolt = getBatchBolt(id);
         try {
             bolt.execute(input);
-            _collector.ack(input);
+            collector.ack(input);
         } catch (FailedException e) {
             LOG.error("Failed to process tuple in batch", e);
-            _collector.fail(input);
+            collector.fail(input);
         }
     }
 
@@ -67,13 +67,13 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
     @Override
     public void finishedId(Object id) {
         IBatchBolt bolt = getBatchBolt(id);
-        _openTransactions.remove(id);
+        openTransactions.remove(id);
         bolt.finishBatch();
     }
 
     @Override
     public void timeoutId(Object attempt) {
-        _openTransactions.remove(attempt);
+        openTransactions.remove(attempt);
     }
 
 
@@ -88,16 +88,16 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
     }
 
     private IBatchBolt getBatchBolt(Object id) {
-        IBatchBolt bolt = _openTransactions.get(id);
+        IBatchBolt bolt = openTransactions.get(id);
         if (bolt == null) {
             bolt = newTransactionalBolt();
-            bolt.prepare(_conf, _context, _collector, id);
-            _openTransactions.put(id, bolt);
+            bolt.prepare(conf, context, collector, id);
+            openTransactions.put(id, bolt);
         }
         return bolt;
     }
 
     private IBatchBolt newTransactionalBolt() {
-        return Utils.javaDeserialize(_boltSer, IBatchBolt.class);
+        return Utils.javaDeserialize(boltSer, IBatchBolt.class);
     }
 }

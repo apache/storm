@@ -62,10 +62,10 @@ public class AggregateByKeyProcessor<K, V, A, R> extends BaseProcessor<Pair<K, V
 
     @Override
     public String toString() {
-        return "AggregateByKeyProcessor{" +
-               "aggregator=" + aggregator +
-               ", emitAggregate=" + emitAggregate +
-               ", state=" + state +
-               "}";
+        return "AggregateByKeyProcessor{"
+                + "aggregator=" + aggregator
+                + ", emitAggregate=" + emitAggregate
+                + ", state=" + state
+                + "}";
     }
 }

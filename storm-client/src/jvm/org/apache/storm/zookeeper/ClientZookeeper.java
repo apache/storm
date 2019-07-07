@@ -234,7 +234,7 @@ public class ClientZookeeper {
     }
 
     /**
-     * Get the data along with a version
+     * Get the data along with a version.
      *
      * @param zk    the zk instance to use
      * @param path  the path to get it from

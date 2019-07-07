@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An in-memory implementation of the {@link State}
+ * An in-memory implementation of the {@link State}.
  */
 public class InMemoryKeyValueState<K, V> implements KeyValueState<K, V> {
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryKeyValueState.class);
@@ -60,24 +60,24 @@ public class InMemoryKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     @Override
-    public void prepareCommit(long txid) {
-        LOG.debug("prepare commit, txid {}", txid);
-        if (preparedState != null && txid > preparedState.txid) {
-            throw new RuntimeException("Cannot prepare a new txn while there is a pending txn");
-        }
-        preparedState = new TxIdState<>(txid, new ConcurrentHashMap<K, V>(state));
-    }
-
-    @Override
     public void commit(long txid) {
         LOG.debug("commit, txid {}", txid);
         if (preparedState != null && txid == preparedState.txid) {
             commitedState = preparedState;
             preparedState = null;
         } else {
-            throw new RuntimeException("Invalid prepared state for commit, " +
-                                       "preparedState " + preparedState + " txid " + txid);
+            throw new RuntimeException("Invalid prepared state for commit, "
+                    + "preparedState " + preparedState + " txid " + txid);
         }
+    }
+
+    @Override
+    public void prepareCommit(long txid) {
+        LOG.debug("prepare commit, txid {}", txid);
+        if (preparedState != null && txid > preparedState.txid) {
+            throw new RuntimeException("Cannot prepare a new txn while there is a pending txn");
+        }
+        preparedState = new TxIdState<>(txid, new ConcurrentHashMap<K, V>(state));
     }
 
     @Override
@@ -92,11 +92,11 @@ public class InMemoryKeyValueState<K, V> implements KeyValueState<K, V> {
 
     @Override
     public String toString() {
-        return "InMemoryKeyValueState{" +
-               "commitedState=" + commitedState +
-               ", preparedState=" + preparedState +
-               ", state=" + state +
-               '}';
+        return "InMemoryKeyValueState{"
+                + "commitedState=" + commitedState
+                + ", preparedState=" + preparedState
+                + ", state=" + state
+                + '}';
     }
 
     private static class TxIdState<K, V> {
@@ -110,10 +110,10 @@ public class InMemoryKeyValueState<K, V> implements KeyValueState<K, V> {
 
         @Override
         public String toString() {
-            return "TxIdState{" +
-                   "txid=" + txid +
-                   ", state=" + state +
-                   '}';
+            return "TxIdState{"
+                    + "txid=" + txid
+                    + ", state=" + state
+                    + '}';
         }
     }
 }

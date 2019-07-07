@@ -252,9 +252,6 @@ public class StormCommon {
 
     @SuppressWarnings("unchecked")
     public static void addAcker(Map<String, Object> conf, StormTopology topology) {
-        int ackerNum =
-            ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
-        Map<GlobalStreamId, Grouping> inputs = ackerInputs(topology);
 
         Map<String, StreamInfo> outputStreams = new HashMap<String, StreamInfo>();
         outputStreams.put(Acker.ACKER_ACK_STREAM_ID, Thrift.directOutputFields(Arrays.asList("id", "time-delta-ms")));
@@ -262,9 +259,12 @@ public class StormCommon {
         outputStreams.put(Acker.ACKER_RESET_TIMEOUT_STREAM_ID, Thrift.directOutputFields(Arrays.asList("id", "time-delta-ms")));
 
         Map<String, Object> ackerConf = new HashMap<>();
+        int ackerNum =
+                ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
         ackerConf.put(Config.TOPOLOGY_TASKS, ackerNum);
         ackerConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, ObjectReader.getInt(conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)));
 
+        Map<GlobalStreamId, Grouping> inputs = ackerInputs(topology);
         Bolt acker = Thrift.prepareSerializedBoltDetails(inputs, makeAckerBolt(), outputStreams, ackerNum, ackerConf);
 
         for (Bolt bolt : topology.get_bolts().values()) {

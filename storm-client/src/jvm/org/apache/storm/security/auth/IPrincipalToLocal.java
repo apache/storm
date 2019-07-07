@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public interface IPrincipalToLocal {
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param topoConf Storm configuration
      */
@@ -32,9 +32,9 @@ public interface IPrincipalToLocal {
      * @param principal the principal to convert
      * @return The local user name.
      */
-    default public String toLocal(Principal principal) {
+    default String toLocal(Principal principal) {
         return principal == null ? null : toLocal(principal.getName());
     }
 
-    public String toLocal(String principalName);
+    String toLocal(String principalName);
 }

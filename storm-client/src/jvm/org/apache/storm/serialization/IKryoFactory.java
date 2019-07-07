@@ -17,10 +17,14 @@ import java.util.Map;
 
 /**
  * An interface that controls the Kryo instance used by Storm for serialization. The lifecycle is:
- *
- * 1. The Kryo instance is constructed using getKryo 2. Storm registers the default classes (e.g. arrays, lists, maps, etc.) 3. Storm calls
- * preRegister hook 4. Storm registers all user-defined registrations through topology.kryo.register 5. Storm calls postRegister hook 6.
- * Storm calls all user-defined decorators through topology.kryo.decorators 7. Storm calls postDecorate hook
+ * <ol><li>The Kryo instance is constructed using getKryo</li>
+ * <li>Storm registers the default classes (e.g. arrays, lists, maps, etc.)</li>
+ * <li>Storm calls preRegister hook</li>
+ * <li>Storm registers all user-defined registrations through topology.kryo.register</li>
+ * <li>Storm calls postRegister hook</li>
+ * <li>Storm calls all user-defined decorators through topology.kryo.decorators</li>
+ * <li>Storm calls postDecorate hook</li>
+ * </ol>
  */
 public interface IKryoFactory {
     Kryo getKryo(Map<String, Object> conf);

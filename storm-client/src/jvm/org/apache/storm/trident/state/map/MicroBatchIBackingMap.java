@@ -18,13 +18,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class MicroBatchIBackingMap<T> implements IBackingMap<T> {
-    IBackingMap<T> _delegate;
-    Options _options;
+    IBackingMap<T> delegate;
+    Options options;
 
 
     public MicroBatchIBackingMap(final Options options, final IBackingMap<T> delegate) {
-        _options = options;
-        _delegate = delegate;
+        this.options = options;
+        this.delegate = delegate;
         assert options.maxMultiPutBatchSize >= 0;
         assert options.maxMultiGetBatchSize >= 0;
     }
@@ -32,10 +32,10 @@ public class MicroBatchIBackingMap<T> implements IBackingMap<T> {
     @Override
     public void multiPut(final List<List<Object>> keys, final List<T> values) {
         int thisBatchSize;
-        if (_options.maxMultiPutBatchSize == 0) {
+        if (options.maxMultiPutBatchSize == 0) {
             thisBatchSize = keys.size();
         } else {
-            thisBatchSize = _options.maxMultiPutBatchSize;
+            thisBatchSize = options.maxMultiPutBatchSize;
         }
 
         LinkedList<List<Object>> keysTodo = new LinkedList<List<Object>>(keys);
@@ -49,17 +49,17 @@ public class MicroBatchIBackingMap<T> implements IBackingMap<T> {
                 valuesBatch.add(valuesTodo.removeFirst());
             }
 
-            _delegate.multiPut(keysBatch, valuesBatch);
+            delegate.multiPut(keysBatch, valuesBatch);
         }
     }
 
     @Override
     public List<T> multiGet(final List<List<Object>> keys) {
         int thisBatchSize;
-        if (_options.maxMultiGetBatchSize == 0) {
+        if (options.maxMultiGetBatchSize == 0) {
             thisBatchSize = keys.size();
         } else {
-            thisBatchSize = _options.maxMultiGetBatchSize;
+            thisBatchSize = options.maxMultiGetBatchSize;
         }
 
         LinkedList<List<Object>> keysTodo = new LinkedList<List<Object>>(keys);
@@ -72,7 +72,7 @@ public class MicroBatchIBackingMap<T> implements IBackingMap<T> {
                 keysBatch.add(keysTodo.removeFirst());
             }
 
-            List<T> retSubset = _delegate.multiGet(keysBatch);
+            List<T> retSubset = delegate.multiGet(keysBatch);
             ret.addAll(retSubset);
         }
 

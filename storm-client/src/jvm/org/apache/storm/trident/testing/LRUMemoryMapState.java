@@ -32,92 +32,94 @@ import org.apache.storm.trident.state.snapshot.Snapshottable;
 import org.apache.storm.trident.util.LRUMap;
 import org.apache.storm.tuple.Values;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class LRUMemoryMapState<T> implements Snapshottable<T>, ITupleCollection, MapState<T> {
 
-    static ConcurrentHashMap<String, Map<List<Object>, Object>> _dbs = new ConcurrentHashMap<String, Map<List<Object>, Object>>();
-    LRUMemoryMapStateBacking<OpaqueValue> _backing;
-    SnapshottableMap<T> _delegate;
+    static ConcurrentHashMap<String, Map<List<Object>, Object>> dbs = new ConcurrentHashMap<String, Map<List<Object>, Object>>();
+    LRUMemoryMapStateBacking<OpaqueValue> backing;
+    SnapshottableMap<T> delegate;
 
     public LRUMemoryMapState(int cacheSize, String id) {
-        _backing = new LRUMemoryMapStateBacking(cacheSize, id);
-        _delegate = new SnapshottableMap(OpaqueMap.build(_backing), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
+        backing = new LRUMemoryMapStateBacking(cacheSize, id);
+        delegate = new SnapshottableMap(OpaqueMap.build(backing), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
     }
 
     @Override
     public T update(ValueUpdater updater) {
-        return _delegate.update(updater);
+        return delegate.update(updater);
     }
 
     @Override
     public void set(T o) {
-        _delegate.set(o);
+        delegate.set(o);
     }
 
     @Override
     public T get() {
-        return _delegate.get();
+        return delegate.get();
     }
 
     @Override
     public void beginCommit(Long txid) {
-        _delegate.beginCommit(txid);
+        delegate.beginCommit(txid);
     }
 
     @Override
     public void commit(Long txid) {
-        _delegate.commit(txid);
+        delegate.commit(txid);
     }
 
     @Override
     public Iterator<List<Object>> getTuples() {
-        return _backing.getTuples();
+        return backing.getTuples();
     }
 
     @Override
     public List<T> multiUpdate(List<List<Object>> keys, List<ValueUpdater> updaters) {
-        return _delegate.multiUpdate(keys, updaters);
+        return delegate.multiUpdate(keys, updaters);
     }
 
     @Override
     public void multiPut(List<List<Object>> keys, List<T> vals) {
-        _delegate.multiPut(keys, vals);
+        delegate.multiPut(keys, vals);
     }
 
     @Override
     public List<T> multiGet(List<List<Object>> keys) {
-        return _delegate.multiGet(keys);
+        return delegate.multiGet(keys);
     }
 
     public static class Factory implements StateFactory {
 
-        String _id;
-        int _maxSize;
+        String id;
+        int maxSize;
 
         public Factory(int maxSize) {
-            _id = UUID.randomUUID().toString();
-            _maxSize = maxSize;
+            id = UUID.randomUUID().toString();
+            this.maxSize = maxSize;
         }
 
         @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-            return new LRUMemoryMapState(_maxSize, _id + partitionIndex);
+            return new LRUMemoryMapState(maxSize, id + partitionIndex);
         }
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     static class LRUMemoryMapStateBacking<T> implements IBackingMap<T>, ITupleCollection {
 
         Map<List<Object>, T> db;
         Long currTx;
 
         public LRUMemoryMapStateBacking(int cacheSize, String id) {
-            if (!_dbs.containsKey(id)) {
-                _dbs.put(id, new LRUMap<List<Object>, Object>(cacheSize));
+            if (!dbs.containsKey(id)) {
+                dbs.put(id, new LRUMap<List<Object>, Object>(cacheSize));
             }
-            this.db = (Map<List<Object>, T>) _dbs.get(id);
+            this.db = (Map<List<Object>, T>) dbs.get(id);
         }
 
         public static void clearAll() {
-            _dbs.clear();
+            dbs.clear();
         }
 
         @Override

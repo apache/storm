@@ -18,61 +18,61 @@ import java.util.Set;
 public interface CgroupCommonOperation {
 
     /**
-     * add task to cgroup
+     * add task to cgroup.
      *
      * @param taskid task id of task to add
      */
     public void addTask(int taskid) throws IOException;
 
     /**
-     * Get a list of task ids running in CGroup
+     * Get a list of task ids running in CGroup.
      */
     public Set<Integer> getTasks() throws IOException;
 
     /**
-     * add a process to cgroup
+     * add a process to cgroup.
      *
      * @param pid the PID of the process to add
      */
     public void addProcs(int pid) throws IOException;
 
     /**
-     * get the PIDs of processes running in cgroup
+     * get the PIDs of processes running in cgroup.
      */
     public Set<Long> getPids() throws IOException;
 
     /**
-     * to get the notify_on_release config
+     * to get the notify_on_release config.
      */
     public boolean getNotifyOnRelease() throws IOException;
 
     /**
-     * to set notify_on_release config in cgroup
+     * to set notify_on_release config in cgroup.
      */
     public void setNotifyOnRelease(boolean flag) throws IOException;
 
     /**
-     * get the command for the relase agent to execute
+     * get the command for the relase agent to execute.
      */
     public String getReleaseAgent() throws IOException;
 
     /**
-     * set a command for the release agent to execute
+     * set a command for the release agent to execute.
      */
     public void setReleaseAgent(String command) throws IOException;
 
     /**
-     * get the cgroup.clone_children config
+     * get the cgroup.clone_children config.
      */
     public boolean getCgroupCloneChildren() throws IOException;
 
     /**
-     * Set the cgroup.clone_children config
+     * Set the cgroup.clone_children config.
      */
     public void setCgroupCloneChildren(boolean flag) throws IOException;
 
     /**
-     * set event control config
+     * set event control config.
      */
     public void setEventControl(String eventFd, String controlFd, String... args) throws IOException;
 }

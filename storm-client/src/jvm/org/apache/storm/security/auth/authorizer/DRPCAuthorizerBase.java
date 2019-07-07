@@ -18,6 +18,7 @@ import org.apache.storm.security.auth.ReqContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public abstract class DRPCAuthorizerBase implements IAuthorizer {
     public static final Logger LOG = LoggerFactory.getLogger(DRPCAuthorizerBase.class);
 
@@ -29,9 +30,9 @@ public abstract class DRPCAuthorizerBase implements IAuthorizer {
     @Override
     public abstract void prepare(Map<String, Object> conf);
 
-    abstract protected boolean permitClientRequest(ReqContext context, String operation, Map<String, Object> params);
+    protected abstract boolean permitClientRequest(ReqContext context, String operation, Map<String, Object> params);
 
-    abstract protected boolean permitInvocationRequest(ReqContext context, String operation, Map<String, Object> params);
+    protected abstract boolean permitInvocationRequest(ReqContext context, String operation, Map<String, Object> params);
 
     /**
      * Authorizes request from to the DRPC server.
@@ -44,14 +45,13 @@ public abstract class DRPCAuthorizerBase implements IAuthorizer {
     public boolean permit(ReqContext context, String operation, Map<String, Object> params) {
         if ("execute".equals(operation)) {
             return permitClientRequest(context, operation, params);
-        } else if ("failRequest".equals(operation) ||
-                   "fetchRequest".equals(operation) ||
-                   "result".equals(operation)) {
+        } else if ("failRequest".equals(operation)
+                || "fetchRequest".equals(operation)
+                || "result".equals(operation)) {
             return permitInvocationRequest(context, operation, params);
         }
         // Deny unsupported operations.
-        LOG.warn("Denying unsupported operation \"" + operation + "\" from " +
-                 context.remoteAddress());
+        LOG.warn("Denying unsupported operation \"" + operation + "\" from " + context.remoteAddress());
         return false;
     }
 }

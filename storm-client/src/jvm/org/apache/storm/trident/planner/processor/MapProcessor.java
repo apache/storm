@@ -31,15 +31,15 @@ import org.apache.storm.tuple.Fields;
  * functions.
  */
 public class MapProcessor implements TridentProcessor {
-    Function _function;
-    TridentContext _context;
-    FreshCollector _collector;
-    Fields _inputFields;
-    TridentTupleView.ProjectionFactory _projection;
+    Function function;
+    TridentContext context;
+    FreshCollector collector;
+    Fields inputFields;
+    TridentTupleView.ProjectionFactory projection;
 
     public MapProcessor(Fields inputFields, Function function) {
-        _function = function;
-        _inputFields = inputFields;
+        this.function = function;
+        this.inputFields = inputFields;
     }
 
     @Override
@@ -48,26 +48,26 @@ public class MapProcessor implements TridentProcessor {
         if (parents.size() != 1) {
             throw new RuntimeException("Map operation can only have one parent");
         }
-        _context = tridentContext;
-        _collector = new FreshCollector(tridentContext);
-        _projection = new TridentTupleView.ProjectionFactory(parents.get(0), _inputFields);
-        _function.prepare(conf, new TridentOperationContext(context, _projection));
+        this.context = tridentContext;
+        collector = new FreshCollector(tridentContext);
+        projection = new TridentTupleView.ProjectionFactory(parents.get(0), inputFields);
+        function.prepare(conf, new TridentOperationContext(context, projection));
     }
 
     @Override
     public void cleanup() {
-        _function.cleanup();
+        function.cleanup();
     }
 
     @Override
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
-        _collector.setContext(processorContext);
-        _function.execute(_projection.create(tuple), _collector);
+        collector.setContext(processorContext);
+        function.execute(projection.create(tuple), collector);
     }
 
     @Override
     public void flush() {
-        _collector.flush();
+        collector.flush();
     }
 
     @Override
@@ -82,6 +82,6 @@ public class MapProcessor implements TridentProcessor {
 
     @Override
     public TridentTuple.Factory getOutputFactory() {
-        return _collector.getOutputFactory();
+        return collector.getOutputFactory();
     }
 }

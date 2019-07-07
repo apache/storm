@@ -23,7 +23,7 @@ import org.apache.storm.container.cgroup.core.CpuacctCore;
 import org.apache.storm.container.cgroup.core.CpuacctCore.StatType;
 
 /**
- * Report CPU used in the cgroup
+ * Report CPU used in the cgroup.
  */
 public class CGroupCpu extends CGroupMetricsBase<Map<String, Long>> {
     long previousSystem = 0;
@@ -34,6 +34,7 @@ public class CGroupCpu extends CGroupMetricsBase<Map<String, Long>> {
         super(conf, SubSystemType.cpuacct);
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public synchronized int getUserHZ() throws IOException {
         if (userHz < 0) {
             ProcessBuilder pb = new ProcessBuilder("getconf", "CLK_TCK");
@@ -52,6 +53,7 @@ public class CGroupCpu extends CGroupMetricsBase<Map<String, Long>> {
         long systemHz = stat.get(StatType.system);
         long userHz = stat.get(StatType.user);
         long user = userHz - previousUser;
+        @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
         long sys = systemHz - previousSystem;
         previousUser = userHz;
         previousSystem = systemHz;

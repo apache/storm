@@ -112,8 +112,11 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
             } else if (msgId <= state.lastEvaluated) {
                 super.execute(input);
             } else {
-                LOG.debug("Tuple msg id {} > lastEvaluated id {}, adding to pendingTuples and clearing recovery state " +
-                          "for taskStream {}", msgId, state.lastEvaluated, taskStream);
+                LOG.debug("Tuple msg id {} > lastEvaluated id {}, adding to pendingTuples and clearing recovery state "
+                                + "for taskStream {}",
+                        msgId,
+                        state.lastEvaluated,
+                        taskStream);
                 pendingTuples.add(input);
                 clearRecoveryState(taskStream);
             }
@@ -203,8 +206,12 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
             @Override
             public void onActivation(List<Tuple> events, List<Tuple> newEvents, List<Tuple> expired, Long timestamp) {
                 if (isRecovering()) {
-                    String msg = String.format("Unexpected activation with events %s, newEvents %s, expired %s in recovering state. " +
-                                               "recoveryStates %s ", events, newEvents, expired, recoveryStates);
+                    String msg = String.format("Unexpected activation with events %s, newEvents %s, expired %s in "
+                                    + "recovering state. recoveryStates %s ",
+                            events,
+                            newEvents,
+                            expired,
+                            recoveryStates);
                     LOG.error(msg);
                     throw new IllegalStateException(msg);
                 } else {
@@ -318,10 +325,10 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
 
         @Override
         public String toString() {
-            return "WindowState{" +
-                   "lastExpired=" + lastExpired +
-                   ", lastEvaluated=" + lastEvaluated +
-                   '}';
+            return "WindowState{"
+                    + "lastExpired=" + lastExpired
+                    + ", lastEvaluated=" + lastEvaluated
+                    + '}';
         }
     }
 
@@ -369,10 +376,10 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
 
         @Override
         public String toString() {
-            return "TaskStream{" +
-                   "sourceTask=" + sourceTask +
-                   ", streamId=" + streamId +
-                   '}';
+            return "TaskStream{"
+                    + "sourceTask=" + sourceTask
+                    + ", streamId=" + streamId
+                    + '}';
         }
     }
 }

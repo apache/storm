@@ -13,23 +13,23 @@
 package org.apache.storm.metric.api;
 
 public class CountMetric implements IMetric {
-    long _value = 0;
+    long value = 0;
 
     public CountMetric() {
     }
 
     public void incr() {
-        _value++;
+        value++;
     }
 
     public void incrBy(long incrementBy) {
-        _value += incrementBy;
+        value += incrementBy;
     }
 
     @Override
     public Object getValueAndReset() {
-        long ret = _value;
-        _value = 0;
+        long ret = value;
+        value = 0;
         return ret;
     }
 }

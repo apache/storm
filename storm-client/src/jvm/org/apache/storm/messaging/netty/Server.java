@@ -67,7 +67,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private volatile boolean closing = false;
 
     /**
-     * Starts Netty at the given port
+     * Starts Netty at the given port.
      * @param topoConf The topology config
      * @param port The port to start Netty at
      * @param cb The callback to deliver incoming messages to
@@ -81,8 +81,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         this.newConnectionResponse = newConnectionResponse;
 
         // Configure the server.
-        int buffer_size = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
-        int backlog = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
+        int bufferSize = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         int maxWorkers = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
         ThreadFactory bossFactory = new NettyRenameThreadFactory(netty_name() + "-boss");
@@ -93,15 +92,16 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
 
-        LOG.info("Create Netty Server " + netty_name() + ", buffer_size: " + buffer_size + ", maxWorkers: " + maxWorkers);
+        LOG.info("Create Netty Server " + netty_name() + ", buffer_size: " + bufferSize + ", maxWorkers: " + maxWorkers);
 
+        int backlog = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
         bootstrap = new ServerBootstrap()
             .group(bossEventLoopGroup, workerEventLoopGroup)
             .channel(NioServerSocketChannel.class)
             .option(ChannelOption.SO_REUSEADDR, true)
             .option(ChannelOption.SO_BACKLOG, backlog)
             .childOption(ChannelOption.TCP_NODELAY, true)
-            .childOption(ChannelOption.SO_RCVBUF, buffer_size)
+            .childOption(ChannelOption.SO_RCVBUF, bufferSize)
             .childOption(ChannelOption.SO_KEEPALIVE, true)
             .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             .childHandler(new StormServerPipelineFactory(topoConf, this));
@@ -136,9 +136,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     /**
-     * enqueue a received message
-     *
-     * @throws InterruptedException
+     * enqueue a received message.
      */
     protected void enqueue(List<TaskMessage> msgs, String from) throws InterruptedException {
         if (null == msgs || msgs.isEmpty() || closing) {
@@ -154,7 +152,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     /**
-     * close all channels, and release resources
+     * close all channels, and release resources.
      */
     @Override
     public void close() {

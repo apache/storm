@@ -22,29 +22,31 @@ import org.apache.storm.metric.api.IMetric;
  * Acts as a Count Metric, but also keeps track of approximate counts for the last 10 mins, 3 hours, 1 day, and all time.
  */
 public class CountStatAndMetric implements IMetric {
-    private final AtomicLong _currentBucket;
+    private final AtomicLong currentBucket;
     //10 min values
-    private final int _tmSize;
-    private final long[] _tmBuckets;
-    private final long[] _tmTime;
+    private final int tmSize;
+    private final long[] tmBuckets;
+    private final long[] tmTime;
     //3 hour values
-    private final int _thSize;
-    private final long[] _thBuckets;
-    private final long[] _thTime;
+    private final int thSize;
+    private final long[] thBuckets;
+    private final long[] thTime;
     //1 day values
-    private final int _odSize;
-    private final long[] _odBuckets;
-    private final long[] _odTime;
-    private final TimerTask _task;
+    private final int odSize;
+    private final long[] odBuckets;
+    private final long[] odTime;
+    private final TimerTask task;
     // All internal state except for the count of the current bucket are
     // protected using a lock on this counter
-    private long _bucketStart;
+    private long bucketStart;
     //exact variable time, that is added to the current bucket
-    private long _exactExtra;
+    private long exactExtra;
     //all time
-    private long _allTime;
+    private long allTime;
 
     /**
+     * Constructor.
+     *
      * @param numBuckets the number of buckets to divide the time periods into.
      */
     public CountStatAndMetric(int numBuckets) {
@@ -52,7 +54,7 @@ public class CountStatAndMetric implements IMetric {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param numBuckets the number of buckets to divide the time periods into.
      * @param startTime  if positive the simulated time to start the from.
@@ -61,28 +63,28 @@ public class CountStatAndMetric implements IMetric {
         numBuckets = Math.max(numBuckets, 2);
         //We want to capture the full time range, so the target size is as
         // if we had one bucket less, then we do
-        _tmSize = 10 * 60 * 1000 / (numBuckets - 1);
-        _thSize = 3 * 60 * 60 * 1000 / (numBuckets - 1);
-        _odSize = 24 * 60 * 60 * 1000 / (numBuckets - 1);
-        if (_tmSize < 1 || _thSize < 1 || _odSize < 1) {
+        tmSize = 10 * 60 * 1000 / (numBuckets - 1);
+        thSize = 3 * 60 * 60 * 1000 / (numBuckets - 1);
+        odSize = 24 * 60 * 60 * 1000 / (numBuckets - 1);
+        if (tmSize < 1 || thSize < 1 || odSize < 1) {
             throw new IllegalArgumentException("number of buckets is too large to be supported");
         }
-        _tmBuckets = new long[numBuckets];
-        _tmTime = new long[numBuckets];
-        _thBuckets = new long[numBuckets];
-        _thTime = new long[numBuckets];
-        _odBuckets = new long[numBuckets];
-        _odTime = new long[numBuckets];
-        _allTime = 0;
-        _exactExtra = 0;
+        tmBuckets = new long[numBuckets];
+        tmTime = new long[numBuckets];
+        thBuckets = new long[numBuckets];
+        thTime = new long[numBuckets];
+        odBuckets = new long[numBuckets];
+        odTime = new long[numBuckets];
+        allTime = 0;
+        exactExtra = 0;
 
-        _bucketStart = startTime >= 0 ? startTime : System.currentTimeMillis();
-        _currentBucket = new AtomicLong(0);
+        bucketStart = startTime >= 0 ? startTime : System.currentTimeMillis();
+        currentBucket = new AtomicLong(0);
         if (startTime < 0) {
-            _task = new Fresher();
-            MetricStatTimer._timer.scheduleAtFixedRate(_task, _tmSize, _tmSize);
+            task = new Fresher();
+            MetricStatTimer.timer.scheduleAtFixedRate(task, tmSize, tmSize);
         } else {
-            _task = null;
+            task = null;
         }
     }
 
@@ -92,7 +94,7 @@ public class CountStatAndMetric implements IMetric {
      * @param count number to count
      */
     public void incBy(long count) {
-        _currentBucket.addAndGet(count);
+        currentBucket.addAndGet(count);
     }
 
 
@@ -101,29 +103,30 @@ public class CountStatAndMetric implements IMetric {
         return getValueAndReset(System.currentTimeMillis());
     }
 
+    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
     synchronized Object getValueAndReset(long now) {
-        long value = _currentBucket.getAndSet(0);
-        long timeSpent = now - _bucketStart;
-        long ret = value + _exactExtra;
-        _bucketStart = now;
-        _exactExtra = 0;
+        long value = currentBucket.getAndSet(0);
+        long timeSpent = now - bucketStart;
+        long ret = value + exactExtra;
+        bucketStart = now;
+        exactExtra = 0;
         rotateBuckets(value, timeSpent);
         return ret;
     }
 
     synchronized void rotateSched(long now) {
-        long value = _currentBucket.getAndSet(0);
-        long timeSpent = now - _bucketStart;
-        _exactExtra += value;
-        _bucketStart = now;
+        long value = currentBucket.getAndSet(0);
+        long timeSpent = now - bucketStart;
+        exactExtra += value;
+        bucketStart = now;
         rotateBuckets(value, timeSpent);
     }
 
     synchronized void rotateBuckets(long value, long timeSpent) {
-        rotate(value, timeSpent, _tmSize, _tmTime, _tmBuckets);
-        rotate(value, timeSpent, _thSize, _thTime, _thBuckets);
-        rotate(value, timeSpent, _odSize, _odTime, _odBuckets);
-        _allTime += value;
+        rotate(value, timeSpent, tmSize, tmTime, tmBuckets);
+        rotate(value, timeSpent, thSize, thTime, thBuckets);
+        rotate(value, timeSpent, odSize, odTime, odBuckets);
+        allTime += value;
     }
 
     private synchronized void rotate(long value, long timeSpent, long targetSize, long[] times, long[] buckets) {
@@ -146,6 +149,7 @@ public class CountStatAndMetric implements IMetric {
     }
 
     /**
+     * Get time counts.
      * @return a map of time window to count. Keys are "600" for last 10 mins "10800" for the last 3 hours "86400" for the last day
      *     ":all-time" for all time
      */
@@ -155,12 +159,12 @@ public class CountStatAndMetric implements IMetric {
 
     synchronized Map<String, Long> getTimeCounts(long now) {
         Map<String, Long> ret = new HashMap<>();
-        long value = _currentBucket.get();
-        long timeSpent = now - _bucketStart;
-        ret.put("600", readApproximateTime(value, timeSpent, _tmTime, _tmBuckets, 600 * 1000));
-        ret.put("10800", readApproximateTime(value, timeSpent, _thTime, _thBuckets, 10800 * 1000));
-        ret.put("86400", readApproximateTime(value, timeSpent, _odTime, _odBuckets, 86400 * 1000));
-        ret.put(":all-time", value + _allTime);
+        long value = currentBucket.get();
+        long timeSpent = now - bucketStart;
+        ret.put("600", readApproximateTime(value, timeSpent, tmTime, tmBuckets, 600 * 1000));
+        ret.put("10800", readApproximateTime(value, timeSpent, thTime, thBuckets, 10800 * 1000));
+        ret.put("86400", readApproximateTime(value, timeSpent, odTime, odBuckets, 86400 * 1000));
+        ret.put(":all-time", value + allTime);
         return ret;
     }
 
@@ -181,8 +185,8 @@ public class CountStatAndMetric implements IMetric {
     }
 
     public void close() {
-        if (_task != null) {
-            _task.cancel();
+        if (task != null) {
+            task.cancel();
         }
     }
 

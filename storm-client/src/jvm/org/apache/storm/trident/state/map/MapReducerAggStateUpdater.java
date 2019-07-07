@@ -32,18 +32,18 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
     //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
     private static final long serialVersionUID = 8667174018978959987L;
 
-    ReducerAggregator _agg;
-    Fields _groupFields;
-    Fields _inputFields;
-    transient ProjectionFactory _groupFactory;
-    transient ProjectionFactory _inputFactory;
-    ComboList.Factory _factory;
+    ReducerAggregator agg;
+    Fields groupFields;
+    Fields inputFields;
+    transient ProjectionFactory groupFactory;
+    transient ProjectionFactory inputFactory;
+    ComboList.Factory factory;
 
     public MapReducerAggStateUpdater(ReducerAggregator agg, Fields groupFields, Fields inputFields) {
-        _agg = agg;
-        _groupFields = groupFields;
-        _inputFields = inputFields;
-        _factory = new ComboList.Factory(groupFields.size(), 1);
+        this.agg = agg;
+        this.groupFields = groupFields;
+        this.inputFields = inputFields;
+        factory = new ComboList.Factory(groupFields.size(), 1);
     }
 
     @Override
@@ -51,32 +51,32 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
         Map<List<Object>, List<TridentTuple>> grouped = new HashMap<>();
 
         for (TridentTuple t : tuples) {
-            List<Object> group = _groupFactory.create(t);
+            List<Object> group = groupFactory.create(t);
             List<TridentTuple> groupTuples = grouped.get(group);
             if (groupTuples == null) {
                 groupTuples = new ArrayList<>();
                 grouped.put(group, groupTuples);
             }
-            groupTuples.add(_inputFactory.create(t));
+            groupTuples.add(inputFactory.create(t));
         }
         List<List<Object>> uniqueGroups = new ArrayList<>(grouped.keySet());
         List<ValueUpdater> updaters = new ArrayList<>(uniqueGroups.size());
         for (List<Object> group : uniqueGroups) {
-            updaters.add(new ReducerValueUpdater(_agg, grouped.get(group)));
+            updaters.add(new ReducerValueUpdater(agg, grouped.get(group)));
         }
         List<Object> results = map.multiUpdate(uniqueGroups, updaters);
 
         for (int i = 0; i < uniqueGroups.size(); i++) {
             List<Object> group = uniqueGroups.get(i);
             Object result = results.get(i);
-            collector.emit(_factory.create(new List[]{ group, new Values(result) }));
+            collector.emit(factory.create(new List[]{ group, new Values(result) }));
         }
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TridentOperationContext context) {
-        _groupFactory = context.makeProjectionFactory(_groupFields);
-        _inputFactory = context.makeProjectionFactory(_inputFields);
+        groupFactory = context.makeProjectionFactory(groupFields);
+        inputFactory = context.makeProjectionFactory(inputFields);
     }
 
     @Override

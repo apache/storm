@@ -22,22 +22,16 @@ public interface WindowConfig extends Serializable {
 
     /**
      * Returns the length of the window.
-     *
-     * @return
      */
     public int getWindowLength();
 
     /**
      * Returns the sliding length of the moving window.
-     *
-     * @return
      */
     public int getSlidingLength();
 
     /**
      * Gives the type of windowing. It can be any of {@code Type} values.
-     *
-     * @return
      */
     public <T> WindowStrategy<T> getWindowStrategy();
 

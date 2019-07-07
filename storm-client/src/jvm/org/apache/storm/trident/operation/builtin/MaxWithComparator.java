@@ -37,8 +37,8 @@ public class MaxWithComparator<T> extends ComparisonAggregator<T> {
 
     @Override
     public String toString() {
-        return "MaxWithComparator{" +
-               "comparator=" + comparator +
-               '}';
+        return "MaxWithComparator{"
+                + "comparator=" + comparator
+                + '}';
     }
 }

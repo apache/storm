@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.zip.CRC32;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class CRC32OutputStream extends OutputStream {
     private CRC32 hasher;
 

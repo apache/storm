@@ -28,66 +28,66 @@ import org.apache.storm.tuple.Fields;
 
 
 public class MultiReducerProcessor implements TridentProcessor {
-    MultiReducer _reducer;
-    TridentContext _context;
-    Map<String, Integer> _streamToIndex;
-    List<Fields> _projectFields;
-    ProjectionFactory[] _projectionFactories;
-    FreshCollector _collector;
+    MultiReducer reducer;
+    TridentContext context;
+    Map<String, Integer> streamToIndex;
+    List<Fields> projectFields;
+    ProjectionFactory[] projectionFactories;
+    FreshCollector collector;
 
     public MultiReducerProcessor(List<Fields> inputFields, MultiReducer reducer) {
-        _reducer = reducer;
-        _projectFields = inputFields;
+        this.reducer = reducer;
+        projectFields = inputFields;
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext) {
         List<Factory> parents = tridentContext.getParentTupleFactories();
-        _context = tridentContext;
-        _streamToIndex = new HashMap<>();
+        this.context = tridentContext;
+        streamToIndex = new HashMap<>();
         List<String> parentStreams = tridentContext.getParentStreams();
         for (int i = 0; i < parentStreams.size(); i++) {
-            _streamToIndex.put(parentStreams.get(i), i);
+            streamToIndex.put(parentStreams.get(i), i);
         }
-        _projectionFactories = new ProjectionFactory[_projectFields.size()];
-        for (int i = 0; i < _projectFields.size(); i++) {
-            _projectionFactories[i] = new ProjectionFactory(parents.get(i), _projectFields.get(i));
+        projectionFactories = new ProjectionFactory[projectFields.size()];
+        for (int i = 0; i < projectFields.size(); i++) {
+            projectionFactories[i] = new ProjectionFactory(parents.get(i), projectFields.get(i));
         }
-        _collector = new FreshCollector(tridentContext);
-        _reducer.prepare(conf, new TridentMultiReducerContext((List) Arrays.asList(_projectionFactories)));
+        collector = new FreshCollector(tridentContext);
+        reducer.prepare(conf, new TridentMultiReducerContext((List) Arrays.asList(projectionFactories)));
     }
 
     @Override
     public void cleanup() {
-        _reducer.cleanup();
+        reducer.cleanup();
     }
 
     @Override
     public void startBatch(ProcessorContext processorContext) {
-        _collector.setContext(processorContext);
-        processorContext.state[_context.getStateIndex()] = _reducer.init(_collector);
+        collector.setContext(processorContext);
+        processorContext.state[context.getStateIndex()] = reducer.init(collector);
     }
 
     @Override
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
-        _collector.setContext(processorContext);
-        int i = _streamToIndex.get(streamId);
-        _reducer.execute(processorContext.state[_context.getStateIndex()], i, _projectionFactories[i].create(tuple), _collector);
+        collector.setContext(processorContext);
+        int i = streamToIndex.get(streamId);
+        reducer.execute(processorContext.state[context.getStateIndex()], i, projectionFactories[i].create(tuple), collector);
     }
 
     @Override
     public void flush() {
-        _collector.flush();
+        collector.flush();
     }
 
     @Override
     public void finishBatch(ProcessorContext processorContext) {
-        _collector.setContext(processorContext);
-        _reducer.complete(processorContext.state[_context.getStateIndex()], _collector);
+        collector.setContext(processorContext);
+        reducer.complete(processorContext.state[context.getStateIndex()], collector);
     }
 
     @Override
     public Factory getOutputFactory() {
-        return _collector.getOutputFactory();
+        return collector.getOutputFactory();
     }
 }

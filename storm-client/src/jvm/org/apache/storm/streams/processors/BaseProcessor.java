@@ -12,16 +12,14 @@
 
 package org.apache.storm.streams.processors;
 
+import static org.apache.storm.streams.WindowNode.PUNCTUATION;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.apache.storm.streams.WindowNode.PUNCTUATION;
-
 /**
  * Base implementation of the {@link Processor} interface that provides convenience methods {@link #execute(Object)} and {@link #finish()}.
- *
- * @param <T>
  */
 abstract class BaseProcessor<T> implements Processor<T> {
     private final Set<String> punctuationState = new HashSet<>();
@@ -44,6 +42,16 @@ abstract class BaseProcessor<T> implements Processor<T> {
     }
 
     /**
+     * Execute some operation on the input value. Sub classes can override this when then don't care about the source stream from where the
+     * input is received.
+     *
+     * @param input the input
+     */
+    protected void execute(T input) {
+        // NOOP
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -53,16 +61,6 @@ abstract class BaseProcessor<T> implements Processor<T> {
             context.forward(PUNCTUATION);
             punctuationState.clear();
         }
-    }
-
-    /**
-     * Execute some operation on the input value. Sub classes can override this when then don't care about the source stream from where the
-     * input is received.
-     *
-     * @param input the input
-     */
-    protected void execute(T input) {
-        // NOOP
     }
 
     /**

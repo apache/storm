@@ -24,11 +24,11 @@ import org.apache.storm.tuple.Fields;
 
 
 /**
- * An {@link org.apache.storm.trident.operation.Assembly} implementation
+ * An {@link org.apache.storm.trident.operation.Assembly} implementation.
  */
 public class FirstN implements Assembly {
 
-    Aggregator _agg;
+    Aggregator agg;
 
     public FirstN(int n, String sortField) {
         this(n, sortField, false);
@@ -36,25 +36,25 @@ public class FirstN implements Assembly {
 
     public FirstN(int n, String sortField, boolean reverse) {
         if (sortField != null) {
-            _agg = new FirstNSortedAgg(n, sortField, reverse);
+            agg = new FirstNSortedAgg(n, sortField, reverse);
         } else {
-            _agg = new FirstNAgg(n);
+            agg = new FirstNAgg(n);
         }
     }
 
     @Override
     public Stream apply(Stream input) {
         Fields outputFields = input.getOutputFields();
-        return input.partitionAggregate(outputFields, _agg, outputFields)
+        return input.partitionAggregate(outputFields, agg, outputFields)
                     .global()
-                    .partitionAggregate(outputFields, _agg, outputFields);
+                    .partitionAggregate(outputFields, agg, outputFields);
     }
 
     public static class FirstNAgg extends BaseAggregator<FirstNAgg.State> {
-        int _n;
+        int number;
 
         public FirstNAgg(int n) {
-            _n = n;
+            number = n;
         }
 
         @Override
@@ -64,7 +64,7 @@ public class FirstN implements Assembly {
 
         @Override
         public void aggregate(State val, TridentTuple tuple, TridentCollector collector) {
-            if (val.emitted < _n) {
+            if (val.emitted < number) {
                 collector.emit(tuple);
                 val.emitted++;
             }
@@ -82,25 +82,25 @@ public class FirstN implements Assembly {
 
     public static class FirstNSortedAgg extends BaseAggregator<PriorityQueue> {
 
-        int _n;
-        String _sortField;
-        boolean _reverse;
+        int number;
+        String sortField;
+        boolean reverse;
 
         public FirstNSortedAgg(int n, String sortField, boolean reverse) {
-            _n = n;
-            _sortField = sortField;
-            _reverse = reverse;
+            number = n;
+            this.sortField = sortField;
+            this.reverse = reverse;
         }
 
         @Override
         public PriorityQueue init(Object batchId, TridentCollector collector) {
-            return new PriorityQueue(_n, new Comparator<TridentTuple>() {
+            return new PriorityQueue(number, new Comparator<TridentTuple>() {
                 @Override
                 public int compare(TridentTuple t1, TridentTuple t2) {
-                    Comparable c1 = (Comparable) t1.getValueByField(_sortField);
-                    Comparable c2 = (Comparable) t2.getValueByField(_sortField);
+                    Comparable c1 = (Comparable) t1.getValueByField(sortField);
+                    Comparable c2 = (Comparable) t2.getValueByField(sortField);
                     int ret = c1.compareTo(c2);
-                    if (_reverse) {
+                    if (reverse) {
                         ret *= -1;
                     }
                     return ret;
@@ -116,7 +116,7 @@ public class FirstN implements Assembly {
         @Override
         public void complete(PriorityQueue val, TridentCollector collector) {
             int total = val.size();
-            for (int i = 0; i < _n && i < total; i++) {
+            for (int i = 0; i < number && i < total; i++) {
                 TridentTuple t = (TridentTuple) val.remove();
                 collector.emit(t);
             }

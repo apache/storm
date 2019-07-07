@@ -19,7 +19,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
 public class OutputFieldsGetter implements OutputFieldsDeclarer {
-    private Map<String, StreamInfo> _fields = new HashMap<>();
+    private Map<String, StreamInfo> fields = new HashMap<>();
 
     @Override
     public void declare(Fields fields) {
@@ -41,15 +41,15 @@ public class OutputFieldsGetter implements OutputFieldsDeclarer {
         if (null == streamId) {
             throw new IllegalArgumentException("streamId can't be null");
         }
-        if (_fields.containsKey(streamId)) {
+        if (this.fields.containsKey(streamId)) {
             throw new IllegalArgumentException("Fields for " + streamId + " already set");
         }
-        _fields.put(streamId, new StreamInfo(fields.toList(), direct));
+        this.fields.put(streamId, new StreamInfo(fields.toList(), direct));
     }
 
 
     public Map<String, StreamInfo> getFieldsDeclaration() {
-        return _fields;
+        return fields;
     }
 
 }

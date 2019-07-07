@@ -19,12 +19,12 @@ import org.apache.storm.trident.tuple.ComboList;
 public class GroupCollector implements TridentCollector {
     public List<Object> currGroup;
 
-    ComboList.Factory _factory;
-    TridentCollector _collector;
+    ComboList.Factory factory;
+    TridentCollector collector;
 
     public GroupCollector(TridentCollector collector, ComboList.Factory factory) {
-        _factory = factory;
-        _collector = collector;
+        this.factory = factory;
+        this.collector = collector;
     }
 
     @Override
@@ -32,17 +32,17 @@ public class GroupCollector implements TridentCollector {
         List[] delegates = new List[2];
         delegates[0] = currGroup;
         delegates[1] = values;
-        _collector.emit(_factory.create(delegates));
+        collector.emit(factory.create(delegates));
     }
 
     @Override
     public void flush() {
-        _collector.flush();
+        collector.flush();
     }
 
     @Override
     public void reportError(Throwable t) {
-        _collector.reportError(t);
+        collector.reportError(t);
     }
 
 }

@@ -41,7 +41,7 @@ import org.apache.storm.topology.OutputFieldsGetter;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
-
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class LinearDRPCTopologyBuilder {
     String function;
     List<Component> components = new ArrayList<>();

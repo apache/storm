@@ -22,13 +22,13 @@ import org.apache.storm.trident.tuple.TridentTupleView.FreshOutputFactory;
 
 
 public class FreshCollector implements TridentCollector {
-    FreshOutputFactory _factory;
-    TridentContext _triContext;
+    FreshOutputFactory factory;
+    TridentContext triContext;
     ProcessorContext context;
 
     public FreshCollector(TridentContext context) {
-        _triContext = context;
-        _factory = new FreshOutputFactory(context.getSelfOutputFields());
+        triContext = context;
+        factory = new FreshOutputFactory(context.getSelfOutputFields());
     }
 
     public void setContext(ProcessorContext pc) {
@@ -37,25 +37,25 @@ public class FreshCollector implements TridentCollector {
 
     @Override
     public void emit(List<Object> values) {
-        TridentTuple toEmit = _factory.create(values);
-        for (TupleReceiver r : _triContext.getReceivers()) {
-            r.execute(context, _triContext.getOutStreamId(), toEmit);
+        TridentTuple toEmit = factory.create(values);
+        for (TupleReceiver r : triContext.getReceivers()) {
+            r.execute(context, triContext.getOutStreamId(), toEmit);
         }
     }
 
     @Override
     public void flush() {
-        for (TupleReceiver r : _triContext.getReceivers()) {
+        for (TupleReceiver r : triContext.getReceivers()) {
             r.flush();
         }
     }
 
     @Override
     public void reportError(Throwable t) {
-        _triContext.getDelegateCollector().reportError(t);
+        triContext.getDelegateCollector().reportError(t);
     }
 
     public Factory getOutputFactory() {
-        return _factory;
+        return factory;
     }
 }

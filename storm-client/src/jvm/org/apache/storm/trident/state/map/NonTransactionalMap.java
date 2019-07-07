@@ -18,10 +18,10 @@ import org.apache.storm.trident.state.ValueUpdater;
 
 
 public class NonTransactionalMap<T> implements MapState<T> {
-    IBackingMap<T> _backing;
+    IBackingMap<T> backing;
 
     protected NonTransactionalMap(IBackingMap<T> backing) {
-        _backing = backing;
+        this.backing = backing;
     }
 
     public static <T> MapState<T> build(IBackingMap<T> backing) {
@@ -30,25 +30,25 @@ public class NonTransactionalMap<T> implements MapState<T> {
 
     @Override
     public List<T> multiGet(List<List<Object>> keys) {
-        return _backing.multiGet(keys);
+        return backing.multiGet(keys);
     }
 
     @Override
     public List<T> multiUpdate(List<List<Object>> keys, List<ValueUpdater> updaters) {
-        List<T> curr = _backing.multiGet(keys);
+        List<T> curr = backing.multiGet(keys);
         List<T> ret = new ArrayList<T>(curr.size());
         for (int i = 0; i < curr.size(); i++) {
             T currVal = curr.get(i);
             ValueUpdater<T> updater = updaters.get(i);
             ret.add(updater.update(currVal));
         }
-        _backing.multiPut(keys, ret);
+        backing.multiPut(keys, ret);
         return ret;
     }
 
     @Override
     public void multiPut(List<List<Object>> keys, List<T> vals) {
-        _backing.multiPut(keys, vals);
+        backing.multiPut(keys, vals);
     }
 
     @Override

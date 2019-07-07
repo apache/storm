@@ -36,7 +36,7 @@ public enum ThriftConnectionType {
 
     private final String transConf;
     private final String portConf;
-    private final String qConf;
+    private final String queueConf;
     private final String threadsConf;
     private final String buffConf;
     private final String socketTimeoutConf;
@@ -48,18 +48,18 @@ public enum ThriftConnectionType {
         this(null, null, null, null, null, null, true, null, false);
     }
 
-    ThriftConnectionType(String transConf, String portConf, String qConf,
+    ThriftConnectionType(String transConf, String portConf, String queueConf,
                          String threadsConf, String buffConf, String socketTimeoutConf,
                          WorkerTokenServiceType wtType, boolean impersonationAllowed) {
-        this(transConf, portConf, qConf, threadsConf, buffConf, socketTimeoutConf, false, wtType, impersonationAllowed);
+        this(transConf, portConf, queueConf, threadsConf, buffConf, socketTimeoutConf, false, wtType, impersonationAllowed);
     }
 
-    ThriftConnectionType(String transConf, String portConf, String qConf,
+    ThriftConnectionType(String transConf, String portConf, String queueConf,
                          String threadsConf, String buffConf, String socketTimeoutConf, boolean isFake,
                          WorkerTokenServiceType wtType, boolean impersonationAllowed) {
         this.transConf = transConf;
         this.portConf = portConf;
-        this.qConf = qConf;
+        this.queueConf = queueConf;
         this.threadsConf = threadsConf;
         this.buffConf = buffConf;
         this.socketTimeoutConf = socketTimeoutConf;
@@ -88,10 +88,10 @@ public enum ThriftConnectionType {
     }
 
     public Integer getQueueSize(Map<String, Object> conf) {
-        if (qConf == null) {
+        if (queueConf == null) {
             return null;
         }
-        return (Integer) conf.get(qConf);
+        return (Integer) conf.get(queueConf);
     }
 
     public int getNumThreads(Map<String, Object> conf) {

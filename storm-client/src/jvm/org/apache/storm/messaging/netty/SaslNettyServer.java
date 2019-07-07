@@ -78,12 +78,12 @@ class SaslNettyServer {
     }
 
     /**
-     * CallbackHandler for SASL DIGEST-MD5 mechanism
+     * CallbackHandler for SASL DIGEST-MD5 mechanism.
      */
     public static class SaslDigestCallbackHandler implements CallbackHandler {
 
         /**
-         * Used to authenticate the clients
+         * Used to authenticate the clients.
          */
         private byte[] userPassword;
         private String userName;

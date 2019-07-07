@@ -24,10 +24,10 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
 
 public class CombinerAggStateUpdater implements StateUpdater<Snapshottable> {
-    CombinerAggregator _agg;
+    CombinerAggregator agg;
 
     public CombinerAggStateUpdater(CombinerAggregator agg) {
-        _agg = agg;
+        this.agg = agg;
     }
 
 
@@ -36,7 +36,7 @@ public class CombinerAggStateUpdater implements StateUpdater<Snapshottable> {
         if (tuples.size() != 1) {
             throw new IllegalArgumentException("Combiner state updater should receive a single tuple. Received: " + tuples.toString());
         }
-        Object newVal = state.update(new CombinerValueUpdater(_agg, tuples.get(0).getValue(0)));
+        Object newVal = state.update(new CombinerValueUpdater(agg, tuples.get(0).getValue(0)));
         collector.emit(new Values(newVal));
     }
 

@@ -42,7 +42,6 @@ public class ClientSupervisorUtils {
 
     static boolean doRequiredTopoFilesExist(Map<String, Object> conf, String stormId) throws IOException {
         String stormroot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
-        String stormjarpath = ConfigUtils.supervisorStormJarPath(stormroot);
         String stormcodepath = ConfigUtils.supervisorStormCodePath(stormroot);
         String stormconfpath = ConfigUtils.supervisorStormConfPath(stormroot);
         if (!Utils.checkFileExists(stormroot)) {
@@ -54,6 +53,7 @@ public class ClientSupervisorUtils {
         if (!Utils.checkFileExists(stormconfpath)) {
             return false;
         }
+        String stormjarpath = ConfigUtils.supervisorStormJarPath(stormroot);
         if (ConfigUtils.isLocalMode(conf) || Utils.checkFileExists(stormjarpath)) {
             return true;
         }
@@ -111,9 +111,6 @@ public class ClientSupervisorUtils {
      * @param exitCodeCallback code to be called passing the exit code value when the process completes
      * @param dir              the working directory of the new process
      * @return the new process
-     *
-     * @throws IOException
-     * @see ProcessBuilder
      */
     public static Process launchProcess(List<String> command,
                                         Map<String, String> environment,

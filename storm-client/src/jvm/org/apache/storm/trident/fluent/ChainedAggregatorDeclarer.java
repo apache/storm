@@ -31,25 +31,25 @@ import org.apache.storm.tuple.Fields;
 
 
 public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer, ChainedPartitionAggregatorDeclarer {
-    List<AggSpec> _aggs = new ArrayList<>();
-    IAggregatableStream _stream;
-    AggType _type = null;
-    GlobalAggregationScheme _globalScheme;
+    List<AggSpec> aggs = new ArrayList<>();
+    IAggregatableStream stream;
+    AggType type = null;
+    GlobalAggregationScheme globalScheme;
 
     public ChainedAggregatorDeclarer(IAggregatableStream stream, GlobalAggregationScheme globalScheme) {
-        _stream = stream;
-        _globalScheme = globalScheme;
+        this.stream = stream;
+        this.globalScheme = globalScheme;
     }
 
     @Override
     public Stream chainEnd() {
-        Fields[] inputFields = new Fields[_aggs.size()];
-        Aggregator[] aggs = new Aggregator[_aggs.size()];
-        int[] outSizes = new int[_aggs.size()];
+        Fields[] inputFields = new Fields[aggs.size()];
+        Aggregator[] aggs = new Aggregator[this.aggs.size()];
+        int[] outSizes = new int[this.aggs.size()];
         List<String> allOutFields = new ArrayList<>();
         Set<String> allInFields = new HashSet<>();
-        for (int i = 0; i < _aggs.size(); i++) {
-            AggSpec spec = _aggs.get(i);
+        for (int i = 0; i < this.aggs.size(); i++) {
+            AggSpec spec = this.aggs.get(i);
             Fields infields = spec.inFields;
             if (infields == null) {
                 infields = new Fields();
@@ -73,21 +73,21 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
         Fields outFields = new Fields(allOutFields);
         Aggregator combined = new ChainedAggregatorImpl(aggs, inputFields, new ComboList.Factory(outSizes));
 
-        if (_type != AggType.FULL) {
-            _stream = _stream.partitionAggregate(inFields, combined, outFields);
+        if (type != AggType.FULL) {
+            stream = stream.partitionAggregate(inFields, combined, outFields);
         }
-        if (_type != AggType.PARTITION) {
-            _stream = _globalScheme.aggPartition(_stream);
-            BatchToPartition singleEmit = _globalScheme.singleEmitPartitioner();
+        if (type != AggType.PARTITION) {
+            stream = globalScheme.aggPartition(stream);
+            BatchToPartition singleEmit = globalScheme.singleEmitPartitioner();
             Aggregator toAgg = combined;
             if (singleEmit != null) {
                 toAgg = new SingleEmitAggregator(combined, singleEmit);
             }
             // this assumes that inFields and outFields are the same for combineragg
             // assumption also made above
-            _stream = _stream.partitionAggregate(inFields, toAgg, outFields);
+            stream = stream.partitionAggregate(inFields, toAgg, outFields);
         }
-        return _stream.toStream();
+        return stream.toStream();
     }
 
     @Override
@@ -97,8 +97,8 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
 
     @Override
     public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
-        _type = AggType.PARTITION;
-        _aggs.add(new AggSpec(inputFields, agg, functionFields));
+        type = AggType.PARTITION;
+        aggs.add(new AggSpec(inputFields, agg, functionFields));
         return this;
     }
 
@@ -135,13 +135,13 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
 
     private ChainedFullAggregatorDeclarer aggregate(Fields inputFields, Aggregator agg, Fields functionFields, boolean isCombiner) {
         if (isCombiner) {
-            if (_type == null) {
-                _type = AggType.FULL_COMBINE;
+            if (type == null) {
+                type = AggType.FULL_COMBINE;
             }
         } else {
-            _type = AggType.FULL;
+            type = AggType.FULL;
         }
-        _aggs.add(new AggSpec(inputFields, agg, functionFields));
+        aggs.add(new AggSpec(inputFields, agg, functionFields));
         return this;
     }
 
@@ -167,7 +167,7 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
     }
 
     private void initCombiner(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
-        _stream = _stream.each(inputFields, new CombinerAggregatorInitImpl(agg), functionFields);
+        stream = stream.each(inputFields, new CombinerAggregatorInitImpl(agg), functionFields);
     }
 
     private static enum AggType {

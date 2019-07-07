@@ -16,19 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.storm.serialization;
+package org.apache.storm.metric.api;
 
-import com.esotericsoftware.kryo.Kryo;
-
-/**
- * Provides a way using a service loader to register Kryo serializers with the SerializationFactory without needing to modify the config.
- * This allows for language bindings libraries or platforms to include their own registration without impacting a clients config.
- */
-public interface SerializationRegister {
-    /**
-     * Register any serializers needed with the kryo instance.
-     *
-     * @param kryo what to register the serializers with.
-     */
-    public void register(Kryo kryo) throws Exception;
+class MeanReducerState {
+    public int count = 0;
+    public double sum = 0.0;
 }

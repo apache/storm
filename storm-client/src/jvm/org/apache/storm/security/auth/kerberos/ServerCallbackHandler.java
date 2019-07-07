@@ -41,7 +41,7 @@ public class ServerCallbackHandler implements CallbackHandler {
             return;
         }
 
-        AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
+        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
             String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_SERVER
                                   + "' entry in this configuration: Server cannot start.";
@@ -82,13 +82,13 @@ public class ServerCallbackHandler implements CallbackHandler {
         }
 
         if (ac != null) {
-            String authenticationID = ac.getAuthenticationID();
-            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationID,
+            String authenticationId = ac.getAuthenticationID();
+            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationId,
                       ac.getAuthorizationID());
 
             //if authorizationId is not set, set it to authenticationId.
             if (ac.getAuthorizationID() == null) {
-                ac.setAuthorizedID(authenticationID);
+                ac.setAuthorizedID(authenticationId);
             }
 
             //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We

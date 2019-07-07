@@ -12,6 +12,8 @@
 
 package org.apache.storm.streams;
 
+import static org.apache.storm.streams.WindowNode.PUNCTUATION;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +30,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.windowing.TupleWindow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.streams.WindowNode.PUNCTUATION;
 
 /**
  * Stream bolt that executes windowing operations.

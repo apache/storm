@@ -34,19 +34,19 @@ public class ThriftEncoder extends MessageToMessageEncoder<Object> {
         .getLogger(ThriftEncoder.class);
 
     private HBMessage encodeNettySerializable(ByteBufAllocator alloc,
-        INettySerializable netty_message, HBServerMessageType mType) {
+        INettySerializable nettyMessage, HBServerMessageType serverMessageType) {
 
-        HBMessageData message_data = new HBMessageData();
+        HBMessageData messageData = new HBMessageData();
         HBMessage m = new HBMessage();
-        byte[] messageBuffer = new byte[netty_message.encodeLength()];
+        byte[] messageBuffer = new byte[nettyMessage.encodeLength()];
         ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(messageBuffer);
         try {
             wrappedBuffer.resetWriterIndex();
-            netty_message.write(wrappedBuffer);
+            nettyMessage.write(wrappedBuffer);
             
-            message_data.set_message_blob(messageBuffer);
-            m.set_type(mType);
-            m.set_data(message_data);
+            messageData.set_message_blob(messageBuffer);
+            m.set_type(serverMessageType);
+            m.set_data(messageData);
             return m;
         } finally {
             wrappedBuffer.release();
@@ -61,7 +61,7 @@ public class ThriftEncoder extends MessageToMessageEncoder<Object> {
 
         LOG.debug("Trying to encode: " + msg.getClass().toString() + " : " + msg.toString());
 
-        HBMessage m;
+        HBMessage message;
         ByteBufAllocator alloc = channelHandlerContext.alloc();
         if (msg instanceof INettySerializable) {
             INettySerializable nettyMsg = (INettySerializable) msg;
@@ -75,13 +75,13 @@ public class ThriftEncoder extends MessageToMessageEncoder<Object> {
                 LOG.error("Didn't recognise INettySerializable: " + nettyMsg.toString());
                 throw new RuntimeException("Unrecognized INettySerializable.");
             }
-            m = encodeNettySerializable(alloc, nettyMsg, type);
+            message = encodeNettySerializable(alloc, nettyMsg, type);
         } else {
-            m = (HBMessage) msg;
+            message = (HBMessage) msg;
         }
 
         try {
-            byte serialized[] = Utils.thriftSerialize(m);
+            byte[] serialized = Utils.thriftSerialize(message);
             ByteBuf ret = alloc.ioBuffer(serialized.length + 4);
 
             ret.writeInt(serialized.length);

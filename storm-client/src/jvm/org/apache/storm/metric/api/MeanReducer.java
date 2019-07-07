@@ -18,11 +18,6 @@
 
 package org.apache.storm.metric.api;
 
-class MeanReducerState {
-    public int count = 0;
-    public double sum = 0.0;
-}
-
 public class MeanReducer implements IReducer<MeanReducerState> {
     @Override
     public MeanReducerState init() {

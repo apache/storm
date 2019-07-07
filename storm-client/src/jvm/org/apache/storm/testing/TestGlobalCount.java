@@ -26,20 +26,20 @@ import org.slf4j.LoggerFactory;
 
 public class TestGlobalCount extends BaseRichBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
-    OutputCollector _collector;
-    private int _count;
+    OutputCollector collector;
+    private int count;
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        _collector = collector;
-        _count = 0;
+        this.collector = collector;
+        count = 0;
     }
 
     @Override
     public void execute(Tuple input) {
-        _count++;
-        _collector.emit(input, new Values(_count));
-        _collector.ack(input);
+        count++;
+        collector.emit(input, new Values(count));
+        collector.ack(input);
     }
 
     @Override

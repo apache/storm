@@ -16,6 +16,7 @@ import java.io.UnsupportedEncodingException;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.shade.org.json.simple.parser.ParseException;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class JSONNonTransactionalSerializer implements Serializer {
 
     @Override

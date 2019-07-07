@@ -187,6 +187,28 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     }
 
     /**
+     * Join the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param valueJoiner the {@link ValueJoiner}
+     * @param <R>         the type of the values resulting from the join
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <R, V1> PairStream<K, R> join(PairStream<K, V1> otherStream,
+            ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
+        return partitionByKey()
+                .joinPartition(
+                        otherStream.partitionByKey(),
+                        valueJoiner,
+                        JoinProcessor.JoinType.INNER,
+                        JoinProcessor.JoinType.INNER);
+    }
+
+    /**
      * Does a left outer join of the values of this stream with the values having the same key from the other stream.
      * <p>
      * Note: The parallelism of this stream is carried forward to the joined stream.
@@ -198,6 +220,28 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      */
     public <V1> PairStream<K, Pair<V, V1>> leftOuterJoin(PairStream<K, V1> otherStream) {
         return leftOuterJoin(otherStream, new PairValueJoiner<>());
+    }
+
+    /**
+     * Does a left outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param valueJoiner the {@link ValueJoiner}
+     * @param <R>         the type of the values resulting from the join
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <R, V1> PairStream<K, R> leftOuterJoin(PairStream<K, V1> otherStream,
+            ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
+        return partitionByKey()
+                .joinPartition(
+                        otherStream.partitionByKey(),
+                        valueJoiner,
+                        JoinProcessor.JoinType.OUTER,
+                        JoinProcessor.JoinType.INNER);
     }
 
     /**
@@ -215,64 +259,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     }
 
     /**
-     * Does a full outer join of the values of this stream with the values having the same key from the other stream.
-     * <p>
-     * Note: The parallelism of this stream is carried forward to the joined stream.
-     * </p>
-     *
-     * @param otherStream the other stream
-     * @param <V1>        the type of the values in the other stream
-     * @return the new stream
-     */
-    public <V1> PairStream<K, Pair<V, V1>> fullOuterJoin(PairStream<K, V1> otherStream) {
-        return fullOuterJoin(otherStream, new PairValueJoiner<>());
-    }
-
-    /**
-     * Join the values of this stream with the values having the same key from the other stream.
-     * <p>
-     * Note: The parallelism of this stream is carried forward to the joined stream.
-     * </p>
-     *
-     * @param otherStream the other stream
-     * @param valueJoiner the {@link ValueJoiner}
-     * @param <R>         the type of the values resulting from the join
-     * @param <V1>        the type of the values in the other stream
-     * @return the new stream
-     */
-    public <R, V1> PairStream<K, R> join(PairStream<K, V1> otherStream,
-                                         ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
-        return partitionByKey()
-            .joinPartition(
-                otherStream.partitionByKey(),
-                valueJoiner,
-                JoinProcessor.JoinType.INNER,
-                JoinProcessor.JoinType.INNER);
-    }
-
-    /**
-     * Does a left outer join of the values of this stream with the values having the same key from the other stream.
-     * <p>
-     * Note: The parallelism of this stream is carried forward to the joined stream.
-     * </p>
-     *
-     * @param otherStream the other stream
-     * @param valueJoiner the {@link ValueJoiner}
-     * @param <R>         the type of the values resulting from the join
-     * @param <V1>        the type of the values in the other stream
-     * @return the new stream
-     */
-    public <R, V1> PairStream<K, R> leftOuterJoin(PairStream<K, V1> otherStream,
-                                                  ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
-        return partitionByKey()
-            .joinPartition(
-                otherStream.partitionByKey(),
-                valueJoiner,
-                JoinProcessor.JoinType.OUTER,
-                JoinProcessor.JoinType.INNER);
-    }
-
-    /**
      * Does a right outer join of the values of this stream with the values having the same key from the other stream.
      * <p>
      * Note: The parallelism of this stream is carried forward to the joined stream.
@@ -285,13 +271,27 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @return the new stream
      */
     public <R, V1> PairStream<K, R> rightOuterJoin(PairStream<K, V1> otherStream,
-                                                   ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
+            ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
         return partitionByKey()
-            .joinPartition(
-                otherStream.partitionByKey(),
-                valueJoiner,
-                JoinProcessor.JoinType.INNER,
-                JoinProcessor.JoinType.OUTER);
+                .joinPartition(
+                        otherStream.partitionByKey(),
+                        valueJoiner,
+                        JoinProcessor.JoinType.INNER,
+                        JoinProcessor.JoinType.OUTER);
+    }
+
+    /**
+     * Does a full outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <V1> PairStream<K, Pair<V, V1>> fullOuterJoin(PairStream<K, V1> otherStream) {
+        return fullOuterJoin(otherStream, new PairValueJoiner<>());
     }
 
     /**
@@ -307,13 +307,13 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @return the new stream
      */
     public <R, V1> PairStream<K, R> fullOuterJoin(PairStream<K, V1> otherStream,
-                                                  ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
+            ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
         return partitionByKey()
-            .joinPartition(
-                otherStream.partitionByKey(),
-                valueJoiner,
-                JoinProcessor.JoinType.OUTER,
-                JoinProcessor.JoinType.OUTER);
+                .joinPartition(
+                        otherStream.partitionByKey(),
+                        valueJoiner,
+                        JoinProcessor.JoinType.OUTER,
+                        JoinProcessor.JoinType.OUTER);
     }
 
     /**

@@ -24,7 +24,7 @@ public interface ITridentWindowManager {
     /**
      * This is invoked from {@code org.apache.storm.trident.planner.TridentProcessor}'s  prepare method. So any initialization tasks can be
      * done before the topology starts accepting tuples. For ex: initialize window manager with any earlier stored tuples/triggers and start
-     * WindowManager
+     * WindowManager.
      */
     public void prepare();
 
@@ -35,17 +35,12 @@ public interface ITridentWindowManager {
     public void shutdown();
 
     /**
-     * Add received batch of tuples to cache/store and add them to {@code WindowManager}
-     *
-     * @param batchId
-     * @param tuples
+     * Add received batch of tuples to cache/store and add them to {@code WindowManager}.
      */
     public void addTuplesBatch(Object batchId, List<TridentTuple> tuples);
 
     /**
      * Returns pending triggers to be emitted.
-     *
-     * @return
      */
     public Queue<StoreBasedTridentWindowManager.TriggerResult> getPendingTriggers();
 

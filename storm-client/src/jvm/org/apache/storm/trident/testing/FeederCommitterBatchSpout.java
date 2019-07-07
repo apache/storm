@@ -24,48 +24,48 @@ import org.apache.storm.tuple.Fields;
 
 public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Integer, List<List<Object>>>>, IFeeder {
 
-    FeederBatchSpout _spout;
+    FeederBatchSpout spout;
 
     public FeederCommitterBatchSpout(List<String> fields) {
-        _spout = new FeederBatchSpout(fields);
+        spout = new FeederBatchSpout(fields);
     }
 
     public void setWaitToEmit(boolean trueIfWait) {
-        _spout.setWaitToEmit(trueIfWait);
+        spout.setWaitToEmit(trueIfWait);
     }
 
     @Override
     public Emitter getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
-        return new CommitterEmitter(_spout.getEmitter(txStateId, conf, context));
+        return new CommitterEmitter(spout.getEmitter(txStateId, conf, context));
     }
 
     @Override
     public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map<String, Object> conf,
                                                                              TopologyContext context) {
-        return _spout.getCoordinator(txStateId, conf, context);
+        return spout.getCoordinator(txStateId, conf, context);
     }
 
     @Override
     public Fields getOutputFields() {
-        return _spout.getOutputFields();
+        return spout.getOutputFields();
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return _spout.getComponentConfiguration();
+        return spout.getComponentConfiguration();
     }
 
     @Override
     public void feed(Object tuples) {
-        _spout.feed(tuples);
+        spout.feed(tuples);
     }
 
     static class CommitterEmitter implements ICommitterTridentSpout.Emitter {
-        ITridentSpout.Emitter _emitter;
+        ITridentSpout.Emitter emitter;
 
 
         public CommitterEmitter(ITridentSpout.Emitter e) {
-            _emitter = e;
+            emitter = e;
         }
 
         @Override
@@ -74,17 +74,17 @@ public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Int
 
         @Override
         public void emitBatch(TransactionAttempt tx, Object coordinatorMeta, TridentCollector collector) {
-            _emitter.emitBatch(tx, coordinatorMeta, collector);
+            emitter.emitBatch(tx, coordinatorMeta, collector);
         }
 
         @Override
         public void success(TransactionAttempt tx) {
-            _emitter.success(tx);
+            emitter.success(tx);
         }
 
         @Override
         public void close() {
-            _emitter.close();
+            emitter.close();
         }
 
     }

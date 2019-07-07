@@ -29,13 +29,13 @@ public class FixedGroupsMapping implements IGroupMappingServiceProvider {
     public Map<String, Set<String>> cachedGroups = new HashMap<String, Set<String>>();
 
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
-     * @param storm_conf Storm configuration
+     * @param stormConf Storm configuration
      */
     @Override
-    public void prepare(Map<String, Object> storm_conf) {
-        Map<?, ?> params = (Map<?, ?>) storm_conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PARAMS);
+    public void prepare(Map<String, Object> stormConf) {
+        Map<?, ?> params = (Map<?, ?>) stormConf.get(Config.STORM_GROUP_MAPPING_SERVICE_PARAMS);
         Map<String, Set<String>> mapping = (Map<String, Set<String>>) params.get(STORM_FIXED_GROUP_MAPPING);
         if (mapping != null) {
             cachedGroups.putAll(mapping);
@@ -45,7 +45,7 @@ public class FixedGroupsMapping implements IGroupMappingServiceProvider {
     }
 
     /**
-     * Returns list of groups for a user
+     * Returns list of groups for a user.
      *
      * @param user get groups for this user
      * @return list of groups for a given user

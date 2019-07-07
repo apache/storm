@@ -19,7 +19,7 @@ import java.util.List;
  * ShellMsg is an object that represents the data sent to a shell component from a process that implements a multi-language protocol. It is
  * the union of all data types that a component can send to Storm.
  *
- * ShellMsgs are objects received from the ISerializer interface, after the serializer has deserialized the data from the underlying wire
+ * <p>ShellMsgs are objects received from the ISerializer interface, after the serializer has deserialized the data from the underlying wire
  * protocol. The ShellMsg class allows for a decoupling between the serialized representation of the data and the data itself.
  */
 public class ShellMsg {
@@ -141,19 +141,19 @@ public class ShellMsg {
 
     @Override
     public String toString() {
-        return "ShellMsg{" +
-               "command='" + command + '\'' +
-               ", id=" + id +
-               ", anchors=" + anchors +
-               ", stream='" + stream + '\'' +
-               ", task=" + task +
-               ", msg='" + msg + '\'' +
-               ", tuple=" + tuple +
-               ", needTaskIds=" + needTaskIds +
-               ", metricName='" + metricName + '\'' +
-               ", metricParams=" + metricParams +
-               ", logLevel=" + logLevel +
-               '}';
+        return "ShellMsg{"
+                + "command='" + command + '\''
+                + ", id=" + id
+                + ", anchors=" + anchors
+                + ", stream='" + stream + '\''
+                + ", task=" + task
+                + ", msg='" + msg + '\''
+                + ", tuple=" + tuple
+                + ", needTaskIds=" + needTaskIds
+                + ", metricName='" + metricName + '\''
+                + ", metricParams=" + metricParams
+                + ", logLevel=" + logLevel
+                + '}';
     }
 
     //logLevel

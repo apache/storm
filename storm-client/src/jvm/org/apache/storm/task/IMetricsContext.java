@@ -26,18 +26,21 @@ import org.apache.storm.metric.api.ReducedMetric;
 
 public interface IMetricsContext {
     /**
+     * Register metric.
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
     @Deprecated
     <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs);
 
     /**
+     * Register metric.
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
     @Deprecated
     ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs);
 
     /**
+     * Register metric.
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
     @Deprecated

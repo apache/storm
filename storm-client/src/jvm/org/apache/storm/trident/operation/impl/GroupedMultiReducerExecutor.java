@@ -26,28 +26,28 @@ import org.apache.storm.tuple.Fields;
 
 
 public class GroupedMultiReducerExecutor implements MultiReducer<Map<TridentTuple, Object>> {
-    GroupedMultiReducer _reducer;
-    List<Fields> _groupFields;
-    List<Fields> _inputFields;
-    List<ProjectionFactory> _groupFactories = new ArrayList<ProjectionFactory>();
-    List<ProjectionFactory> _inputFactories = new ArrayList<ProjectionFactory>();
+    GroupedMultiReducer reducer;
+    List<Fields> groupFields;
+    List<Fields> inputFields;
+    List<ProjectionFactory> groupFactories = new ArrayList<ProjectionFactory>();
+    List<ProjectionFactory> inputFactories = new ArrayList<ProjectionFactory>();
 
     public GroupedMultiReducerExecutor(GroupedMultiReducer reducer, List<Fields> groupFields, List<Fields> inputFields) {
         if (inputFields.size() != groupFields.size()) {
             throw new IllegalArgumentException("Multireducer groupFields and inputFields must be the same size");
         }
-        _groupFields = groupFields;
-        _inputFields = inputFields;
-        _reducer = reducer;
+        this.groupFields = groupFields;
+        this.inputFields = inputFields;
+        this.reducer = reducer;
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
-        for (int i = 0; i < _groupFields.size(); i++) {
-            _groupFactories.add(context.makeProjectionFactory(i, _groupFields.get(i)));
-            _inputFactories.add(context.makeProjectionFactory(i, _inputFields.get(i)));
+        for (int i = 0; i < groupFields.size(); i++) {
+            groupFactories.add(context.makeProjectionFactory(i, groupFields.get(i)));
+            inputFactories.add(context.makeProjectionFactory(i, inputFields.get(i)));
         }
-        _reducer.prepare(conf, new TridentMultiReducerContext((List) _inputFactories));
+        reducer.prepare(conf, new TridentMultiReducerContext((List) inputFactories));
     }
 
     @Override
@@ -57,20 +57,20 @@ public class GroupedMultiReducerExecutor implements MultiReducer<Map<TridentTupl
 
     @Override
     public void execute(Map<TridentTuple, Object> state, int streamIndex, TridentTuple full, TridentCollector collector) {
-        ProjectionFactory groupFactory = _groupFactories.get(streamIndex);
-        ProjectionFactory inputFactory = _inputFactories.get(streamIndex);
+        ProjectionFactory groupFactory = groupFactories.get(streamIndex);
+        ProjectionFactory inputFactory = inputFactories.get(streamIndex);
 
         TridentTuple group = groupFactory.create(full);
         TridentTuple input = inputFactory.create(full);
 
         Object curr;
         if (!state.containsKey(group)) {
-            curr = _reducer.init(collector, group);
+            curr = reducer.init(collector, group);
             state.put(group, curr);
         } else {
             curr = state.get(group);
         }
-        _reducer.execute(curr, streamIndex, group, input, collector);
+        reducer.execute(curr, streamIndex, group, input, collector);
     }
 
     @Override
@@ -78,13 +78,13 @@ public class GroupedMultiReducerExecutor implements MultiReducer<Map<TridentTupl
         for (Map.Entry e : state.entrySet()) {
             TridentTuple group = (TridentTuple) e.getKey();
             Object val = e.getValue();
-            _reducer.complete(val, group, collector);
+            reducer.complete(val, group, collector);
         }
     }
 
     @Override
     public void cleanup() {
-        _reducer.cleanup();
+        reducer.cleanup();
     }
 
 }

@@ -149,8 +149,8 @@ public class PaceMakerStateStorage implements IStateStorage {
         while (true) {
             try {
                 byte[] ret = null;
-                int latest_time_secs = 0;
-                boolean got_response = false;
+                int latestTimeSecs = 0;
+                boolean gotResponse = false;
 
                 HBMessage message = new HBMessage(HBServerMessageType.GET_PULSE, HBMessageData.path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
@@ -160,18 +160,18 @@ public class PaceMakerStateStorage implements IStateStorage {
                         continue;
                     }
                     // We got at least one GET_PULSE_RESPONSE message.
-                    got_response = true;
+                    gotResponse = true;
                     byte[] details = response.get_data().get_pulse().get_details();
                     if (details == null) {
                         continue;
                     }
                     ClusterWorkerHeartbeat cwh = Utils.deserialize(details, ClusterWorkerHeartbeat.class);
-                    if (cwh != null && cwh.get_time_secs() > latest_time_secs) {
-                        latest_time_secs = cwh.get_time_secs();
+                    if (cwh != null && cwh.get_time_secs() > latestTimeSecs) {
+                        latestTimeSecs = cwh.get_time_secs();
                         ret = details;
                     }
                 }
-                if (!got_response) {
+                if (!gotResponse) {
                     throw new WrappedHBExecutionException("Failed to get a response.");
                 }
                 return ret;

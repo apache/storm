@@ -23,11 +23,11 @@ import org.apache.storm.utils.Utils;
  * and a more restricted form of stream processing, see IBasicBolt and BasicOutputCollector.
  */
 public class OutputCollector implements IOutputCollector {
-    private IOutputCollector _delegate;
+    private IOutputCollector delegate;
 
 
     public OutputCollector(IOutputCollector delegate) {
-        _delegate = delegate;
+        this.delegate = delegate;
     }
 
     /**
@@ -88,6 +88,11 @@ public class OutputCollector implements IOutputCollector {
         return emit(Utils.DEFAULT_STREAM_ID, tuple);
     }
 
+    @Override
+    public List<Integer> emit(String streamId, Collection<Tuple> anchors, List<Object> tuple) {
+        return delegate.emit(streamId, anchors, tuple);
+    }
+
     /**
      * Emits a tuple directly to the specified task id on the specified stream. If the target bolt does not subscribe to this bolt using a
      * direct grouping, the tuple will not be sent. If the specified output stream is not declared as direct, or the target bolt subscribes
@@ -121,7 +126,7 @@ public class OutputCollector implements IOutputCollector {
      * direct grouping, the tuple will not be sent. If the specified output stream is not declared as direct, or the target bolt subscribes
      * with a non-direct grouping, an error will occur at runtime. The emitted values must be immutable.
      *
-     * The default stream must be declared as direct in the topology definition. See OutputDeclarer#declare for how this is done when
+     * <p>The default stream must be declared as direct in the topology definition. See OutputDeclarer#declare for how this is done when
      * defining topologies in Java.
      *
      * @param taskId  the taskId to send the new tuple to
@@ -137,7 +142,7 @@ public class OutputCollector implements IOutputCollector {
      * direct grouping, the tuple will not be sent. If the specified output stream is not declared as direct, or the target bolt subscribes
      * with a non-direct grouping, an error will occur at runtime. The emitted values must be immutable.
      *
-     * The default stream must be declared as direct in the topology definition. See OutputDeclarer#declare for how this is done when
+     * <p>The default stream must be declared as direct in the topology definition. See OutputDeclarer#declare for how this is done when
      * defining topologies in Java.
      *
      * @param taskId the taskId to send the new tuple to
@@ -154,10 +159,10 @@ public class OutputCollector implements IOutputCollector {
      * direct grouping, the tuple will not be sent. If the specified output stream is not declared as direct, or the target bolt subscribes
      * with a non-direct grouping, an error will occur at runtime. The emitted values must be immutable.
      *
-     * The default stream must be declared as direct in the topology definition. See OutputDeclarer#declare for how this is done when
+     * <p>The default stream must be declared as direct in the topology definition. See OutputDeclarer#declare for how this is done when
      * defining topologies in Java.<
      *
-     * Note that this method does not use anchors, so downstream failures won't affect the failure status of any spout tuples.
+     * <p>Note that this method does not use anchors, so downstream failures won't affect the failure status of any spout tuples.
      *
      * @param taskId the taskId to send the new tuple to
      * @param tuple  the new output tuple from this bolt
@@ -167,23 +172,18 @@ public class OutputCollector implements IOutputCollector {
     }
 
     @Override
-    public List<Integer> emit(String streamId, Collection<Tuple> anchors, List<Object> tuple) {
-        return _delegate.emit(streamId, anchors, tuple);
-    }
-
-    @Override
     public void emitDirect(int taskId, String streamId, Collection<Tuple> anchors, List<Object> tuple) {
-        _delegate.emitDirect(taskId, streamId, anchors, tuple);
+        delegate.emitDirect(taskId, streamId, anchors, tuple);
     }
 
     @Override
     public void ack(Tuple input) {
-        _delegate.ack(input);
+        delegate.ack(input);
     }
 
     @Override
     public void fail(Tuple input) {
-        _delegate.fail(input);
+        delegate.fail(input);
     }
 
     /**
@@ -194,16 +194,16 @@ public class OutputCollector implements IOutputCollector {
      */
     @Override
     public void resetTimeout(Tuple input) {
-        _delegate.resetTimeout(input);
+        delegate.resetTimeout(input);
     }
 
     @Override
     public void reportError(Throwable error) {
-        _delegate.reportError(error);
+        delegate.reportError(error);
     }
 
     @Override
     public void flush() {
-        _delegate.flush();
+        delegate.flush();
     }
 }

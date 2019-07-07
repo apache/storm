@@ -95,26 +95,32 @@ public class BlkioCore implements CgroupCore {
         return parseConfig(BLKIO_THROTTLE_WRITE_BPS_DEVICE);
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public void setReadIOps(Device device, long iops) throws IOException {
         CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, BLKIO_THROTTLE_READ_IOPS_DEVICE), makeContext(device, iops));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Long> getReadIOps() throws IOException {
         return parseConfig(BLKIO_THROTTLE_READ_IOPS_DEVICE);
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public void setWriteIOps(Device device, long iops) throws IOException {
         CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, BLKIO_THROTTLE_WRITE_IOPS_DEVICE), makeContext(device, iops));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Long> getWriteIOps() throws IOException {
         return parseConfig(BLKIO_THROTTLE_WRITE_IOPS_DEVICE);
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Map<RecordType, Long>> getThrottleIOServiced() throws IOException {
         return this.analyseRecord(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, BLKIO_THROTTLE_IO_SERVICED)));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Map<RecordType, Long>> getThrottleIOServiceByte() throws IOException {
         return this.analyseRecord(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, BLKIO_THROTTLE_IO_SERVICE_BYTES)));
     }
@@ -127,26 +133,32 @@ public class BlkioCore implements CgroupCore {
         return parseConfig(BLKIO_SECTORS);
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Map<RecordType, Long>> getIOServiced() throws IOException {
         return this.analyseRecord(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, BLKIO_IO_SERVICED)));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Map<RecordType, Long>> getIOServiceBytes() throws IOException {
         return this.analyseRecord(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, BLKIO_IO_SERVICE_BYTES)));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Map<RecordType, Long>> getIOServiceTime() throws IOException {
         return this.analyseRecord(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, BLKIO_IO_SERVICE_TIME)));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Map<RecordType, Long>> getIOWaitTime() throws IOException {
         return this.analyseRecord(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, BLKIO_IO_WAIT_TIME)));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Map<RecordType, Long>> getIOMerged() throws IOException {
         return this.analyseRecord(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, BLKIO_IO_MERGED)));
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public Map<Device, Map<RecordType, Long>> getIOQueued() throws IOException {
         return this.analyseRecord(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, BLKIO_IO_QUEUED)));
     }

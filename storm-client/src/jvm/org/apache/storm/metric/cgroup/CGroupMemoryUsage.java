@@ -18,7 +18,7 @@ import org.apache.storm.container.cgroup.core.CgroupCore;
 import org.apache.storm.container.cgroup.core.MemoryCore;
 
 /**
- * Reports the current memory usage of the cgroup for this worker
+ * Reports the current memory usage of the cgroup for this worker.
  */
 public class CGroupMemoryUsage extends CGroupMetricsBase<Long> {
 

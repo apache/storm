@@ -26,7 +26,7 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
     private long delta;
 
     /**
-     * Constructs a TimeEvictionPolicy that evicts events older than the given window length in millis
+     * Constructs a TimeEvictionPolicy that evicts events older than the given window length in millis.
      *
      * @param windowLength the duration in milliseconds
      */
@@ -70,8 +70,8 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
             } else {
                 delta = context.getReferenceTime() - prevContext.getReferenceTime() - context.getSlidingInterval();
                 if (Math.abs(delta) > 100) {
-                    LOG.warn("Possible clock drift or long running computation in window; " +
-                             "Previous eviction time: {}, current eviction time: {}",
+                    LOG.warn("Possible clock drift or long running computation in window; "
+                                    + "Previous eviction time: {}, current eviction time: {}",
                              prevContext.getReferenceTime(),
                              context.getReferenceTime());
                 }
@@ -96,9 +96,9 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
 
     @Override
     public String toString() {
-        return "TimeEvictionPolicy{" +
-               "windowLength=" + windowLength +
-               ", evictionContext=" + evictionContext +
-               '}';
+        return "TimeEvictionPolicy{"
+                + "windowLength=" + windowLength
+                + ", evictionContext=" + evictionContext
+                + '}';
     }
 }

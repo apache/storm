@@ -23,15 +23,15 @@ import org.apache.storm.utils.Utils;
 
 
 public class PrepareBatchBolt extends BaseBasicBolt {
-    Fields _outFields;
+    Fields outFields;
 
     public PrepareBatchBolt(Fields outFields) {
-        _outFields = outFields;
+        this.outFields = outFields;
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(_outFields);
+        declarer.declare(outFields);
     }
 
     @Override

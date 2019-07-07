@@ -79,9 +79,9 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
 
     @Override
     public String toString() {
-        return "TimeTriggerPolicy{" +
-               "duration=" + duration +
-               '}';
+        return "TimeTriggerPolicy{"
+                + "duration=" + duration
+                + '}';
     }
 
     /*

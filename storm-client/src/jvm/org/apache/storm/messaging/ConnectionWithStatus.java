@@ -15,7 +15,7 @@ package org.apache.storm.messaging;
 public abstract class ConnectionWithStatus implements IConnection {
 
     /**
-     * whether this connection is available to transfer data
+     * whether this connection is available to transfer data.
      */
     public abstract Status status();
 

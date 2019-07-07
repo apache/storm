@@ -90,11 +90,11 @@ public class JoinProcessor<K, R, V1, V2> extends BaseProcessor<Pair<K, ?>> imple
     private void joinAndForward(List<Pair<K, V1>> leftRows, List<Pair<K, V2>> rightRows) {
         if (leftRows.size() < rightRows.size()) {
             for (Tuple3<K, V1, V2> res : join(getJoinTable(leftRows), rightRows, leftType, rightType)) {
-                context.forward(Pair.of(res._1, valueJoiner.apply(res._2, res._3)));
+                context.forward(Pair.of(res.value1, valueJoiner.apply(res.value2, res.value3)));
             }
         } else {
             for (Tuple3<K, V2, V1> res : join(getJoinTable(rightRows), leftRows, rightType, leftType)) {
-                context.forward(Pair.of(res._1, valueJoiner.apply(res._3, res._2)));
+                context.forward(Pair.of(res.value1, valueJoiner.apply(res.value3, res.value2)));
             }
         }
     }

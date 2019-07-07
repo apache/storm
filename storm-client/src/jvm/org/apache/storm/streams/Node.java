@@ -75,16 +75,16 @@ abstract class Node implements Serializable {
         return new Fields();
     }
 
+    public Fields getOutputFields() {
+        return outputFields;
+    }
+
     GroupingInfo getGroupingInfo() {
         return groupingInfo;
     }
 
     void setGroupingInfo(GroupingInfo groupingInfo) {
         this.groupingInfo = groupingInfo;
-    }
-
-    public Fields getOutputFields() {
-        return outputFields;
     }
 
     String getComponentId() {
@@ -150,15 +150,15 @@ abstract class Node implements Serializable {
 
     @Override
     public String toString() {
-        return "Node{" +
-               "outputStreams=" + outputStreams +
-               ", outputFields=" + outputFields +
-               ", groupingInfo=" + groupingInfo +
-               ", componentId='" + componentId + '\'' +
-               ", parallelism=" + parallelism +
-               ", parentStreams=" + parentStreams +
-               ", windowed=" + windowed +
-               ", emitsPair=" + emitsPair +
-               '}';
+        return "Node{"
+                + "outputStreams=" + outputStreams
+                + ", outputFields=" + outputFields
+                + ", groupingInfo=" + groupingInfo
+                + ", componentId='" + componentId + '\''
+                + ", parallelism=" + parallelism
+                + ", parentStreams=" + parentStreams
+                + ", windowed=" + windowed
+                + ", emitsPair=" + emitsPair
+                + '}';
     }
 }

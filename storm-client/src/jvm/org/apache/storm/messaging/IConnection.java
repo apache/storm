@@ -34,15 +34,13 @@ public interface IConnection extends AutoCloseable {
     void sendBackPressureStatus(BackPressureStatus bpStatus);
 
     /**
-     * send batch messages
-     *
-     * @param msgs
+     * send batch messages.
      */
 
     void send(Iterator<TaskMessage> msgs);
 
     /**
-     * Get the current load for the given tasks
+     * Get the current load for the given tasks.
      *
      * @param tasks the tasks to look for.
      * @return a Load for each of the tasks it knows about.
@@ -50,14 +48,14 @@ public interface IConnection extends AutoCloseable {
     Map<Integer, Load> getLoad(Collection<Integer> tasks);
 
     /**
-     * Get the port for this connection
+     * Get the port for this connection.
      *
      * @return The port this connection is using
      */
     int getPort();
 
     /**
-     * close this connection
+     * close this connection.
      */
     @Override
     void close();

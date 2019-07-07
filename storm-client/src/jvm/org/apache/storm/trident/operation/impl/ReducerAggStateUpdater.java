@@ -24,16 +24,16 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
 
 public class ReducerAggStateUpdater implements StateUpdater<Snapshottable> {
-    ReducerAggregator _agg;
+    ReducerAggregator agg;
 
     public ReducerAggStateUpdater(ReducerAggregator agg) {
-        _agg = agg;
+        this.agg = agg;
     }
 
 
     @Override
     public void updateState(Snapshottable state, List<TridentTuple> tuples, TridentCollector collector) {
-        Object newVal = state.update(new ReducerValueUpdater(_agg, tuples));
+        Object newVal = state.update(new ReducerValueUpdater(agg, tuples));
         collector.emit(new Values(newVal));
     }
 

@@ -42,11 +42,11 @@ import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.BufferFileInputStream;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
-import org.apache.storm.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +63,7 @@ public class StormSubmitter {
         return Utils.secureRandomLong() + ":" + Utils.secureRandomLong();
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static boolean validateZKDigestPayload(String payload) {
         if (payload != null) {
             Matcher m = zkDigestPattern.matcher(payload);
@@ -75,10 +76,9 @@ public class StormSubmitter {
         Map<String, Object> toRet = new HashMap<>();
         String secretPayload = (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         // Is the topology ZooKeeper authentication configuration unset?
-        if (!conf.containsKey(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) ||
-            conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) == null ||
-            !validateZKDigestPayload((String)
-                                         conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
+        if (!conf.containsKey(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD)
+                || conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) == null
+                || !validateZKDigestPayload((String)conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
             secretPayload = generateZookeeperDigestSecretPayload();
             LOG.info("Generated ZooKeeper secret payload for MD5-digest: " + secretPayload);
         }
@@ -187,17 +187,29 @@ public class StormSubmitter {
     }
 
     /**
+     * Submits a topology to run on the cluster. A topology runs forever or until explicitly killed.
+     *
+     * @param name             the name of the storm.
+     * @param topoConf         the topology-specific configuration. See {@link Config}.
+     * @param topology         the processing to execute.
+     * @param opts             to manipulate the starting of the topology
+     * @param progressListener to track the progress of the jar upload process
+     * @throws AlreadyAliveException    if a topology with this name is already running
+     * @throws InvalidTopologyException if an invalid topology was submitted
+     * @throws AuthorizationException   if authorization is failed
+     * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
+     */
+    @SuppressWarnings("unchecked")
+    public static void submitTopology(String name, Map<String, Object> topoConf, StormTopology topology, SubmitOptions opts,
+            ProgressListener progressListener) throws AlreadyAliveException, InvalidTopologyException,
+            AuthorizationException {
+        submitTopologyAs(name, topoConf, topology, opts, progressListener, null);
+    }
+
+    /**
      * Submits a topology to run on the cluster as a particular user. A topology runs forever or until explicitly killed.
      *
-     * @param name
-     * @param topoConf
-     * @param topology
-     * @param opts
-     * @param progressListener
-     * @param asUser           The user as which this topology should be submitted.
-     * @throws AlreadyAliveException
-     * @throws InvalidTopologyException
-     * @throws AuthorizationException
+     * @param asUser The user as which this topology should be submitted.
      * @throws IllegalArgumentException thrown if configs will yield an unschedulable topology. validateConfs validates confs
      * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
@@ -337,10 +349,7 @@ public class StormSubmitter {
     }
 
     /**
-     * @param name
-     * @param asUser
-     * @param topoConf
-     * @param topology
+     * Invoke submitter hook.
      * @thorws SubmitterHookException This is thrown when any Exception occurs during initialization or invocation of registered {@link
      *     ISubmitterHook}
      */
@@ -365,26 +374,6 @@ public class StormSubmitter {
             LOG.warn("Error occurred in invoking submitter hook:[{}] ", submissionNotifierClassName, e);
             throw new SubmitterHookException(e);
         }
-    }
-
-    /**
-     * Submits a topology to run on the cluster. A topology runs forever or until explicitly killed.
-     *
-     * @param name             the name of the storm.
-     * @param topoConf         the topology-specific configuration. See {@link Config}.
-     * @param topology         the processing to execute.
-     * @param opts             to manipulate the starting of the topology
-     * @param progressListener to track the progress of the jar upload process
-     * @throws AlreadyAliveException    if a topology with this name is already running
-     * @throws InvalidTopologyException if an invalid topology was submitted
-     * @throws AuthorizationException   if authorization is failed
-     * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
-     */
-    @SuppressWarnings("unchecked")
-    public static void submitTopology(String name, Map<String, Object> topoConf, StormTopology topology, SubmitOptions opts,
-                                      ProgressListener progressListener) throws AlreadyAliveException, InvalidTopologyException,
-        AuthorizationException {
-        submitTopologyAs(name, topoConf, topology, opts, progressListener, null);
     }
 
     /**
@@ -455,7 +444,7 @@ public class StormSubmitter {
     }
 
     /**
-     * Submit jar file
+     * Submit jar file.
      *
      * @param conf     the topology-specific configuration. See {@link Config}.
      * @param localJar file path of the jar file to submit
@@ -463,6 +452,18 @@ public class StormSubmitter {
      */
     public static String submitJar(Map<String, Object> conf, String localJar) {
         return submitJar(conf, localJar, null);
+    }
+
+    /**
+     * Submit jar file.
+     *
+     * @param conf     the topology-specific configuration. See {@link Config}.
+     * @param localJar file path of the jar file to submit
+     * @param listener progress listener to track the jar file upload
+     * @return the remote location of the submitted jar
+     */
+    public static String submitJar(Map<String, Object> conf, String localJar, ProgressListener listener) {
+        return submitJarAs(conf, localJar, listener, (String) null);
     }
 
     public static String submitJarAs(Map<String, Object> conf, String localJar, ProgressListener listener, NimbusClient client) {
@@ -518,18 +519,6 @@ public class StormSubmitter {
         }
     }
 
-    /**
-     * Submit jar file
-     *
-     * @param conf     the topology-specific configuration. See {@link Config}.
-     * @param localJar file path of the jar file to submit
-     * @param listener progress listener to track the jar file upload
-     * @return the remote location of the submitted jar
-     */
-    public static String submitJar(Map<String, Object> conf, String localJar, ProgressListener listener) {
-        return submitJarAs(conf, localJar, listener, (String) null);
-    }
-
     private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException,
         InvalidTopologyException, AuthorizationException {
         ConfigValidation.validateTopoConf(topoConf);
@@ -537,11 +526,11 @@ public class StormSubmitter {
     }
 
     /**
-     * Interface use to track progress of file upload
+     * Interface use to track progress of file upload.
      */
     public interface ProgressListener {
         /**
-         * called before file is uploaded
+         * called before file is uploaded.
          *
          * @param srcFile    - jar file to be uploaded
          * @param targetFile - destination file
@@ -550,7 +539,7 @@ public class StormSubmitter {
         public void onStart(String srcFile, String targetFile, long totalBytes);
 
         /**
-         * called whenever a chunk of bytes is uploaded
+         * called whenever a chunk of bytes is uploaded.
          *
          * @param srcFile       - jar file to be uploaded
          * @param targetFile    - destination file
@@ -560,7 +549,7 @@ public class StormSubmitter {
         public void onProgress(String srcFile, String targetFile, long bytesUploaded, long totalBytes);
 
         /**
-         * called when the file is uploaded
+         * called when the file is uploaded.
          *
          * @param srcFile    - jar file to be uploaded
          * @param targetFile - destination file

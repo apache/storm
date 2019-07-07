@@ -43,45 +43,45 @@ import org.apache.storm.utils.Utils;
 
 public class TridentBoltExecutor implements IRichBolt {
     public static final String COORD_STREAM_PREFIX = "$coord-";
-    Map<GlobalStreamId, String> _batchGroupIds;
-    Map<String, CoordSpec> _coordSpecs;
-    Map<String, CoordCondition> _coordConditions;
-    ITridentBatchBolt _bolt;
-    long _messageTimeoutMs;
-    long _lastRotate;
-    RotatingMap<Object, TrackedBatch> _batches;
-    OutputCollector _collector;
-    CoordinatedOutputCollector _coordCollector;
-    BatchOutputCollector _coordOutputCollector;
-    TopologyContext _context;
+    Map<GlobalStreamId, String> batchGroupIds;
+    Map<String, CoordSpec> coordSpecs;
+    Map<String, CoordCondition> coordConditions;
+    ITridentBatchBolt bolt;
+    long messageTimeoutMs;
+    long lastRotate;
+    RotatingMap<Object, TrackedBatch> batches;
+    OutputCollector collector;
+    CoordinatedOutputCollector coordCollector;
+    BatchOutputCollector coordOutputCollector;
+    TopologyContext context;
 
     // map from batchgroupid to coordspec
     public TridentBoltExecutor(ITridentBatchBolt bolt, Map<GlobalStreamId, String> batchGroupIds,
                                Map<String, CoordSpec> coordinationSpecs) {
-        _batchGroupIds = batchGroupIds;
-        _coordSpecs = coordinationSpecs;
-        _bolt = bolt;
+        this.batchGroupIds = batchGroupIds;
+        coordSpecs = coordinationSpecs;
+        this.bolt = bolt;
     }
 
-    public static String COORD_STREAM(String batch) {
+    public static String coordStream(String batch) {
         return COORD_STREAM_PREFIX + batch;
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
-        _messageTimeoutMs = context.maxTopologyMessageTimeout() * 1000L;
-        _lastRotate = System.currentTimeMillis();
-        _batches = new RotatingMap<>(2);
-        _context = context;
-        _collector = collector;
-        _coordCollector = new CoordinatedOutputCollector(collector);
-        _coordOutputCollector = new BatchOutputCollectorImpl(new OutputCollector(_coordCollector));
+        messageTimeoutMs = context.maxTopologyMessageTimeout() * 1000L;
+        lastRotate = System.currentTimeMillis();
+        batches = new RotatingMap<>(2);
+        this.context = context;
+        this.collector = collector;
+        coordCollector = new CoordinatedOutputCollector(collector);
+        coordOutputCollector = new BatchOutputCollectorImpl(new OutputCollector(coordCollector));
 
-        _coordConditions = (Map) context.getExecutorData("__coordConditions");
-        if (_coordConditions == null) {
-            _coordConditions = new HashMap<>();
-            for (String batchGroup : _coordSpecs.keySet()) {
-                CoordSpec spec = _coordSpecs.get(batchGroup);
+        coordConditions = (Map) context.getExecutorData("__coordConditions");
+        if (coordConditions == null) {
+            coordConditions = new HashMap<>();
+            for (String batchGroup : coordSpecs.keySet()) {
+                CoordSpec spec = coordSpecs.get(batchGroup);
                 CoordCondition cond = new CoordCondition();
                 cond.commitStream = spec.commitStream;
                 cond.expectedTaskReports = 0;
@@ -95,24 +95,24 @@ public class TridentBoltExecutor implements IRichBolt {
                 }
                 cond.targetTasks = new HashSet<>();
                 for (String component : Utils.get(context.getThisTargets(),
-                                                  COORD_STREAM(batchGroup),
+                                                  coordStream(batchGroup),
                                                   new HashMap<String, Grouping>()).keySet()) {
                     cond.targetTasks.addAll(context.getComponentTasks(component));
                 }
-                _coordConditions.put(batchGroup, cond);
+                coordConditions.put(batchGroup, cond);
             }
-            context.setExecutorData("_coordConditions", _coordConditions);
+            context.setExecutorData("coordConditions", coordConditions);
         }
-        _bolt.prepare(conf, context, _coordOutputCollector);
+        bolt.prepare(conf, context, coordOutputCollector);
     }
 
     private void failBatch(TrackedBatch tracked, FailedException e) {
         if (e != null && e instanceof ReportedFailedException) {
-            _collector.reportError(e);
+            collector.reportError(e);
         }
         tracked.failed = true;
         if (tracked.delayedAck != null) {
-            _collector.fail(tracked.delayedAck);
+            collector.fail(tracked.delayedAck);
             tracked.delayedAck = null;
         }
     }
@@ -124,33 +124,33 @@ public class TridentBoltExecutor implements IRichBolt {
     private boolean finishBatch(TrackedBatch tracked, Tuple finishTuple) {
         boolean success = true;
         try {
-            _bolt.finishBatch(tracked.info);
-            String stream = COORD_STREAM(tracked.info.batchGroup);
+            bolt.finishBatch(tracked.info);
+            String stream = coordStream(tracked.info.batchGroup);
             for (Integer task : tracked.condition.targetTasks) {
-                _collector
+                collector
                     .emitDirect(task, stream, finishTuple, new Values(tracked.info.batchId, Utils.get(tracked.taskEmittedTuples, task, 0)));
             }
             if (tracked.delayedAck != null) {
-                _collector.ack(tracked.delayedAck);
+                collector.ack(tracked.delayedAck);
                 tracked.delayedAck = null;
             }
         } catch (FailedException e) {
             failBatch(tracked, e);
             success = false;
         }
-        _batches.remove(tracked.info.batchId.getId());
+        batches.remove(tracked.info.batchId.getId());
         return success;
     }
 
     private void checkFinish(TrackedBatch tracked, Tuple tuple, TupleType type) {
         if (tracked.failed) {
             failBatch(tracked);
-            _collector.fail(tuple);
+            collector.fail(tuple);
             return;
         }
         CoordCondition cond = tracked.condition;
-        boolean delayed = tracked.delayedAck == null &&
-                          (cond.commitStream != null && type == TupleType.COMMIT
+        boolean delayed = tracked.delayedAck == null
+                && (cond.commitStream != null && type == TupleType.COMMIT
                            || cond.commitStream == null);
         if (delayed) {
             tracked.delayedAck = tuple;
@@ -162,13 +162,13 @@ public class TridentBoltExecutor implements IRichBolt {
             } else {
                 //TODO: add logging that not all tuples were received
                 failBatch(tracked);
-                _collector.fail(tuple);
+                collector.fail(tuple);
                 failed = true;
             }
         }
 
         if (!delayed && !failed) {
-            _collector.ack(tuple);
+            collector.ack(tuple);
         }
 
     }
@@ -177,43 +177,31 @@ public class TridentBoltExecutor implements IRichBolt {
     public void execute(Tuple tuple) {
         if (TupleUtils.isTick(tuple)) {
             long now = System.currentTimeMillis();
-            if (now - _lastRotate > _messageTimeoutMs) {
-                _batches.rotate();
-                _lastRotate = now;
+            if (now - lastRotate > messageTimeoutMs) {
+                batches.rotate();
+                lastRotate = now;
             }
             return;
         }
-        String batchGroup = _batchGroupIds.get(tuple.getSourceGlobalStreamId());
+        String batchGroup = batchGroupIds.get(tuple.getSourceGlobalStreamId());
         if (batchGroup == null) {
             // this is so we can do things like have simple DRPC that doesn't need to use batch processing
-            _coordCollector.setCurrBatch(null);
-            _bolt.execute(null, tuple);
-            _collector.ack(tuple);
+            coordCollector.setCurrBatch(null);
+            bolt.execute(null, tuple);
+            collector.ack(tuple);
             return;
         }
         IBatchID id = (IBatchID) tuple.getValue(0);
         //get transaction id
         //if it already exists and attempt id is greater than the attempt there
 
-
-        TrackedBatch tracked = (TrackedBatch) _batches.get(id.getId());
-        //        if(_batches.size() > 10 && _context.getThisTaskIndex() == 0) {
-        //            System.out.println("Received in " + _context.getThisComponentId() + " " + _context.getThisTaskIndex()
-        //                    + " (" + _batches.size() + ")" +
-        //                    "\ntuple: " + tuple +
-        //                    "\nwith tracked " + tracked +
-        //                    "\nwith id " + id +
-        //                    "\nwith group " + batchGroup
-        //                    + "\n");
-        //
-        //        }
-        //System.out.println("Num tracked: " + _batches.size() + " " + _context.getThisComponentId() + " " + _context.getThisTaskIndex());
+        TrackedBatch tracked = (TrackedBatch) batches.get(id.getId());
 
         // this code here ensures that only one attempt is ever tracked for a batch, so when
         // failures happen you don't get an explosion in memory usage in the tasks
         if (tracked != null) {
             if (id.getAttemptId() > tracked.attemptId) {
-                _batches.remove(id.getId());
+                batches.remove(id.getId());
                 tracked = null;
             } else if (id.getAttemptId() < tracked.attemptId) {
                 // no reason to try to execute a previous attempt than we've already seen
@@ -223,11 +211,11 @@ public class TridentBoltExecutor implements IRichBolt {
 
         if (tracked == null) {
             tracked =
-                new TrackedBatch(new BatchInfo(batchGroup, id, _bolt.initBatchState(batchGroup, id)), _coordConditions.get(batchGroup),
+                new TrackedBatch(new BatchInfo(batchGroup, id, bolt.initBatchState(batchGroup, id)), coordConditions.get(batchGroup),
                                  id.getAttemptId());
-            _batches.put(id.getId(), tracked);
+            batches.put(id.getId(), tracked);
         }
-        _coordCollector.setCurrBatch(tracked);
+        coordCollector.setCurrBatch(tracked);
 
         //System.out.println("TRACKED: " + tracked + " " + tuple);
 
@@ -244,7 +232,7 @@ public class TridentBoltExecutor implements IRichBolt {
             tracked.receivedTuples++;
             boolean success = true;
             try {
-                _bolt.execute(tracked.info, tuple);
+                bolt.execute(tracked.info, tuple);
                 if (tracked.condition.expectedTaskReports == 0) {
                     success = finishBatch(tracked, tuple);
                 }
@@ -252,30 +240,30 @@ public class TridentBoltExecutor implements IRichBolt {
                 failBatch(tracked, e);
             }
             if (success) {
-                _collector.ack(tuple);
+                collector.ack(tuple);
             } else {
-                _collector.fail(tuple);
+                collector.fail(tuple);
             }
         }
-        _coordCollector.setCurrBatch(null);
+        coordCollector.setCurrBatch(null);
     }
 
     @Override
     public void cleanup() {
-        _bolt.cleanup();
+        bolt.cleanup();
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        _bolt.declareOutputFields(declarer);
-        for (String batchGroup : _coordSpecs.keySet()) {
-            declarer.declareStream(COORD_STREAM(batchGroup), true, new Fields("id", "count"));
+        bolt.declareOutputFields(declarer);
+        for (String batchGroup : coordSpecs.keySet()) {
+            declarer.declareStream(coordStream(batchGroup), true, new Fields("id", "count"));
         }
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        Map<String, Object> ret = _bolt.getComponentConfiguration();
+        Map<String, Object> ret = bolt.getComponentConfiguration();
         if (ret == null) {
             ret = new HashMap<>();
         }
@@ -388,21 +376,21 @@ public class TridentBoltExecutor implements IRichBolt {
     }
 
     private static class CoordinatedOutputCollector implements IOutputCollector {
-        IOutputCollector _delegate;
+        IOutputCollector delegate;
 
-        TrackedBatch _currBatch = null;
+        TrackedBatch currBatch = null;
 
         public CoordinatedOutputCollector(IOutputCollector delegate) {
-            _delegate = delegate;
+            this.delegate = delegate;
         }
 
         public void setCurrBatch(TrackedBatch batch) {
-            _currBatch = batch;
+            currBatch = batch;
         }
 
         @Override
         public List<Integer> emit(String stream, Collection<Tuple> anchors, List<Object> tuple) {
-            List<Integer> tasks = _delegate.emit(stream, anchors, tuple);
+            List<Integer> tasks = delegate.emit(stream, anchors, tuple);
             updateTaskCounts(tasks);
             return tasks;
         }
@@ -410,7 +398,7 @@ public class TridentBoltExecutor implements IRichBolt {
         @Override
         public void emitDirect(int task, String stream, Collection<Tuple> anchors, List<Object> tuple) {
             updateTaskCounts(Arrays.asList(task));
-            _delegate.emitDirect(task, stream, anchors, tuple);
+            delegate.emitDirect(task, stream, anchors, tuple);
         }
 
         @Override
@@ -430,18 +418,18 @@ public class TridentBoltExecutor implements IRichBolt {
 
         @Override
         public void flush() {
-            _delegate.flush();
+            delegate.flush();
         }
 
         @Override
         public void reportError(Throwable error) {
-            _delegate.reportError(error);
+            delegate.reportError(error);
         }
 
 
         private void updateTaskCounts(List<Integer> tasks) {
-            if (_currBatch != null) {
-                Map<Integer, Integer> taskEmittedTuples = _currBatch.taskEmittedTuples;
+            if (currBatch != null) {
+                Map<Integer, Integer> taskEmittedTuples = currBatch.taskEmittedTuples;
                 for (Integer task : tasks) {
                     int newCount = Utils.get(taskEmittedTuples, task, 0) + 1;
                     taskEmittedTuples.put(task, newCount);

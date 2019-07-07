@@ -12,16 +12,17 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.spout.CheckPointState.Action;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
+
 import java.util.Map;
+
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.spout.CheckPointState.Action;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
 
 /**
  * Wraps {@link IRichBolt} and forwards checkpoint tuples in a stateful topology.

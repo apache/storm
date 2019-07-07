@@ -19,8 +19,8 @@ import java.math.BigInteger;
  */
 @Deprecated
 public class TransactionAttempt {
-    BigInteger _txid;
-    long _attemptId;
+    BigInteger txid;
+    long attemptId;
 
 
     // for kryo compatibility
@@ -29,21 +29,21 @@ public class TransactionAttempt {
     }
 
     public TransactionAttempt(BigInteger txid, long attemptId) {
-        _txid = txid;
-        _attemptId = attemptId;
+        this.txid = txid;
+        this.attemptId = attemptId;
     }
 
     public BigInteger getTransactionId() {
-        return _txid;
+        return txid;
     }
 
     public long getAttemptId() {
-        return _attemptId;
+        return attemptId;
     }
 
     @Override
     public int hashCode() {
-        return _txid.hashCode();
+        return txid.hashCode();
     }
 
     @Override
@@ -52,11 +52,11 @@ public class TransactionAttempt {
             return false;
         }
         TransactionAttempt other = (TransactionAttempt) o;
-        return _txid.equals(other._txid) && _attemptId == other._attemptId;
+        return txid.equals(other.txid) && attemptId == other.attemptId;
     }
 
     @Override
     public String toString() {
-        return "" + _txid + ":" + _attemptId;
+        return "" + txid + ":" + attemptId;
     }
 }

@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class DefaultPrincipalToLocal implements IPrincipalToLocal {
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      */
     @Override
     public void prepare(Map<String, Object> topoConf) {

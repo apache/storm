@@ -40,7 +40,7 @@ public class PlainSaslTransportPlugin extends SaslTransportPlugin {
     protected TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException {
         //create an authentication callback handler
         CallbackHandler serverCallbackHandler = new SimpleSaslServerCallbackHandler(impersonationAllowed,
-                                                                                    (userName) -> Optional.of("password".toCharArray()));
+            (userName) -> Optional.of("password".toCharArray()));
         if (Security.getProvider(SaslPlainServer.SecurityProvider.SASL_PLAIN_SERVER) == null) {
             Security.addProvider(new SaslPlainServer.SecurityProvider());
         }

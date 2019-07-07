@@ -21,10 +21,10 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
 
 public class CombinerAggregatorCombineImpl implements Aggregator<Result> {
-    CombinerAggregator _agg;
+    CombinerAggregator agg;
 
     public CombinerAggregatorCombineImpl(CombinerAggregator agg) {
-        _agg = agg;
+        this.agg = agg;
     }
 
     @Override
@@ -35,7 +35,7 @@ public class CombinerAggregatorCombineImpl implements Aggregator<Result> {
     @Override
     public Result init(Object batchId, TridentCollector collector) {
         Result ret = new Result();
-        ret.obj = _agg.zero();
+        ret.obj = agg.zero();
         return ret;
     }
 
@@ -45,7 +45,7 @@ public class CombinerAggregatorCombineImpl implements Aggregator<Result> {
         if (val.obj == null) {
             val.obj = v;
         } else {
-            val.obj = _agg.combine(val.obj, v);
+            val.obj = agg.combine(val.obj, v);
         }
     }
 

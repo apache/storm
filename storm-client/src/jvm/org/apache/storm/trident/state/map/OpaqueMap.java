@@ -19,11 +19,11 @@ import org.apache.storm.trident.state.ValueUpdater;
 
 
 public class OpaqueMap<T> implements MapState<T> {
-    CachedBatchReadsMap<OpaqueValue> _backing;
-    Long _currTx;
+    CachedBatchReadsMap<OpaqueValue> backing;
+    Long currTx;
 
     protected OpaqueMap(IBackingMap<OpaqueValue> backing) {
-        _backing = new CachedBatchReadsMap(backing);
+        this.backing = new CachedBatchReadsMap(backing);
     }
 
     public static <T> MapState<T> build(IBackingMap<OpaqueValue> backing) {
@@ -32,7 +32,7 @@ public class OpaqueMap<T> implements MapState<T> {
 
     @Override
     public List<T> multiGet(List<List<Object>> keys) {
-        List<CachedBatchReadsMap.RetVal<OpaqueValue>> curr = _backing.multiGet(keys);
+        List<CachedBatchReadsMap.RetVal<OpaqueValue>> curr = backing.multiGet(keys);
         List<T> ret = new ArrayList<T>(curr.size());
         for (CachedBatchReadsMap.RetVal<OpaqueValue> retval : curr) {
             OpaqueValue val = retval.val;
@@ -40,7 +40,7 @@ public class OpaqueMap<T> implements MapState<T> {
                 if (retval.cached) {
                     ret.add((T) val.getCurr());
                 } else {
-                    ret.add((T) val.get(_currTx));
+                    ret.add((T) val.get(currTx));
                 }
             } else {
                 ret.add(null);
@@ -51,7 +51,7 @@ public class OpaqueMap<T> implements MapState<T> {
 
     @Override
     public List<T> multiUpdate(List<List<Object>> keys, List<ValueUpdater> updaters) {
-        List<CachedBatchReadsMap.RetVal<OpaqueValue>> curr = _backing.multiGet(keys);
+        List<CachedBatchReadsMap.RetVal<OpaqueValue>> curr = backing.multiGet(keys);
         List<OpaqueValue> newVals = new ArrayList<OpaqueValue>(curr.size());
         List<T> ret = new ArrayList<T>();
         for (int i = 0; i < curr.size(); i++) {
@@ -65,20 +65,20 @@ public class OpaqueMap<T> implements MapState<T> {
                 if (retval.cached) {
                     prev = val.getCurr();
                 } else {
-                    prev = val.get(_currTx);
+                    prev = val.get(currTx);
                 }
             }
             T newVal = updater.update(prev);
             ret.add(newVal);
             OpaqueValue<T> newOpaqueVal;
             if (val == null) {
-                newOpaqueVal = new OpaqueValue<T>(_currTx, newVal);
+                newOpaqueVal = new OpaqueValue<T>(currTx, newVal);
             } else {
-                newOpaqueVal = val.update(_currTx, newVal);
+                newOpaqueVal = val.update(currTx, newVal);
             }
             newVals.add(newOpaqueVal);
         }
-        _backing.multiPut(keys, newVals);
+        backing.multiPut(keys, newVals);
         return ret;
     }
 
@@ -93,26 +93,26 @@ public class OpaqueMap<T> implements MapState<T> {
 
     @Override
     public void beginCommit(Long txid) {
-        _currTx = txid;
-        _backing.reset();
+        currTx = txid;
+        backing.reset();
     }
 
     @Override
     public void commit(Long txid) {
-        _currTx = null;
-        _backing.reset();
+        currTx = null;
+        backing.reset();
     }
 
     static class ReplaceUpdater<T> implements ValueUpdater<T> {
-        T _t;
+        T value;
 
         public ReplaceUpdater(T t) {
-            _t = t;
+            value = t;
         }
 
         @Override
         public T update(Object stored) {
-            return _t;
+            return value;
         }
     }
 }

@@ -18,33 +18,33 @@ import java.util.List;
 /**
  * Interface for publishing tuples to a stream and reporting exceptions (to be displayed in Storm UI).
  *
- * Trident components that have the ability to emit tuples to a stream are passed an instance of this interface.
+ * <p>Trident components that have the ability to emit tuples to a stream are passed an instance of this interface.
  *
- * For example, to emit a new tuple to a stream, you would do something like the following:
+ * <p>For example, to emit a new tuple to a stream, you would do something like the following:
  *
- * ```java collector.emit(new Values("a", "b", "c")); ```
+ * <p>```java collector.emit(new Values("a", "b", "c")); ```
  *
  * @see org.apache.storm.trident.Stream
  * @see org.apache.storm.tuple.Values
  */
 public interface TridentCollector {
     /**
-     * Emits a tuple to a Stream
+     * Emits a tuple to a Stream.
      *
      * @param values a list of values of which the tuple will be composed
      */
     void emit(List<Object> values);
 
     /**
-     * Flush any buffered tuples (when batching is enabled)
+     * Flush any buffered tuples (when batching is enabled).
      */
     void flush();
 
     /**
      * Reports an error. The corresponding stack trace will be visible in the Storm UI.
      *
-     * Note that calling this method does not alter the processing of a batch. To explicitly fail a batch and trigger a replay, components
-     * should throw {@link org.apache.storm.topology.FailedException}.
+     * <p>Note that calling this method does not alter the processing of a batch. To explicitly fail a batch and trigger
+     * a replay, components should throw {@link org.apache.storm.topology.FailedException}.
      *
      * @param t The instance of the error (Throwable) being reported.
      */

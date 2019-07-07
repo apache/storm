@@ -15,22 +15,22 @@ package org.apache.storm.state;
 /**
  * The interface of State Encoder.
  */
-public interface StateEncoder<K, V, KENCODED, VENCODED> {
+public interface StateEncoder<K, V, KENCODEDT, VENCODEDT> {
     /**
      * Encode key.
      *
      * @param key the value of key (K type)
-     * @return the encoded value of key (KENCODED type)
+     * @return the encoded value of key (KENCODEDT type)
      */
-    KENCODED encodeKey(K key);
+    KENCODEDT encodeKey(K key);
 
     /**
      * Encode value.
      *
      * @param value the value of value (V type)
-     * @return the encoded value of value (VENCODED type)
+     * @return the encoded value of value (VENCODEDT type)
      */
-    VENCODED encodeValue(V value);
+    VENCODEDT encodeValue(V value);
 
     /**
      * Decode key.
@@ -38,20 +38,20 @@ public interface StateEncoder<K, V, KENCODED, VENCODED> {
      * @param encodedKey the value of key (KRAW type)
      * @return the decoded value of key (K type)
      */
-    K decodeKey(KENCODED encodedKey);
+    K decodeKey(KENCODEDT encodedKey);
 
     /**
      * Decode value.
      *
-     * @param encodedValue the value of key (VENCODED type)
+     * @param encodedValue the value of key (VENCODEDT type)
      * @return the decoded value of key (V type)
      */
-    V decodeValue(VENCODED encodedValue);
+    V decodeValue(VENCODEDT encodedValue);
 
     /**
      * Get the tombstone value (deletion mark).
      *
-     * @return the tomestone value (VENCODED type)
+     * @return the tomestone value (VENCODEDT type)
      */
-    VENCODED getTombstoneValue();
+    VENCODEDT getTombstoneValue();
 }

@@ -47,14 +47,14 @@ class KerberosSaslNettyServer {
     private Subject subject;
     private List<String> authorizedUsers;
 
-    KerberosSaslNettyServer(Map<String, Object> topoConf, String jaas_section, List<String> authorizedUsers) {
+    KerberosSaslNettyServer(Map<String, Object> topoConf, String jaasSection, List<String> authorizedUsers) {
         this.authorizedUsers = authorizedUsers;
         LOG.debug("Getting Configuration.");
-        Configuration login_conf;
+        Configuration loginConf;
         try {
-            login_conf = ClientAuthUtils.getConfiguration(topoConf);
+            loginConf = ClientAuthUtils.getConfiguration(topoConf);
         } catch (Throwable t) {
-            LOG.error("Failed to get login_conf: ", t);
+            LOG.error("Failed to get loginConf: ", t);
             throw t;
         }
 
@@ -65,12 +65,12 @@ class KerberosSaslNettyServer {
         //login our principal
         subject = null;
         try {
-            LOG.debug("Setting Configuration to login_config: {}", login_conf);
+            LOG.debug("Setting Configuration to login_config: {}", loginConf);
             //specify a configuration object to be used
-            Configuration.setConfiguration(login_conf);
+            Configuration.setConfiguration(loginConf);
             //now login
             LOG.debug("Trying to login.");
-            Login login = new Login(jaas_section, ch);
+            Login login = new Login(jaasSection, ch);
             subject = login.getSubject();
             LOG.debug("Got Subject: {}", subject.toString());
         } catch (LoginException ex) {
@@ -82,19 +82,19 @@ class KerberosSaslNettyServer {
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) {
             LOG.error("Failed to verifyuser principal.");
             throw new RuntimeException("Fail to verify user principal with section \""
-                                       + jaas_section
+                                       + jaasSection
                                        + "\" in login configuration file "
-                                       + login_conf);
+                                       + loginConf);
         }
 
         try {
             LOG.info("Creating Kerberos Server.");
             final CallbackHandler fch = ch;
             Principal p = (Principal) subject.getPrincipals().toArray()[0];
-            KerberosName kName = new KerberosName(p.getName());
-            final String fHost = kName.getHostName();
-            final String fServiceName = kName.getServiceName();
-            LOG.debug("Server with host: {}", fHost);
+            KerberosName kerberosName = new KerberosName(p.getName());
+            final String hostName = kerberosName.getHostName();
+            final String serviceName = kerberosName.getServiceName();
+            LOG.debug("Server with host: {}", hostName);
             saslServer =
                 Subject.doAs(subject, new PrivilegedExceptionAction<SaslServer>() {
                     @Override
@@ -104,8 +104,8 @@ class KerberosSaslNettyServer {
                             props.put(Sasl.QOP, "auth");
                             props.put(Sasl.SERVER_AUTH, "false");
                             return Sasl.createSaslServer(SaslUtils.KERBEROS,
-                                                         fServiceName,
-                                                         fHost, props, fch);
+                                                         serviceName,
+                                                         hostName, props, fch);
                         } catch (Exception e) {
                             LOG.error("Subject failed to create sasl server.", e);
                             return null;
@@ -159,12 +159,12 @@ class KerberosSaslNettyServer {
     }
 
     /**
-     * CallbackHandler for SASL DIGEST-MD5 mechanism
+     * CallbackHandler for SASL DIGEST-MD5 mechanism.
      */
     public static class KerberosSaslCallbackHandler implements CallbackHandler {
 
         /**
-         * Used to authenticate the clients
+         * Used to authenticate the clients.
          */
         private List<String> authorizedUsers;
 

@@ -13,21 +13,22 @@
 package org.apache.storm.container.cgroup;
 
 /**
- * a class that implements operations that can be performed on a cgroup subsystem
+ * a class that implements operations that can be performed on a cgroup subsystem.
  */
 public class SubSystem {
 
     private SubSystemType type;
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private int hierarchyID;
 
     private int cgroupsNum;
 
     private boolean enable;
 
-    public SubSystem(SubSystemType type, int hierarchyID, int cgroupNum, boolean enable) {
+    public SubSystem(SubSystemType type, int hierarchyId, int cgroupNum, boolean enable) {
         this.type = type;
-        this.hierarchyID = hierarchyID;
+        this.hierarchyID = hierarchyId;
         this.cgroupsNum = cgroupNum;
         this.enable = enable;
     }
@@ -40,10 +41,12 @@ public class SubSystem {
         this.type = type;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public int getHierarchyID() {
         return hierarchyID;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public void setHierarchyID(int hierarchyID) {
         this.hierarchyID = hierarchyID;
     }

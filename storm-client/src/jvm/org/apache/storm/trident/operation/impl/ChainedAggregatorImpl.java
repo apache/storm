@@ -24,35 +24,35 @@ import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
 public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
-    Aggregator[] _aggs;
-    ProjectionFactory[] _inputFactories;
-    ComboList.Factory _fact;
-    Fields[] _inputFields;
+    Aggregator[] aggs;
+    ProjectionFactory[] inputFactories;
+    ComboList.Factory fact;
+    Fields[] inputFields;
 
 
     public ChainedAggregatorImpl(Aggregator[] aggs, Fields[] inputFields, ComboList.Factory fact) {
-        _aggs = aggs;
-        _inputFields = inputFields;
-        _fact = fact;
-        if (_aggs.length != _inputFields.length) {
+        this.aggs = aggs;
+        this.inputFields = inputFields;
+        this.fact = fact;
+        if (this.aggs.length != this.inputFields.length) {
             throw new IllegalArgumentException("Require input fields for each aggregator");
         }
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TridentOperationContext context) {
-        _inputFactories = new ProjectionFactory[_inputFields.length];
-        for (int i = 0; i < _inputFields.length; i++) {
-            _inputFactories[i] = context.makeProjectionFactory(_inputFields[i]);
-            _aggs[i].prepare(conf, new TridentOperationContext(context, _inputFactories[i]));
+        inputFactories = new ProjectionFactory[inputFields.length];
+        for (int i = 0; i < inputFields.length; i++) {
+            inputFactories[i] = context.makeProjectionFactory(inputFields[i]);
+            aggs[i].prepare(conf, new TridentOperationContext(context, inputFactories[i]));
         }
     }
 
     @Override
     public ChainedResult init(Object batchId, TridentCollector collector) {
-        ChainedResult initted = new ChainedResult(collector, _aggs.length);
-        for (int i = 0; i < _aggs.length; i++) {
-            initted.objs[i] = _aggs[i].init(batchId, initted.collectors[i]);
+        ChainedResult initted = new ChainedResult(collector, aggs.length);
+        for (int i = 0; i < aggs.length; i++) {
+            initted.objs[i] = aggs[i].init(batchId, initted.collectors[i]);
         }
         return initted;
     }
@@ -60,19 +60,19 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
     @Override
     public void aggregate(ChainedResult val, TridentTuple tuple, TridentCollector collector) {
         val.setFollowThroughCollector(collector);
-        for (int i = 0; i < _aggs.length; i++) {
-            TridentTuple projected = _inputFactories[i].create((TridentTupleView) tuple);
-            _aggs[i].aggregate(val.objs[i], projected, val.collectors[i]);
+        for (int i = 0; i < aggs.length; i++) {
+            TridentTuple projected = inputFactories[i].create((TridentTupleView) tuple);
+            aggs[i].aggregate(val.objs[i], projected, val.collectors[i]);
         }
     }
 
     @Override
     public void complete(ChainedResult val, TridentCollector collector) {
         val.setFollowThroughCollector(collector);
-        for (int i = 0; i < _aggs.length; i++) {
-            _aggs[i].complete(val.objs[i], val.collectors[i]);
+        for (int i = 0; i < aggs.length; i++) {
+            aggs[i].complete(val.objs[i], val.collectors[i]);
         }
-        if (_aggs.length > 1) { // otherwise, tuples were emitted directly
+        if (aggs.length > 1) { // otherwise, tuples were emitted directly
             int[] indices = new int[val.collectors.length];
             for (int i = 0; i < indices.length; i++) {
                 indices[i] = 0;
@@ -80,12 +80,12 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
             boolean keepGoing = true;
             //emit cross-join of all emitted tuples
             while (keepGoing) {
-                List[] combined = new List[_aggs.length];
-                for (int i = 0; i < _aggs.length; i++) {
+                List[] combined = new List[aggs.length];
+                for (int i = 0; i < aggs.length; i++) {
                     CaptureCollector capturer = (CaptureCollector) val.collectors[i];
                     combined[i] = capturer.captured.get(indices[i]);
                 }
-                collector.emit(_fact.create(combined));
+                collector.emit(fact.create(combined));
                 keepGoing = increment(val.collectors, indices, indices.length - 1);
             }
         }
@@ -107,7 +107,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
 
     @Override
     public void cleanup() {
-        for (Aggregator a : _aggs) {
+        for (Aggregator a : aggs) {
             a.cleanup();
         }
     }

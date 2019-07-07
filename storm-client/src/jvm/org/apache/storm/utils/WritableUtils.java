@@ -113,8 +113,9 @@ public final class WritableUtils {
         }
     }
 
-
-    /* Ugly utility, maybe someone else can do this better  */
+    /**
+     * Ugly utility, maybe someone else can do this better.
+     */
     public static String readCompressedString(DataInput in) throws IOException {
         byte[] bytes = readCompressedByteArray(in);
         if (bytes == null) {
@@ -128,12 +129,10 @@ public final class WritableUtils {
         return writeCompressedByteArray(out, (s != null) ? s.getBytes("UTF-8") : null);
     }
 
-    /*
-     *
+    /**
      * Write a String as a Network Int n, followed by n Bytes
      * Alternative to 16 bit read/writeUTF.
      * Encoding standard is... ?
-     *
      */
     public static void writeString(DataOutput out, String s) throws IOException {
         if (s != null) {
@@ -146,11 +145,10 @@ public final class WritableUtils {
         }
     }
 
-    /*
+    /**
      * Read a String as a Network Int n, followed by n Bytes
      * Alternative to 16 bit read/writeUTF.
      * Encoding standard is... ?
-     *
      */
     public static String readString(DataInput in) throws IOException {
         int length = in.readInt();
@@ -163,10 +161,9 @@ public final class WritableUtils {
     }
 
 
-    /*
+    /**
      * Write a String array as a Nework Int N, followed by Int N Byte Array Strings.
      * Could be generalised using introspection.
-     *
      */
     public static void writeStringArray(DataOutput out, String[] s) throws IOException {
         out.writeInt(s.length);
@@ -192,10 +189,9 @@ public final class WritableUtils {
         }
     }
 
-    /*
+    /**
      * Write a String array as a Nework Int N, followed by Int N Byte Array Strings.
      * Could be generalised using introspection. Actually this bit couldn't...
-     *
      */
     public static String[] readStringArray(DataInput in) throws IOException {
         int len = in.readInt();
@@ -210,10 +206,9 @@ public final class WritableUtils {
     }
 
 
-    /*
+    /**
      * Write a String array as a Nework Int N, followed by Int N Byte Array Strings.
      * Could be generalised using introspection. Handles null arrays and null values.
-     *
      */
     public static String[] readCompressedStringArray(DataInput in) throws IOException {
         int len = in.readInt();
@@ -228,10 +223,8 @@ public final class WritableUtils {
     }
 
 
-    /*
-     *
+    /**
      * Test Utility Method Display Byte Array.
-     *
      */
     public static void displayByteArray(byte[] record) {
         int i;
@@ -262,7 +255,6 @@ public final class WritableUtils {
      *
      * @param stream Binary output stream
      * @param i Integer to be serialized
-     * @throws java.io.IOException
      */
     public static void writeVInt(DataOutput stream, int i) throws IOException {
         writeVLong(stream, i);
@@ -281,7 +273,6 @@ public final class WritableUtils {
      *
      * @param stream Binary output stream
      * @param i Long to be serialized
-     * @throws java.io.IOException
      */
     public static void writeVLong(DataOutput stream, long i) throws IOException {
         if (i >= -112 && i <= 127) {
@@ -316,7 +307,6 @@ public final class WritableUtils {
     /**
      * Reads a zero-compressed encoded long from input stream and returns it.
      * @param stream Binary input stream
-     * @throws java.io.IOException
      * @return deserialized long from stream.
      */
     public static long readVLong(DataInput stream) throws IOException {
@@ -337,7 +327,6 @@ public final class WritableUtils {
     /**
      * Reads a zero-compressed encoded integer from input stream and returns it.
      * @param stream Binary input stream
-     * @throws java.io.IOException
      * @return deserialized integer from stream.
      */
     public static int readVInt(DataInput stream) throws IOException {
@@ -345,7 +334,7 @@ public final class WritableUtils {
     }
 
     /**
-     * Given the first byte of a vint/vlong, determine the sign
+     * Given the first byte of a vint/vlong, determine the sign.
      * @param value the first byte
      * @return is the value negative
      */
@@ -354,7 +343,7 @@ public final class WritableUtils {
     }
 
     /**
-     * Parse the first byte of a vint/vlong to determine the number of bytes
+     * Parse the first byte of a vint/vlong to determine the number of bytes.
      * @param value the first byte of the vint/vlong
      * @return the total number of bytes (1 to 9)
      */
@@ -368,7 +357,7 @@ public final class WritableUtils {
     }
 
     /**
-     * Get the encoded length if an integer is stored in a variable-length format
+     * Get the encoded length if an integer is stored in a variable-length format.
      * @return the encoded length
      */
     public static int getVIntSize(long i) {
@@ -386,7 +375,7 @@ public final class WritableUtils {
     }
 
     /**
-     * Skip <i>len</i> number of bytes in input stream<i>in</i>
+     * Skip <i>len</i> number of bytes in input stream<i>in</i>.
      * @param in input stream
      * @param len number of bytes to skip
      * @throws IOException when skipped less number of bytes
@@ -400,8 +389,10 @@ public final class WritableUtils {
         }
 
         if (total < len) {
-            throw new IOException("Not able to skip " + len + " bytes, possibly " +
-                                  "due to end of input.");
+            throw new IOException("Not able to skip "
+                    + len
+                    + " bytes, possibly "
+                    + "due to end of input.");
         }
     }
 }

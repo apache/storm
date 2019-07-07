@@ -24,9 +24,9 @@ public class TupleImpl implements Tuple {
     private String streamId;
     private GeneralTopologyContext context;
     private MessageId id;
-    private Long _processSampleStartTime;
-    private Long _executeSampleStartTime;
-    private long _outAckVal = 0;
+    private Long processSampleStartTime;
+    private Long executeSampleStartTime;
+    private long outAckVal = 0;
 
     public TupleImpl(Tuple t) {
         this.values = t.getValues();
@@ -37,9 +37,9 @@ public class TupleImpl implements Tuple {
         this.srcComponent = t.getSourceComponent();
         try {
             TupleImpl ti = (TupleImpl) t;
-            this._processSampleStartTime = ti._processSampleStartTime;
-            this._executeSampleStartTime = ti._executeSampleStartTime;
-            this._outAckVal = ti._outAckVal;
+            this.processSampleStartTime = ti.processSampleStartTime;
+            this.executeSampleStartTime = ti.executeSampleStartTime;
+            this.outAckVal = ti.outAckVal;
         } catch (ClassCastException e) {
             // ignore ... if t is not a TupleImpl type .. faster than checking and then casting
         }
@@ -68,32 +68,29 @@ public class TupleImpl implements Tuple {
     }
 
     public Long getProcessSampleStartTime() {
-        return _processSampleStartTime;
+        return processSampleStartTime;
     }
 
     public void setProcessSampleStartTime(long ms) {
-        _processSampleStartTime = ms;
+        processSampleStartTime = ms;
     }
 
     public Long getExecuteSampleStartTime() {
-        return _executeSampleStartTime;
+        return executeSampleStartTime;
     }
 
     public void setExecuteSampleStartTime(long ms) {
-        _executeSampleStartTime = ms;
+        executeSampleStartTime = ms;
     }
 
     public void updateAckVal(long val) {
-        _outAckVal = _outAckVal ^ val;
+        outAckVal = outAckVal ^ val;
     }
 
     public long getAckVal() {
-        return _outAckVal;
+        return outAckVal;
     }
 
-    /**
-     * Tuple APIs
-     */
     @Override
     public int size() {
         return values.size();
@@ -256,9 +253,11 @@ public class TupleImpl implements Tuple {
 
     @Override
     public String toString() {
-        return "source: " + getSourceComponent() + ":" + taskId + ", stream: " + streamId + ", id: " + id.toString() + ", " +
-               values.toString() + " PROC_START_TIME(sampled): " + _processSampleStartTime + " EXEC_START_TIME(sampled): " +
-               _executeSampleStartTime;
+        return "source: " + getSourceComponent() + ":" + taskId
+                + ", stream: " + streamId
+                + ", id: " + id.toString()
+                + ", " + values.toString() + " PROC_START_TIME(sampled): "
+                + processSampleStartTime + " EXEC_START_TIME(sampled): " + executeSampleStartTime;
     }
 
     @Override

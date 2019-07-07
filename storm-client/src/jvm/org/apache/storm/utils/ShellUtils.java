@@ -26,7 +26,7 @@ import org.apache.storm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract public class ShellUtils {
+public abstract class ShellUtils {
     public static final Logger LOG = LoggerFactory.getLogger(ShellUtils.class);
     public static final OSType osType = getOSType();
     // Helper static vars for each platform
@@ -45,9 +45,9 @@ abstract public class ShellUtils {
      */
     public static final String TOKEN_SEPARATOR_REGEX
         = WINDOWS ? "[|\n\r]" : "[ \t\n\r\f]";
-    final private boolean redirectErrorStream; // merge stdout and stderr
+    private final boolean redirectErrorStream; // merge stdout and stderr
     /**
-     * Time after which the executing script would be timedout
+     * Time after which the executing script would be timed out.
      */
     protected long timeOutInterval = 0L;
     private long interval;   // refresh interval in msec
@@ -57,11 +57,11 @@ abstract public class ShellUtils {
     private Process process; // sub process used to execute the command
     private int exitCode;
     /**
-     * If or not script timed out
+     * If or not script timed out.
      */
     private AtomicBoolean timedOut;
     /**
-     * If or not script finished executing
+     * If or not script finished executing.
      */
     private volatile AtomicBoolean completed;
 
@@ -74,7 +74,8 @@ abstract public class ShellUtils {
     }
 
     /**
-     * @param interval the minimum duration to wait before re-executing the command.
+     * Creates a new shell utils instance.
+     * @param interval the minimum duration to wait before re-executing the command
      */
     public ShellUtils(long interval, boolean redirectErrorStream) {
         this.interval = interval;
@@ -82,7 +83,8 @@ abstract public class ShellUtils {
         this.redirectErrorStream = redirectErrorStream;
     }
 
-    static private OSType getOSType() {
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+    private static OSType getOSType() {
         String osName = System.getProperty("os.name");
         if (osName.startsWith("Windows")) {
             return OSType.OS_TYPE_WIN;
@@ -101,7 +103,7 @@ abstract public class ShellUtils {
     }
 
     /**
-     * a Unix command to get the current user's groups list
+     * a Unix command to get the current user's groups list.
      */
     public static String[] getGroupsCommand() {
         if (WINDOWS) {
@@ -156,7 +158,7 @@ abstract public class ShellUtils {
     }
 
     /**
-     * get the exit code
+     * get the exit code.
      *
      * @return the exit code of the process
      */
@@ -165,7 +167,7 @@ abstract public class ShellUtils {
     }
 
     /**
-     * set the environment for the command
+     * set the environment for the command.
      *
      * @param env Mapping of environment variables
      */
@@ -174,7 +176,7 @@ abstract public class ShellUtils {
     }
 
     /**
-     * set the working directory
+     * set the working directory.
      *
      * @param dir The directory where the command would be executed
      */
@@ -183,7 +185,7 @@ abstract public class ShellUtils {
     }
 
     /**
-     * check to see if a command needs to be executed and execute if needed
+     * check to see if a command needs to be executed and execute if needed.
      */
     protected void run() throws IOException {
         if (lastTime + interval > System.currentTimeMillis()) {
@@ -199,7 +201,7 @@ abstract public class ShellUtils {
     }
 
     /**
-     * Run a command
+     * Run a command.
      */
     private void runCommand() throws IOException {
         ProcessBuilder builder = new ProcessBuilder(getExecString());
@@ -252,6 +254,7 @@ abstract public class ShellUtils {
         try {
             errThread.start();
         } catch (IllegalStateException ise) {
+            //ignore
         }
         try {
             parseExecResult(inReader); // parse the output
@@ -310,18 +313,18 @@ abstract public class ShellUtils {
     }
 
     /**
-     * return an array containing the command name & its parameters
+     * return an array containing the command name & its parameters.
      */
     protected abstract String[] getExecString();
 
     /**
-     * Parse the execution result
+     * Parse the execution result.
      */
     protected abstract void parseExecResult(BufferedReader lines)
         throws IOException;
 
     /**
-     * get the current sub-process executing the given command
+     * get the current sub-process executing the given command.
      *
      * @return process executing the command
      */
@@ -345,7 +348,10 @@ abstract public class ShellUtils {
         this.timedOut.set(true);
     }
 
-    // OSType detection
+    /**
+     * OSType detection.
+     */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public enum OSType {
         OS_TYPE_LINUX,
         OS_TYPE_WIN,
@@ -437,9 +443,9 @@ abstract public class ShellUtils {
         protected void parseExecResult(BufferedReader lines) throws IOException {
             output = new StringBuffer();
             char[] buf = new char[512];
-            int nRead;
-            while ((nRead = lines.read(buf, 0, buf.length)) > 0) {
-                output.append(buf, 0, nRead);
+            int read;
+            while ((read = lines.read(buf, 0, buf.length)) > 0) {
+                output.append(buf, 0, read);
             }
         }
 

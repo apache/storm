@@ -20,7 +20,7 @@ import org.apache.storm.task.GeneralTopologyContext;
  * dynamically typed -- the types of the fields do not need to be declared. Tuples have helper methods like getInteger and getString to get
  * field values without having to cast the result.
  *
- * Storm needs to know how to serialize all the values in a tuple. By default, Storm knows how to serialize the primitive types, strings,
+ * <p>Storm needs to know how to serialize all the values in a tuple. By default, Storm knows how to serialize the primitive types, strings,
  * and byte arrays. If you want to use another type, you'll need to implement and register a serializer for that type.
  *
  * @see <a href="http://storm.apache.org/documentation/Serialization.html">Serialization</a>
@@ -53,7 +53,7 @@ public interface Tuple extends ITuple {
     public MessageId getMessageId();
 
     /**
-     * Gets the topology context associated with the tuple
+     * Gets the topology context associated with the tuple.
      */
     public GeneralTopologyContext getContext();
 }

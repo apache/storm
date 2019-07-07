@@ -32,72 +32,75 @@ import org.slf4j.LoggerFactory;
 
 public class MetricsConsumerBolt implements IBolt {
     public static final Logger LOG = LoggerFactory.getLogger(MetricsConsumerBolt.class);
-    private final int _maxRetainMetricTuples;
-    private final Predicate<IMetricsConsumer.DataPoint> _filterPredicate;
-    private final DataPointExpander _expander;
-    private final BlockingQueue<MetricsTask> _taskQueue;
-    IMetricsConsumer _metricsConsumer;
-    String _consumerClassName;
-    OutputCollector _collector;
-    Object _registrationArgument;
-    private Thread _taskExecuteThread;
-    private volatile boolean _running = true;
+    private final int maxRetainMetricTuples;
+    private final Predicate<IMetricsConsumer.DataPoint> filterPredicate;
+    private final DataPointExpander expander;
+    private final BlockingQueue<MetricsTask> taskQueue;
+    IMetricsConsumer metricsConsumer;
+    String consumerClassName;
+    OutputCollector collector;
+    Object registrationArgument;
+    private Thread taskExecuteThread;
+    private volatile boolean running = true;
 
     public MetricsConsumerBolt(String consumerClassName, Object registrationArgument, int maxRetainMetricTuples,
                                Predicate<IMetricsConsumer.DataPoint> filterPredicate, DataPointExpander expander) {
 
-        _consumerClassName = consumerClassName;
-        _registrationArgument = registrationArgument;
-        _maxRetainMetricTuples = maxRetainMetricTuples;
-        _filterPredicate = filterPredicate;
-        _expander = expander;
+        this.consumerClassName = consumerClassName;
+        this.registrationArgument = registrationArgument;
+        this.maxRetainMetricTuples = maxRetainMetricTuples;
+        this.filterPredicate = filterPredicate;
+        this.expander = expander;
 
-        if (_maxRetainMetricTuples > 0) {
-            _taskQueue = new LinkedBlockingDeque<>(_maxRetainMetricTuples);
+        if (this.maxRetainMetricTuples > 0) {
+            taskQueue = new LinkedBlockingDeque<>(this.maxRetainMetricTuples);
         } else {
-            _taskQueue = new LinkedBlockingDeque<>();
+            taskQueue = new LinkedBlockingDeque<>();
         }
     }
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         try {
-            _metricsConsumer = (IMetricsConsumer) Class.forName(_consumerClassName).newInstance();
+            metricsConsumer = (IMetricsConsumer) Class.forName(consumerClassName).newInstance();
         } catch (Exception e) {
-            throw new RuntimeException("Could not instantiate a class listed in config under section " +
-                                       Config.TOPOLOGY_METRICS_CONSUMER_REGISTER + " with fully qualified name " + _consumerClassName, e);
+            throw new RuntimeException("Could not instantiate a class listed in config under section "
+                            + Config.TOPOLOGY_METRICS_CONSUMER_REGISTER
+                            + " with fully qualified name "
+                            + consumerClassName,
+                    e);
         }
-        _metricsConsumer.prepare(topoConf, _registrationArgument, context, collector);
-        _collector = collector;
-        _taskExecuteThread = new Thread(new MetricsHandlerRunnable());
-        _taskExecuteThread.setDaemon(true);
-        _taskExecuteThread.start();
+        metricsConsumer.prepare(topoConf, registrationArgument, context, collector);
+        this.collector = collector;
+        taskExecuteThread = new Thread(new MetricsHandlerRunnable());
+        taskExecuteThread.setDaemon(true);
+        taskExecuteThread.start();
     }
 
     @Override
     public void execute(Tuple input) {
         IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) input.getValue(0);
         Collection<IMetricsConsumer.DataPoint> dataPoints = (Collection) input.getValue(1);
-        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = _expander.expandDataPoints(dataPoints);
+        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = expander.expandDataPoints(dataPoints);
         List<IMetricsConsumer.DataPoint> filteredDataPoints = getFilteredDataPoints(expandedDataPoints);
         MetricsTask metricsTask = new MetricsTask(taskInfo, filteredDataPoints);
 
-        while (!_taskQueue.offer(metricsTask)) {
-            _taskQueue.poll();
+        while (!taskQueue.offer(metricsTask)) {
+            taskQueue.poll();
         }
 
-        _collector.ack(input);
+        collector.ack(input);
     }
 
     private List<IMetricsConsumer.DataPoint> getFilteredDataPoints(Collection<IMetricsConsumer.DataPoint> dataPoints) {
-        return Lists.newArrayList(Iterables.filter(dataPoints, _filterPredicate));
+        return Lists.newArrayList(Iterables.filter(dataPoints, filterPredicate));
     }
 
     @Override
     public void cleanup() {
-        _running = false;
-        _metricsConsumer.cleanup();
-        _taskExecuteThread.interrupt();
+        running = false;
+        metricsConsumer.cleanup();
+        taskExecuteThread.interrupt();
     }
 
     static class MetricsTask {
@@ -122,10 +125,10 @@ public class MetricsConsumerBolt implements IBolt {
 
         @Override
         public void run() {
-            while (_running) {
+            while (running) {
                 try {
-                    MetricsTask task = _taskQueue.take();
-                    _metricsConsumer.handleDataPoints(task.getTaskInfo(), task.getDataPoints());
+                    MetricsTask task = taskQueue.take();
+                    metricsConsumer.handleDataPoints(task.getTaskInfo(), task.getDataPoints());
                 } catch (InterruptedException e) {
                     break;
                 } catch (Throwable t) {

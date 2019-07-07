@@ -12,9 +12,6 @@
 
 package org.apache.storm.trident.windowing.config;
 
-/**
- *
- */
 public abstract class BaseWindowConfig implements WindowConfig {
     protected final int windowLength;
     protected final int slideLength;

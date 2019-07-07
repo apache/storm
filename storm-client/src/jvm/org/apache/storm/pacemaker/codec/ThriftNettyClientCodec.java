@@ -38,9 +38,9 @@ public class ThriftNettyClientCodec extends ChannelInitializer<Channel> {
     private final Map<String, Object> topoConf;
     private final String host;
 
-    public ThriftNettyClientCodec(PacemakerClient pacemaker_client, Map<String, Object> topoConf,
+    public ThriftNettyClientCodec(PacemakerClient pacemakerClient, Map<String, Object> topoConf,
                                   AuthMethod authMethod, String host, int thriftMessageMaxSizeBytes) {
-        client = pacemaker_client;
+        client = pacemakerClient;
         this.authMethod = authMethod;
         this.topoConf = topoConf;
         this.host = host;
@@ -50,32 +50,32 @@ public class ThriftNettyClientCodec extends ChannelInitializer<Channel> {
     @Override
     protected void initChannel(Channel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-                pipeline.addLast("encoder", new ThriftEncoder());
-                pipeline.addLast("decoder", new ThriftDecoder(thriftMessageMaxSize));
+        pipeline.addLast("encoder", new ThriftEncoder());
+        pipeline.addLast("decoder", new ThriftDecoder(thriftMessageMaxSize));
 
-                if (authMethod == AuthMethod.KERBEROS) {
-                    try {
-                        LOG.debug("Adding KerberosSaslClientHandler to pacemaker client pipeline.");
-                        pipeline.addLast(KERBEROS_HANDLER,
-                                         new KerberosSaslClientHandler(client,
-                                                                       topoConf,
-                                                                       ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT,
-                                                                       host));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else if (authMethod == AuthMethod.DIGEST) {
-                    try {
-                        LOG.debug("Adding SaslStormClientHandler to pacemaker client pipeline.");
-                        pipeline.addLast(SASL_HANDLER, new SaslStormClientHandler(client));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
+        if (authMethod == AuthMethod.KERBEROS) {
+            try {
+                LOG.debug("Adding KerberosSaslClientHandler to pacemaker client pipeline.");
+                pipeline.addLast(KERBEROS_HANDLER,
+                                 new KerberosSaslClientHandler(client,
+                                                               topoConf,
+                                                               ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT,
+                                                               host));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else if (authMethod == AuthMethod.DIGEST) {
+            try {
+                LOG.debug("Adding SaslStormClientHandler to pacemaker client pipeline.");
+                pipeline.addLast(SASL_HANDLER, new SaslStormClientHandler(client));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
             client.channelReady(ch);
-                }
+        }
 
-                pipeline.addLast("PacemakerClientHandler", new PacemakerClientHandler(client));
+        pipeline.addLast("PacemakerClientHandler", new PacemakerClientHandler(client));
     }
 
     public enum AuthMethod {

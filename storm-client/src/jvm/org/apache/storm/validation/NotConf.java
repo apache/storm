@@ -13,7 +13,7 @@
 package org.apache.storm.validation;
 
 /**
- * Annotation that can be used to explicitly call out public static final String fields that are not configs
+ * Annotation that can be used to explicitly call out public static final String fields that are not configs.
  */
 public @interface NotConf {
 

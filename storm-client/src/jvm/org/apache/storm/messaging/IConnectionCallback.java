@@ -19,7 +19,7 @@ import java.util.List;
  */
 public interface IConnectionCallback {
     /**
-     * A batch of new messages have arrived to be processed
+     * A batch of new messages have arrived to be processed.
      *
      * @param batch the messages to be processed
      */

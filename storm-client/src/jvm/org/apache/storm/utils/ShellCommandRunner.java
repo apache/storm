@@ -59,7 +59,7 @@ public interface ShellCommandRunner {
         throws IOException;
 
     /**
-     * Token separator regex used to parse Shell tool outputs
+     * Token separator regex used to parse Shell tool outputs.
      */
     String getTokenSeparatorRegex();
 

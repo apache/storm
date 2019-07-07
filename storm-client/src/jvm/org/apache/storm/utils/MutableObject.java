@@ -13,21 +13,20 @@
 package org.apache.storm.utils;
 
 public class MutableObject {
-    private Object o = null;
+    private Object object = null;
 
     public MutableObject() {
-
     }
 
-    public MutableObject(Object o) {
-        this.o = o;
+    public MutableObject(Object object) {
+        this.object = object;
     }
 
     public synchronized Object getObject() {
-        return o;
+        return object;
     }
 
     public synchronized void setObject(Object o) {
-        this.o = o;
+        this.object = o;
     }
 }

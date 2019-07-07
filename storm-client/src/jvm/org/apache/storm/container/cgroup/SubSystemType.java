@@ -13,7 +13,7 @@
 package org.apache.storm.container.cgroup;
 
 /**
- * A enum class to described the subsystems that can be used
+ * A enum class to described the subsystems that can be used.
  */
 public enum SubSystemType {
 

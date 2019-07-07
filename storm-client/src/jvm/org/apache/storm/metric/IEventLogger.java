@@ -73,7 +73,7 @@ public interface IEventLogger {
         }
 
         /**
-         * Returns a default formatted string with fields separated by ","
+         * Returns a default formatted string with fields separated by ",".
          *
          * @return a default formatted string with fields separated by ","
          */

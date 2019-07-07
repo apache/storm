@@ -22,15 +22,15 @@ import org.apache.storm.tuple.Values;
 
 public class CombinerAggregatorInitImpl implements Function {
 
-    CombinerAggregator _agg;
+    CombinerAggregator agg;
 
     public CombinerAggregatorInitImpl(CombinerAggregator agg) {
-        _agg = agg;
+        this.agg = agg;
     }
 
     @Override
     public void execute(TridentTuple tuple, TridentCollector collector) {
-        collector.emit(new Values(_agg.init(tuple)));
+        collector.emit(new Values(agg.init(tuple)));
     }
 
     @Override

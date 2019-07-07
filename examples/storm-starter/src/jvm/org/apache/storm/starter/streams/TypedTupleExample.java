@@ -37,7 +37,7 @@ public class TypedTupleExample {
         StreamBuilder builder = new StreamBuilder();
         Stream<Tuple3<Integer, Long, Long>> stream = builder.newStream(new RandomIntegerSpout(), TupleValueMappers.of(0, 1, 2));
 
-        PairStream<Long, Integer> pairs = stream.mapToPair(t -> Pair.of(t._2 / 10000, t._1));
+        PairStream<Long, Integer> pairs = stream.mapToPair(t -> Pair.of(t.value2 / 10000, t.value1));
 
         pairs.window(TumblingWindows.of(Count.of(10))).groupByKey().print();
 
