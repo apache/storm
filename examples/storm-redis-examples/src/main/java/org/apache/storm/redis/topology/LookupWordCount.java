@@ -15,7 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.topology;
+
+import com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Map;
@@ -36,10 +39,9 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
 
 public class LookupWordCount {
     private static final String WORD_SPOUT = "WORD_SPOUT";
@@ -65,7 +67,7 @@ public class LookupWordCount {
             String countStr = input.getStringByField("count");
 
             // print lookup result with low probability
-            if(RANDOM.nextInt(1000) > 995) {
+            if (RANDOM.nextInt(1000) > 995) {
                 int count = 0;
                 if (countStr != null) {
                     count = Integer.parseInt(countStr);
@@ -82,8 +84,6 @@ public class LookupWordCount {
     }
 
     public static void main(String[] args) throws Exception {
-        Config config = new Config();
-
         String host = TEST_REDIS_HOST;
         int port = TEST_REDIS_PORT;
 
@@ -114,6 +114,7 @@ public class LookupWordCount {
             System.out.println("Usage: LookupWordCount <redis host> <redis port> (topology name)");
             return;
         }
+        Config config = new Config();
         StormSubmitter.submitTopology(topoName, config, builder.createTopology());
     }
 
