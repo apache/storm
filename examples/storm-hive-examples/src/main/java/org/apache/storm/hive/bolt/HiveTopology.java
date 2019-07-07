@@ -41,7 +41,7 @@ public class HiveTopology {
     static final String TOPOLOGY_NAME = "hive-test-topology1";
 
     public static void main(String[] args) throws Exception {
-        String metaStoreURI = args[0];
+        String metaStoreUri = args[0];
         String dbName = args[1];
         String tblName = args[2];
         String[] colNames = {"id","name","phone","street","city","state"};
@@ -52,14 +52,14 @@ public class HiveTopology {
                 .withColumnFields(new Fields(colNames));
         HiveOptions hiveOptions;
         if (args.length == 6) {
-            hiveOptions = new HiveOptions(metaStoreURI,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(100)
                 .withIdleTimeout(10)
                 .withKerberosKeytab(args[4])
                 .withKerberosPrincipal(args[5]);
         } else {
-            hiveOptions = new HiveOptions(metaStoreURI,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(100)
                 .withIdleTimeout(10)
@@ -74,7 +74,7 @@ public class HiveTopology {
                 .shuffleGrouping(USER_SPOUT_ID);
         
         String topoName = TOPOLOGY_NAME;
-        if(args.length >= 4) {
+        if (args.length >= 4) {
             topoName = args[3];
         }
         StormSubmitter.submitTopology(topoName, config, builder.createTopology());
@@ -84,6 +84,7 @@ public class HiveTopology {
         try {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
+            //ignore
         }
     }
 
@@ -91,10 +92,10 @@ public class HiveTopology {
         private ConcurrentHashMap<UUID, Values> pending;
         private SpoutOutputCollector collector;
         private String[] sentences = {
-                "1,user1,123456,street1,sunnyvale,ca",
-                "2,user2,123456,street2,sunnyvale,ca",
-                "3,user3,123456,street3,san jose,ca",
-                "4,user4,123456,street4,san jose,ca",
+            "1,user1,123456,street1,sunnyvale,ca",
+            "2,user2,123456,street2,sunnyvale,ca",
+            "3,user3,123456,street3,san jose,ca",
+            "4,user4,123456,street4,san jose,ca",
         };
         private int index = 0;
         private int count = 0;
@@ -125,7 +126,7 @@ public class HiveTopology {
             }
             count++;
             total++;
-            if(count > 1000){
+            if (count > 1000) {
                 count = 0;
                 System.out.println("Pending count: " + this.pending.size() + ", total: " + this.total);
             }

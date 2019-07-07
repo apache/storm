@@ -42,7 +42,7 @@ public class HiveTopologyPartitioned {
     static final String TOPOLOGY_NAME = "hive-test-topology-partitioned";
 
     public static void main(String[] args) throws Exception {
-        String metaStoreURI = args[0];
+        String metaStoreUri = args[0];
         String dbName = args[1];
         String tblName = args[2];
         String[] partNames = {"city","state"};
@@ -55,14 +55,14 @@ public class HiveTopologyPartitioned {
             .withPartitionFields(new Fields(partNames));
         HiveOptions hiveOptions;
         if (args.length == 6) {
-            hiveOptions = new HiveOptions(metaStoreURI,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(1000)
                 .withIdleTimeout(10)
                 .withKerberosKeytab(args[4])
                 .withKerberosPrincipal(args[5]);
         } else {
-            hiveOptions = new HiveOptions(metaStoreURI,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(1000)
                 .withIdleTimeout(10);
@@ -85,6 +85,7 @@ public class HiveTopologyPartitioned {
         try {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
+            //ignore
         }
     }
 
@@ -92,10 +93,10 @@ public class HiveTopologyPartitioned {
         private ConcurrentHashMap<UUID, Values> pending;
         private SpoutOutputCollector collector;
         private String[] sentences = {
-                "1,user1,123456,street1,sunnyvale,ca",
-                "2,user2,123456,street2,sunnyvale,ca",
-                "3,user3,123456,street3,san jose,ca",
-                "4,user4,123456,street4,san jose,ca",
+            "1,user1,123456,street1,sunnyvale,ca",
+            "2,user2,123456,street2,sunnyvale,ca",
+            "3,user3,123456,street3,san jose,ca",
+            "4,user4,123456,street4,san jose,ca",
         };
         private int index = 0;
         private int count = 0;
@@ -126,8 +127,8 @@ public class HiveTopologyPartitioned {
             }
             count++;
             total++;
-            if(count > 1000){
-		Utils.sleep(1000);
+            if (count > 1000) {
+                Utils.sleep(1000);
                 count = 0;
                 System.out.println("Pending count: " + this.pending.size() + ", total: " + this.total);
             }

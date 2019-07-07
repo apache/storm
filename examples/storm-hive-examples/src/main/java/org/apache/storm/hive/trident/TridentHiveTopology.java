@@ -18,7 +18,6 @@
 
 package org.apache.storm.hive.trident;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,11 +41,10 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class TridentHiveTopology {
     private static final Logger LOG = LoggerFactory.getLogger(TridentHiveTopology.class);
 
-    public static StormTopology buildTopology(String metaStoreURI, String dbName, String tblName, Object keytab, Object principal) {
+    public static StormTopology buildTopology(String metaStoreUri, String dbName, String tblName, Object keytab, Object principal) {
         int batchSize = 100;
         FixedBatchSpout spout = new FixedBatchSpout(batchSize);
         spout.setCycle(true);
@@ -60,7 +58,7 @@ public class TridentHiveTopology {
             .withPartitionFields(new Fields(partNames));
         HiveOptions hiveOptions;
         if (keytab != null && principal != null) {
-            hiveOptions = new HiveOptions(metaStoreURI,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(batchSize)
                 .withIdleTimeout(10)
@@ -68,7 +66,7 @@ public class TridentHiveTopology {
                 .withKerberosKeytab((String)keytab)
                 .withKerberosPrincipal((String)principal);
         } else  {
-            hiveOptions = new HiveOptions(metaStoreURI,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(batchSize)
                 .withCallTimeout(30000)
@@ -83,11 +81,12 @@ public class TridentHiveTopology {
         try {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
+            //ignore
         }
     }
 
     public static void main(String[] args) throws Exception {
-        String metaStoreURI = args[0];
+        String metaStoreUri = args[0];
         String dbName = args[1];
         String tblName = args[2];
         Config conf = new Config();
@@ -108,8 +107,8 @@ public class TridentHiveTopology {
         }
         
         try {
-            StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreURI, dbName, tblName,null,null));
-        } catch(SubmitterHookException e) {
+            StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreUri, dbName, tblName,null,null));
+        } catch (SubmitterHookException e) {
             LOG.warn("Topology is submitted but invoking ISubmitterHook failed", e);
         } catch (Exception e) {
             LOG.warn("Failed to submit topology ", e);
@@ -149,20 +148,20 @@ public class TridentHiveTopology {
         @Override
         public void emitBatch(long batchId, TridentCollector collector) {
             List<List<Object>> batch = this.batches.get(batchId);
-            if(batch == null){
+            if (batch == null) {
                 batch = new ArrayList<List<Object>>();
-                if(index>=outputs.length && cycle) {
+                if (index >= outputs.length && cycle) {
                     index = 0;
                 }
-                for(int i=0; i < maxBatchSize; index++, i++) {
-                    if(index == outputs.length){
-                        index=0;
+                for (int i = 0; i < maxBatchSize; index++, i++) {
+                    if (index == outputs.length) {
+                        index = 0;
                     }
                     batch.add(outputs[index]);
                 }
                 this.batches.put(batchId, batch);
             }
-            for(List<Object> list : batch){
+            for (List<Object> list : batch) {
                 collector.emit(list);
             }
         }
