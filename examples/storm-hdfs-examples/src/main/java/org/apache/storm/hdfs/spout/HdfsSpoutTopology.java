@@ -63,25 +63,13 @@ public class HdfsSpoutTopology {
         }
 
         // 1 - parse cmd line args
-        String topologyName = args[0];
         String hdfsUri = args[1];
         String fileFormat = args[2];
         String sourceDir = args[3];
         String archiveDir = args[4];
         String badDir = args[5];
-        int spoutNum = Integer.parseInt(args[6]);
 
-        // 2 - create and configure spout and bolt
-        ConstBolt bolt = new ConstBolt();
-
-        HdfsSpout spout = new HdfsSpout().withOutputFields(TextFileReader.defaultFields)
-                                         .setReaderType(fileFormat)
-                                         .setHdfsUri(hdfsUri)
-                                         .setSourceDir(sourceDir)
-                                         .setArchiveDir(archiveDir)
-                                         .setBadFilesDir(badDir);
-
-        // 3 - Create and configure topology
+        // 2 - Create and configure topology
         Config conf = new Config();
         conf.setNumWorkers(1);
         conf.setNumAckers(1);
@@ -90,15 +78,24 @@ public class HdfsSpoutTopology {
         conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
 
         TopologyBuilder builder = new TopologyBuilder();
+        HdfsSpout spout = new HdfsSpout().withOutputFields(TextFileReader.defaultFields)
+                .setReaderType(fileFormat)
+                .setHdfsUri(hdfsUri)
+                .setSourceDir(sourceDir)
+                .setArchiveDir(archiveDir)
+                .setBadFilesDir(badDir);
+        int spoutNum = Integer.parseInt(args[6]);
         builder.setSpout(SPOUT_ID, spout, spoutNum);
+        ConstBolt bolt = new ConstBolt();
         builder.setBolt(BOLT_ID, bolt, 1).shuffleGrouping(SPOUT_ID);
 
-        // 4 - submit topology, wait for a few min and terminate it
+        // 3 - submit topology, wait for a few min and terminate it
         Map<String, Object> clusterConf = Utils.readStormConfig();
+        String topologyName = args[0];
         StormSubmitter.submitTopologyWithProgressBar(topologyName, conf, builder.createTopology());
         Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
 
-        // 5 - Print metrics every 30 sec, kill topology after 20 min
+        // 4 - Print metrics every 30 sec, kill topology after 20 min
         for (int i = 0; i < 40; i++) {
             Thread.sleep(30 * 1000);
             printMetrics(client, topologyName);
@@ -149,8 +146,10 @@ public class HdfsSpoutTopology {
             }
         }
         double avgLatency = weightedAvgTotal / acked;
-        System.out.println("uptime: " + uptime + " acked: " + acked + " avgLatency: " + avgLatency + " acked/sec: " +
-                           (((double) acked) / uptime + " failed: " + failed));
+        System.out.println("uptime: " + uptime
+                + " acked: " + acked
+                + " avgLatency: " + avgLatency
+                + " acked/sec: " + (((double) acked) / uptime + " failed: " + failed));
     }
 
     public static class ConstBolt extends BaseRichBolt {
