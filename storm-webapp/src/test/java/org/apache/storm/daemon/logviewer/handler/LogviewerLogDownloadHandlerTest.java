@@ -45,8 +45,8 @@ public class LogviewerLogDownloadHandlerTest {
 
             LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response topoAResponse = handler.downloadLogFile("topoA/1111/worker.log", "user");
-            Response topoBResponse = handler.downloadLogFile("topoB/1111/worker.log", "user");
+            Response topoAResponse = handler.downloadLogFile("host", "topoA/1111/worker.log", "user");
+            Response topoBResponse = handler.downloadLogFile("host", "topoB/1111/worker.log", "user");
 
             Utils.forceDelete(rootPath.toString());
 
@@ -63,7 +63,7 @@ public class LogviewerLogDownloadHandlerTest {
 
             LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response topoAResponse = handler.downloadLogFile("../nimbus.log", "user");
+            Response topoAResponse = handler.downloadLogFile("host","../nimbus.log", "user");
 
             Utils.forceDelete(rootPath.toString());
 
@@ -77,7 +77,7 @@ public class LogviewerLogDownloadHandlerTest {
 
             LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response response = handler.downloadDaemonLogFile("nimbus.log", "user");
+            Response response = handler.downloadDaemonLogFile("host","nimbus.log", "user");
 
             Utils.forceDelete(rootPath.toString());
 
@@ -92,7 +92,7 @@ public class LogviewerLogDownloadHandlerTest {
 
             LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response response = handler.downloadDaemonLogFile("workers-artifacts/topoA/1111/worker.log", "user");
+            Response response = handler.downloadDaemonLogFile("host","workers-artifacts/topoA/1111/worker.log", "user");
 
             Utils.forceDelete(rootPath.toString());
 
@@ -106,7 +106,7 @@ public class LogviewerLogDownloadHandlerTest {
 
             LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response response = handler.downloadDaemonLogFile("../evil.sh", "user");
+            Response response = handler.downloadDaemonLogFile("host","../evil.sh", "user");
 
             Utils.forceDelete(rootPath.toString());
 

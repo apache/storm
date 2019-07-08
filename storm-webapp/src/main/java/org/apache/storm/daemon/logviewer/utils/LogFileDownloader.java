@@ -21,7 +21,6 @@ package org.apache.storm.daemon.logviewer.utils;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -59,12 +58,13 @@ public class LogFileDownloader {
     /**
      * Checks authorization for the log file and download.
      *
+     * @param host host address
      * @param fileName file to download
      * @param user username
      * @param isDaemon true if the file is a daemon log, false if the file is an worker log
      * @return a Response which lets browsers download that file.
      */
-    public Response downloadFile(String fileName, String user, boolean isDaemon) throws IOException {
+    public Response downloadFile(String host, String fileName, String user, boolean isDaemon) throws IOException {
         Path rootDir = isDaemon ? daemonLogRoot : logRoot;
         Path rawFile = rootDir.resolve(fileName);
         Path file = rawFile.toAbsolutePath().normalize();
@@ -80,7 +80,7 @@ public class LogFileDownloader {
         if (file.toFile().exists()) {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 fileDownloadSizeDistMb.update(Math.round((double) file.toFile().length() / FileUtils.ONE_MB));
-                return LogviewerResponseBuilder.buildDownloadFile(file.toFile(), numFileDownloadExceptions);
+                return LogviewerResponseBuilder.buildDownloadFile(host, file.toFile(), numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
