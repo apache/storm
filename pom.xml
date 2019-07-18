@@ -420,6 +420,7 @@
                                 <exclude>**/README.md</exclude>
                                 <exclude>**/README.markdown</exclude>
                                 <exclude>**/DEVELOPER.md</exclude>
+                                <exclude>**/RELEASING.md</exclude>
                                 <exclude>**/BYLAWS.md</exclude>
                                 <exclude>**/STORM-UI-REST-API.md</exclude>
                                 <exclude>SECURITY.md</exclude>
