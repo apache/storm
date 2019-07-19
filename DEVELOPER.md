@@ -145,8 +145,9 @@ Please refer to section <a href="#building">Build the code and run the tests</a>
 
 Documentation contributions are very welcome!
 
-You can contribute documentation by pull request, as same as code contribution.
-Main directory is ```docs/```, and you can refer to docs/README.md for how to build / test website.
+You can contribute documentation by pull request, using the same process as code contribution.
+Release specific documentation can be found in `docs/` in this repository.
+The Storm website source repository can be found [here](https://github.com/apache/storm-site). Please refer to the README in that repository for how to build and test the website.
 
 <a name="pull-requests"></a>
 
