@@ -102,7 +102,6 @@ public class LogviewerProfileHandler {
     /**
      * Download a dump file.
      *
-     * @param host host address
      * @param topologyId topology ID
      * @param hostPort host and port of worker
      * @param fileName dump file name
@@ -110,8 +109,10 @@ public class LogviewerProfileHandler {
      * @return a Response which lets browsers download that file.
      * @see {@link org.apache.storm.daemon.logviewer.utils.LogFileDownloader#downloadFile(String, String, String, boolean)}
      */
-    public Response downloadDumpFile(String host, String topologyId, String hostPort, String fileName, String user) throws IOException {
-        String portStr = hostPort.split(":")[1];
+    public Response downloadDumpFile(String topologyId, String hostPort, String fileName, String user) throws IOException {
+        String[] hostPortSplit = hostPort.split(":");
+        String host = hostPortSplit[0];
+        String portStr = hostPortSplit[1];
         Path rawFile = logRoot.resolve(topologyId).resolve(portStr).resolve(fileName);
         Path absFile = rawFile.toAbsolutePath().normalize();
         if (!absFile.startsWith(logRoot) || !rawFile.normalize().toString().equals(rawFile.toString())) {
@@ -122,7 +123,8 @@ public class LogviewerProfileHandler {
         if (absFile.toFile().exists()) {
             String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
-                return LogviewerResponseBuilder.buildDownloadFile(host, absFile.toFile(), numFileDownloadExceptions);
+                String downloadedFileName = host + "-" + topologyId + "-" + portStr + "-" + absFile.getFileName();
+                return LogviewerResponseBuilder.buildDownloadFile(host, downloadedFileName, absFile.toFile(), numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }

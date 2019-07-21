@@ -19,13 +19,14 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import com.google.common.net.HttpHeaders;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -52,8 +53,12 @@ public class LogviewerLogDownloadHandlerTest {
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(topoAResponse.getEntity(), not(nullValue()));
+            String topoAContentDisposition = topoAResponse.getHeaderString(HttpHeaders.CONTENT_DISPOSITION);
+            assertThat(topoAContentDisposition, containsString("host-topoA-1111-worker.log"));
             assertThat(topoBResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(topoBResponse.getEntity(), not(nullValue()));
+            String topoBContentDisposition = topoBResponse.getHeaderString(HttpHeaders.CONTENT_DISPOSITION);
+            assertThat(topoBContentDisposition, containsString("host-topoB-1111-worker.log"));
         }
     }
 
@@ -83,6 +88,8 @@ public class LogviewerLogDownloadHandlerTest {
 
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(response.getEntity(), not(nullValue()));
+            String contentDisposition = response.getHeaderString(HttpHeaders.CONTENT_DISPOSITION);
+            assertThat(contentDisposition, containsString("host-nimbus.log"));
         }
     }
 
