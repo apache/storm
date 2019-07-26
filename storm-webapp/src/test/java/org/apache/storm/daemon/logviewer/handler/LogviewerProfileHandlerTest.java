@@ -25,14 +25,13 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import com.google.common.net.HttpHeaders;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import javax.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
@@ -98,15 +97,19 @@ public class LogviewerProfileHandlerTest {
 
             LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response topoAResponse = handler.downloadDumpFile("host","topoA", "localhost:1111", "worker.jfr", "user");
-            Response topoBResponse = handler.downloadDumpFile("host","topoB", "localhost:1111", "worker.txt", "user");
+            Response topoAResponse = handler.downloadDumpFile("topoA", "localhost:1111", "worker.jfr", "user");
+            Response topoBResponse = handler.downloadDumpFile("topoB", "localhost:1111", "worker.txt", "user");
 
             Utils.forceDelete(rootPath.toString());
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(topoAResponse.getEntity(), not(nullValue()));
+            String topoAContentDisposition = topoAResponse.getHeaderString(HttpHeaders.CONTENT_DISPOSITION);
+            assertThat(topoAContentDisposition, containsString("localhost-topoA-1111-worker.jfr"));
             assertThat(topoBResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(topoBResponse.getEntity(), not(nullValue()));
+            String topoBContentDisposition = topoBResponse.getHeaderString(HttpHeaders.CONTENT_DISPOSITION);
+            assertThat(topoBContentDisposition, containsString("localhost-topoB-1111-worker.txt"));
         }
     }
 
@@ -116,7 +119,7 @@ public class LogviewerProfileHandlerTest {
 
             LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response topoAResponse = handler.downloadDumpFile("host","../../", "localhost:logs", "daemon-dump.bin", "user");
+            Response topoAResponse = handler.downloadDumpFile("../../", "localhost:logs", "daemon-dump.bin", "user");
 
             Utils.forceDelete(rootPath.toString());
 
@@ -130,7 +133,7 @@ public class LogviewerProfileHandlerTest {
 
             LogviewerProfileHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath());
 
-            Response topoAResponse = handler.downloadDumpFile("host","../", "localhost:../logs", "daemon-dump.bin", "user");
+            Response topoAResponse = handler.downloadDumpFile("../", "localhost:../logs", "daemon-dump.bin", "user");
 
             Utils.forceDelete(rootPath.toString());
 

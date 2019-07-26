@@ -75,25 +75,18 @@ public class LogviewerResponseBuilder {
     /**
      * Build a Response object representing download a file.
      *
-     * @param host host address
+     * @param contentDispositionName The name to set in the Content-Disposition header
      * @param file file to download
      */
-    public static Response buildDownloadFile(String host, File file, Meter numFileDownloadExceptions) throws IOException {
-        String fname;
-        try {
-            String topoInfo = file.getParentFile().getParentFile().getName();
-            String port = file.getParentFile().getName();
-            fname = String.format("%s-%s-%s-%s", host, port, topoInfo, file.getName());
-        } catch (NullPointerException e) {
-            fname = file.getName();
-        }
+    public static Response buildDownloadFile(String contentDispositionName,
+        File file, Meter numFileDownloadExceptions) throws IOException {
         try {
             // do not close this InputStream in method: it will be used from jetty server
             InputStream is = Files.newInputStream(file.toPath());
             return Response.status(OK)
                     .entity(wrapWithStreamingOutput(is))
                     .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                    .header("Content-Disposition", "attachment; filename=\"" + fname + "\"")
+                    .header("Content-Disposition", "attachment; filename=\"" + contentDispositionName + "\"")
                     .build();
         } catch (IOException e) {
             numFileDownloadExceptions.mark();

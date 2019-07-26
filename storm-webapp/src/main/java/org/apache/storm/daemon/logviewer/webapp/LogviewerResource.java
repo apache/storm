@@ -233,8 +233,7 @@ public class LogviewerResource {
 
         String user = httpCredsHandler.getUserName(request);
         try {
-            String host = InetAddress.getLocalHost().getCanonicalHostName();
-            return profileHandler.downloadDumpFile(host, topologyId, hostPort, fileName, user);
+            return profileHandler.downloadDumpFile(topologyId, hostPort, fileName, user);
         } catch (IOException e) {
             numDownloadDumpExceptions.mark();
             throw e;
@@ -252,7 +251,7 @@ public class LogviewerResource {
         String file = request.getParameter("file");
         String decodedFileName = Utils.urlDecodeUtf8(file);
         try {
-            String host = InetAddress.getLocalHost().getCanonicalHostName();
+            String host = Utils.hostname();
             return logDownloadHandler.downloadLogFile(host, decodedFileName, user);
         } catch (IOException e) {
             numDownloadLogExceptions.mark();
@@ -271,7 +270,7 @@ public class LogviewerResource {
         String file = request.getParameter("file");
         String decodedFileName = Utils.urlDecodeUtf8(file);
         try {
-            String host = InetAddress.getLocalHost().getCanonicalHostName();
+            String host = Utils.hostname();
             return logDownloadHandler.downloadDaemonLogFile(host, decodedFileName, user);
         } catch (IOException e) {
             numDownloadDaemonLogExceptions.mark();

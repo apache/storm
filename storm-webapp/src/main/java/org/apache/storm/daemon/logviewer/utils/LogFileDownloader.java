@@ -80,7 +80,18 @@ public class LogFileDownloader {
         if (file.toFile().exists()) {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 fileDownloadSizeDistMb.update(Math.round((double) file.toFile().length() / FileUtils.ONE_MB));
-                return LogviewerResponseBuilder.buildDownloadFile(host, file.toFile(), numFileDownloadExceptions);
+                String downloadedFileName;
+                Path pathRelativeToRootDir = rootDir.relativize(file);
+                if (isDaemon || pathRelativeToRootDir.getNameCount() != 3) {
+                    downloadedFileName = host + "-" + rawFile.getFileName();
+                } else {
+                    //host-topoId-port-fileName
+                    downloadedFileName = host + "-"
+                        + pathRelativeToRootDir.getName(0) + "-"
+                        + pathRelativeToRootDir.getName(1) + "-"
+                        + pathRelativeToRootDir.getName(2);
+                }
+                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, file.toFile(), numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
