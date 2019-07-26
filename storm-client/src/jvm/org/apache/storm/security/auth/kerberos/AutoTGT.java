@@ -137,15 +137,15 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
                 }
 
                 if (!tgt.isForwardable()) {
-                    throw new RuntimeException("The TGT found is not forwardable. Please use -f option.");
+                    throw new RuntimeException("The TGT found is not forwardable. Please use -f option with 'kinit'.");
                 }
 
                 if (!tgt.isRenewable()) {
-                    throw new RuntimeException("The TGT found is not renewable. Please use -r option.");
+                    throw new RuntimeException("The TGT found is not renewable. Please use -r option with 'kinit'.");
                 }
 
                 if (tgt.getClientAddresses() != null) {
-                    throw new RuntimeException("The TGT found is not address-less. Please use -A option.");
+                    throw new RuntimeException("The TGT found is not address-less. Please use -A option with 'kinit'.");
                 }
 
                 LOG.info("Pushing TGT for " + tgt.getClient() + " to topology.");
