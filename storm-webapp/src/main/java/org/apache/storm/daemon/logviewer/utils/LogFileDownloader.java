@@ -91,7 +91,7 @@ public class LogFileDownloader {
                         + pathRelativeToRootDir.getName(1) + "-"
                         + pathRelativeToRootDir.getName(2);
                 }
-                return LogviewerResponseBuilder.buildDownloadFile(host, downloadedFileName, file.toFile(), numFileDownloadExceptions);
+                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, file.toFile(), numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }

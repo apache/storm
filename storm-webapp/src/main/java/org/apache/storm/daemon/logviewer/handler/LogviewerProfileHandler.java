@@ -124,7 +124,7 @@ public class LogviewerProfileHandler {
             String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
                 String downloadedFileName = host + "-" + topologyId + "-" + portStr + "-" + absFile.getFileName();
-                return LogviewerResponseBuilder.buildDownloadFile(host, downloadedFileName, absFile.toFile(), numFileDownloadExceptions);
+                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, absFile.toFile(), numFileDownloadExceptions);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }

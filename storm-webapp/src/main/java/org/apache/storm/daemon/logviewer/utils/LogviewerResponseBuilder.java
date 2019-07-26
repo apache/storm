@@ -75,11 +75,10 @@ public class LogviewerResponseBuilder {
     /**
      * Build a Response object representing download a file.
      *
-     * @param host host address
      * @param contentDispositionName The name to set in the Content-Disposition header
      * @param file file to download
      */
-    public static Response buildDownloadFile(String host, String contentDispositionName,
+    public static Response buildDownloadFile(String contentDispositionName,
         File file, Meter numFileDownloadExceptions) throws IOException {
         try {
             // do not close this InputStream in method: it will be used from jetty server
