@@ -82,6 +82,11 @@ public class LocalFsBlobStoreFile extends BlobStoreFile {
     }
 
     @Override
+    public boolean exists() throws IOException {
+        return _path.exists();
+    }
+
+    @Override
     public InputStream getInputStream() throws IOException {
         if (isTmp()) {
             throw new IllegalStateException("Cannot read from a temporary part file.");

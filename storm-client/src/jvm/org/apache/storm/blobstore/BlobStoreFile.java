@@ -51,4 +51,6 @@ public abstract class BlobStoreFile {
     public abstract void cancel() throws IOException;
 
     public abstract long getFileLength() throws IOException;
+
+    public abstract boolean exists() throws IOException;
 }
