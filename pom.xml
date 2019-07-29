@@ -284,7 +284,7 @@
         <log4j.version>2.11.2</log4j.version>
         <slf4j.version>1.7.26</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
-        <mockito.version>2.19.0</mockito.version>
+        <mockito.version>3.0.0</mockito.version>
         <zookeeper.version>3.4.14</zookeeper.version>
         <jline.version>0.9.94</jline.version>
         <hive.version>2.3.4</hive.version>
@@ -295,7 +295,7 @@
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>
         <thrift.version>0.12.0</thrift.version>
-        <junit.jupiter.version>5.5.0-M1</junit.jupiter.version>
+        <junit.jupiter.version>5.5.1</junit.jupiter.version>
         <surefire.version>2.22.1</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
