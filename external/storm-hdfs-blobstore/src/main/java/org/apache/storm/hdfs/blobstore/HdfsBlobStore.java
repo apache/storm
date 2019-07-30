@@ -349,12 +349,7 @@ public class HdfsBlobStore extends BlobStore {
         validateKey(key);
         SettableBlobMeta meta = getStoredBlobMeta(key);
         aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
-        try {
-            BlobStoreFile blobStoreFile = hbs.read(DATA_PREFIX + key);
-            return blobStoreFile.exists();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return true;
     }
 
     @Override
