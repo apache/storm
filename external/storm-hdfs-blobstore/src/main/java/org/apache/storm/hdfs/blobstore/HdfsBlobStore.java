@@ -342,13 +342,16 @@ public class HdfsBlobStore extends BlobStore {
      * @param key blobstore key
      * @param who subject
      * @throws AuthorizationException if authorization is failed
-     * @throws KeyNotFoundException if key is not found
      */
-    public boolean blobExists(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
-        who = checkAndGetSubject(who);
-        validateKey(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
-        aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
+    public boolean blobExists(String key, Subject who) throws AuthorizationException {
+        try {
+            who = checkAndGetSubject(who);
+            validateKey(key);
+            SettableBlobMeta meta = getStoredBlobMeta(key);
+            aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
+        } catch (KeyNotFoundException e) {
+            return false;
+        }
         return true;
     }
 

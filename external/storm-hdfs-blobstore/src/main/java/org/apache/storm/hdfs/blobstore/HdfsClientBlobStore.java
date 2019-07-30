@@ -75,11 +75,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
 
     @Override
     public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
-        try {
-            return blobStore.blobExists(blobKey, null);
-        } catch (KeyNotFoundException e) {
-            return false;
-        }
+        return blobStore.blobExists(blobKey, null);
     }
 
     @Override
