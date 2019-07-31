@@ -318,9 +318,19 @@ public class Config extends HashMap<String, Object> {
     /**
      * Whether to limit each worker to one executor. This is useful for debugging topologies to clearly identify workers that
      * are slow/crashing and for estimating resource requirements and capacity.
+     * If both TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER and TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER are enabled,
+     * TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER is ignored.
      */
     @IsBoolean
     public static final String TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER = "topology.ras.one.executor.per.worker";
+    /**
+     * Whether to limit each worker to one component. This is useful for debugging topologies to clearly identify workers that
+     * are slow/crashing and for estimating resource requirements and capacity.
+     * If both TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER and TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER are enabled,
+     * TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER is ignored.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER = "topology.ras.one.component.per.worker";
     /**
      * The maximum number of seconds to spend scheduling a topology using the constraint solver.  Null means no limit.
      */

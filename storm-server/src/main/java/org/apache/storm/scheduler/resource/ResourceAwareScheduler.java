@@ -152,6 +152,15 @@ public class ResourceAwareScheduler implements IScheduler {
             return;
         }
 
+        // Log warning here to avoid duplicating / spamming in strategy / scheduling code.
+        boolean oneExecutorPerWorker = (Boolean) td.getConf().get(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER);
+        boolean oneComponentPerWorker = (Boolean) td.getConf().get(Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER);
+        if (oneExecutorPerWorker && oneComponentPerWorker) {
+            LOG.warn("Conflicting options: {} and {} are both set! Ignoring {} option.",
+                Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER,
+                Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER);
+        }
+
         final IStrategy finalRasStrategy = rasStrategy;
         for (int i = 0; i < maxSchedulingAttempts; i++) {
             SingleTopologyCluster toSchedule = new SingleTopologyCluster(workingState, td.getId());
