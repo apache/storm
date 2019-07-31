@@ -90,8 +90,6 @@ public class KafkaSpoutMessagingGuaranteeTest {
 
         spout.nextTuple();
 
-        when(consumerMock.position(partition)).thenReturn(1L);
-
         //The spout should have emitted the tuple, and must have committed it before emit
         InOrder inOrder = inOrder(consumerMock, collectorMock);
         inOrder.verify(consumerMock).poll(anyLong());
@@ -154,9 +152,6 @@ public class KafkaSpoutMessagingGuaranteeTest {
         spout.fail(msgIdCaptor.getValue());
 
         reset(consumerMock);
-
-        when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition,
-            SpoutWithMockedConsumerSetupHelper.createRecords(partition, 1, 1))));
 
         spout.nextTuple();
 
