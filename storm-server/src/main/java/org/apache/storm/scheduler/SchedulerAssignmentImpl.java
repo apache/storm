@@ -18,12 +18,10 @@
 
 package org.apache.storm.scheduler;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -45,7 +43,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      */
     private final Map<ExecutorDetails, WorkerSlot> executorToSlot = new HashMap<>();
     private final Map<WorkerSlot, WorkerResources> resources = new HashMap<>();
-    private final Map<String, Double> nodeIdToTotalSharedOffHeap = new HashMap<>();
+    private final Map<String, Double> nodeIdToTotalSharedOffHeapNode = new HashMap<>();
     private final Map<WorkerSlot, Collection<ExecutorDetails>> slotToExecutors = new HashMap<>();
 
     /**
@@ -78,7 +76,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
             if (nodeIdToTotalSharedOffHeap.entrySet().stream().anyMatch((entry) -> entry.getKey() == null || entry.getValue() == null)) {
                 throw new RuntimeException("Cannot create off heap with a null in it " + nodeIdToTotalSharedOffHeap);
             }
-            this.nodeIdToTotalSharedOffHeap.putAll(nodeIdToTotalSharedOffHeap);
+            this.nodeIdToTotalSharedOffHeapNode.putAll(nodeIdToTotalSharedOffHeap);
         }
     }
 
@@ -88,7 +86,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
 
     public SchedulerAssignmentImpl(SchedulerAssignment assignment) {
         this(assignment.getTopologyId(), assignment.getExecutorToSlot(),
-             assignment.getScheduledResources(), assignment.getNodeIdToTotalSharedOffHeapMemory());
+             assignment.getScheduledResources(), assignment.getNodeIdToTotalSharedOffHeapNodeMemory());
     }
 
     @Override
@@ -132,7 +130,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         SchedulerAssignmentImpl o = (SchedulerAssignmentImpl) other;
 
         return resources.equals(o.resources)
-               && nodeIdToTotalSharedOffHeap.equals(o.nodeIdToTotalSharedOffHeap);
+               && nodeIdToTotalSharedOffHeapNode.equals(o.nodeIdToTotalSharedOffHeapNode);
     }
 
     @Override
@@ -186,7 +184,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
             }
         }
         if (!isFound) {
-            nodeIdToTotalSharedOffHeap.remove(node);
+            nodeIdToTotalSharedOffHeapNode.remove(node);
         }
     }
 
@@ -225,12 +223,12 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         return resources;
     }
 
-    public void setTotalSharedOffHeapMemory(String node, double value) {
-        nodeIdToTotalSharedOffHeap.put(node, value);
+    public void setTotalSharedOffHeapNodeMemory(String node, double value) {
+        nodeIdToTotalSharedOffHeapNode.put(node, value);
     }
 
     @Override
-    public Map<String, Double> getNodeIdToTotalSharedOffHeapMemory() {
-        return nodeIdToTotalSharedOffHeap;
+    public Map<String, Double> getNodeIdToTotalSharedOffHeapNodeMemory() {
+        return nodeIdToTotalSharedOffHeapNode;
     }
 }

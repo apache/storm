@@ -83,9 +83,9 @@ public interface SchedulerAssignment {
     public Map<WorkerSlot, WorkerResources> getScheduledResources();
 
     /**
-     * Get the total shared off heap memory mapping.
+     * Get the total shared off heap node memory mapping.
      *
-     * @return host to total shared off heap memory mapping.
+     * @return host to total shared off heap node memory mapping.
      */
-    public Map<String, Double> getNodeIdToTotalSharedOffHeapMemory();
+    public Map<String, Double> getNodeIdToTotalSharedOffHeapNodeMemory();
 }

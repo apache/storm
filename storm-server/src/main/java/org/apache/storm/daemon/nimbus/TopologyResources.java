@@ -37,7 +37,7 @@ public final class TopologyResources {
     private double assignedNonSharedMemOffHeap;
     private double assignedCpu;
     private TopologyResources(TopologyDetails td, Collection<WorkerResources> workers,
-                              Map<String, Double> sharedOffHeap) {
+                              Map<String, Double> nodeIdToSharedOffHeapNode) {
         requestedMemOnHeap = td.getTotalRequestedMemOnHeap();
         requestedMemOffHeap = td.getTotalRequestedMemOffHeap();
         requestedSharedMemOnHeap = td.getRequestedSharedOnHeap();
@@ -73,17 +73,17 @@ public final class TopologyResources {
             }
         }
 
-        if (sharedOffHeap != null) {
-            double sharedOff = sharedOffHeap.values().stream().reduce(0.0, (sum, val) -> sum + val);
+        if (nodeIdToSharedOffHeapNode != null) {
+            double sharedOff = nodeIdToSharedOffHeapNode.values().stream().reduce(0.0, (sum, val) -> sum + val);
             assignedSharedMemOffHeap += sharedOff;
             assignedMemOffHeap += sharedOff;
         }
     }
     public TopologyResources(TopologyDetails td, SchedulerAssignment assignment) {
-        this(td, getWorkerResources(assignment), getNodeIdToSharedOffHeap(assignment));
+        this(td, getWorkerResources(assignment), getNodeIdToSharedOffHeapNode(assignment));
     }
     public TopologyResources(TopologyDetails td, Assignment assignment) {
-        this(td, getWorkerResources(assignment), getNodeIdToSharedOffHeap(assignment));
+        this(td, getWorkerResources(assignment), getNodeIdToSharedOffHeapNode(assignment));
     }
     public TopologyResources() {
         this(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -142,15 +142,15 @@ public final class TopologyResources {
         return ret;
     }
 
-    private static Map<String, Double> getNodeIdToSharedOffHeap(SchedulerAssignment assignment) {
+    private static Map<String, Double> getNodeIdToSharedOffHeapNode(SchedulerAssignment assignment) {
         Map<String, Double> ret = null;
         if (assignment != null) {
-            ret = assignment.getNodeIdToTotalSharedOffHeapMemory();
+            ret = assignment.getNodeIdToTotalSharedOffHeapNodeMemory();
         }
         return ret;
     }
 
-    private static Map<String, Double> getNodeIdToSharedOffHeap(Assignment assignment) {
+    private static Map<String, Double> getNodeIdToSharedOffHeapNode(Assignment assignment) {
         Map<String, Double> ret = null;
         if (assignment != null) {
             ret = assignment.get_total_shared_off_heap();

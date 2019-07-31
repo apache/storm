@@ -19,6 +19,7 @@
 package org.apache.storm.scheduler.resource;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -163,11 +164,11 @@ public class RAS_Node {
      * @return the slots currently assigned to that topology on this node.
      */
     public Collection<WorkerSlot> getUsedSlots(String topId) {
-        Collection<WorkerSlot> ret = null;
         if (topIdToUsedSlots.get(topId) != null) {
-            ret = workerIdsToWorkers(topIdToUsedSlots.get(topId).keySet());
+            return workerIdsToWorkers(topIdToUsedSlots.get(topId).keySet());
+        } else {
+            return Collections.emptySet();
         }
-        return ret;
     }
 
     public boolean isAlive() {
