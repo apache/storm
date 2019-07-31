@@ -39,6 +39,9 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
 
     @Override
     public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
+        boolean oneExecutorPerWorker = (Boolean) td.getConf().get(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER);
+        setOneExecutorPerWorker(oneExecutorPerWorker);
+
         prepare(cluster);
         if (nodes.getNodes().size() <= 0) {
             LOG.warn("No available nodes to schedule tasks on!");

@@ -18,8 +18,9 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.scheduler.IScheduler;
-import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesRule;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesExtension;
 import java.util.Collections;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
@@ -42,20 +43,24 @@ import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -67,11 +72,17 @@ import java.util.TreeSet;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
+@ExtendWith({NormalizedResourcesExtension.class})
 public class TestDefaultResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestDefaultResourceAwareStrategy.class);
 
     private static final int CURRENT_TIME = 1450418597;
     private static IScheduler scheduler = null;
+    private enum SharedMemoryType {
+        SHARED_OFF_HEAP_NODE,
+        SHARED_OFF_HEAP_WORKER,
+        SHARED_ON_HEAP_WORKER
+    };
 
     private static class TestDNSToSwitchMapping implements DNSToSwitchMapping {
         private final Map<String, String> result;
@@ -93,10 +104,7 @@ public class TestDefaultResourceAwareStrategy {
         }
     };
 
-    @Rule
-    public NormalizedResourcesRule nrRule = new NormalizedResourcesRule();
-
-    @After
+    @AfterEach
     public void cleanup() {
         if (scheduler != null) {
             scheduler.cleanup();
@@ -104,20 +112,111 @@ public class TestDefaultResourceAwareStrategy {
         }
     }
 
-    /**
-     * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
+    /*
+     * test assigned memory with shared memory types and oneWorkerPerExecutor
      */
-    @Test
-    public void testDefaultResourceAwareStrategySharedMemory() {
+    @ParameterizedTest
+    @EnumSource(SharedMemoryType.class)
+    public void testMultipleSharedMemoryWithOneExecutorPerWorker(SharedMemoryType memoryType) {
+        int spoutParallelism = 4;
+        double cpuPercent = 10;
+        double memoryOnHeap = 10;
+        double memoryOffHeap = 10;
+        double sharedOnHeapWithinWorker = 450;
+        double sharedOffHeapNode = 600;
+        double sharedOffHeapWithinWorker = 400;
+
+        TopologyBuilder builder = new TopologyBuilder();
+        switch (memoryType) {
+            case SHARED_OFF_HEAP_NODE:
+                builder.setSpout("spout", new TestSpout(), spoutParallelism)
+                        .addSharedMemory(new SharedOffHeapWithinNode(sharedOffHeapNode, "spout shared off heap node"));
+                break;
+            case SHARED_OFF_HEAP_WORKER:
+                builder.setSpout("spout", new TestSpout(), spoutParallelism)
+                        .addSharedMemory(new SharedOffHeapWithinWorker(sharedOffHeapWithinWorker, "spout shared off heap worker"));
+                break;
+            case SHARED_ON_HEAP_WORKER:
+                builder.setSpout("spout", new TestSpout(), spoutParallelism)
+                        .addSharedMemory(new SharedOnHeap(sharedOnHeapWithinWorker, "spout shared on heap worker"));
+                break;
+        }
+        StormTopology stormToplogy = builder.createTopology();
+        INimbus iNimbus = new INimbusTest();
+        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 500, 1000);
+        Config conf = createClusterConfig(cpuPercent, memoryOnHeap, memoryOffHeap, null);
+
+        conf.put(Config.TOPOLOGY_PRIORITY, 0);
+        conf.put(Config.TOPOLOGY_NAME, "testTopology");
+        conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
+        conf.put(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, true);
+        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
+                genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
+
+        Topologies topologies = new Topologies(topo);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
+
+        scheduler = new ResourceAwareScheduler();
+        scheduler.prepare(conf);
+        scheduler.schedule(topologies, cluster);
+
+        TopologyResources topologyResources = cluster.getTopologyResourcesMap().get(topo.getId());
+        SchedulerAssignment assignment = cluster.getAssignmentById(topo.getId());
+        long numNodes = assignment.getSlotToExecutors().keySet().stream().map(ws -> ws.getNodeId()).distinct().count();
+
+        switch (memoryType) {
+            case SHARED_OFF_HEAP_NODE:
+                // 4 workers on single node. OffHeapNode memory is shared
+                assertThat(topologyResources.getAssignedMemOnHeap(), closeTo(spoutParallelism * memoryOnHeap, 0.01));
+                assertThat(topologyResources.getAssignedMemOffHeap(), closeTo(spoutParallelism * memoryOffHeap + sharedOffHeapNode, 0.01));
+                assertThat(topologyResources.getAssignedSharedMemOnHeap(), closeTo(0, 0.01));
+                assertThat(topologyResources.getAssignedSharedMemOffHeap(), closeTo(sharedOffHeapNode, 0.01));
+                assertThat(topologyResources.getAssignedNonSharedMemOnHeap(), closeTo(spoutParallelism * memoryOnHeap, 0.01));
+                assertThat(topologyResources.getAssignedNonSharedMemOffHeap(), closeTo(spoutParallelism * memoryOffHeap, 0.01));
+                assertThat(numNodes, is(1L));
+                assertThat(cluster.getAssignedNumWorkers(topo), is(spoutParallelism));
+                break;
+            case SHARED_OFF_HEAP_WORKER:
+                // 4 workers on 2 nodes. OffHeapWorker memory not shared -- consumed 4x, once for each worker)
+                assertThat(topologyResources.getAssignedMemOnHeap(), closeTo(spoutParallelism * memoryOnHeap, 0.01));
+                assertThat(topologyResources.getAssignedMemOffHeap(), closeTo(spoutParallelism * (memoryOffHeap + sharedOffHeapWithinWorker), 0.01));
+                assertThat(topologyResources.getAssignedSharedMemOnHeap(), closeTo(0, 0.01));
+                assertThat(topologyResources.getAssignedSharedMemOffHeap(), closeTo(spoutParallelism * sharedOffHeapWithinWorker, 0.01));
+                assertThat(topologyResources.getAssignedNonSharedMemOnHeap(), closeTo(spoutParallelism * memoryOnHeap, 0.01));
+                assertThat(topologyResources.getAssignedNonSharedMemOffHeap(), closeTo(spoutParallelism * memoryOffHeap, 0.01));
+                assertThat(numNodes, is(2L));
+                assertThat(cluster.getAssignedNumWorkers(topo), is(spoutParallelism));
+                break;
+            case SHARED_ON_HEAP_WORKER:
+                // 4 workers on 2 nodes. onHeap memory not shared -- consumed 4x, once for each worker
+                assertThat(topologyResources.getAssignedMemOnHeap(), closeTo(spoutParallelism * (memoryOnHeap + sharedOnHeapWithinWorker), 0.01));
+                assertThat(topologyResources.getAssignedMemOffHeap(), closeTo(spoutParallelism * memoryOffHeap, 0.01));
+                assertThat(topologyResources.getAssignedSharedMemOnHeap(), closeTo(spoutParallelism * sharedOnHeapWithinWorker, 0.01));
+                assertThat(topologyResources.getAssignedSharedMemOffHeap(), closeTo(0, 0.01));
+                assertThat(topologyResources.getAssignedNonSharedMemOnHeap(), closeTo(spoutParallelism * memoryOnHeap, 0.01));
+                assertThat(topologyResources.getAssignedNonSharedMemOffHeap(), closeTo(spoutParallelism * memoryOffHeap, 0.01));
+                assertThat(numNodes, is(2L));
+                assertThat(cluster.getAssignedNumWorkers(topo), is(spoutParallelism));
+                break;
+        }
+    }
+
+    /**
+     * test if the scheduling shared memory is correct with/without oneExecutorPerWorker enabled
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testDefaultResourceAwareStrategySharedMemory(boolean oneExecutorPerWorker) {
         int spoutParallelism = 2;
         int boltParallelism = 2;
         int numBolts = 3;
         double cpuPercent = 10;
         double memoryOnHeap = 10;
         double memoryOffHeap = 10;
-        double sharedOnHeap = 500;
+        double sharedOnHeap = 400;
         double sharedOffHeapNode = 700;
-        double sharedOffHeapWorker = 500;
+        double sharedOffHeapWorker = 600;
+
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new TestSpout(),
                 spoutParallelism);
@@ -133,10 +232,11 @@ public class TestDefaultResourceAwareStrategy {
         INimbus iNimbus = new INimbusTest();
         Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 500, 2000);
         Config conf = createClusterConfig(cpuPercent, memoryOnHeap, memoryOffHeap, null);
-        
+
         conf.put(Config.TOPOLOGY_PRIORITY, 0);
         conf.put(Config.TOPOLOGY_NAME, "testTopology");
         conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
+        conf.put(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, oneExecutorPerWorker);
         TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
                 genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
 
@@ -144,10 +244,20 @@ public class TestDefaultResourceAwareStrategy {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
         scheduler = new ResourceAwareScheduler();
-
         scheduler.prepare(conf);
         scheduler.schedule(topologies, cluster);
-        
+
+        // one worker per executor scheduling
+        // [3,3] [7,7], [0,0] [2,2] [6,6] [1,1] [5,5] [4,4] sorted executor ordering
+        // spout  [0,0] [1,1]
+        // bolt-1 [2,2] [3,3]
+        // bolt-2 [6,6] [7,7]
+        // bolt-3 [4,4] [5,5]
+        //
+        // expect 8 workers over 2 nodes
+        // node r000s000 workers: bolt-1 bolt-2 spout bolt-1 (no memory sharing)
+        // node r000s001 workers: bolt-2 spout bolt-3 bolt-3 (no memory sharing)
+
         for (Entry<String, SupervisorResources> entry: cluster.getSupervisorsResourcesMap().entrySet()) {
             String supervisorId = entry.getKey();
             SupervisorResources resources = entry.getValue();
@@ -155,27 +265,59 @@ public class TestDefaultResourceAwareStrategy {
             assertTrue(supervisorId, resources.getTotalMem() >= resources.getUsedMem());
         }
 
-        // Everything should fit in a single slot
-        int totalNumberOfTasks = (spoutParallelism + (boltParallelism * numBolts));
-        double totalExpectedCPU = totalNumberOfTasks * cpuPercent;
-        double totalExpectedOnHeap = (totalNumberOfTasks * memoryOnHeap) + sharedOnHeap;
-        double totalExpectedWorkerOffHeap = (totalNumberOfTasks * memoryOffHeap) + sharedOffHeapWorker;
-        
-        SchedulerAssignment assignment = cluster.getAssignmentById(topo.getId());
-        assertEquals(1, assignment.getSlots().size());
-        WorkerSlot ws = assignment.getSlots().iterator().next();
-        String nodeId = ws.getNodeId();
-        assertEquals(1, assignment.getNodeIdToTotalSharedOffHeapMemory().size());
-        assertEquals(sharedOffHeapNode, assignment.getNodeIdToTotalSharedOffHeapMemory().get(nodeId), 0.01);
-        assertEquals(1, assignment.getScheduledResources().size());
-        WorkerResources resources = assignment.getScheduledResources().get(ws);
-        assertEquals(totalExpectedCPU, resources.get_cpu(), 0.01);
-        assertEquals(totalExpectedOnHeap, resources.get_mem_on_heap(), 0.01);
-        assertEquals(totalExpectedWorkerOffHeap, resources.get_mem_off_heap(), 0.01);
-        assertEquals(sharedOnHeap, resources.get_shared_mem_on_heap(), 0.01);
-        assertEquals(sharedOffHeapWorker, resources.get_shared_mem_off_heap(), 0.01);
+        if (!oneExecutorPerWorker) {
+            // Everything should fit in a single slot
+            int totalNumberOfTasks = (spoutParallelism + (boltParallelism * numBolts));
+            double totalExpectedCPU = totalNumberOfTasks * cpuPercent;
+            double totalExpectedOnHeap = (totalNumberOfTasks * memoryOnHeap) + sharedOnHeap;
+            double totalExpectedWorkerOffHeap = (totalNumberOfTasks * memoryOffHeap) + sharedOffHeapWorker;
+
+            SchedulerAssignment assignment = cluster.getAssignmentById(topo.getId());
+            assertThat(assignment.getSlots().size(), is(1));
+            WorkerSlot ws = assignment.getSlots().iterator().next();
+            String nodeId = ws.getNodeId();
+            assertThat(assignment.getNodeIdToTotalSharedOffHeapNodeMemory().size(), is(1));
+            assertThat(assignment.getNodeIdToTotalSharedOffHeapNodeMemory().get(nodeId), closeTo(sharedOffHeapNode, 0.01));
+            assertThat(assignment.getScheduledResources().size(), is(1));
+            WorkerResources resources = assignment.getScheduledResources().get(ws);
+            assertThat(resources.get_cpu(), closeTo(totalExpectedCPU, 0.01));
+            assertThat(resources.get_mem_on_heap(), closeTo(totalExpectedOnHeap, 0.01));
+            assertThat(resources.get_mem_off_heap(), closeTo(totalExpectedWorkerOffHeap, 0.01));
+            assertThat(resources.get_shared_mem_on_heap(), closeTo(sharedOnHeap, 0.01));
+            assertThat(resources.get_shared_mem_off_heap(), closeTo(sharedOffHeapWorker, 0.01));
+        } else {
+            // one worker per executor
+            int totalNumberOfTasks = (spoutParallelism + (boltParallelism * numBolts));
+            TopologyResources topologyResources = cluster.getTopologyResourcesMap().get(topo.getId());
+
+            // get expected mem on topology rather than per executor
+            double expectedMemOnHeap = (totalNumberOfTasks * memoryOnHeap) + 2 * sharedOnHeap;
+            double expectedMemOffHeap = (totalNumberOfTasks * memoryOffHeap) + 2 * sharedOffHeapWorker + 2 * sharedOffHeapNode;
+            double expectedMemSharedOnHeap = 2 * sharedOnHeap;
+            double expectedMemSharedOffHeap = 2 * sharedOffHeapWorker + 2 * sharedOffHeapNode;
+            double expectedMemNonSharedOnHeap = totalNumberOfTasks * memoryOnHeap;
+            double expectedMemNonSharedOffHeap = totalNumberOfTasks * memoryOffHeap;
+            assertThat(topologyResources.getAssignedMemOnHeap(), closeTo(expectedMemOnHeap, 0.01));
+            assertThat(topologyResources.getAssignedMemOffHeap(), closeTo(expectedMemOffHeap, 0.01));
+            assertThat(topologyResources.getAssignedSharedMemOnHeap(), closeTo(expectedMemSharedOnHeap, 0.01));
+            assertThat(topologyResources.getAssignedSharedMemOffHeap(), closeTo(expectedMemSharedOffHeap, 0.01));
+            assertThat(topologyResources.getAssignedNonSharedMemOnHeap(), closeTo(expectedMemNonSharedOnHeap, 0.01));
+            assertThat(topologyResources.getAssignedNonSharedMemOffHeap(), closeTo(expectedMemNonSharedOffHeap, 0.01));
+
+            double totalExpectedCPU = totalNumberOfTasks * cpuPercent;
+            assertThat(topologyResources.getAssignedCpu(), closeTo(totalExpectedCPU, 0.01));
+
+            // expect 8 workers
+            SchedulerAssignment assignment = cluster.getAssignmentById(topo.getId());
+            int numAssignedWorkers = cluster.getAssignedNumWorkers(topo);
+            assertThat(numAssignedWorkers, is(8));
+            assertThat(assignment.getSlots().size(), is(8));
+
+            // expect 2 nodes
+            long numNodes = assignment.getSlotToExecutors().keySet().stream().map(ws -> ws.getNodeId()).distinct().count();
+            assertThat(numNodes, is(2L));
+        }
     }
-    
     
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy is correct

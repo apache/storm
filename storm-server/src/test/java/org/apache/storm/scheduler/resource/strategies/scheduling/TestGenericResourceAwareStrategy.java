@@ -140,7 +140,7 @@ public class TestGenericResourceAwareStrategy {
         
         SchedulerAssignment assignment = cluster.getAssignmentById(topo.getId());
         Set<WorkerSlot> slots = assignment.getSlots();
-        Map<String, Double> nodeToTotalShared = assignment.getNodeIdToTotalSharedOffHeapMemory();
+        Map<String, Double> nodeToTotalShared = assignment.getNodeIdToTotalSharedOffHeapNodeMemory();
         LOG.info("NODE TO SHARED OFF HEAP {}", nodeToTotalShared);
         Map<WorkerSlot, WorkerResources> scheduledResources = assignment.getScheduledResources();
         assertEquals(2, slots.size());

@@ -45,7 +45,6 @@ import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.SchedulingStatus;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
-import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -54,6 +53,7 @@ import org.slf4j.LoggerFactory;
 public abstract class BaseResourceAwareStrategy implements IStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(BaseResourceAwareStrategy.class);
     protected Cluster cluster;
+    private boolean oneExecutorPerWorker = false;
     // Rack id to list of host names in that rack
     private Map<String, List<String>> networkTopography;
     private final Map<String, String> superIdToRack = new HashMap<>();
@@ -84,6 +84,10 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             rackIdToNodes.computeIfAbsent(rackId, (hn) -> new ArrayList<>()).add(node);
         }
         logClusterInfo();
+    }
+
+    protected void setOneExecutorPerWorker(boolean oneExecutorPerWorker) {
+        this.oneExecutorPerWorker = oneExecutorPerWorker;
     }
 
     @Override
@@ -148,9 +152,12 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         for (String id : sortedNodes) {
             RAS_Node node = nodes.getNodeById(id);
             if (node.couldEverFit(exec, td)) {
+                Collection<WorkerSlot> topologyUsedSlots = oneExecutorPerWorker ? node.getUsedSlots(td.getId()) : Collections.emptySet();
                 for (WorkerSlot ws : node.getSlotsAvailableToScheduleOn()) {
-                    if (node.wouldFit(ws, exec, td)) {
-                        return ws;
+                    if (!topologyUsedSlots.contains(ws)) {
+                        if (node.wouldFit(ws, exec, td)) {
+                            return ws;
+                        }
                     }
                 }
             }
