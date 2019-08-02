@@ -31,6 +31,7 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.ConstraintSolverStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -100,6 +101,13 @@ public class TestUtilsForResourceAwareScheduler {
             res.addSelfTo(ret);
         }
         return ret;
+    }
+
+    public static Config createCSSClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                                Map<String, Map<String, Number>> pools) {
+        Config config = createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, ConstraintSolverStrategy.class.getName());
+        return config;
     }
 
     public static Config createGrasClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
