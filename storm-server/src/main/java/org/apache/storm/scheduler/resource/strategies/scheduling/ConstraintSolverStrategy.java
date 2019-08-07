@@ -248,24 +248,11 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         Map<WorkerSlot, Set<String>> workerCompAssignment = new HashMap<>();
         Map<RAS_Node, Set<String>> nodeCompAssignment = new HashMap<>();
 
-        //set max number of states to search maintaining backward compatibility for old topologies
-        String stormVersionString = td.getTopology().get_storm_version();
-        boolean is2xTopology = stormVersionString != null && stormVersionString.startsWith("2");
+        int confMaxStateSearch = ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH));
+        int daemonMaxStateSearch = ObjectReader.getInt(cluster.getConf().get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH));
+        final int maxStateSearch = Math.min(daemonMaxStateSearch, confMaxStateSearch);
 
-        Object confMaxStateSearch = null;
-        if (is2xTopology == false) {
-            //backward compatibility
-            confMaxStateSearch = td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_TRAVERSAL);
-        }
-        if (confMaxStateSearch == null) {
-            //new topology or old topology using new config
-            confMaxStateSearch = td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH);
-        }
-        int daemonMaxStateSearch = ObjectReader.getInt(td.getConf().get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH));
-        final int maxStateSearch = Math.min(daemonMaxStateSearch, ObjectReader.getInt(confMaxStateSearch));
-
-        final long maxTimeMs =
-            ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS), -1).intValue() * 1000L;
+        final long maxTimeMs = ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS), -1) * 1000L;
 
         favoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES));
         unFavoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES));
