@@ -194,11 +194,17 @@ _This section applies to committers only._
 **Important: A pull request must first be properly approved before you are allowed to merge it.**
 
 Committers that are integrating patches or pull requests should use the official Apache repository at
-[https://git-wip-us.apache.org/repos/asf/storm.git](https://git-wip-us.apache.org/repos/asf/storm.git).
+[https://gitbox.apache.org/repos/asf/storm.git](https://gitbox.apache.org/repos/asf/storm.git).
+
+#### Via Github
+
+You can use the [Gitbox account linking utility](https://gitbox.apache.org/setup/) to link your Apache and Github accounts. This will allow you to merge pull requests using Github's UI. 
+
+#### Via your terminal
 
 To pull in a merge request you should generally follow the command line instructions sent out by GitHub.
 
-1. Go to your local copy of the [Apache git repo](https://git-wip-us.apache.org/repos/asf/storm.git), switch
+1. Go to your local copy of the [Apache git repo](https://gitbox.apache.org/repos/asf/storm.git), switch
    to the `master` branch, and make sure it is up to date.
 
         $ git checkout master
@@ -402,7 +408,7 @@ The source code of Storm is managed via [git](http://git-scm.com/).  For a numbe
 repository associated with Storm.
 
 * **Committers only:**
-  [https://git-wip-us.apache.org/repos/asf/storm.git](https://git-wip-us.apache.org/repos/asf/storm.git)
+  [https://gitbox.apache.org/repos/asf/storm.git](https://gitbox.apache.org/repos/asf/storm.git)
   is the official and authoritative git repository for Storm, managed under the umbrella of the Apache Software
   Foundation.  Only official Storm committers will interact with this repository.
   When you push the first time to this repository git will prompt you for your username and password.  Use your Apache
@@ -415,7 +421,7 @@ repository associated with Storm.
 
 An automated bot (called _[ASF GitHub Bot](https://issues.apache.org/jira/secure/ViewProfile.jspa?name=githubbot)_ in
 [Storm JIRA](https://issues.apache.org/jira/browse/STORM)) runs periodically to merge changes in the
-[official Apache repo](https://git-wip-us.apache.org/repos/asf/storm.git) to the read-only
+[official Apache repo](https://gitbox.apache.org/repos/asf/storm.git) to the read-only
 [GitHub mirror repository](https://github.com/apache/storm/), and to merge comments in GitHub pull requests to
 the [Storm JIRA](https://issues.apache.org/jira/browse/STORM).
 

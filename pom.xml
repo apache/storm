@@ -240,10 +240,10 @@
     </developers>
 
     <scm>
-        <connection>scm:git:https://git-wip-us.apache.org/repos/asf/storm.git</connection>
-        <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/storm.git</developerConnection>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</developerConnection>
         <tag>v2.0.0</tag>
-        <url>https://git-wip-us.apache.org/repos/asf/storm</url>
+        <url>https://gitbox.apache.org/repos/asf/storm</url>
     </scm>
 
     <issueManagement>
