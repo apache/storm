@@ -57,15 +57,37 @@ public class LocalStateTest {
 
     @Test
     public void testEmptyState() throws IOException {
-        TmpPath tmp_dir = new TmpPath();
-        String dir = tmp_dir.getPath();
-        LocalState ls = new LocalState(dir, true);
-        GlobalStreamId gs_a = new GlobalStreamId("a", "a");
-        FileOutputStream data = FileUtils.openOutputStream(new File(dir, "12345"));
-        FileOutputStream version = FileUtils.openOutputStream(new File(dir, "12345.version"));
-        Assert.assertNull(ls.get("c"));
-        ls.put("a", gs_a);
-        Assert.assertEquals(gs_a, ls.get("a"));
+        try (TmpPath tmp_dir = new TmpPath()) {
+            GlobalStreamId globalStreamId_a = new GlobalStreamId("a", "a");
 
+            String dir = tmp_dir.getPath();
+            LocalState ls = new LocalState(dir, true);
+
+            FileUtils.touch(new File(dir, "12345"));
+            FileUtils.touch(new File(dir, "12345.version"));
+
+            Assert.assertNull(ls.get("c"));
+            ls.put("a", globalStreamId_a);
+            Assert.assertEquals(globalStreamId_a, ls.get("a"));
+        }
+    }
+
+    @Test
+    public void testAllNulState() throws IOException {
+        try (TmpPath tmp_dir = new TmpPath()) {
+            GlobalStreamId globalStreamId_a = new GlobalStreamId("a", "a");
+
+            String dir = tmp_dir.getPath();
+            LocalState ls = new LocalState(dir, true);
+
+            FileUtils.touch(new File(dir, "12345.version"));
+
+            try (FileOutputStream data = FileUtils.openOutputStream(new File(dir, "12345"))) {
+                Assert.assertNull(ls.get("c"));
+                data.write(new byte[100]);
+                ls.put("a", globalStreamId_a);
+                Assert.assertEquals(globalStreamId_a, ls.get("a"));
+            }
+        }
     }
 }
