@@ -56,7 +56,7 @@ public class KillTopology {
                         if (!continueOnError) {
                             throw e;
                         } else {
-                            LOG.info(
+                            LOG.error(
                                     "Caught error killing topology '{}'; continuing as -i was passed. Exception: {}",
                                     name,
                                     e.getClass().getName()
