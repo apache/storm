@@ -194,6 +194,8 @@ public class VersionInfoMojo extends AbstractMojo {
                     }
                 }
                 break;
+            case NONE:
+                break;
             default:
                 throw new IllegalArgumentException(String.format("SCM %s is not supported",
                         scm));
@@ -220,6 +222,8 @@ public class VersionInfoMojo extends AbstractMojo {
                         break;
                     }
                 }
+                break;
+            case NONE:
                 break;
             default:
                 throw new IllegalArgumentException(String.format("SCM %s is not supported",
@@ -248,6 +252,8 @@ public class VersionInfoMojo extends AbstractMojo {
                         break;
                     }
                 }
+                break;
+            case NONE:
                 break;
             default:
                 throw new IllegalArgumentException(String.format("SCM %s is not supported",

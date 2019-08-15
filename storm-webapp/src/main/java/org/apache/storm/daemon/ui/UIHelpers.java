@@ -526,7 +526,6 @@ public class UIHelpers {
     private static final AtomicReference<List<Map<String, String>>> MEMORIZED_VERSIONS = new AtomicReference<>();
     private static final AtomicReference<Map<String, String>> MEMORIZED_FULL_VERSION = new AtomicReference<>();
 
-
     private static Map<String, String> toJsonStruct(IVersionInfo info) {
         Map<String, String> ret = new HashMap<>();
         ret.put("version", info.getVersion());

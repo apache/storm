@@ -300,6 +300,28 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.storm</groupId>
+                        <artifactId>storm-maven-plugins</artifactId>
+                        <version>${project.version}</version>
+                        <executions>
+                            <execution>
+                                <id>version-info</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>version-info</goal>
+                                </goals>
+                                <configuration>
+                                    <source>
+                                        <directory>${basedir}/src/</directory>
+                                        <includes>
+                                            <include>jvm/**/*.java</include>
+                                        </includes>
+                                    </source>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
