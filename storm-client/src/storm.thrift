@@ -194,6 +194,7 @@ struct SupervisorSummary {
   9: optional double used_cpu;
   10: optional double fragmented_mem;
   11: optional double fragmented_cpu;
+  12: optional bool blacklisted;
 }
 
 struct NimbusSummary {

@@ -82,13 +82,18 @@
               Version
             </span>
           </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="Whether this supervisor is blacklisted or not">
+              Blacklisted
+            </span>
+          </th>
         </tr>
       </thead>
       <tbody>
       {{#supervisors}}
           <tr>
-            <td><a href="/supervisor.html?host={{host}}">{{host}} (<a href="{{logLink}}" title="View log">log</a>)</a></td>
-            <td><a href="/supervisor.html?id={{id}}">{{id}}</td>
+            <td><a href="/supervisor.html?host={{host}}">{{host}}</a> (<a href="{{logLink}}" title="View log">log</a>)</td>
+            <td><a href="/supervisor.html?id={{id}}">{{id}}</a></td>
             <td>{{uptime}}</td>
             <td>{{slotsTotal}}</td>
             <td>{{slotsUsed}}</td>
@@ -103,6 +108,7 @@
             <td>{{availCpu}}</td>
             {{/schedulerDisplayResource}}
             <td>{{version}}</td>
+            <td>{{blacklisted}}</td>
           </tr>
       {{/supervisors}}
       </tbody>
