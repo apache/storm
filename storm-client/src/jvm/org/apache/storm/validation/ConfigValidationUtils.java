@@ -143,7 +143,7 @@ public class ConfigValidationUtils {
     /**
      * Declares methods for validating configuration values.
      */
-    interface FieldValidator {
+    public interface FieldValidator {
         /**
          * Validates the given field.
          *
