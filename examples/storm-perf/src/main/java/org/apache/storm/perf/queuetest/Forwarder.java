@@ -27,7 +27,7 @@ class Forwarder extends MyThread {
     private final JCQueue inq;
     private final JCQueue outq;
 
-    public Forwarder(JCQueue inq, JCQueue outq) {
+    Forwarder(JCQueue inq, JCQueue outq) {
         super("Forwarder");
         this.inq = inq;
         this.outq = outq;

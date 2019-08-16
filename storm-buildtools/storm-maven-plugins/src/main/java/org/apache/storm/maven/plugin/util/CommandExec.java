@@ -56,7 +56,7 @@ public class CommandExec {
         private List<String> output;
         private BufferedReader reader;
 
-        public OutputBufferThread(InputStream is) {
+        OutputBufferThread(InputStream is) {
             this.setDaemon(true);
             output = new ArrayList<String>();
             reader = new BufferedReader(new InputStreamReader(is));

@@ -126,7 +126,7 @@ public class LookupWordCount {
         private RedisDataTypeDescription description;
         private final String hashKey = "wordCount";
 
-        public WordCountRedisLookupMapper() {
+        WordCountRedisLookupMapper() {
             description = new RedisDataTypeDescription(
                     RedisDataTypeDescription.RedisDataType.HASH, hashKey);
         }

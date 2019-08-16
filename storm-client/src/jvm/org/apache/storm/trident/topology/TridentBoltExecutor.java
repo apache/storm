@@ -285,7 +285,7 @@ public class TridentBoltExecutor implements IRichBolt {
         }
     }
 
-    static enum TupleType {
+    enum TupleType {
         REGULAR,
         COMMIT,
         COORD
@@ -380,7 +380,7 @@ public class TridentBoltExecutor implements IRichBolt {
 
         TrackedBatch currBatch = null;
 
-        public CoordinatedOutputCollector(IOutputCollector delegate) {
+        CoordinatedOutputCollector(IOutputCollector delegate) {
             this.delegate = delegate;
         }
 

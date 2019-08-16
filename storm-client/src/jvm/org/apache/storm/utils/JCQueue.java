@@ -289,7 +289,7 @@ public class JCQueue implements IStatefulObject, Closeable {
     private static class DirectInserter implements Inserter {
         private JCQueue queue;
 
-        public DirectInserter(JCQueue queue) {
+        DirectInserter(JCQueue queue) {
             this.queue = queue;
         }
 
@@ -344,7 +344,7 @@ public class JCQueue implements IStatefulObject, Closeable {
         private JCQueue queue;
         private ArrayList<Object> currentBatch;
 
-        public BatchInserter(JCQueue queue, int batchSz) {
+        BatchInserter(JCQueue queue, int batchSz) {
             this.queue = queue;
             this.batchSz = batchSz;
             this.currentBatch = new ArrayList<>(batchSz + 1);

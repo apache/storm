@@ -1800,7 +1800,7 @@ public class Utils {
         private Map<String, Object> stormConf;
         private File file;
 
-        public JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, File file) {
+        JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, File file) {
             this.yaml = yaml;
             this.defaultsConf = defaultsConf;
             this.stormConf = stormConf;

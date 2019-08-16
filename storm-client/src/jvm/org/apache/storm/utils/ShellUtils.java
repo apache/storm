@@ -485,7 +485,7 @@ public abstract class ShellUtils {
 
         private ShellUtils shell;
 
-        public ShellTimeoutTimerTask(ShellUtils shell) {
+        ShellTimeoutTimerTask(ShellUtils shell) {
             this.shell = shell;
         }
 

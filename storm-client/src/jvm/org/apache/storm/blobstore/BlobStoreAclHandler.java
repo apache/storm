@@ -363,7 +363,7 @@ public class BlobStoreAclHandler {
         return resultAcl;
     }
 
-    private final List<AccessControl> normalizeSettableAcls(String key, List<AccessControl> acls, Subject who,
+    private List<AccessControl> normalizeSettableAcls(String key, List<AccessControl> acls, Subject who,
                                                             int opMask) {
         List<AccessControl> cleanAcls = removeBadAcls(acls);
         Set<String> userNames = getUserNamesFromSubject(who);

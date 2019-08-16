@@ -129,7 +129,7 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
         long lastRotate = System.currentTimeMillis();
         long rotateTime;
 
-        public RichSpoutEmitter(Map<String, Object> conf, TopologyContext context) {
+        RichSpoutEmitter(Map<String, Object> conf, TopologyContext context) {
             this.conf = conf;
             this.context = context;
             Number batchSize = (Number) conf.get(MAX_BATCH_SIZE_CONF);

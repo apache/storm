@@ -27,7 +27,7 @@ class Acker extends MyThread {
     private final JCQueue ackerInQ;
     private final JCQueue spoutInQ;
 
-    public Acker(JCQueue ackerInQ, JCQueue spoutInQ) {
+    Acker(JCQueue ackerInQ, JCQueue spoutInQ) {
         super("Acker");
         this.ackerInQ = ackerInQ;
         this.spoutInQ = spoutInQ;

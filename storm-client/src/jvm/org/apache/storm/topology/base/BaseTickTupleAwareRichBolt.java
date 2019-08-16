@@ -56,5 +56,5 @@ public abstract class BaseTickTupleAwareRichBolt extends BaseRichBolt {
      *
      * @param tuple The input tuple to be processed.
      */
-    protected abstract void process(final Tuple tuple);
+    protected abstract void process(Tuple tuple);
 }

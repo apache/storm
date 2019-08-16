@@ -170,13 +170,13 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
         stream = stream.each(inputFields, new CombinerAggregatorInitImpl(agg), functionFields);
     }
 
-    private static enum AggType {
+    private enum AggType {
         PARTITION,
         FULL,
         FULL_COMBINE
     }
 
-    public static interface AggregationPartition {
+    public interface AggregationPartition {
         Stream partition(Stream input);
     }
 
@@ -186,7 +186,7 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
         Aggregator agg;
         Fields outFields;
 
-        public AggSpec(Fields inFields, Aggregator agg, Fields outFields) {
+        AggSpec(Fields inFields, Aggregator agg, Fields outFields) {
             this.inFields = inFields;
             this.agg = agg;
             this.outFields = outFields;

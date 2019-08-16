@@ -36,7 +36,7 @@ import org.apache.storm.sql.parser.StormParser;
 class StormSqlImpl extends StormSql {
     private final StormSqlContext sqlContext;
 
-    public StormSqlImpl() {
+    StormSqlImpl() {
         sqlContext = new StormSqlContext();
     }
 

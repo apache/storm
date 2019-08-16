@@ -79,7 +79,7 @@ public class PersistentWordCount {
         private RedisDataTypeDescription description;
         private final String hashKey = "wordCount";
 
-        public WordCountStoreMapper() {
+        WordCountStoreMapper() {
             description = new RedisDataTypeDescription(
                     RedisDataTypeDescription.RedisDataType.HASH, hashKey);
         }

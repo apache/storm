@@ -25,5 +25,5 @@ public interface Partitioner extends Serializable {
      *
      * @param tuple The tuple for which the relative path is being calculated.
      */
-    public String getPartitionPath(final Tuple tuple);
+    String getPartitionPath(Tuple tuple);
 }

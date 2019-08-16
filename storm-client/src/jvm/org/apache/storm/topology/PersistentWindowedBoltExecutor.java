@@ -236,7 +236,7 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
      */
     private static class NoAckOutputCollector extends OutputCollector {
 
-        public NoAckOutputCollector(OutputCollector delegate) {
+        NoAckOutputCollector(OutputCollector delegate) {
             super(delegate);
         }
 

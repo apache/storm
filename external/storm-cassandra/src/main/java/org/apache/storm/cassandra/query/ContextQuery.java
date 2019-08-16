@@ -30,12 +30,12 @@ public interface ContextQuery extends Serializable {
      *
      * @return a string bound query.
      */
-    public String resolves(Map<String, Object> config, ITuple tuple);
+    String resolves(Map<String, Object> config, ITuple tuple);
 
     /**
      * Static implementation of {@link ContextQuery} interface.
      */
-    public static final class StaticContextQuery implements ContextQuery {
+    final class StaticContextQuery implements ContextQuery {
         private final String value;
 
         /**
@@ -55,7 +55,7 @@ public interface ContextQuery extends Serializable {
      * Default {@link BoundQueryContext} implementation to retrieve a bound query
      * identified by the provided key.
      */
-    public static final class BoundQueryContext implements ContextQuery {
+    final class BoundQueryContext implements ContextQuery {
         private String key;
 
         public BoundQueryContext(String key) {
@@ -76,7 +76,7 @@ public interface ContextQuery extends Serializable {
      * Default {@link BoundQueryNamedByFieldContext} implementation to retrieve a bound query named by
      * the value of a specified tuple field.
      */
-    public static final class BoundQueryNamedByFieldContext implements ContextQuery {
+    final class BoundQueryNamedByFieldContext implements ContextQuery {
 
         private String fieldName;
 

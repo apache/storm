@@ -34,5 +34,5 @@ public interface TestJob {
      * @param cluster the cluster which created by <code>Testing.withSimulatedTimeLocalCluster</code>
      *        and <code>Testing.withTrackedCluster</code>.
      */
-    public void run(ILocalCluster cluster) throws Exception;
+    void run(ILocalCluster cluster) throws Exception;
 }

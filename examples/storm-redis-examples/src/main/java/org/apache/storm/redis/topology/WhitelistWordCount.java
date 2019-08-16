@@ -122,7 +122,7 @@ public class WhitelistWordCount {
         private RedisDataTypeDescription description;
         private final String setKey = "whitelist";
 
-        public WhitelistWordFilterMapper() {
+        WhitelistWordFilterMapper() {
             description = new RedisDataTypeDescription(
                     RedisDataTypeDescription.RedisDataType.SET, setKey);
         }

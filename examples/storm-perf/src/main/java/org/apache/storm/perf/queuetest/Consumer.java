@@ -26,7 +26,7 @@ class Consumer extends MyThread {
     public final MutableLong counter = new MutableLong(0);
     private final JCQueue queue;
 
-    public Consumer(JCQueue queue) {
+    Consumer(JCQueue queue) {
         super("Consumer");
         this.queue = queue;
     }

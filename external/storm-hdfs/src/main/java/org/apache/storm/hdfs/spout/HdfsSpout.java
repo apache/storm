@@ -793,7 +793,7 @@ public class HdfsSpout extends BaseRichSpout {
         public String fullPath;
         public FileOffset offset;
 
-        public MessageId(long msgNumber, Path fullPath, FileOffset offset) {
+        MessageId(long msgNumber, Path fullPath, FileOffset offset) {
             this.msgNumber = msgNumber;
             this.fullPath = fullPath.toString();
             this.offset = offset;
@@ -821,13 +821,13 @@ public class HdfsSpout extends BaseRichSpout {
         public final Path oldFile;
         public final Path newFile;
 
-        public RenameException(Path oldFile, Path newFile) {
+        RenameException(Path oldFile, Path newFile) {
             super("Rename of " + oldFile + " to " + newFile + " failed");
             this.oldFile = oldFile;
             this.newFile = newFile;
         }
 
-        public RenameException(Path oldFile, Path newFile, IOException cause) {
+        RenameException(Path oldFile, Path newFile, IOException cause) {
             super("Rename of " + oldFile + " to " + newFile + " failed", cause);
             this.oldFile = oldFile;
             this.newFile = newFile;

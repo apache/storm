@@ -77,7 +77,7 @@ public class ComboList extends AbstractList<Object> {
         int listIndex;
         int subIndex;
 
-        public Pointer(int listIndex, int subIndex) {
+        Pointer(int listIndex, int subIndex) {
             this.listIndex = listIndex;
             this.subIndex = subIndex;
         }

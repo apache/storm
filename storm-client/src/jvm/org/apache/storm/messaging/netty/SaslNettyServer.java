@@ -88,7 +88,7 @@ class SaslNettyServer {
         private byte[] userPassword;
         private String userName;
 
-        public SaslDigestCallbackHandler(String topologyName, byte[] token) {
+        SaslDigestCallbackHandler(String topologyName, byte[] token) {
             LOG.debug("SaslDigestCallback: Creating SaslDigestCallback handler with topology token: {}", topologyName);
             this.userName = topologyName;
             this.userPassword = token;

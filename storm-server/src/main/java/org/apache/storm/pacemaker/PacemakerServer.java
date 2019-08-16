@@ -54,7 +54,7 @@ class PacemakerServer implements ISaslServer {
     private final EventLoopGroup bossEventLoopGroup;
     private final EventLoopGroup workerEventLoopGroup;
 
-    public PacemakerServer(IServerMessageHandler handler, Map<String, Object> config) {
+    PacemakerServer(IServerMessageHandler handler, Map<String, Object> config) {
         int port = (int) config.get(Config.PACEMAKER_PORT);
         this.handler = handler;
         this.topologyName = "pacemaker_server";

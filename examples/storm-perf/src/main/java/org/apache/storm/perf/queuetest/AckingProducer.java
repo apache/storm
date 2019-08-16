@@ -27,7 +27,7 @@ class AckingProducer extends MyThread {
     private final JCQueue ackerInQ;
     private final JCQueue spoutInQ;
 
-    public AckingProducer(JCQueue ackerInQ, JCQueue spoutInQ) {
+    AckingProducer(JCQueue ackerInQ, JCQueue spoutInQ) {
         super("AckingProducer");
         this.ackerInQ = ackerInQ;
         this.spoutInQ = spoutInQ;

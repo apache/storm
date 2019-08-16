@@ -73,7 +73,7 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
         private final KafkaSpoutMessageId msgId;
         private long nextRetryTimeNanos;
 
-        public RetrySchedule(KafkaSpoutMessageId msgId, long nextRetryTimeNanos) {
+        RetrySchedule(KafkaSpoutMessageId msgId, long nextRetryTimeNanos) {
             this.msgId = msgId;
             this.nextRetryTimeNanos = nextRetryTimeNanos;
             LOG.debug("Created {}", this);

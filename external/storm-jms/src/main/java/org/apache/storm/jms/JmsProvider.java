@@ -28,11 +28,11 @@ public interface JmsProvider extends Serializable {
      *
      * @return the connection factory
      */
-    public ConnectionFactory connectionFactory() throws Exception;
+    ConnectionFactory connectionFactory() throws Exception;
 
     /**
      * Provides the <code>Destination</code> (topic or queue) from which the
      * <code>JmsSpout</code> will receive messages.
      */
-    public Destination destination() throws Exception;
+    Destination destination() throws Exception;
 }

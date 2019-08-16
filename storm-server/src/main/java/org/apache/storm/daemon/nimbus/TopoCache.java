@@ -229,7 +229,7 @@ public class TopoCache {
         public final List<AccessControl> acl;
         public final T data;
 
-        public WithAcl(List<AccessControl> acl, T data) {
+        WithAcl(List<AccessControl> acl, T data) {
             this.acl = acl;
             this.data = data;
         }

@@ -25,10 +25,10 @@ public interface TridentHBaseMapMapper extends Serializable {
     /**
      * Given a tuple's grouped key list, return the HBase rowkey.
      */
-    public byte[] rowKey(List<Object> keys);
+    byte[] rowKey(List<Object> keys);
 
     /**
      * Given a tuple's grouped key list, return the HBase qualifier.
      */
-    public String qualifier(List<Object> keys);
+    String qualifier(List<Object> keys);
 }

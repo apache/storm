@@ -110,7 +110,7 @@ public class TridentSpoutExecutor implements ITridentBatchBolt {
         Object id;
         String stream;
 
-        public AddIdCollector(String stream, BatchOutputCollector c) {
+        AddIdCollector(String stream, BatchOutputCollector c) {
             delegate = c;
             this.stream = stream;
         }

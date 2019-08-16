@@ -25,5 +25,5 @@ import org.apache.storm.tuple.Tuple;
  * Serialize a tuple to a byte array to be sent to EventHubs.
  */
 public interface IEventDataFormat extends Serializable {
-    public byte[] serialize(Tuple tuple);
+    byte[] serialize(Tuple tuple);
 }

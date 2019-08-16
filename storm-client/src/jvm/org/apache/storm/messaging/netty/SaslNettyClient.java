@@ -96,7 +96,7 @@ public class SaslNettyClient {
         /**
          * Set private members using topology token.
          */
-        public SaslClientCallbackHandler(String topologyToken, byte[] token) {
+        SaslClientCallbackHandler(String topologyToken, byte[] token) {
             this.userName = SaslUtils
                 .encodeIdentifier(topologyToken.getBytes());
             this.userPassword = SaslUtils.encodePassword(token);

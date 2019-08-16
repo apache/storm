@@ -156,7 +156,7 @@ public class TridentMinMaxOfDevicesTopology {
         final int maxSpeed;
         final double efficiency;
 
-        public Vehicle(String name, int maxSpeed, double efficiency) {
+        Vehicle(String name, int maxSpeed, double efficiency) {
             this.name = name;
             this.maxSpeed = maxSpeed;
             this.efficiency = efficiency;

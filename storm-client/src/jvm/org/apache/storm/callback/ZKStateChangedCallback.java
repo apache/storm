@@ -16,5 +16,5 @@ import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface ZKStateChangedCallback {
-    public void changed(Watcher.Event.EventType type, String path);
+    void changed(Watcher.Event.EventType type, String path);
 }

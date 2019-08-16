@@ -86,7 +86,7 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
 
         int index;
 
-        public FeederEmitter(int index) {
+        FeederEmitter(int index) {
             this.index = index;
         }
 

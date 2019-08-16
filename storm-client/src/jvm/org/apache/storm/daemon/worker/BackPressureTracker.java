@@ -101,7 +101,7 @@ public class BackPressureTracker {
         //No task is under backpressure initially
         private final AtomicBoolean backpressure = new AtomicBoolean(false);
 
-        public BackpressureState(JCQueue queue) {
+        BackpressureState(JCQueue queue) {
             this.queue = queue;
         }
 

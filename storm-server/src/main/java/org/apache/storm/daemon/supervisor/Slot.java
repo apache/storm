@@ -1126,7 +1126,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         public final long startTime;
         private final SlotMetrics slotMetrics;
 
-        public DynamicState(final LocalAssignment currentAssignment, Container container, final LocalAssignment newAssignment,
+        DynamicState(final LocalAssignment currentAssignment, Container container, final LocalAssignment newAssignment,
             SlotMetrics slotMetrics) {
             this.currentAssignment = currentAssignment;
             this.container = container;
@@ -1153,7 +1153,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             this.slotMetrics = slotMetrics;
         }
 
-        public DynamicState(final MachineState state, final LocalAssignment newAssignment,
+        DynamicState(final MachineState state, final LocalAssignment newAssignment,
                             final Container container, final LocalAssignment currentAssignment,
                             final LocalAssignment pendingLocalization, final long startTime,
                             final Future<Void> pendingDownload, final Set<TopoProfileAction> profileActions,
@@ -1295,7 +1295,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         public final String topoId;
         public final ProfileRequest request;
 
-        public TopoProfileAction(String topoId, ProfileRequest request) {
+        TopoProfileAction(String topoId, ProfileRequest request) {
             this.topoId = topoId;
             this.request = request;
         }
@@ -1328,7 +1328,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         private final LocallyCachedBlob blob;
         private final GoodToGo.GoodToGoLatch latch;
 
-        public BlobChanging(LocalAssignment assignment, LocallyCachedBlob blob, GoodToGo.GoodToGoLatch latch) {
+        BlobChanging(LocalAssignment assignment, LocallyCachedBlob blob, GoodToGo.GoodToGoLatch latch) {
             this.assignment = assignment;
             this.blob = blob;
             this.latch = latch;

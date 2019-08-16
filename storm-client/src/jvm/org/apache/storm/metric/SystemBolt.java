@@ -106,7 +106,7 @@ public class SystemBolt implements IBolt {
     private static class MemoryUsageMetric implements IMetric {
         Supplier<MemoryUsage> getUsage;
 
-        public MemoryUsageMetric(Supplier<MemoryUsage> getUsage) {
+        MemoryUsageMetric(Supplier<MemoryUsage> getUsage) {
             this.getUsage = getUsage;
         }
 
@@ -131,7 +131,7 @@ public class SystemBolt implements IBolt {
         Long collectionCount;
         Long collectionTime;
 
-        public GarbageCollectorMetric(GarbageCollectorMXBean gcBean) {
+        GarbageCollectorMetric(GarbageCollectorMXBean gcBean) {
             this.gcBean = gcBean;
         }
 

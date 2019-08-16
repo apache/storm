@@ -106,7 +106,7 @@ public class OpaqueMap<T> implements MapState<T> {
     static class ReplaceUpdater<T> implements ValueUpdater<T> {
         T value;
 
-        public ReplaceUpdater(T t) {
+        ReplaceUpdater(T t) {
             value = t;
         }
 

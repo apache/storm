@@ -65,7 +65,7 @@ public class FileSizeRotationPolicy implements FileRotationPolicy {
         return maxBytes;
     }
 
-    public static enum Units {
+    public enum Units {
 
         KB((long) Math.pow(2, 10)),
         MB((long) Math.pow(2, 20)),
@@ -74,7 +74,7 @@ public class FileSizeRotationPolicy implements FileRotationPolicy {
 
         private long byteCount;
 
-        private Units(long byteCount) {
+        Units(long byteCount) {
             this.byteCount = byteCount;
         }
 

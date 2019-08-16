@@ -143,7 +143,7 @@ public class ContainerMemoryTracker {
         public final String topoId;
         public final long memory;
 
-        public TopoAndMemory(String id, long mem) {
+        TopoAndMemory(String id, long mem) {
             topoId = id;
             memory = mem;
         }

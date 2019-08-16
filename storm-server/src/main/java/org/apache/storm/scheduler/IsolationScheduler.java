@@ -377,7 +377,7 @@ public class IsolationScheduler implements IScheduler {
         private String topologyId;
         private Set<ExecutorDetails> executors;
 
-        public AssignmentInfo(WorkerSlot workerSlot, String topologyId, Set<ExecutorDetails> executors) {
+        AssignmentInfo(WorkerSlot workerSlot, String topologyId, Set<ExecutorDetails> executors) {
             this.workerSlot = workerSlot;
             this.topologyId = topologyId;
             this.executors = executors;
@@ -401,7 +401,7 @@ public class IsolationScheduler implements IScheduler {
         private String hostName;
         private List<WorkerSlot> workerSlots;
 
-        public HostAssignableSlots(String hostName, List<WorkerSlot> workerSlots) {
+        HostAssignableSlots(String hostName, List<WorkerSlot> workerSlots) {
             this.hostName = hostName;
             this.workerSlots = workerSlots;
         }

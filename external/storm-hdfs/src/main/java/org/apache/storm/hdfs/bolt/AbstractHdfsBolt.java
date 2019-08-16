@@ -311,7 +311,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         final long maxWriters;
         final OutputCollector collector;
 
-        public WritersMap(long maxWriters, OutputCollector collector) {
+        WritersMap(long maxWriters, OutputCollector collector) {
             super((int) maxWriters, 0.75f, true);
             this.maxWriters = maxWriters;
             this.collector = collector;

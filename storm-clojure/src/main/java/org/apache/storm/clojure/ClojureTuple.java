@@ -121,7 +121,7 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
             this.count = count;
         }
 
-        public Seq(IPersistentMap meta, List<String> fields, List<Object> values, int count) {
+        Seq(IPersistentMap meta, List<String> fields, List<Object> values, int count) {
             super(meta);
             this.fields = fields;
             this.values = values;

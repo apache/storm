@@ -24,10 +24,10 @@ public interface WindowStrategy<T> {
     /**
      * Returns a {@code TriggerPolicy}  by creating with {@code triggerHandler} and {@code evictionPolicy} with the given configuration.
      */
-    public TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T, ?> evictionPolicy);
+    TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T, ?> evictionPolicy);
 
     /**
      * Returns an {@code EvictionPolicy} instance for this strategy with the given configuration.
      */
-    public EvictionPolicy<T, ?> getEvictionPolicy();
+    EvictionPolicy<T, ?> getEvictionPolicy();
 }
