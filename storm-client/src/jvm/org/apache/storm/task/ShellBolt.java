@@ -363,8 +363,7 @@ public class ShellBolt implements IBolt {
                             handleMetrics(shellMsg);
                             break;
                         default:
-                            throw new IllegalArgumentException(String.format("command %s is not supported",
-                                    command));
+                            break;
                     }
                 } catch (InterruptedException e) {
                     // It's likely that Bolt is shutting down so no need to die.
