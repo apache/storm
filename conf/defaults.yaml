@@ -343,6 +343,7 @@ blacklist.scheduler.tolerance.count: 3
 blacklist.scheduler.resume.time.secs: 1800
 blacklist.scheduler.reporter: "org.apache.storm.scheduler.blacklist.reporters.LogReporter"
 blacklist.scheduler.strategy: "org.apache.storm.scheduler.blacklist.strategies.DefaultBlacklistStrategy"
+blacklist.scheduler.assume.supervisor.bad.based.on.bad.slot: true
 
 dev.zookeeper.path: "/tmp/dev-storm-zookeeper"
 
