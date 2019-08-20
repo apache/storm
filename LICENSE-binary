@@ -973,7 +973,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Expression Language 3.0 (org.glassfish:javax.el:3.0.1-b11 - http://uel.java.net)
         * JavaServer Pages(TM) API (javax.servlet.jsp:javax.servlet.jsp-api:2.3.1 - http://jsp.java.net)
         * Java Servlet API (javax.servlet:javax.servlet-api:3.1.0 - http://servlet-spec.java.net)
-        * javax.annotation API (javax.annotation:javax.annotation-api:1.3.2 - http://jcp.org/en/jsr/detail?id=250)
         * JSP implementation (org.glassfish.web:javax.servlet.jsp:2.3.2 - http://jsp.java.net)
 
     Common Development and Distribution License (CDDL) v1.0
@@ -1023,6 +1022,11 @@ The license texts of these dependencies can be found in the licenses directory.
         * OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
         * ServiceLocator Default Implementation (org.glassfish.hk2:hk2-locator:2.5.0 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-locator)
         * Expression Language 3.0 (org.glassfish:jakarta.el:3.0.2 - https://projects.eclipse.org/projects/ee4j.el)
+        
+    Eclipse Distribution License, Version 1.0
+        * JavaBeans Activation Framework (com.sun.activation:jakarta.activation:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation)
+        * JavaBeans Activation Framework API jar (jakarta.activation:jakarta.activation-api:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation-api)
+        * jakarta.xml.bind-api (jakarta.xml.bind:jakarta.xml.bind-api:2.3.2 - https://github.com/eclipse-ee4j/jaxb-api/jakarta.xml.bind-api)
 
     MIT License
 

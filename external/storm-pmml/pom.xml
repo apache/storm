@@ -74,11 +74,10 @@
             <artifactId>pmml-evaluator</artifactId>
             <version>${jpmml.version}</version>
         </dependency>
-        <!-- Java EE package. On JDK8 and below this is a part of java,
-        but JDK9+ it is not there by default. -->
+        <!-- JAXB api -->
         <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>

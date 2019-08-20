@@ -484,7 +484,7 @@ List of third-party dependencies grouped by their license type.
         * zookeeper (org.apache.zookeeper:zookeeper:3.4.14 - no url defined)
         * zookeeper (org.apache.zookeeper:zookeeper:3.4.6 - no url defined)
 
-    Apache License, Version 2.0, BSD 2-Clause, Eclipse Public License, Version 2.0, EDL 1.0, jQuery license, MIT License, Modified BSD, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception, W3C license
+    Apache License, Version 2.0, BSD 2-Clause, Eclipse Distribution License, Version 1.0, Eclipse Public License, Version 2.0, jQuery license, MIT License, Modified BSD, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception, W3C license
 
         * jersey-connectors-apache (org.glassfish.jersey.connectors:jersey-apache-connector:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-apache-connector)
         * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
@@ -601,7 +601,6 @@ List of third-party dependencies grouped by their license type.
         * Expression Language 3.0 (org.glassfish:javax.el:3.0.1-b11 - http://uel.java.net)
         * JavaServer Pages(TM) API (javax.servlet.jsp:javax.servlet.jsp-api:2.3.1 - http://jsp.java.net)
         * Java Servlet API (javax.servlet:javax.servlet-api:3.1.0 - http://servlet-spec.java.net)
-        * javax.annotation API (javax.annotation:javax.annotation-api:1.3.2 - http://jcp.org/en/jsr/detail?id=250)
         * JSP implementation (org.glassfish.web:javax.servlet.jsp:2.3.2 - http://jsp.java.net)
 
     Common Development and Distribution License (CDDL) v1.0
@@ -634,6 +633,12 @@ List of third-party dependencies grouped by their license type.
     Common Public License Version 1.0, GNU General Public License Version 2, GNU Lesser General Public License (LGPL), Version 2.1
 
         * jnr-posix (com.github.jnr:jnr-posix:3.0.27 - http://nexus.sonatype.org/oss-repository-hosting.html/jnr-posix)
+
+    Eclipse Distribution License, Version 1.0
+
+        * jakarta.xml.bind-api (jakarta.xml.bind:jakarta.xml.bind-api:2.3.2 - https://github.com/eclipse-ee4j/jaxb-api/jakarta.xml.bind-api)
+        * JavaBeans Activation Framework (com.sun.activation:jakarta.activation:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation)
+        * JavaBeans Activation Framework API jar (jakarta.activation:jakarta.activation-api:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation-api)
 
     Eclipse Public License, Version 1.0
 
