@@ -195,9 +195,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Java EE package. On JDK8 and below this is a part of java,
+        but JDK9+ it is not there by default. -->
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
     </dependencies>
     <build>

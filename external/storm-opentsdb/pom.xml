@@ -70,15 +70,21 @@
             <groupId>org.glassfish.jersey.connectors</groupId>
             <artifactId>jersey-apache-connector</artifactId>
         </dependency>
-        <!-- Java 9+ compatibility, ensure Java EE classes are on classpath when using jersey -->
+        <!-- Extra Java 11 jars for Jersey. Jersey's dependency tree only includes these on Java 11,
+        so we need to include them manually to ensure that Java 8 builds work on Java 11. -->
         <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>activation</artifactId>
+            <groupId>com.sun.activation</groupId>
+            <artifactId>jakarta.activation</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <!-- End extra Jersey Java 11 jars -->
 
         <!--test dependencies -->
         <dependency>
