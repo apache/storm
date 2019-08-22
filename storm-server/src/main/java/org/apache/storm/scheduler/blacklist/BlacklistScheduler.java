@@ -55,6 +55,7 @@ public class BlacklistScheduler implements IScheduler {
     protected EvictingQueue<HashMap<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow;
     protected int windowSize;
     protected volatile Set<String> blacklistedSupervisorIds;     // supervisor ids
+    private boolean blacklistOnBadSlots;
     private Map<String, Object> conf;
 
     public BlacklistScheduler(IScheduler underlyingScheduler, StormMetricsRegistry metricsRegistry) {
@@ -90,6 +91,7 @@ public class BlacklistScheduler implements IScheduler {
         badSupervisorsToleranceSlidingWindow = EvictingQueue.create(windowSize);
         cachedSupervisors = new HashMap<>();
         blacklistedSupervisorIds = new HashSet<>();
+        blacklistOnBadSlots = ObjectReader.getBoolean(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_ASSUME_SUPERVISOR_BAD_BASED_ON_BAD_SLOT), true);
 
         //nimbus:num-blacklisted-supervisor + non-blacklisted supervisor = nimbus:num-supervisors
         metricsRegistry.registerGauge("nimbus:num-blacklisted-supervisor", () -> blacklistedSupervisorIds.size());
@@ -137,15 +139,16 @@ public class BlacklistScheduler implements IScheduler {
             String key = entry.getKey();
             SupervisorDetails supervisorDetails = entry.getValue();
             if (cachedSupervisors.containsKey(key)) {
-                Set<Integer> badSlots = badSlots(supervisorDetails, key);
-                if (badSlots.size() > 0) { //supervisor contains bad slots
-                    badSupervisors.put(key, badSlots);
+                if (blacklistOnBadSlots) {
+                    Set<Integer> badSlots = badSlots(supervisorDetails, key);
+                    if (badSlots.size() > 0) { //supervisor contains bad slots
+                        badSupervisors.put(key, badSlots);
+                    }
                 }
             } else {
                 cachedSupervisors.put(key, supervisorDetails.getAllPorts()); //new supervisor to cache
             }
         }
-
         badSupervisorsToleranceSlidingWindow.add(badSupervisors);
     }
 
@@ -160,7 +163,6 @@ public class BlacklistScheduler implements IScheduler {
             allPorts.addAll(cachedSupervisorPorts);
             cachedSupervisors.put(supervisorKey, allPorts);
         }
-
         Set<Integer> badSlots = Sets.difference(cachedSupervisorPorts, supervisorPorts);
         return badSlots;
     }
@@ -198,7 +200,8 @@ public class BlacklistScheduler implements IScheduler {
             for (String supervisor : supervisors) {
                 int supervisorCount = supervisorCountMap.getOrDefault(supervisor, 0);
                 Set<Integer> slots = item.get(supervisor);
-                if (slots.equals(cachedSupervisors.get(supervisor))) { // treat supervisor as bad only if all of its slots matched the cached supervisor
+                // treat supervisor as bad only if all of its slots matched the cached supervisor
+                if (slots.equals(cachedSupervisors.get(supervisor))) {
                     // track how many times a cached supervisor has been marked bad
                     supervisorCountMap.put(supervisor, supervisorCount + 1);
                 }

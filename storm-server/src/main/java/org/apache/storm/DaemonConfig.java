@@ -138,6 +138,17 @@ public class DaemonConfig implements Validated {
     public static final String BLACKLIST_SCHEDULER_STRATEGY = "blacklist.scheduler.strategy";
 
     /**
+     * Whether {@link org.apache.storm.scheduler.blacklist.BlacklistScheduler} will assume the supervisor is bad
+     * based on bad slots or not.
+     * A bad slot indicates the situation where the nimbus doesn't receive heartbeat from the worker in time,
+     * it's hard to differentiate if it's because of the supervisor node or the worker itself.
+     * If this is set to true, the scheduler will consider a supervisor is bad when seeing bad slots in it.
+     * Otherwise, the scheduler will assume a supervisor is bad only when it does not receive supervisor heartbeat in time.
+     */
+    @IsBoolean
+    public static final String BLACKLIST_SCHEDULER_ASSUME_SUPERVISOR_BAD_BASED_ON_BAD_SLOT = "blacklist.scheduler.assume.supervisor.bad.based.on.bad.slot";
+
+    /**
      * Whether we want to display all the resource capacity and scheduled usage on the UI page. You MUST have this variable set if you are
      * using any kind of resource-related scheduler.
      * <p/>
