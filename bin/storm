@@ -34,7 +34,9 @@ while [ -h "${PRG}" ]; do
 done
 
 # check for version
-PYTHON="/usr/bin/env python"
+if [ -z $PYTHON ]; then
+  PYTHON="/usr/bin/env python"
+fi
 majversion=`$PYTHON -V 2>&1 | awk '{print $2}' | cut -d'.' -f1`
 minversion=`$PYTHON -V 2>&1 | awk '{print $2}' | cut -d'.' -f2`
 numversion=$(( 10 * $majversion + $minversion))
