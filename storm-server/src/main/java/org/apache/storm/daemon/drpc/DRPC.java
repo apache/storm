@@ -46,6 +46,7 @@ import org.apache.storm.utils.WrappedDRPCExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPC implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPC.class);
     private static final DRPCRequest NOTHING_REQUEST = new DRPCRequest("", "");
@@ -66,14 +67,14 @@ public class DRPC implements AutoCloseable {
     }
 
     //Waiting to be fetched
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<OutstandingRequest>> _queues =
-        new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<OutstandingRequest>> queues =
+            new ConcurrentHashMap<>();
     //Waiting to be returned
-    private final ConcurrentHashMap<String, OutstandingRequest> _requests =
-        new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, OutstandingRequest> requests =
+            new ConcurrentHashMap<>();
     private final Timer timer = new Timer("DRPC-CLEANUP-TIMER", true);
-    private final AtomicLong _ctr = new AtomicLong(0);
-    private final IAuthorizer _auth;
+    private final AtomicLong ctr = new AtomicLong(0);
+    private final IAuthorizer auth;
 
     public DRPC(StormMetricsRegistry metricsRegistry, Map<String, Object> conf) {
         this(metricsRegistry, mkAuthorizationHandler((String) conf.get(DaemonConfig.DRPC_AUTHORIZER), conf),
@@ -81,7 +82,7 @@ public class DRPC implements AutoCloseable {
     }
 
     public DRPC(StormMetricsRegistry metricsRegistry, IAuthorizer auth, long timeoutMs) {
-        _auth = auth;
+        this.auth = auth;
         this.meterServerTimedOut = metricsRegistry.registerMeter("drpc:num-server-timedout-requests");
         this.meterExecuteCalls = metricsRegistry.registerMeter("drpc:num-execute-calls");
         this.meterResultCalls = metricsRegistry.registerMeter("drpc:num-result-calls");
@@ -135,22 +136,22 @@ public class DRPC implements AutoCloseable {
     }
 
     private void checkAuthorization(String operation, String function) throws AuthorizationException {
-        checkAuthorization(ReqContext.context(), _auth, operation, function);
+        checkAuthorization(ReqContext.context(), auth, operation, function);
     }
 
     private void checkAuthorizationNoLog(String operation, String function) throws AuthorizationException {
-        checkAuthorization(ReqContext.context(), _auth, operation, function, false);
+        checkAuthorization(ReqContext.context(), auth, operation, function, false);
     }
 
     private void cleanup(String id) {
-        OutstandingRequest req = _requests.remove(id);
+        OutstandingRequest req = requests.remove(id);
         if (req != null && !req.wasFetched()) {
-            _queues.get(req.getFunction()).remove(req);
+            queues.get(req.getFunction()).remove(req);
         }
     }
 
     private void cleanupAll(long timeoutMs, DRPCExecutionException exp) {
-        for (Entry<String, OutstandingRequest> e : _requests.entrySet()) {
+        for (Entry<String, OutstandingRequest> e : requests.entrySet()) {
             OutstandingRequest req = e.getValue();
             if (req.isTimedOut(timeoutMs)) {
                 req.fail(exp);
@@ -161,17 +162,17 @@ public class DRPC implements AutoCloseable {
     }
 
     private String nextId() {
-        return String.valueOf(_ctr.incrementAndGet());
+        return String.valueOf(ctr.incrementAndGet());
     }
 
     private ConcurrentLinkedQueue<OutstandingRequest> getQueue(String function) {
         if (function == null) {
             throw new IllegalArgumentException("The function for a request cannot be null");
         }
-        ConcurrentLinkedQueue<OutstandingRequest> queue = _queues.get(function);
+        ConcurrentLinkedQueue<OutstandingRequest> queue = queues.get(function);
         if (queue == null) {
-            _queues.putIfAbsent(function, new ConcurrentLinkedQueue<>());
-            queue = _queues.get(function);
+            queues.putIfAbsent(function, new ConcurrentLinkedQueue<>());
+            queue = queues.get(function);
         }
         return queue;
     }
@@ -179,7 +180,7 @@ public class DRPC implements AutoCloseable {
     public void returnResult(String id, String result) throws AuthorizationException {
         meterResultCalls.mark();
         LOG.debug("Got a result {} {}", id, result);
-        OutstandingRequest req = _requests.get(id);
+        OutstandingRequest req = requests.get(id);
         if (req != null) {
             checkAuthorization("result", req.getFunction());
             req.returnResult(result);
@@ -204,7 +205,7 @@ public class DRPC implements AutoCloseable {
     public void failRequest(String id, DRPCExecutionException e) throws AuthorizationException {
         meterFailRequestCalls.mark();
         LOG.debug("Got a fail {}", id);
-        OutstandingRequest req = _requests.get(id);
+        OutstandingRequest req = requests.get(id);
         if (req != null) {
             checkAuthorization("failRequest", req.getFunction());
             if (e == null) {
@@ -221,7 +222,7 @@ public class DRPC implements AutoCloseable {
         String id = nextId();
         LOG.debug("Execute {} {}", functionName, funcArgs);
         T req = factory.mkRequest(functionName, new DRPCRequest(funcArgs, id));
-        _requests.put(id, req);
+        requests.put(id, req);
         ConcurrentLinkedQueue<OutstandingRequest> q = getQueue(functionName);
         q.add(req);
         return req;

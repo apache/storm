@@ -19,20 +19,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Listens for cluster related metrics, dumps them to log
+ * Listens for cluster related metrics, dumps them to log.
  *
- * To use, edit the storm.yaml config file:
- *
+ * <p>To use, edit the storm.yaml config file:
  * ```yaml
  *   storm.cluster.metrics.register:
  *     - class: "org.apache.storm.metrics.LoggingClusterMetricsConsumer"
  * ```
- *
  */
 public class LoggingClusterMetricsConsumer implements IClusterMetricsConsumer {
     public static final Logger LOG = LoggerFactory.getLogger(LoggingClusterMetricsConsumer.class);
 
-    static private String padding = "                       ";
+    private static String padding = "                       ";
 
     @Override
     public void prepare(Object registrationArgument) {
@@ -58,8 +56,8 @@ public class LoggingClusterMetricsConsumer implements IClusterMetricsConsumer {
         for (DataPoint p : dataPoints) {
             sb.delete(header.length(), sb.length());
             sb.append(p.getName())
-              .append(padding).delete(header.length() + 23, sb.length()).append("\t")
-              .append(p.getValue());
+                    .append(padding).delete(header.length() + 23, sb.length()).append("\t")
+                    .append(p.getValue());
             LOG.info(sb.toString());
         }
     }
@@ -72,8 +70,10 @@ public class LoggingClusterMetricsConsumer implements IClusterMetricsConsumer {
         for (DataPoint p : dataPoints) {
             sb.delete(header.length(), sb.length());
             sb.append(p.getName())
-              .append(padding).delete(header.length() + 23, sb.length()).append("\t")
-              .append(p.getValue());
+                    .append(padding)
+                    .delete(header.length() + 23, sb.length())
+                    .append("\t")
+                    .append(p.getValue());
             LOG.info(sb.toString());
         }
     }

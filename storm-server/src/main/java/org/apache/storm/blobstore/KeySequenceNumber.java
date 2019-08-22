@@ -17,11 +17,11 @@ import java.util.List;
 import java.util.TreeSet;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
+import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,16 +39,16 @@ import org.slf4j.LoggerFactory;
  * nimbus and the non-leader nimbus syncs after a call back is triggered by attempting
  * to download the blob and finally updates its state inside the zookeeper.
  *
- * A watch is placed on the /storm/blobstore/key1 and the znodes leader:8080-1 and
+ * <p>A watch is placed on the /storm/blobstore/key1 and the znodes leader:8080-1 and
  * non-leader:8080-1 are ephemeral which implies that these nodes exist only until the
  * connection between the corresponding nimbus and the zookeeper persist. If in case the
  * nimbus crashes the node disappears under /storm/blobstore/key1.
  *
- * The sequence number for the keys are handed over based on the following scenario:
+ * <p>The sequence number for the keys are handed over based on the following scenario:
  * Lets assume there are three nimbodes up and running, one being the leader and the other
  * being the non-leader.
  *
- * 1. Create is straight forward.
+ * <p>1. Create is straight forward.
  * Check whether the znode -> /storm/blobstore/key1 has been created or not. It implies
  * the blob has not been created yet. If not created, it creates it and updates the zookeeper
  * states under /storm/blobstore/key1 and /storm/blobstoremaxkeysequencenumber/key1.
@@ -58,65 +58,65 @@ import org.slf4j.LoggerFactory;
  * indicating the true value of number of updates for a blob. This node helps to maintain sanity in case
  * leadership changes due to crashing.
  *
- * 2. Delete does not require to hand over the sequence number.
+ * <p>2. Delete does not require to hand over the sequence number.
  *
- * 3. Finally, the update has few scenarios.
+ * <p>3. Finally, the update has few scenarios.
  *
- *  The class implements a TreeSet. The basic idea is if all the nimbodes have the same
- *  sequence number for the blob, then the number of elements in the set is 1 which holds
- *  the latest value of sequence number. If the number of elements are greater than 1 then it
- *  implies that there is sequence mismatch and there is need for syncing the blobs across
- *  nimbodes.
+ * <p>The class implements a TreeSet. The basic idea is if all the nimbodes have the same
+ * sequence number for the blob, then the number of elements in the set is 1 which holds
+ * the latest value of sequence number. If the number of elements are greater than 1 then it
+ * implies that there is sequence mismatch and there is need for syncing the blobs across
+ * nimbodes.
  *
- *  The logic for handing over sequence numbers based on the state are described as follows
- *  Here consider Nimbus-1 alias as N1 and Nimbus-2 alias as N2.
- *  Scenario 1:
- *  Example: Normal create/update scenario
- *  Operation     Nimbus-1:state     Nimbus-2:state     Seq-Num-Nimbus-1  Seq-Num-Nimbus-2          Max-Seq-Num
- *  Create-Key1   alive - Leader     alive              1                                           1
- *  Sync          alive - Leader     alive              1                 1 (callback -> download)  1
- *  Update-Key1   alive - Leader     alive              2                 1                         2
- *  Sync          alive - Leader     alive              2                 2 (callback -> download)  2
+ * <p>The logic for handing over sequence numbers based on the state are described as follows
+ * Here consider Nimbus-1 alias as N1 and Nimbus-2 alias as N2.
+ * Scenario 1:
+ * Example: Normal create/update scenario
+ * Operation     Nimbus-1:state     Nimbus-2:state     Seq-Num-Nimbus-1  Seq-Num-Nimbus-2          Max-Seq-Num
+ * Create-Key1   alive - Leader     alive              1                                           1
+ * Sync          alive - Leader     alive              1                 1 (callback -> download)  1
+ * Update-Key1   alive - Leader     alive              2                 1                         2
+ * Sync          alive - Leader     alive              2                 2 (callback -> download)  2
  *
- *  Scenario 2:
- *  Example: Leader nimbus crash followed by leader election, update and ex-leader restored again
- *  Operation     Nimbus-1:state     Nimbus-2:state     Seq-Num-Nimbus-1  Seq-Num-Nimbus-2          Max-Seq-Num
- *  Create        alive - Leader     alive              1                                           1
- *  Sync          alive - Leader     alive              1                 1 (callback -> download)  1
- *  Update        alive - Leader     alive              2                 1                         2
- *  Sync          alive - Leader     alive              2                 2 (callback -> download)  2
- *  Update        alive - Leader     alive              3                 2                         3
- *  Crash         crash - Leader     alive              3                 2                         3
- *  New - Leader  crash              alive - Leader     3 (Invalid)       2                         3
- *  Update        crash              alive - Leader     3 (Invalid)       4 (max-seq-num + 1)       4
- *  N1-Restored   alive              alive - Leader     0                 4                         4
- *  Sync          alive              alive - Leader     4                 4                         4
+ * <p>Scenario 2:
+ * Example: Leader nimbus crash followed by leader election, update and ex-leader restored again
+ * Operation     Nimbus-1:state     Nimbus-2:state     Seq-Num-Nimbus-1  Seq-Num-Nimbus-2          Max-Seq-Num
+ * Create        alive - Leader     alive              1                                           1
+ * Sync          alive - Leader     alive              1                 1 (callback -> download)  1
+ * Update        alive - Leader     alive              2                 1                         2
+ * Sync          alive - Leader     alive              2                 2 (callback -> download)  2
+ * Update        alive - Leader     alive              3                 2                         3
+ * Crash         crash - Leader     alive              3                 2                         3
+ * New - Leader  crash              alive - Leader     3 (Invalid)       2                         3
+ * Update        crash              alive - Leader     3 (Invalid)       4 (max-seq-num + 1)       4
+ * N1-Restored   alive              alive - Leader     0                 4                         4
+ * Sync          alive              alive - Leader     4                 4                         4
  *
- *  Scenario 3:
- *  Example: Leader nimbus crash followed by leader election, update and ex-leader restored again
- *  Operation     Nimbus-1:state     Nimbus-2:state     Seq-Num-Nimbus-1  Seq-Num-Nimbus-2          Max-Seq-Num
- *  Create        alive - Leader     alive              1                                           1
- *  Sync          alive - Leader     alive              1                 1 (callback -> download)  1
- *  Update        alive - Leader     alive              2                 1                         2
- *  Sync          alive - Leader     alive              2                 2 (callback -> download)  2
- *  Update        alive - Leader     alive              3                 2                         3
- *  Crash         crash - Leader     alive              3                 2                         3
- *  Elect Leader  crash              alive - Leader     3 (Invalid)       2                         3
- *  N1-Restored   alive              alive - Leader     3                 2                         3
- *  Read/Update   alive              alive - Leader     3                 4 (Downloads from N1)     4
- *  Sync          alive              alive - Leader     4 (callback)      4                         4
- *  Here the download is triggered whenever an operation corresponding to the blob is triggered on the
- *  nimbus like a read or update operation. Here, in the read/update call it is hard to know which call
- *  is read or update. Hence, by incrementing the sequence number to max-seq-num + 1 we ensure that the
- *  synchronization happens appropriately and all nimbodes have the same blob.
+ * <p>Scenario 3:
+ * Example: Leader nimbus crash followed by leader election, update and ex-leader restored again
+ * Operation     Nimbus-1:state     Nimbus-2:state     Seq-Num-Nimbus-1  Seq-Num-Nimbus-2          Max-Seq-Num
+ * Create        alive - Leader     alive              1                                           1
+ * Sync          alive - Leader     alive              1                 1 (callback -> download)  1
+ * Update        alive - Leader     alive              2                 1                         2
+ * Sync          alive - Leader     alive              2                 2 (callback -> download)  2
+ * Update        alive - Leader     alive              3                 2                         3
+ * Crash         crash - Leader     alive              3                 2                         3
+ * Elect Leader  crash              alive - Leader     3 (Invalid)       2                         3
+ * N1-Restored   alive              alive - Leader     3                 2                         3
+ * Read/Update   alive              alive - Leader     3                 4 (Downloads from N1)     4
+ * Sync          alive              alive - Leader     4 (callback)      4                         4
+ * Here the download is triggered whenever an operation corresponding to the blob is triggered on the
+ * nimbus like a read or update operation. Here, in the read/update call it is hard to know which call
+ * is read or update. Hence, by incrementing the sequence number to max-seq-num + 1 we ensure that the
+ * synchronization happens appropriately and all nimbodes have the same blob.
  */
 public class KeySequenceNumber {
     private static final Logger LOG = LoggerFactory.getLogger(KeySequenceNumber.class);
-    private final String BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE = "/blobstoremaxkeysequencenumber";
+    private static final String BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE = "/blobstoremaxkeysequencenumber";
     private final String key;
     private final NimbusInfo nimbusInfo;
-    private final int INT_CAPACITY = 4;
-    private final int INITIAL_SEQUENCE_NUMBER = 1;
+    private static final int INT_CAPACITY = 4;
+    private static final int INITIAL_SEQUENCE_NUMBER = 1;
 
     public KeySequenceNumber(String key, NimbusInfo nimbusInfo) {
         this.key = key;

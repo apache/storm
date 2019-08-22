@@ -35,7 +35,7 @@ import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.RAS_Node;
+import org.apache.storm.scheduler.resource.RasNode;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.strategies.scheduling.BaseResourceAwareStrategy.ObjectResources;
@@ -474,7 +474,7 @@ public class TestDefaultResourceAwareStrategy {
         List<String> nodeHostnames = rackToNodes.get("rack-1");
         for (int i = 0; i< topo2.getExecutors().size()/2; i++) {
             String nodeHostname = nodeHostnames.get(i % nodeHostnames.size());
-            RAS_Node node = rs.hostnameToNodes(nodeHostname).get(0);
+            RasNode node = rs.hostnameToNodes(nodeHostname).get(0);
             WorkerSlot targetSlot = node.getFreeSlots().iterator().next();
             ExecutorDetails targetExec = executorIterator.next();
             // to keep track of free slots
@@ -599,7 +599,7 @@ public class TestDefaultResourceAwareStrategy {
         List<String> nodeHostnames = rackToNodes.get("rack-1");
         for (int i = 0; i< topo2.getExecutors().size()/2; i++) {
             String nodeHostname = nodeHostnames.get(i % nodeHostnames.size());
-            RAS_Node node = rs.hostnameToNodes(nodeHostname).get(0);
+            RasNode node = rs.hostnameToNodes(nodeHostname).get(0);
             WorkerSlot targetSlot = node.getFreeSlots().iterator().next();
             ExecutorDetails targetExec = executorIterator.next();
             // to keep track of free slots

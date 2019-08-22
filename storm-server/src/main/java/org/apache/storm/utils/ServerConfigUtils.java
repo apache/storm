@@ -81,6 +81,10 @@ public class ServerConfigUtils {
         return ret;
     }
 
+    public static String masterStormDistRoot(Map<String, Object> conf, String stormId) throws IOException {
+        return (masterStormDistRoot(conf) + FILE_SEPARATOR + stormId);
+    }
+
     /* TODO: make sure test these two functions in manual tests */
     public static List<String> getTopoLogsUsers(Map<String, Object> topologyConf) {
         List<String> logsUsers = (List<String>) topologyConf.get(DaemonConfig.LOGS_USERS);
@@ -126,10 +130,6 @@ public class ServerConfigUtils {
         List<String> ret = new ArrayList<String>(mergedGroups);
         Collections.sort(ret);
         return ret;
-    }
-
-    public static String masterStormDistRoot(Map<String, Object> conf, String stormId) throws IOException {
-        return (masterStormDistRoot(conf) + FILE_SEPARATOR + stormId);
     }
 
     public static String supervisorTmpDir(Map<String, Object> conf) throws IOException {

@@ -39,8 +39,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Represents a single node in the cluster.
  */
-public class RAS_Node {
-    private static final Logger LOG = LoggerFactory.getLogger(RAS_Node.class);
+public class RasNode {
+    private static final Logger LOG = LoggerFactory.getLogger(RasNode.class);
     private final String nodeId;
     private final Cluster cluster;
     private final Set<WorkerSlot> originallyFreeSlots;
@@ -63,7 +63,7 @@ public class RAS_Node {
      * @param workerIdToWorker the mapping of slots already assigned to this node.
      * @param assignmentMap the mapping of executors already assigned to this node.
      */
-    public RAS_Node(
+    public RasNode(
         String nodeId,
         SupervisorDetails sup,
         Cluster cluster,
@@ -391,8 +391,8 @@ public class RAS_Node {
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof RAS_Node) {
-            return nodeId.equals(((RAS_Node) other).nodeId);
+        if (other instanceof RasNode) {
+            return nodeId.equals(((RasNode) other).nodeId);
         }
         return false;
     }

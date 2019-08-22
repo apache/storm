@@ -184,8 +184,7 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
         // attempt to find the string in the database
         try {
             stringMetadata = store.rocksDbGetStringMetadata(type, s);
-        }
-        catch (RocksDBException e) {
+        } catch (RocksDBException e) {
             throw new MetricException("Error reading metrics data", e);
         }
         if (stringMetadata != null) {
@@ -244,8 +243,7 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
                     unusedIds.remove(key.getMetadataStringId());
                     return true; // process all metadata
                 });
-            }
-            catch (RocksDBException e) {
+            } catch (RocksDBException e) {
                 throw new MetricException("Error reading metrics data", e);
             }
         }

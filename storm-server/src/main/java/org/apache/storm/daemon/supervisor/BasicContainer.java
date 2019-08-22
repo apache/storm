@@ -18,8 +18,10 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import static org.apache.storm.daemon.nimbus.Nimbus.MIN_VERSION_SUPPORT_RPC_HEARTBEAT;
+import static org.apache.storm.utils.Utils.OR;
+
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +43,7 @@ import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.shade.com.google.common.base.Joiner;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.utils.ConfigUtils;
@@ -55,30 +58,24 @@ import org.apache.storm.utils.VersionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.daemon.nimbus.Nimbus.MIN_VERSION_SUPPORT_RPC_HEARTBEAT;
-import static org.apache.storm.utils.Utils.OR;
-
-import org.apache.storm.metric.StormMetricsRegistry;
 
 /**
  * A container that runs processes on the local box.
  */
 public class BasicContainer extends Container {
-    static final TopoMetaLRUCache TOPO_META_CACHE = new TopoMetaLRUCache();
+    static final TopoMetaLruCache TOPO_META_CACHE = new TopoMetaLruCache();
     private static final Logger LOG = LoggerFactory.getLogger(BasicContainer.class);
-    private static final FilenameFilter jarFilter = (dir, name) -> name.endsWith(".jar");
-    private static final Joiner CPJ =
-        Joiner.on(File.pathSeparator).skipNulls();
-    protected final LocalState _localState;
-    protected final String _profileCmd;
-    protected final String _stormHome = System.getProperty(ConfigUtils.STORM_HOME);
+    private static final Joiner CPJ = Joiner.on(File.pathSeparator).skipNulls();
+    protected final LocalState localState;
+    protected final String profileCmd;
+    protected final String stormHome = System.getProperty(ConfigUtils.STORM_HOME);
     protected final double hardMemoryLimitMultiplier;
     protected final long hardMemoryLimitOver;
-    protected final long lowMemoryThresholdMB;
+    protected final long lowMemoryThresholdMb;
     protected final long mediumMemoryThresholdMb;
     protected final long mediumMemoryGracePeriodMs;
-    protected volatile boolean _exitedEarly = false;
-    protected volatile long memoryLimitMB;
+    protected volatile boolean exitedEarly = false;
+    protected volatile long memoryLimitMb;
     protected volatile long memoryLimitExceededStart;
 
     /**
@@ -132,7 +129,7 @@ public class BasicContainer extends Container {
         super(type, conf, supervisorId, supervisorPort, port, assignment,
             resourceIsolationManager, workerId, topoConf, ops, metricsRegistry, containerMemoryTracker);
         assert (localState != null);
-        _localState = localState;
+        this.localState = localState;
 
         if (type.isRecovery() && !type.isOnlyKillable()) {
             synchronized (localState) {
@@ -147,23 +144,23 @@ public class BasicContainer extends Container {
                     throw new ContainerRecoveryException("Could not find worker id for " + port + " " + assignment);
                 }
                 LOG.info("Recovered Worker {}", wid);
-                _workerId = wid;
+                this.workerId = wid;
             }
-        } else if (_workerId == null) {
+        } else if (this.workerId == null) {
             createNewWorkerId();
         }
 
         if (profileCmd == null) {
-            profileCmd = _stormHome + File.separator + "bin" + File.separator
+            profileCmd = stormHome + File.separator + "bin" + File.separator
                          + conf.get(DaemonConfig.WORKER_PROFILER_COMMAND);
         }
-        _profileCmd = profileCmd;
+        this.profileCmd = profileCmd;
 
         hardMemoryLimitMultiplier =
             ObjectReader.getDouble(conf.get(DaemonConfig.STORM_SUPERVISOR_HARD_MEMORY_LIMIT_MULTIPLIER), 2.0);
         hardMemoryLimitOver =
             ObjectReader.getInt(conf.get(DaemonConfig.STORM_SUPERVISOR_HARD_LIMIT_MEMORY_OVERAGE_MB), 0);
-        lowMemoryThresholdMB = ObjectReader.getInt(conf.get(DaemonConfig.STORM_SUPERVISOR_LOW_MEMORY_THRESHOLD_MB), 1024);
+        lowMemoryThresholdMb = ObjectReader.getInt(conf.get(DaemonConfig.STORM_SUPERVISOR_LOW_MEMORY_THRESHOLD_MB), 1024);
         mediumMemoryThresholdMb =
             ObjectReader.getInt(conf.get(DaemonConfig.STORM_SUPERVISOR_MEDIUM_MEMORY_THRESHOLD_MB), 1536);
         mediumMemoryGracePeriodMs =
@@ -171,14 +168,14 @@ public class BasicContainer extends Container {
 
         if (assignment != null) {
             WorkerResources resources = assignment.get_resources();
-            memoryLimitMB = calculateMemoryLimit(resources, getMemOnHeap(resources));
+            memoryLimitMb = calculateMemoryLimit(resources, getMemOnHeap(resources));
         }
     }
 
-    private static void removeWorkersOn(Map<String, Integer> workerToPort, int _port) {
+    private static void removeWorkersOn(Map<String, Integer> workerToPort, int port) {
         for (Iterator<Entry<String, Integer>> i = workerToPort.entrySet().iterator(); i.hasNext(); ) {
             Entry<String, Integer> found = i.next();
-            if (_port == found.getValue().intValue()) {
+            if (port == found.getValue().intValue()) {
                 LOG.warn("Deleting worker {} from state", found.getKey());
                 i.remove();
             }
@@ -200,31 +197,31 @@ public class BasicContainer extends Container {
      * up and running. We will lose track of the process.
      */
     protected void createNewWorkerId() {
-        _type.assertFull();
-        assert (_workerId == null);
-        synchronized (_localState) {
-            _workerId = Utils.uuid();
-            Map<String, Integer> workerToPort = _localState.getApprovedWorkers();
+        type.assertFull();
+        assert (workerId == null);
+        synchronized (localState) {
+            workerId = Utils.uuid();
+            Map<String, Integer> workerToPort = localState.getApprovedWorkers();
             if (workerToPort == null) {
                 workerToPort = new HashMap<>(1);
             }
-            removeWorkersOn(workerToPort, _port);
-            workerToPort.put(_workerId, _port);
-            _localState.setApprovedWorkers(workerToPort);
-            LOG.info("Created Worker ID {}", _workerId);
+            removeWorkersOn(workerToPort, port);
+            workerToPort.put(workerId, port);
+            localState.setApprovedWorkers(workerToPort);
+            LOG.info("Created Worker ID {}", workerId);
         }
     }
 
     @Override
     public void cleanUpForRestart() throws IOException {
-        String origWorkerId = _workerId;
+        String origWorkerId = workerId;
         super.cleanUpForRestart();
-        synchronized (_localState) {
-            Map<String, Integer> workersToPort = _localState.getApprovedWorkers();
+        synchronized (localState) {
+            Map<String, Integer> workersToPort = localState.getApprovedWorkers();
             if (workersToPort != null) {
                 workersToPort.remove(origWorkerId);
-                removeWorkersOn(workersToPort, _port);
-                _localState.setApprovedWorkers(workersToPort);
+                removeWorkersOn(workersToPort, port);
+                localState.setApprovedWorkers(workersToPort);
                 LOG.info("Removed Worker ID {}", origWorkerId);
             } else {
                 LOG.warn("No approved workers exists");
@@ -234,9 +231,9 @@ public class BasicContainer extends Container {
 
     @Override
     public void relaunch() throws IOException {
-        _type.assertFull();
+        type.assertFull();
         //We are launching it now...
-        _type = ContainerType.LAUNCH;
+        type = ContainerType.LAUNCH;
         createNewWorkerId();
         setup();
         launch();
@@ -244,7 +241,7 @@ public class BasicContainer extends Container {
 
     @Override
     public boolean didMainProcessExit() {
-        return _exitedEarly;
+        return exitedEarly;
     }
 
     /**
@@ -261,7 +258,7 @@ public class BasicContainer extends Container {
      */
     protected boolean runProfilingCommand(List<String> command, Map<String, String> env, String logPrefix,
                                           File targetDir) throws IOException, InterruptedException {
-        _type.assertFull();
+        type.assertFull();
         Process p = ClientSupervisorUtils.launchProcess(command, env, logPrefix, null, targetDir);
         int ret = p.waitFor();
         return ret == 0;
@@ -269,21 +266,21 @@ public class BasicContainer extends Container {
 
     @Override
     public boolean runProfiling(ProfileRequest request, boolean stop) throws IOException, InterruptedException {
-        _type.assertFull();
-        String targetDir = ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port);
+        type.assertFull();
+        String targetDir = ConfigUtils.workerArtifactsRoot(conf, topologyId, port);
 
         @SuppressWarnings("unchecked")
-        Map<String, String> env = (Map<String, String>) _topoConf.get(Config.TOPOLOGY_ENVIRONMENT);
+        Map<String, String> env = (Map<String, String>) topoConf.get(Config.TOPOLOGY_ENVIRONMENT);
         if (env == null) {
             env = new HashMap<>();
         }
 
-        String str = ConfigUtils.workerArtifactsPidPath(_conf, _topologyId, _port);
+        String str = ConfigUtils.workerArtifactsPidPath(conf, topologyId, port);
 
-        String workerPid = _ops.slurpString(new File(str)).trim();
+        String workerPid = ops.slurpString(new File(str)).trim();
 
         ProfileAction profileAction = request.get_action();
-        String logPrefix = "ProfilerAction process " + _topologyId + ":" + _port + " PROFILER_ACTION: " + profileAction
+        String logPrefix = "ProfilerAction process " + topologyId + ":" + port + " PROFILER_ACTION: " + profileAction
                            + " ";
 
         List<String> command = mkProfileCommand(profileAction, stop, workerPid, targetDir);
@@ -326,27 +323,27 @@ public class BasicContainer extends Container {
     }
 
     private List<String> jmapDumpCmd(String pid, String targetDir) {
-        return Lists.newArrayList(_profileCmd, pid, "jmap", targetDir);
+        return Lists.newArrayList(profileCmd, pid, "jmap", targetDir);
     }
 
     private List<String> jstackDumpCmd(String pid, String targetDir) {
-        return Lists.newArrayList(_profileCmd, pid, "jstack", targetDir);
+        return Lists.newArrayList(profileCmd, pid, "jstack", targetDir);
     }
 
     private List<String> jprofileStart(String pid) {
-        return Lists.newArrayList(_profileCmd, pid, "start");
+        return Lists.newArrayList(profileCmd, pid, "start");
     }
 
     private List<String> jprofileStop(String pid, String targetDir) {
-        return Lists.newArrayList(_profileCmd, pid, "stop", targetDir);
+        return Lists.newArrayList(profileCmd, pid, "stop", targetDir);
     }
 
     private List<String> jprofileDump(String pid, String targetDir) {
-        return Lists.newArrayList(_profileCmd, pid, "dump", targetDir);
+        return Lists.newArrayList(profileCmd, pid, "dump", targetDir);
     }
 
     private List<String> jprofileJvmRestart(String pid) {
-        return Lists.newArrayList(_profileCmd, pid, "kill");
+        return Lists.newArrayList(profileCmd, pid, "kill");
     }
 
     /**
@@ -378,12 +375,11 @@ public class BasicContainer extends Container {
     }
 
     protected List<String> frameworkClasspath(SimpleVersion topoVersion) {
-        File stormWorkerLibDir = new File(_stormHome, "lib-worker");
-        String topoConfDir =
-            System.getenv("STORM_CONF_DIR") != null ?
-                System.getenv("STORM_CONF_DIR") :
-                new File(_stormHome, "conf").getAbsolutePath();
-        File stormExtlibDir = new File(_stormHome, "extlib");
+        File stormWorkerLibDir = new File(stormHome, "lib-worker");
+        String topoConfDir = System.getenv("STORM_CONF_DIR") != null
+                ? System.getenv("STORM_CONF_DIR")
+                : new File(stormHome, "conf").getAbsolutePath();
+        File stormExtlibDir = new File(stormHome, "extlib");
         String extcp = System.getenv("STORM_EXT_CLASSPATH");
         List<String> pathElements = new LinkedList<>();
         pathElements.add(getWildcardDir(stormWorkerLibDir));
@@ -391,7 +387,7 @@ public class BasicContainer extends Container {
         pathElements.add(extcp);
         pathElements.add(topoConfDir);
 
-        NavigableMap<SimpleVersion, List<String>> classpaths = Utils.getConfiguredClasspathVersions(_conf, pathElements);
+        NavigableMap<SimpleVersion, List<String>> classpaths = Utils.getConfiguredClasspathVersions(conf, pathElements);
 
         return Utils.getCompatibleVersion(classpaths, topoVersion, "classpath", pathElements);
     }
@@ -405,7 +401,7 @@ public class BasicContainer extends Container {
             //Have not moved to a java worker yet
             defaultWorkerGuess = "org.apache.storm.daemon.worker";
         }
-        NavigableMap<SimpleVersion, String> mains = Utils.getConfiguredWorkerMainVersions(_conf);
+        NavigableMap<SimpleVersion, String> mains = Utils.getConfiguredWorkerMainVersions(conf);
         return Utils.getCompatibleVersion(mains, topoVersion, "worker main class", defaultWorkerGuess);
     }
 
@@ -415,7 +411,7 @@ public class BasicContainer extends Container {
             //Prior to the org.apache change
             defaultGuess = "backtype.storm.LogWriter";
         }
-        NavigableMap<SimpleVersion, String> mains = Utils.getConfiguredWorkerLogWriterVersions(_conf);
+        NavigableMap<SimpleVersion, String> mains = Utils.getConfiguredWorkerLogWriterVersions(conf);
         return Utils.getCompatibleVersion(mains, topoVersion, "worker log writer class", defaultGuess);
     }
 
@@ -439,26 +435,26 @@ public class BasicContainer extends Container {
      */
     protected String getWorkerClassPath(String stormJar, List<String> dependencyLocations, SimpleVersion topoVersion) {
         List<String> workercp = new ArrayList<>();
-        workercp.addAll(asStringList(_topoConf.get(Config.TOPOLOGY_CLASSPATH_BEGINNING)));
+        workercp.addAll(asStringList(topoConf.get(Config.TOPOLOGY_CLASSPATH_BEGINNING)));
         workercp.addAll(frameworkClasspath(topoVersion));
         workercp.add(stormJar);
         workercp.addAll(dependencyLocations);
-        workercp.addAll(asStringList(_topoConf.get(Config.TOPOLOGY_CLASSPATH)));
+        workercp.addAll(asStringList(topoConf.get(Config.TOPOLOGY_CLASSPATH)));
         return CPJ.join(workercp);
     }
 
     private String substituteChildOptsInternal(String string, int memOnheap) {
         if (StringUtils.isNotBlank(string)) {
-            String p = String.valueOf(_port);
+            String p = String.valueOf(port);
             string = string.replace("%ID%", p);
-            string = string.replace("%WORKER-ID%", _workerId);
-            string = string.replace("%TOPOLOGY-ID%", _topologyId);
+            string = string.replace("%WORKER-ID%", workerId);
+            string = string.replace("%TOPOLOGY-ID%", topologyId);
             string = string.replace("%WORKER-PORT%", p);
             if (memOnheap > 0) {
                 string = string.replace("%HEAP-MEM%", String.valueOf(memOnheap));
             }
-            if (memoryLimitMB > 0) {
-                string = string.replace("%LIMIT-MEM%", String.valueOf(memoryLimitMB));
+            if (memoryLimitMb > 0) {
+                string = string.replace("%LIMIT-MEM%", String.valueOf(memoryLimitMb));
             }
         }
         return string;
@@ -507,21 +503,21 @@ public class BasicContainer extends Container {
      */
     protected void launchWorkerProcess(List<String> command, Map<String, String> env, String logPrefix,
                                        ExitCodeCallback processExitCallback, File targetDir) throws IOException {
-        if (_resourceIsolationManager != null) {
-            command = _resourceIsolationManager.getLaunchCommand(_workerId, command);
+        if (resourceIsolationManager != null) {
+            command = resourceIsolationManager.getLaunchCommand(workerId, command);
         }
         ClientSupervisorUtils.launchProcess(command, env, logPrefix, processExitCallback, targetDir);
     }
 
     private String getWorkerLoggingConfigFile() {
-        String log4jConfigurationDir = (String) (_conf.get(DaemonConfig.STORM_LOG4J2_CONF_DIR));
+        String log4jConfigurationDir = (String) (conf.get(DaemonConfig.STORM_LOG4J2_CONF_DIR));
 
         if (StringUtils.isNotBlank(log4jConfigurationDir)) {
             if (!ServerUtils.isAbsolutePath(log4jConfigurationDir)) {
-                log4jConfigurationDir = _stormHome + File.separator + log4jConfigurationDir;
+                log4jConfigurationDir = stormHome + File.separator + log4jConfigurationDir;
             }
         } else {
-            log4jConfigurationDir = _stormHome + File.separator + "log4j2";
+            log4jConfigurationDir = stormHome + File.separator + "log4j2";
         }
 
         if (ServerUtils.IS_ON_WINDOWS && !log4jConfigurationDir.startsWith("file:")) {
@@ -540,7 +536,7 @@ public class BasicContainer extends Container {
      */
     private List<String> getClassPathParams(final String stormRoot, final SimpleVersion topoVersion) throws IOException {
         final String stormJar = ConfigUtils.supervisorStormJarPath(stormRoot);
-        final List<String> dependencyLocations = getDependencyLocationsFor(_conf, _topologyId, _ops, stormRoot);
+        final List<String> dependencyLocations = getDependencyLocationsFor(conf, topologyId, ops, stormRoot);
         final String workerClassPath = getWorkerClassPath(stormJar, dependencyLocations, topoVersion);
 
         List<String> classPathParams = new ArrayList<>();
@@ -556,42 +552,43 @@ public class BasicContainer extends Container {
      * @return a list of command line options
      */
     private List<String> getCommonParams() {
-        final String workersArtifacts = ConfigUtils.workerArtifactsRoot(_conf);
+        final String workersArtifacts = ConfigUtils.workerArtifactsRoot(conf);
         String stormLogDir = ConfigUtils.getLogDir();
         
         List<String> commonParams = new ArrayList<>();
-        commonParams.add("-Dlogging.sensitivity=" + OR((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
+        commonParams.add("-Dlogging.sensitivity=" + OR((String) topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
         commonParams.add("-Dlogfile.name=worker.log");
-        commonParams.add("-Dstorm.home=" + OR(_stormHome, ""));
+        commonParams.add("-Dstorm.home=" + OR(stormHome, ""));
         commonParams.add("-Dworkers.artifacts=" + workersArtifacts);
-        commonParams.add("-Dstorm.id=" + _topologyId);
-        commonParams.add("-Dworker.id=" + _workerId);
-        commonParams.add("-Dworker.port=" + _port);
+        commonParams.add("-Dstorm.id=" + topologyId);
+        commonParams.add("-Dworker.id=" + workerId);
+        commonParams.add("-Dworker.port=" + port);
         commonParams.add("-Dstorm.log.dir=" + stormLogDir);
         commonParams.add("-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector");
-        commonParams.add("-Dstorm.local.dir=" + _conf.get(Config.STORM_LOCAL_DIR));
-        if (memoryLimitMB > 0) {
-            commonParams.add("-Dworker.memory_limit_mb=" + memoryLimitMB);
+        commonParams.add("-Dstorm.local.dir=" + conf.get(Config.STORM_LOCAL_DIR));
+        if (memoryLimitMb > 0) {
+            commonParams.add("-Dworker.memory_limit_mb=" + memoryLimitMb);
         }
         return commonParams;
     }
 
     private int getMemOnHeap(WorkerResources resources) {
         int memOnheap = 0;
-        if (resources != null && resources.is_set_mem_on_heap() &&
-            resources.get_mem_on_heap() > 0) {
+        if (resources != null
+                && resources.is_set_mem_on_heap()
+                && resources.get_mem_on_heap() > 0) {
             memOnheap = (int) Math.ceil(resources.get_mem_on_heap());
         } else {
             // set the default heap memory size for supervisor-test
-            memOnheap = ObjectReader.getInt(_topoConf.get(Config.WORKER_HEAP_MEMORY_MB), 768);
+            memOnheap = ObjectReader.getInt(topoConf.get(Config.WORKER_HEAP_MEMORY_MB), 768);
         }
         return memOnheap;
     }
 
     private List<String> getWorkerProfilerChildOpts(int memOnheap) {
         List<String> workerProfilerChildopts = new ArrayList<>();
-        if (ObjectReader.getBoolean(_conf.get(DaemonConfig.WORKER_PROFILER_ENABLED), false)) {
-            workerProfilerChildopts = substituteChildopts(_conf.get(DaemonConfig.WORKER_PROFILER_CHILDOPTS), memOnheap);
+        if (ObjectReader.getBoolean(conf.get(DaemonConfig.WORKER_PROFILER_ENABLED), false)) {
+            workerProfilerChildopts = substituteChildopts(conf.get(DaemonConfig.WORKER_PROFILER_CHILDOPTS), memOnheap);
         }
         return workerProfilerChildopts;
     }
@@ -622,10 +619,10 @@ public class BasicContainer extends Container {
         final String javaCmd = javaCmd("java");
         final String stormOptions = ConfigUtils.concatIfNotNull(System.getProperty("storm.options"));
         final String topoConfFile = ConfigUtils.concatIfNotNull(System.getProperty("storm.conf.file"));
-        final String workerTmpDir = ConfigUtils.workerTmpRoot(_conf, _workerId);
-        String topoVersionString = getStormVersionFor(_conf, _topologyId, _ops, stormRoot);
+        final String workerTmpDir = ConfigUtils.workerTmpRoot(conf, workerId);
+        String topoVersionString = getStormVersionFor(conf, topologyId, ops, stormRoot);
         if (topoVersionString == null) {
-            topoVersionString = (String) _conf.getOrDefault(Config.SUPERVISOR_WORKER_DEFAULT_VERSION, VersionInfo.getVersion());
+            topoVersionString = (String) conf.getOrDefault(Config.SUPERVISOR_WORKER_DEFAULT_VERSION, VersionInfo.getVersion());
         }
         final SimpleVersion topoVersion = new SimpleVersion(topoVersionString);
 
@@ -634,8 +631,8 @@ public class BasicContainer extends Container {
 
         String log4jConfigurationFile = getWorkerLoggingConfigFile();
         String workerLog4jConfig = log4jConfigurationFile;
-        if (_topoConf.get(Config.TOPOLOGY_LOGGING_CONFIG_FILE) != null) {
-            workerLog4jConfig = workerLog4jConfig + "," + _topoConf.get(Config.TOPOLOGY_LOGGING_CONFIG_FILE);
+        if (topoConf.get(Config.TOPOLOGY_LOGGING_CONFIG_FILE) != null) {
+            workerLog4jConfig = workerLog4jConfig + "," + topoConf.get(Config.TOPOLOGY_LOGGING_CONFIG_FILE);
         }
 
         List<String> commandList = new ArrayList<>();
@@ -644,7 +641,7 @@ public class BasicContainer extends Container {
             //Log Writer Command...
             commandList.add(javaCmd);
             commandList.addAll(classPathParams);
-            commandList.addAll(substituteChildopts(_topoConf.get(Config.TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS)));
+            commandList.addAll(substituteChildopts(topoConf.get(Config.TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS)));
             commandList.addAll(commonParams);
             commandList.add("-Dlog4j.configurationFile=" + log4jConfigurationFile);
             commandList.add(logWriter); //The LogWriter in turn launches the actual worker.
@@ -655,11 +652,11 @@ public class BasicContainer extends Container {
         commandList.add("-server");
         commandList.addAll(commonParams);
         commandList.add("-Dlog4j.configurationFile=" + workerLog4jConfig);
-        commandList.addAll(substituteChildopts(_conf.get(Config.WORKER_CHILDOPTS), memOnheap));
-        commandList.addAll(substituteChildopts(_topoConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS), memOnheap));
+        commandList.addAll(substituteChildopts(conf.get(Config.WORKER_CHILDOPTS), memOnheap));
+        commandList.addAll(substituteChildopts(topoConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS), memOnheap));
         commandList.addAll(substituteChildopts(Utils.OR(
-            _topoConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS),
-            _conf.get(Config.WORKER_GC_CHILDOPTS)), memOnheap));
+            topoConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS),
+            conf.get(Config.WORKER_GC_CHILDOPTS)), memOnheap));
         commandList.addAll(getWorkerProfilerChildOpts(memOnheap));
         commandList.add("-Djava.library.path=" + jlp);
         commandList.add("-Dstorm.conf.file=" + topoConfFile);
@@ -667,18 +664,18 @@ public class BasicContainer extends Container {
         commandList.add("-Djava.io.tmpdir=" + workerTmpDir);
         commandList.addAll(classPathParams);
         commandList.add(getWorkerMain(topoVersion));
-        commandList.add(_topologyId);
-        commandList.add(_supervisorId);
+        commandList.add(topologyId);
+        commandList.add(supervisorId);
 
         // supervisor port should be only presented to worker which supports RPC heartbeat
         // unknown version should be treated as "current version", which supports RPC heartbeat
-        if ((topoVersion.getMajor() == -1 && topoVersion.getMinor() == -1) ||
-            topoVersion.compareTo(MIN_VERSION_SUPPORT_RPC_HEARTBEAT) >= 0) {
-            commandList.add(String.valueOf(_supervisorPort));
+        if ((topoVersion.getMajor() == -1 && topoVersion.getMinor() == -1)
+                || topoVersion.compareTo(MIN_VERSION_SUPPORT_RPC_HEARTBEAT) >= 0) {
+            commandList.add(String.valueOf(supervisorPort));
         }
 
-        commandList.add(String.valueOf(_port));
-        commandList.add(_workerId);
+        commandList.add(String.valueOf(port));
+        commandList.add(workerId);
 
         return commandList;
     }
@@ -688,7 +685,7 @@ public class BasicContainer extends Container {
         if (super.isMemoryLimitViolated(withUpdatedLimits)) {
             return true;
         }
-        if (_resourceIsolationManager != null) {
+        if (resourceIsolationManager != null) {
             // In the short term the goal is to not shoot anyone unless we really need to.
             // The on heap should limit the memory usage in most cases to a reasonable amount
             // If someone is using way more than they requested this is a bug and we should
@@ -706,12 +703,12 @@ public class BasicContainer extends Container {
                 usageMb = getTotalTopologyMemoryUsed();
                 memoryLimitMb = getTotalTopologyMemoryReserved(withUpdatedLimits);
                 hardMemoryLimitOver = this.hardMemoryLimitOver * getTotalWorkersForThisTopology();
-                typeOfCheck = "TOPOLOGY " + _topologyId;
+                typeOfCheck = "TOPOLOGY " + topologyId;
             } else {
                 usageMb = getMemoryUsageMb();
-                memoryLimitMb = this.memoryLimitMB;
+                memoryLimitMb = this.memoryLimitMb;
                 hardMemoryLimitOver = this.hardMemoryLimitOver;
-                typeOfCheck = "WORKER " + _workerId;
+                typeOfCheck = "WORKER " + workerId;
             }
             LOG.debug(
                 "Enforcing memory usage for {} with usage of {} out of {} total and a hard limit of {}",
@@ -735,13 +732,13 @@ public class BasicContainer extends Container {
                 // to be use. If we cannot calculate it assume that it is bad
                 long systemFreeMemoryMb = 0;
                 try {
-                    systemFreeMemoryMb = _resourceIsolationManager.getSystemFreeMemoryMb();
+                    systemFreeMemoryMb = resourceIsolationManager.getSystemFreeMemoryMb();
                 } catch (IOException e) {
                     LOG.warn("Error trying to calculate free memory on the system {}", e);
                 }
                 LOG.debug("SYSTEM MEMORY FREE {} MB", systemFreeMemoryMb);
                 //If the system is low on memory we cannot be kind and need to shoot something
-                if (systemFreeMemoryMb <= lowMemoryThresholdMB) {
+                if (systemFreeMemoryMb <= lowMemoryThresholdMb) {
                     LOG.warn(
                         "{} is using {} MB > memory limit {} MB and system is low on memory {} free",
                         typeOfCheck,
@@ -784,8 +781,8 @@ public class BasicContainer extends Container {
     public long getMemoryUsageMb() {
         try {
             long ret = 0;
-            if (_resourceIsolationManager != null) {
-                long usageBytes = _resourceIsolationManager.getMemoryUsage(_workerId);
+            if (resourceIsolationManager != null) {
+                long usageBytes = resourceIsolationManager.getMemoryUsage(workerId);
                 if (usageBytes >= 0) {
                     ret = usageBytes / 1024 / 1024;
                 }
@@ -799,18 +796,18 @@ public class BasicContainer extends Container {
 
     @Override
     public long getMemoryReservationMb() {
-        return memoryLimitMB;
+        return memoryLimitMb;
     }
 
     private long calculateMemoryLimit(final WorkerResources resources, final int memOnHeap) {
         long ret = memOnHeap;
-        if (_resourceIsolationManager != null) {
+        if (resourceIsolationManager != null) {
             final int memoffheap = (int) Math.ceil(resources.get_mem_off_heap());
             final int extraMem =
                 (int)
                     (Math.ceil(
                         ObjectReader.getDouble(
-                            _conf.get(DaemonConfig.STORM_SUPERVISOR_MEMORY_LIMIT_TOLERANCE_MARGIN_MB),
+                            conf.get(DaemonConfig.STORM_SUPERVISOR_MEMORY_LIMIT_TOLERANCE_MARGIN_MB),
                             0.0)));
             ret += memoffheap + extraMem;
         }
@@ -819,146 +816,147 @@ public class BasicContainer extends Container {
 
     @Override
     public void launch() throws IOException {
-        _type.assertFull();
-        LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}", _assignment,
-                 _supervisorId, _port, _workerId);
-        String logPrefix = "Worker Process " + _workerId;
-        ProcessExitCallback processExitCallback = new ProcessExitCallback(logPrefix);
-        _exitedEarly = false;
+        type.assertFull();
+        LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}", assignment,
+                supervisorId, port, workerId);
+        exitedEarly = false;
 
-        final WorkerResources resources = _assignment.get_resources();
+        final WorkerResources resources = assignment.get_resources();
         final int memOnHeap = getMemOnHeap(resources);
-        memoryLimitMB = calculateMemoryLimit(resources, memOnHeap);
-        final String stormRoot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
-        String jlp = javaLibraryPath(stormRoot, _conf);
+        memoryLimitMb = calculateMemoryLimit(resources, memOnHeap);
+        final String stormRoot = ConfigUtils.supervisorStormDistRoot(conf, topologyId);
+        String jlp = javaLibraryPath(stormRoot, conf);
 
         Map<String, String> topEnvironment = new HashMap<String, String>();
         @SuppressWarnings("unchecked")
-        Map<String, String> environment = (Map<String, String>) _topoConf.get(Config.TOPOLOGY_ENVIRONMENT);
+        Map<String, String> environment = (Map<String, String>) topoConf.get(Config.TOPOLOGY_ENVIRONMENT);
         if (environment != null) {
             topEnvironment.putAll(environment);
         }
 
-        String ld_library_path = topEnvironment.get("LD_LIBRARY_PATH");
-        if (ld_library_path != null) {
-            jlp = jlp + System.getProperty("path.separator") + ld_library_path;
+        String ldLibraryPath = topEnvironment.get("LD_LIBRARY_PATH");
+        if (ldLibraryPath != null) {
+            jlp = jlp + System.getProperty("path.separator") + ldLibraryPath;
         }
 
         topEnvironment.put("LD_LIBRARY_PATH", jlp);
 
-        if (_resourceIsolationManager != null) {
+        if (resourceIsolationManager != null) {
             final int cpu = (int) Math.ceil(resources.get_cpu());
             //Save the memory limit so we can enforce it less strictly
-            _resourceIsolationManager.reserveResourcesForWorker(_workerId, (int) memoryLimitMB, cpu);
+            resourceIsolationManager.reserveResourcesForWorker(workerId, (int) memoryLimitMb, cpu);
         }
 
         List<String> commandList = mkLaunchCommand(memOnHeap, stormRoot, jlp);
 
         LOG.info("Launching worker with command: {}. ", ServerUtils.shellCmd(commandList));
 
-        String workerDir = ConfigUtils.workerRoot(_conf, _workerId);
+        String workerDir = ConfigUtils.workerRoot(conf, workerId);
 
+        String logPrefix = "Worker Process " + workerId;
+        ProcessExitCallback processExitCallback = new ProcessExitCallback(logPrefix);
         launchWorkerProcess(commandList, topEnvironment, logPrefix, processExitCallback, new File(workerDir));
     }
 
     private static class TopologyMetaData {
-        private final Map<String, Object> _conf;
-        private final String _topologyId;
-        private final AdvancedFSOps _ops;
-        private final String _stormRoot;
-        private boolean _dataCached = false;
-        private List<String> _depLocs = null;
-        private String _stormVersion = null;
+        private final Map<String, Object> conf;
+        private final String topologyId;
+        private final AdvancedFSOps ops;
+        private final String stormRoot;
+        private boolean dataCached = false;
+        private List<String> depLocs = null;
+        private String stormVersion = null;
 
         public TopologyMetaData(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, final String stormRoot) {
-            _conf = conf;
-            _topologyId = topologyId;
-            _ops = ops;
-            _stormRoot = stormRoot;
+            this.conf = conf;
+            this.topologyId = topologyId;
+            this.ops = ops;
+            this.stormRoot = stormRoot;
         }
 
+        @Override
         public String toString() {
             List<String> data;
             String stormVersion;
             synchronized (this) {
-                data = _depLocs;
-                stormVersion = _stormVersion;
+                data = depLocs;
+                stormVersion = this.stormVersion;
             }
-            return "META for " + _topologyId + " DEP_LOCS => " + data + " STORM_VERSION => " + stormVersion;
+            return "META for " + topologyId + " DEP_LOCS => " + data + " STORM_VERSION => " + stormVersion;
         }
 
         private synchronized void readData() throws IOException {
-            final StormTopology stormTopology = ConfigUtils.readSupervisorTopology(_conf, _topologyId, _ops);
+            final StormTopology stormTopology = ConfigUtils.readSupervisorTopology(conf, topologyId, ops);
             final List<String> dependencyLocations = new ArrayList<>();
             if (stormTopology.get_dependency_jars() != null) {
                 for (String dependency : stormTopology.get_dependency_jars()) {
-                    dependencyLocations.add(new File(_stormRoot, dependency).getAbsolutePath());
+                    dependencyLocations.add(new File(stormRoot, dependency).getAbsolutePath());
                 }
             }
 
             if (stormTopology.get_dependency_artifacts() != null) {
                 for (String dependency : stormTopology.get_dependency_artifacts()) {
-                    dependencyLocations.add(new File(_stormRoot, dependency).getAbsolutePath());
+                    dependencyLocations.add(new File(stormRoot, dependency).getAbsolutePath());
                 }
             }
-            _depLocs = dependencyLocations;
-            _stormVersion = stormTopology.get_storm_version();
-            _dataCached = true;
+            depLocs = dependencyLocations;
+            stormVersion = stormTopology.get_storm_version();
+            dataCached = true;
         }
 
         public synchronized List<String> getDepLocs() throws IOException {
-            if (!_dataCached) {
+            if (!dataCached) {
                 readData();
             }
-            return _depLocs;
+            return depLocs;
         }
 
         public synchronized String getStormVersion() throws IOException {
-            if (!_dataCached) {
+            if (!dataCached) {
                 readData();
             }
-            return _stormVersion;
+            return stormVersion;
         }
     }
 
-    static class TopoMetaLRUCache {
-        public final int _maxSize = 100; //We could make this configurable in the future...
+    static class TopoMetaLruCache {
+        public final int maxSize = 100; //We could make this configurable in the future...
 
         @SuppressWarnings("serial")
-        private LinkedHashMap<String, TopologyMetaData> _cache = new LinkedHashMap<String, TopologyMetaData>() {
+        private LinkedHashMap<String, TopologyMetaData> cache = new LinkedHashMap<String, TopologyMetaData>() {
             @Override
             protected boolean removeEldestEntry(Map.Entry<String, TopologyMetaData> eldest) {
-                return (size() > _maxSize);
+                return (size() > maxSize);
             }
         };
 
         public synchronized TopologyMetaData get(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops,
                                                  String stormRoot) {
             //Only go off of the topology id for now.
-            TopologyMetaData dl = _cache.get(topologyId);
+            TopologyMetaData dl = cache.get(topologyId);
             if (dl == null) {
-                _cache.putIfAbsent(topologyId, new TopologyMetaData(conf, topologyId, ops, stormRoot));
-                dl = _cache.get(topologyId);
+                cache.putIfAbsent(topologyId, new TopologyMetaData(conf, topologyId, ops, stormRoot));
+                dl = cache.get(topologyId);
             }
             return dl;
         }
 
         public synchronized void clear() {
-            _cache.clear();
+            cache.clear();
         }
     }
 
     private class ProcessExitCallback implements ExitCodeCallback {
-        private final String _logPrefix;
+        private final String logPrefix;
 
         public ProcessExitCallback(String logPrefix) {
-            _logPrefix = logPrefix;
+            this.logPrefix = logPrefix;
         }
 
         @Override
         public void call(int exitCode) {
-            LOG.info("{} exited with code: {}", _logPrefix, exitCode);
-            _exitedEarly = true;
+            LOG.info("{} exited with code: {}", logPrefix, exitCode);
+            exitedEarly = true;
         }
     }
 }

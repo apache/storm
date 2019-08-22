@@ -220,7 +220,7 @@ public class LocalizedResource extends LocallyCachedBlob {
     private void setSize() {
         // we trust that the file exists
         Path withVersion = getFilePathWithVersion();
-        size = ServerUtils.getDU(withVersion.toFile());
+        size = ServerUtils.getDiskUsage(withVersion.toFile());
         LOG.debug("size of {} is: {}", withVersion, size);
     }
 

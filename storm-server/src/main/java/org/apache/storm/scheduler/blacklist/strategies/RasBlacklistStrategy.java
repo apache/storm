@@ -54,7 +54,7 @@ public class RasBlacklistStrategy extends DefaultBlacklistStrategy {
                 if (cluster.needsSchedulingRas(td)) {
                     int slots = 0;
                     try {
-                        slots = ServerUtils.getEstimatedWorkerCountForRASTopo(td.getConf(), td.getTopology());
+                        slots = ServerUtils.getEstimatedWorkerCountForRasTopo(td.getConf(), td.getTopology());
                     } catch (InvalidTopologyException e) {
                         LOG.warn("Could not guess the number of slots needed for {}", td.getName(), e);
                     }

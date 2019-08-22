@@ -352,8 +352,7 @@ public class TopologyDetails {
     /**
      * Get the total CPU requirement for executor.
      *
-     * @param exec
-     * @return Map<String   ,       Double> generic resource mapping requirement for the executor
+     * @return generic resource mapping requirement for the executor
      */
     public Double getTotalCpuReqTask(ExecutorDetails exec) {
         if (hasExecInTopo(exec)) {

@@ -39,7 +39,7 @@ public class OnlyLatestExecutor<K> {
     }
 
     /**
-     * Run something in the future, but replace it with the latest if it is taking too long
+     * Run something in the future, but replace it with the latest if it is taking too long.
      *
      * @param key what to use to dedupe things.
      * @param r   what you want to run.

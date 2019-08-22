@@ -84,6 +84,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private final Map<String, Object> conf;
     private final IContext sharedContext;
     private final IAuthorizer authorizationHandler;
+    @SuppressWarnings("checkstyle:MemberName")
     private final ISupervisor iSupervisor;
     private final Utils.UptimeComputer upTime;
     private final String stormVersion;
@@ -115,6 +116,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     //Passed to workers in local clusters, exposed by thrift server in distributed mode
     private org.apache.storm.generated.Supervisor.Iface supervisorThriftInterface;
 
+    @SuppressWarnings("checkstyle:ParameterName")
     private Supervisor(ISupervisor iSupervisor, StormMetricsRegistry metricsRegistry)
         throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         this(ConfigUtils.readStormConfig(), null, iSupervisor, metricsRegistry);
@@ -126,8 +128,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
      * @param conf          config
      * @param sharedContext {@link IContext}
      * @param iSupervisor   {@link ISupervisor}
-     * @throws IOException
      */
+    @SuppressWarnings("checkstyle:ParameterName")
     public Supervisor(Map<String, Object> conf, IContext sharedContext, ISupervisor iSupervisor, StormMetricsRegistry metricsRegistry)
         throws IOException, IllegalAccessException, ClassNotFoundException, InstantiationException {
         this.conf = conf;
@@ -186,8 +188,6 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
     /**
      * supervisor daemon enter entrance.
-     *
-     * @param args
      */
     public static void main(String[] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
@@ -367,7 +367,6 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     @VisibleForTesting
     public void checkAuthorization(String topoName, Map<String, Object> topoConf, String operation, ReqContext context)
         throws AuthorizationException {
-        IAuthorizer aclHandler = authorizationHandler;
         if (context == null) {
             context = ReqContext.context();
         }
@@ -384,6 +383,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             throw new WrappedAuthorizationException("Supervisor does not support impersonation");
         }
 
+        IAuthorizer aclHandler = authorizationHandler;
         if (aclHandler != null) {
             if (!aclHandler.permit(context, operation, checkConf)) {
                 ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(), context.principal(),

@@ -139,43 +139,43 @@ public class AsyncLocalizer implements AutoCloseable {
     @VisibleForTesting
     LocallyCachedBlob getTopoJar(final String topologyId, String owner) {
         return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormJarKey(topologyId),
-                                             (tjk) -> {
-                                                 try {
-                                                     return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                                                                                          LocallyCachedTopologyBlob.TopologyBlobType
-                                                                                              .TOPO_JAR, owner, metricsRegistry);
-                                                 } catch (IOException e) {
-                                                     throw new RuntimeException(e);
-                                                 }
-                                             });
+            (tjk) -> {
+                try {
+                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                                                      LocallyCachedTopologyBlob.TopologyBlobType
+                                                          .TOPO_JAR, owner, metricsRegistry);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     @VisibleForTesting
     LocallyCachedBlob getTopoCode(final String topologyId, String owner) {
         return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormCodeKey(topologyId),
-                                             (tck) -> {
-                                                 try {
-                                                     return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                                                                                          LocallyCachedTopologyBlob.TopologyBlobType
-                                                                                              .TOPO_CODE, owner, metricsRegistry);
-                                                 } catch (IOException e) {
-                                                     throw new RuntimeException(e);
-                                                 }
-                                             });
+            (tck) -> {
+                try {
+                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                                                      LocallyCachedTopologyBlob.TopologyBlobType
+                                                          .TOPO_CODE, owner, metricsRegistry);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     @VisibleForTesting
     LocallyCachedBlob getTopoConf(final String topologyId, String owner) {
         return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormConfKey(topologyId),
-                                             (tck) -> {
-                                                 try {
-                                                     return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                                                                                          LocallyCachedTopologyBlob.TopologyBlobType
-                                                                                              .TOPO_CONF, owner, metricsRegistry);
-                                                 } catch (IOException e) {
-                                                     throw new RuntimeException(e);
-                                                 }
-                                             });
+            (tck) -> {
+                try {
+                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                                                      LocallyCachedTopologyBlob.TopologyBlobType
+                                                          .TOPO_CONF, owner, metricsRegistry);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     private LocalizedResource getUserArchive(String user, String key) {
@@ -209,22 +209,22 @@ public class AsyncLocalizer implements AutoCloseable {
 
         CompletableFuture<Void> baseBlobs = requestDownloadBaseTopologyBlobs(pna, cb);
         return baseBlobs.thenComposeAsync((v) ->
-                                              blobPending.compute(topologyId, (tid, old) -> {
-                                                  CompletableFuture<Void> ret = old;
-                                                  if (ret == null) {
-                                                      ret = CompletableFuture.supplyAsync(new DownloadBlobs(pna, cb), execService);
-                                                  } else {
-                                                      try {
-                                                          addReferencesToBlobs(pna, cb);
-                                                      } catch (Exception e) {
-                                                          throw new RuntimeException(e);
-                                                      } finally {
-                                                          pna.complete();
-                                                      }
-                                                  }
-                                                  LOG.debug("Reserved blobs {} {}", topologyId, ret);
-                                                  return ret;
-                                              }));
+            blobPending.compute(topologyId, (tid, old) -> {
+                CompletableFuture<Void> ret = old;
+                if (ret == null) {
+                    ret = CompletableFuture.supplyAsync(new DownloadBlobs(pna, cb), execService);
+                } else {
+                    try {
+                        addReferencesToBlobs(pna, cb);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        pna.complete();
+                    }
+                }
+                LOG.debug("Reserved blobs {} {}", topologyId, ret);
+                return ret;
+            }));
     }
 
     @VisibleForTesting
@@ -241,7 +241,7 @@ public class AsyncLocalizer implements AutoCloseable {
         topoConf.addReference(pna, cb);
 
         return topologyBasicDownloaded.computeIfAbsent(topologyId,
-                                                       (tid) -> downloadOrUpdate(topoJar, topoCode, topoConf));
+            (tid) -> downloadOrUpdate(topoJar, topoCode, topoConf));
     }
 
     private CompletableFuture<Void> downloadOrUpdate(LocallyCachedBlob... blobs) {

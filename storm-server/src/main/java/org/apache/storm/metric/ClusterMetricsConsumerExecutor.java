@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 public class ClusterMetricsConsumerExecutor {
     public static final Logger LOG = LoggerFactory.getLogger(ClusterMetricsConsumerExecutor.class);
     private static final String ERROR_MESSAGE_PREPARATION_CLUSTER_METRICS_CONSUMER_FAILED =
-        "Preparation of Cluster Metrics Consumer failed. " +
-        "Please check your configuration and/or corresponding systems and relaunch Nimbus. " +
-        "Skipping handle metrics.";
+            "Preparation of Cluster Metrics Consumer failed. "
+                    + "Please check your configuration and/or corresponding systems and relaunch Nimbus. "
+                    + "Skipping handle metrics.";
 
     private IClusterMetricsConsumer metricsConsumer;
     private String consumerClassName;
@@ -39,8 +39,9 @@ public class ClusterMetricsConsumerExecutor {
             metricsConsumer = (IClusterMetricsConsumer) Class.forName(consumerClassName).newInstance();
             metricsConsumer.prepare(registrationArgument);
         } catch (Exception e) {
-            LOG.error("Could not instantiate or prepare Cluster Metrics Consumer with fully qualified name " +
-                      consumerClassName, e);
+            LOG.error("Could not instantiate or prepare Cluster Metrics Consumer with fully qualified name "
+                    + consumerClassName,
+                    e);
 
             if (metricsConsumer != null) {
                 metricsConsumer.cleanup();

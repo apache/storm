@@ -39,7 +39,7 @@ public class ServerAuthUtils {
     }
 
     /**
-     * Construct an HttpServletRequest credential plugin specified by the UI storm configuration
+     * Construct an HttpServletRequest credential plugin specified by the UI storm configuration.
      *
      * @param conf storm configuration
      * @return the plugin
@@ -50,7 +50,7 @@ public class ServerAuthUtils {
     }
 
     /**
-     * Construct an HttpServletRequest credential plugin specified by the DRPC storm configuration
+     * Construct an HttpServletRequest credential plugin specified by the DRPC storm configuration.
      *
      * @param conf storm configuration
      * @return the plugin

@@ -21,31 +21,31 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.LocalState;
 
 /**
- * Launch containers with no security using standard java commands
+ * Launch containers with no security using standard java commands.
  */
 public class BasicContainerLauncher extends ContainerLauncher {
-    protected final ResourceIsolationInterface _resourceIsolationManager;
-    private final Map<String, Object> _conf;
-    private final String _supervisorId;
-    private final int _supervisorPort;
+    protected final ResourceIsolationInterface resourceIsolationManager;
+    private final Map<String, Object> conf;
+    private final String supervisorId;
+    private final int supervisorPort;
     private final StormMetricsRegistry metricsRegistry;
     private final ContainerMemoryTracker containerMemoryTracker;
 
     public BasicContainerLauncher(Map<String, Object> conf, String supervisorId, int supervisorPort,
                                   ResourceIsolationInterface resourceIsolationManager, StormMetricsRegistry metricsRegistry,
                                   ContainerMemoryTracker containerMemoryTracker) throws IOException {
-        _conf = conf;
-        _supervisorId = supervisorId;
-        _supervisorPort = supervisorPort;
-        _resourceIsolationManager = resourceIsolationManager;
+        this.conf = conf;
+        this.supervisorId = supervisorId;
+        this.supervisorPort = supervisorPort;
+        this.resourceIsolationManager = resourceIsolationManager;
         this.metricsRegistry = metricsRegistry;
         this.containerMemoryTracker = containerMemoryTracker;
     }
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        Container container = new BasicContainer(ContainerType.LAUNCH, _conf, _supervisorId, _supervisorPort, port,
-            assignment, _resourceIsolationManager, state, null, metricsRegistry,
+        Container container = new BasicContainer(ContainerType.LAUNCH, conf, supervisorId, supervisorPort, port,
+            assignment, resourceIsolationManager, state, null, metricsRegistry,
             containerMemoryTracker);
         container.setup();
         container.launch();
@@ -54,13 +54,13 @@ public class BasicContainerLauncher extends ContainerLauncher {
 
     @Override
     public Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        return new BasicContainer(ContainerType.RECOVER_FULL, _conf, _supervisorId, _supervisorPort, port, assignment,
-                                  _resourceIsolationManager, state, null, metricsRegistry, containerMemoryTracker);
+        return new BasicContainer(ContainerType.RECOVER_FULL, conf, supervisorId, supervisorPort, port, assignment,
+                resourceIsolationManager, state, null, metricsRegistry, containerMemoryTracker);
     }
 
     @Override
     public Killable recoverContainer(String workerId, LocalState localState) throws IOException {
-        return new BasicContainer(ContainerType.RECOVER_PARTIAL, _conf, _supervisorId, _supervisorPort, -1, null,
-                                  _resourceIsolationManager, localState, workerId, metricsRegistry, containerMemoryTracker);
+        return new BasicContainer(ContainerType.RECOVER_PARTIAL, conf, supervisorId, supervisorPort, -1, null,
+                resourceIsolationManager, localState, workerId, metricsRegistry, containerMemoryTracker);
     }
 }

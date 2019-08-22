@@ -276,8 +276,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
         // attempt to find the string in the database
         try {
             stringMetadata = rocksDbGetStringMetadata(type, s);
-        }
-        catch (RocksDBException e) {
+        } catch (RocksDBException e) {
             throw new MetricException("Error reading metric data", e);
         }
 
@@ -525,18 +524,15 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
 
                                 // callback to caller
                                 scanCallback.cb(metric);
-                            }
-                            catch (MetricException e) {
+                            } catch (MetricException e) {
                                 LOG.warn("Failed to report found metric: {}", e.getMessage());
                             }
-                        }
-                        else {
+                        } else {
                             try {
                                 if (!rawCallback.cb(key, val)) {
                                     return;
                                 }
-                            }
-                            catch (RocksDBException e) {
+                            } catch (RocksDBException e) {
                                 throw new MetricException("Error reading metrics data", e);
                             }
                         }
@@ -627,8 +623,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
                     }
                     return true;
                 });
-            }
-            catch (RocksDBException e) {
+            } catch (RocksDBException e) {
                 throw new MetricException("Error reading metric data", e);
             }
 

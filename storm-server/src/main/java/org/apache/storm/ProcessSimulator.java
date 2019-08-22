@@ -31,28 +31,21 @@ public class ProcessSimulator {
     private static Object lock = new Object();
 
     /**
-     * Register a process' handle
-     *
-     * @param pid
-     * @param shutdownable
+     * Register a process' handle.
      */
     public static void registerProcess(String pid, Shutdownable shutdownable) {
         processMap.put(pid, shutdownable);
     }
 
     /**
-     * Get all process handles
-     *
-     * @return
+     * Get all process handles.
      */
     public static Collection<Shutdownable> getAllProcessHandles() {
         return processMap.values();
     }
 
     /**
-     * Kill a process
-     *
-     * @param pid
+     * Kill a process.
      */
     public static void killProcess(String pid) {
         synchronized (lock) {
@@ -67,7 +60,7 @@ public class ProcessSimulator {
     }
 
     /**
-     * Kill all processes
+     * Kill all processes.
      */
     public static void killAllProcesses() {
         Set<String> pids = processMap.keySet();

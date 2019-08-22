@@ -21,25 +21,26 @@ public interface Killable {
      * kill -15 equivalent
      * @throws IOException on any error
      */
-    public void kill() throws IOException;
+    void kill() throws IOException;
 
     /**
      * Kill the processes in this container violently.
      * kill -9 equivalent
      * @throws IOException on any error
      */
-    public void forceKill() throws IOException;
+    void forceKill() throws IOException;
 
     /**
+     * Check whether all processes are dead.
      * @return true if all of the processes are dead, else false
      * @throws IOException on any error
      */
-    public boolean areAllProcessesDead() throws IOException;
+    boolean areAllProcessesDead() throws IOException;
 
     /**
      * Clean up the container. It is not coming back.
      * by default do the same thing as when restarting.
      * @throws IOException on any error
      */
-    public void cleanUp() throws IOException;
+    void cleanUp() throws IOException;
 }

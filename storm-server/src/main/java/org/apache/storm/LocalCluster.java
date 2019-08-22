@@ -334,6 +334,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
      *
      * @throws Exception on any Exception.
      */
+    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
     public static <T> T withLocalModeOverride(Callable<T> c, long ttlSec, Map<String, Object> daemonConf) throws Exception {
         LOG.info("\n\n\t\tSTARTING LOCAL MODE CLUSTER\n\n");
         Builder builder = new Builder();
@@ -422,6 +423,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     /**
+     * Reference to nimbus.
      * @return Nimbus itself so you can interact with it directly, if needed.
      */
     public Nimbus getNimbus() {
@@ -429,6 +431,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     /**
+     * Reference to metrics registry.
      * @return The metrics registry for the local cluster.
      */
     public StormMetricsRegistry getMetricRegistry() {
@@ -436,7 +439,8 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     /**
-     * @return the base config for the daemons.
+     * Get daemon configuration.
+     * @return the base config for the daemons
      */
     public Map<String, Object> getDaemonConf() {
         return new HashMap<>(daemonConf);
@@ -463,6 +467,24 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
+    public LocalTopology submitTopology(String topologyName, Map<String, Object> conf, TrackedTopology topology)
+            throws TException {
+        return submitTopology(topologyName, conf, topology.getTopology());
+    }
+
+    @Override
+    public void submitTopology(String name, String uploadedJarLocation, String jsonConf, StormTopology topology)
+            throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, TException {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> conf = (Map<String, Object>) JSONValue.parseWithException(jsonConf);
+            submitTopology(name, conf, topology);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public LocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf, StormTopology topology,
                                                 SubmitOptions submitOpts)
         throws TException {
@@ -474,16 +496,23 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
-    public LocalTopology submitTopology(String topologyName, Map<String, Object> conf, TrackedTopology topology)
-        throws TException {
-        return submitTopology(topologyName, conf, topology.getTopology());
-    }
-
-    @Override
     public LocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf, TrackedTopology topology,
                                                 SubmitOptions submitOpts)
         throws TException {
         return submitTopologyWithOpts(topologyName, conf, topology.getTopology(), submitOpts);
+    }
+
+    @Override
+    public void submitTopologyWithOpts(String name, String uploadedJarLocation, String jsonConf, StormTopology topology,
+            SubmitOptions options)
+            throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, TException {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> conf = (Map<String, Object>) JSONValue.parseWithException(jsonConf);
+            submitTopologyWithOpts(name, conf, topology, options);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -792,32 +821,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         return trackId;
     }
 
-    @Override
-    public void submitTopology(String name, String uploadedJarLocation, String jsonConf, StormTopology topology)
-        throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, TException {
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> conf = (Map<String, Object>) JSONValue.parseWithException(jsonConf);
-            submitTopology(name, conf, topology);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     //Nimbus Compatibility
-
-    @Override
-    public void submitTopologyWithOpts(String name, String uploadedJarLocation, String jsonConf, StormTopology topology,
-                                       SubmitOptions options)
-        throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, TException {
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> conf = (Map<String, Object>) JSONValue.parseWithException(jsonConf);
-            submitTopologyWithOpts(name, conf, topology, options);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public void setLogConfig(String name, LogConfig config) throws TException {

@@ -672,17 +672,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @SuppressWarnings("deprecation")
     private static <T extends AutoCloseable> TimeCacheMap<String, T> makeBlobCacheMap(Map<String, Object> conf) {
         return new TimeCacheMap<>(ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_BLOBSTORE_EXPIRATION_SECS), 600),
-                                  (id, stream) -> {
-                                      try {
-                                          if (stream instanceof AtomicOutputStream) {
-                                              ((AtomicOutputStream) stream).cancel();
-                                          } else {
-                                              stream.close();
-                                          }
-                                      } catch (Exception e) {
-                                          throw new RuntimeException(e);
-                                      }
-                                  });
+            (id, stream) -> {
+                try {
+                    if (stream instanceof AtomicOutputStream) {
+                        ((AtomicOutputStream) stream).cancel();
+                    } else {
+                        stream.close();
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     /**
@@ -1009,7 +1009,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      * ignored. The delay is to prevent a race conditions such as when a blobstore is created and when the topology
      * is submitted. It is possible the Nimbus cleanup timer task will find entries to delete between these two events.
      *
-     * Tracked topology entries are rotated out of the stored map periodically.
+     * <p>Tracked topology entries are rotated out of the stored map periodically.
      *
      * @param toposToClean topologies considered for cleanup
      * @param conf the nimbus conf
@@ -1168,7 +1168,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static void validateTopologySize(Map<String, Object> topoConf, Map<String, Object> nimbusConf,
         StormTopology topology) throws InvalidTopologyException {
         // check allowedWorkers only if the scheduler is not the Resource Aware Scheduler
-        if (!ServerUtils.isRAS(nimbusConf)) {
+        if (!ServerUtils.isRas(nimbusConf)) {
             int workerCount = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKERS), 1);
             Integer allowedWorkers = ObjectReader.getInt(nimbusConf.get(DaemonConfig.NIMBUS_SLOTS_PER_TOPOLOGY), null);
             if (allowedWorkers != null && workerCount > allowedWorkers) {
@@ -1245,8 +1245,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static Map<IClusterMetricsConsumer.SupervisorInfo, List<DataPoint>> extractSupervisorMetrics(ClusterSummary summ) {
         Map<IClusterMetricsConsumer.SupervisorInfo, List<DataPoint>> ret = new HashMap<>();
         for (SupervisorSummary sup : summ.get_supervisors()) {
-            IClusterMetricsConsumer.SupervisorInfo info =
-                new IClusterMetricsConsumer.SupervisorInfo(sup.get_host(), sup.get_supervisor_id(), Time.currentTimeSecs());
             List<DataPoint> metrics = new ArrayList<>();
             metrics.add(new DataPoint("slotsTotal", sup.get_num_workers()));
             metrics.add(new DataPoint("slotsUsed", sup.get_num_used_workers()));
@@ -1254,6 +1252,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             metrics.add(new DataPoint("totalCpu", sup.get_total_resources().get(Constants.COMMON_CPU_RESOURCE_NAME)));
             metrics.add(new DataPoint("usedMem", sup.get_used_mem()));
             metrics.add(new DataPoint("usedCpu", sup.get_used_cpu()));
+            IClusterMetricsConsumer.SupervisorInfo info =
+                    new IClusterMetricsConsumer.SupervisorInfo(sup.get_host(), sup.get_supervisor_id(), Time.currentTimeSecs());
             ret.put(info, metrics);
         }
         return ret;
@@ -1274,6 +1274,132 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         } catch (BindException e) {
             LOG.error("{} is not available. Check if another process is already listening on {}", port, port);
             System.exit(0);
+        }
+    }
+
+    @VisibleForTesting
+    public void launchServer() throws Exception {
+        try {
+            IStormClusterState state = stormClusterState;
+            NimbusInfo hpi = nimbusHostPortInfo;
+
+            LOG.info("Starting Nimbus with conf {}", ConfigUtils.maskPasswords(conf));
+            validator.prepare(conf);
+
+            //add to nimbuses
+            state.addNimbusHost(hpi.getHost(),
+                    new NimbusSummary(hpi.getHost(), hpi.getPort(), Time.currentTimeSecs(), false, STORM_VERSION));
+            leaderElector.addToLeaderLockQueue();
+            this.blobStore.startSyncBlobs();
+
+            for (ClusterMetricsConsumerExecutor exec: clusterConsumerExceutors) {
+                exec.prepare();
+            }
+
+            if (isLeader()) {
+                for (String topoId : state.activeStorms()) {
+                    transition(topoId, TopologyActions.STARTUP, null);
+                }
+                clusterMetricSet.setActive(true);
+            }
+
+            final boolean doNotReassign = (Boolean) conf.getOrDefault(ServerConfigUtils.NIMBUS_DO_NOT_REASSIGN, false);
+            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS)),
+                () -> {
+                    try {
+                        if (!doNotReassign) {
+                            mkAssignments();
+                        }
+                        doCleanup();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+            // Schedule Nimbus inbox cleaner
+            final int jarExpSecs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_INBOX_JAR_EXPIRATION_SECS));
+            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CLEANUP_INBOX_FREQ_SECS)),
+                () -> {
+                    try {
+                        cleanInbox(getInbox(), jarExpSecs);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+
+            // Schedule topology history cleaner
+            Integer interval = ObjectReader.getInt(conf.get(DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS), null);
+            if (interval != null) {
+                final int lvCleanupAgeMins = ObjectReader.getInt(conf.get(DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS));
+                timer.scheduleRecurring(0, interval,
+                    () -> {
+                        try {
+                            cleanTopologyHistory(lvCleanupAgeMins);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+            }
+
+            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CREDENTIAL_RENEW_FREQ_SECS)),
+                () -> {
+                    try {
+                        renewCredentials();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+            metricsRegistry.registerGauge("nimbus:total-available-memory-non-negative", () -> nodeIdToResources.get().values()
+                    .parallelStream()
+                    .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableMem(), 0))
+                    .sum());
+            metricsRegistry.registerGauge("nimbus:available-cpu-non-negative", () -> nodeIdToResources.get().values()
+                    .parallelStream()
+                    .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableCpu(), 0))
+                    .sum());
+            metricsRegistry.registerGauge("nimbus:total-memory", () -> nodeIdToResources.get().values()
+                    .parallelStream()
+                    .mapToDouble(SupervisorResources::getTotalMem)
+                    .sum());
+            metricsRegistry.registerGauge("nimbus:total-cpu", () -> nodeIdToResources.get().values()
+                    .parallelStream()
+                    .mapToDouble(SupervisorResources::getTotalCpu)
+                    .sum());
+            metricsRegistry.registerGauge("nimbus:longest-scheduling-time-ms", () -> {
+                //We want to update longest scheduling time in real time in case scheduler get stuck
+                // Get current time before startTime to avoid potential race with scheduler's Timer
+                Long currTime = Time.nanoTime();
+                Long startTime = schedulingStartTimeNs.get();
+                return TimeUnit.NANOSECONDS.toMillis(startTime == null
+                        ? longestSchedulingTime.get()
+                        : Math.max(currTime - startTime, longestSchedulingTime.get()));
+            });
+            metricsRegistry.registerMeter("nimbus:num-launched").mark();
+
+            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.STORM_CLUSTER_METRICS_CONSUMER_PUBLISH_INTERVAL_SECS)),
+                () -> {
+                    try {
+                        if (isLeader()) {
+                            sendClusterMetricsToExecutors();
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+            timer.scheduleRecurring(5, 5, clusterMetricSet);
+        } catch (Exception e) {
+            if (Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e)) {
+                throw e;
+            }
+
+            if (Utils.exceptionCauseIsInstanceOf(InterruptedIOException.class, e)) {
+                throw e;
+            }
+            LOG.error("Error on initialization of nimbus", e);
+            Utils.exitProcess(13, "Error on initialization of nimbus");
         }
     }
 
@@ -1314,6 +1440,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         launch(new StandaloneINimbus());
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private static CuratorFramework makeZKClient(Map<String, Object> conf) {
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
@@ -1431,10 +1558,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     @VisibleForTesting
     static void validateTopologyWorkerMaxHeapSizeConfigs(
-        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMB) {
+        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMb) {
         double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
         double topologyWorkerMaxHeapSize =
-            ObjectReader.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeapSizeMB);
+            ObjectReader.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeapSizeMb);
         if (topologyWorkerMaxHeapSize < largestMemReq) {
             throw new IllegalArgumentException(
                 "Topology will not be able to be successfully scheduled: Config "
@@ -2013,10 +2140,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private boolean isFragmented(SupervisorResources supervisorResources) {
         double minMemory = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), 256.0)
                            + ObjectReader.getDouble(conf.get(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB), 128.0);
-        double minCPU = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), 50.0)
+        double minCpu = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), 50.0)
                         + ObjectReader.getDouble(conf.get(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT), 50.0);
 
-        return minMemory > supervisorResources.getAvailableMem() || minCPU > supervisorResources.getAvailableCpu();
+        return minMemory > supervisorResources.getAvailableMem() || minCpu > supervisorResources.getAvailableCpu();
     }
 
     private double fragmentedMemory() {
@@ -2148,6 +2275,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private boolean isReadyForMKAssignments() throws Exception {
         if (isLeader()) {
             if (isHeartbeatsRecovered()) {
@@ -2384,7 +2512,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                String principal, Map<String, Object> topoConf, StormTopology stormTopology)
         throws KeyNotFoundException, AuthorizationException, IOException, InvalidTopologyException {
         assert (TopologyStatus.ACTIVE == initStatus || TopologyStatus.INACTIVE == initStatus);
-        IStormClusterState state = stormClusterState;
         Map<String, Integer> numExecutors = new HashMap<>();
         StormTopology topology = StormCommon.systemTopology(topoConf, stormTopology);
         for (Entry<String, Object> entry : StormCommon.allComponents(topology).entrySet()) {
@@ -2403,6 +2530,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         base.set_owner(owner);
         base.set_principal(principal);
         base.set_component_debug(new HashMap<>());
+        IStormClusterState state = stormClusterState;
         state.activateStorm(topoId, base, topoConf);
         idToExecutors.getAndUpdate(new Assoc<>(topoId,
             new HashSet<>(computeExecutors(topoId, base, topoConf, stormTopology))));
@@ -2434,8 +2562,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     @VisibleForTesting
     public void checkAuthorization(String topoName, Map<String, Object> topoConf, String operation, ReqContext context)
-        throws AuthorizationException {
-        IAuthorizer aclHandler = authorizationHandler;
+            throws AuthorizationException {
         IAuthorizer impersonationAuthorizer = impersonationAuthorizationHandler;
         if (context == null) {
             context = ReqContext.context();
@@ -2465,6 +2592,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
         }
 
+        IAuthorizer aclHandler = authorizationHandler;
         if (aclHandler != null) {
             if (!aclHandler.permit(context, operation, checkConf)) {
                 ThriftAccessLogger.logAccess(context.requestID(), context.remoteAddress(), context.principal(), operation,
@@ -2821,8 +2949,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private CommonTopoInfo getCommonTopoInfo(String topoId, String operation) throws NotAliveException,
-        AuthorizationException, IOException, InvalidTopologyException {
-        IStormClusterState state = stormClusterState;
+            AuthorizationException, IOException, InvalidTopologyException {
         CommonTopoInfo ret = new CommonTopoInfo();
         ret.topoConf = tryReadTopoConf(topoId, topoCache);
         ret.topoName = (String) ret.topoConf.get(Config.TOPOLOGY_NAME);
@@ -2830,6 +2957,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         StormTopology topology = tryReadTopology(topoId, topoCache);
         ret.topology = StormCommon.systemTopology(ret.topoConf, topology);
         ret.taskToComponent = StormCommon.stormTaskInfo(topology, ret.topoConf);
+        IStormClusterState state = stormClusterState;
         ret.base = state.stormBase(topoId, null);
         if (ret.base != null && ret.base.is_set_launch_time_secs()) {
             ret.launchTimeSecs = ret.base.get_launch_time_secs();
@@ -2845,131 +2973,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             .emptyMap();
         ret.allComponents = new HashSet<>(ret.taskToComponent.values());
         return ret;
-    }
-
-    @VisibleForTesting
-    public void launchServer() throws Exception {
-        try {
-            IStormClusterState state = stormClusterState;
-            NimbusInfo hpi = nimbusHostPortInfo;
-
-            LOG.info("Starting Nimbus with conf {}", ConfigUtils.maskPasswords(conf));
-            validator.prepare(conf);
-
-            //add to nimbuses
-            state.addNimbusHost(hpi.getHost(),
-                                new NimbusSummary(hpi.getHost(), hpi.getPort(), Time.currentTimeSecs(), false, STORM_VERSION));
-            leaderElector.addToLeaderLockQueue();
-            this.blobStore.startSyncBlobs();
-            
-            for (ClusterMetricsConsumerExecutor exec: clusterConsumerExceutors) {
-                exec.prepare();
-            }
-
-            if (isLeader()) {
-                for (String topoId : state.activeStorms()) {
-                    transition(topoId, TopologyActions.STARTUP, null);
-                }
-                clusterMetricSet.setActive(true);
-            }
-
-            final boolean doNotReassign = (Boolean) conf.getOrDefault(ServerConfigUtils.NIMBUS_DO_NOT_REASSIGN, false);
-            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS)),
-                                    () -> {
-                                        try {
-                                            if (!doNotReassign) {
-                                                mkAssignments();
-                                            }
-                                            doCleanup();
-                                        } catch (Exception e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    });
-
-            // Schedule Nimbus inbox cleaner
-            final int jarExpSecs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_INBOX_JAR_EXPIRATION_SECS));
-            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CLEANUP_INBOX_FREQ_SECS)),
-                    () -> {
-                        try {
-                            cleanInbox(getInbox(), jarExpSecs);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-            
-
-            // Schedule topology history cleaner
-            Integer interval = ObjectReader.getInt(conf.get(DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS), null);
-            if (interval != null) {
-                final int lvCleanupAgeMins = ObjectReader.getInt(conf.get(DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS));
-                timer.scheduleRecurring(0, interval,
-                                        () -> {
-                                            try {
-                                                cleanTopologyHistory(lvCleanupAgeMins);
-                                            } catch (Exception e) {
-                                                throw new RuntimeException(e);
-                                            }
-                                        });
-            }
-
-            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CREDENTIAL_RENEW_FREQ_SECS)),
-                                    () -> {
-                                        try {
-                                            renewCredentials();
-                                        } catch (Exception e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    });
-
-            metricsRegistry.registerGauge("nimbus:total-available-memory-non-negative", () -> nodeIdToResources.get().values()
-                .parallelStream()
-                .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableMem(), 0))
-                .sum());
-            metricsRegistry.registerGauge("nimbus:available-cpu-non-negative", () -> nodeIdToResources.get().values()
-                .parallelStream()
-                .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableCpu(), 0))
-                .sum());
-            metricsRegistry.registerGauge("nimbus:total-memory", () -> nodeIdToResources.get().values()
-                .parallelStream()
-                .mapToDouble(SupervisorResources::getTotalMem)
-                .sum());
-            metricsRegistry.registerGauge("nimbus:total-cpu", () -> nodeIdToResources.get().values()
-                .parallelStream()
-                .mapToDouble(SupervisorResources::getTotalCpu)
-                .sum());
-            metricsRegistry.registerGauge("nimbus:longest-scheduling-time-ms", () -> {
-                //We want to update longest scheduling time in real time in case scheduler get stuck
-                // Get current time before startTime to avoid potential race with scheduler's Timer
-                Long currTime = Time.nanoTime();
-                Long startTime = schedulingStartTimeNs.get();
-                return TimeUnit.NANOSECONDS.toMillis(startTime == null ?
-                        longestSchedulingTime.get() : Math.max(currTime - startTime, longestSchedulingTime.get()));
-            });
-            metricsRegistry.registerMeter("nimbus:num-launched").mark();
-
-            timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.STORM_CLUSTER_METRICS_CONSUMER_PUBLISH_INTERVAL_SECS)),
-                                    () -> {
-                                        try {
-                                            if (isLeader()) {
-                                                sendClusterMetricsToExecutors();
-                                            }
-                                        } catch (Exception e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    });
-            
-            timer.scheduleRecurring(5, 5, clusterMetricSet);
-        } catch (Exception e) {
-            if (Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e)) {
-                throw e;
-            }
-
-            if (Utils.exceptionCauseIsInstanceOf(InterruptedIOException.class, e)) {
-                throw e;
-            }
-            LOG.error("Error on initialization of nimbus", e);
-            Utils.exitProcess(13, "Error on initialization of nimbus");
-        }
     }
     
     @VisibleForTesting
@@ -3035,15 +3038,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             ReqContext req = ReqContext.context();
             Principal principal = req.principal();
             String submitterPrincipal = principal == null ? null : principal.toString();
-            String submitterUser = principalToLocal.toLocal(principal);
-            String systemUser = System.getProperty("user.name");
             @SuppressWarnings("unchecked")
             Set<String> topoAcl = new HashSet<>((List<String>) topoConf.getOrDefault(Config.TOPOLOGY_USERS, Collections.emptyList()));
             topoAcl.add(submitterPrincipal);
+            String submitterUser = principalToLocal.toLocal(principal);
             topoAcl.add(submitterUser);
 
             String topologyPrincipal = Utils.OR(submitterPrincipal, "");
             topoConf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, topologyPrincipal);
+            String systemUser = System.getProperty("user.name");
             String topologyOwner = Utils.OR(submitterUser, systemUser);
             topoConf.put(Config.TOPOLOGY_SUBMITTER_USER, topologyOwner); //Don't let the user set who we launch as
             topoConf.put(Config.TOPOLOGY_USERS, new ArrayList<>(topoAcl));
@@ -3078,8 +3081,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
             // if the Resource Aware Scheduler is used,
             // we might need to set the number of acker executors and eventlogger executors to be the estimated number of workers.
-            if (ServerUtils.isRAS(conf)) {
-                int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRASTopo(totalConf, topology);
+            if (ServerUtils.isRas(conf)) {
+                int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(totalConf, topology);
                 int numAckerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_ACKER_EXECUTORS), estimatedNumWorker);
                 int numEventLoggerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS), estimatedNumWorker);
 
@@ -3374,7 +3377,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (topoId == null) {
                 throw new WrappedNotAliveException(topoName);
             }
-            boolean hasCompId = componentId != null && !componentId.isEmpty();
 
             DebugOptions options = new DebugOptions();
             options.set_enable(enable);
@@ -3384,6 +3386,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             StormBase updates = new StormBase();
             //For backwards compatability
             updates.set_component_executors(Collections.emptyMap());
+            boolean hasCompId = componentId != null && !componentId.isEmpty();
             String key = hasCompId ? componentId : topoId;
             updates.put_to_component_debug(key, options);
 
@@ -4031,12 +4034,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             CommonTopoInfo common = getCommonTopoInfo(topoId, "getTopologyPageInfo");
             String topoName = common.topoName;
             IStormClusterState state = stormClusterState;
-            int launchTimeSecs = common.launchTimeSecs;
             Assignment assignment = common.assignment;
             Map<List<Integer>, Map<String, Object>> beats = common.beats;
             Map<Integer, String> taskToComp = common.taskToComponent;
             StormTopology topology = common.topology;
-            Map<String, Object> topoConf = Utils.merge(conf, common.topoConf);
             StormBase base = common.base;
             if (base == null) {
                 throw new WrappedNotAliveException(topoId);
@@ -4080,6 +4081,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoPageInfo.set_storm_version(topology.get_storm_version());
             }
 
+            Map<String, Object> topoConf = Utils.merge(conf, common.topoConf);
             Map<String, NormalizedResourceRequest> spoutResources = ResourceUtils.getSpoutsResources(topology, topoConf);
             for (Entry<String, ComponentAggregateStats> entry : topoPageInfo.get_id_to_spout_agg_stats().entrySet()) {
                 CommonAggregateStats commonStats = entry.getValue().get_common_stats();
@@ -4128,6 +4130,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoPageInfo.set_assigned_shared_on_heap_memory(resources.getAssignedSharedMemOnHeap());
                 topoPageInfo.set_assigned_regular_on_heap_memory(resources.getAssignedNonSharedMemOnHeap());
             }
+            int launchTimeSecs = common.launchTimeSecs;
             topoPageInfo.set_name(topoName);
             topoPageInfo.set_status(extractStatusStr(base));
             topoPageInfo.set_uptime_secs(Time.deltaSecs(launchTimeSecs));
@@ -4968,66 +4971,74 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             };
 
-            clusterSummaryMetrics.put("cluster:num-nimbus-leaders", new DerivativeGauge<ClusterSummary, Long>(cachedSummary) {
-                @Override
-                protected Long transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_nimbuses().stream()
-                            .filter(NimbusSummary::is_isLeader)
-                            .count();
-                }
-            });
-            clusterSummaryMetrics.put("cluster:num-nimbuses", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
-                @Override
-                protected Integer transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_nimbuses_size();
-                }
-            });
-            clusterSummaryMetrics.put("cluster:num-supervisors", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
-                @Override
-                protected Integer transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_supervisors_size();
-                }
-            });
-            clusterSummaryMetrics.put("cluster:num-topologies", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
-                @Override
-                protected Integer transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_topologies_size();
-                }
-            });
-            clusterSummaryMetrics.put("cluster:num-total-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
-                @Override
-                protected Integer transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_supervisors().stream()
-                            .mapToInt(SupervisorSummary::get_num_workers)
-                            .sum();
-                }
-            });
-            clusterSummaryMetrics.put("cluster:num-total-used-workers", new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
-                @Override
-                protected Integer transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_supervisors().stream()
-                            .mapToInt(SupervisorSummary::get_num_used_workers)
-                            .sum();
-                }
-            });
-            clusterSummaryMetrics.put("cluster:total-fragmented-memory-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
-                @Override
-                protected Double transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_supervisors().stream()
-                            //Filtered negative value
-                            .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_mem(), 0))
-                            .sum();
-                }
-            });
-            clusterSummaryMetrics.put("cluster:total-fragmented-cpu-non-negative", new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
-                @Override
-                protected Double transform(ClusterSummary clusterSummary) {
-                    return clusterSummary.get_supervisors().stream()
-                            //Filtered negative value
-                            .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_cpu(), 0))
-                            .sum();
-                }
-            });
+            clusterSummaryMetrics.put("cluster:num-nimbus-leaders",
+                    new DerivativeGauge<ClusterSummary, Long>(cachedSummary) {
+                        @Override
+                        protected Long transform(ClusterSummary clusterSummary) {
+                            return clusterSummary.get_nimbuses().stream()
+                                    .filter(NimbusSummary::is_isLeader)
+                                    .count();
+                        }
+                    });
+            clusterSummaryMetrics.put("cluster:num-nimbuses",
+                    new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                        @Override
+                        protected Integer transform(ClusterSummary clusterSummary) {
+                            return clusterSummary.get_nimbuses_size();
+                        }
+                    });
+            clusterSummaryMetrics.put("cluster:num-supervisors",
+                    new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                        @Override
+                        protected Integer transform(ClusterSummary clusterSummary) {
+                            return clusterSummary.get_supervisors_size();
+                        }
+                    });
+            clusterSummaryMetrics.put("cluster:num-topologies",
+                    new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                        @Override
+                        protected Integer transform(ClusterSummary clusterSummary) {
+                            return clusterSummary.get_topologies_size();
+                        }
+                    });
+            clusterSummaryMetrics.put("cluster:num-total-workers",
+                    new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                        @Override
+                        protected Integer transform(ClusterSummary clusterSummary) {
+                            return clusterSummary.get_supervisors().stream()
+                                    .mapToInt(SupervisorSummary::get_num_workers)
+                                    .sum();
+                        }
+                    });
+            clusterSummaryMetrics.put("cluster:num-total-used-workers",
+                    new DerivativeGauge<ClusterSummary, Integer>(cachedSummary) {
+                        @Override
+                        protected Integer transform(ClusterSummary clusterSummary) {
+                            return clusterSummary.get_supervisors().stream()
+                                    .mapToInt(SupervisorSummary::get_num_used_workers)
+                                    .sum();
+                        }
+                    });
+            clusterSummaryMetrics.put("cluster:total-fragmented-memory-non-negative",
+                    new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
+                        @Override
+                        protected Double transform(ClusterSummary clusterSummary) {
+                            return clusterSummary.get_supervisors().stream()
+                                    //Filtered negative value
+                                    .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_mem(), 0))
+                                    .sum();
+                        }
+                    });
+            clusterSummaryMetrics.put("cluster:total-fragmented-cpu-non-negative",
+                    new DerivativeGauge<ClusterSummary, Double>(cachedSummary) {
+                        @Override
+                        protected Double transform(ClusterSummary clusterSummary) {
+                            return clusterSummary.get_supervisors().stream()
+                                    //Filtered negative value
+                                    .mapToDouble(supervisorSummary -> Math.max(supervisorSummary.get_fragmented_cpu(), 0))
+                                    .sum();
+                        }
+                    });
         }
 
         private void updateHistogram(ClusterSummary newSummary) {

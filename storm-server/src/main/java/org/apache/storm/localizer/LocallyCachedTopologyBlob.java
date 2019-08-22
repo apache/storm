@@ -258,11 +258,12 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     private void cleanUpTemp(String baseName) throws IOException {
         LOG.debug("Cleaning up temporary data in {}", topologyBasicBlobsRootDir);
         try (DirectoryStream<Path> children = fsOps.newDirectoryStream(topologyBasicBlobsRootDir,
-                                                                       (p) -> {
-                                                                           String fileName = p.getFileName().toString();
-                                                                           Matcher m = EXTRACT_BASE_NAME_AND_VERSION.matcher(fileName);
-                                                                           return m.matches() && baseName.equals(m.group(1));
-                                                                       })) {
+            (p) -> {
+                String fileName = p.getFileName().toString();
+                Matcher m = EXTRACT_BASE_NAME_AND_VERSION.matcher(fileName);
+                return m.matches() && baseName.equals(m.group(1));
+            })
+        ) {
             //children is only ever null if topologyBasicBlobsRootDir does not exist.  This happens during unit tests
             // And because a non-existant directory is by definition clean we are ignoring it.
             if (children != null) {

@@ -49,6 +49,7 @@ public class BlobStoreUtils {
         return BLOBSTORE_SUBTREE;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static CuratorFramework createZKClient(Map<String, Object> conf, DaemonType type) {
         @SuppressWarnings("unchecked")
         List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
@@ -191,7 +192,7 @@ public class BlobStoreUtils {
                     out = null;
                 }
                 isSuccess = true;
-            } catch(FileNotFoundException fnf) {
+            } catch (FileNotFoundException fnf) {
                 LOG.warn("Blobstore file for key '{}' does not exist or got deleted before it could be downloaded.", key, fnf);
             } catch (IOException | AuthorizationException exception) {
                 throw new RuntimeException(exception);
