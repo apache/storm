@@ -2668,6 +2668,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private SupervisorSummary makeSupervisorSummary(String supervisorId, SupervisorInfo info) {
+        Set<String> blacklistedSupervisorIds = Collections.emptySet();
+        if (scheduler instanceof BlacklistScheduler) {
+            BlacklistScheduler bs = (BlacklistScheduler) scheduler;
+            blacklistedSupervisorIds = bs.getBlacklistSupervisorIds();
+        }
+
         LOG.debug("INFO: {} ID: {}", info, supervisorId);
         int numPorts = 0;
         if (info.is_set_meta()) {
@@ -2701,6 +2707,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         if (info.is_set_version()) {
             ret.set_version(info.get_version());
         }
+
+        if (blacklistedSupervisorIds.contains(supervisorId)) {
+            ret.set_blacklisted(true);
+        } else {
+            ret.set_blacklisted(false);
+        }
+
         return ret;
     }
 

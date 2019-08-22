@@ -879,6 +879,7 @@ public class UIHelpers {
         result.put("id", supervisorSummary.get_supervisor_id());
         result.put("host", supervisorSummary.get_host());
         result.put("uptime", UIHelpers.prettyUptimeSec(supervisorSummary.get_uptime_secs()));
+        result.put("blacklisted", supervisorSummary.is_blacklisted());
         result.put("uptimeSeconds", supervisorSummary.get_uptime_secs());
         result.put("slotsTotal", supervisorSummary.get_num_workers());
         result.put("slotsUsed", supervisorSummary.get_num_used_workers());
@@ -1021,7 +1022,7 @@ public class UIHelpers {
      */
     private static List<Map> getSupervisorsMap(List<SupervisorSummary> supervisors,
                                                Map<String, Object> config) {
-        List<Map> supervisorMaps = new ArrayList();
+        List<Map> supervisorMaps = new ArrayList<>();
         for (SupervisorSummary supervisorSummary : supervisors) {
             supervisorMaps.add(getPrettifiedSupervisorMap(supervisorSummary, config));
         }
@@ -1050,7 +1051,7 @@ public class UIHelpers {
      */
     public static Map<String, Object> getSupervisorPageInfo(
             SupervisorPageInfo supervisorPageInfo, Map<String,Object> config) {
-        Map<String, Object> result = new HashMap();
+        Map<String, Object> result = new HashMap<>();
         result.put("workers", getWorkerSummaries(supervisorPageInfo, config));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
         List<Map> supervisorMaps = getSupervisorsMap(supervisorPageInfo.get_supervisor_summaries(), config);
