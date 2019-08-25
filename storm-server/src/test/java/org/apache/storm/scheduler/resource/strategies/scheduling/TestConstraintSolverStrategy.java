@@ -210,7 +210,7 @@ public class TestConstraintSolverStrategy {
      * Cluster has sufficient resources for scheduling to succeed but can fail due to StackOverflowError.
      */
     @ParameterizedTest
-    @ValueSource(ints = {5, 20})
+    @ValueSource(ints = {1, 20})
     public void testScheduleLargeExecutorConstraintCount(int parallelismMultiplier) {
         // Add 1 topology with large number of executors and constraints. Too many can cause a java.lang.StackOverflowError
         Config config = createCSSClusterConfig(10, 10, 0, null);
@@ -238,7 +238,7 @@ public class TestConstraintSolverStrategy {
 
         boolean scheduleSuccess = isStatusSuccess(cluster.getStatus(topo.getId()));
 
-        if (parallelismMultiplier <= 5) {
+        if (parallelismMultiplier == 1) {
             Assert.assertTrue(scheduleSuccess);
         } else if (parallelismMultiplier == 20) {
             // For default JVM, scheduling currently fails due to StackOverflow.
