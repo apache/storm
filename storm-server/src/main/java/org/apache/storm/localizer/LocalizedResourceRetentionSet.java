@@ -81,10 +81,6 @@ public class LocalizedResourceRetentionSet {
     public void cleanup(ClientBlobStore store) {
         LOG.debug("cleanup target size: {} current size is: {}", targetSize, currentSize);
         long bytesOver = currentSize - targetSize;
-        if (bytesOver <= 0) { // no need to query remote files
-            return;
-        }
-
         //First delete everything that no longer exists...
         for (Iterator<Map.Entry<LocallyCachedBlob, Map<String, ? extends LocallyCachedBlob>>> i = noReferences.entrySet().iterator();
              i.hasNext(); ) {
