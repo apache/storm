@@ -20,7 +20,7 @@ import java.io.Serializable;
  */
 public interface AsyncResultSetHandler<T> extends Serializable {
 
-    public static final AsyncResultSetHandler NO_OP_HANDLER = new AsyncResultSetHandler() {
+    AsyncResultSetHandler NO_OP_HANDLER = new AsyncResultSetHandler() {
         @Override
         public void failure(Throwable t, Object inputs) {
             /** no-operation **/

@@ -656,7 +656,7 @@ public class AsyncLocalizer implements AutoCloseable {
         private final PortAndAssignment pna;
         private final BlobChangingCallback cb;
 
-        public DownloadBlobs(PortAndAssignment pna, BlobChangingCallback cb) {
+        DownloadBlobs(PortAndAssignment pna, BlobChangingCallback cb) {
             this.pna = pna;
             this.cb = cb;
         }

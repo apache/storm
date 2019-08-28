@@ -119,11 +119,11 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
      */
     protected abstract String getConfigKeyString();
 
-    protected abstract byte[] getHadoopCredentials(Map<String, Object> topologyConf, String configKey, final String topologyOwnerPrincipal);
+    protected abstract byte[] getHadoopCredentials(Map<String, Object> topologyConf, String configKey, String topologyOwnerPrincipal);
 
-    protected abstract byte[] getHadoopCredentials(Map<String, Object> topologyConf, final String topologyOwnerPrincipal);
+    protected abstract byte[] getHadoopCredentials(Map<String, Object> topologyConf, String topologyOwnerPrincipal);
 
-    protected abstract void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, final String topologyOwnerPrincipal);
+    protected abstract void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, String topologyOwnerPrincipal);
 
     protected List<String> getConfigKeys(Map<String, Object> conf) {
         String configKeyString = getConfigKeyString();

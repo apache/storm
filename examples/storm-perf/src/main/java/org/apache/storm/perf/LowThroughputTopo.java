@@ -93,7 +93,7 @@ public class LowThroughputTopo {
         private SpoutOutputCollector collector = null;
         private long sleepTimeMs;
 
-        public ThrottledSpout(long sleepMs) {
+        ThrottledSpout(long sleepMs) {
             this.sleepTimeMs = sleepMs;
         }
 

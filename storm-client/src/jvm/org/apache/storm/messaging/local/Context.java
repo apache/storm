@@ -79,7 +79,7 @@ public class Context implements IContext {
         final int port;
         final IConnectionCallback cb;
 
-        public LocalServer(int port, IConnectionCallback cb) {
+        LocalServer(int port, IConnectionCallback cb) {
             this.port = port;
             this.cb = cb;
         }
@@ -129,7 +129,7 @@ public class Context implements IContext {
         private final int port;
         private final String registryKey;
 
-        public LocalClient(String stormId, int port) {
+        LocalClient(String stormId, int port) {
             this.port = port;
             this.registryKey = getNodeKey(stormId, port);
             pendingDueToUnregisteredServer = new LinkedBlockingQueue<>();

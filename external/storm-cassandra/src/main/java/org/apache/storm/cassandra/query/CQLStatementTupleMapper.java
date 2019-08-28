@@ -37,7 +37,7 @@ public interface CQLStatementTupleMapper extends Serializable {
     List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple);
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static class DynamicCQLStatementTupleMapper implements CQLStatementTupleMapper {
+    class DynamicCQLStatementTupleMapper implements CQLStatementTupleMapper {
         private List<CQLStatementBuilder> builders;
 
         public DynamicCQLStatementTupleMapper(List<CQLStatementBuilder> builders) {

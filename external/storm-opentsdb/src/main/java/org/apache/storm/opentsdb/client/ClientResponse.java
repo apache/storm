@@ -30,7 +30,7 @@ import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 public interface ClientResponse extends Serializable {
 
 
-    public class Summary implements ClientResponse {
+    class Summary implements ClientResponse {
         private int failed;
         private int success;
         private int timeouts;
@@ -95,7 +95,7 @@ public interface ClientResponse extends Serializable {
         }
     }
 
-    public class Details extends Summary {
+    class Details extends Summary {
         private List<Error> errors;
 
         public Details() {

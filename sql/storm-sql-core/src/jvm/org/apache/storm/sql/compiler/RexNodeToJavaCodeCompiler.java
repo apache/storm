@@ -202,7 +202,7 @@ public class RexNodeToJavaCodeCompiler {
         public final Constructor constructor;
         public final Field field;
 
-        private StormBuiltInMethod(Method method, Constructor constructor, Field field) {
+        StormBuiltInMethod(Method method, Constructor constructor, Field field) {
             this.method = method;
             this.constructor = constructor;
             this.field = field;

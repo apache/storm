@@ -222,7 +222,7 @@ public class AsyncExecutor<T> implements Serializable {
         private final List<Throwable> exceptions;
         private final Semaphore throttle;
 
-        public AsyncContext(List<T> inputs, Semaphore throttle, SettableFuture<List<T>> settableFuture) {
+        AsyncContext(List<T> inputs, Semaphore throttle, SettableFuture<List<T>> settableFuture) {
             this.inputs = inputs;
             this.latch = new AtomicInteger(inputs.size());
             this.throttle = throttle;

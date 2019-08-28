@@ -40,5 +40,5 @@ public interface ManualPartitioner extends Serializable {
      * @param context the context of the topology
      * @return the subset of the partitions that this spout task should handle.
      */
-    public Set<TopicPartition> getPartitionsForThisTask(List<TopicPartition> allPartitionsSorted, TopologyContext context);
+    Set<TopicPartition> getPartitionsForThisTask(List<TopicPartition> allPartitionsSorted, TopologyContext context);
 }

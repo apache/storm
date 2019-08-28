@@ -35,5 +35,5 @@ import org.apache.storm.generated.StormTopology;
  *
  */
 public interface TopologySource {
-    public StormTopology getTopology(Map<String, Object> config);
+    StormTopology getTopology(Map<String, Object> config);
 }

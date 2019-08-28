@@ -230,17 +230,17 @@ public class CoordinatedBolt implements IRichBolt {
         }
     }
 
-    static enum TupleType {
+    enum TupleType {
         REGULAR,
         ID,
         COORD
     }
 
-    public static interface FinishedCallback {
+    public interface FinishedCallback {
         void finishedId(Object id);
     }
 
-    public static interface TimeoutCallback {
+    public interface TimeoutCallback {
         void timeoutId(Object id);
     }
 

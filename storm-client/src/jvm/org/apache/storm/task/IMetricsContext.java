@@ -46,13 +46,13 @@ public interface IMetricsContext {
     @Deprecated
     CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs);
     
-    public Timer registerTimer(String name);
+    Timer registerTimer(String name);
 
-    public Histogram registerHistogram(String name);
+    Histogram registerHistogram(String name);
 
-    public Meter registerMeter(String name);
+    Meter registerMeter(String name);
 
-    public Counter registerCounter(String name);
+    Counter registerCounter(String name);
 
-    public <T> Gauge<T> registerGauge(String name, Gauge<T> gauge);
+    <T> Gauge<T> registerGauge(String name, Gauge<T> gauge);
 }

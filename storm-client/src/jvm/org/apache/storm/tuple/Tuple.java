@@ -30,30 +30,30 @@ public interface Tuple extends ITuple {
     /**
      * Returns the global stream id (component + stream) of this tuple.
      */
-    public GlobalStreamId getSourceGlobalStreamId();
+    GlobalStreamId getSourceGlobalStreamId();
 
     /**
      * Gets the id of the component that created this tuple.
      */
-    public String getSourceComponent();
+    String getSourceComponent();
 
     /**
      * Gets the id of the task that created this tuple.
      */
-    public int getSourceTask();
+    int getSourceTask();
 
     /**
      * Gets the id of the stream that this tuple was emitted to.
      */
-    public String getSourceStreamId();
+    String getSourceStreamId();
 
     /**
      * Gets the message id that associated with this tuple.
      */
-    public MessageId getMessageId();
+    MessageId getMessageId();
 
     /**
      * Gets the topology context associated with the tuple.
      */
-    public GeneralTopologyContext getContext();
+    GeneralTopologyContext getContext();
 }

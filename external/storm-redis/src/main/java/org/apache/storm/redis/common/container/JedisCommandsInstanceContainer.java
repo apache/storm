@@ -35,5 +35,5 @@ public interface JedisCommandsInstanceContainer extends Closeable {
      * Release Container.
      */
     @Override
-    public void close();
+    void close();
 }

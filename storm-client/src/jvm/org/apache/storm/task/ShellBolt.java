@@ -308,7 +308,7 @@ public class ShellBolt implements IBolt {
     private class BoltHeartbeatTimerTask extends TimerTask {
         private ShellBolt bolt;
 
-        public BoltHeartbeatTimerTask(ShellBolt bolt) {
+        BoltHeartbeatTimerTask(ShellBolt bolt) {
             this.bolt = bolt;
         }
 

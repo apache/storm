@@ -175,7 +175,7 @@ public class RotatingTransactionalState {
                 + '}';
     }
 
-    public static interface StateInitializer {
+    public interface StateInitializer {
         Object init(long txid, Object lastState);
     }
 }

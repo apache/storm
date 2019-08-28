@@ -83,7 +83,7 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
         private final Properties props;
         private final IOutputSerializer serializer;
 
-        public KafkaStreamsDataSource(KafkaSpoutConfig<ByteBuffer, ByteBuffer> kafkaSpoutConfig, String bootstrapServers,
+        KafkaStreamsDataSource(KafkaSpoutConfig<ByteBuffer, ByteBuffer> kafkaSpoutConfig, String bootstrapServers,
             String topic, Properties props, IOutputSerializer serializer) {
             this.kafkaSpoutConfig = kafkaSpoutConfig;
             this.bootstrapServers = bootstrapServers;

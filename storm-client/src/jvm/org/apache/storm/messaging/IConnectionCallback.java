@@ -23,5 +23,5 @@ public interface IConnectionCallback {
      *
      * @param batch the messages to be processed
      */
-    public void recv(List<TaskMessage> batch);
+    void recv(List<TaskMessage> batch);
 }

@@ -62,7 +62,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
         public RotatingTransactionalState rotatingState;
         public ISpoutPartition partition;
 
-        public EmitterPartitionState(RotatingTransactionalState s, ISpoutPartition p) {
+        EmitterPartitionState(RotatingTransactionalState s, ISpoutPartition p) {
             rotatingState = s;
             partition = p;
         }
@@ -71,7 +71,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
     class Coordinator implements ITridentSpout.BatchCoordinator<Object> {
         private IPartitionedTridentSpout.Coordinator<Object> coordinator;
 
-        public Coordinator(Map<String, Object> conf, TopologyContext context) {
+        Coordinator(Map<String, Object> conf, TopologyContext context) {
             coordinator = spout.getCoordinator(conf, context);
         }
 
@@ -115,7 +115,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
         private int index;
         private int numTasks;
 
-        public Emitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
+        Emitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
             emitter = spout.getEmitter(conf, context);
             state = TransactionalState.newUserState(conf, txStateId);
             index = context.getThisTaskIndex();

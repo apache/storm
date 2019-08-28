@@ -134,7 +134,7 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
 
         SpoutOutputCollector collector;
 
-        public StreamOverrideCollector(SpoutOutputCollector collector) {
+        StreamOverrideCollector(SpoutOutputCollector collector) {
             this.collector = collector;
         }
 

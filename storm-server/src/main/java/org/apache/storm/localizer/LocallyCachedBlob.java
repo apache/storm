@@ -299,7 +299,7 @@ public abstract class LocallyCachedBlob {
         private final Path downloadPath;
         private final long version;
 
-        public DownloadMeta(Path downloadPath, long version) {
+        DownloadMeta(Path downloadPath, long version) {
             this.downloadPath = downloadPath;
             this.version = version;
         }

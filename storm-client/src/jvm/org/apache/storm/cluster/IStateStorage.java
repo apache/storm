@@ -192,7 +192,7 @@ public interface IStateStorage extends Closeable {
      *
      * @param listener A StateStorageListener to handle changing cluster state events.
      */
-    void add_listener(final ConnectionStateListener listener);
+    void add_listener(ConnectionStateListener listener);
 
     /**
      * Force consistency on a path. Any writes committed on the path before this call will be completely propagated when it returns.

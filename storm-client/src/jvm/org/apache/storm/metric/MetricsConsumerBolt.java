@@ -107,7 +107,7 @@ public class MetricsConsumerBolt implements IBolt {
         private IMetricsConsumer.TaskInfo taskInfo;
         private Collection<IMetricsConsumer.DataPoint> dataPoints;
 
-        public MetricsTask(IMetricsConsumer.TaskInfo taskInfo, Collection<IMetricsConsumer.DataPoint> dataPoints) {
+        MetricsTask(IMetricsConsumer.TaskInfo taskInfo, Collection<IMetricsConsumer.DataPoint> dataPoints) {
             this.taskInfo = taskInfo;
             this.dataPoints = dataPoints;
         }

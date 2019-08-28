@@ -22,57 +22,57 @@ public interface CgroupCommonOperation {
      *
      * @param taskid task id of task to add
      */
-    public void addTask(int taskid) throws IOException;
+    void addTask(int taskid) throws IOException;
 
     /**
      * Get a list of task ids running in CGroup.
      */
-    public Set<Integer> getTasks() throws IOException;
+    Set<Integer> getTasks() throws IOException;
 
     /**
      * add a process to cgroup.
      *
      * @param pid the PID of the process to add
      */
-    public void addProcs(int pid) throws IOException;
+    void addProcs(int pid) throws IOException;
 
     /**
      * get the PIDs of processes running in cgroup.
      */
-    public Set<Long> getPids() throws IOException;
+    Set<Long> getPids() throws IOException;
 
     /**
      * to get the notify_on_release config.
      */
-    public boolean getNotifyOnRelease() throws IOException;
+    boolean getNotifyOnRelease() throws IOException;
 
     /**
      * to set notify_on_release config in cgroup.
      */
-    public void setNotifyOnRelease(boolean flag) throws IOException;
+    void setNotifyOnRelease(boolean flag) throws IOException;
 
     /**
      * get the command for the relase agent to execute.
      */
-    public String getReleaseAgent() throws IOException;
+    String getReleaseAgent() throws IOException;
 
     /**
      * set a command for the release agent to execute.
      */
-    public void setReleaseAgent(String command) throws IOException;
+    void setReleaseAgent(String command) throws IOException;
 
     /**
      * get the cgroup.clone_children config.
      */
-    public boolean getCgroupCloneChildren() throws IOException;
+    boolean getCgroupCloneChildren() throws IOException;
 
     /**
      * Set the cgroup.clone_children config.
      */
-    public void setCgroupCloneChildren(boolean flag) throws IOException;
+    void setCgroupCloneChildren(boolean flag) throws IOException;
 
     /**
      * set event control config.
      */
-    public void setEventControl(String eventFd, String controlFd, String... args) throws IOException;
+    void setEventControl(String eventFd, String controlFd, String... args) throws IOException;
 }

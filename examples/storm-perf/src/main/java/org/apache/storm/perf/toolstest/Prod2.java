@@ -27,7 +27,7 @@ class Prod2 extends MyThd {
     private final MpscArrayQueue<Object> q1;
     private final MpscArrayQueue<Object> q2;
 
-    public Prod2(MpscArrayQueue<Object> q1, MpscArrayQueue<Object> q2) {
+    Prod2(MpscArrayQueue<Object> q1, MpscArrayQueue<Object> q2) {
         super("Producer2");
         this.q1 = q1;
         this.q2 = q2;

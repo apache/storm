@@ -527,7 +527,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
         private final InetSocketAddress address;
 
-        public Connect(InetSocketAddress address) {
+        Connect(InetSocketAddress address) {
             this.address = address;
         }
 

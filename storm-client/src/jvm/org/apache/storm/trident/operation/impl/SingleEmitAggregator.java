@@ -71,7 +71,7 @@ public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
         agg.cleanup();
     }
 
-    public static interface BatchToPartition extends Serializable {
+    public interface BatchToPartition extends Serializable {
         int partitionIndex(Object batchId, int numPartitions);
     }
 
@@ -80,7 +80,7 @@ public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
         Object state;
         Object batchId;
 
-        public SingleEmitState(Object batchId) {
+        SingleEmitState(Object batchId) {
             this.batchId = batchId;
         }
     }

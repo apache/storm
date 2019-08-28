@@ -21,9 +21,9 @@ import org.apache.storm.cassandra.query.Column;
 
 public interface PreparedStatementBinder extends Serializable {
 
-    public BoundStatement apply(PreparedStatement statement, List<Column> columns);
+    BoundStatement apply(PreparedStatement statement, List<Column> columns);
 
-    public static final class DefaultBinder implements PreparedStatementBinder {
+    final class DefaultBinder implements PreparedStatementBinder {
 
         /**
          * {@inheritDoc}
@@ -36,7 +36,7 @@ public interface PreparedStatementBinder extends Serializable {
     }
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static final class CQL3NamedSettersBinder implements PreparedStatementBinder {
+    final class CQL3NamedSettersBinder implements PreparedStatementBinder {
 
         /**
          * {@inheritDoc}

@@ -23,7 +23,7 @@ import org.apache.storm.utils.JCQueue;
 class Producer extends MyThread {
     private final JCQueue queue;
 
-    public Producer(JCQueue queue) {
+    Producer(JCQueue queue) {
         super("Producer");
         this.queue = queue;
     }

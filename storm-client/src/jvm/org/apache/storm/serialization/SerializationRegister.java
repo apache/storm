@@ -30,5 +30,5 @@ public interface SerializationRegister {
      *
      * @param kryo what to register the serializers with.
      */
-    public void register(Kryo kryo) throws Exception;
+    void register(Kryo kryo) throws Exception;
 }

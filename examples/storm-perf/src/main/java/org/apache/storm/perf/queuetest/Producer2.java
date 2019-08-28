@@ -27,7 +27,7 @@ class Producer2 extends MyThread {
     private final JCQueue q1;
     private final JCQueue q2;
 
-    public Producer2(JCQueue q1, JCQueue q2) {
+    Producer2(JCQueue q1, JCQueue q2) {
         super("Producer2");
         this.q1 = q1;
         this.q2 = q2;

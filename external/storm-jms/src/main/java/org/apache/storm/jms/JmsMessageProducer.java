@@ -29,5 +29,5 @@ public interface JmsMessageProducer extends Serializable {
      * Translate a <code>org.apache.storm.tuple.Tuple</code> object
      * to a <code>javax.jms.Message</code> object.
      */
-    public Message toMessage(Session session, ITuple input) throws JMSException;
+    Message toMessage(Session session, ITuple input) throws JMSException;
 }

@@ -286,7 +286,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                 + "}";
     }
 
-    private static enum AttemptStatus {
+    private enum AttemptStatus {
         PROCESSING,
         PROCESSED,
         COMMITTING
@@ -296,7 +296,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         TransactionAttempt attempt;
         AttemptStatus status;
 
-        public TransactionStatus(TransactionAttempt attempt) {
+        TransactionStatus(TransactionAttempt attempt) {
             this.attempt = attempt;
             this.status = AttemptStatus.PROCESSING;
         }

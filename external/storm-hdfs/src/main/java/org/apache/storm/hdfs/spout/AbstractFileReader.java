@@ -20,7 +20,7 @@ abstract class AbstractFileReader implements FileReader {
 
     private final Path file;
 
-    public AbstractFileReader(FileSystem fs, Path file) {
+    AbstractFileReader(FileSystem fs, Path file) {
         if (fs == null) {
             throw new IllegalArgumentException("filesystem arg cannot be null for reader");
         }

@@ -798,7 +798,7 @@ public class LogviewerLogSearchHandler {
         private Integer newByteOffset;
         private byte[] newBeforeBytes;
 
-        public SubstringSearchResult(List<Map<String, Object>> matches, Integer newByteOffset, byte[] newBeforeBytes) {
+        SubstringSearchResult(List<Map<String, Object>> matches, Integer newByteOffset, byte[] newBeforeBytes) {
             this.matches = matches;
             this.newByteOffset = newByteOffset;
             this.newBeforeBytes = newBeforeBytes;

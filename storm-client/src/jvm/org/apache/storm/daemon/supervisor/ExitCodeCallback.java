@@ -22,5 +22,5 @@ public interface ExitCodeCallback {
      *
      * @param exitCode the exit code of the finished process.
      */
-    public void call(int exitCode);
+    void call(int exitCode);
 }

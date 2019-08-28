@@ -258,7 +258,7 @@ public class DRPCSpout extends BaseRichSpout {
         String id;
         int index;
 
-        public DRPCMessageId(String id, int index) {
+        DRPCMessageId(String id, int index) {
             this.id = id;
             this.index = index;
         }
@@ -269,7 +269,7 @@ public class DRPCSpout extends BaseRichSpout {
         private int port;
         private Map<String, Object> conf;
 
-        public Adder(String server, int port, Map<String, Object> conf) {
+        Adder(String server, int port, Map<String, Object> conf) {
             this.server = server;
             this.port = port;
             this.conf = conf;

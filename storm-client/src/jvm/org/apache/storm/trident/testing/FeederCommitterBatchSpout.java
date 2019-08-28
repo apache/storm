@@ -64,7 +64,7 @@ public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Int
         ITridentSpout.Emitter emitter;
 
 
-        public CommitterEmitter(ITridentSpout.Emitter e) {
+        CommitterEmitter(ITridentSpout.Emitter e) {
             emitter = e;
         }
 

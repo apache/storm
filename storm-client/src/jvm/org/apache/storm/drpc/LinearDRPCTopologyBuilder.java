@@ -174,8 +174,8 @@ public class LinearDRPCTopologyBuilder {
         return builder.createTopology();
     }
 
-    private static interface InputDeclaration {
-        public void declare(String prevComponent, InputDeclarer declarer);
+    private interface InputDeclaration {
+        void declare(String prevComponent, InputDeclarer declarer);
     }
 
     private static class Component {
@@ -185,7 +185,7 @@ public class LinearDRPCTopologyBuilder {
         public final List<InputDeclaration> declarations = new ArrayList<>();
         public final Set<SharedMemory> sharedMemory = new HashSet<>();
 
-        public Component(IRichBolt bolt, int parallelism) {
+        Component(IRichBolt bolt, int parallelism) {
             this.bolt = bolt;
             this.parallelism = parallelism;
         }
@@ -194,7 +194,7 @@ public class LinearDRPCTopologyBuilder {
     private static class InputDeclarerImpl extends BaseConfigurationDeclarer<LinearDRPCInputDeclarer> implements LinearDRPCInputDeclarer {
         Component component;
 
-        public InputDeclarerImpl(Component component) {
+        InputDeclarerImpl(Component component) {
             this.component = component;
         }
 

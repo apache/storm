@@ -25,7 +25,7 @@ public interface IMetricsConsumer {
 
     void cleanup();
 
-    public static class TaskInfo {
+    class TaskInfo {
         public String srcWorkerHost;
         public int srcWorkerPort;
         public String srcComponentId;
@@ -56,7 +56,7 @@ public interface IMetricsConsumer {
     }
 
     // We can't move this to outside without breaking backward compatibility.
-    public static class DataPoint {
+    class DataPoint {
         public String name;
         public Object value;
 

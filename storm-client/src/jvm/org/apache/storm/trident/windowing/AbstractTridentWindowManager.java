@@ -157,7 +157,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         final List<List<Object>> values = new ArrayList<>();
         private final BatchOutputCollector delegateCollector;
 
-        public AccumulatedTuplesCollector(BatchOutputCollector delegateCollector) {
+        AccumulatedTuplesCollector(BatchOutputCollector delegateCollector) {
             this.delegateCollector = delegateCollector;
         }
 
@@ -182,7 +182,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         final int id;
         final List<List<Object>> result;
 
-        public TriggerResult(int id, List<List<Object>> result) {
+        TriggerResult(int id, List<List<Object>> result) {
             this.id = id;
             this.result = result;
         }

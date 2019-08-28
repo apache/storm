@@ -23,7 +23,7 @@ abstract class MyThd extends Thread {
     public long runTime = 0;
     public boolean halt = false;
 
-    public MyThd(String thdName) {
+    MyThd(String thdName) {
         super(thdName);
     }
 

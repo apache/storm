@@ -30,7 +30,7 @@ public interface SchedulerAssignment {
      * @param slot the slot to check.
      * @return true if the slot is occupied by this assignment else false.
      */
-    public boolean isSlotOccupied(WorkerSlot slot);
+    boolean isSlotOccupied(WorkerSlot slot);
 
     /**
      * Is the executor assigned or not.
@@ -38,54 +38,54 @@ public interface SchedulerAssignment {
      * @param executor the executor to check it if is assigned.
      * @return true if it is assigned else false
      */
-    public boolean isExecutorAssigned(ExecutorDetails executor);
+    boolean isExecutorAssigned(ExecutorDetails executor);
 
     /**
      * Return the ID of the topology.
      *
      * @return the topology-id this assignment is for.
      */
-    public String getTopologyId();
+    String getTopologyId();
 
     /**
      * Get the map of executor to WorkerSlot.
      *
      * @return the executor -> slot map.
      */
-    public Map<ExecutorDetails, WorkerSlot> getExecutorToSlot();
+    Map<ExecutorDetails, WorkerSlot> getExecutorToSlot();
 
     /**
      * Get the set of all executors.
      *
      * @return the executors covered by this assignments
      */
-    public Set<ExecutorDetails> getExecutors();
+    Set<ExecutorDetails> getExecutors();
 
     /**
      * Get the set of all slots that are a part of this.
      *
      * @return the set of all slots.
      */
-    public Set<WorkerSlot> getSlots();
+    Set<WorkerSlot> getSlots();
 
     /**
      * Get the mapping of slot to executors on that slot.
      *
      * @return the slot to the executors assigned to that slot.
      */
-    public Map<WorkerSlot, Collection<ExecutorDetails>> getSlotToExecutors();
+    Map<WorkerSlot, Collection<ExecutorDetails>> getSlotToExecutors();
 
     /**
      * Get the slot to resource mapping.
      *
      * @return The slot to resource mapping
      */
-    public Map<WorkerSlot, WorkerResources> getScheduledResources();
+    Map<WorkerSlot, WorkerResources> getScheduledResources();
 
     /**
      * Get the total shared off heap node memory mapping.
      *
      * @return host to total shared off heap node memory mapping.
      */
-    public Map<String, Double> getNodeIdToTotalSharedOffHeapNodeMemory();
+    Map<String, Double> getNodeIdToTotalSharedOffHeapNodeMemory();
 }

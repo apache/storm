@@ -282,7 +282,7 @@ public class ShellSpout implements ISpout {
     private class SpoutHeartbeatTimerTask extends TimerTask {
         private ShellSpout spout;
 
-        public SpoutHeartbeatTimerTask(ShellSpout spout) {
+        SpoutHeartbeatTimerTask(ShellSpout spout) {
             this.spout = spout;
         }
 

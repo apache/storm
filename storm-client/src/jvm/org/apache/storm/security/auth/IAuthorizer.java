@@ -41,5 +41,5 @@ public interface IAuthorizer {
      * @param topoConf  configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
-    public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf);
+    boolean permit(ReqContext context, String operation, Map<String, Object> topoConf);
 }

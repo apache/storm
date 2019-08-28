@@ -17,7 +17,7 @@ import java.io.Serializable;
 class Prefix implements Serializable {
     private String str;
 
-    public Prefix(String str) {
+    Prefix(String str) {
         this.str = str;
     }
 

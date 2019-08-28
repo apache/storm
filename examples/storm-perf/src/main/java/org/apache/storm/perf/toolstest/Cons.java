@@ -26,7 +26,7 @@ class Cons extends MyThd {
     public final MutableLong counter = new MutableLong(0);
     private final MpscArrayQueue<Object> queue;
 
-    public Cons(MpscArrayQueue<Object> queue) {
+    Cons(MpscArrayQueue<Object> queue) {
         super("Consumer");
         this.queue = queue;
     }

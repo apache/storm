@@ -21,7 +21,7 @@ class PortAndAssignmentImpl implements PortAndAssignment {
     private final int port;
     private final LocalAssignment assignment;
 
-    public PortAndAssignmentImpl(int port, LocalAssignment assignment) {
+    PortAndAssignmentImpl(int port, LocalAssignment assignment) {
         this.port = port;
         this.assignment = assignment;
     }

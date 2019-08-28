@@ -88,7 +88,7 @@ public class BackPressureTopo {
         private OutputCollector collector;
         private long sleepMs;
 
-        public ThrottledBolt(Long sleepMs) {
+        ThrottledBolt(Long sleepMs) {
             this.sleepMs = sleepMs;
         }
 

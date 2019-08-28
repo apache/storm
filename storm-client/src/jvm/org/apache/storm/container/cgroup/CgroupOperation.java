@@ -25,50 +25,50 @@ public interface CgroupOperation {
     /**
      * Get a list of hierarchies.
      */
-    public List<Hierarchy> getHierarchies();
+    List<Hierarchy> getHierarchies();
 
     /**
      * get a list of available subsystems.
      */
-    public Set<SubSystem> getSubSystems();
+    Set<SubSystem> getSubSystems();
 
     /**
      * Check if a subsystem is enabled.
      */
-    public boolean isSubSystemEnabled(SubSystemType subsystem);
+    boolean isSubSystemEnabled(SubSystemType subsystem);
 
     /**
      * get the first hierarchy that has a certain subsystem isMounted.
      */
-    public Hierarchy getHierarchyWithSubSystem(SubSystemType subsystem);
+    Hierarchy getHierarchyWithSubSystem(SubSystemType subsystem);
 
     /**
      * get the first hierarchy that has a certain list of subsystems isMounted.
      */
-    public Hierarchy getHierarchyWithSubSystems(List<SubSystemType> subSystems);
+    Hierarchy getHierarchyWithSubSystems(List<SubSystemType> subSystems);
 
     /**
      * check if a hiearchy is mounted.
      */
-    public boolean isMounted(Hierarchy hierarchy);
+    boolean isMounted(Hierarchy hierarchy);
 
     /**
      * mount a hierarchy.
      */
-    public void mount(Hierarchy hierarchy) throws IOException;
+    void mount(Hierarchy hierarchy) throws IOException;
 
     /**
      * umount a heirarchy.
      */
-    public void umount(Hierarchy hierarchy) throws IOException;
+    void umount(Hierarchy hierarchy) throws IOException;
 
     /**
      * create a cgroup.
      */
-    public void createCgroup(CgroupCommon cgroup) throws SecurityException;
+    void createCgroup(CgroupCommon cgroup) throws SecurityException;
 
     /**
      * delete a cgroup.
      */
-    public void deleteCgroup(CgroupCommon cgroup) throws IOException;
+    void deleteCgroup(CgroupCommon cgroup) throws IOException;
 }

@@ -31,7 +31,7 @@ public interface CqlMapper extends Serializable {
     List<Column> map(ITuple tuple);
 
 
-    public static final class SelectableCqlMapper implements CqlMapper {
+    final class SelectableCqlMapper implements CqlMapper {
 
         private final List<FieldSelector> selectors;
 
@@ -59,7 +59,7 @@ public interface CqlMapper extends Serializable {
     /**
      * Default {@link CqlMapper} to map all tuple values to column.
      */
-    public static final class DefaultCqlMapper implements CqlMapper {
+    final class DefaultCqlMapper implements CqlMapper {
 
         /**
          * Creates a new {@link org.apache.storm.cassandra.query.CqlMapper.DefaultCqlMapper} instance.

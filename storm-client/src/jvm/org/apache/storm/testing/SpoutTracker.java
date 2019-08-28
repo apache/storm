@@ -75,7 +75,7 @@ public class SpoutTracker extends BaseRichSpout {
         public int emitted = 0;
         public SpoutOutputCollector collector;
 
-        public SpoutTrackOutputCollector(SpoutOutputCollector collector) {
+        SpoutTrackOutputCollector(SpoutOutputCollector collector) {
             this.collector = collector;
         }
 

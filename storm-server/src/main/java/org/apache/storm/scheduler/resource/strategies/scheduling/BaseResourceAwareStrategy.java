@@ -137,8 +137,8 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     }
 
     protected abstract TreeSet<ObjectResources> sortObjectResources(
-        final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
-        final ExistingScheduleFunc existingScheduleFunc
+        AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
+        ExistingScheduleFunc existingScheduleFunc
     );
 
     /**
@@ -245,7 +245,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         private final Iterator<String> post;
         private final Set<String> skip;
 
-        public LazyNodeSortingIterator(LazyNodeSorting parent,
+        LazyNodeSortingIterator(LazyNodeSorting parent,
                                        TreeSet<ObjectResources> sortedRacks) {
             this.parent = parent;
             rackIterator = sortedRacks.iterator();
@@ -315,7 +315,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         private final List<String> unFavoredNodeIds;
         private final Set<String> skippedNodeIds = new HashSet<>();
 
-        public LazyNodeSorting(TopologyDetails td, ExecutorDetails exec,
+        LazyNodeSorting(TopologyDetails td, ExecutorDetails exec,
                                List<String> favoredNodeIds, List<String> unFavoredNodeIds) {
             this.favoredNodeIds = favoredNodeIds;
             this.unFavoredNodeIds = unFavoredNodeIds;

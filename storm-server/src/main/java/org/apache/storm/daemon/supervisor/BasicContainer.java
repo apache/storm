@@ -867,7 +867,7 @@ public class BasicContainer extends Container {
         private List<String> depLocs = null;
         private String stormVersion = null;
 
-        public TopologyMetaData(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, final String stormRoot) {
+        TopologyMetaData(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, final String stormRoot) {
             this.conf = conf;
             this.topologyId = topologyId;
             this.ops = ops;
@@ -949,7 +949,7 @@ public class BasicContainer extends Container {
     private class ProcessExitCallback implements ExitCodeCallback {
         private final String logPrefix;
 
-        public ProcessExitCallback(String logPrefix) {
+        ProcessExitCallback(String logPrefix) {
             this.logPrefix = logPrefix;
         }
 

@@ -168,7 +168,7 @@ class KerberosSaslNettyServer {
          */
         private List<String> authorizedUsers;
 
-        public KerberosSaslCallbackHandler(List<String> authorizedUsers) {
+        KerberosSaslCallbackHandler(List<String> authorizedUsers) {
             LOG.debug("KerberosSaslCallback: Creating KerberosSaslCallback handler.");
             this.authorizedUsers = authorizedUsers;
         }

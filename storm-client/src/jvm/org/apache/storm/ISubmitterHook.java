@@ -21,5 +21,5 @@ import org.apache.storm.generated.TopologyInfo;
  * class's notify method will be invoked when a topology is successfully submitted via StormSubmitter class.
  */
 public interface ISubmitterHook {
-    public void notify(TopologyInfo topologyInfo, Map<String, Object> topoConf, StormTopology topology) throws IllegalAccessException;
+    void notify(TopologyInfo topologyInfo, Map<String, Object> topoConf, StormTopology topology) throws IllegalAccessException;
 }

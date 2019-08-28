@@ -27,7 +27,7 @@ public interface JdbcLookupMapper extends JdbcMapper {
      * @param columns list of columns that represents a row
      * @return a List of storm values that can be emitted. Each item in list is emitted as an output tuple.
      */
-    public List<Values> toTuple(ITuple input, List<Column> columns);
+    List<Values> toTuple(ITuple input, List<Column> columns);
 
     /**
      * declare what are the fields that this code will output.

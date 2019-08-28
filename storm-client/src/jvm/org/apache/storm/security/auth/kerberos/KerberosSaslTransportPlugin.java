@@ -255,7 +255,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         private final Subject subject;
         private final TTransportFactory wrapped;
 
-        public TUGIAssumingTransportFactory(TTransportFactory wrapped, Subject subject) {
+        TUGIAssumingTransportFactory(TTransportFactory wrapped, Subject subject) {
             this.wrapped = wrapped;
             this.subject = subject;
 
@@ -293,7 +293,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     private class LoginCacheKey {
         private String keyString = null;
 
-        public LoginCacheKey(SortedMap<String, ?> authConf) throws IOException {
+        LoginCacheKey(SortedMap<String, ?> authConf) throws IOException {
             if (authConf != null) {
                 StringBuilder stringBuilder = new StringBuilder();
                 for (String configKey : authConf.keySet()) {

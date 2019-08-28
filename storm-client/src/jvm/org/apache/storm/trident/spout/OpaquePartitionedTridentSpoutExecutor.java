@@ -63,7 +63,7 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
         public RotatingTransactionalState rotatingState;
         public ISpoutPartition partition;
 
-        public EmitterPartitionState(RotatingTransactionalState s, ISpoutPartition p) {
+        EmitterPartitionState(RotatingTransactionalState s, ISpoutPartition p) {
             rotatingState = s;
             partition = p;
         }

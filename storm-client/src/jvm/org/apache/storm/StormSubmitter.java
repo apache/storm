@@ -536,7 +536,7 @@ public class StormSubmitter {
          * @param targetFile - destination file
          * @param totalBytes - total number of bytes of the file
          */
-        public void onStart(String srcFile, String targetFile, long totalBytes);
+        void onStart(String srcFile, String targetFile, long totalBytes);
 
         /**
          * called whenever a chunk of bytes is uploaded.
@@ -546,7 +546,7 @@ public class StormSubmitter {
          * @param bytesUploaded - number of bytes transferred so far
          * @param totalBytes    - total number of bytes of the file
          */
-        public void onProgress(String srcFile, String targetFile, long bytesUploaded, long totalBytes);
+        void onProgress(String srcFile, String targetFile, long bytesUploaded, long totalBytes);
 
         /**
          * called when the file is uploaded.
@@ -555,6 +555,6 @@ public class StormSubmitter {
          * @param targetFile - destination file
          * @param totalBytes - total number of bytes of the file
          */
-        public void onCompleted(String srcFile, String targetFile, long totalBytes);
+        void onCompleted(String srcFile, String targetFile, long totalBytes);
     }
 }

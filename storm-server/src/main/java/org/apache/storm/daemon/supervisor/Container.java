@@ -737,7 +737,7 @@ public abstract class Container implements Killable {
         }
     }
 
-    public static enum ContainerType {
+    public enum ContainerType {
         LAUNCH(false, false),
         RECOVER_FULL(true, false),
         RECOVER_PARTIAL(true, true);

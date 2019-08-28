@@ -22,7 +22,7 @@ abstract class MyThread extends Thread {
     public long count = 0;
     public long runTime = 0;
 
-    public MyThread(String thdName) {
+    MyThread(String thdName) {
         super(thdName);
     }
 

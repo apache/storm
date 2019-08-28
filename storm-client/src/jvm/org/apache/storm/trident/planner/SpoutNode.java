@@ -27,7 +27,7 @@ public class SpoutNode extends Node {
         this.type = type;
     }
 
-    public static enum SpoutType {
+    public enum SpoutType {
         DRPC,
         BATCH
     }

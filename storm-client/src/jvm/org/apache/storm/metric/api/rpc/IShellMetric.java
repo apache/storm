@@ -23,5 +23,5 @@ public interface IShellMetric extends IMetric {
      *     Object can be any json support types: String, Long, Double, Boolean, Null, List, Map
      */
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public void updateMetricFromRPC(Object value);
+    void updateMetricFromRPC(Object value);
 }

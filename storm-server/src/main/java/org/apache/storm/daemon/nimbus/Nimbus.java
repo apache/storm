@@ -4793,7 +4793,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         private final K key;
         private final V value;
 
-        public Assoc(K key, V value) {
+        Assoc(K key, V value) {
             this.key = key;
             this.value = value;
         }
@@ -4811,7 +4811,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final class Dissoc<K, V> implements UnaryOperator<Map<K, V>> {
         private final K key;
 
-        public Dissoc(K key) {
+        Dissoc(K key) {
             this.key = key;
         }
 

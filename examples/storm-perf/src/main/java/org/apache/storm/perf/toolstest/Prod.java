@@ -23,7 +23,7 @@ import org.jctools.queues.MpscArrayQueue;
 class Prod extends MyThd {
     private final MpscArrayQueue<Object> queue;
 
-    public Prod(MpscArrayQueue<Object> queue) {
+    Prod(MpscArrayQueue<Object> queue) {
         super("Producer");
         this.queue = queue;
     }

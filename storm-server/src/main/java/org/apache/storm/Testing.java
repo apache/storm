@@ -700,8 +700,8 @@ public class Testing {
     /**
      * Simply produces a boolean to see if a specific state is true or false.
      */
-    public static interface Condition {
-        public boolean exec();
+    public interface Condition {
+        boolean exec();
     }
 
     /**

@@ -78,7 +78,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
      * @return A friendly string describing the acknowledge mode
      * @throws IllegalArgumentException if the mode is not recognized
      */
-    private static final String toDeliveryModeString(int acknowledgeMode) {
+    private static String toDeliveryModeString(int acknowledgeMode) {
         switch (acknowledgeMode) {
             case Session.AUTO_ACKNOWLEDGE:
                 return "AUTO_ACKNOWLEDGE";
@@ -188,7 +188,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
         private final Logger log = LoggerFactory.getLogger(JmsEmitter.class);
         private long lastRotate;
 
-        public JmsEmitter(String name, JmsProvider jmsProvider, JmsTupleProducer tupleProducer, int jmsAcknowledgeMode,
+        JmsEmitter(String name, JmsProvider jmsProvider, JmsTupleProducer tupleProducer, int jmsAcknowledgeMode,
                           Map<String, Object> conf) {
             if (jmsProvider == null) {
                 throw new IllegalStateException("JMS provider has not been set.");
@@ -359,7 +359,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
 
         private final Logger log = LoggerFactory.getLogger(JmsBatchCoordinator.class);
 
-        public JmsBatchCoordinator(String name) {
+        JmsBatchCoordinator(String name) {
             this.name = name;
             log.info("Created batch coordinator for " + name);
         }

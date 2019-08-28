@@ -90,11 +90,11 @@ public class StreamsStormRuleSets {
     private static class StormRuleSet implements RuleSet {
         final ImmutableSet<RelOptRule> rules;
 
-        public StormRuleSet(ImmutableSet<RelOptRule> rules) {
+        StormRuleSet(ImmutableSet<RelOptRule> rules) {
             this.rules = rules;
         }
 
-        public StormRuleSet(ImmutableList<RelOptRule> rules) {
+        StormRuleSet(ImmutableList<RelOptRule> rules) {
             this.rules = ImmutableSet.<RelOptRule>builder()
                 .addAll(rules)
                 .build();

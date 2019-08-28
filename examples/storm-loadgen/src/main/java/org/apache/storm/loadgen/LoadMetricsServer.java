@@ -313,7 +313,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     }
 
     private static class NoCloseOutputStream extends FilterOutputStream {
-        public NoCloseOutputStream(OutputStream out) {
+        NoCloseOutputStream(OutputStream out) {
             super(out);
         }
 
@@ -328,11 +328,11 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         protected final Map<String, MetricExtractor> allExtractors;
         public final boolean includesSysOutOrError;
 
-        public FileReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        FileReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
             this(null, Collections.emptyMap(), allExtractors);
         }
 
-        public FileReporter(String path, Map<String, String> query,  Map<String, MetricExtractor> allExtractors)
+        FileReporter(String path, Map<String, String> query,  Map<String, MetricExtractor> allExtractors)
             throws FileNotFoundException {
             boolean append = Boolean.parseBoolean(query.getOrDefault("append", "false"));
             boolean tee = Boolean.parseBoolean(query.getOrDefault("tee", "false"));
@@ -467,12 +467,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         private final String unit;
         private final BiFunction<Measurements, TimeUnit, Object> func;
 
-        public MetricExtractor(BiFunction<Measurements, TimeUnit, Object> func) {
+        MetricExtractor(BiFunction<Measurements, TimeUnit, Object> func) {
             this.func = func;
             this.unit = null;
         }
 
-        public MetricExtractor(BiFunction<Measurements, TimeUnit, Object> func, String unit) {
+        MetricExtractor(BiFunction<Measurements, TimeUnit, Object> func, String unit) {
             this.func = func;
             this.unit = unit;
         }
@@ -504,12 +504,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         protected final int precision;
         protected String doubleFormat;
 
-        public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+        ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
             this(path, query, extractorsMap, null);
         }
 
-        public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap,
+        ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap,
                                    String defaultPreceision) throws FileNotFoundException {
             super(path, query, extractorsMap);
             targetUnit = UNIT_MAP.get(query.getOrDefault("time", "MILLISECONDS").toUpperCase());
@@ -590,7 +590,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         public final String longFormat;
         public final String stringFormat;
 
-        public FixedWidthReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+        FixedWidthReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
             super(path, query, extractorsMap, "3");
             int columnWidth = Integer.parseInt(query.getOrDefault("columnWidth", "15")) - 1;//Always have a space in between
@@ -599,7 +599,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             stringFormat = "%" + columnWidth + "s";
         }
 
-        public FixedWidthReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        FixedWidthReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
             this(null, Collections.emptyMap(), allExtractors);
         }
 
@@ -652,7 +652,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     static class SepValReporter extends ColumnsFileReporter {
         private final String separator;
 
-        public SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+        SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
             super(path, query, extractorsMap);
             this.separator = separator;
@@ -702,12 +702,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     static class LegacyReporter extends FileReporter {
         private final TimeUnit targetUnitOverride;
 
-        public LegacyReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        LegacyReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
             super(allExtractors);
             targetUnitOverride = null;
         }
 
-        public LegacyReporter(String path, Map<String, String> query, Map<String, MetricExtractor> allExtractors)
+        LegacyReporter(String path, Map<String, String> query, Map<String, MetricExtractor> allExtractors)
             throws FileNotFoundException {
             super(path, query, allExtractors);
             if (query.containsKey("time")) {

@@ -45,7 +45,7 @@ public abstract class BaseBeanFactory<T> implements BeanFactory<T> {
     /**
      * Return a new instance of T.
      */
-    protected abstract T make(final Map<String, Object> topoConf);
+    protected abstract T make(Map<String, Object> topoConf);
 
     /**
      * {@inheritDoc}

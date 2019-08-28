@@ -39,7 +39,7 @@ public interface ITransportPlugin {
      * @param processor service handler
      * @return server
      */
-    public TServer getServer(TProcessor processor) throws IOException, TTransportException;
+    TServer getServer(TProcessor processor) throws IOException, TTransportException;
 
     /**
      * Connect to the specified server via framed transport.
@@ -49,14 +49,14 @@ public interface ITransportPlugin {
      * @param asUser     the user as which the connection should be established, and all the subsequent actions should be executed. Only
      *                   applicable when using secure storm cluster. A null/blank value here will just indicate to use the logged in user.
      */
-    public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException;
+    TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException;
 
     /**
      * Get port.
      * @return The port this transport is using. This is not known until
      * {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called
      */
-    public int getPort();
+    int getPort();
 
     /**
      * Check if worker tokens are supported by this transport.

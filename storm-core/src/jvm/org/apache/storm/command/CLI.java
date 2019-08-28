@@ -221,7 +221,7 @@ public class CLI {
         final Assoc assoc;
         final boolean noValue;
 
-        public Opt(String shortName, String longName, Object defaultValue, Parse parse, Assoc assoc, boolean noValue) {
+        Opt(String shortName, String longName, Object defaultValue, Parse parse, Assoc assoc, boolean noValue) {
             this.shortName = shortName;
             this.longName = longName;
             this.defaultValue = defaultValue;
@@ -240,7 +240,7 @@ public class CLI {
         final Parse parse;
         final Assoc assoc;
 
-        public Arg(String name, Parse parse, Assoc assoc) {
+        Arg(String name, Parse parse, Assoc assoc) {
             this.name = name;
             this.parse = parse == null ? AS_STRING : parse;
             this.assoc = assoc == null ? INTO_LIST : assoc;

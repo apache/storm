@@ -25,8 +25,7 @@ public enum ControlMessage implements INettySerializable {
 
     private final short code;
 
-    //private constructor
-    private ControlMessage(short code) {
+    ControlMessage(short code) {
         this.code = code;
     }
 

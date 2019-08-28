@@ -34,6 +34,6 @@ public interface ITupleOpenTsdbDatapointMapper extends Serializable {
      *
      * @param tuple tuple instance
      */
-    public OpenTsdbMetricDatapoint getMetricPoint(ITuple tuple);
+    OpenTsdbMetricDatapoint getMetricPoint(ITuple tuple);
 
 }
