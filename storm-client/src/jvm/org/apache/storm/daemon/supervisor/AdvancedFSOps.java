@@ -97,6 +97,18 @@ public class AdvancedFSOps implements IAdvancedFSOps {
     }
 
     /**
+     * Moves a file to a given destination.
+     *
+     * @param fromFile file to move
+     * @param toFile where to move it
+     * @throws IOException on any error
+     */
+    @Override
+    public void moveFile(File fromFile, File toFile) throws IOException {
+        Files.move(fromFile.toPath(), toFile.toPath());
+    }
+
+    /**
      * Check whether supports atomic directory move.
      * @return true if an atomic directory move works, else false
      */

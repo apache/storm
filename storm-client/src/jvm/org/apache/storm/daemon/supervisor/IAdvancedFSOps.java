@@ -46,6 +46,16 @@ public interface IAdvancedFSOps {
      */
     void moveDirectoryPreferAtomic(File fromDir, File toDir) throws IOException;
 
+
+    /**
+     * Moves a file to a given destination.
+     *
+     * @param fromFile file to move
+     * @param toFile where to move it
+     * @throws IOException on any error
+     */
+    void moveFile(File fromFile, File toFile) throws IOException;
+
     /**
      * Check whether supports atomic directory move.
      * @return true if an atomic directory move works, else false

@@ -234,6 +234,14 @@ public class ServerUtils {
         return _instance.currentClasspathImpl();
     }
 
+
+    /**
+     *  Returns the current thread classloader.
+     */
+    public static ClassLoader currentThreadClassloader() {
+        return _instance.currentThreadClassloaderImpl();
+    }
+
     /**
      * Determines if a zip archive contains a particular directory.
      *
@@ -746,6 +754,11 @@ public class ServerUtils {
     // Non-static impl methods exist for mocking purposes.
     public String currentClasspathImpl() {
         return System.getProperty("java.class.path");
+    }
+
+
+    public ClassLoader currentThreadClassloaderImpl() {
+        return Thread.currentThread().getContextClassLoader();
     }
 
     public void downloadResourcesAsSupervisorImpl(String key, String localFile,
