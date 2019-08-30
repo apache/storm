@@ -48,11 +48,11 @@ public class DependencyUploader {
 
     private final Map<String, Object> conf;
     private ClientBlobStore blobStore;
-    private int uploadChuckSize;
+    private final int uploadChunkSize;
 
     public DependencyUploader() {
         conf = Utils.readStormConfig();
-        this.uploadChuckSize = ObjectReader.getInt(conf.get(Config.STORM_BLOBSTORE_DEPENDENCY_JAR_UPLOAD_CHUCK_SIZE_BYTES), 1024 * 1024);
+        this.uploadChunkSize = ObjectReader.getInt(conf.get(Config.STORM_BLOBSTORE_DEPENDENCY_JAR_UPLOAD_CHUNK_SIZE_BYTES), 1024 * 1024);
     }
 
     public void init() {
@@ -164,7 +164,7 @@ public class DependencyUploader {
             try {
                 blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
                 try (InputStream in = Files.newInputStream(dependency.toPath())) {
-                    IOUtils.copy(in, blob, this.uploadChuckSize);
+                    IOUtils.copy(in, blob, this.uploadChunkSize);
                 }
                 blob.close();
                 blob = null;
