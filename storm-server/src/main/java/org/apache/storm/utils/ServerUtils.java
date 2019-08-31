@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -232,6 +233,14 @@ public class ServerUtils {
      */
     public static String currentClasspath() {
         return _instance.currentClasspathImpl();
+    }
+
+
+    /**
+     *  Returns the current thread classloader.
+     */
+    public static URL getResourceFromClassloader(String name) {
+        return _instance.getResourceFromClassloaderImpl(name);
     }
 
     /**
@@ -746,6 +755,11 @@ public class ServerUtils {
     // Non-static impl methods exist for mocking purposes.
     public String currentClasspathImpl() {
         return System.getProperty("java.class.path");
+    }
+
+
+    public URL getResourceFromClassloaderImpl(String name) {
+        return Thread.currentThread().getContextClassLoader().getResource(name);
     }
 
     public void downloadResourcesAsSupervisorImpl(String key, String localFile,
