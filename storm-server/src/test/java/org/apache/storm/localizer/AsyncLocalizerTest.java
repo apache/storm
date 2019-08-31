@@ -311,9 +311,6 @@ public class AsyncLocalizerTest {
             when(mockedCU.readSupervisorStormConfImpl(conf, topoId)).thenReturn(topoConf);
             when(mockedCU.readSupervisorTopologyImpl(conf, topoId, ops)).thenReturn(st);
 
-            // empty classloader
-            when(mockedSU.currentThreadClassloaderImpl()).thenReturn(mock(ClassLoader.class));
-
             doReturn(mockblobstore).when(bl).getClientBlobStore();
             doReturn(userDir).when(bl).getLocalUserFileCacheDir(user);
             doReturn(localizedList).when(bl).getBlobs(any(List.class), any(), any());

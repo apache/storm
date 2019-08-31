@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -238,8 +239,8 @@ public class ServerUtils {
     /**
      *  Returns the current thread classloader.
      */
-    public static ClassLoader currentThreadClassloader() {
-        return _instance.currentThreadClassloaderImpl();
+    public static URL getResourceFromClassloader(String name) {
+        return _instance.getResourceFromClassloaderImpl(name);
     }
 
     /**
@@ -757,8 +758,8 @@ public class ServerUtils {
     }
 
 
-    public ClassLoader currentThreadClassloaderImpl() {
-        return Thread.currentThread().getContextClassLoader();
+    public URL getResourceFromClassloaderImpl(String name) {
+        return Thread.currentThread().getContextClassLoader().getResource(name);
     }
 
     public void downloadResourcesAsSupervisorImpl(String key, String localFile,
