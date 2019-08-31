@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,6 +67,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.blobstore.BlobStoreAclHandler.WORLD_EVERYTHING;
 import static org.apache.storm.localizer.LocalizedResource.USERCACHE;
+import static org.apache.storm.localizer.LocallyCachedTopologyBlob.LOCAL_MODE_JAR_VERSION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -242,6 +244,103 @@ public class AsyncLocalizerTest {
         } finally {
             try {
                 ConfigUtils.setInstance(orig);
+                bl.close();
+            } catch (Throwable e) {
+                LOG.error("ERROR trying to close an object", e);
+            }
+        }
+    }
+
+
+    @Test
+    public void testRequestDownloadTopologyBlobsLocalMode() throws Exception {
+        // tests download of topology blobs in local mode on a topology without resources folder
+        final String topoId = "TOPO-12345";
+        final String user = "user";
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+        la.set_owner(user);
+        ExecutorInfo ei = new ExecutorInfo();
+        ei.set_task_start(1);
+        ei.set_task_end(1);
+        la.add_to_executors(ei);
+        final String topoName = "TOPO";
+        final int port = 8080;
+        final String simpleLocalName = "simple.txt";
+        final String simpleKey = "simple";
+
+        final String stormLocal = "/tmp/storm-local/";
+        final File userDir = new File(stormLocal, user);
+        final String stormRoot = stormLocal + topoId + "/";
+
+        final String localizerRoot = getTestLocalizerRoot();
+
+        final StormTopology st = new StormTopology();
+        st.set_spouts(new HashMap<>());
+        st.set_bolts(new HashMap<>());
+        st.set_state_spouts(new HashMap<>());
+
+        Map<String, Map<String, Object>> topoBlobMap = new HashMap<>();
+        Map<String, Object> simple = new HashMap<>();
+        simple.put("localname", simpleLocalName);
+        simple.put("uncompress", false);
+        topoBlobMap.put(simpleKey, simple);
+
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.STORM_LOCAL_DIR, stormLocal);
+        conf.put(Config.STORM_CLUSTER_MODE, "local");
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        ConfigUtils mockedCU = mock(ConfigUtils.class);
+        ServerUtils mockedSU = mock(ServerUtils.class);
+
+        Map<String, Object> topoConf = new HashMap<>(conf);
+        topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topoBlobMap);
+        topoConf.put(Config.TOPOLOGY_NAME, topoName);
+
+        List<LocalizedResource> localizedList = new ArrayList<>();
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        LocalizedResource simpleLocal = new LocalizedResource(simpleKey, Paths.get(localizerRoot), false, ops, conf, user, metricsRegistry);
+        localizedList.add(simpleLocal);
+
+        AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, localizerRoot, metricsRegistry));
+        ConfigUtils orig = ConfigUtils.setInstance(mockedCU);
+        ServerUtils origSU = ServerUtils.setInstance(mockedSU);
+
+        try {
+            when(mockedCU.supervisorStormDistRootImpl(conf, topoId)).thenReturn(stormRoot);
+            when(mockedCU.readSupervisorStormConfImpl(conf, topoId)).thenReturn(topoConf);
+            when(mockedCU.readSupervisorTopologyImpl(conf, topoId, ops)).thenReturn(st);
+
+            doReturn(mockblobstore).when(bl).getClientBlobStore();
+            doReturn(userDir).when(bl).getLocalUserFileCacheDir(user);
+            doReturn(localizedList).when(bl).getBlobs(any(List.class), any(), any());
+            doReturn(mock(OutputStream.class)).when(ops).getOutputStream(any());
+
+            ReadableBlobMeta blobMeta = new ReadableBlobMeta();
+            blobMeta.set_version(1);
+            doReturn(blobMeta).when(mockblobstore).getBlobMeta(any());
+            when(mockblobstore.getBlob(any())).thenAnswer(invocation -> new TestInputStreamWithMeta(LOCAL_MODE_JAR_VERSION));
+
+            Future<Void> f = bl.requestDownloadTopologyBlobs(la, port, null);
+            f.get(20, TimeUnit.SECONDS);
+
+            verify(bl).getLocalUserFileCacheDir(user);
+
+            verify(ops).fileExists(userDir);
+            verify(ops).forceMkdir(userDir);
+
+            verify(bl).getBlobs(any(List.class), any(), any());
+
+            Path extractionDir = Paths.get(stormRoot,
+                    LocallyCachedTopologyBlob.TopologyBlobType.TOPO_JAR.getTempExtractionDir(LOCAL_MODE_JAR_VERSION));
+
+            // make sure resources dir is created.
+            verify(ops).forceMkdir(extractionDir);
+
+        } finally {
+            try {
+                ConfigUtils.setInstance(orig);
+                ServerUtils.setInstance(origSU);
                 bl.close();
             } catch (Throwable e) {
                 LOG.error("ERROR trying to close an object", e);
