@@ -325,12 +325,15 @@
         <maven-resolver.version>1.3.3</maven-resolver.version>
         <maven.version>3.6.0</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
-        <jersey.version>2.27</jersey.version>
+        <jersey.version>2.29</jersey.version>
         <dropwizard.version>1.3.5</dropwizard.version>
         <j2html.version>1.0.0</j2html.version>
         <jool.version>0.9.12</jool.version>
         <caffeine.version>2.3.5</caffeine.version>
+        <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
+        <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jaxb-version>2.3.0</jaxb-version>
+        <activation-version>1.1.1</activation-version>
         <rocksdb-version>5.18.3</rocksdb-version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
@@ -388,7 +391,6 @@
                     <plugin>
                         <groupId>org.apache.rat</groupId>
                         <artifactId>apache-rat-plugin</artifactId>
-                        <version>0.12</version>
                         <executions>
                             <execution>
                                 <phase>test</phase>
@@ -687,20 +689,37 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-server</artifactId>
+                <groupId>org.glassfish.jersey</groupId>
+                <artifactId>jersey-bom</artifactId>
                 <version>${jersey.version}</version>
-            </dependency> 
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId> 
-                <artifactId>jersey-container-servlet-core</artifactId>
-                <version>${jersey.version}</version>
-            </dependency> 
+                <groupId>com.sun.activation</groupId>
+                <artifactId>jakarta.activation</artifactId>
+                <version>${jakarta-activation-version}</version>
+            </dependency>
             <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId> 
-                <artifactId>jersey-container-jetty-http</artifactId>
-                <version>${jersey.version}</version>
-            </dependency> 
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>${jakarta-activation-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta-jaxb-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>${activation-version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
                 <artifactId>HdrHistogram</artifactId>
@@ -1006,16 +1025,6 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${jaxb-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>1.1.1</version>
             </dependency>
             <dependency>
                 <groupId>javax.annotation</groupId>
@@ -1365,6 +1374,16 @@
                                 Eclipse Public License, Version 1.0 |
                                 Eclipse Public License 1.0 |
                                 Eclipse Public License - v 1.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                Eclipse Public License, Version 2.0 |
+                                EPL-2.0 |
+                                EPL 2.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                Eclipse Distribution License, Version 1.0 |
+                                Eclipse Distribution License - v 1.0 |
+                                EDL 1.0
                             </licenseMerge>
                             <licenseMerge>
                                 MIT License |

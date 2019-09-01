@@ -762,7 +762,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Velocity (org.apache.velocity:velocity:1.5 - http://velocity.apache.org/engine/releases/velocity-1.5/)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.5.0 - https://yetus.apache.org/audience-annotations)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:1.2 - http://www.minidev.net/)
-        * Bean Validation API (javax.validation:validation-api:1.1.0.Final - http://beanvalidation.org)
         * BoneCP :: Core Library (com.jolbox:bonecp:0.8.0.RELEASE - http://jolbox.com/bonecp)
         * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
         * Calcite Druid (org.apache.calcite:calcite-druid:1.10.0 - http://calcite.apache.org/calcite-druid)
@@ -906,15 +905,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Tephra HBase 1.0 Compatibility (co.cask.tephra:tephra-hbase-compat-1.0:0.6.0 - https://github.com/caskdata/tephra/tephra-hbase-compat-1.0)
         * zookeeper (org.apache.zookeeper:zookeeper:3.4.6 - no url defined)
         * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.26 - http://www.slf4j.org)
-        * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.27 - https://jersey.github.io/project/jersey-container-grizzly2-http/)
-        * jersey-container-grizzly2-servlet (org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:2.27 - https://jersey.github.io/project/jersey-container-grizzly2-servlet/)
-        * jersey-container-servlet (org.glassfish.jersey.containers:jersey-container-servlet:2.27 - https://jersey.github.io/project/jersey-container-servlet/)
-        * jersey-container-servlet-core (org.glassfish.jersey.containers:jersey-container-servlet-core:2.27 - https://jersey.github.io/project/jersey-container-servlet-core/)
-        * jersey-core-client (org.glassfish.jersey.core:jersey-client:2.27 - https://jersey.github.io/jersey-client/)
-        * jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2:2.27 - https://jersey.github.io/project/jersey-hk2/)
-        * jersey-media-jaxb (org.glassfish.jersey.media:jersey-media-jaxb:2.27 - https://jersey.github.io/project/jersey-media-jaxb/)
-        * jersey-core-server (org.glassfish.jersey.core:jersey-server:2.27 - https://jersey.github.io/jersey-server/)
-        * jersey-core-common (org.glassfish.jersey.core:jersey-common:2.27 - https://jersey.github.io/jersey-common/)
         * Jetty :: Aggregate :: All core Jetty (org.eclipse.jetty.aggregate:jetty-all:7.6.0.v20120127 - http://www.eclipse.org/jetty/jetty-aggregate-project/jetty-all)
         * Jetty :: Continuation (org.eclipse.jetty:jetty-continuation:9.4.14.v20181114 - http://www.eclipse.org/jetty)
         * Jetty :: Http Utility (org.eclipse.jetty:jetty-http:9.4.14.v20181114 - http://www.eclipse.org/jetty)
@@ -936,6 +926,20 @@ The license texts of these dependencies can be found in the licenses directory.
         * Javassist (org.javassist:javassist:3.22.0-GA - http://www.javassist.org/)
         * RocksDB JNI (org.rocksdb:rocksdbjni:5.18.3 - http://rocksdb.org/)
         * JCTools Core (org.jctools:jctools-core:2.0.1 - http://jctools.github.io/JCTools/)
+        * Bean Validation API (javax.validation:validation-api:2.0.1.Final - http://beanvalidation.org)
+        * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
+        * jersey-container-grizzly2-servlet (org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-servlet)
+        * jersey-container-servlet (org.glassfish.jersey.containers:jersey-container-servlet:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet)
+        * jersey-container-servlet-core (org.glassfish.jersey.containers:jersey-container-servlet-core:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet-core)
+        * jersey-core-client (org.glassfish.jersey.core:jersey-client:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-client)
+        * jersey-ext-bean-validation (org.glassfish.jersey.ext:jersey-bean-validation:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-bean-validation)
+        * jersey-ext-metainf-services (org.glassfish.jersey.ext:jersey-metainf-services:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-metainf-services)
+        * jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-hk2)
+        * jersey-media-jaxb (org.glassfish.jersey.media:jersey-media-jaxb:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-media-jaxb)
+        * jersey-core-server (org.glassfish.jersey.core:jersey-server:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
+        * jersey-core-common (org.glassfish.jersey.core:jersey-common:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
+        * Hibernate Validator Engine (org.hibernate:hibernate-validator:5.4.2.Final - http://hibernate.org/validator/hibernate-validator)
+        * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:6.0.17.Final - http://hibernate.org/validator/hibernate-validator)
 
     BSD 3-Clause License
 
@@ -965,22 +969,12 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Common Development and Distribution License
 
-        * aopalliance version 1.0 repackaged as a module (org.glassfish.hk2.external:aopalliance-repackaged:2.5.0-b42 - https://github.com/hk2-project/hk2/external/aopalliance-repackaged)
         * Expression Language 3.0 (org.glassfish:javax.el:3.0.0 - http://el-spec.java.net)
         * Expression Language 3.0 (org.glassfish:javax.el:3.0.1-b11 - http://uel.java.net)
-        * grizzly-framework (org.glassfish.grizzly:grizzly-framework:2.4.3 - http://grizzly.java.net/grizzly-framework)
-        * grizzly-http (org.glassfish.grizzly:grizzly-http:2.4.3 - http://grizzly.java.net/grizzly-http)
-        * grizzly-http-server (org.glassfish.grizzly:grizzly-http-server:2.4.3 - http://grizzly.java.net/grizzly-http-server)
-        * grizzly-http-servlet (org.glassfish.grizzly:grizzly-http-servlet:2.4.0 - http://grizzly.java.net/grizzly-http-servlet)
-        * HK2 API module (org.glassfish.hk2:hk2-api:2.5.0-b42 - https://github.com/hk2-project/hk2/hk2-api)
-        * HK2 Implementation Utilities (org.glassfish.hk2:hk2-utils:2.5.0-b42 - https://github.com/hk2-project/hk2/hk2-utils)
         * JavaServer Pages(TM) API (javax.servlet.jsp:javax.servlet.jsp-api:2.3.1 - http://jsp.java.net)
         * Java Servlet API (javax.servlet:javax.servlet-api:3.1.0 - http://servlet-spec.java.net)
-        * javax.annotation API (javax.annotation:javax.annotation-api:1.3.2 - http://jcp.org/en/jsr/detail?id=250)
-        * javax.inject:1 as OSGi bundle (org.glassfish.hk2.external:javax.inject:2.5.0-b42 - https://github.com/hk2-project/hk2/external/javax.inject)
         * JSP implementation (org.glassfish.web:javax.servlet.jsp:2.3.2 - http://jsp.java.net)
-        * OSGi resource locator bundle - used by various API providers that rely on META-INF/services mechanism to locate providers. (org.glassfish.hk2:osgi-resource-locator:1.0.1 - http://glassfish.org/osgi-resource-locator/)
-        * ServiceLocator Default Implementation (org.glassfish.hk2:hk2-locator:2.5.0-b42 - https://github.com/hk2-project/hk2/hk2-locator)
+        * javax.annotation API (javax.annotation:javax.annotation-api:1.3.2 - http://jcp.org/en/jsr/detail?id=250)
 
     Common Development and Distribution License (CDDL) v1.0
 
@@ -991,18 +985,15 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * Java Message Service (javax.jms:jms:1.1 - http://java.sun.com/products/jms)
         * Java Transaction API (javax.transaction:jta:1.1 - http://java.sun.com/products/jta)
-        * jersey-bom (org.glassfish.jersey:jersey-bom:2.27 - http://java.net/jersey-bom/)
         * jsp-api (javax.servlet:jsp-api:2.0 - no url defined)
         * jsp-api (javax.servlet.jsp:jsp-api:2.1 - no url defined)
         * servlet-api (javax.servlet:servlet-api:2.5 - no url defined)
         * transaction-api (javax.transaction:transaction-api:1.1 - no url defined)
         * javax.ws.rs-api (javax.ws.rs:javax.ws.rs-api:2.0.1 - http://jax-rs-spec.java.net)
-        * javax.ws.rs-api (javax.ws.rs:javax.ws.rs-api:2.1 - http://jax-rs-spec.java.net)
         * jaxb-api (javax.xml.bind:jaxb-api:2.3.0 - https://github.com/javaee/jaxb-spec/jaxb-api)
         * JAXB RI (com.sun.xml.bind:jaxb-impl:2.2.3-1 - http://jaxb.java.net/)
         * jersey-client (com.sun.jersey:jersey-client:1.9 - https://jersey.java.net/jersey-client/)
         * jersey-core (com.sun.jersey:jersey-core:1.9 - https://jersey.java.net/jersey-core/)
-        * jersey-grizzly2 (com.sun.jersey:jersey-grizzly2:1.19.4 - https://jersey.java.net/jersey-grizzly2/)
         * jersey-guice (com.sun.jersey.contribs:jersey-guice:1.9 - https://jersey.java.net/jersey-contribs/jersey-guice/)
         * jersey-json (com.sun.jersey:jersey-json:1.9 - https://jersey.java.net/jersey-json/)
         * jersey-server (com.sun.jersey:jersey-server:1.9 - https://jersey.java.net/jersey-server/)
@@ -1014,6 +1005,29 @@ The license texts of these dependencies can be found in the licenses directory.
         * core.specs.alpha (org.clojure:core.specs.alpha:0.2.44 - https://github.com/clojure/build.poms/core.specs.alpha)
         * spec.alpha (org.clojure:spec.alpha:0.2.176 - https://github.com/clojure/build.poms/spec.alpha)
         * JGraphT (org.jgrapht:jgrapht-core:0.9.0 - https://jgrapht.org/)
+        
+    Eclipse Public License, Version 2.0
+    
+        * jakarta.annotation API (jakarta.annotation:jakarta.annotation-api:1.3.4 - https://projects.eclipse.org/projects/ee4j.ca)
+        * Expression Language 3.0 API (jakarta.el:jakarta.el-api:3.0.2 - https://projects.eclipse.org/projects/ee4j.el)
+        * Java Servlet API (jakarta.servlet:jakarta.servlet-api:4.0.2 - https://projects.eclipse.org/projects/ee4j.servlet)
+        * javax.ws.rs-api (jakarta.ws.rs:jakarta.ws.rs-api:2.1.5 - https://github.com/eclipse-ee4j/jaxrs-api)
+        * grizzly-framework (org.glassfish.grizzly:grizzly-framework:2.4.4 - https://projects.eclipse.org/projects/ee4j.grizzly/grizzly-framework)
+        * grizzly-http (org.glassfish.grizzly:grizzly-http:2.4.4 - https://projects.eclipse.org/projects/ee4j.grizzly/grizzly-http)
+        * grizzly-http-server (org.glassfish.grizzly:grizzly-http-server:2.4.4 - https://projects.eclipse.org/projects/ee4j.grizzly/grizzly-http-server)
+        * grizzly-http-servlet (org.glassfish.grizzly:grizzly-http-servlet:2.4.4 - https://projects.eclipse.org/projects/ee4j.grizzly/grizzly-http-servlet)
+        * aopalliance version 1.0 repackaged as a module (org.glassfish.hk2.external:aopalliance-repackaged:2.5.0 - https://github.com/eclipse-ee4j/glassfish-hk2/external/aopalliance-repackaged)
+        * HK2 API module (org.glassfish.hk2:hk2-api:2.5.0 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-api)
+        * HK2 Implementation Utilities (org.glassfish.hk2:hk2-utils:2.5.0 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-utils)
+        * javax.inject:1 as OSGi bundle (org.glassfish.hk2.external:jakarta.inject:2.5.0 - https://github.com/eclipse-ee4j/glassfish-hk2/external/jakarta.inject)
+        * OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
+        * ServiceLocator Default Implementation (org.glassfish.hk2:hk2-locator:2.5.0 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-locator)
+        * Expression Language 3.0 (org.glassfish:jakarta.el:3.0.2 - https://projects.eclipse.org/projects/ee4j.el)
+        
+    Eclipse Distribution License, Version 1.0
+        * JavaBeans Activation Framework (com.sun.activation:jakarta.activation:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation)
+        * JavaBeans Activation Framework API jar (jakarta.activation:jakarta.activation-api:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation-api)
+        * jakarta.xml.bind-api (jakarta.xml.bind:jakarta.xml.bind-api:2.3.2 - https://github.com/eclipse-ee4j/jaxb-api/jakarta.xml.bind-api)
 
     MIT License
 
