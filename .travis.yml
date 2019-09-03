@@ -43,7 +43,7 @@ before_install:
   - sudo add-apt-repository ppa:deadsnakes/ppa -y
   - sudo apt-get update
   - sudo apt-get install python3.6
-  - wget http://mirrors.rackhosting.com/apache/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz -P $HOME
+  - wget https://www-us.apache.org/dist/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz -P $HOME
   - tar xzvf $HOME/apache-maven-3.6.1-bin.tar.gz -C $HOME
   - export PATH=$HOME/apache-maven-3.6.1/bin:$PATH
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
