@@ -32,6 +32,7 @@ import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.thrift.TBase;
 import org.apache.storm.thrift.TDeserializer;
 import org.apache.storm.thrift.TSerializer;
+import org.apache.storm.thrift.protocol.TProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,6 +124,10 @@ public class LocalState {
             } catch (Exception e) {
                 attempts++;
                 if (attempts >= 10) {
+                    if (e.getCause() instanceof TProtocolException) {
+                        LOG.warn("LocalState file is corrupted, resetting state.", e);
+                        return new HashMap<>();
+                    }
                     throw new RuntimeException(e);
                 }
             }
