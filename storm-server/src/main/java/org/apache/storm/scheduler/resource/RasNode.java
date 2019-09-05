@@ -364,6 +364,7 @@ public class RasNode {
      * @return true if it would fit else false
      */
     public boolean wouldFit(WorkerSlot ws, ExecutorDetails exec, TopologyDetails td) {
+        assert nodeId.equals(ws.getNodeId()) : "Slot " + ws + " is not a part of this node " + nodeId;
         if (!isAlive || !cluster.wouldFit(
                 ws,
                 exec,
