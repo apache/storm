@@ -244,6 +244,10 @@ public class TopologyDetails {
         return ret;
     }
 
+    public String getComponentFromExecutor(ExecutorDetails exec) {
+        return executorToComponent.get(exec);
+    }
+
     /**
      * Gets the on heap memory requirement for a certain task within a topology.
      *
