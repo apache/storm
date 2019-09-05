@@ -1042,11 +1042,29 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_THRIFT_TRANSPORT_PLUGIN = "storm.thrift.transport";
     /**
      * How long a worker can go without heartbeating before the supervisor tries to restart the worker process.
+     * Can be overridden by {@link #TOPOLOGY_WORKER_TIMEOUT_SECS}, if set.
      */
     @IsInteger
     @IsPositiveNumber
     @NotNull
     public static final String SUPERVISOR_WORKER_TIMEOUT_SECS = "supervisor.worker.timeout.secs";
+    /**
+     * Enforce maximum on {@link #TOPOLOGY_WORKER_TIMEOUT_SECS}.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    @NotNull
+    public static final String WORKER_MAX_TIMEOUT_SECS = "worker.max.timeout.secs";
+    /**
+     * Topology configurable worker heartbeat timeout before the supervisor tries to restart the worker process.
+     * Maximum value constrained by {@link #WORKER_MAX_TIMEOUT_SECS}.
+     * When topology timeout is greater, the following configs are effectively overridden:
+     * {@link #SUPERVISOR_WORKER_TIMEOUT_SECS}, SUPERVISOR_WORKER_START_TIMEOUT_SECS, NIMBUS_TASK_TIMEOUT_SECS and NIMBUS_TASK_LAUNCH_SECS.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    @NotNull
+    public static final String TOPOLOGY_WORKER_TIMEOUT_SECS = "topology.worker.timeout.secs";
     /**
      * How many seconds to allow for graceful worker shutdown when killing workers before resorting to force kill.
      * If a worker fails to shut down gracefully within this delay, it will either suicide or be forcibly killed by the supervisor.

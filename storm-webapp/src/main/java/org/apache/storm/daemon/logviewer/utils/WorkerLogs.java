@@ -25,6 +25,7 @@ import static org.apache.storm.Config.TOPOLOGY_SUBMITTER_USER;
 import com.codahale.metrics.Meter;
 import com.google.common.collect.Lists;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,11 +41,15 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.ClientSupervisorUtils;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.utils.PathUtil;
+import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.utils.LruMap;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Unchecked;
@@ -64,6 +69,7 @@ public class WorkerLogs {
     private final Map<String, Object> stormConf;
     private final Path logRootDir;
     private final DirectoryCleaner directoryCleaner;
+    private final LruMap<String, Integer> mapTopologyIdToHeartbeatTimeout;
 
     /**
      * Constructor.
@@ -77,6 +83,7 @@ public class WorkerLogs {
         this.logRootDir = logRootDir.toAbsolutePath().normalize();
         this.numSetPermissionsExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_SET_PERMISSION_EXCEPTIONS);
         this.directoryCleaner = new DirectoryCleaner(metricsRegistry);
+        this.mapTopologyIdToHeartbeatTimeout = new LruMap<>(200);
     }
 
     /**
@@ -189,10 +196,38 @@ public class WorkerLogs {
      */
     public Set<String> getAliveIds(int nowSecs) throws IOException {
         return SupervisorUtils.readWorkerHeartbeats(stormConf).entrySet().stream()
-                .filter(entry -> Objects.nonNull(entry.getValue())
-                        && !SupervisorUtils.isWorkerHbTimedOut(nowSecs, entry.getValue(), stormConf))
+                .filter(entry -> Objects.nonNull(entry.getValue()) && !isTimedOut(nowSecs, entry))
                 .map(Map.Entry::getKey)
                 .collect(toCollection(TreeSet::new));
+    }
+
+    private boolean isTimedOut(int nowSecs, Map.Entry<String, LSWorkerHeartbeat> entry) {
+        LSWorkerHeartbeat hb = entry.getValue();
+        int workerLogTimeout = getTopologyTimeout(hb);
+        return (nowSecs - hb.get_time_secs()) >= workerLogTimeout;
+    }
+
+    private int getTopologyTimeout(LSWorkerHeartbeat hb) {
+        String topoId = hb.get_topology_id();
+        Integer cachedTimeout = mapTopologyIdToHeartbeatTimeout.get(topoId);
+        if (cachedTimeout != null) {
+            return cachedTimeout;
+        } else {
+            int timeout = getWorkerLogTimeout(stormConf, topoId, hb.get_port());
+            mapTopologyIdToHeartbeatTimeout.put(topoId, timeout);
+            return timeout;
+        }
+    }
+
+    private int getWorkerLogTimeout(Map<String, Object> conf, String topologyId, int port) {
+        int defaultWorkerLogTimeout = ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+        File file = ServerConfigUtils.getLogMetaDataFile(conf, topologyId, port);
+        Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(file.getAbsolutePath());
+        if (map == null) {
+            return defaultWorkerLogTimeout;
+        }
+
+        return (Integer) map.getOrDefault(Config.TOPOLOGY_WORKER_TIMEOUT_SECS, defaultWorkerLogTimeout);
     }
 
     /**

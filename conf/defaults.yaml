@@ -171,6 +171,8 @@ supervisor.monitor.frequency.secs: 3
 supervisor.heartbeat.frequency.secs: 5
 #max timeout for a node worker heartbeats when master gains leadership
 supervisor.worker.heartbeats.max.timeout.secs: 600
+#For topology configurable heartbeat timeout, maximum allowed heartbeat timeout.
+worker.max.timeout.secs: 600
 supervisor.enable: true
 supervisor.supervisors: []
 supervisor.supervisors.commands: []
