@@ -49,13 +49,14 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -104,6 +105,75 @@ public class TestDefaultResourceAwareStrategy {
         }
     }
 
+    /*
+     * test scheduling does not cause negative resources
+     */
+    @Test
+    public void testSchedulingNegativeResources() {
+        int spoutParallelism = 2;
+        int boltParallelism = 2;
+        double cpuPercent = 10;
+        double memoryOnHeap = 10;
+        double memoryOffHeap = 10;
+        double sharedOnHeapWithinWorker = 400;
+        double sharedOffHeapWithinNode = 700;
+        double sharedOffHeapWithinWorker = 500;
+
+        Config conf = createClusterConfig(cpuPercent, memoryOnHeap, memoryOffHeap, null);
+        TopologyDetails[] topo = new TopologyDetails[2];
+
+        // 1st topology
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("spout", new TestSpout(),
+                spoutParallelism);
+        builder.setBolt("bolt-1", new TestBolt(),
+                boltParallelism).addSharedMemory(new SharedOffHeapWithinWorker(sharedOffHeapWithinWorker, "bolt-1 shared off heap within worker")).shuffleGrouping("spout");
+        builder.setBolt("bolt-2", new TestBolt(),
+                boltParallelism).addSharedMemory(new SharedOffHeapWithinNode(sharedOffHeapWithinNode, "bolt-2 shared off heap within node")).shuffleGrouping("bolt-1");
+        builder.setBolt("bolt-3", new TestBolt(),
+                boltParallelism).addSharedMemory(new SharedOnHeap(sharedOnHeapWithinWorker, "bolt-3 shared on heap within worker")).shuffleGrouping("bolt-2");
+        StormTopology stormToplogy = builder.createTopology();
+
+        conf.put(Config.TOPOLOGY_PRIORITY, 1);
+        conf.put(Config.TOPOLOGY_NAME, "testTopology-0");
+        conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
+        topo[0] = new TopologyDetails("testTopology-id-0", conf, stormToplogy, 0,
+                genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
+
+        // 2nd topology
+        builder = new TopologyBuilder();
+        builder.setSpout("spout", new TestSpout(),
+                spoutParallelism).addSharedMemory(new SharedOffHeapWithinNode(sharedOffHeapWithinNode, "spout shared off heap within node"));
+        stormToplogy = builder.createTopology();
+
+        conf.put(Config.TOPOLOGY_PRIORITY, 0);
+        conf.put(Config.TOPOLOGY_NAME, "testTopology-1");
+        topo[1] = new TopologyDetails("testTopology-id-1", conf, stormToplogy, 0,
+                genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
+
+        Map<String, SupervisorDetails> supMap = genSupervisors(1, 4, 500, 2000);
+        Topologies topologies = new Topologies(topo[0]);
+        Cluster cluster = new Cluster(new INimbusTest(), new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
+
+        // schedule 1st topology
+        scheduler = new ResourceAwareScheduler();
+        scheduler.prepare(conf);
+        scheduler.schedule(topologies, cluster);
+        assertTopologiesFullyScheduled(cluster, topo[0].getName());
+
+        // attempt scheduling both topologies.
+        // this triggered negative resource event as the second topology incorrectly scheduled with the first in place
+        // first topology should get evicted for higher priority (lower value) second topology to successfully schedule
+        topologies = new Topologies(topo[0], topo[1]);
+        cluster = new Cluster(cluster, topologies);
+        scheduler.schedule(topologies, cluster);
+        assertTopologiesNotScheduled(cluster, topo[0].getName());
+        assertTopologiesFullyScheduled(cluster, topo[1].getName());
+
+        // check negative resource count
+        assertThat(cluster.getResourceMetrics().getNegativeResourceEventsMeter().getCount(), is(0L));
+    }
+
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
      */
@@ -115,25 +185,26 @@ public class TestDefaultResourceAwareStrategy {
         double cpuPercent = 10;
         double memoryOnHeap = 10;
         double memoryOffHeap = 10;
-        double sharedOnHeap = 500;
-        double sharedOffHeapNode = 700;
-        double sharedOffHeapWorker = 500;
+        double sharedOnHeapWithinWorker = 400;
+        double sharedOffHeapWithinNode = 700;
+        double sharedOffHeapWithinWorker = 600;
+
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new TestSpout(),
                 spoutParallelism);
         builder.setBolt("bolt-1", new TestBolt(),
-                boltParallelism).addSharedMemory(new SharedOffHeapWithinWorker(sharedOffHeapWorker, "bolt-1 shared off heap worker")).shuffleGrouping("spout");
+                boltParallelism).addSharedMemory(new SharedOffHeapWithinWorker(sharedOffHeapWithinWorker, "bolt-1 shared off heap within worker")).shuffleGrouping("spout");
         builder.setBolt("bolt-2", new TestBolt(),
-                boltParallelism).addSharedMemory(new SharedOffHeapWithinNode(sharedOffHeapNode, "bolt-2 shared node")).shuffleGrouping("bolt-1");
+                boltParallelism).addSharedMemory(new SharedOffHeapWithinNode(sharedOffHeapWithinNode, "bolt-2 shared off heap within node")).shuffleGrouping("bolt-1");
         builder.setBolt("bolt-3", new TestBolt(),
-                boltParallelism).addSharedMemory(new SharedOnHeap(sharedOnHeap, "bolt-3 shared worker")).shuffleGrouping("bolt-2");
+                boltParallelism).addSharedMemory(new SharedOnHeap(sharedOnHeapWithinWorker, "bolt-3 shared on heap within worker")).shuffleGrouping("bolt-2");
 
         StormTopology stormToplogy = builder.createTopology();
 
         INimbus iNimbus = new INimbusTest();
         Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 500, 2000);
         Config conf = createClusterConfig(cpuPercent, memoryOnHeap, memoryOffHeap, null);
-        
+
         conf.put(Config.TOPOLOGY_PRIORITY, 0);
         conf.put(Config.TOPOLOGY_NAME, "testTopology");
         conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
@@ -144,10 +215,9 @@ public class TestDefaultResourceAwareStrategy {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
         scheduler = new ResourceAwareScheduler();
-
         scheduler.prepare(conf);
         scheduler.schedule(topologies, cluster);
-        
+
         for (Entry<String, SupervisorResources> entry: cluster.getSupervisorsResourcesMap().entrySet()) {
             String supervisorId = entry.getKey();
             SupervisorResources resources = entry.getValue();
@@ -158,24 +228,23 @@ public class TestDefaultResourceAwareStrategy {
         // Everything should fit in a single slot
         int totalNumberOfTasks = (spoutParallelism + (boltParallelism * numBolts));
         double totalExpectedCPU = totalNumberOfTasks * cpuPercent;
-        double totalExpectedOnHeap = (totalNumberOfTasks * memoryOnHeap) + sharedOnHeap;
-        double totalExpectedWorkerOffHeap = (totalNumberOfTasks * memoryOffHeap) + sharedOffHeapWorker;
-        
+        double totalExpectedOnHeap = (totalNumberOfTasks * memoryOnHeap) + sharedOnHeapWithinWorker;
+        double totalExpectedWorkerOffHeap = (totalNumberOfTasks * memoryOffHeap) + sharedOffHeapWithinWorker;
+
         SchedulerAssignment assignment = cluster.getAssignmentById(topo.getId());
-        assertEquals(1, assignment.getSlots().size());
+        assertThat(assignment.getSlots().size(), is(1));
         WorkerSlot ws = assignment.getSlots().iterator().next();
         String nodeId = ws.getNodeId();
-        assertEquals(1, assignment.getNodeIdToTotalSharedOffHeapMemory().size());
-        assertEquals(sharedOffHeapNode, assignment.getNodeIdToTotalSharedOffHeapMemory().get(nodeId), 0.01);
-        assertEquals(1, assignment.getScheduledResources().size());
+        assertThat(assignment.getNodeIdToTotalSharedOffHeapNodeMemory().size(), is(1));
+        assertThat(assignment.getNodeIdToTotalSharedOffHeapNodeMemory().get(nodeId), closeTo(sharedOffHeapWithinNode, 0.01));
+        assertThat(assignment.getScheduledResources().size(), is(1));
         WorkerResources resources = assignment.getScheduledResources().get(ws);
-        assertEquals(totalExpectedCPU, resources.get_cpu(), 0.01);
-        assertEquals(totalExpectedOnHeap, resources.get_mem_on_heap(), 0.01);
-        assertEquals(totalExpectedWorkerOffHeap, resources.get_mem_off_heap(), 0.01);
-        assertEquals(sharedOnHeap, resources.get_shared_mem_on_heap(), 0.01);
-        assertEquals(sharedOffHeapWorker, resources.get_shared_mem_off_heap(), 0.01);
+        assertThat(resources.get_cpu(), closeTo(totalExpectedCPU, 0.01));
+        assertThat(resources.get_mem_on_heap(), closeTo(totalExpectedOnHeap, 0.01));
+        assertThat(resources.get_mem_off_heap(), closeTo(totalExpectedWorkerOffHeap, 0.01));
+        assertThat(resources.get_shared_mem_on_heap(), closeTo(sharedOnHeapWithinWorker, 0.01));
+        assertThat(resources.get_shared_mem_off_heap(), closeTo(sharedOffHeapWithinWorker, 0.01));
     }
-    
     
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
