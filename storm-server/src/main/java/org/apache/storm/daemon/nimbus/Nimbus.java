@@ -3058,6 +3058,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (!(Boolean) conf.getOrDefault(DaemonConfig.STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED, false)) {
                 topoConf.remove(Config.TOPOLOGY_CLASSPATH_BEGINNING);
             }
+
+            // don't allow topoConf to override various cluster-specific properties
+            topoConf.remove(Config.STORM_CGROUP_HIERARCHY_DIR);
+            topoConf.remove(Config.WORKER_METRICS);
+
             String topoVersionString = topology.get_storm_version();
             if (topoVersionString == null) {
                 topoVersionString = (String) conf.getOrDefault(Config.SUPERVISOR_WORKER_DEFAULT_VERSION, VersionInfo.getVersion());
