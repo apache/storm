@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -94,7 +93,8 @@ public class AsyncLocalizerTest {
     private ClientBlobStore mockblobstore = mock(ClientBlobStore.class);
 
     private static String getTestLocalizerRoot() {
-        File f = new File("./target/" + Thread.currentThread().getStackTrace()[2].getMethodName() + "/localizer/");
+        File f = new File("./target/" + Thread.currentThread().getStackTrace()[2].getMethodName() + "/localizer/")
+                .getAbsoluteFile();
         f.deleteOnExit();
         return f.getPath();
     }
@@ -111,14 +111,13 @@ public class AsyncLocalizerTest {
         ei.set_task_end(1);
         la.add_to_executors(ei);
         final int port = 8080;
-        final String stormLocal = "./target/DOWNLOAD-TEST/storm-local/";
         ClientBlobStore blobStore = mock(ClientBlobStore.class);
         Map<String, Object> conf = new HashMap<>();
         conf.put(DaemonConfig.SUPERVISOR_BLOBSTORE, ClientBlobStore.class.getName());
         conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
         conf.put(Config.STORM_CLUSTER_MODE, "distributed");
-        conf.put(Config.STORM_LOCAL_DIR, stormLocal);
-        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        conf.put(Config.STORM_LOCAL_DIR, baseDir);
+        AdvancedFSOps ops = AdvancedFSOps.make(conf);
         ReflectionUtils mockedRU = mock(ReflectionUtils.class);
         ServerUtils mockedU = mock(ServerUtils.class);
 
@@ -184,12 +183,10 @@ public class AsyncLocalizerTest {
         final String simpleLocalName = "simple.txt";
         final String simpleKey = "simple";
 
-        final String stormLocal = "/tmp/storm-local/";
-        final File userDir = new File(stormLocal, user);
-        final String stormRoot = stormLocal + topoId + "/";
+        final File userDir = new File(baseDir, user);
+        final String stormRoot = new File(baseDir, topoId).toString();
 
         final String localizerRoot = getTestLocalizerRoot();
-        final String simpleCurrentLocalFile = localizerRoot + "/usercache/" + user + "/filecache/files/simple.current";
 
         final StormTopology st = new StormTopology();
         st.set_spouts(new HashMap<>());
@@ -203,8 +200,8 @@ public class AsyncLocalizerTest {
         topoBlobMap.put(simpleKey, simple);
 
         Map<String, Object> conf = new HashMap<>();
-        conf.put(Config.STORM_LOCAL_DIR, stormLocal);
-        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        conf.put(Config.STORM_LOCAL_DIR, baseDir);
+        AdvancedFSOps ops = AdvancedFSOps.make(conf);
         ConfigUtils mockedCU = mock(ConfigUtils.class);
 
         Map<String, Object> topoConf = new HashMap<>(conf);
@@ -226,6 +223,9 @@ public class AsyncLocalizerTest {
             //Write the mocking backwards so the actual method is not called on the spy object
             doReturn(CompletableFuture.supplyAsync(() -> null)).when(bl)
                                                                .requestDownloadBaseTopologyBlobs(any(), eq(null));
+
+            Files.createDirectories(new File(stormRoot).toPath());
+
             doReturn(userDir).when(bl).getLocalUserFileCacheDir(user);
             doReturn(localizedList).when(bl).getBlobs(any(List.class), any(), any());
 
@@ -235,12 +235,12 @@ public class AsyncLocalizerTest {
 
             verify(bl).getLocalUserFileCacheDir(user);
 
-            verify(ops).fileExists(userDir);
-            verify(ops).forceMkdir(userDir);
+            assertTrue(ops.fileExists(userDir));
 
             verify(bl).getBlobs(any(List.class), any(), any());
 
-            verify(ops).createSymlink(new File(stormRoot, simpleLocalName), new File(simpleCurrentLocalFile));
+            // symlink was created
+            assertTrue(Files.isSymbolicLink(new File(stormRoot, simpleLocalName).toPath()));
         } finally {
             try {
                 ConfigUtils.setInstance(orig);
@@ -269,9 +269,8 @@ public class AsyncLocalizerTest {
         final String simpleLocalName = "simple.txt";
         final String simpleKey = "simple";
 
-        final String stormLocal = "/tmp/storm-local/";
-        final File userDir = new File(stormLocal, user);
-        final String stormRoot = stormLocal + topoId + "/";
+        final File userDir = new File(baseDir, user);
+        final String stormRoot = new File(baseDir, topoId).toString();
 
         final String localizerRoot = getTestLocalizerRoot();
 
@@ -287,9 +286,9 @@ public class AsyncLocalizerTest {
         topoBlobMap.put(simpleKey, simple);
 
         Map<String, Object> conf = new HashMap<>();
-        conf.put(Config.STORM_LOCAL_DIR, stormLocal);
+        conf.put(Config.STORM_LOCAL_DIR, baseDir);
         conf.put(Config.STORM_CLUSTER_MODE, "local");
-        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        AdvancedFSOps ops = AdvancedFSOps.make(conf);
         ConfigUtils mockedCU = mock(ConfigUtils.class);
         ServerUtils mockedSU = mock(ServerUtils.class);
 
@@ -314,7 +313,6 @@ public class AsyncLocalizerTest {
             doReturn(mockblobstore).when(bl).getClientBlobStore();
             doReturn(userDir).when(bl).getLocalUserFileCacheDir(user);
             doReturn(localizedList).when(bl).getBlobs(any(List.class), any(), any());
-            doReturn(mock(OutputStream.class)).when(ops).getOutputStream(any());
 
             ReadableBlobMeta blobMeta = new ReadableBlobMeta();
             blobMeta.set_version(1);
@@ -326,16 +324,14 @@ public class AsyncLocalizerTest {
 
             verify(bl).getLocalUserFileCacheDir(user);
 
-            verify(ops).fileExists(userDir);
-            verify(ops).forceMkdir(userDir);
+            assertTrue(ops.fileExists(userDir));
 
             verify(bl).getBlobs(any(List.class), any(), any());
 
-            Path extractionDir = Paths.get(stormRoot,
-                    LocallyCachedTopologyBlob.TopologyBlobType.TOPO_JAR.getTempExtractionDir(LOCAL_MODE_JAR_VERSION));
-
-            // make sure resources dir is created.
-            verify(ops).forceMkdir(extractionDir);
+            //  make sure resources directory after blob version commit is created.
+            Path extractionDir = new File(stormRoot,
+                    LocallyCachedTopologyBlob.TopologyBlobType.TOPO_JAR.getExtractionDir()).toPath();
+            assertTrue(ops.fileExists(extractionDir));
 
         } finally {
             try {
