@@ -808,8 +808,6 @@ public class AsyncLocalizerTest {
     @Test
     public void testMultipleUsers() throws Exception {
         try (TmpPath tmp = new TmpPath()){
-
-
             Map<String, Object> conf = new HashMap<>();
             // set clean time really high so doesn't kick in
             conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
