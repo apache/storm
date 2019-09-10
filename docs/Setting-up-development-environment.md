@@ -5,7 +5,7 @@ documentation: true
 ---
 This page outlines what you need to do to get a Storm development environment set up. In summary, the steps are:
 
-1. Download a [Storm release](..//downloads.html) , unpack it, and put the unpacked `bin/` directory on your PATH
+1. Download a [Storm release](../../downloads.html) , unpack it, and put the unpacked `bin/` directory on your PATH
 2. To be able to start and stop topologies on a remote cluster, put the cluster information in `~/.storm/storm.yaml`
 
 More detail on each of these steps is below.
