@@ -31,6 +31,9 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.storm.generated.ComponentType;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.Cluster;
@@ -242,7 +245,9 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             this.parent = parent;
             rackIterator = sortedRacks.iterator();
             pre = parent.favoredNodeIds.iterator();
-            post = parent.unFavoredNodeIds.iterator();
+            post = Stream.concat(parent.unFavoredNodeIds.stream(), parent.greyListedSupervisorIds.stream())
+                            .collect(Collectors.toList())
+                            .iterator();
             skip = parent.skippedNodeIds;
         }
 
@@ -305,15 +310,20 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         private final TopologyDetails td;
         private final List<String> favoredNodeIds;
         private final List<String> unFavoredNodeIds;
+        private final List<String> greyListedSupervisorIds;
         private final Set<String> skippedNodeIds = new HashSet<>();
 
         LazyNodeSorting(TopologyDetails td, ExecutorDetails exec,
                                List<String> favoredNodeIds, List<String> unFavoredNodeIds) {
             this.favoredNodeIds = favoredNodeIds;
             this.unFavoredNodeIds = unFavoredNodeIds;
+            this.greyListedSupervisorIds = cluster.getGreyListedSupervisors();
             this.unFavoredNodeIds.removeAll(favoredNodeIds);
+            this.favoredNodeIds.removeAll(greyListedSupervisorIds);
+            this.unFavoredNodeIds.removeAll(greyListedSupervisorIds);
             skippedNodeIds.addAll(favoredNodeIds);
             skippedNodeIds.addAll(unFavoredNodeIds);
+            skippedNodeIds.addAll(greyListedSupervisorIds);
 
             this.td = td;
             this.exec = exec;
