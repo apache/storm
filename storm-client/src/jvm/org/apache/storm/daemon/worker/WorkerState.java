@@ -88,6 +88,7 @@ public class WorkerState {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
+    private static final int RESEND_BACKPRESSURE_SIZE = 10000;
     private static long dropCount = 0;
     final Map<String, Object> conf;
     final IContext mqContext;
@@ -533,8 +534,6 @@ public class WorkerState {
     // Receives msgs from remote workers and feeds them to local executors. If any receiving local executor is under Back Pressure,
     // informs other workers about back pressure situation. Runs in the NettyWorker thread.
     private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
-        int lastOverflowCount = 0; // overflowQ size at the time the last BPStatus was sent
-
         for (int i = 0; i < tupleBatch.size(); i++) {
             AddressedTuple tuple = tupleBatch.get(i);
             JCQueue queue = taskToExecutorQueue.get(tuple.dest);
@@ -550,14 +549,14 @@ public class WorkerState {
             int currOverflowCount = queue.getOverflowCount();
             if (bpTracker.recordBackPressure(tuple.dest)) {
                 receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
-                lastOverflowCount = currOverflowCount;
+                bpTracker.setLastOverflowCount(tuple.dest, currOverflowCount);
             } else {
 
-                if (currOverflowCount - lastOverflowCount > 10000) {
+                if (currOverflowCount - bpTracker.getLastOverflowCount(tuple.dest) > RESEND_BACKPRESSURE_SIZE) {
                     // resend BP status, in case prev notification was missed or reordered
                     BackPressureStatus bpStatus = bpTracker.getCurrStatus();
                     receiver.sendBackPressureStatus(bpStatus);
-                    lastOverflowCount = currOverflowCount;
+                    bpTracker.setLastOverflowCount(tuple.dest, currOverflowCount);
                     LOG.debug("Re-sent BackPressure Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
                 }
             }

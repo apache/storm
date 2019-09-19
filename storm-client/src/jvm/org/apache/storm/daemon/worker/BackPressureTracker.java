@@ -19,6 +19,7 @@
 package org.apache.storm.daemon.worker;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,6 +40,7 @@ import org.slf4j.LoggerFactory;
 public class BackPressureTracker {
     static final Logger LOG = LoggerFactory.getLogger(BackPressureTracker.class);
     private final Map<Integer, BackpressureState> tasks;
+    private final Map<Integer, Integer> lastOverflowCount;
     private final String workerId;
 
     public BackPressureTracker(String workerId, Map<Integer, JCQueue> localTasksToQueues) {
@@ -47,6 +49,7 @@ public class BackPressureTracker {
             .collect(Collectors.toMap(
                 entry -> entry.getKey(),
                 entry -> new BackpressureState(entry.getValue())));
+        this.lastOverflowCount = new HashMap<>();
     }
 
     private void recordNoBackPressure(Integer taskId) {
@@ -94,6 +97,14 @@ public class BackPressureTracker {
             }
         }
         return new BackPressureStatus(workerId, bpTasks, nonBpTasks);
+    }
+
+    public void setLastOverflowCount(Integer taskId, int value) {
+        lastOverflowCount.put(taskId, value);
+    }
+
+    public int getLastOverflowCount(Integer taskId) {
+        return lastOverflowCount.getOrDefault(taskId, 0);
     }
     
     private static class BackpressureState {
