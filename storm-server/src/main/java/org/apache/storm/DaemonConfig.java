@@ -186,11 +186,11 @@ public class DaemonConfig implements Validated {
 
     /**
      * How long without heartbeating a task can go before nimbus will consider the task dead and reassign it to another location.
+     * Can be exceeded when {@link Config#TOPOLOGY_WORKER_TIMEOUT_SECS} is set.
      */
     @IsInteger
     @IsPositiveNumber
     public static final String NIMBUS_TASK_TIMEOUT_SECS = "nimbus.task.timeout.secs";
-
 
     /**
      * How often nimbus should wake up to check heartbeats and do reassignments. Note that if a machine ever goes down Nimbus will
@@ -234,6 +234,7 @@ public class DaemonConfig implements Validated {
      *
      * <p>A separate timeout exists for launch because there can be quite a bit of overhead
      * to launching new JVM's and configuring them.</p>
+     * Can be exceeded when {@link Config#TOPOLOGY_WORKER_TIMEOUT_SECS} is set.
      */
     @IsInteger
     @IsPositiveNumber
@@ -794,6 +795,7 @@ public class DaemonConfig implements Validated {
      * How long a worker can go without heartbeating during the initial launch before the supervisor tries to restart the worker process.
      * This value override supervisor.worker.timeout.secs during launch because there is additional overhead to starting and configuring the
      * JVM on launch.
+     * Can be exceeded when {@link Config#TOPOLOGY_WORKER_TIMEOUT_SECS} is set.
      */
     @IsInteger
     @IsPositiveNumber

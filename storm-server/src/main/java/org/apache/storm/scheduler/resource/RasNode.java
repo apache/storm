@@ -26,6 +26,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.apache.storm.Config;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SupervisorDetails;
@@ -363,14 +365,40 @@ public class RasNode {
      */
     public boolean wouldFit(WorkerSlot ws, ExecutorDetails exec, TopologyDetails td) {
         assert nodeId.equals(ws.getNodeId()) : "Slot " + ws + " is not a part of this node " + nodeId;
-        return isAlive
-               && cluster.wouldFit(
-            ws,
-            exec,
-            td,
-            getTotalAvailableResources(),
-            td.getTopologyWorkerMaxHeapSize()
-        );
+        if (!isAlive || !cluster.wouldFit(
+                ws,
+                exec,
+                td,
+                getTotalAvailableResources(),
+                td.getTopologyWorkerMaxHeapSize())) {
+            return false;
+        }
+
+        boolean oneExecutorPerWorker = (Boolean) td.getConf().get(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER);
+        boolean oneComponentPerWorker = (Boolean) td.getConf().get(Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER);
+
+        if (oneExecutorPerWorker) {
+            return !getUsedSlots(td.getId()).contains(ws);
+        }
+
+        if (oneComponentPerWorker) {
+            Set<String> components = new HashSet<>();
+            Map<String, Collection<ExecutorDetails>> topologyExecutors = topIdToUsedSlots.get(td.getId());
+            if (topologyExecutors != null) {
+                Collection<ExecutorDetails> slotExecs = topologyExecutors.get(ws.getId());
+                if (slotExecs != null) {
+                    // components from WorkerSlot
+                    for (ExecutorDetails slotExec : slotExecs) {
+                        components.add(td.getComponentFromExecutor(slotExec));
+                    }
+                    // component from exec
+                    components.add(td.getComponentFromExecutor(exec));
+                }
+            }
+            return components.size() <= 1;
+        }
+
+        return true;
     }
 
     /**

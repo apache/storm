@@ -667,7 +667,8 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         LSWorkerHeartbeat hb = dynamicState.container.readHeartbeat();
         if (hb != null) {
             long hbAgeMs = (Time.currentTimeSecs() - hb.get_time_secs()) * 1000;
-            if (hbAgeMs <= staticState.hbTimeoutMs) {
+            long hbTimeoutMs = getHbTimeoutMs(staticState, dynamicState);
+            if (hbAgeMs <= hbTimeoutMs) {
                 return dynamicState.withState(MachineState.RUNNING);
             }
         }
@@ -681,9 +682,10 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         dynamicState = updateAssignmentIfNeeded(dynamicState);
 
         long timeDiffms = (Time.currentTimeMillis() - dynamicState.startTime);
-        if (timeDiffms > staticState.firstHbTimeoutMs) {
+        long hbFirstTimeoutMs = getFirstHbTimeoutMs(staticState, dynamicState);
+        if (timeDiffms > hbFirstTimeoutMs) {
             LOG.warn("SLOT {}: Container {} failed to launch in {} ms.", staticState.port, dynamicState.container,
-                     staticState.firstHbTimeoutMs);
+                    hbFirstTimeoutMs);
             return killContainerFor(KillReason.HB_TIMEOUT, dynamicState, staticState);
         }
 
@@ -745,8 +747,9 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         }
 
         long timeDiffMs = (Time.currentTimeSecs() - hb.get_time_secs()) * 1000;
-        if (timeDiffMs > staticState.hbTimeoutMs) {
-            LOG.warn("SLOT {}: HB is too old {} > {}", staticState.port, timeDiffMs, staticState.hbTimeoutMs);
+        long hbTimeoutMs = getHbTimeoutMs(staticState, dynamicState);
+        if (timeDiffMs > hbTimeoutMs) {
+            LOG.warn("SLOT {}: HB is too old {} > {}", staticState.port, timeDiffMs, hbTimeoutMs);
             return killContainerFor(KillReason.HB_TIMEOUT, dynamicState, staticState);
         }
 
@@ -831,6 +834,30 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
     MachineState getMachineState() {
         return dynamicState.state;
+    }
+
+    /*
+     * Get worker heartbeat timeout time in ms. Use topology specified timeout if provided.
+     */
+    private static long getHbTimeoutMs(StaticState staticState, DynamicState dynamicState) {
+        long hbTimeoutMs = staticState.hbTimeoutMs;
+        Map<String, Object> topoConf = dynamicState.container.topoConf;
+
+        if (topoConf != null && topoConf.containsKey(Config.TOPOLOGY_WORKER_TIMEOUT_SECS)) {
+            long topoHbTimeoutMs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKER_TIMEOUT_SECS)) * 1000;
+            topoHbTimeoutMs = Math.max(topoHbTimeoutMs, hbTimeoutMs);
+            hbTimeoutMs = topoHbTimeoutMs;
+        }
+
+        return hbTimeoutMs;
+    }
+
+    /*
+     * Get worker heartbeat timeout when waiting for worker to start.
+     * If topology specific timeout if set, ensure first heartbeat timeout >= topology specific timeout.
+     */
+    private static long getFirstHbTimeoutMs(StaticState staticState, DynamicState dynamicState) {
+        return Math.max(getHbTimeoutMs(staticState, dynamicState), staticState.firstHbTimeoutMs);
     }
 
     /**

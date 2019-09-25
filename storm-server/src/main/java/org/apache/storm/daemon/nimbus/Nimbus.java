@@ -1135,6 +1135,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         ret.put(Config.STORM_CGROUP_HIERARCHY_DIR, conf.get(Config.STORM_CGROUP_HIERARCHY_DIR));
         ret.put(Config.WORKER_METRICS, conf.get(Config.WORKER_METRICS));
 
+        if (mergedConf.containsKey(Config.TOPOLOGY_WORKER_TIMEOUT_SECS)) {
+            int workerTimeoutSecs = (Integer) ObjectReader.getInt(mergedConf.get(Config.TOPOLOGY_WORKER_TIMEOUT_SECS));
+            int workerMaxTimeoutSecs = (Integer) ObjectReader.getInt(mergedConf.get(Config.WORKER_MAX_TIMEOUT_SECS));
+            if (workerTimeoutSecs > workerMaxTimeoutSecs) {
+                ret.put(Config.TOPOLOGY_WORKER_TIMEOUT_SECS, workerMaxTimeoutSecs);
+                String topoId = (String) mergedConf.get(Config.STORM_ID);
+                LOG.warn("Topology {} topology.worker.timeout.secs is too large. Reducing from {} to {}",
+                    topoId, workerTimeoutSecs, workerMaxTimeoutSecs);
+            }
+        }
         return ret;
     }
 
@@ -1884,8 +1894,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         IStormClusterState state = stormClusterState;
         Map<List<Integer>, Map<String, Object>> executorBeats =
             StatsUtil.convertExecutorBeats(state.executorBeats(topoId, existingAssignment.get_executor_node_port()));
-        heartbeatsCache.updateFromZkHeartbeat(topoId, executorBeats, allExecutors,
-            ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+        heartbeatsCache.updateFromZkHeartbeat(topoId, executorBeats, allExecutors, getTopologyHeartbeatTimeoutSecs(topoId));
     }
 
     /**
@@ -1902,17 +1911,21 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 updateHeartbeatsFromZkHeartbeat(topoId, topologyToExecutors.get(topoId), entry.getValue());
             } else {
                 LOG.debug("Timing out old heartbeats for {}", topoId);
-                heartbeatsCache.timeoutOldHeartbeats(topoId, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+                heartbeatsCache.timeoutOldHeartbeats(topoId, getTopologyHeartbeatTimeoutSecs(topoId));
             }
         }
     }
 
-    private void updateCachedHeartbeatsFromWorker(SupervisorWorkerHeartbeat workerHeartbeat) {
-        heartbeatsCache.updateHeartbeat(workerHeartbeat, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+    private void updateCachedHeartbeatsFromWorker(SupervisorWorkerHeartbeat workerHeartbeat, int heartbeatTimeoutSecs) {
+        heartbeatsCache.updateHeartbeat(workerHeartbeat, heartbeatTimeoutSecs);
     }
 
     private void updateCachedHeartbeatsFromSupervisor(SupervisorWorkerHeartbeats workerHeartbeats) {
-        workerHeartbeats.get_worker_heartbeats().forEach(this::updateCachedHeartbeatsFromWorker);
+        for (SupervisorWorkerHeartbeat hb : workerHeartbeats.get_worker_heartbeats()) {
+            String topoId = hb.get_storm_id();
+            int heartbeatTimeoutSecs = getTopologyHeartbeatTimeoutSecs(topoId);
+            updateCachedHeartbeatsFromWorker(hb, heartbeatTimeoutSecs);
+        }
         if (!heartbeatsReadyFlag.get() && !Strings.isNullOrEmpty(workerHeartbeats.get_supervisor_id())) {
             heartbeatsRecoveryStrategy.reportNodeId(workerHeartbeats.get_supervisor_id());
         }
@@ -1949,8 +1962,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private Set<List<Integer>> aliveExecutors(String topoId, Set<List<Integer>> allExecutors, Assignment assignment) {
-        return heartbeatsCache.getAliveExecutors(topoId, allExecutors, assignment,
-            ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_LAUNCH_SECS)));
+        return heartbeatsCache.getAliveExecutors(topoId, allExecutors, assignment, getTopologyLaunchHeartbeatTimeoutSec(topoId));
     }
 
     private List<List<Integer>> computeExecutors(String topoId, StormBase base, Map<String, Object> topoConf,
@@ -2528,6 +2540,35 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private void fixupBase(StormBase base, Map<String, Object> topoConf) {
         base.set_owner((String) topoConf.get(Config.TOPOLOGY_SUBMITTER_USER));
         base.set_principal((String) topoConf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL));
+    }
+
+    // Topology may set custom heartbeat timeout.
+    private int getTopologyHeartbeatTimeoutSecs(Map<String, Object> topoConf) {
+        int defaultNimbusTimeout = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS));
+        if (topoConf.containsKey(Config.TOPOLOGY_WORKER_TIMEOUT_SECS)) {
+            int topoTimeout = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKER_TIMEOUT_SECS));
+            topoTimeout = Math.max(topoTimeout, defaultNimbusTimeout);
+            return topoTimeout;
+        }
+
+        return defaultNimbusTimeout;
+    }
+
+    private int getTopologyHeartbeatTimeoutSecs(String topoId) {
+        try {
+            Map<String, Object> topoConf = tryReadTopoConf(topoId, topoCache);
+            return getTopologyHeartbeatTimeoutSecs(topoConf);
+        } catch (Exception e) {
+            // contain any exception
+            LOG.warn("Exception when getting heartbeat timeout.", e.getMessage());
+            return ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS));
+        }
+    }
+
+    private int getTopologyLaunchHeartbeatTimeoutSec(String topoId) {
+        int nimbusLaunchTimeout = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_LAUNCH_SECS));
+        int topoHeartbeatTimeoutSecs = getTopologyHeartbeatTimeoutSecs(topoId);
+        return Math.max(nimbusLaunchTimeout, topoHeartbeatTimeoutSecs);
     }
 
     private void startTopology(String topoName, String topoId, TopologyStatus initStatus, String owner,
@@ -4728,11 +4769,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         String id = hb.get_storm_id();
         try {
             Map<String, Object> topoConf = tryReadTopoConf(id, topoCache);
-            topoConf = Utils.merge(conf, topoConf);
             String topoName = (String) topoConf.get(Config.TOPOLOGY_NAME);
             checkAuthorization(topoName, topoConf, "sendSupervisorWorkerHeartbeat");
             if (isLeader()) {
-                updateCachedHeartbeatsFromWorker(hb);
+                int heartbeatTimeoutSecs = getTopologyHeartbeatTimeoutSecs(topoConf);
+                updateCachedHeartbeatsFromWorker(hb, heartbeatTimeoutSecs);
             }
         } catch (Exception e) {
             LOG.warn("Send HB exception. (topology id='{}')", id, e);
