@@ -17,13 +17,17 @@ import com.codahale.metrics.MetricRegistry;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.metrics.MetricsUtils;
+import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ConsolePreparableReporter implements PreparableReporter {
     private static final Logger LOG = LoggerFactory.getLogger(ConsolePreparableReporter.class);
     ConsoleReporter reporter = null;
+    Integer reportingIntervalPeriod = null;
 
     @Override
     public void prepare(MetricRegistry metricsRegistry, Map<String, Object> daemonConf) {
@@ -46,13 +50,14 @@ public class ConsolePreparableReporter implements PreparableReporter {
             builder.convertDurationsTo(durationUnit);
         }
         reporter = builder.build();
+        reportingIntervalPeriod = ObjectReader.getInt(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_INTERVAL_SECS), 10);
     }
 
     @Override
     public void start() {
         if (reporter != null) {
             LOG.debug("Starting...");
-            reporter.start(10, TimeUnit.SECONDS);
+            reporter.start(reportingIntervalPeriod, TimeUnit.SECONDS);
         } else {
             throw new IllegalStateException("Attempt to start without preparing " + getClass().getSimpleName());
         }

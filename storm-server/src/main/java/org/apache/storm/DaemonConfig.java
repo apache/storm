@@ -79,6 +79,12 @@ public class DaemonConfig implements Validated {
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN = "storm.daemon.metrics.reporter.plugin.domain";
 
     /**
+     * We report the metrics with this interval period.
+     */
+    @IsString
+    public static final String STORM_DAEMON_METRICS_REPORTER_INTERVAL_SECS = "storm.daemon.metrics.reporter.interval.secs";
+
+    /**
      * Specify the csv reporter directory for CvsPreparableReporter daemon metrics reporter.
      */
     @IsString
@@ -339,7 +345,7 @@ public class DaemonConfig implements Validated {
     @IsInteger
     @IsPositiveNumber
     public static final String UI_PORT = "ui.port";
-    
+
     /**
      * Storm UI's title.
      */
