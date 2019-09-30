@@ -42,6 +42,7 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
+import org.apache.storm.daemon.worker.BackPressureTracker.BackpressureState;
 import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.DebugOptions;
@@ -102,7 +103,8 @@ public class WorkerState {
     final IStormClusterState stormClusterState;
     // when worker bootup, worker will start to setup initial connections to
     // other workers. When all connection is ready, we will count down this latch
-    // and spout and bolt will be activated, assuming the topology is not deactivated.
+    // and spout and bolt will be activated, assuming the topology is not
+    // deactivated.
     // used in worker only, keep it as a latch
     final CountDownLatch isWorkerActive;
     final AtomicBoolean isTopologyActive;
@@ -110,7 +112,7 @@ public class WorkerState {
     // local executors and localTaskIds running in this worker
     final Set<List<Long>> localExecutors;
     final ArrayList<Integer> localTaskIds;
-    // [taskId]-> JCQueue :  initialized after local executors are initialized
+    // [taskId]-> JCQueue : initialized after local executors are initialized
     final Map<Integer, JCQueue> localReceiveQueues = new HashMap<>();
     final Map<String, Object> topologyConf;
     final StormTopology topology;
@@ -153,19 +155,11 @@ public class WorkerState {
     private final Collection<IAutoCredentials> autoCredentials;
     private final StormMetricRegistry metricRegistry;
 
-    public WorkerState(Map<String, Object> conf,
-            IContext mqContext,
-            String topologyId,
-            String assignmentId,
-            Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier,
-            int port,
-            String workerId,
-            Map<String, Object> topologyConf,
-            IStateStorage stateStorage,
-            IStormClusterState stormClusterState,
-            Collection<IAutoCredentials> autoCredentials,
-            StormMetricRegistry metricRegistry) throws IOException,
-            InvalidTopologyException {
+    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId,
+            Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier, int port, String workerId,
+            Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState,
+            Collection<IAutoCredentials> autoCredentials, StormMetricRegistry metricRegistry)
+            throws IOException, InvalidTopologyException {
         this.metricRegistry = metricRegistry;
         this.autoCredentials = autoCredentials;
         this.conf = conf;
@@ -200,8 +194,8 @@ public class WorkerState {
         this.componentToStreamToFields = new HashMap<>();
         for (String c : ThriftTopologyUtils.getComponentIds(systemTopology)) {
             Map<String, Fields> streamToFields = new HashMap<>();
-            for (Map.Entry<String, StreamInfo> stream :
-                ThriftTopologyUtils.getComponentCommon(systemTopology, c).get_streams().entrySet()) {
+            for (Map.Entry<String, StreamInfo> stream : ThriftTopologyUtils.getComponentCommon(systemTopology, c)
+                    .get_streams().entrySet()) {
                 streamToFields.put(stream.getKey(), new Fields(stream.getValue().get_output_fields()));
             }
             componentToStreamToFields.put(c, streamToFields);
@@ -219,18 +213,18 @@ public class WorkerState {
         this.assignmentVersions = new AtomicReference<>(new HashMap<>());
         this.outboundTasks = workerOutboundTasks();
         this.trySerializeLocal = topologyConf.containsKey(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE)
-                                 && (Boolean) topologyConf.get(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
+                && (Boolean) topologyConf.get(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
         if (trySerializeLocal) {
-            LOG.warn("WILL TRY TO SERIALIZE ALL TUPLES (Turn off {} for production", Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
+            LOG.warn("WILL TRY TO SERIALIZE ALL TUPLES (Turn off {} for production",
+                    Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
         }
         int maxTaskId = getMaxTaskId(componentToSortedTasks);
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
         this.bpTracker = new BackPressureTracker(workerId, taskToExecutorQueue);
         this.deserializedWorkerHooks = deserializeWorkerHooks();
         LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
-        IConnectionCallback cb = new DeserializingConnectionCallback(topologyConf,
-            getWorkerTopologyContext(),
-            this::transferLocalBatch);
+        IConnectionCallback cb = new DeserializingConnectionCallback(topologyConf, getWorkerTopologyContext(),
+                this::transferLocalBatch);
         Supplier<Object> newConnectionResponse = () -> {
             BackPressureStatus bpStatus = bpTracker.getCurrStatus();
             LOG.info("Sending BackPressure status to new client. BPStatus: {}", bpStatus);
@@ -246,7 +240,7 @@ public class WorkerState {
 
     public static boolean isConnectionReady(IConnection connection) {
         return !(connection instanceof ConnectionWithStatus)
-               || ((ConnectionWithStatus) connection).status() == ConnectionWithStatus.Status.Ready;
+                || ((ConnectionWithStatus) connection).status() == ConnectionWithStatus.Status.Ready;
     }
 
     private static int getMaxTaskId(Map<String, List<Integer>> componentToSortedTasks) {
@@ -293,7 +287,7 @@ public class WorkerState {
     public CountDownLatch getIsWorkerActive() {
         return isWorkerActive;
     }
-    
+
     public AtomicBoolean getIsTopologyActive() {
         return isTopologyActive;
     }
@@ -381,7 +375,7 @@ public class WorkerState {
     public SmartThread makeTransferThread() {
         return workerTransfer.makeTransferThread();
     }
-    
+
     public void refreshConnections() {
         Assignment assignment = null;
         try {
@@ -414,17 +408,15 @@ public class WorkerState {
         cachedNodeToPortSocket.getAndUpdate(prev -> {
             Map<NodeInfo, IConnection> next = new HashMap<>(prev);
             for (NodeInfo nodeInfo : newConnections) {
-                next.put(nodeInfo,
-                         mqContext.connect(
-                             topologyId,
-                             //nodeHost is not null here, as newConnections is only non-empty if assignment was not null above.
-                             nodeHost.get(nodeInfo.get_node()),    // Host
-                             nodeInfo.get_port().iterator().next().intValue(),       // Port
-                             workerTransfer.getRemoteBackPressureStatus()));
+                next.put(nodeInfo, mqContext.connect(topologyId,
+                        // nodeHost is not null here, as newConnections is only non-empty if assignment
+                        // was not null above.
+                        nodeHost.get(nodeInfo.get_node()), // Host
+                        nodeInfo.get_port().iterator().next().intValue(), // Port
+                        workerTransfer.getRemoteBackPressureStatus()));
             }
             return next;
         });
-
 
         try {
             endpointSocketLock.writeLock().lock();
@@ -452,9 +444,7 @@ public class WorkerState {
 
     public void refreshStormActive(Runnable callback) {
         StormBase base = stormClusterState.stormBase(topologyId, callback);
-        isTopologyActive.set(
-            (null != base)
-            && (base.get_status() == TopologyStatus.ACTIVE));
+        isTopologyActive.set((null != base) && (base.get_status() == TopologyStatus.ACTIVE));
         if (null != base) {
             Map<String, DebugOptions> debugOptionsMap = new HashMap<>(base.get_component_debug());
             for (DebugOptions debugOptions : debugOptionsMap.values()) {
@@ -490,7 +480,8 @@ public class WorkerState {
         }
     }
 
-    // checks if the tasks which had back pressure are now free again. if so, sends an update to other workers
+    // checks if the tasks which had back pressure are now free again. if so, sends
+    // an update to other workers
     public void refreshBackPressureStatus() {
         LOG.debug("Checking for change in Backpressure status on worker's tasks");
         boolean bpSituationChanged = bpTracker.refreshBpTaskList();
@@ -501,25 +492,28 @@ public class WorkerState {
     }
 
     /**
-     * we will wait all connections to be ready and then activate the spout/bolt when the worker bootup.
+     * we will wait all connections to be ready and then activate the spout/bolt
+     * when the worker bootup.
      */
     public void activateWorkerWhenAllConnectionsReady() {
         int delaySecs = 0;
         int recurSecs = 1;
-        refreshActiveTimer.schedule(delaySecs,
-            () -> {
-                if (areAllConnectionsReady()) {
-                    LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
-                    isWorkerActive.countDown();
-                } else {
-                    refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
-                }
+        refreshActiveTimer.schedule(delaySecs, () -> {
+            if (areAllConnectionsReady()) {
+                LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
+                isWorkerActive.countDown();
+            } else {
+                refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
             }
-        );
+        });
     }
 
-    /* Not a Blocking call. If cannot emit, will add 'tuple' to pendingEmits and return 'false'. 'pendingEmits' can be null */
-    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits, ITupleSerializer serializer) {
+    /*
+     * Not a Blocking call. If cannot emit, will add 'tuple' to pendingEmits and
+     * return 'false'. 'pendingEmits' can be null
+     */
+    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits,
+            ITupleSerializer serializer) {
         return workerTransfer.tryTransferRemote(tuple, pendingEmits, serializer);
     }
 
@@ -531,8 +525,10 @@ public class WorkerState {
         return workerTransfer.tryFlushRemotes();
     }
 
-    // Receives msgs from remote workers and feeds them to local executors. If any receiving local executor is under Back Pressure,
-    // informs other workers about back pressure situation. Runs in the NettyWorker thread.
+    // Receives msgs from remote workers and feeds them to local executors. If any
+    // receiving local executor is under Back Pressure,
+    // informs other workers about back pressure situation. Runs in the NettyWorker
+    // thread.
     private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
         for (int i = 0; i < tupleBatch.size(); i++) {
             AddressedTuple tuple = tupleBatch.get(i);
@@ -547,16 +543,18 @@ public class WorkerState {
 
             // 2- BP detected (i.e MainQ is full). So try adding to overflow
             int currOverflowCount = queue.getOverflowCount();
-            if (bpTracker.recordBackPressure(tuple.dest)) {
+            // get BP state object so only have to lookup once
+            BackpressureState bpState = bpTracker.getBackpressureState(tuple.dest);
+            if (bpTracker.recordBackPressure(bpState)) {
                 receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
-                bpTracker.setLastOverflowCount(tuple.dest, currOverflowCount);
+                bpTracker.setLastOverflowCount(bpState, currOverflowCount);
             } else {
 
-                if (currOverflowCount - bpTracker.getLastOverflowCount(tuple.dest) > RESEND_BACKPRESSURE_SIZE) {
+                if (currOverflowCount - bpTracker.getLastOverflowCount(bpState) > RESEND_BACKPRESSURE_SIZE) {
                     // resend BP status, in case prev notification was missed or reordered
                     BackPressureStatus bpStatus = bpTracker.getCurrStatus();
-                    receiver.sendBackPressureStatus(bpStatus);
-                    bpTracker.setLastOverflowCount(tuple.dest, currOverflowCount);
+                    receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
+                    bpTracker.setLastOverflowCount(bpState, currOverflowCount);
                     LOG.debug("Re-sent BackPressure Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
                 }
             }

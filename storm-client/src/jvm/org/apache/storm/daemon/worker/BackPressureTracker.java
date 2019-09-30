@@ -19,7 +19,6 @@
 package org.apache.storm.daemon.worker;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,7 +39,6 @@ import org.slf4j.LoggerFactory;
 public class BackPressureTracker {
     static final Logger LOG = LoggerFactory.getLogger(BackPressureTracker.class);
     private final Map<Integer, BackpressureState> tasks;
-    private final Map<Integer, Integer> lastOverflowCount;
     private final String workerId;
 
     public BackPressureTracker(String workerId, Map<Integer, JCQueue> localTasksToQueues) {
@@ -49,11 +47,14 @@ public class BackPressureTracker {
             .collect(Collectors.toMap(
                 entry -> entry.getKey(),
                 entry -> new BackpressureState(entry.getValue())));
-        this.lastOverflowCount = new HashMap<>();
     }
 
-    private void recordNoBackPressure(Integer taskId) {
-        tasks.get(taskId).backpressure.set(false);
+    public BackpressureState getBackpressureState(Integer taskId) {
+        return tasks.get(taskId);
+    }
+
+    private void recordNoBackPressure(BackpressureState state) {
+        state.backpressure.set(false);
     }
 
     /**
@@ -63,8 +64,8 @@ public class BackPressureTracker {
      *
      * @return true if an update was recorded, false if taskId is already under BP
      */
-    public boolean recordBackPressure(Integer taskId) {
-        return tasks.get(taskId).backpressure.getAndSet(true) == false;
+    public boolean recordBackPressure(BackpressureState state) {
+        return state.backpressure.getAndSet(true) == false;
     }
 
     // returns true if there was a change in the BP situation
@@ -74,7 +75,7 @@ public class BackPressureTracker {
         for (Entry<Integer, BackpressureState> entry : tasks.entrySet()) {
             BackpressureState state = entry.getValue();
             if (state.backpressure.get() && state.queue.isEmptyOverflow()) {
-                recordNoBackPressure(entry.getKey());
+                recordNoBackPressure(state);
                 changed = true;
             }
         }
@@ -99,18 +100,23 @@ public class BackPressureTracker {
         return new BackPressureStatus(workerId, bpTasks, nonBpTasks);
     }
 
-    public void setLastOverflowCount(Integer taskId, int value) {
-        lastOverflowCount.put(taskId, value);
+    public int getLastOverflowCount(BackpressureState state) {
+        return state.lastOverflowCount;
     }
 
-    public int getLastOverflowCount(Integer taskId) {
-        return lastOverflowCount.getOrDefault(taskId, 0);
+    public void setLastOverflowCount(BackpressureState state, int value) {
+        state.lastOverflowCount = value;
     }
+
+
     
-    private static class BackpressureState {
+    public static class BackpressureState {
         private final JCQueue queue;
         //No task is under backpressure initially
         private final AtomicBoolean backpressure = new AtomicBoolean(false);
+        //The overflow count last time BP status was sent
+        private int lastOverflowCount = 0;
+
 
         BackpressureState(JCQueue queue) {
             this.queue = queue;
