@@ -42,6 +42,7 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
+import org.apache.storm.daemon.worker.BackPressureTracker.BackpressureState;
 import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.DebugOptions;
@@ -88,6 +89,7 @@ public class WorkerState {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
+    private static final int RESEND_BACKPRESSURE_SIZE = 10000;
     private static long dropCount = 0;
     final Map<String, Object> conf;
     final IContext mqContext;
@@ -533,8 +535,6 @@ public class WorkerState {
     // Receives msgs from remote workers and feeds them to local executors. If any receiving local executor is under Back Pressure,
     // informs other workers about back pressure situation. Runs in the NettyWorker thread.
     private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
-        int lastOverflowCount = 0; // overflowQ size at the time the last BPStatus was sent
-
         for (int i = 0; i < tupleBatch.size(); i++) {
             AddressedTuple tuple = tupleBatch.get(i);
             JCQueue queue = taskToExecutorQueue.get(tuple.dest);
@@ -548,16 +548,18 @@ public class WorkerState {
 
             // 2- BP detected (i.e MainQ is full). So try adding to overflow
             int currOverflowCount = queue.getOverflowCount();
-            if (bpTracker.recordBackPressure(tuple.dest)) {
+            // get BP state object so only have to lookup once
+            BackpressureState bpState = bpTracker.getBackpressureState(tuple.dest);
+            if (bpTracker.recordBackPressure(bpState)) {
                 receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
-                lastOverflowCount = currOverflowCount;
+                bpTracker.setLastOverflowCount(bpState, currOverflowCount);
             } else {
 
-                if (currOverflowCount - lastOverflowCount > 10000) {
+                if (currOverflowCount - bpTracker.getLastOverflowCount(bpState) > RESEND_BACKPRESSURE_SIZE) {
                     // resend BP status, in case prev notification was missed or reordered
                     BackPressureStatus bpStatus = bpTracker.getCurrStatus();
                     receiver.sendBackPressureStatus(bpStatus);
-                    lastOverflowCount = currOverflowCount;
+                    bpTracker.setLastOverflowCount(bpState, currOverflowCount);
                     LOG.debug("Re-sent BackPressure Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
                 }
             }
