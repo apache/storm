@@ -462,6 +462,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private AtomicReference<Map<String, Set<List<Integer>>>> idToExecutors;
     //May be null if worker tokens are not supported by the thrift transport.
     private WorkerTokenManager workerTokenManager;
+    private boolean wasLeader = false;
 
     public Nimbus(Map<String, Object> conf, INimbus inimbus, StormMetricsRegistry metricsRegistry) throws Exception {
         this(conf, inimbus, null, null, null, null, null, metricsRegistry);
@@ -1328,12 +1329,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 exec.prepare();
             }
 
-            if (isLeader()) {
-                for (String topoId : state.activeStorms()) {
-                    transition(topoId, TopologyActions.STARTUP, null);
-                }
-                clusterMetricSet.setActive(true);
-            }
+            // Leadership coordination may be incomplete when launchServer is called. Previous behavior did a one time check
+            // which could cause Nimbus to not process TopologyActions.STARTUP transitions. Similar problem exists for
+            // HA Nimbus on being newly elected as leader. Change to a recurring pattern addresses these problems.
+            timer.scheduleRecurring(3, 5,
+                () -> {
+                    try {
+                        boolean isLeader = isLeader();
+                        if (isLeader && !wasLeader) {
+                            for (String topoId : state.activeStorms()) {
+                                transition(topoId, TopologyActions.STARTUP, null);
+                            }
+                            clusterMetricSet.setActive(true);
+                        }
+                        wasLeader = isLeader;
+                    } catch (Exception e) {
+                        throw  new RuntimeException(e);
+                    }
+                });
 
             final boolean doNotReassign = (Boolean) conf.getOrDefault(ServerConfigUtils.NIMBUS_DO_NOT_REASSIGN, false);
             timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS)),
