@@ -16,7 +16,7 @@ package org.apache.storm.daemon.nimbus;
  * Actions that can be done to a topology in nimbus.
  */
 public enum TopologyActions {
-    STARTUP,
+    GAIN_LEADERSHIP,
     INACTIVATE,
     ACTIVATE,
     REBALANCE,

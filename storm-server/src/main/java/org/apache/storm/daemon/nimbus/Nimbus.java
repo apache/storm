@@ -360,12 +360,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         return sb;
     };
-    private static final TopologyStateTransition STARTUP_WHEN_KILLED_TRANSITION = (args, nimbus, topoId, base) -> {
+    private static final TopologyStateTransition GAIN_LEADERSHIP_WHEN_KILLED_TRANSITION = (args, nimbus, topoId, base) -> {
         int delay = base.get_topology_action_options().get_kill_options().get_wait_secs();
         nimbus.delayEvent(topoId, delay, TopologyActions.REMOVE, null);
         return null;
     };
-    private static final TopologyStateTransition STARTUP_WHEN_REBALANCING_TRANSITION = (args, nimbus, topoId, base) -> {
+    private static final TopologyStateTransition GAIN_LEADERSHIP_WHEN_REBALANCING_TRANSITION = (args, nimbus, topoId, base) -> {
         int delay = base.get_topology_action_options().get_rebalance_options().get_wait_secs();
         nimbus.delayEvent(topoId, delay, TopologyActions.DO_REBALANCE, null);
         return null;
@@ -385,12 +385,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 .put(TopologyActions.KILL, KILL_TRANSITION)
                 .build())
             .put(TopologyStatus.KILLED, new ImmutableMap.Builder<TopologyActions, TopologyStateTransition>()
-                .put(TopologyActions.STARTUP, STARTUP_WHEN_KILLED_TRANSITION)
+                .put(TopologyActions.GAIN_LEADERSHIP, GAIN_LEADERSHIP_WHEN_KILLED_TRANSITION)
                 .put(TopologyActions.KILL, KILL_TRANSITION)
                 .put(TopologyActions.REMOVE, REMOVE_TRANSITION)
                 .build())
             .put(TopologyStatus.REBALANCING, new ImmutableMap.Builder<TopologyActions, TopologyStateTransition>()
-                .put(TopologyActions.STARTUP, STARTUP_WHEN_REBALANCING_TRANSITION)
+                .put(TopologyActions.GAIN_LEADERSHIP, GAIN_LEADERSHIP_WHEN_REBALANCING_TRANSITION)
                 .put(TopologyActions.KILL, KILL_TRANSITION)
                 .put(TopologyActions.DO_REBALANCE, DO_REBALANCE_TRANSITION)
                 .build())
@@ -1330,7 +1330,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
 
             // Leadership coordination may be incomplete when launchServer is called. Previous behavior did a one time check
-            // which could cause Nimbus to not process TopologyActions.STARTUP transitions. Similar problem exists for
+            // which could cause Nimbus to not process TopologyActions.GAIN_LEADERSHIP transitions. Similar problem exists for
             // HA Nimbus on being newly elected as leader. Change to a recurring pattern addresses these problems.
             timer.scheduleRecurring(3, 5,
                 () -> {
@@ -1338,7 +1338,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                         boolean isLeader = isLeader();
                         if (isLeader && !wasLeader) {
                             for (String topoId : state.activeStorms()) {
-                                transition(topoId, TopologyActions.STARTUP, null);
+                                transition(topoId, TopologyActions.GAIN_LEADERSHIP, null);
                             }
                             clusterMetricSet.setActive(true);
                         }
@@ -1774,8 +1774,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                         throw new RuntimeException(message);
                     }
 
-                    if (TopologyActions.STARTUP != event) {
-                        //STARTUP is a system event so don't log an issue
+                    if (TopologyActions.GAIN_LEADERSHIP != event) {
+                        //GAIN_LEADERSHIP is a system event so don't log an issue
                         LOG.info(message);
                     }
                     transition = NOOP_TRANSITION;
