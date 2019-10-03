@@ -253,8 +253,7 @@ public class ResourceAwareScheduler implements IScheduler {
      * 2) RemainingRequiredResources. Start with required topology resources, and deduct for partially scheduled and evicted topologies.
      */
     private class TopologySchedulingResources {
-        ResourceMetrics metrics;
-        boolean remainingResourcesSet;
+        boolean remainingResourcesAreSet;
 
         NormalizedResourceOffer clusterAvailableResources;
         NormalizedResourceRequest topologyRequiredResources;
@@ -269,10 +268,9 @@ public class ResourceAwareScheduler implements IScheduler {
         double topologyScheduledMemory;
 
         TopologySchedulingResources(Cluster cluster, TopologyDetails td) {
-            remainingResourcesSet = false;
-            metrics = new ResourceMetrics(new StormMetricsRegistry());
+            remainingResourcesAreSet = false;
 
-            // available resources
+            // available resources (lower bound since blacklisted supervisors do not contribute)
             clusterAvailableResources = cluster.getNonBlacklistedClusterAvailableResources(Collections.emptyList());
             clusterAvailableMemory = clusterAvailableResources.getTotalMemoryMb();
             // required resources
@@ -301,7 +299,7 @@ public class ResourceAwareScheduler implements IScheduler {
         boolean canScheduleAvailable() {
             NormalizedResourceOffer availableResources = new NormalizedResourceOffer(clusterAvailableResources);
             availableResources.add(topologyScheduledResources);
-            boolean insufficientResources = availableResources.remove(topologyRequiredResources, metrics);
+            boolean insufficientResources = availableResources.remove(topologyRequiredResources);
             if (insufficientResources) {
                 return false;
             }
@@ -312,7 +310,7 @@ public class ResourceAwareScheduler implements IScheduler {
         }
 
         boolean canScheduleRemainingRequired() {
-            if (!remainingResourcesSet) {
+            if (!remainingResourcesAreSet) {
                 return true;
             }
             if (remainingRequiredTopologyResources.areAnyOverZero() || (remainingRequiredTopologyMemory > 0)) {
@@ -324,12 +322,12 @@ public class ResourceAwareScheduler implements IScheduler {
 
         // Set remainingRequiredResources following failed scheduling.
         void setRemainingRequiredResources(Cluster cluster, TopologyDetails td) {
-            remainingResourcesSet = true;
+            remainingResourcesAreSet = true;
             setScheduledTopologyResources(cluster, td);
 
             remainingRequiredTopologyResources = new NormalizedResourceOffer();
             remainingRequiredTopologyResources.add(topologyRequiredResources);
-            remainingRequiredTopologyResources.remove(topologyScheduledResources, metrics);
+            remainingRequiredTopologyResources.remove(topologyScheduledResources);
 
             remainingRequiredTopologyMemory = (topologyRequiredNonSharedMemory + topologySharedMemoryLowerBound)
                     - (topologyScheduledMemory);
@@ -344,13 +342,13 @@ public class ResourceAwareScheduler implements IScheduler {
 
                 clusterAvailableResources.add(evictResources);
                 clusterAvailableMemory += topologyScheduledMemory;
-                remainingRequiredTopologyResources.remove(evictResources, metrics);
+                remainingRequiredTopologyResources.remove(evictResources);
                 remainingRequiredTopologyMemory -= topologyScheduledMemory;
             }
         }
 
         void resetRemaining() {
-            remainingResourcesSet = false;
+            remainingResourcesAreSet = false;
             remainingRequiredTopologyMemory = 0;
         }
 

@@ -267,7 +267,6 @@ public class TestGenericResourceAwareStrategy {
 
         Config conf = createGrasClusterConfig(cpuPercent, memoryOnHeap, memoryOffHeap, null, Collections.emptyMap());
         conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_TOPOLOGY_SCHEDULING_ATTEMPTS, 2);    // allow 1 round of evictions
-        //conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
 
         String gpu1 = "hasGpu1";
         String noGpu = "hasNoGpu";

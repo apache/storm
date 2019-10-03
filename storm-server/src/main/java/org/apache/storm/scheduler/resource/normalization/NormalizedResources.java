@@ -135,7 +135,9 @@ public class NormalizedResources {
         this.cpu -= other.cpu;
         if (cpu < 0.0) {
             ret = true;
-            resourceMetrics.getNegativeResourceEventsMeter().mark();
+            if (resourceMetrics != null) {
+                resourceMetrics.getNegativeResourceEventsMeter().mark();
+            }
             cpu = 0.0;
         }
         int otherLength = other.otherResources.length;
@@ -144,7 +146,9 @@ public class NormalizedResources {
             otherResources[i] -= other.otherResources[i];
             if (otherResources[i] < 0.0) {
                 ret = true;
-                resourceMetrics.getNegativeResourceEventsMeter().mark();
+                if (resourceMetrics != null) {
+                    resourceMetrics.getNegativeResourceEventsMeter().mark();
+                }
                 otherResources[i]  = 0.0;
             }
         }
@@ -425,7 +429,7 @@ public class NormalizedResources {
 
     /**
      * Are any of the non cpu resources positive.
-     * @return true of any of the resources are positive.  False if they are all <= 0.
+     * @return true of any of the non cpu resources are positive.  False if they are all <= 0.
      */
     public boolean anyNonCpuOverZero() {
         return areAnyOverZero(true);
