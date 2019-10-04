@@ -42,6 +42,7 @@ class TestStormCli(TestCase):
         )
 
     def base_test(self, command_invocation, mock_shell_interface, expected_output):
+        print(command_invocation)
         with mock.patch.object(sys, "argv", command_invocation):
             self.cli_main()
         if expected_output not in mock_shell_interface.call_args_list:
@@ -146,7 +147,7 @@ class TestStormCli(TestCase):
 
     def test_upload_credentials_command(self):
         self.base_test([
-            'storm', 'upload-credentials', 'my-topology-name', 'appids role.name1,role.name2"'
+            'storm','upload-credentials', '--config', '/some/other/storm.yaml', '-c', 'test=test', 'my-topology-name', 'appids', 'role.name1,role.name2'
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd,  '-client', '-Ddaemon.name=', '-Dstorm.options=',
@@ -156,7 +157,7 @@ class TestStormCli(TestCase):
                                              '/extlib:' + self.storm_dir + '/extlib-daemon:' +
                                              self.storm_dir + '/conf:' + self.storm_dir +
                                              '/bin', 'org.apache.storm.command.UploadCredentials',
-                'my-topology-name', 'appids role.name1,role.name2"'])
+                'my-topology-name', 'appids role.name1,role.name"'])
         )
 
     def test_blobstore_command(self):
