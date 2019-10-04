@@ -278,7 +278,7 @@ def run_client_jar(klass, args, daemon=False, client=True, extrajvmopts=[]):
         klass, args.storm_config_opts,
         jvmtype="-client",
         extrajars=extra_jars,
-        args=args.topology_main_args,
+        args=args.main_args,
         daemon=False,
         jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
                 ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
@@ -295,7 +295,6 @@ def print_remoteconfvalue(args):
 
 def initialize_main_command():
     main_parser = argparse.ArgumentParser(prog="storm", formatter_class=SortingHelpFormatter)
-    add_common_options(main_parser)
 
     subparsers = main_parser.add_subparsers(help="")
 
@@ -360,12 +359,17 @@ def initialize_remoteconfvalue_subcommand(subparsers):
     add_common_options(sub_parser)
 
 
-def add_common_options(parser):
+def add_common_options(parser, main_args=True):
     parser.add_argument("--config", default=None, help="Override default storm conf file")
     parser.add_argument(
         "-storm_config_opts", "-c", action="append", default=[],
         help="Override storm conf properties , e.g. nimbus.ui.port=4443"
     )
+    if main_args:
+        parser.add_argument(
+            "main_args", metavar="main_args",
+            nargs='*', help="Runs the main method with the specified arguments."
+        )
 
 def add_topology_jar_options(parser):
     parser.add_argument(
@@ -375,10 +379,6 @@ def add_topology_jar_options(parser):
     parser.add_argument(
         "topology_main_class", metavar="topology-main-class",
     help="main class of the topology jar being submitted"
-    )
-    parser.add_argument(
-        "topology_main_args", metavar="topology_main_args",
-        nargs='*', help="Runs the main method with the specified arguments."
     )
 
 
@@ -510,12 +510,6 @@ def check_positive(value):
         raise argparse.ArgumentTypeError("%s is not a positive integer" % value)
     return ivalue
 
-def check_even_list(cred_list):
-    if not (len(cred_list) % 2):
-        raise argparse.ArgumentTypeError("please provide a list of cred key and value pairs")
-    return cred_list
-
-
 def initialize_upload_credentials_subcommand(subparsers):
     command_help = """Uploads a new set of credentials to a running topology."""
     sub_parser = subparsers.add_parser("upload-credentials", help=command_help, formatter_class=SortingHelpFormatter)
@@ -533,8 +527,7 @@ def initialize_upload_credentials_subcommand(subparsers):
     )
 
     sub_parser.add_argument(
-        "cred_list", nargs='*', help="List of credkeys and their values [credkey credvalue]*",
-        type=check_even_list
+        "cred_list", nargs='*', help="List of credkeys and their values [credkey credvalue]*"
     )
 
     sub_parser.set_defaults(func=upload_credentials)
@@ -563,7 +556,7 @@ def initialize_sql_subcommand(subparsers):
     group.add_argument("--explain", action="store_true", help="activate explain mode")
 
     sub_parser.set_defaults(func=sql)
-    add_common_options(sub_parser)
+    add_common_options(sub_parser, main_args=False)
 
 
 def initialize_blobstore_subcommand(subparsers):
@@ -581,7 +574,7 @@ def initialize_blobstore_subcommand(subparsers):
     )
     list_parser.add_argument(
         "keys", nargs='+')
-    add_common_options(list_parser)
+    add_common_options(list_parser, main_args=False)
 
     cat_parser = sub_sub_parsers.add_parser(
         "cat", help="read a blob and then either write it to a file, or STDOUT (requires read access).", formatter_class=SortingHelpFormatter
@@ -892,7 +885,7 @@ def initialize_shell_subcommand(subparsers):
     sub_parser.add_argument("args", nargs='*', default=[])
 
     sub_parser.set_defaults(func=shell)
-    add_common_options(sub_parser)
+    add_common_options(sub_parser, main_args=False)
 
 
 def initialize_repl_subcommand(subparsers):
@@ -987,7 +980,7 @@ def initialize_drpc_client_subcommand(subparsers):
     sub_parser.add_argument("function_arguments", nargs='*', default=[])
 
     sub_parser.set_defaults(func=drpc_client)
-    add_common_options(sub_parser)
+    add_common_options(sub_parser, main_args=False)
 
 
 def initialize_drpc_subcommand(subparsers):
@@ -1061,7 +1054,7 @@ def local(args):
     extrajvmopts = ["-Dstorm.local.sleeptime=" + args.local_ttl]
     if args.java_debug:
         extrajvmopts += ["-agentlib:jdwp=" + args.java_debug]
-    args.topology_main_args = [args.topology_main_class] + args.topology_main_args
+    args.main_args = [args.topology_main_class] + args.main_args
     run_client_jar(
         "org.apache.storm.LocalCluster", args,
         client=False, daemon=False, extrajvmopts=extrajvmopts)
@@ -1107,15 +1100,17 @@ def sql(args):
 def kill(args):
     exec_storm_class(
         "org.apache.storm.command.KillTopology",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 
 def upload_credentials(args):
+    if (len(args.cred_list) %2 != 0):
+        raise argparse.ArgumentTypeError("please provide a list of cred key and value pairs " + cred_list)
     exec_storm_class(
         "org.apache.storm.command.UploadCredentials",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1125,7 +1120,7 @@ def blob(args):
         raise argparse.ArgumentTypeError("Replication factor needed when doing blob update")
     exec_storm_class(
         "org.apache.storm.command.Blobstore",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1133,7 +1128,7 @@ def blob(args):
 def heartbeats(args):
     exec_storm_class(
         "org.apache.storm.command.Heartbeats",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1141,14 +1136,14 @@ def heartbeats(args):
 def activate(args):
     exec_storm_class(
         "org.apache.storm.command.Activate",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def listtopos(args):
     exec_storm_class(
         "org.apache.storm.command.ListTopologies",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1163,14 +1158,14 @@ def set_log_level(args):
             raise argparse.ArgumentTypeError("Should be in the form[logger name]=[log level][:optional timeout]")
     exec_storm_class(
         "org.apache.storm.command.SetLogLevel",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def deactivate(args):
     exec_storm_class(
         "org.apache.storm.command.Deactivate",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1186,7 +1181,7 @@ def rebalance(args):
             raise argparse.ArgumentTypeError("Should be in the form component_name:new_executor_count")
     exec_storm_class(
         "org.apache.storm.command.Rebalance",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1194,7 +1189,7 @@ def rebalance(args):
 def get_errors(args):
     exec_storm_class(
         "org.apache.storm.command.GetErrors",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1202,7 +1197,7 @@ def get_errors(args):
 def healthcheck(args):
     exec_storm_class(
         "org.apache.storm.command.HealthCheck",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1210,7 +1205,7 @@ def healthcheck(args):
 def kill_workers(args):
     exec_storm_class(
         "org.apache.storm.command.KillWorkers",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
@@ -1218,7 +1213,7 @@ def kill_workers(args):
 def admin(args):
     exec_storm_class(
         "org.apache.storm.command.AdminCommands",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        args=args.main_args, storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
