@@ -14,6 +14,7 @@ package org.apache.storm.scheduler.resource;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SchedulerAssignment;
@@ -32,6 +34,9 @@ import org.apache.storm.scheduler.SingleTopologyCluster;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
@@ -66,15 +71,6 @@ public class ResourceAwareScheduler implements IScheduler {
             LOG.error(realMessage);
         }
         u.markTopoUnsuccess(td);
-    }
-
-    private static double getCpuUsed(SchedulerAssignment assignment) {
-        return assignment.getScheduledResources().values().stream().mapToDouble((wr) -> wr.get_cpu()).sum();
-    }
-
-    private static double getMemoryUsed(SchedulerAssignment assignment) {
-        return assignment.getScheduledResources().values().stream()
-                         .mapToDouble((wr) -> wr.get_mem_on_heap() + wr.get_mem_off_heap()).sum();
     }
 
     @Override
@@ -161,23 +157,28 @@ public class ResourceAwareScheduler implements IScheduler {
                 Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER);
         }
 
+        TopologySchedulingResources topologySchedulingResources = new TopologySchedulingResources(workingState, td);
         final IStrategy finalRasStrategy = rasStrategy;
         for (int i = 0; i < maxSchedulingAttempts; i++) {
             SingleTopologyCluster toSchedule = new SingleTopologyCluster(workingState, td.getId());
             try {
                 SchedulingResult result = null;
-                Future<SchedulingResult> schedulingFuture = backgroundScheduling.submit(
-                    () -> finalRasStrategy.schedule(toSchedule, td)
-                );
-                try {
-                    result = schedulingFuture.get(schedulingTimeoutSeconds, TimeUnit.SECONDS);
-                } catch (TimeoutException te) {
-                    markFailedTopology(topologySubmitter, cluster, td, "Scheduling took too long for "
-                            + td.getId() + " using strategy " + rasStrategy.getClass().getName() + " timeout after "
-                            + schedulingTimeoutSeconds + " seconds using config "
-                            + DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY + ".");
-                    schedulingFuture.cancel(true);
-                    return;
+                topologySchedulingResources.resetRemaining();
+                if (topologySchedulingResources.canSchedule()) {
+                    Future<SchedulingResult> schedulingFuture = backgroundScheduling.submit(
+                        () -> finalRasStrategy.schedule(toSchedule, td));
+                    try {
+                        result = schedulingFuture.get(schedulingTimeoutSeconds, TimeUnit.SECONDS);
+                    } catch (TimeoutException te) {
+                        markFailedTopology(topologySubmitter, cluster, td, "Scheduling took too long for "
+                                + td.getId() + " using strategy " + rasStrategy.getClass().getName() + " timeout after "
+                                + schedulingTimeoutSeconds + " seconds using config "
+                                + DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY + ".");
+                        schedulingFuture.cancel(true);
+                        return;
+                    }
+                } else {
+                    result = SchedulingResult.failure(SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES, "");
                 }
                 LOG.debug("scheduling result: {}", result);
                 if (result == null) {
@@ -195,26 +196,20 @@ public class ResourceAwareScheduler implements IScheduler {
                         boolean evictedSomething = false;
                         LOG.debug("attempting to make space for topo {} from user {}", td.getName(), td.getTopologySubmitter());
                         int tdIndex = reversedList.indexOf(td);
-                        double cpuNeeded = td.getTotalRequestedCpu();
-                        double memoryNeeded = td.getTotalRequestedMemOffHeap() + td.getTotalRequestedMemOnHeap();
-                        SchedulerAssignment assignment = cluster.getAssignmentById(td.getId());
-                        if (assignment != null) {
-                            cpuNeeded -= getCpuUsed(assignment);
-                            memoryNeeded -= getMemoryUsed(assignment);
-                        }
+                        topologySchedulingResources.setRemainingRequiredResources(toSchedule, td);
+
                         for (int index = 0; index < tdIndex; index++) {
                             TopologyDetails topologyEvict = reversedList.get(index);
                             SchedulerAssignment evictAssignemnt = workingState.getAssignmentById(topologyEvict.getId());
                             if (evictAssignemnt != null && !evictAssignemnt.getSlots().isEmpty()) {
                                 Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
+                                topologySchedulingResources.adjustResourcesForEvictedTopology(toSchedule, topologyEvict);
 
                                 LOG.debug("Evicting Topology {} with workers: {} from user {}", topologyEvict.getName(), workersToEvict,
-                                          topologyEvict.getTopologySubmitter());
-                                cpuNeeded -= getCpuUsed(evictAssignemnt);
-                                memoryNeeded -= getMemoryUsed(evictAssignemnt);
+                                    topologyEvict.getTopologySubmitter());
                                 evictedSomething = true;
                                 nodes.freeSlots(workersToEvict);
-                                if (cpuNeeded <= 0 && memoryNeeded <= 0) {
+                                if (topologySchedulingResources.canSchedule()) {
                                     //We evicted enough topologies to have a hope of scheduling, so try it now, and don't evict more
                                     // than is needed
                                     break;
@@ -225,15 +220,7 @@ public class ResourceAwareScheduler implements IScheduler {
                         if (!evictedSomething) {
                             StringBuilder message = new StringBuilder();
                             message.append("Not enough resources to schedule ");
-                            if (memoryNeeded > 0 || cpuNeeded > 0) {
-                                if (memoryNeeded > 0) {
-                                    message.append(memoryNeeded).append(" MB ");
-                                }
-                                if (cpuNeeded > 0) {
-                                    message.append(cpuNeeded).append("% CPU ");
-                                }
-                                message.append("needed even after evicting lower priority topologies. ");
-                            }
+                            message.append(topologySchedulingResources.getRemainingRequiredResourcesMessage());
                             message.append(result.getErrorMessage());
                             markFailedTopology(topologySubmitter, cluster, td, message.toString());
                             return;
@@ -247,11 +234,165 @@ public class ResourceAwareScheduler implements IScheduler {
                 }
             } catch (Exception ex) {
                 markFailedTopology(topologySubmitter, cluster, td,
-                                   "Internal Error - Exception thrown when scheduling. Please check logs for details", ex);
+                        "Internal Error - Exception thrown when scheduling. Please check logs for details", ex);
                 return;
             }
         }
         markFailedTopology(topologySubmitter, cluster, td, "Failed to schedule within " + maxSchedulingAttempts + " attempts");
+    }
+
+    /*
+     * Class for tracking resources for scheduling a topology.
+     *
+     * Ideally we would simply track NormalizedResources, but shared topology memory complicates things.
+     * Topologies with shared memory may use more than the SharedMemoryLowerBound, and topologyRequiredResources
+     * ignores shared memory.
+     *
+     * Resources are tracked in two ways:
+     * 1) AvailableResources. Track cluster available resources and required topology resources.
+     * 2) RemainingRequiredResources. Start with required topology resources, and deduct for partially scheduled and evicted topologies.
+     */
+    private class TopologySchedulingResources {
+        boolean remainingResourcesAreSet;
+
+        NormalizedResourceOffer clusterAvailableResources;
+        NormalizedResourceRequest topologyRequiredResources;
+        NormalizedResourceRequest topologyScheduledResources;
+
+        double clusterAvailableMemory;
+        double topologyRequiredNonSharedMemory;
+        double topologySharedMemoryLowerBound;
+
+        NormalizedResourceOffer remainingRequiredTopologyResources;
+        double remainingRequiredTopologyMemory;
+        double topologyScheduledMemory;
+
+        TopologySchedulingResources(Cluster cluster, TopologyDetails td) {
+            remainingResourcesAreSet = false;
+
+            // available resources (lower bound since blacklisted supervisors do not contribute)
+            clusterAvailableResources = cluster.getNonBlacklistedClusterAvailableResources(Collections.emptyList());
+            clusterAvailableMemory = clusterAvailableResources.getTotalMemoryMb();
+            // required resources
+            topologyRequiredResources = td.getApproximateTotalResources();
+            topologyRequiredNonSharedMemory = td.getRequestedNonSharedOffHeap() + td.getRequestedNonSharedOnHeap();
+            topologySharedMemoryLowerBound = td.getRequestedSharedOffHeap() + td.getRequestedSharedOnHeap();
+            // partially scheduled topology resources
+            setScheduledTopologyResources(cluster, td);
+        }
+
+        void setScheduledTopologyResources(Cluster cluster, TopologyDetails td) {
+            SchedulerAssignment assignment = cluster.getAssignmentById(td.getId());
+            if (assignment != null) {
+                topologyScheduledResources = td.getApproximateResources(assignment.getExecutors());
+                topologyScheduledMemory = computeScheduledTopologyMemory(cluster, td);
+            } else {
+                topologyScheduledResources = new NormalizedResourceRequest();
+                topologyScheduledMemory = 0;
+            }
+        }
+
+        boolean canSchedule() {
+            return canScheduleAvailable() && canScheduleRemainingRequired();
+        }
+
+        boolean canScheduleAvailable() {
+            NormalizedResourceOffer availableResources = new NormalizedResourceOffer(clusterAvailableResources);
+            availableResources.add(topologyScheduledResources);
+            boolean insufficientResources = availableResources.remove(topologyRequiredResources);
+            if (insufficientResources) {
+                return false;
+            }
+
+            double availableMemory = clusterAvailableMemory + topologyScheduledMemory;
+            double totalRequiredTopologyMemory = topologyRequiredNonSharedMemory + topologySharedMemoryLowerBound;
+            return (availableMemory >= totalRequiredTopologyMemory);
+        }
+
+        boolean canScheduleRemainingRequired() {
+            if (!remainingResourcesAreSet) {
+                return true;
+            }
+            if (remainingRequiredTopologyResources.areAnyOverZero() || (remainingRequiredTopologyMemory > 0)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        // Set remainingRequiredResources following failed scheduling.
+        void setRemainingRequiredResources(Cluster cluster, TopologyDetails td) {
+            remainingResourcesAreSet = true;
+            setScheduledTopologyResources(cluster, td);
+
+            remainingRequiredTopologyResources = new NormalizedResourceOffer();
+            remainingRequiredTopologyResources.add(topologyRequiredResources);
+            remainingRequiredTopologyResources.remove(topologyScheduledResources);
+
+            remainingRequiredTopologyMemory = (topologyRequiredNonSharedMemory + topologySharedMemoryLowerBound)
+                    - (topologyScheduledMemory);
+        }
+
+        // Adjust remainingRequiredResources after evicting topology
+        void adjustResourcesForEvictedTopology(Cluster cluster, TopologyDetails evict) {
+            SchedulerAssignment assignment = cluster.getAssignmentById(evict.getId());
+            if (assignment != null) {
+                NormalizedResourceRequest evictResources = evict.getApproximateResources(assignment.getExecutors());
+                double topologyScheduledMemory = computeScheduledTopologyMemory(cluster, evict);
+
+                clusterAvailableResources.add(evictResources);
+                clusterAvailableMemory += topologyScheduledMemory;
+                remainingRequiredTopologyResources.remove(evictResources);
+                remainingRequiredTopologyMemory -= topologyScheduledMemory;
+            }
+        }
+
+        void resetRemaining() {
+            remainingResourcesAreSet = false;
+            remainingRequiredTopologyMemory = 0;
+        }
+
+        private double getMemoryUsed(SchedulerAssignment assignment) {
+            return assignment.getScheduledResources().values().stream()
+                    .mapToDouble((wr) -> wr.get_mem_on_heap() + wr.get_mem_off_heap()).sum();
+        }
+
+        // Get total memory for scheduled topology, including all shared memory
+        private double computeScheduledTopologyMemory(Cluster cluster, TopologyDetails td) {
+            SchedulerAssignment assignment = cluster.getAssignmentById(td.getId());
+            double scheduledTopologyMemory = 0;
+            // node shared memory
+            if (assignment != null) {
+                for (double mem : assignment.getNodeIdToTotalSharedOffHeapNodeMemory().values()) {
+                    scheduledTopologyMemory += mem;
+                }
+                // worker memory (shared & unshared)
+                scheduledTopologyMemory += getMemoryUsed(assignment);
+            }
+
+            return scheduledTopologyMemory;
+        }
+
+        String getRemainingRequiredResourcesMessage() {
+            double memoryNeeded = remainingRequiredTopologyMemory;
+            double cpuNeeded = remainingRequiredTopologyResources.getTotalCpu();
+            StringBuilder message = new StringBuilder();
+            if (memoryNeeded > 0 || cpuNeeded > 0) {
+                if (memoryNeeded > 0) {
+                    message.append(memoryNeeded).append(" MB ");
+                }
+                if (cpuNeeded > 0) {
+                    message.append(cpuNeeded).append("% CPU ");
+                }
+                if (remainingRequiredTopologyResources.getNormalizedResources().anyNonCpuOverZero()) {
+                    message.append(" ");
+                    message.append(remainingRequiredTopologyResources.getNormalizedResources().toString());
+                    message.append(" ");
+                }
+                message.append("needed even after evicting lower priority topologies. ");
+            }
+            return message.toString();
+        }
     }
 
     /**

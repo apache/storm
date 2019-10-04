@@ -92,10 +92,16 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
         totalMemoryMb -= other.getTotalMemoryMb();
         if (totalMemoryMb < 0.0) {
             negativeResources = true;
-            resourceMetrics.getNegativeResourceEventsMeter().mark();
+            if (resourceMetrics != null) {
+                resourceMetrics.getNegativeResourceEventsMeter().mark();
+            }
             totalMemoryMb = 0.0;
         }
         return negativeResources;
+    }
+
+    public boolean remove(NormalizedResourcesWithMemory other) {
+        return remove(other, null);
     }
 
     /**
