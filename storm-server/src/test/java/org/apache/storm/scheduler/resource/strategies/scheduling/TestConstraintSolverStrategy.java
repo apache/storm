@@ -195,12 +195,12 @@ public class TestConstraintSolverStrategy {
                 @Override
                 protected SolverResult backtrackSearch(SearcherState state) {
                     //Each time we try to schedule a new component simulate taking 1 second longer
-                    Time.advanceTime(1_000);
+                    Time.advanceTime(1_001);
                     return super.backtrackSearch(state);
 
                 }
             };
-            basicFailureTest(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS, 2, cs);
+            basicFailureTest(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS, 1, cs);
         }
     }
 
