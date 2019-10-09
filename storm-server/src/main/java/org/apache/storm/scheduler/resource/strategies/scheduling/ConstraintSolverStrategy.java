@@ -342,7 +342,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         LOG.info("backtrackSearch: will assign {} executors", maxExecCnt);
 
         OUTERMOST_LOOP:
-        for (int loopCnt = 0 ; loopCnt < 2_000_000_000 ; loopCnt++) {
+        for (int loopCnt = 0 ; true ; loopCnt++) {
             LOG.debug("backtrackSearch: loopCnt = {}, state.execIndex = {}", loopCnt, state.execIndex);
             if (state.areSearchLimitsExceeded()) {
                 LOG.warn("backtrackSearch: Search limits exceeded");
