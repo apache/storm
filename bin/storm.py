@@ -588,7 +588,7 @@ def initialize_blobstore_subcommand(subparsers):
         "list", help="lists blobs currently in the blob store", formatter_class=SortingHelpFormatter
     )
     list_parser.add_argument(
-        "keys", nargs='+')
+        "keys", nargs='*')
     add_common_options(list_parser, main_args=False)
 
     cat_parser = sub_sub_parsers.add_parser(

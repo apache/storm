@@ -177,6 +177,20 @@ class TestStormCli(TestCase):
         self.mock_execvp.reset_mock()
 
         self.base_test([
+            'storm', 'blobstore', 'list'
+        ], self.mock_execvp, mock.call(
+            self.java_cmd, [
+                self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
+                '-Dstorm.home=' + self.storm_dir + '',
+                '-Dstorm.log.dir=' + self.storm_dir + "/logs", '-Djava.library.path=',
+                '-Dstorm.conf.file=', '-cp',
+                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
+                self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'list'])
+        )
+        self.mock_execvp.reset_mock()
+
+        self.base_test([
             'storm', 'blobstore', 'list', 'wordstotrack'
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
