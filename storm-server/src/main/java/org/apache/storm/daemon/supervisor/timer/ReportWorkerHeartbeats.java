@@ -50,13 +50,8 @@ public class ReportWorkerHeartbeats implements Runnable {
 
     private SupervisorWorkerHeartbeats getAndResetWorkerHeartbeats() {
         Map<String, LSWorkerHeartbeat> localHeartbeats;
-        try {
-            localHeartbeats = SupervisorUtils.readWorkerHeartbeats(this.conf);
-            return getSupervisorWorkerHeartbeatsFromLocal(localHeartbeats);
-        } catch (Exception e) {
-            LOG.error("Read local worker heartbeats error, skipping heartbeats for this round, msg:{}", e.getMessage());
-            return null;
-        }
+        localHeartbeats = SupervisorUtils.readWorkerHeartbeats(this.conf);
+        return getSupervisorWorkerHeartbeatsFromLocal(localHeartbeats);
     }
 
     private SupervisorWorkerHeartbeats getSupervisorWorkerHeartbeatsFromLocal(Map<String, LSWorkerHeartbeat> localHeartbeats) {
