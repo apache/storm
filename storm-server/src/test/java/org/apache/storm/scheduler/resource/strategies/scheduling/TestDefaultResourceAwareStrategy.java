@@ -628,7 +628,7 @@ public class TestDefaultResourceAwareStrategy {
         t1Conf.putAll(config);
         final List<String> t1FavoredHostNames = Arrays.asList("host-41", "host-42", "host-43");
         t1Conf.put(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES, t1FavoredHostNames);
-        final List<String> t1UnfavoredHostIds = Arrays.asList("host-1", "host-2", "host-3");
+        final List<String> t1UnfavoredHostIds = Arrays.asList("host-1", "host-2", "host-3", "host[11-13]", "host[2-1]");
         t1Conf.put(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES, t1UnfavoredHostIds);
         //generate topologies
         TopologyDetails topo1 = genTopology("topo-1", t1Conf, 8, 0, 2, 0, CURRENT_TIME - 2, 10, "user");

@@ -31,6 +31,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.storm.generated.ComponentType;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.Cluster;
@@ -52,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class BaseResourceAwareStrategy implements IStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(BaseResourceAwareStrategy.class);
+    private static final Pattern NUMBER_RANGE_IN_BRACKET_PATTERN = Pattern.compile("(.*)\\[(\\d+)-(\\d+)\\](.*)"); 
     protected Cluster cluster;
     // Rack id to list of host names in that rack
     private Map<String, List<String>> networkTopography;
@@ -216,14 +219,40 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         if (hosts == null) {
             return Collections.emptyList();
         }
+        List<String> expandedHosts = new ArrayList<>();
         List<String> ret = new ArrayList<>(hosts.size());
         for (String host: hosts) {
+            Matcher m = NUMBER_RANGE_IN_BRACKET_PATTERN.matcher(host); 
+            if (m.find()) {
+                String headStr = m.group(1); 
+                Integer startOfRange = Integer.valueOf(m.group(2)); 
+                Integer endOfRange = Integer.valueOf(m.group(3)); 
+                String tailStr = m.group(4); 
+                expandedHosts.addAll(expandRangeForHost(startOfRange, endOfRange, headStr, tailStr)); 
+            } else {
+                expandedHosts.add(host); 
+            }
+        }
+
+        for (String host: expandedHosts) {
             List<RasNode> nodes = hostnameToNodes.get(host);
             if (nodes != null) {
                 for (RasNode node : nodes) {
                     ret.add(node.getId());
                 }
             }
+        }
+        return ret;
+    }
+
+    private List<String> expandRangeForHost(Integer startOfRange, Integer endOfRange, String headStr, String tailStr) {
+        if (startOfRange > endOfRange) {
+            LOG.error("Invalid number range provided in {}[{}-{}]{}", headStr, startOfRange, endOfRange, tailStr); 
+            return Collections.emptyList();
+        }
+        List<String> ret = new ArrayList<>(endOfRange - startOfRange + 1);
+        for (int num = startOfRange; num < endOfRange + 1; num++) {
+            ret.add(headStr + num + tailStr); 
         }
         return ret;
     }
