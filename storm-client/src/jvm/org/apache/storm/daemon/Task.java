@@ -232,7 +232,7 @@ public class Task {
 
     private TopologyContext mkTopologyContext(StormTopology topology) throws IOException {
         Map<String, Object> conf = workerData.getConf();
-        return new TopologyContext(
+        TopologyContext topologyContext = new TopologyContext(
             topology,
             workerData.getTopologyConf(),
             workerData.getTaskToComponent(),
@@ -252,6 +252,8 @@ public class Task {
             executor.getIntervalToTaskToMetricToRegistry(),
             executor.getOpenOrPrepareWasCalled(),
             workerData.getMetricRegistry());
+        executor.setMetricRegistry(workerData.getMetricRegistry());
+        return topologyContext;
     }
 
     private Object mkTaskObject() {
