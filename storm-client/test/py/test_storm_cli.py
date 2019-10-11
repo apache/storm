@@ -385,6 +385,32 @@ class TestStormCli(TestCase):
             ])
         )
 
+    def test_drpc_client_command(self):
+        self.base_test([
+            'storm', 'drpc-client', 'exclaim', 'a', 'exclaim', 'b', 'test', 'bar'
+        ], self.mock_execvp, mock.call(
+            self.java_cmd, [
+                self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
+                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=' + self.storm_dir + "/logs",
+                '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
+                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
+                '/bin', 'org.apache.storm.command.BasicDrpcClient', 'exclaim', 'a', 'exclaim', 'b', 'test', 'bar'
+            ])
+        )
+        self.base_test([
+            'storm', 'drpc-client', '-f', 'exclaim', 'a', 'b'
+        ], self.mock_execvp, mock.call(
+            self.java_cmd, [
+                self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
+                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=' + self.storm_dir + "/logs",
+                '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
+                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
+                '/bin', 'org.apache.storm.command.BasicDrpcClient', '-f', 'exclaim', 'a', 'b'
+            ])
+        )
+
     def test_healthcheck_command(self):
         self.base_test([
             'storm', 'node-health-check'

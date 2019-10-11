@@ -1391,7 +1391,7 @@ def logviewer(args):
 
 
 def drpc_client(args):
-    if not args.function and not (len(args.function_arguments) % 2):
+    if not args.function and (len(args.function_arguments) % 2):
         raise argparse.ArgumentTypeError(
             "If no -f is supplied arguments need to be in the form [function arg]. " +
             "This has {} args".format(
@@ -1401,7 +1401,7 @@ def drpc_client(args):
 
     exec_storm_class(
         "org.apache.storm.command.BasicDrpcClient",
-        args=remove_common_options(sys.argv[2:]),
+        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
