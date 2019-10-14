@@ -55,8 +55,7 @@ public class FIFOSchedulingPriorityStrategy extends DefaultSchedulingPriorityStr
     }
 
     /**
-     * Comparator that sorts topologies by priority and then by submission time.
-     * First sort by Topology Priority, if there is a tie for topology priority, topology uptime is used to sort.
+     * Comparator that sorts topologies by submission time.
      */
     private static class TopologyBySubmissionTimeComparator implements Comparator<TopologyDetails> {
 
