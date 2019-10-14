@@ -21,6 +21,7 @@ package org.apache.storm.localizer;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -449,7 +450,15 @@ public class AsyncLocalizer implements AutoCloseable {
             topoConfBlob.removeReference(pna);
         }
 
-        for (LocalResource lr : getLocalResources(pna)) {
+        List<LocalResource> localResources;
+        try {
+            localResources = getLocalResources(pna);
+        } catch (FileNotFoundException e) {
+            LOG.warn("Local resources for {} no longer available", pna, e);
+            return;
+        }
+
+        for (LocalResource lr : localResources) {
             try {
                 removeBlobReference(lr.getBlobName(), pna, lr.shouldUncompress());
             } catch (Exception e) {
