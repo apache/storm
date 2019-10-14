@@ -342,7 +342,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         LOG.info("backtrackSearch: will assign {} executors", maxExecCnt);
 
         OUTERMOST_LOOP:
-        for (int loopCnt = 0 ; loopCnt < 2_000_000_000 ; loopCnt++) {
+        for (int loopCnt = 0 ; true ; loopCnt++) {
             LOG.debug("backtrackSearch: loopCnt = {}, state.execIndex = {}", loopCnt, state.execIndex);
             if (state.areSearchLimitsExceeded()) {
                 LOG.warn("backtrackSearch: Search limits exceeded");
@@ -359,7 +359,6 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             Iterable<String> sortedNodesIter = sortAllNodes(state.td, exec, favoredNodeIds, unFavoredNodeIds);
 
             int progressIdx = -1;
-            boolean assigned = false;
             for (String nodeId : sortedNodesIter) {
                 RasNode node = nodes.get(nodeId);
                 for (WorkerSlot workerSlot : node.getSlotsAvailableToScheduleOn()) {
@@ -375,39 +374,30 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                         continue;
                     }
 
-                    try {
-                        state.incStatesSearched();
-                        state.tryToSchedule(execToComp, node, workerSlot);
-                        if (state.areAllExecsScheduled()) {
-                            //Everything is scheduled correctly, so no need to search any more.
-                            LOG.info("backtrackSearch: AllExecsScheduled at loopCnt = {} in {} milliseconds, elapsedtime in state={}",
-                                loopCnt, System.currentTimeMillis() - startTimeMilli, Time.currentTimeMillis() - state.startTimeMillis);
-                            return new SolverResult(state, true);
-                        }
-                        state = state.nextExecutor();
-                        nodeForExec[execIndex] = node;
-                        workerSlotForExec[execIndex] = workerSlot;
-                        assigned = true;
-                        LOG.debug("backtrackSearch: Assigned execId={} to node={}, node/slot-ordinal={} at loopCnt={}", 
-                            execIndex, nodeId, progressIdx, loopCnt);
-                        continue OUTERMOST_LOOP;
-                    } catch (Exception ex) {
-                        LOG.error("backtrackSearch: Failed to schedule execId {} to node/slot-ordinal = {} at loopCnt = {}, nodeId = {}",
-                            ex, execIndex, progressIdx, loopCnt, nodeId);
-                        continue;
+                    state.incStatesSearched();
+                    state.tryToSchedule(execToComp, node, workerSlot);
+                    if (state.areAllExecsScheduled()) {
+                        //Everything is scheduled correctly, so no need to search any more.
+                        LOG.info("backtrackSearch: AllExecsScheduled at loopCnt = {} in {} milliseconds, elapsedtime in state={}",
+                            loopCnt, System.currentTimeMillis() - startTimeMilli, Time.currentTimeMillis() - state.startTimeMillis);
+                        return new SolverResult(state, true);
                     }
+                    state = state.nextExecutor();
+                    nodeForExec[execIndex] = node;
+                    workerSlotForExec[execIndex] = workerSlot;
+                    LOG.debug("backtrackSearch: Assigned execId={} to node={}, node/slot-ordinal={} at loopCnt={}",
+                        execIndex, nodeId, progressIdx, loopCnt);
+                    continue OUTERMOST_LOOP;
                 }
             }
-            if (!assigned) {
-                // if here, then the executor was not assigned, backtrack;
-                LOG.debug("backtrackSearch: Failed to schedule execId = {} at loopCnt = {}", execIndex, loopCnt);
-                if (execIndex == 0) {
-                    break;
-                } else {
-                    state.backtrack(execToComp, nodeForExec[execIndex - 1], workerSlotForExec[execIndex - 1]);
-                    for (int i = execIndex ; i < maxExecCnt ; i++) {
-                        progressIdxForExec[i] = -1;
-                    }
+            // if here, then the executor was not assigned, backtrack;
+            LOG.debug("backtrackSearch: Failed to schedule execId = {} at loopCnt = {}", execIndex, loopCnt);
+            if (execIndex == 0) {
+                break;
+            } else {
+                state.backtrack(execToComp, nodeForExec[execIndex - 1], workerSlotForExec[execIndex - 1]);
+                for (int i = execIndex ; i < maxExecCnt ; i++) {
+                    progressIdxForExec[i] = -1;
                 }
             }
         }
