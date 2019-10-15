@@ -396,9 +396,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                 break;
             } else {
                 state.backtrack(execToComp, nodeForExec[execIndex - 1], workerSlotForExec[execIndex - 1]);
-                for (int i = execIndex ; i < maxExecCnt ; i++) {
-                    progressIdxForExec[i] = -1;
-                }
+                progressIdxForExec[execIndex] = -1;
             }
         }
         boolean success = state.areAllExecsScheduled();
