@@ -144,6 +144,7 @@ public class LocalizedResource extends LocallyCachedBlob {
 
     static void completelyRemoveUnusedUser(Path localBaseDir, String user) throws IOException {
         Path userFileCacheDir = getLocalUserFileCacheDir(localBaseDir, user);
+        LOG.info("completelyRemoveUnusedUser {} for directory {}", user, userFileCacheDir);
         // baseDir/supervisor/usercache/user1/filecache/files
         Files.deleteIfExists(getCacheDirForFiles(userFileCacheDir));
         // baseDir/supervisor/usercache/user1/filecache/archives
@@ -254,9 +255,12 @@ public class LocalizedResource extends LocallyCachedBlob {
                 if (!Files.exists(parent)) {
                     //There is a race here that we can still lose
                     try {
-                        Files.createDirectory(parent);
+                        Files.createDirectories(parent);
                     } catch (FileAlreadyExistsException e) {
                         //Ignored
+                    } catch (Exception e) {
+                        LOG.error("Failed to create parent directory {}", parent, e);
+                        throw e;
                     }
                 }
                 return path;
@@ -397,7 +401,7 @@ public class LocalizedResource extends LocallyCachedBlob {
                 }
             }
         } catch (NoSuchFileException e) {
-            LOG.warn("Nothing to cleanup with badeDir {} even though we expected there to be something there", baseDir);
+            LOG.warn("Nothing to cleanup with baseDir {} even though we expected there to be something there", baseDir);
         }
     }
 
