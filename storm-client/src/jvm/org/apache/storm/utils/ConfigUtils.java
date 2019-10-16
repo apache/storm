@@ -163,7 +163,7 @@ public class ConfigUtils {
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static Map<String, Object> readStormConfig() {
-        return instance.readStormConfigImpl();
+        return overrideLoginConfigWithSystemProperty(instance.readStormConfigImpl());
     }
 
     public static int samplingRate(Map<String, Object> conf) {
