@@ -143,8 +143,10 @@ public class LocalizedResource extends LocallyCachedBlob {
     }
 
     static void completelyRemoveUnusedUser(Path localBaseDir, String user) throws IOException {
+        Path localUserDir = getLocalUserDir(localBaseDir, user);
+        LOG.info("completelyRemoveUnusedUser {} for directory {}", user, localUserDir);
+
         Path userFileCacheDir = getLocalUserFileCacheDir(localBaseDir, user);
-        LOG.info("completelyRemoveUnusedUser {} for directory {}", user, userFileCacheDir);
         // baseDir/supervisor/usercache/user1/filecache/files
         Files.deleteIfExists(getCacheDirForFiles(userFileCacheDir));
         // baseDir/supervisor/usercache/user1/filecache/archives
@@ -152,7 +154,7 @@ public class LocalizedResource extends LocallyCachedBlob {
         // baseDir/supervisor/usercache/user1/filecache
         Files.deleteIfExists(userFileCacheDir);
         // baseDir/supervisor/usercache/user1
-        Files.deleteIfExists(getLocalUserDir(localBaseDir, user));
+        Files.deleteIfExists(localUserDir);
     }
 
     static List<String> getLocalizedArchiveKeys(Path localBaseDir, String user) throws IOException {
@@ -258,7 +260,7 @@ public class LocalizedResource extends LocallyCachedBlob {
                         Files.createDirectories(parent);
                     } catch (FileAlreadyExistsException e) {
                         //Ignored
-                    } catch (Exception e) {
+                    } catch (IOException e) {
                         LOG.error("Failed to create parent directory {}", parent, e);
                         throw e;
                     }
