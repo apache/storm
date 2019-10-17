@@ -231,7 +231,7 @@ def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir
 
 
 def exec_storm_class(klass, storm_config_opts, jvmtype="-server", jvmopts=[],
-                     extrajars=[], args=[], fork=False, daemon=True, client=False, daemonName="",
+                     extrajars=[], main_class_args=[], fork=False, daemon=True, client=False, daemonName="",
                      overriding_conf_file=None):
     storm_log_dir = confvalue("storm.log.dir", storm_config_opts=storm_config_opts,
                               extrapaths=[CLUSTER_CONF_DIR], overriding_conf_file=overriding_conf_file)
@@ -246,7 +246,7 @@ def exec_storm_class(klass, storm_config_opts, jvmtype="-server", jvmopts=[],
        "-Djava.library.path=" + confvalue("java.library.path", storm_config_opts, extrajars, daemon=daemon),
        "-Dstorm.conf.file=" + (overriding_conf_file if overriding_conf_file else ""),
        "-cp", get_classpath(extrajars, daemon, client=client),
-    ] + jvmopts + [klass] + list(args)
+    ] + jvmopts + [klass] + list(main_class_args)
     print("Running: " + " ".join(all_args))
     sys.stdout.flush()
     exit_code = 0
@@ -282,7 +282,7 @@ def run_client_jar(klass, args, daemon=False, client=True, extrajvmopts=[]):
         klass, args.storm_config_opts,
         jvmtype="-client",
         extrajars=extra_jars,
-        args=args.main_args,
+        main_class_args=args.main_args,
         daemon=False,
         jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
                 ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
@@ -1106,7 +1106,7 @@ def sql(args):
         "org.apache.storm.sql.StormSqlRunner", storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=extra_jars,
-        args=sql_args,
+        main_class_args=sql_args,
         daemon=False,
         jvmopts=["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
                 ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)],
@@ -1116,7 +1116,7 @@ def sql(args):
 def kill(args):
     exec_storm_class(
         "org.apache.storm.command.KillTopology",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1127,7 +1127,7 @@ def upload_credentials(args):
         raise argparse.ArgumentTypeError("please provide a list of cred key and value pairs " + cred_list)
     exec_storm_class(
         "org.apache.storm.command.UploadCredentials",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1138,7 +1138,7 @@ def blob(args):
         raise argparse.ArgumentTypeError("Replication factor needed when doing blob update")
     exec_storm_class(
         "org.apache.storm.command.Blobstore",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1147,7 +1147,7 @@ def blob(args):
 def heartbeats(args):
     exec_storm_class(
         "org.apache.storm.command.Heartbeats",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1156,7 +1156,7 @@ def heartbeats(args):
 def activate(args):
     exec_storm_class(
         "org.apache.storm.command.Activate",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1164,7 +1164,7 @@ def activate(args):
 def listtopos(args):
     exec_storm_class(
         "org.apache.storm.command.ListTopologies",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1180,7 +1180,7 @@ def set_log_level(args):
             raise argparse.ArgumentTypeError("Should be in the form[logger name]=[log level][:optional timeout]")
     exec_storm_class(
         "org.apache.storm.command.SetLogLevel",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1188,7 +1188,7 @@ def set_log_level(args):
 def deactivate(args):
     exec_storm_class(
         "org.apache.storm.command.Deactivate",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1205,7 +1205,7 @@ def rebalance(args):
             raise argparse.ArgumentTypeError("Should be in the form component_name:new_executor_count")
     exec_storm_class(
         "org.apache.storm.command.Rebalance",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1214,7 +1214,7 @@ def rebalance(args):
 def get_errors(args):
     exec_storm_class(
         "org.apache.storm.command.GetErrors",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1223,7 +1223,7 @@ def get_errors(args):
 def healthcheck(args):
     exec_storm_class(
         "org.apache.storm.command.HealthCheck",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1232,7 +1232,7 @@ def healthcheck(args):
 def kill_workers(args):
     exec_storm_class(
         "org.apache.storm.command.KillWorkers",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1241,7 +1241,7 @@ def kill_workers(args):
 def admin(args):
     exec_storm_class(
         "org.apache.storm.command.AdminCommands",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1254,7 +1254,7 @@ def shell(args):
     runnerargs.extend(args.args)
     exec_storm_class(
         "org.apache.storm.command.ShellSubmission", storm_config_opts=args.storm_config_opts,
-        args=runnerargs,
+        main_class_args=runnerargs,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR],
         fork=True,
@@ -1401,7 +1401,7 @@ def drpc_client(args):
 
     exec_storm_class(
         "org.apache.storm.command.BasicDrpcClient",
-        args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
@@ -1464,10 +1464,9 @@ def print_server_classpath(args):
 def monitor(args):
     exec_storm_class(
         "org.apache.storm.command.Monitor", storm_config_opts=args.storm_config_opts,
-        args=remove_common_options(sys.argv[2:]),
+        main_class_args=remove_common_options(sys.argv[2:]),
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
-
 
 def main():
     init_storm_env()
@@ -1475,7 +1474,9 @@ def main():
     if len(sys.argv) == 1:
         storm_parser.print_help(sys.stderr)
         sys.exit(1)
-    raw_args = storm_parser.parse_args()
+    raw_args, unknown_args = storm_parser.parse_known_args()
+    if hasattr(raw_args, "main_args"):
+        raw_args.main_args += unknown_args
     raw_args.func(raw_args)
 
 
