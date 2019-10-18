@@ -57,7 +57,7 @@ public class Pacemaker implements IServerMessageHandler {
 
     public static void main(String[] args) {
         SysOutOverSLF4J.sendSystemOutAndErrToSLF4J();
-        Map<String, Object> conf = ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readStormConfig());
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         final Pacemaker serverHandler = new Pacemaker(conf, metricsRegistry);
         serverHandler.launchServer();
