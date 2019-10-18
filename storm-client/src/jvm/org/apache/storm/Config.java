@@ -29,6 +29,7 @@ import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
+import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.EventLoggerRegistryValidator;
@@ -53,6 +54,8 @@ import org.apache.storm.validation.ConfigValidationAnnotations.IsStringOrStringL
 import org.apache.storm.validation.ConfigValidationAnnotations.IsType;
 import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
 import org.apache.storm.validation.ConfigValidationAnnotations.Password;
+import org.apache.storm.windowing.EvictionPolicy;
+import org.apache.storm.windowing.TriggerPolicy;
 
 /**
  * Topology configs are specified as a plain old map. This class provides a convenient way to create a topology config map by providing
@@ -248,14 +251,14 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB =
-        "topology.metrics.consumer.resources.onheap.memory.mb";
+            "topology.metrics.consumer.resources.onheap.memory.mb";
     /**
      * The maximum amount of memory an instance of a metrics consumer will take off heap. This enables the scheduler to allocate slots on
      * machines with enough available memory.  A default value will be set for this config if user does not override
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB =
-        "topology.metrics.consumer.resources.offheap.memory.mb";
+            "topology.metrics.consumer.resources.offheap.memory.mb";
     /**
      * The config indicates the percentage of cpu for a core an instance(executor) of a metrics consumer will use. Assuming the a core value
      * to be 100, a value of 10 indicates 10% of the core. The P in PCORE represents the term "physical".  A default value will be set for
@@ -857,7 +860,7 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS =
-        "topology.backpressure.wait.progressive.level3.sleep.millis";
+            "topology.backpressure.wait.progressive.level3.sleep.millis";
     /**
      * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
      */
@@ -1461,7 +1464,7 @@ public class Config extends HashMap<String, Object> {
      * Impersonation user ACL config entries.
      */
     @IsMapEntryCustom(keyValidatorClasses = { ConfigValidation.StringValidator.class },
-        valueValidatorClasses = { ConfigValidation.ImpersonationAclUserEntryValidator.class })
+            valueValidatorClasses = { ConfigValidation.ImpersonationAclUserEntryValidator.class })
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
     /**
      * A whitelist of the RAS scheduler strategies allowed by nimbus. Should be a list of fully-qualified class names or null to allow all.
@@ -1675,6 +1678,17 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT = "storm.daemon.metrics.reporter.plugin.duration.unit";
     //DO NOT CHANGE UNLESS WE ADD IN STATE NOT STORED IN THE PARENT CLASS
     private static final long serialVersionUID = -1550278723792864455L;
+
+    /**
+     * Specify the trigger policy for the window*/
+    @IsType(type = TriggerPolicy.class)
+    public static final String TOPOLOGY_BOLTS_WINDOW_TRIGGER_POLICY = "topology.bolts.window.trigger.policy";
+
+    /**
+     * Specify the eviction policy for the window
+     */
+    @IsType(type = EvictionPolicy.class)
+    public static final String TOPOLOGY_BOLTS_WINDOW_EVICTION_POLICY = "topology.bolts.window.eviction.policy";
 
     public static void setClasspath(Map<String, Object> conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
@@ -1938,7 +1952,7 @@ public class Config extends HashMap<String, Object> {
         if (component1 != null && component2 != null) {
             List<String> constraintPair = Arrays.asList(component1, component2);
             List<List<String>> constraints = (List<List<String>>) computeIfAbsent(Config.TOPOLOGY_RAS_CONSTRAINTS,
-                (k) -> new ArrayList<>(1));
+                    (k) -> new ArrayList<>(1));
             constraints.add(constraintPair);
         }
     }
