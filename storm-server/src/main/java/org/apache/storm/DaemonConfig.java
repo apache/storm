@@ -732,6 +732,7 @@ public class DaemonConfig implements Validated {
 
     /**
      * What blobstore download parallelism the supervisor should use.
+     * Warning: running with threadPoolSize of 3 or less can lead to deadlocks for the localizer, preventing downloads.
      */
     @IsPositiveNumber
     @IsInteger
