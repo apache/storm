@@ -11,9 +11,9 @@
 
 package org.apache.storm.metricstore;
 
+import java.util.Map;
 import org.apache.storm.metric.StormMetricsRegistry;
 
-import java.util.Map;
 
 public class NoOpMetricStore implements MetricStore {
 
