@@ -16,6 +16,7 @@ import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
 import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -345,7 +346,7 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return bolt.getComponentConfiguration();
+        return bolt.getComponentConfiguration() != null ? bolt.getComponentConfiguration() : Collections.emptyMap();
     }
 
     protected WindowLifecycleListener<Tuple> newWindowLifecycleListener() {

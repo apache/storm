@@ -39,6 +39,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -212,6 +213,14 @@ public class WindowedBoltExecutorTest {
         System.out.println(testWindowedBolt.tupleWindows);
         Tuple tuple = tuples.get(tuples.size() - 1);
         Mockito.verify(outputCollector).emit("$late", Arrays.asList(tuple), new Values(tuple));
+    }
+
+    @Test
+    public void testEmptyConfigOnWrappedBolt() {
+        IWindowedBolt wrappedBolt = Mockito.mock(IWindowedBolt.class);
+        Mockito.when(wrappedBolt.getComponentConfiguration()).thenReturn(null);
+        executor = new WindowedBoltExecutor(wrappedBolt);
+        assertTrue("Configuration is not empty", executor.getComponentConfiguration().isEmpty());
     }
 
     private static class TestWindowedBolt extends BaseWindowedBolt {
