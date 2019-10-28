@@ -135,7 +135,7 @@ transactional.zookeeper.port: null
 
 ## blobstore configs
 supervisor.blobstore.class: "org.apache.storm.blobstore.NimbusBlobStore"
-supervisor.blobstore.download.thread.count: 5
+supervisor.blobstore.download.thread.count: 3
 supervisor.blobstore.download.max_retries: 3
 supervisor.localizer.cache.target.size.mb: 10240
 supervisor.localizer.cleanup.interval.ms: 30000
