@@ -123,7 +123,7 @@ public class AsyncLocalizer implements AutoCloseable {
         blobDownloadRetries = ObjectReader.getInt(conf.get(
             DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_MAX_RETRIES), 3);
 
-        int downloadThreadPoolSize = ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_THREAD_COUNT), 3);
+        int downloadThreadPoolSize = ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_THREAD_COUNT), 5);
         downloadExecService = Executors.newScheduledThreadPool(downloadThreadPoolSize,
                 new ThreadFactoryBuilder().setNameFormat("AsyncLocalizer Download Executor - %d").build());
         taskExecService = Executors.newScheduledThreadPool(3,
