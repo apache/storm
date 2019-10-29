@@ -1952,7 +1952,7 @@ public class Config extends HashMap<String, Object> {
         if (component1 != null && component2 != null) {
             List<String> constraintPair = Arrays.asList(component1, component2);
             List<List<String>> constraints = (List<List<String>>) computeIfAbsent(Config.TOPOLOGY_RAS_CONSTRAINTS,
-                    (k) -> new ArrayList<>(1));
+                (k) -> new ArrayList<>(1));
             constraints.add(constraintPair);
         }
     }
