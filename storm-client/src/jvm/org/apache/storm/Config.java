@@ -19,19 +19,16 @@
 package org.apache.storm;
 
 import com.esotericsoftware.kryo.Serializer;
-
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
-import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.EventLoggerRegistryValidator;
@@ -253,14 +250,14 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB =
-            "topology.metrics.consumer.resources.onheap.memory.mb";
+       "topology.metrics.consumer.resources.onheap.memory.mb";
     /**
      * The maximum amount of memory an instance of a metrics consumer will take off heap. This enables the scheduler to allocate slots on
      * machines with enough available memory.  A default value will be set for this config if user does not override
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB =
-            "topology.metrics.consumer.resources.offheap.memory.mb";
+       "topology.metrics.consumer.resources.offheap.memory.mb";
     /**
      * The config indicates the percentage of cpu for a core an instance(executor) of a metrics consumer will use. Assuming the a core value
      * to be 100, a value of 10 indicates 10% of the core. The P in PCORE represents the term "physical".  A default value will be set for
@@ -373,7 +370,7 @@ public class Config extends HashMap<String, Object> {
      * <p>Note that EventLoggerBolt takes care of all the implementations of IEventLogger, hence registering many
      * implementations (especially they're implemented as 'blocking' manner) would slow down overall topology.
      */
-    @IsListEntryCustom(entryValidatorClasses = {EventLoggerRegistryValidator.class})
+    @IsListEntryCustom(entryValidatorClasses = { EventLoggerRegistryValidator.class })
     public static final String TOPOLOGY_EVENT_LOGGER_REGISTER = "topology.event.logger.register";
     /**
      * How many executors to spawn for event logger.
@@ -437,7 +434,7 @@ public class Config extends HashMap<String, Object> {
      * it's parallelism is configurable.
      */
 
-    @IsListEntryCustom(entryValidatorClasses = {MetricRegistryValidator.class})
+    @IsListEntryCustom(entryValidatorClasses = { MetricRegistryValidator.class })
     public static final String TOPOLOGY_METRICS_CONSUMER_REGISTER = "topology.metrics.consumer.register";
     /**
      * Enable tracking of network message byte counts per source-destination task. This is off by default as it creates tasks^2 metric
@@ -727,14 +724,14 @@ public class Config extends HashMap<String, Object> {
      * Topology central logging sensitivity to determine who has access to logs in central logging system. The possible values are: S0 -
      * Public (open to all users on grid) S1 - Restricted S2 - Confidential S3 - Secret (default.)
      */
-    @IsString(acceptedValues = {"S0", "S1", "S2", "S3"})
+    @IsString(acceptedValues = { "S0", "S1", "S2", "S3" })
     public static final String TOPOLOGY_LOGGING_SENSITIVITY = "topology.logging.sensitivity";
     /**
      * Log file the user can use to configure Log4j2.
      * Can be a resource in the jar (specified with classpath:/path/to/resource) or a file.
      * This configuration is applied in addition to the regular worker log4j2 configuration.
      * The configs are merged according to the rules here:
-     * https://logging.apache.org/log4j/2.x/manual/configuration.html#CompositeConfiguration
+     *   https://logging.apache.org/log4j/2.x/manual/configuration.html#CompositeConfiguration
      */
     @IsString
     public static final String TOPOLOGY_LOGGING_CONFIG_FILE = "topology.logging.config";
@@ -862,7 +859,7 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS =
-            "topology.backpressure.wait.progressive.level3.sleep.millis";
+        "topology.backpressure.wait.progressive.level3.sleep.millis";
     /**
      * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
      */
@@ -1122,7 +1119,7 @@ public class Config extends HashMap<String, Object> {
      */
     @IsString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
-    @IsListEntryCustom(entryValidatorClasses = {MetricReportersValidator.class})
+    @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
     public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
     /**
      * What blobstore implementation the storm client should use.
@@ -1466,7 +1463,7 @@ public class Config extends HashMap<String, Object> {
      * Impersonation user ACL config entries.
      */
     @IsMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class},
-            valueValidatorClasses = {ConfigValidation.ImpersonationAclUserEntryValidator.class})
+            valueValidatorClasses = { ConfigValidation.ImpersonationAclUserEntryValidator.class })
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
     /**
      * A whitelist of the RAS scheduler strategies allowed by nimbus. Should be a list of fully-qualified class names or null to allow all.
