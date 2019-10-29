@@ -229,11 +229,24 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, interval.value);
         return this;
     }
+
+    /**
+    * Specify the Trigger Policy
+    *
+    * @param triggerPolicy the policy to be applied while computing the window
+    * */
+
     public BaseWindowedBolt withTriggerPolicy(TriggerPolicy<Tuple, ?> triggerPolicy) {
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_TRIGGER_POLICY, triggerPolicy);
         return this;
     }
-    public BaseWindowedBolt withEvictionPolicy(EvictionPolicy<Tuple, ?> evictionPolicy){
+
+    /**
+     * Specify the Trigger Policy
+     *
+     * @param evictionPolicy the policy to be applied while evicting tuples from the window
+     * */
+    public BaseWindowedBolt withEvictionPolicy(EvictionPolicy<Tuple, ?> evictionPolicy) {
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_EVICTION_POLICY, evictionPolicy);
         return this;
     }
