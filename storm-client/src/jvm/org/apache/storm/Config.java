@@ -250,14 +250,14 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB =
-       "topology.metrics.consumer.resources.onheap.memory.mb";
+        "topology.metrics.consumer.resources.onheap.memory.mb";
     /**
      * The maximum amount of memory an instance of a metrics consumer will take off heap. This enables the scheduler to allocate slots on
      * machines with enough available memory.  A default value will be set for this config if user does not override
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB =
-       "topology.metrics.consumer.resources.offheap.memory.mb";
+        "topology.metrics.consumer.resources.offheap.memory.mb";
     /**
      * The config indicates the percentage of cpu for a core an instance(executor) of a metrics consumer will use. Assuming the a core value
      * to be 100, a value of 10 indicates 10% of the core. The P in PCORE represents the term "physical".  A default value will be set for
@@ -1462,8 +1462,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * Impersonation user ACL config entries.
      */
-    @IsMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class},
-            valueValidatorClasses = { ConfigValidation.ImpersonationAclUserEntryValidator.class })
+    @IsMapEntryCustom(keyValidatorClasses = { ConfigValidation.StringValidator.class },
+        valueValidatorClasses = { ConfigValidation.ImpersonationAclUserEntryValidator.class })
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
     /**
      * A whitelist of the RAS scheduler strategies allowed by nimbus. Should be a list of fully-qualified class names or null to allow all.
