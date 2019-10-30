@@ -1,7 +1,6 @@
-# Committer documentation
+# Release
 
-This document summarizes information relevant to Storm committers.  It includes information about
-the Storm release process.
+This document includes information about the Storm release process.
 
 ---
 
@@ -85,3 +84,24 @@ gpg --print-md SHA512 RELEASE_NOTES.html > RELEASE_NOTES.html.sha512
 2. Delete the staged distribution files from https://dist.apache.org/repos/dist/dev/storm/
 
 3. Delete the git tag.
+
+# How to vote on a release candidate
+
+We encourage everyone to review and vote on a release candidate to make an Apache Storm release more reliable and trustworthy.
+
+Below is a checklist that one could do to review a release candidate. 
+Please note this list is not exhaustive and only includes some of the common steps. Feel free to add your own tests.
+
+1. Verify files such as *.asc, *.sha512;
+2. Build Apache Storm source code and run unit tests, create an Apache Storm distribution;
+3. Set up a standalone cluster using apache-storm-xxx.zip, apache-storm-xxx.tar.gz, the Apache Storm distribution created from step 2, separately;
+4. Launch WordCountTopology and ThroughputVsLatency topology and check logs, UI metrics, etc;
+5. Test basic UI functionalities such as jstack, heap dump, deactivate, activate, rebalance, change log level, log search, kill topology;
+6. Test basic CLI such as kill, list, deactivate, deactivate, rebalance, etc.
+
+It's also preferable to set up a standalone secure Apache Storm cluster and test basic funcionalities on it.
+
+Don't feel the pressure to do everything listed above. After you finish your review, reply to the corresponding email thread with your vote, summarize the work you have performed and elaborate the issues
+you have found if any. Also please feel free to update the checklist if you think anything important is missing there. 
+
+Your contribution is very much appreciated.  
