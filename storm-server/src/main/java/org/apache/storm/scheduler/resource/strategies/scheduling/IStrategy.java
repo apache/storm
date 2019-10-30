@@ -41,10 +41,4 @@ public interface IStrategy {
      *     successful.
      */
     SchedulingResult schedule(Cluster schedulingState, TopologyDetails td);
-
-    // Get topology scheduling failure text.
-    String getSchedulingFailText();
-
-    // Clear topology scheduling failure text.
-    void clearSchedulingFailText();
 }

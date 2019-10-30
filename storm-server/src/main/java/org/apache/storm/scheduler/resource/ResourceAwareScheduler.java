@@ -158,7 +158,6 @@ public class ResourceAwareScheduler implements IScheduler {
         TopologySchedulingResources topologySchedulingResources = new TopologySchedulingResources(workingState, td);
         final IStrategy finalRasStrategy = rasStrategy;
         for (int i = 0; i < maxSchedulingAttempts; i++) {
-            finalRasStrategy.clearSchedulingFailText();
             SingleTopologyCluster toSchedule = new SingleTopologyCluster(workingState, td.getId());
             try {
                 SchedulingResult result = null;
@@ -218,8 +217,8 @@ public class ResourceAwareScheduler implements IScheduler {
 
                         if (!evictedSomething) {
                             StringBuilder message = new StringBuilder();
-                            message.append("Not enough resources to schedule - ");
-                            message.append(topologySchedulingResources.getRemainingRequiredResourcesMessage(finalRasStrategy));
+                            message.append("Not enough resources to schedule ");
+                            message.append(topologySchedulingResources.getRemainingRequiredResourcesMessage());
                             message.append(result.getErrorMessage());
                             markFailedTopology(topologySubmitter, cluster, td, message.toString());
                             return;
@@ -372,10 +371,9 @@ public class ResourceAwareScheduler implements IScheduler {
             return scheduledTopologyMemory;
         }
 
-        String getRemainingRequiredResourcesMessage(IStrategy rasStrategy) {
+        String getRemainingRequiredResourcesMessage() {
             StringBuilder message = new StringBuilder();
             message.append("After evicting lower priority topologies: ");
-            message.append(rasStrategy.getSchedulingFailText()).append("\n");
 
             NormalizedResourceOffer clusterRemainingAvailableResources = new NormalizedResourceOffer();
             clusterRemainingAvailableResources.add(clusterAvailableResources);

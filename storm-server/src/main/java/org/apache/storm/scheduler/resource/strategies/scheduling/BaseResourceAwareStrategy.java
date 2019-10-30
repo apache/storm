@@ -60,15 +60,6 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     private final Map<String, List<RasNode>> hostnameToNodes = new HashMap<>();
     private final Map<String, List<RasNode>> rackIdToNodes = new HashMap<>();
     protected RasNodes nodes;
-    private String schedulingFailText;
-
-    public String getSchedulingFailText() {
-        return schedulingFailText;
-    }
-
-    public void clearSchedulingFailText() {
-        schedulingFailText = "";
-    }
 
     @VisibleForTesting
     void prepare(Cluster cluster) {
@@ -135,9 +126,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         } else {
             String comp = td.getExecutorToComponent().get(exec);
             NormalizedResourceRequest requestedResources = td.getTotalResources(exec);
-            schedulingFailText = "Not Enough Resources to schedule Task "
-                    + exec + " - " + comp + " " + requestedResources;
-            LOG.error(schedulingFailText);
+            LOG.warn("Not Enough Resources to schedule Task {} - {} {}", exec, comp, requestedResources);
             return false;
         }
     }
