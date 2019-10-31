@@ -92,7 +92,7 @@ We encourage everyone to review and vote on a release candidate to make an Apach
 Below is a checklist that one could do to review a release candidate. 
 Please note this list is not exhaustive and only includes some of the common steps. Feel free to add your own tests.
 
-1. Verify files such as *.asc, *.sha512;
+1. Verify files such as *.asc, *.sha512; some scripts are available under `dev-tools/rc` to help with it;
 2. Build Apache Storm source code and run unit tests, create an Apache Storm distribution;
 3. Set up a standalone cluster using apache-storm-xxx.zip, apache-storm-xxx.tar.gz, the Apache Storm distribution created from step 2, separately;
 4. Launch WordCountTopology and ThroughputVsLatency topology and check logs, UI metrics, etc;
