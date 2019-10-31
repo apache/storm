@@ -19,7 +19,6 @@ import org.apache.storm.cassandra.executor.ExecutionResultCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.tuple.Tuple;
 
-
 public class SingleAsyncResultHandler implements AsyncResultHandler<Tuple> {
 
     private ConcurrentLinkedQueue<ExecutionResultCollector> completed;
@@ -28,7 +27,6 @@ public class SingleAsyncResultHandler implements AsyncResultHandler<Tuple> {
 
     /**
      * Creates a new {@link SingleAsyncResultHandler} instance.
-     * @param handler
      */
     public SingleAsyncResultHandler(ExecutionResultHandler handler) {
         this.handler = handler;
@@ -38,8 +36,9 @@ public class SingleAsyncResultHandler implements AsyncResultHandler<Tuple> {
     /**
      * This method is responsible for failing specified inputs.
      *
-     * The default method does no-operation.
+     * <p>The default method does no-operation.
      */
+    @Override
     public void failure(Throwable t, Tuple input) {
         completed.offer(new ExecutionResultCollector.FailedCollector(input, t));
     }
@@ -47,8 +46,9 @@ public class SingleAsyncResultHandler implements AsyncResultHandler<Tuple> {
     /**
      * This method is responsible for acknowledging specified inputs.
      *
-     * The default method does no-operation.
+     * <p>The default method does no-operation.
      */
+    @Override
     public void success(Tuple input) {
         completed.offer(new ExecutionResultCollector.SucceedCollector(input));
     }

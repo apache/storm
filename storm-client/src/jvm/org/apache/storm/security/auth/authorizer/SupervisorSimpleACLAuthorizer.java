@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * An authorization implementation that simply checks if a user is allowed to perform specific operations.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(SupervisorSimpleACLAuthorizer.class);
 

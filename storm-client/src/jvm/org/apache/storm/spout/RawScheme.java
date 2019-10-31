@@ -24,12 +24,14 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
 public class RawScheme implements Scheme {
+    @Override
     public List<Object> deserialize(ByteBuffer ser) {
         // Maintain backward compatibility for 0.10
         byte[] b = Utils.toByteArray(ser);
         return Utils.tuple(new Object[]{ b });
     }
 
+    @Override
     public Fields getOutputFields() {
         return new Fields("bytes");
     }

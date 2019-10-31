@@ -21,29 +21,29 @@ import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 
 public class KryoTupleDeserializer implements ITupleDeserializer {
-    GeneralTopologyContext _context;
-    KryoValuesDeserializer _kryo;
-    SerializationFactory.IdDictionary _ids;
-    Input _kryoInput;
+    private GeneralTopologyContext context;
+    private KryoValuesDeserializer kryo;
+    private SerializationFactory.IdDictionary ids;
+    private Input kryoInput;
 
     public KryoTupleDeserializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
-        _kryo = new KryoValuesDeserializer(conf);
-        _context = context;
-        _ids = new SerializationFactory.IdDictionary(context.getRawTopology());
-        _kryoInput = new Input(1);
+        kryo = new KryoValuesDeserializer(conf);
+        this.context = context;
+        ids = new SerializationFactory.IdDictionary(context.getRawTopology());
+        kryoInput = new Input(1);
     }
 
     @Override
     public TupleImpl deserialize(byte[] ser) {
         try {
-            _kryoInput.setBuffer(ser);
-            int taskId = _kryoInput.readInt(true);
-            int streamId = _kryoInput.readInt(true);
-            String componentName = _context.getComponentId(taskId);
-            String streamName = _ids.getStreamName(componentName, streamId);
-            MessageId id = MessageId.deserialize(_kryoInput);
-            List<Object> values = _kryo.deserializeFrom(_kryoInput);
-            return new TupleImpl(_context, values, componentName, taskId, streamName, id);
+            kryoInput.setBuffer(ser);
+            int taskId = kryoInput.readInt(true);
+            int streamId = kryoInput.readInt(true);
+            String componentName = context.getComponentId(taskId);
+            String streamName = ids.getStreamName(componentName, streamId);
+            MessageId id = MessageId.deserialize(kryoInput);
+            List<Object> values = kryo.deserializeFrom(kryoInput);
+            return new TupleImpl(context, values, componentName, taskId, streamName, id);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -290,8 +290,8 @@ public class AclEnforcement {
 
     private static boolean equivalent(List<ACL> a, List<ACL> b) {
         if (a.size() == b.size()) {
-            for (ACL aAcl : a) {
-                if (!b.contains(aAcl)) {
+            for (ACL acl : a) {
+                if (!b.contains(acl)) {
                     return false;
                 }
             }

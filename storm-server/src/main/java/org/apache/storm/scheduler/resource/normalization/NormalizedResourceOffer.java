@@ -86,22 +86,6 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
     /**
      * Remove the resources in other from this.
      *
-     * @param other the resources to be removed.
-     * @return true if one or more resources in other were larger than available resources in this, else false.
-     */
-    public boolean remove(NormalizedResourcesWithMemory other) {
-        boolean negativeResources = normalizedResources.remove(other.getNormalizedResources(), null);
-        totalMemoryMb -= other.getTotalMemoryMb();
-        if (totalMemoryMb < 0.0) {
-            negativeResources = true;
-            totalMemoryMb = 0.0;
-        }
-        return negativeResources;
-    }
-
-    /**
-     * Remove the resources in other from this.
-     *
      * @param other           the resources to be removed.
      * @param resourceMetrics The resource related metrics
      * @return true if one or more resources in other were larger than available resources in this, else false.
@@ -111,10 +95,16 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
         totalMemoryMb -= other.getTotalMemoryMb();
         if (totalMemoryMb < 0.0) {
             negativeResources = true;
-            resourceMetrics.getNegativeResourceEventsMeter().mark();
+            if (resourceMetrics != null) {
+                resourceMetrics.getNegativeResourceEventsMeter().mark();
+            }
             totalMemoryMb = 0.0;
         }
         return negativeResources;
+    }
+
+    public boolean remove(NormalizedResourcesWithMemory other) {
+        return remove(other, null);
     }
 
     /**
@@ -219,7 +209,7 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
      * @return true if there is the possibility it might fit, no guarantee that it will, or false if there is no
      *     way it would ever fit.
      */
-    public boolean couldFit(double minWorkerCpu, NormalizedResourceRequest requestedResources){
+    public boolean couldFit(double minWorkerCpu, NormalizedResourceRequest requestedResources) {
         if (minWorkerCpu < 0.001) {
             return this.couldHoldIgnoringSharedMemory(requestedResources);
         } else {

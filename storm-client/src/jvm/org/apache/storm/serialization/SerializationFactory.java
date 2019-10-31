@@ -224,9 +224,9 @@ public class SerializationFactory {
         }
 
         /**
-         * "{:a 1  :b 2} -> {1 :a  2 :b}"
+         * "{:a 1  :b 2} -> {1 :a  2 :b}".
          *
-         * Note: Only one key wins if there are duplicate values. Which key wins is indeterminate: "{:a 1  :b 1} -> {1 :a} *or* {1 :b}"
+         * <p>Note: Only one key wins if there are duplicate values. Which key wins is indeterminate: "{:a 1  :b 1} -> {1 :a} *or* {1 :b}"
          */
         private static <K, V> Map<V, K> simpleReverseMap(Map<K, V> map) {
             Map<V, K> ret = new HashMap<V, K>();

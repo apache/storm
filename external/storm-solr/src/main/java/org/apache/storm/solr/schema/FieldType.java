@@ -47,10 +47,10 @@ public class FieldType implements Serializable {
 
     @Override
     public String toString() {
-        return "FieldType{" +
-               "name='" + name + '\'' +
-               ", clazz='" + clazz + '\'' +
-               ", multiValued=" + multiValued +
-               '}';
+        return "FieldType{"
+                + "name='" + name + '\''
+                + ", clazz='" + clazz + '\''
+                + ", multiValued=" + multiValued
+                + '}';
     }
 }

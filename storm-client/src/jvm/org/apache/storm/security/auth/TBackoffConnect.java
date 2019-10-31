@@ -21,15 +21,15 @@ import org.slf4j.LoggerFactory;
 
 public class TBackoffConnect {
     private static final Logger LOG = LoggerFactory.getLogger(TBackoffConnect.class);
-    private int _completedRetries = 0;
-    private int _retryTimes;
+    private int completedRetries = 0;
+    private int retryTimes;
     private StormBoundedExponentialBackoffRetry waitGrabber;
-    private boolean _retryForever = false;
+    private boolean retryForever = false;
 
     public TBackoffConnect(int retryTimes, int retryInterval, int retryIntervalCeiling, boolean retryForever) {
 
-        _retryForever = retryForever;
-        _retryTimes = retryTimes;
+        this.retryForever = retryForever;
+        this.retryTimes = retryTimes;
         waitGrabber = new StormBoundedExponentialBackoffRetry(retryInterval,
                                                               retryIntervalCeiling,
                                                               retryTimes);
@@ -59,19 +59,19 @@ public class TBackoffConnect {
             throw new RuntimeException(ex);
         }
         try {
-            long sleeptime = waitGrabber.getSleepTimeMs(_completedRetries, 0);
+            long sleeptime = waitGrabber.getSleepTimeMs(completedRetries, 0);
 
-            LOG.debug("Failed to connect. Retrying... (" + Integer.toString(_completedRetries) + ") in " + Long.toString(sleeptime) + "ms");
+            LOG.debug("Failed to connect. Retrying... (" + Integer.toString(completedRetries) + ") in " + Long.toString(sleeptime) + "ms");
 
             Thread.sleep(sleeptime);
         } catch (InterruptedException e) {
             LOG.info("Nimbus connection retry interrupted.");
         }
 
-        _completedRetries++;
+        completedRetries++;
     }
 
     private boolean canRetry() {
-        return _retryForever || (_completedRetries < _retryTimes);
+        return retryForever || (completedRetries < retryTimes);
     }
 }

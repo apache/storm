@@ -20,8 +20,10 @@ package org.apache.storm.kafka.spout.trident;
 
 import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.EARLIEST;
 import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.LATEST;
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.TIMESTAMP;
 import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
 import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
+import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.UNCOMMITTED_TIMESTAMP;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
@@ -34,10 +36,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.RecordTranslator;
@@ -69,6 +73,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
     private final RecordTranslator<K, V> translator;
     private final TopicPartitionSerializer tpSerializer = new TopicPartitionSerializer();
     private final TopologyContext topologyContext;
+    private final long startTimeStamp;
 
     /**
      * Create a new Kafka spout emitter.
@@ -90,6 +95,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
         this.topicAssigner = topicAssigner;
         this.pollTimeoutMs = kafkaSpoutConfig.getPollTimeoutMs();
         this.firstPollOffsetStrategy = kafkaSpoutConfig.getFirstPollOffsetStrategy();
+        this.startTimeStamp = kafkaSpoutConfig.getStartTimeStamp();
         LOG.debug("Created {}", this.toString());
     }
 
@@ -249,6 +255,9 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
             } else if (firstPollOffsetStrategy == LATEST && isFirstPollSinceTopologyWasDeployed) {
                 LOG.debug("First poll for topic partition [{}], seeking to partition end", tp);
                 consumer.seekToEnd(Collections.singleton(tp));
+            } else if (firstPollOffsetStrategy == TIMESTAMP && isFirstPollSinceTopologyWasDeployed) {
+                LOG.debug("First poll for topic partition [{}], seeking to partition based on startTimeStamp", tp);
+                seekOffsetByStartTimeStamp(tp);
             } else if (lastBatchMeta != null) {
                 LOG.debug("First poll for topic partition [{}], using last batch metadata", tp);
                 consumer.seek(tp, lastBatchMeta.getLastOffset() + 1);  // seek next offset after last offset from previous batch
@@ -258,6 +267,10 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
             } else if (firstPollOffsetStrategy == UNCOMMITTED_LATEST) {
                 LOG.debug("First poll for topic partition [{}] with no last batch metadata, seeking to partition end", tp);
                 consumer.seekToEnd(Collections.singleton(tp));
+            } else if (firstPollOffsetStrategy == UNCOMMITTED_TIMESTAMP) {
+                LOG.debug("First poll for topic partition [{}] with no last batch metadata, "
+                        + "seeking to partition based on startTimeStamp", tp);
+                seekOffsetByStartTimeStamp(tp);
             }
             tpToFirstSeekOffset.put(tp, consumer.position(tp));
         } else if (lastBatchMeta != null) {
@@ -277,6 +290,17 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
         final long fetchOffset = consumer.position(tp);
         LOG.debug("Set [fetchOffset = {}] for partition [{}]", fetchOffset, tp);
         return fetchOffset;
+    }
+
+    /**
+     * Seek the consumer to offset corresponding to startTimeStamp.
+     */
+    private void seekOffsetByStartTimeStamp(TopicPartition tp) {
+        Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes = consumer.offsetsForTimes(Collections.singletonMap(tp, startTimeStamp));
+        OffsetAndTimestamp startOffsetAndTimeStamp = offsetsForTimes.get(tp);
+        long startTimeStampOffset = startOffsetAndTimeStamp.offset();
+        LOG.debug("First poll for topic partition [{}], seeking to partition from startTimeStamp [{}]", tp, startTimeStamp);
+        consumer.seek(tp, startTimeStampOffset);
     }
 
     private boolean isFirstPollSinceExecutorStarted(TopicPartition tp) {

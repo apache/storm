@@ -12,6 +12,8 @@
 
 package org.apache.storm.nimbus;
 
+import com.codahale.metrics.Meter;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +22,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import javax.security.auth.Subject;
 
-import com.codahale.metrics.Meter;
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -90,7 +91,7 @@ public class LeaderListenerCallback {
         this.numLostLeader = metricsRegistry.registerMeter("nimbus:num-lost-leadership");
         //Since we only give up leadership if we're waiting for blobs to sync,
         //it makes sense to wait a full sync cycle before trying for leadership again.
-        this.requeueDelayMs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS))*1000;
+        this.requeueDelayMs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CODE_SYNC_FREQ_SECS)) * 1000;
     }
 
     /**

@@ -19,10 +19,12 @@ import org.apache.storm.tuple.Values;
 
 
 public class ByteArrayMessageMapper implements MqttMessageMapper {
+    @Override
     public Values toValues(MqttMessage message) {
         return new Values(message.getTopic(), message.getMessage());
     }
 
+    @Override
     public Fields outputFields() {
         return new Fields("topic", "message");
     }

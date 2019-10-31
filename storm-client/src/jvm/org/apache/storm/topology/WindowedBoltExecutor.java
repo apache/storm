@@ -12,6 +12,9 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
+import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,9 +55,6 @@ import org.apache.storm.windowing.WindowLifecycleListener;
 import org.apache.storm.windowing.WindowManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
-import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
 /**
  * An {@link IWindowedBolt} wrapper that does the windowing of tuples.
@@ -106,17 +106,16 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     private void ensureDurationLessThanTimeout(int duration, int timeout) {
         if (duration > timeout) {
-            throw new IllegalArgumentException("Window duration (length + sliding interval) value " + duration +
-                                               " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS +
-                                               " value " + timeout);
+            throw new IllegalArgumentException("Window duration (length + sliding interval) value " + duration
+                    + " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS + " value " + timeout);
         }
     }
 
     private void ensureCountLessThanMaxPending(int count, int maxPending) {
         if (count > maxPending) {
-            throw new IllegalArgumentException("Window count (length + sliding interval) value " + count +
-                                               " is more than " + Config.TOPOLOGY_MAX_SPOUT_PENDING +
-                                               " value " + maxPending);
+            throw new IllegalArgumentException("Window count (length + sliding interval) value " + count
+                    + " is more than " + Config.TOPOLOGY_MAX_SPOUT_PENDING
+                    + " value " + maxPending);
         }
     }
 
@@ -149,9 +148,9 @@ public class WindowedBoltExecutor implements IRichBolt {
     private WindowManager<Tuple> initWindowManager(WindowLifecycleListener<Tuple> lifecycleListener, Map<String, Object> topoConf,
                                                    TopologyContext context, Collection<Event<Tuple>> queue, boolean stateful) {
 
-        WindowManager<Tuple> manager = stateful ?
-            new StatefulWindowManager<>(lifecycleListener, queue)
-            : new WindowManager<>(lifecycleListener, queue);
+        WindowManager<Tuple> manager = stateful
+                ? new StatefulWindowManager<>(lifecycleListener, queue)
+                : new WindowManager<>(lifecycleListener, queue);
 
         Count windowLengthCount = null;
         Duration slidingIntervalDuration = null;
@@ -234,7 +233,7 @@ public class WindowedBoltExecutor implements IRichBolt {
     }
 
     /**
-     * Start the trigger policy and waterMarkEventGenerator if set
+     * Start the trigger policy and waterMarkEventGenerator if set.
      */
     protected void start() {
         if (waterMarkEventGenerator != null) {

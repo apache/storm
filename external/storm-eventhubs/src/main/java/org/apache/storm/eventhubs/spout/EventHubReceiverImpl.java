@@ -61,9 +61,10 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 
     @Override
     public void open(IEventFilter filter) throws EventHubException {
-        logger.info("creating eventhub receiver: partitionId=" + partitionId +
-                    ", filter=" + filter.getOffset() != null ?
-                        filter.getOffset() : Long.toString(filter.getTime().toEpochMilli()));
+        logger.info("creating eventhub receiver: partitionId=" + partitionId
+                + ", filter=" + filter.getOffset() != null
+                ? filter.getOffset()
+                : Long.toString(filter.getTime().toEpochMilli()));
         long start = System.currentTimeMillis();
         try {
             ehClient = EventHubClient.createFromConnectionStringSync(connectionString);
@@ -82,8 +83,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
                     filter.getTime(),
                     1);
             } else {
-                throw new RuntimeException("Eventhub receiver must have " +
-                                           "an offset or time to be created");
+                throw new RuntimeException("Eventhub receiver must have an offset or time to be created");
             }
             if (receiver != null) {
                 receiver.setReceiveTimeout(Duration.ofMillis(receiverTimeoutInMillis));

@@ -33,6 +33,7 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHBaseBolt.class);
 
     protected transient OutputCollector collector;
+    @SuppressWarnings("checkstyle:MemberName")
     protected transient HBaseClient hBaseClient;
     protected String tableName;
     protected HBaseMapper mapper;

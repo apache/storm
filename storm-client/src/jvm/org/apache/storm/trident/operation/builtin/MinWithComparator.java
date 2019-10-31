@@ -37,8 +37,8 @@ public class MinWithComparator<T> extends ComparisonAggregator<T> {
 
     @Override
     public String toString() {
-        return "MinWithComparator{" +
-               "comparator=" + comparator +
-               '}';
+        return "MinWithComparator{"
+                + "comparator=" + comparator
+                + '}';
     }
 }

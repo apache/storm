@@ -56,8 +56,8 @@ public class StormSqlRunner {
             SubmitOptions submitOptions = new SubmitOptions(TopologyInitialStatus.ACTIVE);
             sql.submit(topoName, stmts, conf, submitOptions, null, null);
         } else {
-            printUsageAndExit(options, "Either " + OPTION_SQL_TOPOLOGY_NAME_LONG + " or " + OPTION_SQL_EXPLAIN_LONG +
-                                       " must be presented");
+            printUsageAndExit(options, "Either " + OPTION_SQL_TOPOLOGY_NAME_LONG
+                    + " or " + OPTION_SQL_EXPLAIN_LONG + " must be presented");
         }
     }
 

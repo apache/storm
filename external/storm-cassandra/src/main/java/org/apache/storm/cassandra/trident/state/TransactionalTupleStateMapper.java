@@ -69,6 +69,7 @@ public class TransactionalTupleStateMapper implements StateMapper<TransactionalV
         }
         Values values = valuesList.get(0);
         int index = 0;
+        @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
         Long txId = (Long) values.get(index++);
 
         SimpleTuple curr = new SimpleTuple(tupleFields);

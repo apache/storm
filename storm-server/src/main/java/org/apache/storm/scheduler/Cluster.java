@@ -54,8 +54,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Cluster implements ISchedulingState {
     private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
-    private static final Function<String, Set<WorkerSlot>> MAKE_SET = (x) -> new HashSet<>();
-    private static final Function<String, Map<WorkerSlot, NormalizedResourceRequest>> MAKE_MAP = (x) -> new HashMap<>();
 
     /**
      * key: supervisor id, value: supervisor details.
@@ -80,6 +78,7 @@ public class Cluster implements ISchedulingState {
     private final Map<String, Object> conf;
     private final Topologies topologies;
     private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache;
+    private final Map<String, Map<String, Double>> nodeToScheduledOffHeapNodeMemoryCache;   // node -> topologyId -> double
     private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache;
     private final Map<String, NormalizedResourceRequest> totalResourcesPerNodeCache = new HashMap<>();
     private final ResourceMetrics resourceMetrics;
@@ -87,6 +86,14 @@ public class Cluster implements ISchedulingState {
     private Set<String> blackListedHosts = new HashSet<>();
     private INimbus inimbus;
     private double minWorkerCpu = 0.0;
+
+    private static <K, V> Map<K, V> makeMap(String key) {
+        return new HashMap<>();
+    }
+
+    private static <K> Set<K> makeSet(String key) {
+        return new HashSet<>();
+    }
 
     public Cluster(
         INimbus nimbus,
@@ -148,6 +155,7 @@ public class Cluster implements ISchedulingState {
         this.resourceMetrics = resourceMetrics;
         this.supervisors.putAll(supervisors);
         this.nodeToScheduledResourcesCache = new HashMap<>(this.supervisors.size());
+        this.nodeToScheduledOffHeapNodeMemoryCache = new HashMap<>();
         this.nodeToUsedSlotsCache = new HashMap<>(this.supervisors.size());
 
         for (Map.Entry<String, SupervisorDetails> entry : supervisors.entrySet()) {
@@ -359,7 +367,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Set<Integer> getUsedPorts(SupervisorDetails supervisor) {
-        return nodeToUsedSlotsCache.computeIfAbsent(supervisor.getId(), MAKE_SET)
+        return nodeToUsedSlotsCache.computeIfAbsent(supervisor.getId(), Cluster::makeSet)
             .stream()
             .map(WorkerSlot::getPort)
             .collect(Collectors.toSet());
@@ -504,7 +512,7 @@ public class Cluster implements ISchedulingState {
         }
         for (SharedMemory shared : td.getSharedMemoryRequests(executors)) {
             totalResources.addOffHeap(shared.get_off_heap_worker());
-            totalResources.addOnHeap(shared.get_off_heap_worker());
+            totalResources.addOnHeap(shared.get_on_heap());
 
             addResource(
                 sharedTotalResources,
@@ -556,11 +564,7 @@ public class Cluster implements ISchedulingState {
         }
 
         double currentTotal = 0.0;
-        double afterTotal = 0.0;
-        double afterOnHeap = 0.0;
-
         double currentCpuTotal = 0.0;
-        double afterCpuTotal = 0.0;
 
         Set<ExecutorDetails> wouldBeAssigned = new HashSet<>();
         wouldBeAssigned.add(exec);
@@ -574,17 +578,16 @@ public class Cluster implements ISchedulingState {
                 currentTotal = wrCurrent.get_mem_off_heap() + wrCurrent.get_mem_on_heap();
                 currentCpuTotal = wrCurrent.get_cpu();
             }
-            WorkerResources wrAfter = calculateWorkerResources(td, wouldBeAssigned);
-            afterTotal = wrAfter.get_mem_off_heap() + wrAfter.get_mem_on_heap();
-            afterOnHeap = wrAfter.get_mem_on_heap();
 
-            currentTotal += calculateSharedOffHeapMemory(ws.getNodeId(), assignment);
-            afterTotal += calculateSharedOffHeapMemory(ws.getNodeId(), assignment, exec);
-            afterCpuTotal = wrAfter.get_cpu();
-        } else {
-            WorkerResources wrAfter = calculateWorkerResources(td, wouldBeAssigned);
-            afterCpuTotal = wrAfter.get_cpu();
+            currentTotal += calculateSharedOffHeapNodeMemory(ws.getNodeId(), assignment, td);
         }
+
+        WorkerResources wrAfter = calculateWorkerResources(td, wouldBeAssigned);
+        double afterTotal = wrAfter.get_mem_off_heap() + wrAfter.get_mem_on_heap();
+        afterTotal += calculateSharedOffHeapNodeMemory(ws.getNodeId(), assignment, td, exec);
+
+        double afterOnHeap = wrAfter.get_mem_on_heap();
+        double afterCpuTotal = wrAfter.get_cpu();
 
         double cpuAdded = afterCpuTotal - currentCpuTotal;
         double cpuAvailable = resourcesAvailable.getTotalCpu();
@@ -673,9 +676,9 @@ public class Cluster implements ISchedulingState {
 
         assignment.assign(slot, executors, resources);
         String nodeId = slot.getNodeId();
-        double sharedOffHeapMemory = calculateSharedOffHeapMemory(nodeId, assignment);
-        assignment.setTotalSharedOffHeapMemory(nodeId, sharedOffHeapMemory);
-        updateCachesForWorkerSlot(slot, resources, sharedOffHeapMemory);
+        double sharedOffHeapNodeMemory = calculateSharedOffHeapNodeMemory(nodeId, assignment, td);
+        assignment.setTotalSharedOffHeapNodeMemory(nodeId, sharedOffHeapNodeMemory);
+        updateCachesForWorkerSlot(slot, resources, topologyId, sharedOffHeapNodeMemory);
         totalResourcesPerNodeCache.remove(slot.getNodeId());
     }
 
@@ -700,31 +703,32 @@ public class Cluster implements ISchedulingState {
     }
 
     /**
-     * Calculate the amount of shared off heap memory on a given nodes with the given assignment.
+     * Calculate the amount of shared off heap node memory on a given node with the given assignment.
      *
      * @param nodeId     the id of the node
      * @param assignment the current assignment
-     * @return the amount of shared off heap memory for that node in MB
+     * @param td         the topology details
+     * @return the amount of shared off heap node memory for that node in MB
      */
-    private double calculateSharedOffHeapMemory(String nodeId, SchedulerAssignmentImpl assignment) {
-        return calculateSharedOffHeapMemory(nodeId, assignment, null);
+    private double calculateSharedOffHeapNodeMemory(String nodeId, SchedulerAssignmentImpl assignment, TopologyDetails td) {
+        return calculateSharedOffHeapNodeMemory(nodeId, assignment, td, null);
     }
 
-    private double calculateSharedOffHeapMemory(
-        String nodeId, SchedulerAssignmentImpl assignment, ExecutorDetails extra) {
-        double memorySharedWithinNode = 0.0;
-        TopologyDetails td = topologies.getById(assignment.getTopologyId());
+    private double calculateSharedOffHeapNodeMemory(
+        String nodeId, SchedulerAssignmentImpl assignment, TopologyDetails td, ExecutorDetails extra) {
         Set<ExecutorDetails> executorsOnNode = new HashSet<>();
-        for (Entry<WorkerSlot, Collection<ExecutorDetails>> entry :
-            assignment.getSlotToExecutors().entrySet()) {
-            if (nodeId.equals(entry.getKey().getNodeId())) {
-                executorsOnNode.addAll(entry.getValue());
+        if (assignment != null) {
+            for (Entry<WorkerSlot, Collection<ExecutorDetails>> entry : assignment.getSlotToExecutors().entrySet()) {
+                if (nodeId.equals(entry.getKey().getNodeId())) {
+                    executorsOnNode.addAll(entry.getValue());
+                }
             }
         }
         if (extra != null) {
             executorsOnNode.add(extra);
         }
         //Now check for overlap on the node
+        double memorySharedWithinNode = 0.0;
         for (SharedMemory shared : td.getSharedMemoryRequests(executorsOnNode)) {
             memorySharedWithinNode += shared.get_off_heap_node();
         }
@@ -743,10 +747,11 @@ public class Cluster implements ISchedulingState {
                 assertValidTopologyForModification(assignment.getTopologyId());
                 assignment.unassignBySlot(slot);
                 String nodeId = slot.getNodeId();
-                assignment.setTotalSharedOffHeapMemory(
-                    nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
-                nodeToScheduledResourcesCache.computeIfAbsent(nodeId, MAKE_MAP).put(slot, new NormalizedResourceRequest());
-                nodeToUsedSlotsCache.computeIfAbsent(nodeId, MAKE_SET).remove(slot);
+                TopologyDetails td = topologies.getById(assignment.getTopologyId());
+                assignment.setTotalSharedOffHeapNodeMemory(
+                    nodeId, calculateSharedOffHeapNodeMemory(nodeId, assignment, td));
+                nodeToScheduledResourcesCache.computeIfAbsent(nodeId, Cluster::makeMap).put(slot, new NormalizedResourceRequest());
+                nodeToUsedSlotsCache.computeIfAbsent(nodeId, Cluster::makeSet).remove(slot);
             }
         }
         //Invalidate the cache as something on the node changed
@@ -768,7 +773,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public boolean isSlotOccupied(WorkerSlot slot) {
-        return nodeToUsedSlotsCache.computeIfAbsent(slot.getNodeId(), MAKE_SET).contains(slot);
+        return nodeToUsedSlotsCache.computeIfAbsent(slot.getNodeId(), Cluster::makeSet).contains(slot);
     }
 
     @Override
@@ -963,7 +968,7 @@ public class Cluster implements ISchedulingState {
                 sr = sr.add(entry.getValue());
                 ret.put(id, sr);
             }
-            Map<String, Double> nodeIdToSharedOffHeap = assignment.getNodeIdToTotalSharedOffHeapMemory();
+            Map<String, Double> nodeIdToSharedOffHeap = assignment.getNodeIdToTotalSharedOffHeapNodeMemory();
             if (nodeIdToSharedOffHeap != null) {
                 for (Entry<String, Double> entry : nodeIdToSharedOffHeap.entrySet()) {
                     String id = entry.getKey();
@@ -1003,13 +1008,14 @@ public class Cluster implements ISchedulingState {
     /**
      * This method updates ScheduledResources and UsedSlots cache for given workerSlot.
      */
-    private void updateCachesForWorkerSlot(WorkerSlot workerSlot, WorkerResources workerResources, Double sharedoffHeapMemory) {
+    private void updateCachesForWorkerSlot(WorkerSlot workerSlot, WorkerResources workerResources, String topologyId,
+                                           Double sharedOffHeapNodeMemory) {
         String nodeId = workerSlot.getNodeId();
         NormalizedResourceRequest normalizedResourceRequest = new NormalizedResourceRequest();
         normalizedResourceRequest.add(workerResources);
-        normalizedResourceRequest.addOffHeap(sharedoffHeapMemory);
-        nodeToScheduledResourcesCache.computeIfAbsent(nodeId, MAKE_MAP).put(workerSlot, normalizedResourceRequest);
-        nodeToUsedSlotsCache.computeIfAbsent(nodeId, MAKE_SET).add(workerSlot);
+        nodeToScheduledResourcesCache.computeIfAbsent(nodeId, Cluster::makeMap).put(workerSlot, normalizedResourceRequest);
+        nodeToScheduledOffHeapNodeMemoryCache.computeIfAbsent(nodeId, Cluster::makeMap).put(topologyId, sharedOffHeapNodeMemory);
+        nodeToUsedSlotsCache.computeIfAbsent(nodeId, Cluster::makeSet).add(workerSlot);
     }
 
     public ResourceMetrics getResourceMetrics() {
@@ -1019,10 +1025,17 @@ public class Cluster implements ISchedulingState {
     @Override
     public NormalizedResourceRequest getAllScheduledResourcesForNode(String nodeId) {
         return totalResourcesPerNodeCache.computeIfAbsent(nodeId, (nid) -> {
+            // executor resources
             NormalizedResourceRequest totalScheduledResources = new NormalizedResourceRequest();
-            for (NormalizedResourceRequest req : nodeToScheduledResourcesCache.computeIfAbsent(nodeId, MAKE_MAP).values()) {
+            for (NormalizedResourceRequest req : nodeToScheduledResourcesCache.computeIfAbsent(nodeId, Cluster::makeMap).values()) {
                 totalScheduledResources.add(req);
             }
+            // shared off heap node memory
+            for (Double offHeapNodeMemory
+                    : nodeToScheduledOffHeapNodeMemoryCache.computeIfAbsent(nid, Cluster::makeMap).values()) {
+                totalScheduledResources.addOffHeap(offHeapNodeMemory);
+            }
+
             return totalScheduledResources;
         });
     }

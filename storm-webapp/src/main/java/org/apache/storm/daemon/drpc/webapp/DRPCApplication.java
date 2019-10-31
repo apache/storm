@@ -29,6 +29,7 @@ import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.metric.StormMetricsRegistry;
 
 @ApplicationPath("")
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCApplication extends Application {
     private static DRPC _drpc;
     private static StormMetricsRegistry metricsRegistry;

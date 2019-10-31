@@ -102,8 +102,6 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
     /**
      * Handle expired tuple events which can be removing from cache or store.
-     *
-     * @param expiredEvents
      */
     protected abstract void onTuplesExpired(List<T> expiredEvents);
 
@@ -132,16 +130,15 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
     /**
      * Return {@code TridentTuple}s from given {@code tupleEvents}.
-     *
-     * @param tupleEvents
-     * @return
      */
     protected abstract List<TridentTuple> getTridentTuples(List<T> tupleEvents);
 
+    @Override
     public Queue<TriggerResult> getPendingTriggers() {
         return pendingTriggers;
     }
 
+    @Override
     public void shutdown() {
         try {
             LOG.info("window manager [{}] is being shutdown", windowManager);
@@ -160,7 +157,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         final List<List<Object>> values = new ArrayList<>();
         private final BatchOutputCollector delegateCollector;
 
-        public AccumulatedTuplesCollector(BatchOutputCollector delegateCollector) {
+        AccumulatedTuplesCollector(BatchOutputCollector delegateCollector) {
             this.delegateCollector = delegateCollector;
         }
 
@@ -185,7 +182,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         final int id;
         final List<List<Object>> result;
 
-        public TriggerResult(int id, List<List<Object>> result) {
+        TriggerResult(int id, List<List<Object>> result) {
             this.id = id;
             this.result = result;
         }
@@ -212,10 +209,10 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
         @Override
         public String toString() {
-            return "TriggerResult{" +
-                   "id=" + id +
-                   ", result=" + result +
-                   '}';
+            return "TriggerResult{"
+                    + "id=" + id
+                    + ", result=" + result
+                    + '}';
         }
     }
 

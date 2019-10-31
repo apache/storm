@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A factory for creating {@link State} instances
+ * A factory for creating {@link State} instances.
  */
 public class StateFactory {
     private static final Logger LOG = LoggerFactory.getLogger(StateFactory.class);
@@ -49,8 +49,8 @@ public class StateFactory {
             if (object instanceof StateProvider) {
                 state = ((StateProvider) object).newState(namespace, topoConf, context);
             } else {
-                String msg = "Invalid state provider '" + provider +
-                             "'. Should implement org.apache.storm.state.StateProvider";
+                String msg = "Invalid state provider '" + provider
+                        + "'. Should implement org.apache.storm.state.StateProvider";
                 LOG.error(msg);
                 throw new RuntimeException(msg);
             }

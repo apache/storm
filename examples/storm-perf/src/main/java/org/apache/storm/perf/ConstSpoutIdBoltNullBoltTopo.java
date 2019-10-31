@@ -30,7 +30,7 @@ import org.apache.storm.utils.Utils;
 
 /**
  * ConstSpout -> IdBolt -> DevNullBolt This topology measures speed of messaging between spouts->bolt  and  bolt->bolt ConstSpout :
- * Continuously emits a constant string IdBolt : clones and emits input tuples DevNullBolt : discards incoming tuples
+ * Continuously emits a constant string IdBolt : clones and emits input tuples DevNullBolt : discards incoming tuples.
  */
 public class ConstSpoutIdBoltNullBoltTopo {
 

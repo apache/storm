@@ -15,7 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.blobstore;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.regex.Matcher;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileContext;
@@ -28,87 +34,83 @@ import org.apache.storm.generated.SettableBlobMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.regex.Matcher;
-
 public class HdfsBlobStoreFile extends BlobStoreFile {
-    public static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStoreFile.class);
-
-    private final String _key;
-    private final boolean _isTmp;
-    private final Path _path;
-    private Long _modTime = null;
-    private final boolean _mustBeNew;
-    private final Configuration _hadoopConf;
-    private final FileSystem _fs;
-    private SettableBlobMeta meta;
 
     // files are world-wide readable and owner writable
-    final public static FsPermission BLOBSTORE_FILE_PERMISSION =
+    public static final FsPermission BLOBSTORE_FILE_PERMISSION =
             FsPermission.createImmutable((short) 0644); // rw-r--r--
+
+    private static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStoreFile.class);
+
+    private final String key;
+    private final boolean isTmp;
+    private final Path path;
+    private Long modTime = null;
+    private final boolean mustBeNew;
+    private final Configuration hadoopConf;
+    private final FileSystem fileSystem;
+    private SettableBlobMeta settableBlobMeta;
 
     public HdfsBlobStoreFile(Path base, String name, Configuration hconf) {
         if (BLOBSTORE_DATA_FILE.equals(name)) {
-            _isTmp = false;
+            isTmp = false;
         } else {
             Matcher m = TMP_NAME_PATTERN.matcher(name);
             if (!m.matches()) {
-                throw new IllegalArgumentException("File name does not match '"+name+"' !~ "+TMP_NAME_PATTERN);
+                throw new IllegalArgumentException("File name does not match '" + name + "' !~ " + TMP_NAME_PATTERN);
             }
-            _isTmp = true;
+            isTmp = true;
         }
-        _hadoopConf = hconf;
-        _key = base.getName();
-        _path = new Path(base, name);
-        _mustBeNew = false;
+        hadoopConf = hconf;
+        key = base.getName();
+        path = new Path(base, name);
+        mustBeNew = false;
         try {
-            _fs = _path.getFileSystem(_hadoopConf);
+            fileSystem = path.getFileSystem(hadoopConf);
         } catch (IOException e) {
-            throw new RuntimeException("Error getting filesystem for path: " + _path, e);
+            throw new RuntimeException("Error getting filesystem for path: " + path, e);
         }
     }
 
     public HdfsBlobStoreFile(Path base, boolean isTmp, boolean mustBeNew, Configuration hconf) {
-        _key = base.getName();
-        _hadoopConf = hconf;
-        _isTmp = isTmp;
-        _mustBeNew = mustBeNew;
-        if (_isTmp) {
-            _path = new Path(base, System.currentTimeMillis()+TMP_EXT);
+        key = base.getName();
+        hadoopConf = hconf;
+        this.isTmp = isTmp;
+        this.mustBeNew = mustBeNew;
+        if (this.isTmp) {
+            path = new Path(base, System.currentTimeMillis() + TMP_EXT);
         } else {
-            _path = new Path(base, BLOBSTORE_DATA_FILE);
+            path = new Path(base, BLOBSTORE_DATA_FILE);
         }
         try {
-            _fs = _path.getFileSystem(_hadoopConf);
+            fileSystem = path.getFileSystem(hadoopConf);
         } catch (IOException e) {
-            throw new RuntimeException("Error getting filesystem for path: " + _path, e);
+            throw new RuntimeException("Error getting filesystem for path: " + path, e);
         }
     }
 
     @Override
     public void delete() throws IOException {
-        _fs.delete(_path, true);
+        fileSystem.delete(path, true);
     }
 
     @Override
     public boolean isTmp() {
-        return _isTmp;
+        return isTmp;
     }
 
     @Override
     public String getKey() {
-        return _key;
+        return key;
     }
 
     @Override
     public long getModTime() throws IOException {
-        if (_modTime == null) {
-            FileSystem fs = _path.getFileSystem(_hadoopConf);
-            _modTime = fs.getFileStatus(_path).getModificationTime();
+        if (modTime == null) {
+            FileSystem fs = path.getFileSystem(hadoopConf);
+            modTime = fs.getFileStatus(path).getModificationTime();
         }
-        return _modTime;
+        return modTime;
     }
 
     private void checkIsNotTmp() {
@@ -126,7 +128,7 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
     @Override
     public InputStream getInputStream() throws IOException {
         checkIsTmp();
-        return _fs.open(_path);
+        return fileSystem.open(path);
     }
 
     @Override
@@ -135,21 +137,21 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
         OutputStream out = null;
         FsPermission fileperms = new FsPermission(BLOBSTORE_FILE_PERMISSION);
         try {
-            out = _fs.create(_path, (short)this.getMetadata().get_replication_factor());
-            _fs.setPermission(_path, fileperms);
-            _fs.setReplication(_path, (short)this.getMetadata().get_replication_factor());
+            out = fileSystem.create(path, (short)this.getMetadata().get_replication_factor());
+            fileSystem.setPermission(path, fileperms);
+            fileSystem.setReplication(path, (short)this.getMetadata().get_replication_factor());
         } catch (IOException e) {
             //Try to create the parent directory, may not work
             FsPermission dirperms = new FsPermission(HdfsBlobStoreImpl.BLOBSTORE_DIR_PERMISSION);
-            if (!_fs.mkdirs(_path.getParent(), dirperms)) {
-                LOG.warn("error creating parent dir: " + _path.getParent());
+            if (!fileSystem.mkdirs(path.getParent(), dirperms)) {
+                LOG.warn("error creating parent dir: " + path.getParent());
             }
-            out = _fs.create(_path, (short)this.getMetadata().get_replication_factor());
-            _fs.setPermission(_path, dirperms);
-            _fs.setReplication(_path, (short)this.getMetadata().get_replication_factor());
+            out = fileSystem.create(path, (short)this.getMetadata().get_replication_factor());
+            fileSystem.setPermission(path, dirperms);
+            fileSystem.setReplication(path, (short)this.getMetadata().get_replication_factor());
         }
         if (out == null) {
-            throw new IOException("Error in creating: " + _path);
+            throw new IOException("Error in creating: " + path);
         }
         return out;
     }
@@ -158,12 +160,12 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
     public void commit() throws IOException {
         checkIsNotTmp();
         // FileContext supports atomic rename, whereas FileSystem doesn't
-        FileContext fc = FileContext.getFileContext(_hadoopConf);
-        Path dest = new Path(_path.getParent(), BLOBSTORE_DATA_FILE);
-        if (_mustBeNew) {
-            fc.rename(_path, dest);
+        FileContext fc = FileContext.getFileContext(hadoopConf);
+        Path dest = new Path(path.getParent(), BLOBSTORE_DATA_FILE);
+        if (mustBeNew) {
+            fc.rename(path, dest);
         } else {
-            fc.rename(_path, dest, Options.Rename.OVERWRITE);
+            fc.rename(path, dest, Options.Rename.OVERWRITE);
         }
         // Note, we could add support for setting the replication factor
     }
@@ -176,21 +178,21 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
 
     @Override
     public String toString() {
-        return _path+":"+(_isTmp ? "tmp": BlobStoreFile.BLOBSTORE_DATA_FILE)+":"+_key;
+        return path + ":" + (isTmp ? "tmp" : BlobStoreFile.BLOBSTORE_DATA_FILE) + ":" + key;
     }
 
     @Override
     public long getFileLength() throws IOException {
-        return _fs.getFileStatus(_path).getLen();
+        return fileSystem.getFileStatus(path).getLen();
     }
 
     @Override
     public SettableBlobMeta getMetadata() {
-        return meta;
+        return settableBlobMeta;
     }
 
     @Override
     public void setMetadata(SettableBlobMeta meta) {
-        this.meta = meta;
+        this.settableBlobMeta = meta;
     }
 }

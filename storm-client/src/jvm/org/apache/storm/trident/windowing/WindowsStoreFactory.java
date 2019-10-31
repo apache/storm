@@ -23,10 +23,10 @@ import org.apache.storm.trident.planner.processor.TridentContext;
 public interface WindowsStoreFactory extends Serializable {
 
     /**
-     * Creates a window store
+     * Creates a window store.
      *
      * @param topoConf storm topology configuration passed in {@link org.apache.storm.trident.planner.TridentProcessor#prepare(Map,
      *                 TopologyContext, TridentContext)}
      */
-    public WindowsStore create(Map<String, Object> topoConf);
+    WindowsStore create(Map<String, Object> topoConf);
 }

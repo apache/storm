@@ -23,6 +23,10 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+/**
+ * @deprecated Use {@link MiniDFSClusterExtension} instead, along with JUnit 5 for new tests.
+ */
+@Deprecated
 public class MiniDFSClusterRule implements TestRule {
 
     private static final String TEST_BUILD_DATA = "test.build.data";
@@ -57,6 +61,7 @@ public class MiniDFSClusterRule implements TestRule {
                     hadoopConf = hadoopConfSupplier.get();
                     dfscluster = new MiniDFSCluster.Builder(hadoopConf).numDataNodes(3).build();
                     dfscluster.waitActive();
+                    base.evaluate();
                 } finally {
                     if (dfscluster != null) {
                         dfscluster.shutdown();

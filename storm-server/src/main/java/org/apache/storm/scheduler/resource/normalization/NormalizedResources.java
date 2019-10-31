@@ -416,17 +416,33 @@ public class NormalizedResources {
         }
     }
 
-    /**
-     * Are any of the resources positive.
-     * @return true of any of the resources are positive.  False if they are all <= 0.
-     */
-    public boolean areAnyOverZero() {
+    private boolean areAnyOverZero(boolean skipCpuCheck) {
         for (int i = 0; i < otherResources.length; i++) {
             if (otherResources[i] > 0) {
                 return true;
             }
         }
-        return cpu > 0;
+        if (skipCpuCheck) {
+            return false;
+        } else {
+            return cpu > 0;
+        }
+    }
+
+    /**
+     * Are any of the resources positive.
+     * @return true of any of the resources are positive.  False if they are all <= 0.
+     */
+    public boolean areAnyOverZero() {
+        return areAnyOverZero(false);
+    }
+
+    /**
+     * Are any of the non cpu resources positive.
+     * @return true of any of the non cpu resources are positive.  False if they are all <= 0.
+     */
+    public boolean anyNonCpuOverZero() {
+        return areAnyOverZero(true);
     }
 
     /**

@@ -12,6 +12,8 @@
 
 package org.apache.storm.cassandra.query.builder;
 
+import static org.apache.storm.cassandra.query.ContextQuery.StaticContextQuery;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
@@ -23,8 +25,7 @@ import org.apache.storm.cassandra.query.impl.PreparedStatementBinder;
 import org.apache.storm.cassandra.query.impl.RoutingKeyGenerator;
 import org.apache.storm.cassandra.query.selector.FieldSelector;
 
-import static org.apache.storm.cassandra.query.ContextQuery.StaticContextQuery;
-
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class BoundCQLStatementMapperBuilder implements CQLStatementBuilder<BoundCQLStatementTupleMapper>, Serializable {
 
     private final ContextQuery contextQuery;
@@ -37,7 +38,6 @@ public class BoundCQLStatementMapperBuilder implements CQLStatementBuilder<Bound
 
     /**
      * Creates a new {@link BoundCQLStatementMapperBuilder} instance.
-     * @param cql
      */
     public BoundCQLStatementMapperBuilder(String cql) {
         this.contextQuery = new StaticContextQuery(cql);
@@ -45,7 +45,6 @@ public class BoundCQLStatementMapperBuilder implements CQLStatementBuilder<Bound
 
     /**
      * Creates a new {@link BoundCQLStatementMapperBuilder} instance.
-     * @param contextQuery
      */
     public BoundCQLStatementMapperBuilder(ContextQuery contextQuery) {
         this.contextQuery = contextQuery;

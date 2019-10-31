@@ -15,7 +15,7 @@ package org.apache.storm.container.cgroup;
 import java.util.Set;
 
 /**
- * A class that describes a cgroup hierarchy
+ * A class that describes a cgroup hierarchy.
  */
 public class Hierarchy {
 
@@ -38,14 +38,14 @@ public class Hierarchy {
     }
 
     /**
-     * get subsystems
+     * get subsystems.
      */
     public Set<SubSystemType> getSubSystems() {
         return subSystems;
     }
 
     /**
-     * get all subsystems in hierarchy as a comma delimited list
+     * get all subsystems in hierarchy as a comma delimited list.
      */
     public String getType() {
         return type;

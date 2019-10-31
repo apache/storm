@@ -28,18 +28,18 @@ import org.slf4j.LoggerFactory;
 
 public class LocalContainer extends Container {
     private static final Logger LOG = LoggerFactory.getLogger(LocalContainer.class);
-    private final IContext _sharedContext;
+    private final IContext sharedContext;
     private final org.apache.storm.generated.Supervisor.Iface localSupervisor;
-    private volatile boolean _isAlive = false;
+    private volatile boolean isAlive = false;
 
     public LocalContainer(Map<String, Object> conf, String supervisorId, int supervisorPort, int port,
                           LocalAssignment assignment, IContext sharedContext, StormMetricsRegistry metricsRegistry,
                           ContainerMemoryTracker containerMemoryTracker,
                           org.apache.storm.generated.Supervisor.Iface localSupervisor) throws IOException {
-        super(ContainerType.LAUNCH, conf, supervisorId, supervisorPort, port, assignment, null, null, null, null, metricsRegistry, 
+        super(ContainerType.LAUNCH, conf, supervisorId, supervisorPort, port, assignment, null, null, null, null, metricsRegistry,
             containerMemoryTracker);
-        _sharedContext = sharedContext;
-        _workerId = Utils.uuid();
+        this.sharedContext = sharedContext;
+        workerId = Utils.uuid();
         this.localSupervisor = localSupervisor;
     }
 
@@ -55,12 +55,11 @@ public class LocalContainer extends Container {
 
     @Override
     public void launch() throws IOException {
-        String numaId = Utils.getNumaIdForPort(_port, _conf);
-        String supervisorId = _supervisorId;
+        String numaId = Utils.getNumaIdForPort(port, conf);
         if (numaId != null) {
-            supervisorId +=  Constants.NUMA_ID_SEPARATOR + _supervisorId;
+            supervisorId +=  Constants.NUMA_ID_SEPARATOR + supervisorId;
         }
-        Worker worker = new Worker(_conf, _sharedContext, _topologyId, supervisorId, _supervisorPort, _port, _workerId,
+        Worker worker = new Worker(conf, sharedContext, topologyId, supervisorId, supervisorPort, port, workerId,
             () -> {
                 return () -> localSupervisor;
             });
@@ -70,21 +69,21 @@ public class LocalContainer extends Container {
             throw new IOException(e);
         }
         saveWorkerUser(System.getProperty("user.name"));
-        ProcessSimulator.registerProcess(_workerId, worker);
-        _isAlive = true;
+        ProcessSimulator.registerProcess(workerId, worker);
+        isAlive = true;
     }
 
     @Override
     public void kill() throws IOException {
-        ProcessSimulator.killProcess(_workerId);
-        _isAlive = false;
+        ProcessSimulator.killProcess(workerId);
+        isAlive = false;
         //Make sure the worker is down before we try to shoot any child processes
         super.kill();
     }
 
     @Override
     public boolean areAllProcessesDead() throws IOException {
-        return !_isAlive && super.areAllProcessesDead();
+        return !isAlive && super.areAllProcessesDead();
     }
 
     @Override

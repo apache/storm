@@ -13,7 +13,7 @@
 package org.apache.storm.trident.operation;
 
 /**
- * A one to many transformation function which is aware of Operation (lifecycle of the Trident component)
+ * A one to many transformation function which is aware of Operation (lifecycle of the Trident component).
  */
 public interface OperationAwareFlatMapFunction extends FlatMapFunction, Operation {
 }

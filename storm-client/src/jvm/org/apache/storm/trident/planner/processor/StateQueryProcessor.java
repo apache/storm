@@ -29,18 +29,18 @@ import org.apache.storm.tuple.Fields;
 
 
 public class StateQueryProcessor implements TridentProcessor {
-    QueryFunction _function;
-    State _state;
-    String _stateId;
-    TridentContext _context;
-    Fields _inputFields;
-    ProjectionFactory _projection;
-    AppendCollector _collector;
+    QueryFunction function;
+    State state;
+    String stateId;
+    TridentContext context;
+    Fields inputFields;
+    ProjectionFactory projection;
+    AppendCollector collector;
 
     public StateQueryProcessor(String stateId, Fields inputFields, QueryFunction function) {
-        _stateId = stateId;
-        _function = function;
-        _inputFields = inputFields;
+        this.stateId = stateId;
+        this.function = function;
+        this.inputFields = inputFields;
     }
 
     @Override
@@ -49,28 +49,28 @@ public class StateQueryProcessor implements TridentProcessor {
         if (parents.size() != 1) {
             throw new RuntimeException("State query operation can only have one parent");
         }
-        _context = tridentContext;
-        _state = (State) context.getTaskData(_stateId);
-        _projection = new ProjectionFactory(parents.get(0), _inputFields);
-        _collector = new AppendCollector(tridentContext);
-        _function.prepare(conf, new TridentOperationContext(context, _projection));
+        this.context = tridentContext;
+        state = (State) context.getTaskData(stateId);
+        projection = new ProjectionFactory(parents.get(0), inputFields);
+        collector = new AppendCollector(tridentContext);
+        function.prepare(conf, new TridentOperationContext(context, projection));
     }
 
     @Override
     public void cleanup() {
-        _function.cleanup();
+        function.cleanup();
     }
 
     @Override
     public void startBatch(ProcessorContext processorContext) {
-        processorContext.state[_context.getStateIndex()] = new BatchState();
+        processorContext.state[context.getStateIndex()] = new BatchState();
     }
 
     @Override
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
-        BatchState state = (BatchState) processorContext.state[_context.getStateIndex()];
+        BatchState state = (BatchState) processorContext.state[context.getStateIndex()];
         state.tuples.add(tuple);
-        state.args.add(_projection.create(tuple));
+        state.args.add(projection.create(tuple));
     }
 
     @Override
@@ -80,9 +80,9 @@ public class StateQueryProcessor implements TridentProcessor {
 
     @Override
     public void finishBatch(ProcessorContext processorContext) {
-        BatchState state = (BatchState) processorContext.state[_context.getStateIndex()];
+        BatchState state = (BatchState) processorContext.state[context.getStateIndex()];
         if (!state.tuples.isEmpty()) {
-            List<Object> results = _function.batchRetrieve(_state, Collections.unmodifiableList(state.args));
+            List<Object> results = function.batchRetrieve(this.state, Collections.unmodifiableList(state.args));
             if (results.size() != state.tuples.size()) {
                 throw new RuntimeException(
                     "Results size is different than argument size: " + results.size() + " vs " + state.tuples.size());
@@ -90,15 +90,15 @@ public class StateQueryProcessor implements TridentProcessor {
             for (int i = 0; i < state.tuples.size(); i++) {
                 TridentTuple tuple = state.tuples.get(i);
                 Object result = results.get(i);
-                _collector.setContext(processorContext, tuple);
-                _function.execute(state.args.get(i), result, _collector);
+                collector.setContext(processorContext, tuple);
+                function.execute(state.args.get(i), result, collector);
             }
         }
     }
 
     @Override
     public Factory getOutputFactory() {
-        return _collector.getOutputFactory();
+        return collector.getOutputFactory();
     }
 
     private static class BatchState {

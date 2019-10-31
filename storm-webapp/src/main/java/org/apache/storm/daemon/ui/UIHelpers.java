@@ -111,6 +111,7 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class UIHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(UIHelpers.class);
     private static final Object[][] PRETTY_SEC_DIVIDERS = {
@@ -525,7 +526,6 @@ public class UIHelpers {
     private static final AtomicReference<List<Map<String, String>>> MEMORIZED_VERSIONS = new AtomicReference<>();
     private static final AtomicReference<Map<String, String>> MEMORIZED_FULL_VERSION = new AtomicReference<>();
 
-
     private static Map<String, String> toJsonStruct(IVersionInfo info) {
         Map<String, String> ret = new HashMap<>();
         ret.put("version", info.getVersion());
@@ -548,36 +548,6 @@ public class UIHelpers {
     public static Map<String, Object> getClusterSummary(ClusterSummary clusterSummary, String user,
                                                         Map<String, Object> conf) {
         Map<String, Object> result = new HashMap();
-        List<SupervisorSummary> supervisorSummaries = clusterSummary.get_supervisors();
-        List<TopologySummary> topologySummaries = clusterSummary.get_topologies();
-
-        int usedSlots =
-            supervisorSummaries.stream().mapToInt(
-                SupervisorSummary::get_num_used_workers).sum();
-        int totalSlots =
-            supervisorSummaries.stream().mapToInt(
-                SupervisorSummary::get_num_workers).sum();
-
-        int totalTasks =
-            topologySummaries.stream().mapToInt(
-                TopologySummary::get_num_tasks).sum();
-        int totalExecutors =
-            topologySummaries.stream().mapToInt(
-                TopologySummary::get_num_executors).sum();
-
-        double supervisorTotalMemory =
-            supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
-                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
-                x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
-                )
-            ).sum();
-
-        double supervisorTotalCpu =
-            supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
-                Constants.COMMON_CPU_RESOURCE_NAME,
-                x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
-                )
-            ).sum();
 
         if (MEMORIZED_VERSIONS.get() == null) {
             //Races are okay this is just to avoid extra work for each page load.
@@ -602,15 +572,47 @@ public class UIHelpers {
         result.put("user", user);
         result.put("stormVersion", VersionInfo.getVersion());
         result.put("stormVersionInfo", MEMORIZED_FULL_VERSION.get());
+        List<SupervisorSummary> supervisorSummaries = clusterSummary.get_supervisors();
         result.put("supervisors", supervisorSummaries.size());
         result.put("topologies", clusterSummary.get_topologies_size());
+
+        int usedSlots =
+                supervisorSummaries.stream().mapToInt(
+                        SupervisorSummary::get_num_used_workers).sum();
         result.put("slotsUsed", usedSlots);
+
+        int totalSlots =
+                supervisorSummaries.stream().mapToInt(
+                        SupervisorSummary::get_num_workers).sum();
         result.put("slotsTotal", totalSlots);
         result.put("slotsFree", totalSlots - usedSlots);
+
+        List<TopologySummary> topologySummaries = clusterSummary.get_topologies();
+        int totalTasks =
+                topologySummaries.stream().mapToInt(
+                        TopologySummary::get_num_tasks).sum();
         result.put("tasksTotal", totalTasks);
+
+        int totalExecutors =
+                topologySummaries.stream().mapToInt(
+                        TopologySummary::get_num_executors).sum();
         result.put("executorsTotal", totalExecutors);
 
+
+        double supervisorTotalMemory =
+                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                        Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
+                        x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
+                        )
+                ).sum();
         result.put("totalMem", supervisorTotalMemory);
+
+        double supervisorTotalCpu =
+                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                        Constants.COMMON_CPU_RESOURCE_NAME,
+                        x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
+                        )
+                ).sum();
         result.put("totalCpu", supervisorTotalCpu);
 
         double supervisorUsedMemory =
@@ -877,6 +879,7 @@ public class UIHelpers {
         result.put("id", supervisorSummary.get_supervisor_id());
         result.put("host", supervisorSummary.get_host());
         result.put("uptime", UIHelpers.prettyUptimeSec(supervisorSummary.get_uptime_secs()));
+        result.put("blacklisted", supervisorSummary.is_blacklisted());
         result.put("uptimeSeconds", supervisorSummary.get_uptime_secs());
         result.put("slotsTotal", supervisorSummary.get_num_workers());
         result.put("slotsUsed", supervisorSummary.get_num_used_workers());
@@ -986,6 +989,7 @@ public class UIHelpers {
         result.put("uptimeSeconds", workerSummary.get_uptime_secs());
         result.put("workerLogLink", getWorkerLogLink(workerSummary.get_host(),
                 workerSummary.get_port(), config, workerSummary.get_topology_id()));
+        result.put("owner", workerSummary.get_owner());
         return result;
     }
 
@@ -1018,7 +1022,7 @@ public class UIHelpers {
      */
     private static List<Map> getSupervisorsMap(List<SupervisorSummary> supervisors,
                                                Map<String, Object> config) {
-        List<Map> supervisorMaps = new ArrayList();
+        List<Map> supervisorMaps = new ArrayList<>();
         for (SupervisorSummary supervisorSummary : supervisors) {
             supervisorMaps.add(getPrettifiedSupervisorMap(supervisorSummary, config));
         }
@@ -1047,7 +1051,7 @@ public class UIHelpers {
      */
     public static Map<String, Object> getSupervisorPageInfo(
             SupervisorPageInfo supervisorPageInfo, Map<String,Object> config) {
-        Map<String, Object> result = new HashMap();
+        Map<String, Object> result = new HashMap<>();
         result.put("workers", getWorkerSummaries(supervisorPageInfo, config));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
         List<Map> supervisorMaps = getSupervisorsMap(supervisorPageInfo.get_supervisor_summaries(), config);
@@ -1119,6 +1123,8 @@ public class UIHelpers {
         result.put("configuration", topologyConf);
         result.put("visualizationTable", new ArrayList());
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
+        result.put("bugtracker-url", config.get(DaemonConfig.UI_PROJECT_BUGTRACKER_URL));
+        result.put("central-log-url", config.get(DaemonConfig.UI_CENTRAL_LOGGING_URL));
         return result;
     }
 

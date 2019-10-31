@@ -16,17 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.opentsdb.bolt;
+
+import java.util.Map;
 
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.apache.storm.tuple.ITuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 /**
- * Converts {@link org.apache.storm.tuple.ITuple} to {@link OpenTsdbMetricDatapoint}
+ * Converts {@link org.apache.storm.tuple.ITuple} to {@link OpenTsdbMetricDatapoint}.
  */
 public final class TupleOpenTsdbDatapointMapper implements ITupleOpenTsdbDatapointMapper {
     private static final Logger LOG = LoggerFactory.getLogger(TupleOpenTsdbDatapointMapper.class);
@@ -51,52 +52,66 @@ public final class TupleOpenTsdbDatapointMapper implements ITupleOpenTsdbDatapoi
 
     @Override
     public OpenTsdbMetricDatapoint getMetricPoint(ITuple tuple) {
-            return new OpenTsdbMetricDatapoint(
-                    tuple.getStringByField(metricField),
-                    (Map<String, String>) tuple.getValueByField(tagsField),
-                    tuple.getLongByField(timestampField),
-                    (Number) tuple.getValueByField(valueField));
+        return new OpenTsdbMetricDatapoint(
+                tuple.getStringByField(metricField),
+                (Map<String, String>) tuple.getValueByField(tagsField),
+                tuple.getLongByField(timestampField),
+                (Number) tuple.getValueByField(valueField));
     }
 
     /**
-     * @return metric field name in the tuple.
+     * Retrieve metric field name in the tuple.
+     * @return metric field name in the tuple
      */
     public String getMetricField() {
         return metricField;
     }
 
     /**
-     * @return timestamp field name in the tuple.
+     * Retrieve the timestamp field name in the tuple.
+     * @return timestamp field name in the tuple
      */
     public String getTimestampField() {
         return timestampField;
     }
 
     /**
-     * @return value field name in the tuple.
+     * Retrieve the value field name in the tuple.
+     * @return value field name in the tuple
      */
     public String getValueField() {
         return valueField;
     }
 
     /**
+     * Retrieve the tags field name in the tuple.
      * @return tags field name in the tuple
      */
     public String getTagsField() {
         return tagsField;
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TupleOpenTsdbDatapointMapper)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TupleOpenTsdbDatapointMapper)) {
+            return false;
+        }
 
         TupleOpenTsdbDatapointMapper that = (TupleOpenTsdbDatapointMapper) o;
 
-        if (!metricField.equals(that.metricField)) return false;
-        if (!timestampField.equals(that.timestampField)) return false;
-        if (!valueField.equals(that.valueField)) return false;
+        if (!metricField.equals(that.metricField)) {
+            return false;
+        }
+        if (!timestampField.equals(that.timestampField)) {
+            return false;
+        }
+        if (!valueField.equals(that.valueField)) {
+            return false;
+        }
         return tagsField.equals(that.tagsField);
-
     }
 
     @Override
@@ -110,11 +125,11 @@ public final class TupleOpenTsdbDatapointMapper implements ITupleOpenTsdbDatapoi
 
     @Override
     public String toString() {
-        return "TupleOpenTsdbDatapointMapper{" +
-                "metricField='" + metricField + '\'' +
-                ", timestampField='" + timestampField + '\'' +
-                ", valueField='" + valueField + '\'' +
-                ", tagsField='" + tagsField + '\'' +
-                '}';
+        return "TupleOpenTsdbDatapointMapper{"
+                + "metricField='" + metricField + '\''
+                + ", timestampField='" + timestampField + '\''
+                + ", valueField='" + valueField + '\''
+                + ", tagsField='" + tagsField + '\''
+                + '}';
     }
 }

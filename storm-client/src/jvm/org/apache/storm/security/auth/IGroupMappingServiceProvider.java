@@ -19,20 +19,18 @@ import java.util.Set;
 public interface IGroupMappingServiceProvider {
 
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param topoConf Storm configuration
      */
     void prepare(Map<String, Object> topoConf);
 
     /**
-     * Get all various group memberships of a given user. Returns EMPTY list in case of non-existing user
+     * Get all various group memberships of a given user. Returns EMPTY list in case of non-existing user.
      *
      * @param user User's name
      * @return group memberships of user
-     *
-     * @throws IOException
      */
-    public Set<String> getGroups(String user) throws IOException;
+    Set<String> getGroups(String user) throws IOException;
 
 }

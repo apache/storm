@@ -142,6 +142,7 @@ public interface IStormClusterState {
     List<String> errorTopologies();
 
     /**
+     * Get backpressure topologies.
      * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
     @Deprecated
@@ -149,6 +150,7 @@ public interface IStormClusterState {
 
     /**
      * Get leader info from state store, which was written when a master gains leadership.
+     *
      * <p>Caution: it can not be used for fencing and is only for informational purposes because we use ZK as our
      * backend now, which could have a overdue info of nodes.
      *
@@ -168,24 +170,28 @@ public interface IStormClusterState {
     void supervisorHeartbeat(String supervisorId, SupervisorInfo info);
 
     /**
+     * Get topoloy backpressure.
      * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
     @Deprecated
     boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback);
 
     /**
+     * Setup backpressure.
      * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
     @Deprecated
     void setupBackpressure(String stormId, Map<String, Object> topoConf);
 
     /**
+     * Remove backpressure.
      * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
     @Deprecated
     void removeBackpressure(String stormId);
 
     /**
+     * Remove worker backpressure.
      * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
     @Deprecated
@@ -291,6 +297,7 @@ public interface IStormClusterState {
     }
 
     /**
+     * Get all supervisor info.
      * @param callback be alerted if the list of supervisors change
      * @return All of the supervisors with the ID as the key
      */

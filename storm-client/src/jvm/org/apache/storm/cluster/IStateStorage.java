@@ -19,14 +19,16 @@ import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionState
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 
 /**
- * StateStorage provides the API for the pluggable state store used by the Storm daemons. Data is stored in path/value format, and the store
- * supports listing sub-paths at a given path. All data should be available across all nodes with eventual consistency.
+ * StateStorage provides the API for the pluggable state store used by the Storm daemons. Data is stored in path/value
+ * format, and the store supports listing sub-paths at a given path. All data should be available across all nodes with
+ * eventual consistency.
  *
- * IMPORTANT NOTE: Heartbeats have different api calls used to interact with them. The root path (/) may or may not be the same as the root
- * path for the other api calls.
+ * <p>IMPORTANT NOTE: Heartbeats have different api calls used to interact with them. The root path (/) may or may not
+ * be the same as the root path for the other api calls.
  *
- * For example, performing these two calls: set_data("/path", data, acls); void set_worker_hb("/path", heartbeat, acls); may or may not
- * cause a collision in "/path". Never use the same paths with the *_hb* methods as you do with the others.
+ * <p>For example, performing these two calls: set_data("/path", data, acls); void set_worker_hb("/path", heartbeat,
+ * acls); may or may not cause a collision in "/path". Never use the same paths with the *_hb* methods as you do with
+ * the others.
  */
 public interface IStateStorage extends Closeable {
 
@@ -190,7 +192,7 @@ public interface IStateStorage extends Closeable {
      *
      * @param listener A StateStorageListener to handle changing cluster state events.
      */
-    void add_listener(final ConnectionStateListener listener);
+    void add_listener(ConnectionStateListener listener);
 
     /**
      * Force consistency on a path. Any writes committed on the path before this call will be completely propagated when it returns.
@@ -200,7 +202,7 @@ public interface IStateStorage extends Closeable {
     void sync_path(String path);
 
     /**
-     * Allows us to delete the znodes within /storm/blobstore/key_name whose znodes start with the corresponding nimbusHostPortInfo
+     * Allows us to delete the znodes within /storm/blobstore/key_name whose znodes start with the corresponding nimbusHostPortInfo.
      *
      * @param path               /storm/blobstore/key_name
      * @param nimbusHostPortInfo Contains the host port information of a nimbus node.

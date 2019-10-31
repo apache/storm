@@ -32,7 +32,7 @@ public class RedisClusterContainer implements RedisCommandsInstanceContainer {
     private JedisCluster jedisCluster;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param jedisCluster JedisCluster instance
      */

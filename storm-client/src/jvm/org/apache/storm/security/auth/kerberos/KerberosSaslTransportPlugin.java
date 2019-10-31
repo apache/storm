@@ -58,7 +58,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             workerTokenAuthorizer = new WorkerTokenAuthorizer(conf, type);
         }
         //create an authentication callback handler
-        CallbackHandler server_callback_handler = new ServerCallbackHandler(loginConf, impersonationAllowed);
+        CallbackHandler serverCallbackHandler = new ServerCallbackHandler(loginConf, impersonationAllowed);
 
         //login our principal
         Subject subject = null;
@@ -66,7 +66,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             //specify a configuration object to be used
             Configuration.setConfiguration(loginConf);
             //now login
-            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_SERVER, server_callback_handler);
+            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_SERVER, serverCallbackHandler);
             subject = login.getSubject();
             login.startThreadIfNeeded();
         } catch (LoginException ex) {
@@ -91,7 +91,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
         //create a transport factory that will invoke our auth callback for digest
         TSaslServerTransport.Factory factory = new TSaslServerTransport.Factory();
-        factory.addServerDefinition(KERBEROS, serviceName, hostName, props, server_callback_handler);
+        factory.addServerDefinition(KERBEROS, serviceName, hostName, props, serverCallbackHandler);
 
         //Also add in support for worker tokens
         factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, hostName, null,
@@ -107,11 +107,11 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     private Login mkLogin() throws IOException {
         try {
             //create an authentication callback handler
-            ClientCallbackHandler client_callback_handler = new ClientCallbackHandler(loginConf);
+            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(loginConf);
             //specify a configuration object to be used
             Configuration.setConfiguration(loginConf);
             //now login
-            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, client_callback_handler);
+            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, clientCallbackHandler);
             login.startThreadIfNeeded();
             return login;
         } catch (LoginException ex) {
@@ -204,19 +204,21 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         //open Sasl transport with the login credential
         try {
             Subject.doAs(subject,
-                         new PrivilegedExceptionAction<Void>() {
-                             public Void run() {
-                                 try {
-                                     LOG.debug("do as:" + principal);
-                                     sasalTransport.open();
-                                 } catch (Exception e) {
-                                     LOG.error(
-                                         "Client failed to open SaslClientTransport to interact with a server during session initiation: " +
-                                         e, e);
-                                 }
-                                 return null;
-                             }
-                         });
+                    new PrivilegedExceptionAction<Void>() {
+                        @Override
+                        public Void run() {
+                            try {
+                                LOG.debug("do as:" + principal);
+                                sasalTransport.open();
+                            } catch (Exception e) {
+                                LOG.error("Client failed to open SaslClientTransport to interact with a server during "
+                                                + "session initiation: "
+                                                + e,
+                                        e);
+                        }
+                        return null;
+                    }
+                });
         } catch (PrivilegedActionException e) {
             throw new RuntimeException(e);
         }
@@ -246,13 +248,14 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     /**
      * A TransportFactory that wraps another one, but assumes a specified UGI before calling through.
      *
-     * This is used on the server side to assume the server's Principal when accepting clients.
+     * <p>This is used on the server side to assume the server's Principal when accepting clients.
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     static class TUGIAssumingTransportFactory extends TTransportFactory {
         private final Subject subject;
         private final TTransportFactory wrapped;
 
-        public TUGIAssumingTransportFactory(TTransportFactory wrapped, Subject subject) {
+        TUGIAssumingTransportFactory(TTransportFactory wrapped, Subject subject) {
             this.wrapped = wrapped;
             this.subject = subject;
 
@@ -266,20 +269,22 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         public TTransport getTransport(final TTransport trans) {
             try {
                 return Subject.doAs(subject,
-                                    (PrivilegedExceptionAction<TTransport>) () -> {
-                                        try {
-                                            return wrapped.getTransport(trans);
-                                        } catch (Exception e) {
-                                            LOG.debug("Storm server failed to open transport " +
-                                                      "to interact with a client during session initiation: " + e, e);
-                                            return new NoOpTTrasport(null);
-                                        }
-                                    });
+                    (PrivilegedExceptionAction<TTransport>) () -> {
+                        try {
+                            return wrapped.getTransport(trans);
+                        } catch (Exception e) {
+                            LOG.debug("Storm server failed to open transport to interact with a client during "
+                                            + "session initiation: "
+                                            + e,
+                                    e);
+                            return new NoOpTTrasport(null);
+                        }
+                    });
             } catch (PrivilegedActionException e) {
-                LOG.error(
-                    "Storm server experienced a PrivilegedActionException exception while creating a transport using a JAAS principal " +
-                    "context:" +
-                    e, e);
+                LOG.error("Storm server experienced a PrivilegedActionException exception while creating a transport "
+                                + "using a JAAS principal context:"
+                                + e,
+                        e);
                 return null;
             }
         }
@@ -288,7 +293,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     private class LoginCacheKey {
         private String keyString = null;
 
-        public LoginCacheKey(SortedMap<String, ?> authConf) throws IOException {
+        LoginCacheKey(SortedMap<String, ?> authConf) throws IOException {
             if (authConf != null) {
                 StringBuilder stringBuilder = new StringBuilder();
                 for (String configKey : authConf.keySet()) {

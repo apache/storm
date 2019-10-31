@@ -139,9 +139,8 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         if (isLocalMode && type == TopologyBlobType.TOPO_JAR) {
             LOG.debug("DOWNLOADING LOCAL JAR to TEMP LOCATION... {}", topologyId);
             //This is a special case where the jar was not uploaded so we will not download it (it is already on the classpath)
-            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
             String resourcesJar = resourcesJar();
-            URL url = classloader.getResource(ServerConfigUtils.RESOURCES_SUBDIR);
+            URL url = ServerUtils.getResourceFromClassloader(ServerConfigUtils.RESOURCES_SUBDIR);
             Path extractionDest = topologyBasicBlobsRootDir.resolve(type.getTempExtractionDir(LOCAL_MODE_JAR_VERSION));
             if (resourcesJar != null) {
                 LOG.info("Extracting resources from jar at {} to {}", resourcesJar, extractionDest);
@@ -154,6 +153,10 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
                 } else {
                     fsOps.copyDirectory(new File(url.getFile()), extractionDest.toFile());
                 }
+            } else if (!fsOps.fileExists(extractionDest)) {
+                // if we can't find the resources directory in a resources jar or in the classpath just create an empty
+                // resources directory. This way we can check later that the topology jar was fully downloaded.
+                fsOps.forceMkdir(extractionDest);
             }
             return LOCAL_MODE_JAR_VERSION;
         }
@@ -225,7 +228,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         }
         if (!(isLocalMode && type == TopologyBlobType.TOPO_JAR)) {
             //Don't try to move the JAR file in local mode, it does not exist because it was not uploaded
-            Files.move(tempLoc, dest);
+            fsOps.moveFile(tempLoc.toFile(), dest.toFile());
         }
         synchronized (LocallyCachedTopologyBlob.class) {
             //This is a bit ugly, but it works.  In order to maintain the same directory structure that existed before
@@ -258,11 +261,12 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     private void cleanUpTemp(String baseName) throws IOException {
         LOG.debug("Cleaning up temporary data in {}", topologyBasicBlobsRootDir);
         try (DirectoryStream<Path> children = fsOps.newDirectoryStream(topologyBasicBlobsRootDir,
-                                                                       (p) -> {
-                                                                           String fileName = p.getFileName().toString();
-                                                                           Matcher m = EXTRACT_BASE_NAME_AND_VERSION.matcher(fileName);
-                                                                           return m.matches() && baseName.equals(m.group(1));
-                                                                       })) {
+            (p) -> {
+                String fileName = p.getFileName().toString();
+                Matcher m = EXTRACT_BASE_NAME_AND_VERSION.matcher(fileName);
+                return m.matches() && baseName.equals(m.group(1));
+            })
+        ) {
             //children is only ever null if topologyBasicBlobsRootDir does not exist.  This happens during unit tests
             // And because a non-existant directory is by definition clean we are ignoring it.
             if (children != null) {

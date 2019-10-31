@@ -23,12 +23,12 @@ import java.util.Random;
 import java.util.Set;
 
 public class MessageId {
-    final static MessageId unanchoredMsgId = makeId(Collections.emptyMap());
+    static final MessageId unanchoredMsgId = makeId(Collections.emptyMap());
 
-    private Map<Long, Long> _anchorsToIds;
+    private Map<Long, Long> anchorsToIds;
 
     protected MessageId(Map<Long, Long> anchorsToIds) {
-        _anchorsToIds = anchorsToIds;
+        this.anchorsToIds = anchorsToIds;
     }
 
     public static long generateId(Random rand) {
@@ -59,31 +59,31 @@ public class MessageId {
     }
 
     public Map<Long, Long> getAnchorsToIds() {
-        return _anchorsToIds;
+        return anchorsToIds;
     }
 
     public Set<Long> getAnchors() {
-        return _anchorsToIds.keySet();
+        return anchorsToIds.keySet();
     }
 
     @Override
     public int hashCode() {
-        return _anchorsToIds.hashCode();
+        return anchorsToIds.hashCode();
     }
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof MessageId && _anchorsToIds.equals(((MessageId) other)._anchorsToIds);
+        return other instanceof MessageId && anchorsToIds.equals(((MessageId) other).anchorsToIds);
     }
 
     @Override
     public String toString() {
-        return _anchorsToIds.toString();
+        return anchorsToIds.toString();
     }
 
     public void serialize(Output out) throws IOException {
-        out.writeInt(_anchorsToIds.size(), true);
-        for (Entry<Long, Long> anchorToId : _anchorsToIds.entrySet()) {
+        out.writeInt(anchorsToIds.size(), true);
+        for (Entry<Long, Long> anchorToId : anchorsToIds.entrySet()) {
             out.writeLong(anchorToId.getKey());
             out.writeLong(anchorToId.getValue());
         }

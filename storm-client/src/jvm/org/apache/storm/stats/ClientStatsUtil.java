@@ -42,7 +42,7 @@ public class ClientStatsUtil {
     public static final IdentityTransformer IDENTITY = new IdentityTransformer();
 
     /**
-     * Convert a List<Long> executor to java List<Integer>.
+     * Convert a List&lt;Long&gt; executor to java List&lt;Integer&gt;.
      */
     public static List<Integer> convertExecutor(List<Long> executor) {
         return Lists.newArrayList(executor.get(0).intValue(), executor.get(1).intValue());
@@ -50,8 +50,8 @@ public class ClientStatsUtil {
 
     /**
      * Make an map of executors to empty stats, in preparation for doing a heartbeat.
-     * @param executors the executors as keys of the map.
-     * @return and empty map of executors to stats.
+     * @param executors the executors as keys of the map
+     * @return and empty map of executors to stats
      */
     public static Map<List<Integer>, ExecutorStats> mkEmptyExecutorZkHbs(Set<List<Long>> executors) {
         Map<List<Integer>, ExecutorStats> ret = new HashMap<>();
@@ -77,8 +77,8 @@ public class ClientStatsUtil {
      * Create a new worker heartbeat for zookeeper.
      * @param topoId the topology id
      * @param executorStats the stats for the executors
-     * @param uptime the uptime for the worker.
-     * @return the heartbeat map.
+     * @param uptime the uptime for the worker
+     * @return the heartbeat map
      */
     public static Map<String, Object> mkZkWorkerHb(String topoId, Map<List<Integer>, ExecutorStats> executorStats, Integer uptime) {
         Map<String, Object> ret = new HashMap<>();
@@ -105,8 +105,8 @@ public class ClientStatsUtil {
     /**
      * Get a sub-map by a given key.
      * @param map the original map
-     * @param key the key to get it from.
-     * @return the map stored under key.
+     * @param key the key to get it from
+     * @return the map stored under key
      */
     public static <K, V> Map<K, V> getMapByKey(Map map, String key) {
         if (map == null) {
@@ -174,7 +174,6 @@ public class ClientStatsUtil {
 
     /**
      * Provides a way to transform one key into another.
-     * @param <T>
      */
     interface KeyTransformer<T> {
         T transform(Object key);

@@ -18,7 +18,6 @@
 
 package org.apache.storm.hbase.trident.mapper;
 
-
 import java.io.Serializable;
 import org.apache.storm.hbase.common.ColumnList;
 import org.apache.storm.trident.tuple.TridentTuple;
@@ -31,17 +30,11 @@ public interface TridentHBaseMapper extends Serializable {
 
     /**
      * Given a tuple, return the HBase rowkey.
-     *
-     * @param tuple
-     * @return
      */
     byte[] rowKey(TridentTuple tuple);
 
     /**
      * Given a tuple, return a list of HBase columns to insert.
-     *
-     * @param tuple
-     * @return
      */
     ColumnList columns(TridentTuple tuple);
 }

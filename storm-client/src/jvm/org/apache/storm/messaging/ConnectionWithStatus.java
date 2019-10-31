@@ -15,11 +15,11 @@ package org.apache.storm.messaging;
 public abstract class ConnectionWithStatus implements IConnection {
 
     /**
-     * whether this connection is available to transfer data
+     * whether this connection is available to transfer data.
      */
     public abstract Status status();
 
-    public static enum Status {
+    public enum Status {
 
         /**
          * we are establishing a active connection with target host. The new data sending request can be buffered for future sending, or

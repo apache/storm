@@ -234,6 +234,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
         }
 
         @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             LOG.info("Preparing HBase State for partition {} of {}.", partitionIndex + 1, numPartitions);
             IBackingMap state = new HBaseMapState(options, conf, partitionIndex);

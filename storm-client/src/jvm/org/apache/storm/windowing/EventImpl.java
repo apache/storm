@@ -38,9 +38,9 @@ public class EventImpl<T> implements Event<T> {
 
     @Override
     public String toString() {
-        return "EventImpl{" +
-               "event=" + event +
-               ", ts=" + ts +
-               '}';
+        return "EventImpl{"
+                + "event=" + event
+                + ", ts=" + ts
+                + '}';
     }
 }

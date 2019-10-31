@@ -12,12 +12,12 @@
 
 package org.apache.storm.trident.topology.state;
 
-
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
@@ -31,6 +31,7 @@ import org.apache.storm.shade.org.json.simple.parser.ParseException;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +42,8 @@ import org.slf4j.LoggerFactory;
 public class TransactionalState {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalState.class);
 
-    CuratorFramework _curator;
-    List<ACL> _zkAcls = null;
+    CuratorFramework curator;
+    List<ACL> zkAcls = null;
 
     protected TransactionalState(Map<String, Object> conf, String id, String subroot) {
         try {
@@ -54,18 +55,20 @@ public class TransactionalState {
             Object port = getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_PORT, Config.STORM_ZOOKEEPER_PORT);
             ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);
             CuratorFramework initter = CuratorUtils.newCuratorStarted(conf, servers, port, auth, DaemonType.WORKER.getDefaultZkAcls(conf));
-            _zkAcls = Utils.getWorkerACL(conf);
+            zkAcls = Utils.getWorkerACL(conf);
             try {
                 TransactionalState.createNode(initter, transactionalRoot, null, null, null);
             } catch (KeeperException.NodeExistsException e) {
+                //ignore
             }
             try {
-                TransactionalState.createNode(initter, rootDir, null, _zkAcls, null);
+                TransactionalState.createNode(initter, rootDir, null, zkAcls, null);
             } catch (KeeperException.NodeExistsException e) {
+                //ignore
             }
             initter.close();
 
-            _curator = CuratorUtils.newCuratorStarted(conf, servers, port, rootDir, auth, DaemonType.WORKER.getDefaultZkAcls(conf));
+            curator = CuratorUtils.newCuratorStarted(conf, servers, port, rootDir, auth, DaemonType.WORKER.getDefaultZkAcls(conf));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -117,10 +120,10 @@ public class TransactionalState {
             throw new RuntimeException(e);
         }
         try {
-            if (_curator.checkExists().forPath(path) != null) {
-                _curator.setData().forPath(path, ser);
+            if (curator.checkExists().forPath(path) != null) {
+                curator.setData().forPath(path, ser);
             } else {
-                TransactionalState.createNode(_curator, path, ser, _zkAcls,
+                TransactionalState.createNode(curator, path, ser, zkAcls,
                                               CreateMode.PERSISTENT);
             }
         } catch (KeeperException.NodeExistsException nne) {
@@ -133,7 +136,7 @@ public class TransactionalState {
     public void delete(String path) {
         path = "/" + path;
         try {
-            _curator.delete().forPath(path);
+            curator.delete().forPath(path);
         } catch (KeeperException.NoNodeException nne) {
             LOG.warn("Path {} already deleted.");
         } catch (Exception e) {
@@ -146,10 +149,10 @@ public class TransactionalState {
         path = "/" + path;
         try {
             List<String> children;
-            if (_curator.checkExists().forPath(path) == null) {
+            if (curator.checkExists().forPath(path) == null) {
                 children = new ArrayList<>();
             } else {
-                children = _curator.getChildren().forPath(path);
+                children = curator.getChildren().forPath(path);
             }
             LOG.debug("List [path = {}], [children = {}]", path, children);
             return children;
@@ -166,11 +169,11 @@ public class TransactionalState {
         path = "/" + path;
         try {
             Object data;
-            if (_curator.checkExists().forPath(path) != null) {
+            if (curator.checkExists().forPath(path) != null) {
                 // Use parseWithException instead of parse so we can capture deserialization errors in the log.
                 // They are likely to be bugs in the spout code.
                 try {
-                    data = JSONValue.parseWithException(new String(_curator.getData().forPath(path), "UTF-8"));
+                    data = JSONValue.parseWithException(new String(curator.getData().forPath(path), "UTF-8"));
                 } catch (ParseException e) {
                     LOG.warn("Failed to deserialize zookeeper data for path {}", path, e);
                     data = null;
@@ -186,7 +189,7 @@ public class TransactionalState {
     }
 
     public void close() {
-        _curator.close();
+        curator.close();
     }
 
     private Object getWithBackup(Map<String, Object> amap, String primary, String backup) {

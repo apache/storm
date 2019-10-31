@@ -17,13 +17,13 @@ import java.util.Map;
 /**
  * Nimbus could be configured with an authorization plugin. If not specified, all requests are authorized.
  *
- * You could specify the authorization plugin via storm parameter. For example:
+ * <p>You could specify the authorization plugin via storm parameter. For example:
  *
- * ``` storm -c nimbus.authorization.class=org.apache.storm.security.auth.NoopAuthorizer ... ```
+ * <p>``` storm -c nimbus.authorization.class=org.apache.storm.security.auth.NoopAuthorizer ... ```
  *
- * You could also specify it via storm.yaml:
+ * <p>You could also specify it via storm.yaml:
  *
- * ```yaml nimbus.authorization.class: org.apache.storm.security.auth.NoopAuthorizer ```
+ * <p>```yaml nimbus.authorization.class: org.apache.storm.security.auth.NoopAuthorizer ```
  */
 public interface IAuthorizer {
     /**
@@ -41,5 +41,5 @@ public interface IAuthorizer {
      * @param topoConf  configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
-    public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf);
+    boolean permit(ReqContext context, String operation, Map<String, Object> topoConf);
 }

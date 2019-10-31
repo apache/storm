@@ -101,6 +101,7 @@ public class StringMetadataCache implements LruMap.CacheEvictionCallback<String,
      * @param s   The string to look for
      * @return the metadata associated with the string or null if not found
      */
+    @Override
     public StringMetadata get(String s) {
         return lruStringCache.get(s);
     }
@@ -108,16 +109,17 @@ public class StringMetadataCache implements LruMap.CacheEvictionCallback<String,
     /**
      * Add the string metadata to the cache.
      *
-     * NOTE: this can cause data to be evicted from the cache when full.  When this occurs, the evictionCallback() method
+     * <p>NOTE: this can cause data to be evicted from the cache when full.  When this occurs, the evictionCallback() method
      * is called to store the metadata back into the RocksDB database.
      *
-     * This method is only exposed to the WritableStringMetadataCache interface.
+     * <p>This method is only exposed to the WritableStringMetadataCache interface.
      *
      * @param s   The string to add
      * @param stringMetadata  The string's metadata
      * @param newEntry   Indicates the metadata is being used for the first time and should be written to RocksDB immediately
      * @throws MetricException   when evicted data fails to save to the database or when the database is shutdown
      */
+    @Override
     public void put(String s, StringMetadata stringMetadata, boolean newEntry) throws MetricException {
         if (dbWriter.isShutdown()) {
             // another thread could be writing out the metadata cache to the database.
@@ -142,6 +144,7 @@ public class StringMetadataCache implements LruMap.CacheEvictionCallback<String,
      * @param val  The evicted string's metadata
      * @throws RuntimeException   when evicted data fails to save to the database
      */
+    @Override
     public void evictionCallback(String key, StringMetadata val) {
         writeMetadataToDisk(key, val);
     }
@@ -168,6 +171,7 @@ public class StringMetadataCache implements LruMap.CacheEvictionCallback<String,
      * @param stringId   The string Id to check
      * @return true if the Id is in the cache, false otherwise
      */
+    @Override
     public boolean contains(Integer stringId) {
         return hashToString.containsKey(stringId);
     }
@@ -178,6 +182,7 @@ public class StringMetadataCache implements LruMap.CacheEvictionCallback<String,
      * @param stringId   The string Id to check
      * @return the associated string if the Id is in the cache, null otherwise
      */
+    @Override
     public String getMetadataString(Integer stringId) {
         return hashToString.get(stringId);
     }
@@ -187,6 +192,7 @@ public class StringMetadataCache implements LruMap.CacheEvictionCallback<String,
      *
      * @return the string metadata map entrySet
      */
+    @Override
     public Set<Map.Entry<String, StringMetadata>> entrySet() {
         return lruStringCache.entrySet();
     }

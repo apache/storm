@@ -25,7 +25,9 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.DRPCClient;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class ManualDRPC {
+
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 

@@ -19,44 +19,44 @@ import java.util.function.Supplier;
 /**
  * This interface needs to be implemented for messaging plugin.
  *
- * Messaging plugin is specified via Storm config parameter, storm.messaging.transport.
+ * <p>Messaging plugin is specified via Storm config parameter, storm.messaging.transport.
  *
- * A messaging plugin should have a default constructor and implements IContext interface. Upon construction, we will invoke
+ * <p>A messaging plugin should have a default constructor and implements IContext interface. Upon construction, we will invoke
  * IContext::prepare(topoConf) to enable context to be configured according to storm configuration.
  */
 public interface IContext {
     /**
-     * This method is invoked at the startup of messaging plugin
+     * This method is invoked at the startup of messaging plugin.
      *
      * @param topoConf storm configuration
      */
     void prepare(Map<String, Object> topoConf);
 
     /**
-     * This method is invoked when a worker is unloading a messaging plugin
+     * This method is invoked when a worker is unloading a messaging plugin.
      */
     void term();
 
     /**
-     * This method establishes a server side connection
+     * This method establishes a server side connection.
      *
-     * @param storm_id topology ID
+     * @param stormId topology ID
      * @param port     port #
      * @param cb The callback to deliver received messages to
      * @param newConnectionResponse Supplier of the initial message to send to new client connections
      * @return server side connection
      */
-    IConnection bind(String storm_id, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse);
+    IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse);
 
     /**
      * This method establish a client side connection to a remote server
-     * implementation should return a new connection every call
+     * implementation should return a new connection every call.
      *
-     * @param storm_id       topology ID
+     * @param stormId       topology ID
      * @param host           remote host
      * @param port           remote port
      * @param remoteBpStatus array of booleans reflecting Back Pressure status of remote tasks.
      * @return client side connection
      */
-    IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus);
+    IConnection connect(String stormId, String host, int port, AtomicBoolean[] remoteBpStatus);
 }

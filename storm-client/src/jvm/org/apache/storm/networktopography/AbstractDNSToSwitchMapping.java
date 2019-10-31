@@ -19,14 +19,16 @@ import java.util.Set;
 /**
  * This is a base class for DNS to Switch mappings.
  *
- * It is not mandatory to derive {@link DNSToSwitchMapping} implementations from it, but it is strongly recommended, as it makes it easy for
- * the developers to add new methods to this base class that are automatically picked up by all implementations.
+ * <p>It is not mandatory to derive {@link DNSToSwitchMapping} implementations from it, but it is strongly recommended,
+ * as it makes it easy for the developers to add new methods to this base class that are automatically picked up by all
+ * implementations.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public abstract class AbstractDNSToSwitchMapping
     implements DNSToSwitchMapping {
 
     /**
-     * Create an unconfigured instance
+     * Create an unconfigured instance.
      */
     protected AbstractDNSToSwitchMapping() {
     }
@@ -42,7 +44,7 @@ public abstract class AbstractDNSToSwitchMapping
     }
 
     /**
-     * Get a copy of the map (for diagnostics)
+     * Get a copy of the map (for diagnostics).
      *
      * @return a clone of the map or null for none known
      */

@@ -29,26 +29,27 @@ import org.apache.storm.utils.Utils;
 
 public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Object>>>>, IFeeder {
 
-    String _id;
-    String _semaphoreId;
-    Fields _outFields;
-    boolean _waitToEmit = true;
+    String id;
+    String semaphoreId;
+    Fields outFields;
+    boolean waitToEmit = true;
 
 
     public FeederBatchSpout(List<String> fields) {
-        _outFields = new Fields(fields);
-        _id = RegisteredGlobalState.registerState(new CopyOnWriteArrayList());
-        _semaphoreId = RegisteredGlobalState.registerState(new CopyOnWriteArrayList());
+        outFields = new Fields(fields);
+        id = RegisteredGlobalState.registerState(new CopyOnWriteArrayList());
+        semaphoreId = RegisteredGlobalState.registerState(new CopyOnWriteArrayList());
     }
 
     public void setWaitToEmit(boolean trueIfWait) {
-        _waitToEmit = trueIfWait;
+        waitToEmit = trueIfWait;
     }
 
+    @Override
     public void feed(Object tuples) {
         Semaphore sem = new Semaphore(0);
-        ((List) RegisteredGlobalState.getState(_semaphoreId)).add(sem);
-        ((List) RegisteredGlobalState.getState(_id)).add(tuples);
+        ((List) RegisteredGlobalState.getState(semaphoreId)).add(sem);
+        ((List) RegisteredGlobalState.getState(id)).add(tuples);
         try {
             sem.acquire();
         } catch (InterruptedException e) {
@@ -63,7 +64,7 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
 
     @Override
     public Fields getOutputFields() {
-        return _outFields;
+        return outFields;
     }
 
     @Override
@@ -83,15 +84,15 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
 
     private static class FeederEmitter implements ITridentSpout.Emitter<Map<Integer, List<List<Object>>>> {
 
-        int _index;
+        int index;
 
-        public FeederEmitter(int index) {
-            _index = index;
+        FeederEmitter(int index) {
+            this.index = index;
         }
 
         @Override
         public void emitBatch(TransactionAttempt tx, Map<Integer, List<List<Object>>> coordinatorMeta, TridentCollector collector) {
-            List<List<Object>> tuples = coordinatorMeta.get(_index);
+            List<List<Object>> tuples = coordinatorMeta.get(index);
             if (tuples != null) {
                 for (List<Object> t : tuples) {
                     collector.emit(t);
@@ -110,13 +111,13 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
 
     public class FeederCoordinator implements ITridentSpout.BatchCoordinator<Map<Integer, List<List<Object>>>> {
 
-        int _numPartitions;
-        int _emittedIndex = 0;
+        int numPartitions;
+        int emittedIndex = 0;
         Map<Long, Integer> txIndices = new HashMap();
-        int _masterEmitted = 0;
+        int masterEmitted = 0;
 
         public FeederCoordinator(int numPartitions) {
-            _numPartitions = numPartitions;
+            this.numPartitions = numPartitions;
         }
 
         @Override
@@ -125,21 +126,21 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
             if (currMetadata != null) {
                 return currMetadata;
             }
-            List allBatches = (List) RegisteredGlobalState.getState(_id);
-            if (allBatches.size() > _emittedIndex) {
-                Object batchInfo = allBatches.get(_emittedIndex);
-                txIndices.put(txid, _emittedIndex);
-                _emittedIndex += 1;
+            List allBatches = (List) RegisteredGlobalState.getState(id);
+            if (allBatches.size() > emittedIndex) {
+                Object batchInfo = allBatches.get(emittedIndex);
+                txIndices.put(txid, emittedIndex);
+                emittedIndex += 1;
                 if (batchInfo instanceof Map) {
                     return (Map) batchInfo;
                 } else {
                     List batchList = (List) batchInfo;
                     Map<Integer, List<List<Object>>> partitions = new HashMap();
-                    for (int i = 0; i < _numPartitions; i++) {
+                    for (int i = 0; i < numPartitions; i++) {
                         partitions.put(i, new ArrayList());
                     }
                     for (int i = 0; i < batchList.size(); i++) {
-                        int partition = i % _numPartitions;
+                        int partition = i % numPartitions;
                         partitions.get(partition).add((List) batchList.get(i));
                     }
                     return partitions;
@@ -157,19 +158,19 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
         public void success(long txid) {
             Integer index = txIndices.get(txid);
             if (index != null) {
-                Semaphore sem = (Semaphore) ((List) RegisteredGlobalState.getState(_semaphoreId)).get(index);
+                Semaphore sem = (Semaphore) ((List) RegisteredGlobalState.getState(semaphoreId)).get(index);
                 sem.release();
             }
         }
 
         @Override
         public boolean isReady(long txid) {
-            if (!_waitToEmit) {
+            if (!waitToEmit) {
                 return true;
             }
-            List allBatches = (List) RegisteredGlobalState.getState(_id);
-            if (allBatches.size() > _masterEmitted) {
-                _masterEmitted++;
+            List allBatches = (List) RegisteredGlobalState.getState(id);
+            if (allBatches.size() > masterEmitted) {
+                masterEmitted++;
                 return true;
             } else {
                 Utils.sleep(2);

@@ -18,6 +18,8 @@
 
 package org.apache.storm.daemon.common;
 
+import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,8 +31,6 @@ import javax.ws.rs.ext.Provider;
 
 import org.apache.storm.generated.AuthorizationException;
 import org.json.simple.JSONValue;
-
-import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
 
 @Provider
 public class AuthorizationExceptionMapper implements ExceptionMapper<AuthorizationException> {

@@ -74,7 +74,7 @@ public class SetLogLevel {
 
         private LogLevelAction action;
 
-        public LogLevelsParser(LogLevelAction action) {
+        LogLevelsParser(LogLevelAction action) {
             this.action = action;
         }
 

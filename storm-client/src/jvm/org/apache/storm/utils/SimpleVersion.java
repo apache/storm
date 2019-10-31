@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
  */
 public class SimpleVersion implements Comparable<SimpleVersion> {
     private static final Pattern VERSION_PATTERN = Pattern.compile("^(\\d+)[\\.\\-\\_]+(\\d+).*$");
-    private final int _major;
-    private final int _minor;
+    private final int major;
+    private final int minor;
 
     public SimpleVersion(String version) {
         Matcher m = VERSION_PATTERN.matcher(version);
@@ -36,21 +36,21 @@ public class SimpleVersion implements Comparable<SimpleVersion> {
             maj = Integer.valueOf(m.group(1));
             min = Integer.valueOf(m.group(2));
         }
-        _major = maj;
-        _minor = min;
+        major = maj;
+        minor = min;
     }
 
     public int getMajor() {
-        return _major;
+        return major;
     }
 
     public int getMinor() {
-        return _minor;
+        return minor;
     }
 
     @Override
     public int hashCode() {
-        return (Integer.hashCode(_major) * 17) & Integer.hashCode(_minor);
+        return (Integer.hashCode(major) * 17) & Integer.hashCode(minor);
     }
 
     @Override
@@ -68,15 +68,15 @@ public class SimpleVersion implements Comparable<SimpleVersion> {
 
     @Override
     public int compareTo(SimpleVersion o) {
-        int ret = Integer.compare(_major, o._major);
+        int ret = Integer.compare(major, o.major);
         if (ret == 0) {
-            ret = Integer.compare(_minor, o._minor);
+            ret = Integer.compare(minor, o.minor);
         }
         return ret;
     }
 
     @Override
     public String toString() {
-        return _major + "." + _minor;
+        return major + "." + minor;
     }
 }

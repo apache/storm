@@ -19,20 +19,20 @@ import java.security.Principal;
  */
 public class SingleUserPrincipal implements Principal {
 
-    private final String _userName;
+    private final String userName;
 
     public SingleUserPrincipal(String userName) {
-        _userName = userName;
+        this.userName = userName;
     }
 
     @Override
     public boolean equals(Object another) {
-        return another instanceof SingleUserPrincipal && _userName.equals(((SingleUserPrincipal) another)._userName);
+        return another instanceof SingleUserPrincipal && userName.equals(((SingleUserPrincipal) another).userName);
     }
 
     @Override
     public String getName() {
-        return _userName;
+        return userName;
     }
 
     @Override
@@ -42,6 +42,6 @@ public class SingleUserPrincipal implements Principal {
 
     @Override
     public int hashCode() {
-        return _userName.hashCode();
+        return userName.hashCode();
     }
 }

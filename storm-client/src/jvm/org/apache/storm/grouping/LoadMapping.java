@@ -17,12 +17,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Holds a list of the current loads
+ * Holds a list of the current loads.
  */
 public class LoadMapping {
     private static final Load NOT_CONNECTED = new Load(false, 1.0, 1.0);
-    private final AtomicReference<Map<Integer, Load>> _local = new AtomicReference<Map<Integer, Load>>(new HashMap<Integer, Load>());
-    private final AtomicReference<Map<Integer, Load>> _remote = new AtomicReference<Map<Integer, Load>>(new HashMap<Integer, Load>());
+    private final AtomicReference<Map<Integer, Load>> local = new AtomicReference<Map<Integer, Load>>(new HashMap<Integer, Load>());
+    private final AtomicReference<Map<Integer, Load>> remote = new AtomicReference<Map<Integer, Load>>(new HashMap<Integer, Load>());
 
     public void setLocal(Map<Integer, Double> local) {
         Map<Integer, Load> newLocal = new HashMap<Integer, Load>();
@@ -31,21 +31,21 @@ public class LoadMapping {
                 newLocal.put(entry.getKey(), new Load(true, entry.getValue(), 0.0));
             }
         }
-        _local.set(newLocal);
+        this.local.set(newLocal);
     }
 
     public void setRemote(Map<Integer, Load> remote) {
         if (remote != null) {
-            _remote.set(new HashMap<Integer, Load>(remote));
+            this.remote.set(new HashMap<Integer, Load>(remote));
         } else {
-            _remote.set(new HashMap<Integer, Load>());
+            this.remote.set(new HashMap<Integer, Load>());
         }
     }
 
     public Load getLoad(int task) {
-        Load ret = _local.get().get(task);
+        Load ret = local.get().get(task);
         if (ret == null) {
-            ret = _remote.get().get(task);
+            ret = remote.get().get(task);
         }
         if (ret == null) {
             ret = NOT_CONNECTED;

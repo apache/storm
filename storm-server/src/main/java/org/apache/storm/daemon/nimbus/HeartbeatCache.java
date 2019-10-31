@@ -49,7 +49,7 @@ public class HeartbeatCache {
         private Integer nimbusTimeSecs;
         private Integer executorReportedTimeSecs;
 
-        public ExecutorCache(Map<String, Object> newBeat) {
+        ExecutorCache(Map<String, Object> newBeat) {
             if (newBeat != null) {
                 executorReportedTimeSecs = (Integer) newBeat.getOrDefault(ClientStatsUtil.TIME_SECS, 0);
             } else {

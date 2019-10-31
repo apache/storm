@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -126,11 +127,16 @@ public class ServerUtils {
         return null;
     }
 
-    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf,
+            NimbusInfo nimbusInfo,
+            ILeaderElector leaderElector) {
         return getNimbusBlobStore(conf, null, nimbusInfo, leaderElector);
     }
 
-    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf,
+            String baseDir,
+            NimbusInfo nimbusInfo,
+            ILeaderElector leaderElector) {
         String type = (String)conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
         if (type == null) {
             type = LocalFsBlobStore.class.getName();
@@ -174,7 +180,7 @@ public class ServerUtils {
      * @param dir The input dir to get the disk space of this local dir
      * @return The total disk space of the input local directory
      */
-    public static long getDU(File dir) {
+    public static long getDiskUsage(File dir) {
         long size = 0;
         if (!dir.exists()) {
             return 0;
@@ -192,7 +198,7 @@ public class ServerUtils {
                         isSymLink = true;
                     }
                     if (!isSymLink) {
-                        size += getDU(allFiles[i]);
+                        size += getDiskUsage(allFiles[i]);
                     }
                 }
             }
@@ -214,13 +220,6 @@ public class ServerUtils {
 
     /**
      * Meant to be called only by the supervisor for stormjar/stormconf/stormcode files.
-     *
-     * @param key
-     * @param localFile
-     * @param cb
-     * @throws AuthorizationException
-     * @throws KeyNotFoundException
-     * @throws IOException
      */
     public static void downloadResourcesAsSupervisor(String key, String localFile,
                                                      ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
@@ -234,6 +233,14 @@ public class ServerUtils {
      */
     public static String currentClasspath() {
         return _instance.currentClasspathImpl();
+    }
+
+
+    /**
+     *  Returns the current thread classloader.
+     */
+    public static URL getResourceFromClassloader(String name) {
+        return _instance.getResourceFromClassloaderImpl(name);
     }
 
     /**
@@ -384,8 +391,7 @@ public class ServerUtils {
      */
     private static void ensureDirectory(File dir) throws IOException {
         if (!dir.mkdirs() && !dir.isDirectory()) {
-            throw new IOException("Mkdirs failed to create " +
-                                  dir.toString());
+            throw new IOException("Mkdirs failed to create " + dir.toString());
         }
     }
 
@@ -394,10 +400,9 @@ public class ServerUtils {
      * <p/>
      * This utility will untar ".tar" files and ".tar.gz","tgz" files.
      *
-     * @param inFile   The tar file as input.
-     * @param untarDir The untar directory where to untar the tar file.
-     * @param symlinksDisabled true if symlinks should be disabled, else false.
-     * @throws IOException
+     * @param inFile   The tar file as input
+     * @param untarDir The untar directory where to untar the tar file
+     * @param symlinksDisabled true if symlinks should be disabled, else false
      */
     public static void unTar(File inFile, File untarDir, boolean symlinksDisabled) throws IOException {
         ensureDirectory(untarDir);
@@ -437,8 +442,10 @@ public class ServerUtils {
         shexec.execute();
         int exitcode = shexec.getExitCode();
         if (exitcode != 0) {
-            throw new IOException("Error untarring file " + inFile +
-                                  ". Tar process exited with exit code " + exitcode);
+            throw new IOException("Error untarring file "
+                    + inFile
+                    + ". Tar process exited with exit code "
+                    + exitcode);
         }
     }
 
@@ -548,18 +555,18 @@ public class ServerUtils {
 
     public static void unpack(File localrsrc, File dst, boolean symLinksDisabled) throws IOException {
         String lowerDst = localrsrc.getName().toLowerCase();
-        if (lowerDst.endsWith(".jar") ||
-            lowerDst.endsWith("_jar")) {
+        if (lowerDst.endsWith(".jar")
+                || lowerDst.endsWith("_jar")) {
             unJar(localrsrc, dst);
-        } else if (lowerDst.endsWith(".zip") ||
-            lowerDst.endsWith("_zip")) {
+        } else if (lowerDst.endsWith(".zip")
+                || lowerDst.endsWith("_zip")) {
             unZip(localrsrc, dst);
-        } else if (lowerDst.endsWith(".tar.gz") ||
-            lowerDst.endsWith("_tar_gz") ||
-            lowerDst.endsWith(".tgz") ||
-            lowerDst.endsWith("_tgz") ||
-            lowerDst.endsWith(".tar") ||
-            lowerDst.endsWith("_tar")) {
+        } else if (lowerDst.endsWith(".tar.gz")
+                || lowerDst.endsWith("_tar_gz")
+                || lowerDst.endsWith(".tgz")
+                || lowerDst.endsWith("_tgz")
+                || lowerDst.endsWith(".tar")
+                || lowerDst.endsWith("_tar")) {
             unTar(localrsrc, dst, symLinksDisabled);
         } else {
             LOG.warn("Cannot unpack " + localrsrc);
@@ -577,10 +584,10 @@ public class ServerUtils {
      * Extracts the given file to the given directory. Only zip entries starting with the given prefix are extracted.
      * The prefix is stripped off entry names before extraction.
      *
-     * @param zipFile The zip file to extract.
-     * @param toDir The directory to extract to.
+     * @param zipFile The zip file to extract
+     * @param toDir The directory to extract to
      * @param prefix The prefix to look for in the zip file. If not null only paths starting with the prefix will be
-     * extracted.
+     *     extracted
      */
     public static void extractZipFile(ZipFile zipFile, File toDir, String prefix) throws IOException {
         ensureDirectory(toDir);
@@ -622,8 +629,7 @@ public class ServerUtils {
      * Given a File input it will unzip the file in a the unzip directory passed as the second parameter.
      *
      * @param inFile   The zip file as input
-     * @param toDir The unzip directory where to unzip the zip file.
-     * @throws IOException
+     * @param toDir The unzip directory where to unzip the zip file
      */
     public static void unZip(File inFile, File toDir) throws IOException {
         try (ZipFile zipFile = new ZipFile(inFile)) {
@@ -633,12 +639,10 @@ public class ServerUtils {
 
     /**
      * Given a zip File input it will return its size Only works for zip files whose uncompressed size is less than 4 GB, otherwise returns
-     * the size module 2^32, per gzip specifications
+     * the size module 2^32, per gzip specifications.
      *
      * @param myFile The zip file as input
      * @return zip file size as a long
-     *
-     * @throws IOException
      */
     public static long zipFileSize(File myFile) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(myFile, "r")) {
@@ -685,7 +689,7 @@ public class ServerUtils {
      * @param conf The configuration
      * @return True if it's resource aware; false otherwise
      */
-    public static boolean isRAS(Map<String, Object> conf) {
+    public static boolean isRas(Map<String, Object> conf) {
         if (conf.containsKey(DaemonConfig.STORM_SCHEDULER)) {
             if (conf.get(DaemonConfig.STORM_SCHEDULER).equals("org.apache.storm.scheduler.resource.ResourceAwareScheduler")) {
                 return true;
@@ -694,7 +698,7 @@ public class ServerUtils {
         return false;
     }
 
-    public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology)
+    public static int getEstimatedWorkerCountForRasTopo(Map<String, Object> topoConf, StormTopology topology)
         throws InvalidTopologyException {
         Double defaultWorkerMaxHeap = ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB), 768d);
         Double topologyWorkerMaxHeap = ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeap);
@@ -753,15 +757,20 @@ public class ServerUtils {
         return System.getProperty("java.class.path");
     }
 
+
+    public URL getResourceFromClassloaderImpl(String name) {
+        return Thread.currentThread().getContextClassLoader().getResource(name);
+    }
+
     public void downloadResourcesAsSupervisorImpl(String key, String localFile,
                                                   ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
-        final int MAX_RETRY_ATTEMPTS = 2;
-        final int ATTEMPTS_INTERVAL_TIME = 100;
-        for (int retryAttempts = 0; retryAttempts < MAX_RETRY_ATTEMPTS; retryAttempts++) {
+        final int maxRetryAttempts = 2;
+        final int attemptsIntervalTime = 100;
+        for (int retryAttempts = 0; retryAttempts < maxRetryAttempts; retryAttempts++) {
             if (downloadResourcesAsSupervisorAttempt(cb, key, localFile)) {
                 break;
             }
-            Utils.sleep(ATTEMPTS_INTERVAL_TIME);
+            Utils.sleep(attemptsIntervalTime);
         }
     }
 }

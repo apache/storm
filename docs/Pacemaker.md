@@ -19,7 +19,7 @@ The corresponding Pacemaker client is a plugin for the `ClusterState` interface,
  - `pacemaker.servers` : The hosts that the Pacemaker daemons are running on
  - `pacemaker.port` : The port that Pacemaker will listen on
  - `pacemaker.max.threads` : Maximum number of threads Pacemaker daemon will use to handle requests.
- - `pacemaker.childopts` : Any JVM parameters that need to go to the Pacemaker. (used by storm-deploy project)
+ - `pacemaker.childopts` : Any JVM parameters that need to go to the Pacemaker. 
  - `pacemaker.auth.method` : The authentication method that is used (more info below)
 
 #### Example

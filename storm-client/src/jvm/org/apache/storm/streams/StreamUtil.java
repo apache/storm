@@ -12,12 +12,12 @@
 
 package org.apache.storm.streams;
 
+import static org.apache.storm.streams.WindowNode.PUNCTUATION;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.storm.shade.org.jgrapht.DirectedGraph;
 import org.apache.storm.tuple.Fields;
-
-import static org.apache.storm.streams.WindowNode.PUNCTUATION;
 
 public class StreamUtil {
     @SuppressWarnings("unchecked")

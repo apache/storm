@@ -15,8 +15,8 @@ package org.apache.storm.metric.internal;
 import java.util.Timer;
 
 /**
- * Just holds a singleton metric/stat timer for use by metric/stat calculations
+ * Just holds a singleton metric/stat timer for use by metric/stat calculations.
  */
 class MetricStatTimer {
-    static Timer _timer = new Timer("metric/stat timer", true);
+    static Timer timer = new Timer("metric/stat timer", true);
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.supervisor;
 
 import java.util.Optional;
@@ -21,17 +22,14 @@ import org.apache.storm.metric.StormMetricsRegistry;
 
 public class ContainerMemoryTracker {
 
-    private final ConcurrentHashMap<Integer, TopoAndMemory> usedMemory =
-        new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Integer, TopoAndMemory> reservedMemory =
-        new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, TopoAndMemory> usedMemory = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, TopoAndMemory> reservedMemory = new ConcurrentHashMap<>();
 
     public ContainerMemoryTracker(StormMetricsRegistry metricsRegistry) {
         metricsRegistry.registerGauge(
             "supervisor:current-used-memory-mb",
             () -> {
-                Long val =
-                usedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
+                Long val = usedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
                 int ret = val.intValue();
                 if (val > Integer.MAX_VALUE) { // Would only happen at 2 PB so we are OK for now
                     ret = Integer.MAX_VALUE;
@@ -41,8 +39,7 @@ public class ContainerMemoryTracker {
         metricsRegistry.registerGauge(
             "supervisor:current-reserved-memory-mb",
             () -> {
-                Long val =
-                reservedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
+                Long val = reservedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
                 int ret = val.intValue();
                 if (val > Integer.MAX_VALUE) { // Would only happen at 2 PB so we are OK for now
                     ret = Integer.MAX_VALUE;
@@ -146,7 +143,7 @@ public class ContainerMemoryTracker {
         public final String topoId;
         public final long memory;
 
-        public TopoAndMemory(String id, long mem) {
+        TopoAndMemory(String id, long mem) {
             topoId = id;
             memory = mem;
         }

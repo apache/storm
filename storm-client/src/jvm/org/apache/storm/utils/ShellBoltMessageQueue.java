@@ -44,7 +44,7 @@ public class ShellBoltMessageQueue implements Serializable {
     }
 
     /**
-     * put list of task id to its queue
+     * put list of task id to its queue.
      *
      * @param taskIds task ids that received the tuples
      */
@@ -59,10 +59,9 @@ public class ShellBoltMessageQueue implements Serializable {
     }
 
     /**
-     * put bolt message to its queue
+     * put bolt message to its queue.
      *
      * @param boltMsg BoltMsg to pass to subprocess
-     * @throws InterruptedException
      */
     public void putBoltMsg(BoltMsg boltMsg) throws InterruptedException {
         boltMsgQueue.put(boltMsg);
@@ -81,10 +80,8 @@ public class ShellBoltMessageQueue implements Serializable {
      *
      * @param timeout how long to wait before giving up, in units of unit
      * @param unit    a TimeUnit determining how to interpret the timeout parameter
-     * @return List\<Integer\> if task id is available, BoltMsg if task id is not available but bolt message is available, null if the
+     * @return {@code List<Integer>} if task id is available, BoltMsg if task id is not available but bolt message is available, null if the
      *     specified waiting time elapses before an element is available.
-     *
-     * @throws InterruptedException
      */
     public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
         takeLock.lockInterruptibly();

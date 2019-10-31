@@ -25,13 +25,12 @@ import static org.apache.storm.spout.CheckPointState.State.PREPARING;
  *
  * </pre>
  *
- * During recovery, if a previous transaction is in PREPARING state, it is rolled back since all bolts in the topology might not have
+ * <p>During recovery, if a previous transaction is in PREPARING state, it is rolled back since all bolts in the topology might not have
  * prepared (saved) the data for commit. If the previous transaction is in COMMITTING state, it is rolled forward (committed) since some
  * bolts might have already committed the data.
- * <p>
- * During normal flow, the state transitions from PREPARING to COMMITTING to COMMITTED. In case of failures the prepare/commit operation is
- * retried.
- * </p>
+ *
+ * <p>During normal flow, the state transitions from PREPARING to COMMITTING to COMMITTED. In case of failures the
+ * prepare/commit operation is retried.
  */
 public class CheckPointState {
     private long txid;
@@ -129,10 +128,10 @@ public class CheckPointState {
 
     @Override
     public String toString() {
-        return "CheckPointState{" +
-               "txid=" + txid +
-               ", state=" + state +
-               '}';
+        return "CheckPointState{"
+                + "txid=" + txid
+                + ", state=" + state
+                + '}';
     }
 
     public enum State {
@@ -152,19 +151,19 @@ public class CheckPointState {
 
     public enum Action {
         /**
-         * prepare transaction for commit
+         * prepare transaction for commit.
          */
         PREPARE,
         /**
-         * commit the previously prepared transaction
+         * commit the previously prepared transaction.
          */
         COMMIT,
         /**
-         * rollback the previously prepared transaction
+         * rollback the previously prepared transaction.
          */
         ROLLBACK,
         /**
-         * initialize the state
+         * initialize the state.
          */
         INITSTATE
     }

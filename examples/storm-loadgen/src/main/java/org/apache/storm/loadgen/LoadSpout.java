@@ -41,7 +41,7 @@ public class LoadSpout  extends BaseRichSpout {
     private static class OutputStreamEngineWithHisto extends OutputStreamEngine {
         public final HistogramMetric histogram;
 
-        public OutputStreamEngineWithHisto(OutputStream stats, TopologyContext context) {
+        OutputStreamEngineWithHisto(OutputStream stats, TopologyContext context) {
             super(stats);
             histogram = new HistogramMetric(3600000000000L, 3);
             //TODO perhaps we can adjust the frequency later...

@@ -128,9 +128,9 @@ public class WorkerTokenManager {
      * @param topologyId the topology the credentials are for
      */
     public void upsertWorkerTokensInCredsForTopo(Map<String, String> creds, String user, String topologyId) {
-        Arrays.stream(WorkerTokenServiceType.values()).filter(type -> shouldRenewWorkerToken(creds, type))
-              .forEach(type -> {ClientAuthUtils.setWorkerToken(creds, createOrUpdateTokenFor(type, user, topologyId));
-              });
+        Arrays.stream(WorkerTokenServiceType.values())
+                .filter(type -> shouldRenewWorkerToken(creds, type))
+                .forEach(type -> ClientAuthUtils.setWorkerToken(creds, createOrUpdateTokenFor(type, user, topologyId)));
     }
 
     /**

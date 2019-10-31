@@ -39,6 +39,7 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
   private static final org.apache.storm.thrift.protocol.TField USED_CPU_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("used_cpu", org.apache.storm.thrift.protocol.TType.DOUBLE, (short)9);
   private static final org.apache.storm.thrift.protocol.TField FRAGMENTED_MEM_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("fragmented_mem", org.apache.storm.thrift.protocol.TType.DOUBLE, (short)10);
   private static final org.apache.storm.thrift.protocol.TField FRAGMENTED_CPU_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("fragmented_cpu", org.apache.storm.thrift.protocol.TType.DOUBLE, (short)11);
+  private static final org.apache.storm.thrift.protocol.TField BLACKLISTED_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("blacklisted", org.apache.storm.thrift.protocol.TType.BOOL, (short)12);
 
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new SupervisorSummaryStandardSchemeFactory();
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new SupervisorSummaryTupleSchemeFactory();
@@ -54,6 +55,7 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
   private double used_cpu; // optional
   private double fragmented_mem; // optional
   private double fragmented_cpu; // optional
+  private boolean blacklisted; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
@@ -67,7 +69,8 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     USED_MEM((short)8, "used_mem"),
     USED_CPU((short)9, "used_cpu"),
     FRAGMENTED_MEM((short)10, "fragmented_mem"),
-    FRAGMENTED_CPU((short)11, "fragmented_cpu");
+    FRAGMENTED_CPU((short)11, "fragmented_cpu"),
+    BLACKLISTED((short)12, "blacklisted");
 
     private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -105,6 +108,8 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
           return FRAGMENTED_MEM;
         case 11: // FRAGMENTED_CPU
           return FRAGMENTED_CPU;
+        case 12: // BLACKLISTED
+          return BLACKLISTED;
         default:
           return null;
       }
@@ -153,8 +158,9 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
   private static final int __USED_CPU_ISSET_ID = 4;
   private static final int __FRAGMENTED_MEM_ISSET_ID = 5;
   private static final int __FRAGMENTED_CPU_ISSET_ID = 6;
+  private static final int __BLACKLISTED_ISSET_ID = 7;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.VERSION,_Fields.TOTAL_RESOURCES,_Fields.USED_MEM,_Fields.USED_CPU,_Fields.FRAGMENTED_MEM,_Fields.FRAGMENTED_CPU};
+  private static final _Fields optionals[] = {_Fields.VERSION,_Fields.TOTAL_RESOURCES,_Fields.USED_MEM,_Fields.USED_CPU,_Fields.FRAGMENTED_MEM,_Fields.FRAGMENTED_CPU,_Fields.BLACKLISTED};
   public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -182,6 +188,8 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.DOUBLE)));
     tmpMap.put(_Fields.FRAGMENTED_CPU, new org.apache.storm.thrift.meta_data.FieldMetaData("fragmented_cpu", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.DOUBLE)));
+    tmpMap.put(_Fields.BLACKLISTED, new org.apache.storm.thrift.meta_data.FieldMetaData("blacklisted", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.BOOL)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
     org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(SupervisorSummary.class, metaDataMap);
   }
@@ -234,6 +242,7 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     this.used_cpu = other.used_cpu;
     this.fragmented_mem = other.fragmented_mem;
     this.fragmented_cpu = other.fragmented_cpu;
+    this.blacklisted = other.blacklisted;
   }
 
   public SupervisorSummary deepCopy() {
@@ -261,6 +270,8 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     this.fragmented_mem = 0.0;
     set_fragmented_cpu_isSet(false);
     this.fragmented_cpu = 0.0;
+    set_blacklisted_isSet(false);
+    this.blacklisted = false;
   }
 
   @org.apache.storm.thrift.annotation.Nullable
@@ -524,6 +535,28 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     __isset_bitfield = org.apache.storm.thrift.EncodingUtils.setBit(__isset_bitfield, __FRAGMENTED_CPU_ISSET_ID, value);
   }
 
+  public boolean is_blacklisted() {
+    return this.blacklisted;
+  }
+
+  public void set_blacklisted(boolean blacklisted) {
+    this.blacklisted = blacklisted;
+    set_blacklisted_isSet(true);
+  }
+
+  public void unset_blacklisted() {
+    __isset_bitfield = org.apache.storm.thrift.EncodingUtils.clearBit(__isset_bitfield, __BLACKLISTED_ISSET_ID);
+  }
+
+  /** Returns true if field blacklisted is set (has been assigned a value) and false otherwise */
+  public boolean is_set_blacklisted() {
+    return org.apache.storm.thrift.EncodingUtils.testBit(__isset_bitfield, __BLACKLISTED_ISSET_ID);
+  }
+
+  public void set_blacklisted_isSet(boolean value) {
+    __isset_bitfield = org.apache.storm.thrift.EncodingUtils.setBit(__isset_bitfield, __BLACKLISTED_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
     switch (field) {
     case HOST:
@@ -614,6 +647,14 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       }
       break;
 
+    case BLACKLISTED:
+      if (value == null) {
+        unset_blacklisted();
+      } else {
+        set_blacklisted((java.lang.Boolean)value);
+      }
+      break;
+
     }
   }
 
@@ -653,6 +694,9 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     case FRAGMENTED_CPU:
       return get_fragmented_cpu();
 
+    case BLACKLISTED:
+      return is_blacklisted();
+
     }
     throw new java.lang.IllegalStateException();
   }
@@ -686,6 +730,8 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       return is_set_fragmented_mem();
     case FRAGMENTED_CPU:
       return is_set_fragmented_cpu();
+    case BLACKLISTED:
+      return is_set_blacklisted();
     }
     throw new java.lang.IllegalStateException();
   }
@@ -804,6 +850,15 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
         return false;
     }
 
+    boolean this_present_blacklisted = true && this.is_set_blacklisted();
+    boolean that_present_blacklisted = true && that.is_set_blacklisted();
+    if (this_present_blacklisted || that_present_blacklisted) {
+      if (!(this_present_blacklisted && that_present_blacklisted))
+        return false;
+      if (this.blacklisted != that.blacklisted)
+        return false;
+    }
+
     return true;
   }
 
@@ -848,6 +903,10 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     hashCode = hashCode * 8191 + ((is_set_fragmented_cpu()) ? 131071 : 524287);
     if (is_set_fragmented_cpu())
       hashCode = hashCode * 8191 + org.apache.storm.thrift.TBaseHelper.hashCode(fragmented_cpu);
+
+    hashCode = hashCode * 8191 + ((is_set_blacklisted()) ? 131071 : 524287);
+    if (is_set_blacklisted())
+      hashCode = hashCode * 8191 + ((blacklisted) ? 131071 : 524287);
 
     return hashCode;
   }
@@ -970,6 +1029,16 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
         return lastComparison;
       }
     }
+    lastComparison = java.lang.Boolean.valueOf(is_set_blacklisted()).compareTo(other.is_set_blacklisted());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_blacklisted()) {
+      lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.blacklisted, other.blacklisted);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -1060,6 +1129,12 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       if (!first) sb.append(", ");
       sb.append("fragmented_cpu:");
       sb.append(this.fragmented_cpu);
+      first = false;
+    }
+    if (is_set_blacklisted()) {
+      if (!first) sb.append(", ");
+      sb.append("blacklisted:");
+      sb.append(this.blacklisted);
       first = false;
     }
     sb.append(")");
@@ -1227,6 +1302,14 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 12: // BLACKLISTED
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.BOOL) {
+              struct.blacklisted = iprot.readBool();
+              struct.set_blacklisted_isSet(true);
+            } else { 
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -1301,6 +1384,11 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
         oprot.writeDouble(struct.fragmented_cpu);
         oprot.writeFieldEnd();
       }
+      if (struct.is_set_blacklisted()) {
+        oprot.writeFieldBegin(BLACKLISTED_FIELD_DESC);
+        oprot.writeBool(struct.blacklisted);
+        oprot.writeFieldEnd();
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -1342,7 +1430,10 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       if (struct.is_set_fragmented_cpu()) {
         optionals.set(5);
       }
-      oprot.writeBitSet(optionals, 6);
+      if (struct.is_set_blacklisted()) {
+        optionals.set(6);
+      }
+      oprot.writeBitSet(optionals, 7);
       if (struct.is_set_version()) {
         oprot.writeString(struct.version);
       }
@@ -1368,6 +1459,9 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       if (struct.is_set_fragmented_cpu()) {
         oprot.writeDouble(struct.fragmented_cpu);
       }
+      if (struct.is_set_blacklisted()) {
+        oprot.writeBool(struct.blacklisted);
+      }
     }
 
     @Override
@@ -1383,7 +1477,7 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       struct.set_num_used_workers_isSet(true);
       struct.supervisor_id = iprot.readString();
       struct.set_supervisor_id_isSet(true);
-      java.util.BitSet incoming = iprot.readBitSet(6);
+      java.util.BitSet incoming = iprot.readBitSet(7);
       if (incoming.get(0)) {
         struct.version = iprot.readString();
         struct.set_version_isSet(true);
@@ -1418,6 +1512,10 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       if (incoming.get(5)) {
         struct.fragmented_cpu = iprot.readDouble();
         struct.set_fragmented_cpu_isSet(true);
+      }
+      if (incoming.get(6)) {
+        struct.blacklisted = iprot.readBool();
+        struct.set_blacklisted_isSet(true);
       }
     }
   }

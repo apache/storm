@@ -19,8 +19,6 @@ import org.apache.storm.tuple.Fields;
  * RecordFormat implementation that uses field and record delimiters.
  * By default uses a comma (",") as the field delimiter and a
  * newline ("\n") as the record delimiter.
- *
- *
  */
 public class DelimitedRecordFormat implements RecordFormat {
     public static final String DEFAULT_FIELD_DELIMITER = ",";
@@ -31,9 +29,6 @@ public class DelimitedRecordFormat implements RecordFormat {
 
     /**
      * Only output the specified fields.
-     *
-     * @param fields
-     * @return
      */
     public DelimitedRecordFormat withFields(Fields fields) {
         this.fields = fields;
@@ -42,9 +37,6 @@ public class DelimitedRecordFormat implements RecordFormat {
 
     /**
      * Overrides the default field delimiter.
-     *
-     * @param delimiter
-     * @return
      */
     public DelimitedRecordFormat withFieldDelimiter(String delimiter) {
         this.fieldDelimiter = delimiter;
@@ -53,9 +45,6 @@ public class DelimitedRecordFormat implements RecordFormat {
 
     /**
      * Overrides the default record delimiter.
-     *
-     * @param delimiter
-     * @return
      */
     public DelimitedRecordFormat withRecordDelimiter(String delimiter) {
         this.recordDelimiter = delimiter;

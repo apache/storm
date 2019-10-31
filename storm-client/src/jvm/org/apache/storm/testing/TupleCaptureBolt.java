@@ -17,52 +17,66 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 
-
 public class TupleCaptureBolt implements IRichBolt {
-    public static final transient Map<String, Map<String, List<FixedTuple>>> emitted_tuples = new HashMap<>();
 
-    private String _name;
-    private OutputCollector _collector;
+    /*
+     * Even though normally bolts do not need to care about thread safety, this particular bolt is different.
+     * It maintains a static field that is prepopulated before the topology starts, is written into by the topology,
+     * and is then read from after the topology is completed - all of this by potentially different threads.
+     */
+
+    private static final transient Map<String, Map<String, List<FixedTuple>>> emitted_tuples = new ConcurrentHashMap<>();
+
+    private final String name;
+    private OutputCollector collector;
 
     public TupleCaptureBolt() {
-        _name = UUID.randomUUID().toString();
-        emitted_tuples.put(_name, new HashMap<String, List<FixedTuple>>());
+        name = UUID.randomUUID().toString();
+        emitted_tuples.put(name, new ConcurrentHashMap<String, List<FixedTuple>>());
     }
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        _collector = collector;
+        this.collector = collector;
     }
 
+    @Override
     public void execute(Tuple input) {
         String component = input.getSourceComponent();
-        Map<String, List<FixedTuple>> captured = emitted_tuples.get(_name);
-        if (!captured.containsKey(component)) {
-            captured.put(component, new ArrayList<FixedTuple>());
-        }
-        captured.get(component).add(new FixedTuple(input.getSourceStreamId(), input.getValues()));
-        _collector.ack(input);
+        emitted_tuples.get(name)
+            .compute(component, (String key, List<FixedTuple> tuples) -> {
+                if (tuples == null) {
+                    tuples = new ArrayList<>();
+                }
+                tuples.add(new FixedTuple(input.getSourceStreamId(), input.getValues()));
+                return tuples;
+            });
+        collector.ack(input);
     }
 
     public Map<String, List<FixedTuple>> getResults() {
-        return emitted_tuples.get(_name);
+        return emitted_tuples.get(name);
     }
 
+    @Override
     public void cleanup() {
     }
 
     public Map<String, List<FixedTuple>> getAndRemoveResults() {
-        return emitted_tuples.remove(_name);
+        return emitted_tuples.remove(name);
     }
 
     public Map<String, List<FixedTuple>> getAndClearResults() {
-        Map<String, List<FixedTuple>> ret = new HashMap<>(emitted_tuples.get(_name));
-        emitted_tuples.get(_name).clear();
+        Map<String, List<FixedTuple>> results = emitted_tuples.get(name);
+        Map<String, List<FixedTuple>> ret = new HashMap<>(results);
+        results.clear();
         return ret;
     }
 

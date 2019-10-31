@@ -12,6 +12,8 @@
 
 package org.apache.storm.hbase.state;
 
+import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
+
 import com.google.common.primitives.UnsignedBytes;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -24,8 +26,6 @@ import org.apache.storm.state.BaseBinaryStateIterator;
 import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
 import org.apache.storm.state.StateEncoder;
-
-import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
 
 /**
  * An iterator over {@link HBaseKeyValueState}.

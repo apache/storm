@@ -27,18 +27,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
-import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.policy.IWaitStrategy;
-import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
+import org.apache.storm.policy.IWaitStrategy.WaitSituation;
 import org.apache.storm.policy.WaitStrategyProgressive;
-import org.apache.storm.serialization.KryoValuesDeserializer;
-import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.shade.io.netty.bootstrap.Bootstrap;
 import org.apache.storm.shade.io.netty.buffer.PooledByteBufAllocator;
 import org.apache.storm.shade.io.netty.channel.Channel;
@@ -166,7 +162,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         } else {
             waitStrategy = ReflectionUtils.newInstance(clazz);
         }
-        waitStrategy.prepare(topoConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
+        waitStrategy.prepare(topoConf, WaitSituation.BACK_PRESSURE_WAIT);
     }
 
     /**
@@ -177,6 +173,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         // netty TimerTask is already defined and hence a fully
         // qualified name
         TIMER.schedule(new java.util.TimerTask() {
+            @Override
             public void run() {
                 try {
                     LOG.debug("running timer task, address {}", dstAddress);
@@ -530,7 +527,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
         private final InetSocketAddress address;
 
-        public Connect(InetSocketAddress address) {
+        Connect(InetSocketAddress address) {
             this.address = address;
         }
 

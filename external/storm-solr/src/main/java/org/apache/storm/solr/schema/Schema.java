@@ -88,15 +88,15 @@ public class Schema implements Serializable {
 
     @Override
     public String toString() {
-        return "Schema{" +
-               "name='" + name + '\'' +
-               ", version='" + version + '\'' +
-               ", uniqueKey='" + uniqueKey + '\'' +
-               ", fieldTypes=" + fieldTypes +
-               ", fields=" + fields +
-               ", dynamicFields=" + dynamicFields +
-               ", copyFields=" + copyFields +
-               '}';
+        return "Schema{"
+                + "name='" + name + '\''
+                + ", version='" + version + '\''
+                + ", uniqueKey='" + uniqueKey + '\''
+                + ", fieldTypes=" + fieldTypes
+                + ", fields=" + fields
+                + ", dynamicFields=" + dynamicFields
+                + ", copyFields=" + copyFields
+                + '}';
     }
 
     // Wrapper class handy for the client code to use the JSON parser to build to use with JSON parser

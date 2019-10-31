@@ -15,7 +15,7 @@ package org.apache.storm.streams;
 import java.io.Serializable;
 
 /**
- * An edge connects source and target nodes
+ * An edge connects source and target nodes.
  */
 class Edge implements Serializable {
     private final Node source;

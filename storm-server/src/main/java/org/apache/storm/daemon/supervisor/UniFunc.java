@@ -13,5 +13,5 @@
 package org.apache.storm.daemon.supervisor;
 
 public interface UniFunc<T> {
-    public void call(T arg) throws Exception;
+    void call(T arg) throws Exception;
 }

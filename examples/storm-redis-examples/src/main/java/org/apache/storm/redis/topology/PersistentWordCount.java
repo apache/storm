@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.topology;
 
 import org.apache.storm.Config;
@@ -36,8 +37,6 @@ public class PersistentWordCount {
     private static final int TEST_REDIS_PORT = 6379;
 
     public static void main(String[] args) throws Exception {
-        Config config = new Config();
-
         String host = TEST_REDIS_HOST;
         int port = TEST_REDIS_PORT;
 
@@ -68,6 +67,7 @@ public class PersistentWordCount {
             System.out.println("Usage: PersistentWordCount <redis host> <redis port> (topology name)");
             return;
         }
+        Config config = new Config();
         StormSubmitter.submitTopology(topoName, config, builder.createTopology());
     }
 
@@ -79,7 +79,7 @@ public class PersistentWordCount {
         private RedisDataTypeDescription description;
         private final String hashKey = "wordCount";
 
-        public WordCountStoreMapper() {
+        WordCountStoreMapper() {
             description = new RedisDataTypeDescription(
                     RedisDataTypeDescription.RedisDataType.HASH, hashKey);
         }

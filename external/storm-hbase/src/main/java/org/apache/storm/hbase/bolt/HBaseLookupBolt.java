@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Basic bolt for querying from HBase.
  *
- * Note: Each HBaseBolt defined in a topology is tied to a specific table.
+ * <p>Note: Each HBaseBolt defined in a topology is tied to a specific table.
  */
 public class HBaseLookupBolt extends AbstractHBaseBolt {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseLookupBolt.class);
@@ -66,10 +66,10 @@ public class HBaseLookupBolt extends AbstractHBaseBolt {
     public void prepare(Map<String, Object> config, TopologyContext topologyContext, OutputCollector collector) {
         super.prepare(config, topologyContext, collector);
         cacheEnabled = Boolean.parseBoolean(config.getOrDefault("hbase.cache.enable", "false").toString());
-        int cacheTTL = Integer.parseInt(config.getOrDefault("hbase.cache.ttl.seconds", "300").toString());
+        int cacheTtl = Integer.parseInt(config.getOrDefault("hbase.cache.ttl.seconds", "300").toString());
         int maxCacheSize = Integer.parseInt(config.getOrDefault("hbase.cache.size", "1000").toString());
         if (cacheEnabled) {
-            cache = Caffeine.newBuilder().maximumSize(maxCacheSize).expireAfterWrite(cacheTTL, TimeUnit.SECONDS)
+            cache = Caffeine.newBuilder().maximumSize(maxCacheSize).expireAfterWrite(cacheTtl, TimeUnit.SECONDS)
                             .build(new CacheLoader<byte[], Result>() {
 
                                 @Override

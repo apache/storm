@@ -42,6 +42,7 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
+import org.apache.storm.daemon.worker.BackPressureTracker.BackpressureState;
 import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.DebugOptions;
@@ -88,6 +89,7 @@ public class WorkerState {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
+    private static final int RESEND_BACKPRESSURE_SIZE = 10000;
     private static long dropCount = 0;
     final Map<String, Object> conf;
     final IContext mqContext;
@@ -152,11 +154,19 @@ public class WorkerState {
     private final Collection<IAutoCredentials> autoCredentials;
     private final StormMetricRegistry metricRegistry;
 
-    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId,
-                       Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier, int port, String workerId, Map<String, Object> topologyConf, IStateStorage stateStorage,
-                       IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials,
-                       StormMetricRegistry metricRegistry) throws IOException,
-        InvalidTopologyException {
+    public WorkerState(Map<String, Object> conf,
+            IContext mqContext,
+            String topologyId,
+            String assignmentId,
+            Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier,
+            int port,
+            String workerId,
+            Map<String, Object> topologyConf,
+            IStateStorage stateStorage,
+            IStormClusterState stormClusterState,
+            Collection<IAutoCredentials> autoCredentials,
+            StormMetricRegistry metricRegistry) throws IOException,
+            InvalidTopologyException {
         this.metricRegistry = metricRegistry;
         this.autoCredentials = autoCredentials;
         this.conf = conf;
@@ -230,9 +240,9 @@ public class WorkerState {
         this.receiver = this.mqContext.bind(topologyId, port, cb, newConnectionResponse);
     }
 
-    private static double getQueueLoad(JCQueue q) {
-        JCQueue.QueueMetrics qMetrics = q.getMetrics();
-        return ((double) qMetrics.population()) / qMetrics.capacity();
+    private static double getQueueLoad(JCQueue queue) {
+        JCQueue.QueueMetrics queueMetrics = queue.getMetrics();
+        return ((double) queueMetrics.population()) / queueMetrics.capacity();
     }
 
     public static boolean isConnectionReady(IConnection connection) {
@@ -463,7 +473,6 @@ public class WorkerState {
 
     public void refreshLoad(List<IRunningExecutor> execs) {
         Set<Integer> remoteTasks = Sets.difference(new HashSet<>(outboundTasks), new HashSet<>(localTaskIds));
-        Long now = System.currentTimeMillis();
         Map<Integer, Double> localLoad = new HashMap<>();
         for (IRunningExecutor exec : execs) {
             double receiveLoad = getQueueLoad(exec.getReceiveQueue());
@@ -475,6 +484,7 @@ public class WorkerState {
         loadMapping.setLocal(localLoad);
         loadMapping.setRemote(remoteLoad);
 
+        Long now = System.currentTimeMillis();
         if (now > nextLoadUpdate.get()) {
             receiver.sendLoadMetrics(localLoad);
             nextLoadUpdate.set(now + LOAD_REFRESH_INTERVAL_MS);
@@ -498,14 +508,14 @@ public class WorkerState {
         int delaySecs = 0;
         int recurSecs = 1;
         refreshActiveTimer.schedule(delaySecs,
-                                    () -> {
-                                        if (areAllConnectionsReady()) {
-                                            LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
-                                            isWorkerActive.countDown();
-                                        } else {
-                                            refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
-                                        }
-                                    }
+            () -> {
+                if (areAllConnectionsReady()) {
+                    LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
+                    isWorkerActive.countDown();
+                } else {
+                    refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
+                }
+            }
         );
     }
 
@@ -525,8 +535,6 @@ public class WorkerState {
     // Receives msgs from remote workers and feeds them to local executors. If any receiving local executor is under Back Pressure,
     // informs other workers about back pressure situation. Runs in the NettyWorker thread.
     private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
-        int lastOverflowCount = 0; // overflowQ size at the time the last BPStatus was sent
-
         for (int i = 0; i < tupleBatch.size(); i++) {
             AddressedTuple tuple = tupleBatch.get(i);
             JCQueue queue = taskToExecutorQueue.get(tuple.dest);
@@ -540,16 +548,18 @@ public class WorkerState {
 
             // 2- BP detected (i.e MainQ is full). So try adding to overflow
             int currOverflowCount = queue.getOverflowCount();
-            if (bpTracker.recordBackPressure(tuple.dest)) {
+            // get BP state object so only have to lookup once
+            BackpressureState bpState = bpTracker.getBackpressureState(tuple.dest);
+            if (bpTracker.recordBackPressure(bpState)) {
                 receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
-                lastOverflowCount = currOverflowCount;
+                bpTracker.setLastOverflowCount(bpState, currOverflowCount);
             } else {
 
-                if (currOverflowCount - lastOverflowCount > 10000) {
+                if (currOverflowCount - bpTracker.getLastOverflowCount(bpState) > RESEND_BACKPRESSURE_SIZE) {
                     // resend BP status, in case prev notification was missed or reordered
                     BackPressureStatus bpStatus = bpTracker.getCurrStatus();
                     receiver.sendBackPressureStatus(bpStatus);
-                    lastOverflowCount = currOverflowCount;
+                    bpTracker.setLastOverflowCount(bpState, currOverflowCount);
                     LOG.debug("Re-sent BackPressure Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
                 }
             }
@@ -650,7 +660,7 @@ public class WorkerState {
         try (SupervisorIfaceFactory fac = supervisorIfaceSupplier.get()) {
             return fac.getIface().getLocalAssignmentForStorm(topologyId);
         } catch (Throwable e) {
-                //if any error/exception thrown, fetch it from zookeeper
+            //if any error/exception thrown, fetch it from zookeeper
             Assignment assignment = stormClusterState.remoteAssignmentInfo(topologyId, null);
             if (assignment == null) {
                 throw new RuntimeException("Failed to read worker assignment."
@@ -667,8 +677,8 @@ public class WorkerState {
 
         if (recvBatchSize > recvQueueSize / 2) {
             throw new IllegalArgumentException(Config.TOPOLOGY_PRODUCER_BATCH_SIZE + ":" + recvBatchSize
-                                               + " is greater than half of " + Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE + ":" +
-                                               recvQueueSize);
+                    + " is greater than half of " + Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE + ":"
+                    + recvQueueSize);
         }
 
         IWaitStrategy backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
@@ -705,6 +715,7 @@ public class WorkerState {
     }
 
     /**
+     * Get worker outbound tasks.
      * @return seq of task ids that receive messages from this worker
      */
     private Set<Integer> workerOutboundTasks() {

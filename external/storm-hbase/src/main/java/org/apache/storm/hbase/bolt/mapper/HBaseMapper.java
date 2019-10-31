@@ -12,8 +12,8 @@
 
 package org.apache.storm.hbase.bolt.mapper;
 
-
 import java.io.Serializable;
+
 import org.apache.storm.hbase.common.ColumnList;
 import org.apache.storm.tuple.Tuple;
 
@@ -24,17 +24,11 @@ public interface HBaseMapper extends Serializable {
 
     /**
      * Given a tuple, return the HBase rowkey.
-     *
-     * @param tuple
-     * @return
      */
     byte[] rowKey(Tuple tuple);
 
     /**
      * Given a tuple, return a list of HBase columns to insert.
-     *
-     * @param tuple
-     * @return
      */
     ColumnList columns(Tuple tuple);
 

@@ -289,8 +289,8 @@ class ProcessorBoltDelegate implements Serializable {
             for (String receivedStream : receivedStreams) {
                 Integer expected = streamToInputTaskCount.get(receivedStream);
                 if (expected == null) {
-                    throw new IllegalStateException("Punctuation received on unexpected stream '" + receivedStream +
-                                                    "' for which input task count is not set.");
+                    throw new IllegalStateException("Punctuation received on unexpected stream '" + receivedStream
+                            + "' for which input task count is not set.");
                 }
                 if (punctuationState.get(processorNode, receivedStream) < streamToInputTaskCount.get(receivedStream)) {
                     return false;

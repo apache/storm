@@ -22,14 +22,12 @@ public interface BeanFactory<T> extends Serializable {
 
     /**
      * Sets the storm context.
-     * @param context
      */
-    public void setStormContext(WorkerCtx context);
+    void setStormContext(WorkerCtx context);
 
     /**
      * Return an instance, which may be shared or independent, of the specified type.
      * @param topoConf The storm configuration
-     * @return
      */
     T get(Map<String, Object> topoConf);
 
@@ -38,5 +36,5 @@ public interface BeanFactory<T> extends Serializable {
      * Returns a new copy if this factory.
      * @return a new {@link BeanFactory} instance.
      */
-    public BeanFactory<T> newInstance();
+    BeanFactory<T> newInstance();
 }

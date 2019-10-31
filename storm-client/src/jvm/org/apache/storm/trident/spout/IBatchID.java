@@ -13,6 +13,7 @@
 package org.apache.storm.trident.spout;
 
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface IBatchID {
     Object getId();
 

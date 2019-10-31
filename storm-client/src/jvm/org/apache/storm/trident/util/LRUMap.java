@@ -15,16 +15,17 @@ package org.apache.storm.trident.util;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class LRUMap<A, B> extends LinkedHashMap<A, B> {
-    private int _maxSize;
+    private int maxSize;
 
     public LRUMap(int maxSize) {
         super(maxSize + 1, 1.0f, true);
-        _maxSize = maxSize;
+        this.maxSize = maxSize;
     }
 
     @Override
     protected boolean removeEldestEntry(final Map.Entry<A, B> eldest) {
-        return size() > _maxSize;
+        return size() > maxSize;
     }
 }

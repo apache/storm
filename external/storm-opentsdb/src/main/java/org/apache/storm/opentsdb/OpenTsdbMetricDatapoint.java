@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.opentsdb;
 
 import java.io.Serializable;
@@ -57,6 +58,7 @@ public class OpenTsdbMetricDatapoint implements Serializable {
     }
 
     /**
+     * Retrieve the metric name of this datapoint.
      * @return metric name of this datapoint
      */
     public String getMetric() {
@@ -64,6 +66,7 @@ public class OpenTsdbMetricDatapoint implements Serializable {
     }
 
     /**
+     * Retrieve the map of tag/value pairs of this metric.
      * @return Map of tag/value pairs of this metric
      */
     public Map<String, String> getTags() {
@@ -71,13 +74,15 @@ public class OpenTsdbMetricDatapoint implements Serializable {
     }
 
     /**
-     * @return timestamp either in milliseconds or seconds at which this metric is occurred.
+     * Retrieve the timestamp at which this metric occured.
+     * @return timestamp either in milliseconds or seconds at which this metric occurred
      */
     public long getTimestamp() {
         return timestamp;
     }
 
     /**
+     * Retrieve the value of this metric datapoint.
      * @return value of this metric datapoint
      */
     public Object getValue() {
@@ -86,24 +91,34 @@ public class OpenTsdbMetricDatapoint implements Serializable {
 
     @Override
     public String toString() {
-        return "OpenTsdbMetricDataPoint{" +
-                "metric='" + metric + '\'' +
-                ", tags=" + tags +
-                ", timestamp=" + timestamp +
-                ", value=" + value +
-                '}';
+        return "OpenTsdbMetricDataPoint{"
+                + "metric='" + metric + '\''
+                + ", tags=" + tags
+                + ", timestamp=" + timestamp
+                + ", value=" + value
+                + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof OpenTsdbMetricDatapoint)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof OpenTsdbMetricDatapoint)) {
+            return false;
+        }
 
         OpenTsdbMetricDatapoint that = (OpenTsdbMetricDatapoint) o;
 
-        if (timestamp != that.timestamp) return false;
-        if (value != that.value) return false;
-        if (!metric.equals(that.metric)) return false;
+        if (timestamp != that.timestamp) {
+            return false;
+        }
+        if (value != that.value) {
+            return false;
+        }
+        if (!metric.equals(that.metric)) {
+            return false;
+        }
         return tags.equals(that.tags);
 
     }

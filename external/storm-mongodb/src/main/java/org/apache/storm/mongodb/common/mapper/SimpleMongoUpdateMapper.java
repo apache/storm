@@ -39,6 +39,7 @@ public class SimpleMongoUpdateMapper extends SimpleMongoMapper implements MongoU
         return new Document("$set", document);
     }
 
+    @Override
     public SimpleMongoUpdateMapper withFields(String... fields) {
         this.fields = fields;
         return this;

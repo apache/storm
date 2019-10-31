@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Computes sliding window sum
+ * Computes sliding window sum.
  */
 public class SlidingWindowSumBolt extends BaseWindowedBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SlidingWindowSumBolt.class);

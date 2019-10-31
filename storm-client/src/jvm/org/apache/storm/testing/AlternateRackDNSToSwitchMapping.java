@@ -23,6 +23,7 @@ import org.apache.storm.networktopography.DNSToSwitchMapping;
 /**
  * This class implements the {@link DNSToSwitchMapping} interface It alternates bewteen RACK1 and RACK2 for the hosts.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public final class AlternateRackDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
 
     private Map<String, String> mappingCache = new ConcurrentHashMap<String, String>();

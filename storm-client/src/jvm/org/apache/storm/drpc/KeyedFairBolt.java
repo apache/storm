@@ -26,58 +26,63 @@ import org.apache.storm.utils.KeyedRoundRobinQueue;
 
 
 public class KeyedFairBolt implements IRichBolt, FinishedCallback {
-    IRichBolt _delegate;
-    KeyedRoundRobinQueue<Tuple> _rrQueue;
-    Thread _executor;
-    FinishedCallback _callback;
+    IRichBolt delegate;
+    KeyedRoundRobinQueue<Tuple> rrQueue;
+    Thread executor;
+    FinishedCallback callback;
 
     public KeyedFairBolt(IRichBolt delegate) {
-        _delegate = delegate;
+        this.delegate = delegate;
     }
 
     public KeyedFairBolt(IBasicBolt delegate) {
         this(new BasicBoltExecutor(delegate));
     }
 
-
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        if (_delegate instanceof FinishedCallback) {
-            _callback = (FinishedCallback) _delegate;
+        if (delegate instanceof FinishedCallback) {
+            callback = (FinishedCallback) delegate;
         }
-        _delegate.prepare(topoConf, context, collector);
-        _rrQueue = new KeyedRoundRobinQueue<Tuple>();
-        _executor = new Thread(new Runnable() {
+        delegate.prepare(topoConf, context, collector);
+        rrQueue = new KeyedRoundRobinQueue<Tuple>();
+        executor = new Thread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     while (true) {
-                        _delegate.execute(_rrQueue.take());
+                        delegate.execute(rrQueue.take());
                     }
                 } catch (InterruptedException e) {
-
+                    //ignore
                 }
             }
         });
-        _executor.setDaemon(true);
-        _executor.start();
+        executor.setDaemon(true);
+        executor.start();
     }
 
+    @Override
     public void execute(Tuple input) {
         Object key = input.getValue(0);
-        _rrQueue.add(key, input);
+        rrQueue.add(key, input);
     }
 
+    @Override
     public void cleanup() {
-        _executor.interrupt();
-        _delegate.cleanup();
+        executor.interrupt();
+        delegate.cleanup();
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        _delegate.declareOutputFields(declarer);
+        delegate.declareOutputFields(declarer);
     }
 
+    @Override
     public void finishedId(Object id) {
-        if (_callback != null) {
-            _callback.finishedId(id);
+        if (callback != null) {
+            callback.finishedId(id);
         }
     }
 

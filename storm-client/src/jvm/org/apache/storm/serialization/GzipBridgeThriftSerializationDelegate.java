@@ -49,7 +49,7 @@ public class GzipBridgeThriftSerializationDelegate implements SerializationDeleg
     }
 
     /**
-     * Looks ahead to see if the GZIP magic constant is heading {@code bytes}
+     * Looks ahead to see if the GZIP magic constant is heading {@code bytes}.
      */
     private boolean isGzipped(byte[] bytes) {
         return (bytes.length > 1) && (bytes[0] == GZIP_MAGIC_FIRST_BYTE)

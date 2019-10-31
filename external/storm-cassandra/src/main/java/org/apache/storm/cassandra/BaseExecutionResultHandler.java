@@ -19,6 +19,7 @@ import com.datastax.driver.core.exceptions.UnavailableException;
 import com.datastax.driver.core.exceptions.WriteTimeoutException;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -29,7 +30,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BaseExecutionResultHandler extends AbstractExecutionResultHandler {
 
-    private final static org.slf4j.Logger LOG = LoggerFactory.getLogger(BaseExecutionResultHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BaseExecutionResultHandler.class);
 
     /**
      * {@inheritDoc}

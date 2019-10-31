@@ -26,15 +26,15 @@ import org.apache.storm.tuple.Fields;
 
 
 public class EachProcessor implements TridentProcessor {
-    Function _function;
-    TridentContext _context;
-    AppendCollector _collector;
-    Fields _inputFields;
-    ProjectionFactory _projection;
+    Function function;
+    TridentContext context;
+    AppendCollector collector;
+    Fields inputFields;
+    ProjectionFactory projection;
 
     public EachProcessor(Fields inputFields, Function function) {
-        _function = function;
-        _inputFields = inputFields;
+        this.function = function;
+        this.inputFields = inputFields;
     }
 
     @Override
@@ -43,26 +43,26 @@ public class EachProcessor implements TridentProcessor {
         if (parents.size() != 1) {
             throw new RuntimeException("Each operation can only have one parent");
         }
-        _context = tridentContext;
-        _collector = new AppendCollector(tridentContext);
-        _projection = new ProjectionFactory(parents.get(0), _inputFields);
-        _function.prepare(conf, new TridentOperationContext(context, _projection));
+        this.context = tridentContext;
+        collector = new AppendCollector(tridentContext);
+        projection = new ProjectionFactory(parents.get(0), inputFields);
+        function.prepare(conf, new TridentOperationContext(context, projection));
     }
 
     @Override
     public void flush() {
-        _collector.flush();
+        collector.flush();
     }
 
     @Override
     public void cleanup() {
-        _function.cleanup();
+        function.cleanup();
     }
 
     @Override
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
-        _collector.setContext(processorContext, tuple);
-        _function.execute(_projection.create(tuple), _collector);
+        collector.setContext(processorContext, tuple);
+        function.execute(projection.create(tuple), collector);
     }
 
 
@@ -76,6 +76,6 @@ public class EachProcessor implements TridentProcessor {
 
     @Override
     public Factory getOutputFactory() {
-        return _collector.getOutputFactory();
+        return collector.getOutputFactory();
     }
 }

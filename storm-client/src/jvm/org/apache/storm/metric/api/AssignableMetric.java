@@ -13,17 +13,18 @@
 package org.apache.storm.metric.api;
 
 public class AssignableMetric implements IMetric {
-    Object _value;
+    Object value;
 
     public AssignableMetric(Object value) {
-        _value = value;
+        this.value = value;
     }
 
     public void setValue(Object value) {
-        _value = value;
+        this.value = value;
     }
 
+    @Override
     public Object getValueAndReset() {
-        return _value;
+        return value;
     }
 }

@@ -32,6 +32,7 @@ public class DefaultKryoFactory implements IKryoFactory {
     public void preRegister(Kryo k, Map<String, Object> conf) {
     }
 
+    @Override
     public void postRegister(Kryo k, Map<String, Object> conf) {
         ((KryoSerializableDefault) k).overrideDefault(true);
     }
@@ -41,15 +42,15 @@ public class DefaultKryoFactory implements IKryoFactory {
     }
 
     public static class KryoSerializableDefault extends Kryo {
-        boolean _override = false;
+        boolean override = false;
 
         public void overrideDefault(boolean value) {
-            _override = value;
+            override = value;
         }
 
         @Override
         public Serializer getDefaultSerializer(Class type) {
-            if (_override) {
+            if (override) {
                 return new SerializableSerializer();
             } else {
                 return super.getDefaultSerializer(type);

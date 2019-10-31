@@ -62,7 +62,7 @@ public class HdfsSpout extends BaseRichSpout {
     private int maxOutstanding = Configs.DEFAULT_MAX_OUTSTANDING;
     private int lockTimeoutSec = Configs.DEFAULT_LOCK_TIMEOUT;
     private boolean clocksInSync = true;
-    private String inprogress_suffix = ".inprogress"; // not configurable to prevent change between topology restarts
+    private String inprogressSuffix = ".inprogress"; // not configurable to prevent change between topology restarts
     private String ignoreSuffix = ".ignore";
     private String outputStreamName = null;
     private ProgressTracker tracker = null;
@@ -89,14 +89,14 @@ public class HdfsSpout extends BaseRichSpout {
         return reader.getFilePath() + " " + reader.getFileOffset();
     }
 
-    private static void releaseLockAndLog(FileLock fLock, String spoutId) {
+    private static void releaseLockAndLog(FileLock fileLock, String spoutId) {
         try {
-            if (fLock != null) {
-                fLock.release();
-                LOG.debug("Spout {} released FileLock. SpoutId = {}", fLock.getLockFile(), spoutId);
+            if (fileLock != null) {
+                fileLock.release();
+                LOG.debug("Spout {} released FileLock. SpoutId = {}", fileLock.getLockFile(), spoutId);
             }
         } catch (IOException e) {
-            LOG.error("Unable to delete lock file : " + fLock.getLockFile() + " SpoutId =" + spoutId, e);
+            LOG.error("Unable to delete lock file : " + fileLock.getLockFile() + " SpoutId =" + spoutId, e);
         }
     }
 
@@ -215,7 +215,7 @@ public class HdfsSpout extends BaseRichSpout {
     }
 
     /**
-     * Set output stream name
+     * Set output stream name.
      */
     public HdfsSpout withOutputStream(String streamName) {
         this.outputStreamName = streamName;
@@ -230,6 +230,7 @@ public class HdfsSpout extends BaseRichSpout {
         return collector;
     }
 
+    @Override
     public void nextTuple() {
         LOG.trace("Next Tuple {}", spoutId);
         // 1) First re-emit any previously failed tuples (from retryList)
@@ -347,7 +348,7 @@ public class HdfsSpout extends BaseRichSpout {
 
     private void markFileAsBad(Path file) {
         String fileName = file.toString();
-        String fileNameMinusSuffix = fileName.substring(0, fileName.indexOf(inprogress_suffix));
+        String fileNameMinusSuffix = fileName.substring(0, fileName.indexOf(inprogressSuffix));
         String originalName = new Path(fileNameMinusSuffix).getName();
         Path newFile = new Path(badFilesDirPath + Path.SEPARATOR + originalName);
 
@@ -387,6 +388,7 @@ public class HdfsSpout extends BaseRichSpout {
     }
 
     @SuppressWarnings("deprecation")
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         LOG.info("Opening HDFS Spout");
         this.conf = conf;
@@ -588,7 +590,7 @@ public class HdfsSpout extends BaseRichSpout {
             Collection<Path> listing = HdfsUtils.listFilesByModificationTime(hdfs, sourceDirPath, 0);
 
             for (Path file : listing) {
-                if (file.getName().endsWith(inprogress_suffix)) {
+                if (file.getName().endsWith(inprogressSuffix)) {
                     continue;
                 }
                 if (file.getName().endsWith(ignoreSuffix)) {
@@ -623,7 +625,6 @@ public class HdfsSpout extends BaseRichSpout {
      * check if the lock is updated. if not updated then acquires the lock
      *
      * @return a lock object
-     * @throws IOException
      */
     private FileLock getOldestExpiredLock() throws IOException {
         // 1 - acquire lock on dir
@@ -679,11 +680,9 @@ public class HdfsSpout extends BaseRichSpout {
     }
 
     /**
-     * Creates a reader that reads from beginning of file
+     * Creates a reader that reads from beginning of file.
      *
      * @param file file to read
-     * @return
-     * @throws IOException
      */
     private FileReader createFileReader(Path file)
         throws IOException {
@@ -704,12 +703,10 @@ public class HdfsSpout extends BaseRichSpout {
     }
 
     /**
-     * Creates a reader that starts reading from 'offset'
+     * Creates a reader that starts reading from 'offset'.
      *
      * @param file the file to read
      * @param offset the offset string should be understandable by the reader type being used
-     * @return
-     * @throws IOException
      */
     private FileReader createFileReader(Path file, String offset)
         throws IOException {
@@ -731,14 +728,14 @@ public class HdfsSpout extends BaseRichSpout {
     }
 
     /**
-     * Renames files with .inprogress suffix
+     * Renames files with .inprogress suffix.
      *
      * @return path of renamed file
      * @throws if operation fails
      */
     private Path renameToInProgressFile(Path file)
         throws IOException {
-        Path newFile = new Path(file.toString() + inprogress_suffix);
+        Path newFile = new Path(file.toString() + inprogressSuffix);
         try {
             if (hdfs.rename(file, newFile)) {
                 return newFile;
@@ -755,7 +752,7 @@ public class HdfsSpout extends BaseRichSpout {
     private Path getFileForLockFile(Path lockFile, Path sourceDirPath)
         throws IOException {
         String lockFileName = lockFile.getName();
-        Path dataFile = new Path(sourceDirPath + Path.SEPARATOR + lockFileName + inprogress_suffix);
+        Path dataFile = new Path(sourceDirPath + Path.SEPARATOR + lockFileName + inprogressSuffix);
         if (hdfs.exists(dataFile)) {
             return dataFile;
         }
@@ -769,7 +766,7 @@ public class HdfsSpout extends BaseRichSpout {
     // renames files and returns the new file path
     private Path renameCompletedFile(Path file) throws IOException {
         String fileName = file.toString();
-        String fileNameMinusSuffix = fileName.substring(0, fileName.indexOf(inprogress_suffix));
+        String fileNameMinusSuffix = fileName.substring(0, fileName.indexOf(inprogressSuffix));
         String newName = new Path(fileNameMinusSuffix).getName();
 
         Path newFile = new Path(archiveDirPath + Path.SEPARATOR + newName);
@@ -796,7 +793,7 @@ public class HdfsSpout extends BaseRichSpout {
         public String fullPath;
         public FileOffset offset;
 
-        public MessageId(long msgNumber, Path fullPath, FileOffset offset) {
+        MessageId(long msgNumber, Path fullPath, FileOffset offset) {
             this.msgNumber = msgNumber;
             this.fullPath = fullPath.toString();
             this.offset = offset;
@@ -824,13 +821,13 @@ public class HdfsSpout extends BaseRichSpout {
         public final Path oldFile;
         public final Path newFile;
 
-        public RenameException(Path oldFile, Path newFile) {
+        RenameException(Path oldFile, Path newFile) {
             super("Rename of " + oldFile + " to " + newFile + " failed");
             this.oldFile = oldFile;
             this.newFile = newFile;
         }
 
-        public RenameException(Path oldFile, Path newFile, IOException cause) {
+        RenameException(Path oldFile, Path newFile, IOException cause) {
             super("Rename of " + oldFile + " to " + newFile + " failed", cause);
             this.oldFile = oldFile;
             this.newFile = newFile;

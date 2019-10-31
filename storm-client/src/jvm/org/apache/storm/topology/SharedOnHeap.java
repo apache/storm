@@ -22,7 +22,7 @@ public class SharedOnHeap extends SharedMemory {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Create a new request for a shared memory region on heap
+     * Create a new request for a shared memory region on heap.
      *
      * @param amount the number of MB to share on heap
      * @param name   the name of the shared region (for tracking purposes)

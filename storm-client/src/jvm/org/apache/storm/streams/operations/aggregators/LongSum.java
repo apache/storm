@@ -15,7 +15,7 @@ package org.apache.storm.streams.operations.aggregators;
 import org.apache.storm.streams.operations.CombinerAggregator;
 
 /**
- * Computes the long sum of the input values
+ * Computes the long sum of the input values.
  */
 public class LongSum implements CombinerAggregator<Number, Long, Long> {
     @Override

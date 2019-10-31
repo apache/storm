@@ -143,6 +143,9 @@ public class LocalizedResource extends LocallyCachedBlob {
     }
 
     static void completelyRemoveUnusedUser(Path localBaseDir, String user) throws IOException {
+        Path localUserDir = getLocalUserDir(localBaseDir, user);
+        LOG.info("completelyRemoveUnusedUser {} for directory {}", user, localUserDir);
+
         Path userFileCacheDir = getLocalUserFileCacheDir(localBaseDir, user);
         // baseDir/supervisor/usercache/user1/filecache/files
         Files.deleteIfExists(getCacheDirForFiles(userFileCacheDir));
@@ -151,7 +154,7 @@ public class LocalizedResource extends LocallyCachedBlob {
         // baseDir/supervisor/usercache/user1/filecache
         Files.deleteIfExists(userFileCacheDir);
         // baseDir/supervisor/usercache/user1
-        Files.deleteIfExists(getLocalUserDir(localBaseDir, user));
+        Files.deleteIfExists(localUserDir);
     }
 
     static List<String> getLocalizedArchiveKeys(Path localBaseDir, String user) throws IOException {
@@ -220,7 +223,7 @@ public class LocalizedResource extends LocallyCachedBlob {
     private void setSize() {
         // we trust that the file exists
         Path withVersion = getFilePathWithVersion();
-        size = ServerUtils.getDU(withVersion.toFile());
+        size = ServerUtils.getDiskUsage(withVersion.toFile());
         LOG.debug("size of {} is: {}", withVersion, size);
     }
 
@@ -254,9 +257,12 @@ public class LocalizedResource extends LocallyCachedBlob {
                 if (!Files.exists(parent)) {
                     //There is a race here that we can still lose
                     try {
-                        Files.createDirectory(parent);
+                        Files.createDirectories(parent);
                     } catch (FileAlreadyExistsException e) {
                         //Ignored
+                    } catch (IOException e) {
+                        LOG.error("Failed to create parent directory {}", parent, e);
+                        throw e;
                     }
                 }
                 return path;
@@ -397,7 +403,7 @@ public class LocalizedResource extends LocallyCachedBlob {
                 }
             }
         } catch (NoSuchFileException e) {
-            LOG.warn("Nothing to cleanup with badeDir {} even though we expected there to be something there", baseDir);
+            LOG.warn("Nothing to cleanup with baseDir {} even though we expected there to be something there", baseDir);
         }
     }
 

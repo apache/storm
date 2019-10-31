@@ -152,6 +152,7 @@ public class DependencyUploaderTest {
 
         final AtomicInteger counter = new AtomicInteger();
         final Answer incrementCounter = new Answer() {
+            @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 counter.addAndGet(1);
                 return null;
@@ -271,6 +272,7 @@ public class DependencyUploaderTest {
 
         final AtomicInteger counter = new AtomicInteger();
         final Answer incrementCounter = new Answer() {
+            @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 counter.addAndGet(1);
                 return null;

@@ -25,6 +25,7 @@ import org.apache.storm.cassandra.query.selector.FieldSelector;
 /**
  * Default class to build {@link org.apache.storm.cassandra.query.impl.SimpleCQLStatementMapper} instance.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class SimpleCQLStatementMapperBuilder implements CQLStatementBuilder<SimpleCQLStatementMapper>, Serializable {
 
     private final String queryString;
@@ -67,11 +68,6 @@ public class SimpleCQLStatementMapperBuilder implements CQLStatementBuilder<Simp
         return this;
     }
 
-    public final SimpleCQLStatementMapperBuilder withRoutingKeys(String... fields) {
-        this.routingKeys = Arrays.asList(fields);
-        return this;
-    }
-
     /**
      * Includes only the specified tuple fields.
      *
@@ -79,6 +75,11 @@ public class SimpleCQLStatementMapperBuilder implements CQLStatementBuilder<Simp
      */
     public final SimpleCQLStatementMapperBuilder with(CqlMapper mapper) {
         this.mapper = mapper;
+        return this;
+    }
+
+    public final SimpleCQLStatementMapperBuilder withRoutingKeys(String... fields) {
+        this.routingKeys = Arrays.asList(fields);
         return this;
     }
 }

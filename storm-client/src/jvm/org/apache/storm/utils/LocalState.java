@@ -32,6 +32,7 @@ import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.thrift.TBase;
 import org.apache.storm.thrift.TDeserializer;
 import org.apache.storm.thrift.TSerializer;
+import org.apache.storm.thrift.protocol.TProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,11 +46,11 @@ public class LocalState {
     public static final String LS_LOCAL_ASSIGNMENTS = "local-assignments";
     public static final String LS_APPROVED_WORKERS = "approved-workers";
     public static final String LS_TOPO_HISTORY = "topo-hist";
-    private VersionedStore _vs;
+    private VersionedStore versionedStore;
 
     public LocalState(String backingDir, boolean createBackingDir) throws IOException {
         LOG.debug("New Local State for {}", backingDir);
-        _vs = new VersionedStore(backingDir, createBackingDir);
+        versionedStore = new VersionedStore(backingDir, createBackingDir);
     }
 
     public synchronized Map<String, TBase> snapshot() {
@@ -94,7 +95,7 @@ public class LocalState {
 
     private Map<String, ThriftSerializedObject> partialDeserializeLatestVersion(TDeserializer td) {
         try {
-            String latestPath = _vs.mostRecentVersionPath();
+            String latestPath = versionedStore.mostRecentVersionPath();
             Map<String, ThriftSerializedObject> result = new HashMap<>();
             if (latestPath != null) {
                 byte[] serialized = FileUtils.readFileToByteArray(new File(latestPath));
@@ -123,6 +124,10 @@ public class LocalState {
             } catch (Exception e) {
                 attempts++;
                 if (attempts >= 10) {
+                    if (e.getCause() instanceof TProtocolException) {
+                        LOG.warn("LocalState file is corrupted, resetting state.", e);
+                        return new HashMap<>();
+                    }
                     throw new RuntimeException(e);
                 }
             }
@@ -162,7 +167,7 @@ public class LocalState {
     }
 
     public synchronized void cleanup(int keepVersions) throws IOException {
-        _vs.cleanup(keepVersions);
+        versionedStore.cleanup(keepVersions);
     }
 
     public List<LSTopoHistory> getTopoHistoryList() {
@@ -175,8 +180,6 @@ public class LocalState {
 
     /**
      * Remove topologies from local state which are older than cutOffAge.
-     *
-     * @param cutOffAge
      */
     public void filterOldTopologies(long cutOffAge) {
         LSTopoHistoryList lsTopoHistoryListWrapper = (LSTopoHistoryList) get(LS_TOPO_HISTORY);
@@ -252,7 +255,7 @@ public class LocalState {
             }
             byte[] toWrite = ser.serialize(new LocalStateData(serialized));
 
-            String newPath = _vs.createVersion();
+            String newPath = versionedStore.createVersion();
             File file = new File(newPath);
             FileUtils.writeByteArrayToFile(file, toWrite);
             if (toWrite.length != file.length()) {
@@ -260,9 +263,9 @@ public class LocalState {
                                       + " bytes to " + file.getCanonicalPath() + ", but "
                                       + file.length() + " bytes were written.");
             }
-            _vs.succeedVersion(newPath);
+            versionedStore.succeedVersion(newPath);
             if (cleanup) {
-                _vs.cleanup(4);
+                versionedStore.cleanup(4);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

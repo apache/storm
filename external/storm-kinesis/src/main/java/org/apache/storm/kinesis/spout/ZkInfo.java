@@ -36,8 +36,13 @@ public class ZkInfo implements Serializable {
     // time to sleep between retries in milliseconds
     private final Integer retryIntervalMs;
 
-    public ZkInfo (String zkUrl, String zkNode, Integer sessionTimeoutMs, Integer connectionTimeoutMs, Long commitIntervalMs, Integer retryAttempts, Integer
-            retryIntervalMs) {
+    public ZkInfo(String zkUrl,
+            String zkNode,
+            Integer sessionTimeoutMs,
+            Integer connectionTimeoutMs,
+            Long commitIntervalMs,
+            Integer retryAttempts,
+            Integer retryIntervalMs) {
         this.zkUrl = zkUrl;
         this.zkNode = zkNode;
         this.sessionTimeoutMs = sessionTimeoutMs;
@@ -76,7 +81,7 @@ public class ZkInfo implements Serializable {
         return retryIntervalMs;
     }
 
-    private void validate () {
+    private void validate() {
 
         if (zkUrl == null || zkUrl.length() < 1) {
             throw new IllegalArgumentException("zkUrl must be specified to connect to zookeeper");
@@ -91,12 +96,13 @@ public class ZkInfo implements Serializable {
         checkPositive(retryIntervalMs, "retryIntervalMs");
     }
 
-    private void checkPositive (Integer argument, String name) {
+    private void checkPositive(Integer argument, String name) {
         if (argument == null && argument <= 0) {
             throw new IllegalArgumentException(name + " must be positive");
         }
     }
-    private void checkPositive (Long argument, String name) {
+
+    private void checkPositive(Long argument, String name) {
         if (argument == null && argument <= 0) {
             throw new IllegalArgumentException(name + " must be positive");
         }
@@ -104,15 +110,15 @@ public class ZkInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "ZkInfo{" +
-                "zkUrl='" + zkUrl + '\'' +
-                ", zkNode='" + zkNode + '\'' +
-                ", sessionTimeoutMs=" + sessionTimeoutMs +
-                ", connectionTimeoutMs=" + connectionTimeoutMs +
-                ", commitIntervalMs=" + commitIntervalMs +
-                ", retryAttempts=" + retryAttempts +
-                ", retryIntervalMs=" + retryIntervalMs +
-                '}';
+        return "ZkInfo{"
+                + "zkUrl='" + zkUrl + '\''
+                + ", zkNode='" + zkNode + '\''
+                + ", sessionTimeoutMs=" + sessionTimeoutMs
+                + ", connectionTimeoutMs=" + connectionTimeoutMs
+                + ", commitIntervalMs=" + commitIntervalMs
+                + ", retryAttempts=" + retryAttempts
+                + ", retryIntervalMs=" + retryIntervalMs
+                + '}';
     }
 
 }

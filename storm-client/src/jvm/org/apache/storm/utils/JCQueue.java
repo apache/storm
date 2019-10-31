@@ -37,6 +37,7 @@ import org.apache.storm.shade.org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class JCQueue implements IStatefulObject, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(JCQueue.class);
     private static final String PREFIX = "jc-";
@@ -95,7 +96,7 @@ public class JCQueue implements IStatefulObject, Closeable {
     }
 
     /**
-     * Non blocking. Returns immediately if Q is empty. Returns number of elements consumed from Q
+     * Non blocking. Returns immediately if Q is empty. Returns number of elements consumed from Q.
      */
     public int consume(JCQueue.Consumer consumer) {
         return consume(consumer, continueRunning);
@@ -103,7 +104,7 @@ public class JCQueue implements IStatefulObject, Closeable {
 
     /**
      * Non blocking. Returns immediately if Q is empty. Runs till Q is empty OR exitCond.keepRunning() return false. Returns number of
-     * elements consumed from Q
+     * elements consumed from Q.
      */
     public int consume(JCQueue.Consumer consumer, ExitCondition exitCond) {
         try {
@@ -118,10 +119,7 @@ public class JCQueue implements IStatefulObject, Closeable {
     }
 
     /**
-     * Non blocking. Returns immediately if Q is empty. Returns number of elements consumed from Q
-     *
-     * @param consumer
-     * @param exitCond
+     * Non blocking. Returns immediately if Q is empty. Returns number of elements consumed from Q.
      */
     private int consumeImpl(Consumer consumer, ExitCondition exitCond) throws InterruptedException {
         int drainCount = 0;
@@ -161,11 +159,11 @@ public class JCQueue implements IStatefulObject, Closeable {
     private int tryPublishInternal(ArrayList<Object> objs) {
         MessagePassingQueue.Supplier<Object> supplier =
             new MessagePassingQueue.Supplier<Object>() {
-                int i = 0;
+                int counter = 0;
 
                 @Override
                 public Object get() {
-                    return objs.get(i++);
+                    return objs.get(counter++);
                 }
             };
         int count = recvQueue.fill(supplier, objs.size());
@@ -289,10 +287,10 @@ public class JCQueue implements IStatefulObject, Closeable {
 
     /* Thread safe. Same instance can be used across multiple threads */
     private static class DirectInserter implements Inserter {
-        private JCQueue q;
+        private JCQueue queue;
 
-        public DirectInserter(JCQueue q) {
-            this.q = q;
+        DirectInserter(JCQueue queue) {
+            this.queue = queue;
         }
 
         /**
@@ -300,19 +298,19 @@ public class JCQueue implements IStatefulObject, Closeable {
          */
         @Override
         public void publish(Object obj) throws InterruptedException {
-            boolean inserted = q.tryPublishInternal(obj);
+            boolean inserted = queue.tryPublishInternal(obj);
             int idleCount = 0;
             while (!inserted) {
-                q.metrics.notifyInsertFailure();
+                queue.metrics.notifyInsertFailure();
                 if (idleCount == 0) { // check avoids multiple log msgs when in a idle loop
-                    LOG.debug("Experiencing Back Pressure on recvQueue: '{}'. Entering BackPressure Wait", q.getName());
+                    LOG.debug("Experiencing Back Pressure on recvQueue: '{}'. Entering BackPressure Wait", queue.getName());
                 }
 
-                idleCount = q.backPressureWaitStrategy.idle(idleCount);
+                idleCount = queue.backPressureWaitStrategy.idle(idleCount);
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
-                inserted = q.tryPublishInternal(obj);
+                inserted = queue.tryPublishInternal(obj);
             }
 
         }
@@ -322,9 +320,9 @@ public class JCQueue implements IStatefulObject, Closeable {
          */
         @Override
         public boolean tryPublish(Object obj) {
-            boolean inserted = q.tryPublishInternal(obj);
+            boolean inserted = queue.tryPublishInternal(obj);
             if (!inserted) {
-                q.metrics.notifyInsertFailure();
+                queue.metrics.notifyInsertFailure();
                 return false;
             }
             return true;
@@ -343,11 +341,11 @@ public class JCQueue implements IStatefulObject, Closeable {
     /* Not thread safe. Have one instance per producer thread or synchronize externally */
     private static class BatchInserter implements Inserter {
         private final int batchSz;
-        private JCQueue q;
+        private JCQueue queue;
         private ArrayList<Object> currentBatch;
 
-        public BatchInserter(JCQueue q, int batchSz) {
-            this.q = q;
+        BatchInserter(JCQueue queue, int batchSz) {
+            this.queue = queue;
             this.batchSz = batchSz;
             this.currentBatch = new ArrayList<>(batchSz + 1);
         }
@@ -386,18 +384,18 @@ public class JCQueue implements IStatefulObject, Closeable {
             if (currentBatch.isEmpty()) {
                 return;
             }
-            int publishCount = q.tryPublishInternal(currentBatch);
+            int publishCount = queue.tryPublishInternal(currentBatch);
             int retryCount = 0;
             while (publishCount == 0) { // retry till at least 1 element is drained
-                q.metrics.notifyInsertFailure();
+                queue.metrics.notifyInsertFailure();
                 if (retryCount == 0) { // check avoids multiple log msgs when in a idle loop
-                    LOG.debug("Experiencing Back Pressure when flushing batch to Q: {}. Entering BackPressure Wait.", q.getName());
+                    LOG.debug("Experiencing Back Pressure when flushing batch to Q: {}. Entering BackPressure Wait.", queue.getName());
                 }
-                retryCount = q.backPressureWaitStrategy.idle(retryCount);
+                retryCount = queue.backPressureWaitStrategy.idle(retryCount);
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
-                publishCount = q.tryPublishInternal(currentBatch);
+                publishCount = queue.tryPublishInternal(currentBatch);
             }
             currentBatch.subList(0, publishCount).clear();
         }
@@ -411,9 +409,9 @@ public class JCQueue implements IStatefulObject, Closeable {
             if (currentBatch.isEmpty()) {
                 return true;
             }
-            int publishCount = q.tryPublishInternal(currentBatch);
+            int publishCount = queue.tryPublishInternal(currentBatch);
             if (publishCount == 0) {
-                q.metrics.notifyInsertFailure();
+                queue.metrics.notifyInsertFailure();
                 return false;
             } else {
                 currentBatch.subList(0, publishCount).clear();

@@ -22,9 +22,10 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Interface for handling credentials in an HttpServletRequest
+ * Interface for handling credentials in an HttpServletRequest.
  */
 public interface IHttpCredentialsPlugin {
+
     /**
      * Invoked once immediately after construction.
      *

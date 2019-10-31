@@ -65,6 +65,10 @@ public class StormTimer implements AutoCloseable {
         scheduleMs(Time.secsToMillisLong(delaySecs), func, checkActive, jitterMs);
     }
 
+    public void schedule(int delaySecs, Runnable func) {
+        schedule(delaySecs, func, true, 0);
+    }
+
     /**
      * Same as schedule with millisecond resolution.
      *
@@ -86,10 +90,6 @@ public class StormTimer implements AutoCloseable {
             endTimeMs = this.task.random.nextInt(jitterMs) + endTimeMs;
         }
         task.add(new QueueEntry(endTimeMs, func, id));
-    }
-
-    public void schedule(int delaySecs, Runnable func) {
-        schedule(delaySecs, func, true, 0);
     }
 
     public void scheduleMs(long delayMs, Runnable func) {

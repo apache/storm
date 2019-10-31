@@ -26,15 +26,15 @@ import org.apache.storm.tuple.Fields;
 
 
 public class AggregateProcessor implements TridentProcessor {
-    Aggregator _agg;
-    TridentContext _context;
-    FreshCollector _collector;
-    Fields _inputFields;
-    ProjectionFactory _projection;
+    Aggregator agg;
+    TridentContext context;
+    FreshCollector collector;
+    Fields inputFields;
+    ProjectionFactory projection;
 
     public AggregateProcessor(Fields inputFields, Aggregator agg) {
-        _agg = agg;
-        _inputFields = inputFields;
+        this.agg = agg;
+        this.inputFields = inputFields;
     }
 
     @Override
@@ -43,42 +43,42 @@ public class AggregateProcessor implements TridentProcessor {
         if (parents.size() != 1) {
             throw new RuntimeException("Aggregate operation can only have one parent");
         }
-        _context = tridentContext;
-        _collector = new FreshCollector(tridentContext);
-        _projection = new ProjectionFactory(parents.get(0), _inputFields);
-        _agg.prepare(conf, new TridentOperationContext(context, _projection));
+        this.context = tridentContext;
+        collector = new FreshCollector(tridentContext);
+        projection = new ProjectionFactory(parents.get(0), inputFields);
+        agg.prepare(conf, new TridentOperationContext(context, projection));
     }
 
     @Override
     public void cleanup() {
-        _agg.cleanup();
+        agg.cleanup();
     }
 
     @Override
     public void startBatch(ProcessorContext processorContext) {
-        _collector.setContext(processorContext);
-        processorContext.state[_context.getStateIndex()] = _agg.init(processorContext.batchId, _collector);
+        collector.setContext(processorContext);
+        processorContext.state[context.getStateIndex()] = agg.init(processorContext.batchId, collector);
     }
 
     @Override
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
-        _collector.setContext(processorContext);
-        _agg.aggregate(processorContext.state[_context.getStateIndex()], _projection.create(tuple), _collector);
+        collector.setContext(processorContext);
+        agg.aggregate(processorContext.state[context.getStateIndex()], projection.create(tuple), collector);
     }
 
     @Override
     public void flush() {
-        _collector.flush();
+        collector.flush();
     }
 
     @Override
     public void finishBatch(ProcessorContext processorContext) {
-        _collector.setContext(processorContext);
-        _agg.complete(processorContext.state[_context.getStateIndex()], _collector);
+        collector.setContext(processorContext);
+        agg.complete(processorContext.state[context.getStateIndex()], collector);
     }
 
     @Override
     public Factory getOutputFactory() {
-        return _collector.getOutputFactory();
+        return collector.getOutputFactory();
     }
 }

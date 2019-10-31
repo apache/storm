@@ -24,9 +24,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
 
-/**
- *
- */
 public class TridentResultSetValuesMapper implements CQLResultSetValuesMapper {
     private Fields outputDeclaredFields;
 

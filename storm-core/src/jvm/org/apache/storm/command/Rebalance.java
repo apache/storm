@@ -13,6 +13,7 @@
 package org.apache.storm.command;
 
 import static java.lang.String.format;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.generated.Nimbus;
@@ -39,20 +40,18 @@ public class Rebalance {
         final String name = (String) cl.get("topologyName");
         final RebalanceOptions rebalanceOptions = new RebalanceOptions();
         Integer wait = (Integer) cl.get("w");
-        Integer numWorkers = (Integer) cl.get("n");
-        Map<String, Integer> numExecutors = (Map<String, Integer>) cl.get("e");
-        Map<String, Map<String, Double>> resourceOverrides = (Map<String, Map<String, Double>>) cl.get("r");
-
         if (null != wait) {
             rebalanceOptions.set_wait_secs(wait);
         }
+        Integer numWorkers = (Integer) cl.get("n");
         if (null != numWorkers) {
             rebalanceOptions.set_num_workers(numWorkers);
         }
+        Map<String, Integer> numExecutors = (Map<String, Integer>) cl.get("e");
         if (null != numExecutors) {
             rebalanceOptions.set_num_executors(numExecutors);
         }
-
+        Map<String, Map<String, Double>> resourceOverrides = (Map<String, Map<String, Double>>) cl.get("r");
         if (null != resourceOverrides) {
             rebalanceOptions.set_topology_resources_overrides(resourceOverrides);
         }

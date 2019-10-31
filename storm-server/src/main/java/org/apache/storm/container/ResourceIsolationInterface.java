@@ -23,7 +23,7 @@ import java.util.Set;
 public interface ResourceIsolationInterface {
 
     /**
-     * Called when starting up
+     * Called when starting up.
      *
      * @param conf the cluster config
      * @throws IOException on any error.
@@ -85,6 +85,7 @@ public interface ResourceIsolationInterface {
     long getMemoryUsage(String workerId) throws IOException;
 
     /**
+     * Get the system free memory in MB.
      * @return The amount of memory in bytes that are free on the system. This might not be the entire box, it might be
      *     within a parent resource group.
      * @throws IOException on any error.

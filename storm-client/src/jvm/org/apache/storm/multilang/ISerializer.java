@@ -27,7 +27,7 @@ import org.apache.storm.task.TopologyContext;
 public interface ISerializer extends Serializable {
 
     /**
-     * This method sets the input and output streams of the serializer
+     * This method sets the input and output streams of the serializer.
      *
      * @param processIn  output stream to non-JVM component
      * @param processOut input stream from non-JVM component
@@ -45,28 +45,28 @@ public interface ISerializer extends Serializable {
         NoOutputException;
 
     /**
-     * This method receives a shell message from the non-JVM process
+     * This method receives a shell message from the non-JVM process.
      *
      * @return shell message
      */
     ShellMsg readShellMsg() throws IOException, NoOutputException;
 
     /**
-     * This method sends a bolt message to a non-JVM bolt process
+     * This method sends a bolt message to a non-JVM bolt process.
      *
      * @param msg bolt message
      */
     void writeBoltMsg(BoltMsg msg) throws IOException;
 
     /**
-     * This method sends a spout message to a non-JVM spout process
+     * This method sends a spout message to a non-JVM spout process.
      *
      * @param msg spout message
      */
     void writeSpoutMsg(SpoutMsg msg) throws IOException;
 
     /**
-     * This method sends a list of task IDs to a non-JVM bolt process
+     * This method sends a list of task IDs to a non-JVM bolt process.
      *
      * @param taskIds list of task IDs
      */

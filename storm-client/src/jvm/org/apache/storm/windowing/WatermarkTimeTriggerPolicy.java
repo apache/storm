@@ -118,10 +118,10 @@ public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T, Long> {
 
     @Override
     public String toString() {
-        return "WatermarkTimeTriggerPolicy{" +
-               "slidingIntervalMs=" + slidingIntervalMs +
-               ", nextWindowEndTs=" + nextWindowEndTs +
-               ", started=" + started +
-               '}';
+        return "WatermarkTimeTriggerPolicy{"
+                + "slidingIntervalMs=" + slidingIntervalMs
+                + ", nextWindowEndTs=" + nextWindowEndTs
+                + ", started=" + started
+                + '}';
     }
 }

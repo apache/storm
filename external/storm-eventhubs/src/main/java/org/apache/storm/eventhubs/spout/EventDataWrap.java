@@ -43,7 +43,6 @@ public class EventDataWrap implements Comparable<EventDataWrap> {
 
     @Override
     public int compareTo(EventDataWrap ed) {
-        return messageId.getSequenceNumber().
-            compareTo(ed.getMessageId().getSequenceNumber());
+        return messageId.getSequenceNumber().compareTo(ed.getMessageId().getSequenceNumber());
     }
 }

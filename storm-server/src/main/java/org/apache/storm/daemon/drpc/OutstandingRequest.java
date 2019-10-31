@@ -23,35 +23,35 @@ import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.utils.Time;
 
 public abstract class OutstandingRequest {
-    private final long _start;
-    private final String _function;
-    private final DRPCRequest _req;
-    private volatile boolean _fetched = false;
+    private final long start;
+    private final String function;
+    private final DRPCRequest req;
+    private volatile boolean fetched = false;
 
     public OutstandingRequest(String function, DRPCRequest req) {
-        _start = Time.currentTimeMillis();
-        _function = function;
-        _req = req;
+        start = Time.currentTimeMillis();
+        this.function = function;
+        this.req = req;
     }
 
     public DRPCRequest getRequest() {
-        return _req;
+        return req;
     }
 
     public void fetched() {
-        _fetched = true;
+        fetched = true;
     }
 
     public boolean wasFetched() {
-        return _fetched;
+        return fetched;
     }
 
     public String getFunction() {
-        return _function;
+        return function;
     }
 
     public boolean isTimedOut(long timeoutMs) {
-        return (_start + timeoutMs) <= Time.currentTimeMillis();
+        return (start + timeoutMs) <= Time.currentTimeMillis();
     }
 
     public abstract void returnResult(String result);

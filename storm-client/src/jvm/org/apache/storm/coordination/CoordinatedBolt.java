@@ -43,13 +43,13 @@ import org.slf4j.LoggerFactory;
  */
 public class CoordinatedBolt implements IRichBolt {
     public static final Logger LOG = LoggerFactory.getLogger(CoordinatedBolt.class);
-    private Map<String, SourceArgs> _sourceArgs;
-    private IdStreamSpec _idStreamSpec;
-    private IRichBolt _delegate;
-    private Integer _numSourceReports;
-    private List<Integer> _countOutTasks = new ArrayList<>();
-    private OutputCollector _collector;
-    private TimeCacheMap<Object, TrackingInfo> _tracked;
+    private Map<String, SourceArgs> sourceArgs;
+    private IdStreamSpec idStreamSpec;
+    private IRichBolt delegate;
+    private Integer numSourceReports;
+    private List<Integer> countOutTasks = new ArrayList<>();
+    private OutputCollector collector;
+    private TimeCacheMap<Object, TrackingInfo> tracked;
 
     public CoordinatedBolt(IRichBolt delegate) {
         this(delegate, null, null);
@@ -60,12 +60,12 @@ public class CoordinatedBolt implements IRichBolt {
     }
 
     public CoordinatedBolt(IRichBolt delegate, Map<String, SourceArgs> sourceArgs, IdStreamSpec idStreamSpec) {
-        _sourceArgs = sourceArgs;
-        if (_sourceArgs == null) {
-            _sourceArgs = new HashMap<>();
+        this.sourceArgs = sourceArgs;
+        if (this.sourceArgs == null) {
+            this.sourceArgs = new HashMap<>();
         }
-        _delegate = delegate;
-        _idStreamSpec = idStreamSpec;
+        this.delegate = delegate;
+        this.idStreamSpec = idStreamSpec;
     }
 
     private static Map<String, SourceArgs> singleSourceArgs(String sourceComponent, SourceArgs sourceArgs) {
@@ -74,29 +74,30 @@ public class CoordinatedBolt implements IRichBolt {
         return ret;
     }
 
+    @Override
     public void prepare(Map<String, Object> config, TopologyContext context, OutputCollector collector) {
         TimeCacheMap.ExpiredCallback<Object, TrackingInfo> callback = null;
-        if (_delegate instanceof TimeoutCallback) {
+        if (delegate instanceof TimeoutCallback) {
             callback = new TimeoutItems();
         }
-        _tracked = new TimeCacheMap<>(context.maxTopologyMessageTimeout(), callback);
-        _collector = collector;
-        _delegate.prepare(config, context, new OutputCollector(new CoordinatedOutputCollector(collector)));
+        tracked = new TimeCacheMap<>(context.maxTopologyMessageTimeout(), callback);
+        this.collector = collector;
+        delegate.prepare(config, context, new OutputCollector(new CoordinatedOutputCollector(collector)));
         for (String component : Utils.get(context.getThisTargets(),
                                           Constants.COORDINATED_STREAM_ID,
                                           new HashMap<String, Grouping>())
                                      .keySet()) {
             for (Integer task : context.getComponentTasks(component)) {
-                _countOutTasks.add(task);
+                countOutTasks.add(task);
             }
         }
-        if (!_sourceArgs.isEmpty()) {
-            _numSourceReports = 0;
-            for (Entry<String, SourceArgs> entry : _sourceArgs.entrySet()) {
+        if (!sourceArgs.isEmpty()) {
+            numSourceReports = 0;
+            for (Entry<String, SourceArgs> entry : sourceArgs.entrySet()) {
                 if (entry.getValue().singleCount) {
-                    _numSourceReports += 1;
+                    numSourceReports += 1;
                 } else {
-                    _numSourceReports += context.getComponentTasks(entry.getKey()).size();
+                    numSourceReports += context.getComponentTasks(entry.getKey()).size();
                 }
             }
         }
@@ -106,121 +107,122 @@ public class CoordinatedBolt implements IRichBolt {
         Object id = tup.getValue(0);
         boolean failed = false;
 
-        synchronized (_tracked) {
-            TrackingInfo track = _tracked.get(id);
+        synchronized (tracked) {
+            TrackingInfo track = tracked.get(id);
             try {
                 if (track != null) {
                     boolean delayed = false;
-                    if (_idStreamSpec == null && type == TupleType.COORD || _idStreamSpec != null && type == TupleType.ID) {
+                    if (idStreamSpec == null && type == TupleType.COORD || idStreamSpec != null && type == TupleType.ID) {
                         track.ackTuples.add(tup);
                         delayed = true;
                     }
                     if (track.failed) {
                         failed = true;
                         for (Tuple t : track.ackTuples) {
-                            _collector.fail(t);
+                            collector.fail(t);
                         }
-                        _tracked.remove(id);
-                    } else if (track.receivedId
-                               && (_sourceArgs.isEmpty() ||
-                                   track.reportCount == _numSourceReports &&
-                                   track.expectedTupleCount == track.receivedTuples)) {
-                        if (_delegate instanceof FinishedCallback) {
-                            ((FinishedCallback) _delegate).finishedId(id);
+                        tracked.remove(id);
+                    } else if (track.receivedId && (sourceArgs.isEmpty()
+                            || track.reportCount == numSourceReports && track.expectedTupleCount == track.receivedTuples)) {
+                        if (delegate instanceof FinishedCallback) {
+                            ((FinishedCallback) delegate).finishedId(id);
                         }
-                        if (!(_sourceArgs.isEmpty() || type != TupleType.REGULAR)) {
+                        if (!(sourceArgs.isEmpty() || type != TupleType.REGULAR)) {
                             throw new IllegalStateException("Coordination condition met on a non-coordinating tuple. Should be impossible");
                         }
-                        Iterator<Integer> outTasks = _countOutTasks.iterator();
+                        Iterator<Integer> outTasks = countOutTasks.iterator();
                         while (outTasks.hasNext()) {
                             int task = outTasks.next();
                             int numTuples = Utils.get(track.taskEmittedTuples, task, 0);
-                            _collector.emitDirect(task, Constants.COORDINATED_STREAM_ID, tup, new Values(id, numTuples));
+                            collector.emitDirect(task, Constants.COORDINATED_STREAM_ID, tup, new Values(id, numTuples));
                         }
                         for (Tuple t : track.ackTuples) {
-                            _collector.ack(t);
+                            collector.ack(t);
                         }
                         track.finished = true;
-                        _tracked.remove(id);
+                        tracked.remove(id);
                     }
                     if (!delayed && type != TupleType.REGULAR) {
                         if (track.failed) {
-                            _collector.fail(tup);
+                            collector.fail(tup);
                         } else {
-                            _collector.ack(tup);
+                            collector.ack(tup);
                         }
                     }
                 } else {
                     if (type != TupleType.REGULAR) {
-                        _collector.fail(tup);
+                        collector.fail(tup);
                     }
                 }
             } catch (FailedException e) {
                 LOG.error("Failed to finish batch", e);
                 for (Tuple t : track.ackTuples) {
-                    _collector.fail(t);
+                    collector.fail(t);
                 }
-                _tracked.remove(id);
+                tracked.remove(id);
                 failed = true;
             }
         }
         return failed;
     }
 
+    @Override
     public void execute(Tuple tuple) {
         Object id = tuple.getValue(0);
         TrackingInfo track;
         TupleType type = getTupleType(tuple);
-        synchronized (_tracked) {
-            track = _tracked.get(id);
+        synchronized (tracked) {
+            track = tracked.get(id);
             if (track == null) {
                 track = new TrackingInfo();
-                if (_idStreamSpec == null) {
+                if (idStreamSpec == null) {
                     track.receivedId = true;
                 }
-                _tracked.put(id, track);
+                tracked.put(id, track);
             }
         }
 
         if (type == TupleType.ID) {
-            synchronized (_tracked) {
+            synchronized (tracked) {
                 track.receivedId = true;
             }
             checkFinishId(tuple, type);
         } else if (type == TupleType.COORD) {
             int count = (Integer) tuple.getValue(1);
-            synchronized (_tracked) {
+            synchronized (tracked) {
                 track.reportCount++;
                 track.expectedTupleCount += count;
             }
             checkFinishId(tuple, type);
         } else {
-            synchronized (_tracked) {
-                _delegate.execute(tuple);
+            synchronized (tracked) {
+                delegate.execute(tuple);
             }
         }
     }
 
+    @Override
     public void cleanup() {
-        _delegate.cleanup();
-        _tracked.cleanup();
+        delegate.cleanup();
+        tracked.cleanup();
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        _delegate.declareOutputFields(declarer);
+        delegate.declareOutputFields(declarer);
         declarer.declareStream(Constants.COORDINATED_STREAM_ID, true, new Fields("id", "count"));
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return _delegate.getComponentConfiguration();
+        return delegate.getComponentConfiguration();
     }
 
     private TupleType getTupleType(Tuple tuple) {
-        if (_idStreamSpec != null
-            && tuple.getSourceGlobalStreamId().equals(_idStreamSpec._id)) {
+        if (idStreamSpec != null
+            && tuple.getSourceGlobalStreamId().equals(idStreamSpec.id)) {
             return TupleType.ID;
-        } else if (!_sourceArgs.isEmpty()
+        } else if (!sourceArgs.isEmpty()
                    && tuple.getSourceStreamId().equals(Constants.COORDINATED_STREAM_ID)) {
             return TupleType.COORD;
         } else {
@@ -228,17 +230,17 @@ public class CoordinatedBolt implements IRichBolt {
         }
     }
 
-    static enum TupleType {
+    enum TupleType {
         REGULAR,
         ID,
         COORD
     }
 
-    public static interface FinishedCallback {
+    public interface FinishedCallback {
         void finishedId(Object id);
     }
 
-    public static interface TimeoutCallback {
+    public interface TimeoutCallback {
         void timeoutId(Object id);
     }
 
@@ -275,19 +277,19 @@ public class CoordinatedBolt implements IRichBolt {
 
         @Override
         public String toString() {
-            return "reportCount: " + reportCount + "\n" +
-                   "expectedTupleCount: " + expectedTupleCount + "\n" +
-                   "receivedTuples: " + receivedTuples + "\n" +
-                   "failed: " + failed + "\n" +
-                   taskEmittedTuples.toString();
+            return "reportCount: " + reportCount + "\n"
+                    + "expectedTupleCount: " + expectedTupleCount + "\n"
+                    + "receivedTuples: " + receivedTuples + "\n"
+                    + "failed: " + failed + "\n"
+                    + taskEmittedTuples.toString();
         }
     }
 
     public static class IdStreamSpec implements Serializable {
-        GlobalStreamId _id;
+        GlobalStreamId id;
 
         protected IdStreamSpec(String component, String stream) {
-            _id = new GlobalStreamId(component, stream);
+            id = new GlobalStreamId(component, stream);
         }
 
         public static IdStreamSpec makeDetectSpec(String component, String stream) {
@@ -295,72 +297,79 @@ public class CoordinatedBolt implements IRichBolt {
         }
 
         public GlobalStreamId getGlobalStreamId() {
-            return _id;
+            return id;
         }
     }
 
     public class CoordinatedOutputCollector implements IOutputCollector {
-        IOutputCollector _delegate;
+        IOutputCollector delegate;
 
         public CoordinatedOutputCollector(IOutputCollector delegate) {
-            _delegate = delegate;
+            this.delegate = delegate;
         }
 
+        @Override
         public List<Integer> emit(String stream, Collection<Tuple> anchors, List<Object> tuple) {
-            List<Integer> tasks = _delegate.emit(stream, anchors, tuple);
+            List<Integer> tasks = delegate.emit(stream, anchors, tuple);
             updateTaskCounts(tuple.get(0), tasks);
             return tasks;
         }
 
+        @Override
         public void emitDirect(int task, String stream, Collection<Tuple> anchors, List<Object> tuple) {
             updateTaskCounts(tuple.get(0), Arrays.asList(task));
-            _delegate.emitDirect(task, stream, anchors, tuple);
+            delegate.emitDirect(task, stream, anchors, tuple);
         }
 
+        @Override
         public void ack(Tuple tuple) {
             Object id = tuple.getValue(0);
-            synchronized (_tracked) {
-                TrackingInfo track = _tracked.get(id);
+            synchronized (tracked) {
+                TrackingInfo track = tracked.get(id);
                 if (track != null) {
                     track.receivedTuples++;
                 }
             }
             boolean failed = checkFinishId(tuple, TupleType.REGULAR);
             if (failed) {
-                _delegate.fail(tuple);
+                delegate.fail(tuple);
             } else {
-                _delegate.ack(tuple);
+                delegate.ack(tuple);
             }
         }
 
+        @Override
         public void fail(Tuple tuple) {
             Object id = tuple.getValue(0);
-            synchronized (_tracked) {
-                TrackingInfo track = _tracked.get(id);
+            synchronized (tracked) {
+                TrackingInfo track = tracked.get(id);
                 if (track != null) {
                     track.failed = true;
                 }
             }
             checkFinishId(tuple, TupleType.REGULAR);
-            _delegate.fail(tuple);
+            delegate.fail(tuple);
         }
 
+        @Override
         public void flush() {
-            _delegate.flush();
+            delegate.flush();
         }
 
+        @Override
         public void resetTimeout(Tuple tuple) {
-            _delegate.resetTimeout(tuple);
+            delegate.resetTimeout(tuple);
         }
 
+        @Override
         public void reportError(Throwable error) {
-            _delegate.reportError(error);
+            delegate.reportError(error);
         }
 
 
         private void updateTaskCounts(Object id, List<Integer> tasks) {
-            synchronized (_tracked) {
-                TrackingInfo track = _tracked.get(id);
+            synchronized (tracked) {
+                TrackingInfo track = tracked.get(id);
                 if (track != null) {
                     Map<Integer, Integer> taskEmittedTuples = track.taskEmittedTuples;
                     for (Integer task : tasks) {
@@ -375,12 +384,12 @@ public class CoordinatedBolt implements IRichBolt {
     private class TimeoutItems implements TimeCacheMap.ExpiredCallback<Object, TrackingInfo> {
         @Override
         public void expire(Object id, TrackingInfo val) {
-            synchronized (_tracked) {
+            synchronized (tracked) {
                 // the combination of the lock and the finished flag ensure that
                 // an id is never timed out if it has been finished
                 val.failed = true;
                 if (!val.finished) {
-                    ((TimeoutCallback) _delegate).timeoutId(id);
+                    ((TimeoutCallback) delegate).timeoutId(id);
                 }
             }
         }

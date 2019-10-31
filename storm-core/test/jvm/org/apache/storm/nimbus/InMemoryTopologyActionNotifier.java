@@ -25,7 +25,7 @@ public class InMemoryTopologyActionNotifier implements ITopologyActionNotifierPl
 
 
     @Override
-    public void prepare(Map<String, Object> StormConf) {
+    public void prepare(Map<String, Object> stormConf) {
         //no-op
     }
 

@@ -94,13 +94,7 @@ public class EventHubSpout extends BaseRichSpout {
     }
 
     /**
-     * This is a extracted method that is easy to test
-     *
-     * @param config
-     * @param totalTasks
-     * @param taskIndex
-     * @param collector
-     * @throws Exception
+     * This is a extracted method that is easy to test.
      */
     public void preparePartitions(Map<String, Object> config, int totalTasks, int taskIndex, SpoutOutputCollector collector) throws
         Exception {

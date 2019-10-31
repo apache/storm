@@ -65,11 +65,11 @@ public class TupleWindowImpl implements TupleWindow {
 
     @Override
     public String toString() {
-        return "TupleWindowImpl{" +
-               "tuples=" + tuples +
-               ", newTuples=" + newTuples +
-               ", expiredTuples=" + expiredTuples +
-               '}';
+        return "TupleWindowImpl{"
+                + "tuples=" + tuples
+                + ", newTuples=" + newTuples
+                + ", expiredTuples=" + expiredTuples
+                + '}';
     }
 
     @Override

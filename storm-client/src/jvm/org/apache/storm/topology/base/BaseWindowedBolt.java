@@ -289,9 +289,9 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
 
         @Override
         public String toString() {
-            return "Count{" +
-                   "value=" + value +
-                   '}';
+            return "Count{"
+                    + "value=" + value
+                    + '}';
         }
     }
 
@@ -384,9 +384,9 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
 
         @Override
         public String toString() {
-            return "Duration{" +
-                   "value=" + value +
-                   '}';
+            return "Duration{"
+                    + "value=" + value
+                    + '}';
         }
     }
 }

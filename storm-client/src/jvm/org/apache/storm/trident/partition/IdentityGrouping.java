@@ -24,7 +24,7 @@ import org.apache.storm.task.WorkerTopologyContext;
 
 
 public class IdentityGrouping implements CustomStreamGrouping {
-    final Map<Integer, List<Integer>> _precomputed = new HashMap<>();
+    final Map<Integer, List<Integer>> precomputed = new HashMap<>();
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> tasks) {
@@ -38,13 +38,13 @@ public class IdentityGrouping implements CustomStreamGrouping {
         for (int i = 0; i < sourceTasks.size(); i++) {
             int s = sourceTasks.get(i);
             int t = tasks.get(i);
-            _precomputed.put(s, Arrays.asList(t));
+            precomputed.put(s, Arrays.asList(t));
         }
     }
 
     @Override
     public List<Integer> chooseTasks(int task, List<Object> values) {
-        List<Integer> ret = _precomputed.get(task);
+        List<Integer> ret = precomputed.get(task);
         if (ret == null) {
             throw new RuntimeException("Tuple emitted by task that's not part of this component. Should be impossible");
         }

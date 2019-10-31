@@ -91,13 +91,13 @@ public class JedisPoolConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "JedisPoolConfig{" +
-               "host='" + host + '\'' +
-               ", port=" + port +
-               ", timeout=" + timeout +
-               ", database=" + database +
-               ", password='" + password + '\'' +
-               '}';
+        return "JedisPoolConfig{"
+                + "host='" + host + '\''
+                + ", port=" + port
+                + ", timeout=" + timeout
+                + ", database=" + database
+                + ", password='" + password + '\''
+                + '}';
     }
 
     /**

@@ -18,7 +18,6 @@
 
 package org.apache.storm.perf;
 
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +93,7 @@ public class LowThroughputTopo {
         private SpoutOutputCollector collector = null;
         private long sleepTimeMs;
 
-        public ThrottledSpout(long sleepMs) {
+        ThrottledSpout(long sleepMs) {
             this.sleepTimeMs = sleepMs;
         }
 

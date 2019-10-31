@@ -224,7 +224,7 @@ public class ClusterUtils {
     }
 
     /**
-     * Get the path to secret keys for a specific topology
+     * Get the path to secret keys for a specific topology.
      *
      * @param type       the service the secret is for.
      * @param topologyId the topology the secret is for.
@@ -254,11 +254,7 @@ public class ClusterUtils {
     }
 
     /**
-     * Ensures that we only return heartbeats for executors assigned to this worker
-     *
-     * @param executors
-     * @param workerHeartbeat
-     * @return
+     * Ensures that we only return heartbeats for executors assigned to this worker.
      */
     public static Map<ExecutorInfo, ExecutorBeat> convertExecutorBeats(List<ExecutorInfo> executors,
                                                                        ClusterWorkerHeartbeat workerHeartbeat) {
@@ -276,18 +272,18 @@ public class ClusterUtils {
         return executorWhb;
     }
 
-    public static IStateStorage mkStateStorage(Map<String, Object> config, Map<String, Object> auth_conf,
+    public static IStateStorage mkStateStorage(Map<String, Object> config, Map<String, Object> authConf,
                                                ClusterStateContext context) throws Exception {
-        return _instance.mkStateStorageImpl(config, auth_conf, context);
+        return _instance.mkStateStorageImpl(config, authConf, context);
     }
 
-    public static IStormClusterState mkStormClusterState(Object StateStorage, ILocalAssignmentsBackend backend,
+    public static IStormClusterState mkStormClusterState(Object stateStorage, ILocalAssignmentsBackend backend,
                                                          ClusterStateContext context) throws Exception {
-        return _instance.mkStormClusterStateImpl(StateStorage, backend, context);
+        return _instance.mkStormClusterStateImpl(stateStorage, backend, context);
     }
 
-    public static IStormClusterState mkStormClusterState(Object StateStorage, ClusterStateContext context) throws Exception {
-        return _instance.mkStormClusterStateImpl(StateStorage, LocalAssignmentsBackendFactory.getDefault(), context);
+    public static IStormClusterState mkStormClusterState(Object stateStorage, ClusterStateContext context) throws Exception {
+        return _instance.mkStormClusterStateImpl(stateStorage, LocalAssignmentsBackendFactory.getDefault(), context);
     }
 
     public static String stringifyError(Throwable error) {
@@ -302,13 +298,13 @@ public class ClusterUtils {
         if (stateStorage instanceof IStateStorage) {
             return new StormClusterStateImpl((IStateStorage) stateStorage, backend, context, false);
         } else {
-            IStateStorage Storage = _instance.mkStateStorageImpl((Map<String, Object>) stateStorage,
+            IStateStorage storage = _instance.mkStateStorageImpl((Map<String, Object>) stateStorage,
                                                                  (Map<String, Object>) stateStorage, context);
-            return new StormClusterStateImpl(Storage, backend, context, true);
+            return new StormClusterStateImpl(storage, backend, context, true);
         }
     }
 
-    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map<String, Object> auth_conf, ClusterStateContext context) throws
+    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map<String, Object> authConf, ClusterStateContext context) throws
         Exception {
         String className = null;
         IStateStorage stateStorage = null;
@@ -319,7 +315,7 @@ public class ClusterUtils {
         }
         Class clazz = Class.forName(className);
         StateStorageFactory storageFactory = (StateStorageFactory) clazz.newInstance();
-        stateStorage = storageFactory.mkStore(config, auth_conf, context);
+        stateStorage = storageFactory.mkStore(config, authConf, context);
         return stateStorage;
     }
 }

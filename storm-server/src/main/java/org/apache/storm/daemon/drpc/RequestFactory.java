@@ -21,5 +21,6 @@ package org.apache.storm.daemon.drpc;
 import org.apache.storm.generated.DRPCRequest;
 
 public interface RequestFactory<T extends OutstandingRequest> {
-    public T mkRequest(String function, DRPCRequest req);
+
+    T mkRequest(String function, DRPCRequest req);
 }

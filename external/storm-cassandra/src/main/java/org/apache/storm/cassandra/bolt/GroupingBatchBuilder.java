@@ -20,9 +20,6 @@ import java.util.LinkedList;
 import java.util.List;
 import org.apache.storm.tuple.Tuple;
 
-/**
- *
- */
 public class GroupingBatchBuilder implements Iterable<PairBatchStatementTuples> {
 
     private int batchSizeRows;
@@ -31,7 +28,6 @@ public class GroupingBatchBuilder implements Iterable<PairBatchStatementTuples> 
 
     /**
      * Creates a new  {@link GroupingBatchBuilder} instance.
-     * @param batchSizeRows
      */
     public GroupingBatchBuilder(int batchSizeRows, List<PairStatementTuple> statements) {
         this.batchSizeRows = batchSizeRows;

@@ -18,6 +18,9 @@
 
 package org.apache.storm.pmml;
 
+import java.util.List;
+import java.util.Map;
+
 import org.apache.storm.pmml.model.ModelOutputs;
 import org.apache.storm.pmml.runner.ModelRunner;
 import org.apache.storm.pmml.runner.ModelRunnerFactory;
@@ -32,9 +35,7 @@ import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class PMMLPredictorBolt extends BaseTickTupleAwareRichBolt {
     protected static final Logger LOG = LoggerFactory.getLogger(PMMLPredictorBolt.class);
 
@@ -52,7 +53,7 @@ public class PMMLPredictorBolt extends BaseTickTupleAwareRichBolt {
      * Creates an instance of {@link PMMLPredictorBolt} that executes, for every tuple, the runner constructed with
      * the {@link ModelRunnerFactory} specified in the parameter
      * The {@link PMMLPredictorBolt} instantiated with this constructor declares the output fields as specified
-     * by the {@link ModelOutputs} parameter
+     * by the {@link ModelOutputs} parameter.
      */
     public PMMLPredictorBolt(ModelRunnerFactory modelRunnerFactory, ModelOutputs modelOutputs) {
         this.outputs = modelOutputs;
@@ -95,11 +96,11 @@ public class PMMLPredictorBolt extends BaseTickTupleAwareRichBolt {
 
     @Override
     public String toString() {
-        return "PMMLPredictorBolt{" +
-                "outputFields=" + outputs +
-                ", runnerFactory=" + runnerFactory.getClass().getName() +
-                ", runner=" + runner +
-                ", collector=" + collector +
-                "} ";
+        return "PMMLPredictorBolt{"
+                + "outputFields=" + outputs
+                + ", runnerFactory=" + runnerFactory.getClass().getName()
+                + ", runner=" + runner
+                + ", collector=" + collector
+                + "} ";
     }
 }

@@ -18,7 +18,6 @@
 
 package org.apache.storm.eventhubs.bolt;
 
-
 import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.PartitionSender;

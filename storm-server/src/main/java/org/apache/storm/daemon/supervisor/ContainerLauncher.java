@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Launches containers
+ * Launches containers.
  */
 public abstract class ContainerLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(ContainerLauncher.class);
@@ -76,7 +76,7 @@ public abstract class ContainerLauncher {
     }
 
     /**
-     * Launch a container in a given slot
+     * Launch a container in a given slot.
      * @param port the port to run this on
      * @param assignment what to launch
      * @param state the current state of the supervisor
@@ -86,7 +86,7 @@ public abstract class ContainerLauncher {
     public abstract Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException;
 
     /**
-     * Recover a container for a running process
+     * Recover a container for a running process.
      * @param port the port the assignment is running on
      * @param assignment the assignment that was launched
      * @param state the current state of the supervisor

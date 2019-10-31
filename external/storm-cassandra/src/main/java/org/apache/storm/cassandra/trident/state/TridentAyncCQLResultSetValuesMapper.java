@@ -33,6 +33,7 @@ import org.apache.storm.tuple.Values;
 /**
  * A result set mapper implementation which runs requests in parallel and waits for them all to finish.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class TridentAyncCQLResultSetValuesMapper implements AyncCQLResultSetValuesMapper {
     private final Fields outputDeclaredFields;
     private final Semaphore throttle;

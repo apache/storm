@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultClient implements SimpleClient, Closeable, Serializable {
 
-    private final static Logger LOG = LoggerFactory.getLogger(DefaultClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultClient.class);
 
     private String keyspace;
 
@@ -72,8 +72,9 @@ public class DefaultClient implements SimpleClient, Closeable, Serializable {
     public synchronized Session connect() throws NoHostAvailableException {
         if (isDisconnected()) {
             LOG.info("Connected to cluster: {}", cluster.getClusterName());
-            for (Host host : getAllHosts())
+            for (Host host : getAllHosts()) {
                 LOG.info("Datacenter: {}; Host: {}; Rack: {}", host.getDatacenter(), host.getAddress(), host.getRack());
+            }
 
             LOG.info("Connect to cluster using keyspace %s", keyspace);
             session = cluster.connect(keyspace);

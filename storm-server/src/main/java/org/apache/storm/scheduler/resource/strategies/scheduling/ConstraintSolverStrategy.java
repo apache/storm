@@ -25,13 +25,14 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SchedulerAssignment;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.RAS_Node;
-import org.apache.storm.scheduler.resource.RAS_Nodes;
+import org.apache.storm.scheduler.resource.RasNode;
+import org.apache.storm.scheduler.resource.RasNodes;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.SchedulingStatus;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
@@ -42,15 +43,13 @@ import org.slf4j.LoggerFactory;
 
 public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     //hard coded max number of states to search
-    public static final int MAX_STATE_SEARCH = 100_000;
-    public static final int DEFAULT_STATE_SEARCH = 10_000;
     private static final Logger LOG = LoggerFactory.getLogger(ConstraintSolverStrategy.class);
 
     //constraints and spreads
     private Map<String, Map<String, Integer>> constraintMatrix;
     private HashSet<String> spreadComps = new HashSet<>();
 
-    private Map<String, RAS_Node> nodes;
+    private Map<String, RasNode> nodes;
     private Map<ExecutorDetails, String> execToComp;
     private Map<String, Set<ExecutorDetails>> compToExecs;
     private List<String> favoredNodeIds;
@@ -125,9 +124,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         return true;
     }
 
-    private static Map<WorkerSlot, RAS_Node> workerToNodes(Cluster cluster) {
-        Map<WorkerSlot, RAS_Node> workerToNodes = new HashMap<>();
-        for (RAS_Node node : RAS_Nodes.getAllNodesFrom(cluster).values()) {
+    private static Map<WorkerSlot, RasNode> workerToNodes(Cluster cluster) {
+        Map<WorkerSlot, RasNode> workerToNodes = new HashMap<>();
+        for (RasNode node : RasNodes.getAllNodesFrom(cluster).values()) {
             for (WorkerSlot s : node.getUsedSlots()) {
                 workerToNodes.put(s, node);
             }
@@ -142,15 +141,15 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         Map<ExecutorDetails, String> execToComp = topo.getExecutorToComponent();
         Map<WorkerSlot, HashSet<ExecutorDetails>> workerExecMap = new HashMap<>();
         Map<WorkerSlot, HashSet<String>> workerCompMap = new HashMap<>();
-        Map<RAS_Node, HashSet<String>> nodeCompMap = new HashMap<>();
-        Map<WorkerSlot, RAS_Node> workerToNodes = workerToNodes(cluster);
+        Map<RasNode, HashSet<String>> nodeCompMap = new HashMap<>();
+        Map<WorkerSlot, RasNode> workerToNodes = workerToNodes(cluster);
         boolean ret = true;
 
         HashSet<String> spreadComps = getSpreadComps(topo);
         for (Map.Entry<ExecutorDetails, WorkerSlot> entry : result.entrySet()) {
             ExecutorDetails exec = entry.getKey();
             WorkerSlot worker = entry.getValue();
-            RAS_Node node = workerToNodes.get(worker);
+            RasNode node = workerToNodes.get(worker);
 
             if (workerExecMap.computeIfAbsent(worker, (k) -> new HashSet<>()).contains(exec)) {
                 LOG.error("Incorrect Scheduling: Found duplicate in scheduling");
@@ -178,9 +177,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         LOG.info("Checking Resources...");
         assert (cluster.getAssignmentById(topo.getId()) != null);
         Map<ExecutorDetails, WorkerSlot> result = cluster.getAssignmentById(topo.getId()).getExecutorToSlot();
-        Map<RAS_Node, Collection<ExecutorDetails>> nodeToExecs = new HashMap<>();
+        Map<RasNode, Collection<ExecutorDetails>> nodeToExecs = new HashMap<>();
         Map<ExecutorDetails, WorkerSlot> mergedExecToWorker = new HashMap<>();
-        Map<String, RAS_Node> nodes = RAS_Nodes.getAllNodesFrom(cluster);
+        Map<String, RasNode> nodes = RasNodes.getAllNodesFrom(cluster);
         //merge with existing assignments
         if (cluster.getAssignmentById(topo.getId()) != null
             && cluster.getAssignmentById(topo.getId()).getExecutorToSlot() != null) {
@@ -191,7 +190,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         for (Map.Entry<ExecutorDetails, WorkerSlot> entry : mergedExecToWorker.entrySet()) {
             ExecutorDetails exec = entry.getKey();
             WorkerSlot worker = entry.getValue();
-            RAS_Node node = nodes.get(worker.getNodeId());
+            RasNode node = nodes.get(worker.getNodeId());
 
             if (node.getAvailableMemoryResources() < 0.0 && node.getAvailableCpuResources() < 0.0) {
                 LOG.error("Incorrect Scheduling: found node with negative available resources");
@@ -200,8 +199,8 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             nodeToExecs.computeIfAbsent(node, (k) -> new HashSet<>()).add(exec);
         }
 
-        for (Map.Entry<RAS_Node, Collection<ExecutorDetails>> entry : nodeToExecs.entrySet()) {
-            RAS_Node node = entry.getKey();
+        for (Map.Entry<RasNode, Collection<ExecutorDetails>> entry : nodeToExecs.entrySet()) {
+            RasNode node = entry.getKey();
             Collection<ExecutorDetails> execs = entry.getValue();
             double cpuUsed = 0.0;
             double memoryUsed = 0.0;
@@ -245,16 +244,15 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
         prepare(cluster);
         LOG.debug("Scheduling {}", td.getId());
-        nodes = RAS_Nodes.getAllNodesFrom(cluster);
+        nodes = RasNodes.getAllNodesFrom(cluster);
         Map<WorkerSlot, Set<String>> workerCompAssignment = new HashMap<>();
-        Map<RAS_Node, Set<String>> nodeCompAssignment = new HashMap<>();
-        //set max number of states to search
-        final int maxStateSearch = Math.min(MAX_STATE_SEARCH,
-                                            ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH),
-                                                                DEFAULT_STATE_SEARCH));
+        Map<RasNode, Set<String>> nodeCompAssignment = new HashMap<>();
 
-        final long maxTimeMs =
-            ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS), -1).intValue() * 1000L;
+        int confMaxStateSearch = ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH));
+        int daemonMaxStateSearch = ObjectReader.getInt(cluster.getConf().get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH));
+        final int maxStateSearch = Math.min(daemonMaxStateSearch, confMaxStateSearch);
+
+        final long maxTimeMs = ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS), -1) * 1000L;
 
         favoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES));
         unFavoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES));
@@ -281,7 +279,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         if (existingAssignment != null) {
             existingAssignment.getExecutorToSlot().forEach((exec, ws) -> {
                 String compId = execToComp.get(exec);
-                RAS_Node node = nodes.get(ws.getNodeId());
+                RasNode node = nodes.get(ws.getNodeId());
                 //populate node to component Assignments
                 nodeCompAssignment.computeIfAbsent(node, (k) -> new HashSet<>()).add(compId);
                 //populate worker to comp assignments
@@ -290,7 +288,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         }
 
         //early detection/early fail
-        if (!checkSchedulingFeasibility()) {
+        if (!checkSchedulingFeasibility(maxStateSearch)) {
             //Scheduling Status set to FAIL_OTHER so no eviction policy will be attempted to make space for this topology
             return SchedulingResult.failure(SchedulingStatus.FAIL_OTHER, "Scheduling not feasible!");
         }
@@ -298,7 +296,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             .asSchedulingResult();
     }
 
-    private boolean checkSchedulingFeasibility() {
+    private boolean checkSchedulingFeasibility(int maxStateSearch) {
         for (String comp : spreadComps) {
             int numExecs = compToExecs.get(comp).size();
             if (numExecs > nodes.size()) {
@@ -307,9 +305,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                 return false;
             }
         }
-        if (execToComp.size() >= MAX_STATE_SEARCH) {
+        if (execToComp.size() >= maxStateSearch) {
             LOG.error("Number of executors is greater than the maximum number of states allowed to be searched.  "
-                      + "# of executors: {} Max states to search: {}", execToComp.size(), MAX_STATE_SEARCH);
+                      + "# of executors: {} Max states to search: {}", execToComp.size(), maxStateSearch);
             return false;
         }
         return true;
@@ -322,51 +320,89 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         return GenericResourceAwareStrategy.sortObjectResourcesImpl(allResources, exec, topologyDetails, existingScheduleFunc);
     }
 
-    // Backtracking algorithm does not take into account the ordering of executors in worker to reduce traversal space
+    /**
+     * Try to schedule till successful or till limits (backtrack count or time) have been exceeded.
+     *
+     * @param state terminal state of the executor assignment.
+     * @return SolverResult with success attribute set to true or false indicting whether ALL executors were assigned.
+     */
     @VisibleForTesting
     protected SolverResult backtrackSearch(SearcherState state) {
-        state.incStatesSearched();
-        if (state.areSearchLimitsExceeded()) {
-            LOG.warn("Limits Exceeded");
-            return new SolverResult(state, false);
+        long         startTimeMilli     = System.currentTimeMillis();
+        int          maxExecCnt         = state.getExecSize();
+
+        // following three are state information at each "execIndex" level
+        int[]        progressIdxForExec = new int[maxExecCnt];
+        RasNode[]    nodeForExec        = new RasNode[maxExecCnt];
+        WorkerSlot[] workerSlotForExec  = new WorkerSlot[maxExecCnt];
+
+        for (int i = 0; i < maxExecCnt ; i++) {
+            progressIdxForExec[i] = -1;
         }
+        LOG.info("backtrackSearch: will assign {} executors", maxExecCnt);
 
-        if (Thread.currentThread().isInterrupted()) {
-            return new SolverResult(state, false);
-        }
+        OUTERMOST_LOOP:
+        for (int loopCnt = 0 ; true ; loopCnt++) {
+            LOG.debug("backtrackSearch: loopCnt = {}, state.execIndex = {}", loopCnt, state.execIndex);
+            if (state.areSearchLimitsExceeded()) {
+                LOG.warn("backtrackSearch: Search limits exceeded");
+                return new SolverResult(state, false);
+            }
 
-        ExecutorDetails exec = state.currentExec();
-        Iterable<String> sortedNodes = sortAllNodes(state.td, exec, favoredNodeIds, unFavoredNodeIds);
+            if (Thread.currentThread().isInterrupted()) {
+                return new SolverResult(state, false);
+            }
 
-        for (String nodeId: sortedNodes) {
-            RAS_Node node = nodes.get(nodeId);
-            for (WorkerSlot workerSlot : node.getSlotsAvailableToScheduleOn()) {
-                if (isExecAssignmentToWorkerValid(workerSlot, state)) {
+            int execIndex = state.execIndex;
+
+            ExecutorDetails exec = state.currentExec();
+            Iterable<String> sortedNodesIter = sortAllNodes(state.td, exec, favoredNodeIds, unFavoredNodeIds);
+
+            int progressIdx = -1;
+            for (String nodeId : sortedNodesIter) {
+                RasNode node = nodes.get(nodeId);
+                for (WorkerSlot workerSlot : node.getSlotsAvailableToScheduleOn()) {
+                    progressIdx++;
+                    if (progressIdx <= progressIdxForExec[execIndex]) {
+                        continue;
+                    }
+                    progressIdxForExec[execIndex]++;
+                    LOG.debug("backtrackSearch: loopCnt = {}, state.execIndex = {}, node/slot-ordinal = {}, nodeId = {}",
+                        loopCnt, execIndex, progressIdx, nodeId);
+
+                    if (!isExecAssignmentToWorkerValid(workerSlot, state)) {
+                        continue;
+                    }
+
+                    state.incStatesSearched();
                     state.tryToSchedule(execToComp, node, workerSlot);
-
                     if (state.areAllExecsScheduled()) {
                         //Everything is scheduled correctly, so no need to search any more.
+                        LOG.info("backtrackSearch: AllExecsScheduled at loopCnt = {} in {} milliseconds, elapsedtime in state={}",
+                            loopCnt, System.currentTimeMillis() - startTimeMilli, Time.currentTimeMillis() - state.startTimeMillis);
                         return new SolverResult(state, true);
                     }
-
-                    SolverResult results = backtrackSearch(state.nextExecutor());
-                    if (results.success) {
-                        //We found a good result we are done.
-                        return results;
-                    }
-
-                    if (state.areSearchLimitsExceeded()) {
-                        //No need to search more it is not going to help.
-                        return new SolverResult(state, false);
-                    }
-
-                    //backtracking (If we ever get here there really isn't a lot of hope that we will find a scheduling)
-                    state.backtrack(execToComp, node, workerSlot);
+                    state = state.nextExecutor();
+                    nodeForExec[execIndex] = node;
+                    workerSlotForExec[execIndex] = workerSlot;
+                    LOG.debug("backtrackSearch: Assigned execId={} to node={}, node/slot-ordinal={} at loopCnt={}",
+                        execIndex, nodeId, progressIdx, loopCnt);
+                    continue OUTERMOST_LOOP;
                 }
             }
+            // if here, then the executor was not assigned, backtrack;
+            LOG.debug("backtrackSearch: Failed to schedule execId = {} at loopCnt = {}", execIndex, loopCnt);
+            if (execIndex == 0) {
+                break;
+            } else {
+                state.backtrack(execToComp, nodeForExec[execIndex - 1], workerSlotForExec[execIndex - 1]);
+                progressIdxForExec[execIndex] = -1;
+            }
         }
-        //Tried all of the slots and none of them worked.
-        return new SolverResult(state, false);
+        boolean success = state.areAllExecsScheduled();
+        LOG.info("backtrackSearch: Scheduled={} in {} milliseconds, elapsedtime in state={}",
+            success, System.currentTimeMillis() - startTimeMilli, Time.currentTimeMillis() - state.startTimeMillis);
+        return new SolverResult(state, success);
     }
 
     /**
@@ -376,7 +412,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     public boolean isExecAssignmentToWorkerValid(WorkerSlot worker, SearcherState state) {
         final ExecutorDetails exec = state.currentExec();
         //check resources
-        RAS_Node node = nodes.get(worker.getNodeId());
+        RasNode node = nodes.get(worker.getNodeId());
         if (!node.wouldFit(worker, exec, state.td)) {
             LOG.trace("{} would not fit in resources available on {}", exec, worker);
             return false;
@@ -483,7 +519,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         private final Map<WorkerSlot, Set<String>> workerCompAssignment;
         private final boolean[] okToRemoveFromWorker;
         // for the currently tested assignment a Map of the node to the components on it to be able to enforce constraints
-        private final Map<RAS_Node, Set<String>> nodeCompAssignment;
+        private final Map<RasNode, Set<String>> nodeCompAssignment;
         private final boolean[] okToRemoveFromNode;
         // Static State
         // The list of all executors (preferably sorted to make assignments simpler).
@@ -501,7 +537,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         // The current executor we are trying to schedule
         private int execIndex = 0;
 
-        private SearcherState(Map<WorkerSlot, Set<String>> workerCompAssignment, Map<RAS_Node, Set<String>> nodeCompAssignment,
+        private SearcherState(Map<WorkerSlot, Set<String>> workerCompAssignment, Map<RasNode, Set<String>> nodeCompAssignment,
                               int maxStatesSearched, long maxTimeMs, List<ExecutorDetails> execs, TopologyDetails td) {
             assert !execs.isEmpty();
             assert execs != null;
@@ -533,6 +569,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             return statesSearched;
         }
 
+        public int getExecSize() {
+            return execs.size();
+        }
+
         public boolean areSearchLimitsExceeded() {
             return statesSearched > maxStatesSearched || Time.currentTimeMillis() > maxEndTimeMs;
         }
@@ -553,7 +593,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             return execs.get(execIndex);
         }
 
-        public void tryToSchedule(Map<ExecutorDetails, String> execToComp, RAS_Node node, WorkerSlot workerSlot) {
+        public void tryToSchedule(Map<ExecutorDetails, String> execToComp, RasNode node, WorkerSlot workerSlot) {
             ExecutorDetails exec = currentExec();
             String comp = execToComp.get(exec);
             LOG.trace("Trying assignment of {} {} to {}", exec, comp, workerSlot);
@@ -563,7 +603,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             node.assignSingleExecutor(workerSlot, exec, td);
         }
 
-        public void backtrack(Map<ExecutorDetails, String> execToComp, RAS_Node node, WorkerSlot workerSlot) {
+        public void backtrack(Map<ExecutorDetails, String> execToComp, RasNode node, WorkerSlot workerSlot) {
             execIndex--;
             if (execIndex < 0) {
                 throw new IllegalStateException("Internal Error: exec index became negative");

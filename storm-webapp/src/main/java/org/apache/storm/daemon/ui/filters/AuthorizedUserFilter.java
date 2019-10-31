@@ -112,7 +112,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
         Map topoConf = null;
         if (annotation.needsTopoId()) {
             final String topoId = containerRequestContext.getUriInfo().getPathParameters().get("id").get(0);
-            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)){
+            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)) {
                 topoConf = (Map) JSONValue.parse(nimbusClient.getClient().getTopologyConf(topoId));
             } catch (AuthorizationException ae) {
                 LOG.error("Nimbus isn't allowing {} to access the topology conf of {}. {}", ReqContext.context(), topoId, ae.get_msg());
@@ -155,11 +155,11 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                     return;
                 }
 
-            LOG.warn(" principal {} is trying to impersonate {} but {} has no authorizer configured. "
-                            + "This is a potential security hole. Please see SECURITY.MD to learn how to "
-                            + "configure an impersonation authorizer.",
-                    reqContext.realPrincipal().toString(), reqContext.principal().toString(),
-                    conf.get(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER));
+                LOG.warn(" principal {} is trying to impersonate {} but {} has no authorizer configured. "
+                                + "This is a potential security hole. Please see SECURITY.MD to learn how to "
+                                + "configure an impersonation authorizer.",
+                        reqContext.realPrincipal().toString(), reqContext.principal().toString(),
+                        conf.get(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER));
             }
         }
 

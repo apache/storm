@@ -36,8 +36,8 @@ public final class TupleFieldTimestampExtractor implements TimestampExtractor {
 
     @Override
     public String toString() {
-        return "TupleFieldTimestampExtractor{" +
-               "fieldName='" + fieldName + '\'' +
-               '}';
+        return "TupleFieldTimestampExtractor{"
+                + "fieldName='" + fieldName + '\''
+                + '}';
     }
 }

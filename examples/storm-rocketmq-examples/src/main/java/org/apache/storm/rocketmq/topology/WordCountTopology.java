@@ -41,15 +41,13 @@ public class WordCountTopology {
     private static final String CONSUMER_GROUP = "wordcount";
     private static final String CONSUMER_TOPIC = "source";
 
-    public static StormTopology buildTopology(String nameserverAddr, String topic){
+    public static StormTopology buildTopology(String nameserverAddr, String topic) {
         Properties properties = new Properties();
         properties.setProperty(SpoutConfig.NAME_SERVER_ADDR, nameserverAddr);
         properties.setProperty(SpoutConfig.CONSUMER_GROUP, CONSUMER_GROUP);
         properties.setProperty(SpoutConfig.CONSUMER_TOPIC, CONSUMER_TOPIC);
 
         RocketMqSpout spout = new RocketMqSpout(properties);
-
-        WordCounter bolt = new WordCounter();
 
         TupleToMessageMapper mapper = new FieldNameBasedTupleToMessageMapper("word", "count");
         TopicSelector selector = new DefaultTopicSelector(topic);
@@ -65,6 +63,7 @@ public class WordCountTopology {
         // wordSpout ==> countBolt ==> insertBolt
         TopologyBuilder builder = new TopologyBuilder();
 
+        WordCounter bolt = new WordCounter();
         builder.setSpout(WORD_SPOUT, spout, 1);
         builder.setBolt(COUNT_BOLT, bolt, 1).fieldsGrouping(WORD_SPOUT, new Fields("str"));
         builder.setBolt(INSERT_BOLT, insertBolt, 1).shuffleGrouping(COUNT_BOLT);

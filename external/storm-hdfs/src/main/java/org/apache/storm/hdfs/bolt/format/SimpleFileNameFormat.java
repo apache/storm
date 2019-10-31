@@ -73,9 +73,7 @@ public class SimpleFileNameFormat implements FileNameFormat {
      * $COMPONENT - component id<br/>
      * $TASK - task id<br/>
      *
-     * @param name
-     *            file name
-     * @return
+     * @param name file name
      */
     public SimpleFileNameFormat withName(String name) {
         this.name = name;

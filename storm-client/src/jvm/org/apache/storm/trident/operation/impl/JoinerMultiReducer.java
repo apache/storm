@@ -25,31 +25,31 @@ import org.apache.storm.tuple.Fields;
 
 public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
 
-    List<JoinType> _types;
-    List<Fields> _sideFields;
-    int _numGroupFields;
-    ComboList.Factory _factory;
+    List<JoinType> types;
+    List<Fields> sideFields;
+    int numGroupFields;
+    ComboList.Factory factory;
 
 
     public JoinerMultiReducer(List<JoinType> types, int numGroupFields, List<Fields> sides) {
-        _types = types;
-        _sideFields = sides;
-        _numGroupFields = numGroupFields;
+        this.types = types;
+        sideFields = sides;
+        this.numGroupFields = numGroupFields;
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
-        int[] sizes = new int[_sideFields.size() + 1];
-        sizes[0] = _numGroupFields;
-        for (int i = 0; i < _sideFields.size(); i++) {
-            sizes[i + 1] = _sideFields.get(i).size();
+        int[] sizes = new int[sideFields.size() + 1];
+        sizes[0] = numGroupFields;
+        for (int i = 0; i < sideFields.size(); i++) {
+            sizes[i + 1] = sideFields.get(i).size();
         }
-        _factory = new ComboList.Factory(sizes);
+        factory = new ComboList.Factory(sizes);
     }
 
     @Override
     public JoinState init(TridentCollector collector, TridentTuple group) {
-        return new JoinState(_types.size(), group);
+        return new JoinState(types.size(), group);
     }
 
     @Override
@@ -72,9 +72,9 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
         List<List>[] sides = state.sides;
         boolean wasEmpty = state.numSidesReceived < sides.length;
         for (int i = 0; i < sides.length; i++) {
-            if (sides[i].isEmpty() && _types.get(i) == JoinType.OUTER) {
+            if (sides[i].isEmpty() && types.get(i) == JoinType.OUTER) {
                 state.numSidesReceived++;
-                sides[i].add(makeNullList(_sideFields.get(i).size()));
+                sides[i].add(makeNullList(sideFields.get(i).size()));
             }
         }
         if (wasEmpty && state.numSidesReceived == sides.length) {
@@ -113,7 +113,7 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
                     combined[i + 1] = sides[i].get(indices[i]);
                 }
             }
-            collector.emit(_factory.create(combined));
+            collector.emit(factory.create(combined));
             keepGoing = increment(sides, indices, indices.length - 1, overrideIndex);
         }
     }

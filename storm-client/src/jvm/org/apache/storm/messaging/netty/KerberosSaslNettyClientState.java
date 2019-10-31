@@ -16,6 +16,7 @@ import org.apache.storm.shade.io.netty.util.AttributeKey;
 
 final class KerberosSaslNettyClientState {
 
-    public static final AttributeKey<KerberosSaslNettyClient> KERBEROS_SASL_NETTY_CLIENT = AttributeKey.valueOf("kerberos.sasl.netty.client");
+    public static final AttributeKey<KerberosSaslNettyClient> KERBEROS_SASL_NETTY_CLIENT =
+            AttributeKey.valueOf("kerberos.sasl.netty.client");
 
 }

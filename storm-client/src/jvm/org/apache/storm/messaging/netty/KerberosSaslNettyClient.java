@@ -45,22 +45,22 @@ public class KerberosSaslNettyClient {
      */
     private SaslClient saslClient;
     private Subject subject;
-    private String jaas_section;
+    private String jaasSection;
 
     /**
      * Create a KerberosSaslNettyClient for authentication with servers.
      */
-    public KerberosSaslNettyClient(Map<String, Object> topoConf, String jaas_section, String host) {
+    public KerberosSaslNettyClient(Map<String, Object> topoConf, String jaasSection, String host) {
         LOG.debug("KerberosSaslNettyClient: Creating SASL {} client to authenticate to server ",
                   SaslUtils.KERBEROS);
 
         LOG.info("Creating Kerberos Client.");
 
-        Configuration login_conf;
+        Configuration loginConf;
         try {
-            login_conf = ClientAuthUtils.getConfiguration(topoConf);
+            loginConf = ClientAuthUtils.getConfiguration(topoConf);
         } catch (Throwable t) {
-            LOG.error("Failed to get login_conf: ", t);
+            LOG.error("Failed to get loginConf: ", t);
             throw t;
         }
         LOG.debug("KerberosSaslNettyClient: authmethod {}", SaslUtils.KERBEROS);
@@ -69,12 +69,12 @@ public class KerberosSaslNettyClient {
 
         subject = null;
         try {
-            LOG.debug("Setting Configuration to login_config: {}", login_conf);
+            LOG.debug("Setting Configuration to login_config: {}", loginConf);
             //specify a configuration object to be used
-            Configuration.setConfiguration(login_conf);
+            Configuration.setConfiguration(loginConf);
             //now login
             LOG.debug("Trying to login.");
-            Login login = new Login(jaas_section, ch);
+            Login login = new Login(jaasSection, ch);
             subject = login.getSubject();
             LOG.debug("Got Subject: {}", subject.toString());
         } catch (LoginException ex) {
@@ -85,15 +85,15 @@ public class KerberosSaslNettyClient {
         //check the credential of our principal
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) {
             LOG.error("Failed to verify user principal.");
-            throw new RuntimeException("Fail to verify user principal with section \"" +
-                                       jaas_section +
-                                       "\" in login configuration file " +
-                                       login_conf);
+            throw new RuntimeException("Fail to verify user principal with section \""
+                    + jaasSection
+                    + "\" in login configuration file "
+                    + loginConf);
         }
 
         String serviceName = null;
         try {
-            serviceName = ClientAuthUtils.get(login_conf, jaas_section, "serviceName");
+            serviceName = ClientAuthUtils.get(loginConf, jaasSection, "serviceName");
         } catch (IOException e) {
             LOG.error("Failed to get service name.", e);
             throw new RuntimeException(e);
@@ -107,6 +107,7 @@ public class KerberosSaslNettyClient {
             final CallbackHandler fch = ch;
             LOG.debug("Kerberos Client with principal: {}, host: {}", fPrincipalName, fHost);
             saslClient = Subject.doAs(subject, new PrivilegedExceptionAction<SaslClient>() {
+                @Override
                 public SaslClient run() {
                     try {
                         Map<String, String> props = new TreeMap<String, String>();
@@ -146,6 +147,7 @@ public class KerberosSaslNettyClient {
         try {
             final SaslMessageToken fSaslTokenMessage = saslTokenMessage;
             byte[] retval = Subject.doAs(subject, new PrivilegedExceptionAction<byte[]>() {
+                @Override
                 public byte[] run() {
                     try {
                         byte[] retval = saslClient.evaluateChallenge(fSaslTokenMessage
@@ -174,8 +176,8 @@ public class KerberosSaslNettyClient {
          * Implementation used to respond to SASL tokens from server.
          *
          * @param callbacks objects that indicate what credential information the server's SaslServer requires from the client.
-         * @throws UnsupportedCallbackException
          */
+        @Override
         public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
             for (Callback callback : callbacks) {
                 LOG.info("Kerberos Client Callback Handler got callback: {}", callback.getClass());

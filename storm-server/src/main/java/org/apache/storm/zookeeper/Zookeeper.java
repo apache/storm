@@ -44,7 +44,7 @@ public class Zookeeper {
     // tests by subclassing.
     private static final Zookeeper INSTANCE = new Zookeeper();
     private static Logger LOG = LoggerFactory.getLogger(Zookeeper.class);
-    private static Zookeeper _instance = INSTANCE;
+    private static Zookeeper instance = INSTANCE;
 
     /**
      * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
@@ -53,7 +53,7 @@ public class Zookeeper {
      * @param u a Zookeeper instance
      */
     public static void setInstance(Zookeeper u) {
-        _instance = u;
+        instance = u;
     }
 
     /**
@@ -61,12 +61,10 @@ public class Zookeeper {
      * longer desired.
      */
     public static void resetInstance() {
-        _instance = INSTANCE;
+        instance = INSTANCE;
     }
 
     public static NIOServerCnxnFactory mkInprocessZookeeper(String localdir, Integer port) throws Exception {
-        File localfile = new File(localdir);
-        ZooKeeperServer zk = new ZooKeeperServer(localfile, localfile, 2000);
         NIOServerCnxnFactory factory = null;
         int report = 2000;
         int limitPort = 65535;
@@ -87,6 +85,8 @@ public class Zookeeper {
             }
         }
         LOG.info("Starting inprocess zookeeper at port {} and dir {}", report, localdir);
+        File localfile = new File(localdir);
+        ZooKeeperServer zk = new ZooKeeperServer(localfile, localfile, 2000);
         factory.startup(zk);
         return factory;
     }
@@ -119,7 +119,7 @@ public class Zookeeper {
     public static ILeaderElector zkLeaderElector(Map<String, Object> conf, CuratorFramework zkClient, BlobStore blobStore,
                                                  final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
                                                  StormMetricsRegistry metricsRegistry) {
-        return _instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc, clusterState, acls, metricsRegistry);
+        return instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc, clusterState, acls, metricsRegistry);
     }
 
     protected ILeaderElector zkLeaderElectorImpl(Map<String, Object> conf, CuratorFramework zk, BlobStore blobStore,

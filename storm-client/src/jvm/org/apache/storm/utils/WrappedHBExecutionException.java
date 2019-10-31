@@ -23,6 +23,7 @@ import org.apache.storm.generated.HBExecutionException;
 /**
  * Wraps the generated TException to allow getMessage() to return a valid string.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class WrappedHBExecutionException extends HBExecutionException {
     public WrappedHBExecutionException(String msg) {
         super(msg);

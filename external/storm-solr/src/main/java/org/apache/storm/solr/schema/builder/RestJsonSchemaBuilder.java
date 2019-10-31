@@ -32,7 +32,9 @@ public class RestJsonSchemaBuilder implements SchemaBuilder {
     private Schema schema;
 
 
-    /** Urls with the form http://localhost:8983/solr/gettingstarted/schema/ returns the schema in JSON format */
+    /**
+     * Urls with the form http://localhost:8983/solr/gettingstarted/schema/ returns the schema in JSON format.
+     */
     public RestJsonSchemaBuilder(String solrHost, String solrPort, String collection) throws IOException {
         this(new URL("http://" + solrHost + ":" + solrPort + "/solr/" + collection + "/schema/"));
     }

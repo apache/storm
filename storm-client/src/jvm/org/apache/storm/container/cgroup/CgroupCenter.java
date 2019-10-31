@@ -37,7 +37,7 @@ public class CgroupCenter implements CgroupOperation {
 
     }
 
-    public synchronized static CgroupCenter getInstance() {
+    public static synchronized CgroupCenter getInstance() {
         if (CgroupUtils.enabled()) {
             instance = new CgroupCenter();
             return instance;
@@ -82,10 +82,10 @@ public class CgroupCenter implements CgroupOperation {
                 if (type == null) {
                     continue;
                 }
-                int hierarchyID = Integer.valueOf(split[1]);
+                int hierarchyId = Integer.valueOf(split[1]);
                 int cgroupNum = Integer.valueOf(split[2]);
                 boolean enable = Integer.valueOf(split[3]).intValue() == 1 ? true : false;
-                subSystems.add(new SubSystem(type, hierarchyID, cgroupNum, enable));
+                subSystems.add(new SubSystem(type, hierarchyId, cgroupNum, enable));
             }
             return subSystems;
         } catch (Exception e) {

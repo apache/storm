@@ -20,12 +20,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Reports the current memory limit of the cgroup for this worker
+ * Reports the current memory limit of the cgroup for this worker.
  */
 public class CGroupMemoryLimit extends CGroupMetricsBase<Long> {
     private static final Logger LOG = LoggerFactory.getLogger(CGroupMemoryLimit.class);
     private static final long BYTES_PER_MB = 1024 * 1024;
-    private final long _workerLimitBytes;
+    private final long workerLimitBytes;
 
     public CGroupMemoryLimit(Map<String, Object> conf) {
         super(conf, SubSystemType.memory);
@@ -36,13 +36,13 @@ public class CGroupMemoryLimit extends CGroupMetricsBase<Long> {
         } catch (NumberFormatException e) {
             LOG.warn("Error Parsing worker.memory_limit_mb {}", e);
         }
-        _workerLimitBytes = BYTES_PER_MB * limit;
+        workerLimitBytes = BYTES_PER_MB * limit;
     }
 
     @Override
     public Long getDataFrom(CgroupCore core) throws Exception {
-        if (_workerLimitBytes > 0) {
-            return _workerLimitBytes;
+        if (workerLimitBytes > 0) {
+            return workerLimitBytes;
         }
         return ((MemoryCore) core).getPhysicalUsageLimit();
     }

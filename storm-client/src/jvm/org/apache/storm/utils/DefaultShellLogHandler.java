@@ -47,6 +47,7 @@ public class DefaultShellLogHandler implements ShellLogHandler {
      * @param context  - the current {@link TopologyContext}.
      * @see {@link ShellLogHandler#setUpContext}
      */
+    @Override
     public void setUpContext(final Class<?> ownerCls, final ShellProcess process,
                              final TopologyContext context) {
         this.log = getLogger(ownerCls);
@@ -61,6 +62,7 @@ public class DefaultShellLogHandler implements ShellLogHandler {
      * @param shellMsg - the {@link ShellMsg} to log.
      * @see {@link ShellLogHandler#log}
      */
+    @Override
     public void log(final ShellMsg shellMsg) {
         if (shellMsg == null) {
             throw new IllegalArgumentException("shellMsg is required");

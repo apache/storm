@@ -18,19 +18,20 @@
 
 package org.apache.storm.solr.spout;
 
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import org.apache.storm.solr.util.TestUtil;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import org.apache.storm.solr.util.TestUtil;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 public class SolrJsonSpout extends BaseRichSpout {
     private SpoutOutputCollector collector;
@@ -80,27 +81,27 @@ public class SolrJsonSpout extends BaseRichSpout {
     public static class JsonSchema {
         private String id;
         private String date;
-        private String dc_title;
+        private String dcTitle;
 
         private static final Gson gson = new Gson();
 
         public JsonSchema(String suffix) {
             this.id = "id" + suffix;
             this.date = TestUtil.getDate();
-            this.dc_title = "dc_title" + suffix;
+            this.dcTitle = "dcTitle" + suffix;
         }
 
-        public JsonSchema(String id, String date, String dc_title) {
+        public JsonSchema(String id, String date, String dcTitle) {
             this.id = id;
             this.date = date;
-            this.dc_title = dc_title;
+            this.dcTitle = dcTitle;
         }
 
         // copy constructor
         public JsonSchema(JsonSchema jsonSchema) {
             this.id = jsonSchema.id;
             this.date = jsonSchema.date;
-            this.dc_title = jsonSchema.dc_title;
+            this.dcTitle = jsonSchema.dcTitle;
         }
 
         public String toJson() {

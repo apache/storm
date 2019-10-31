@@ -144,6 +144,7 @@ nimbus.blobstore.class: "org.apache.storm.blobstore.LocalFsBlobStore"
 nimbus.blobstore.expiration.secs: 600
 
 storm.blobstore.inputstream.buffer.size.bytes: 65536
+storm.blobstore.dependency.jar.upload.chunk.size.bytes: 1048576
 client.blobstore.class: "org.apache.storm.blobstore.NimbusBlobStore"
 storm.blobstore.replication.factor: 3
 # For secure mode we would want to change this config to true
@@ -170,6 +171,8 @@ supervisor.monitor.frequency.secs: 3
 supervisor.heartbeat.frequency.secs: 5
 #max timeout for a node worker heartbeats when master gains leadership
 supervisor.worker.heartbeats.max.timeout.secs: 600
+#For topology configurable heartbeat timeout, maximum allowed heartbeat timeout.
+worker.max.timeout.secs: 600
 supervisor.enable: true
 supervisor.supervisors: []
 supervisor.supervisors.commands: []
@@ -333,12 +336,17 @@ topology.component.cpu.pcore.percent: 10.0
 topology.worker.max.heap.size.mb: 768.0
 topology.scheduler.strategy: "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy"
 resource.aware.scheduler.priority.strategy: "org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy"
+topology.ras.constraint.max.state.search: 10_000     # The maximum number of states that will be searched looking for a solution in the constraint solver strategy
+resource.aware.scheduler.constraint.max.state.search: 100_000 # Daemon limit on maximum number of states that will be searched looking for a solution in the constraint solver strategy
+topology.ras.one.executor.per.worker: false
+topology.ras.one.component.per.worker: false
 
 blacklist.scheduler.tolerance.time.secs: 300
 blacklist.scheduler.tolerance.count: 3
 blacklist.scheduler.resume.time.secs: 1800
 blacklist.scheduler.reporter: "org.apache.storm.scheduler.blacklist.reporters.LogReporter"
 blacklist.scheduler.strategy: "org.apache.storm.scheduler.blacklist.strategies.DefaultBlacklistStrategy"
+blacklist.scheduler.assume.supervisor.bad.based.on.bad.slot: true
 
 dev.zookeeper.path: "/tmp/dev-storm-zookeeper"
 

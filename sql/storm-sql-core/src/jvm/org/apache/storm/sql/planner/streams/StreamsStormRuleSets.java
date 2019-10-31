@@ -19,10 +19,9 @@
 
 package org.apache.storm.sql.planner.streams;
 
-import java.util.Iterator;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import java.util.Iterator;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.rules.CalcMergeRule;
 import org.apache.calcite.rel.rules.FilterCalcMergeRule;
@@ -91,11 +90,11 @@ public class StreamsStormRuleSets {
     private static class StormRuleSet implements RuleSet {
         final ImmutableSet<RelOptRule> rules;
 
-        public StormRuleSet(ImmutableSet<RelOptRule> rules) {
+        StormRuleSet(ImmutableSet<RelOptRule> rules) {
             this.rules = rules;
         }
 
-        public StormRuleSet(ImmutableList<RelOptRule> rules) {
+        StormRuleSet(ImmutableList<RelOptRule> rules) {
             this.rules = ImmutableSet.<RelOptRule>builder()
                 .addAll(rules)
                 .build();

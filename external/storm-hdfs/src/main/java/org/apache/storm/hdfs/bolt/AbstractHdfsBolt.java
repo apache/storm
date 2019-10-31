@@ -87,14 +87,16 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     /**
      * Marked as final to prevent override. Subclasses should implement the doPrepare() method.
-     * @param conf
-     * @param topologyContext
-     * @param collector
      */
+    @Override
     public final void prepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) {
         this.writeLock = new Object();
-        if (this.syncPolicy == null) throw new IllegalStateException("SyncPolicy must be specified.");
-        if (this.rotationPolicy == null) throw new IllegalStateException("RotationPolicy must be specified.");
+        if (this.syncPolicy == null) {
+            throw new IllegalStateException("SyncPolicy must be specified.");
+        }
+        if (this.rotationPolicy == null) {
+            throw new IllegalStateException("RotationPolicy must be specified.");
+        }
         if (this.fsUrl == null) {
             throw new IllegalStateException("File system URL must be specified.");
         }
@@ -207,13 +209,10 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     }
 
     /**
-     * A tuple must be mapped to a writer based on two factors:
+     * A tuple must be mapped to a writer based on two factors.
      *  - bolt specific logic that must separate tuples into different files in the same directory (see the avro bolt
      *    for an example of this)
      *  - the directory the tuple will be partioned into
-     *
-     * @param tuple
-     * @return
      */
     private String getHashKeyForTuple(Tuple tuple) {
         final String boltKey = getWriterKey(tuple);
@@ -248,7 +247,9 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     @Override
     public void cleanup() {
         doRotationAndRemoveAllWriters();
-        this.rotationTimer.cancel();
+        if (this.rotationTimer != null) {
+            this.rotationTimer.cancel();
+        }
     }
 
     private void doRotationAndRemoveAllWriters() {
@@ -299,18 +300,18 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
                         this.fileNameFormat.getName(rotation, System.currentTimeMillis()));
     }
 
-    abstract protected void doPrepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) throws
+    protected abstract void doPrepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) throws
         IOException;
 
-    abstract protected String getWriterKey(Tuple tuple);
+    protected abstract String getWriterKey(Tuple tuple);
 
-    abstract protected Writer makeNewWriter(Path path, Tuple tuple) throws IOException;
+    protected abstract Writer makeNewWriter(Path path, Tuple tuple) throws IOException;
 
     static class WritersMap extends LinkedHashMap<String, Writer> {
         final long maxWriters;
         final OutputCollector collector;
 
-        public WritersMap(long maxWriters, OutputCollector collector) {
+        WritersMap(long maxWriters, OutputCollector collector) {
             super((int) maxWriters, 0.75f, true);
             this.maxWriters = maxWriters;
             this.collector = collector;

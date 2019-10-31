@@ -17,12 +17,12 @@
 
 package org.apache.storm.st.utils;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
 
 public class TimeUtil {
     private static Logger log = LoggerFactory.getLogger(TimeUtil.class);
@@ -34,6 +34,7 @@ public class TimeUtil {
             log.warn("Caught exception: " + ExceptionUtils.getFullStackTrace(e));
         }
     }
+
     public static void sleepMilliSec(int milliSec) {
         try {
             TimeUnit.MILLISECONDS.sleep(milliSec);

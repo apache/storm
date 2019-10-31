@@ -23,20 +23,20 @@ import org.apache.storm.tuple.Values;
 
 
 public class TestConfBolt extends BaseBasicBolt {
-    Map<String, Object> _componentConf;
-    Map<String, Object> _conf;
+    Map<String, Object> componentConf;
+    Map<String, Object> conf;
 
     public TestConfBolt() {
         this(null);
     }
 
     public TestConfBolt(Map<String, Object> componentConf) {
-        _componentConf = componentConf;
+        this.componentConf = componentConf;
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TopologyContext context) {
-        _conf = conf;
+        this.conf = conf;
     }
 
     @Override
@@ -47,11 +47,11 @@ public class TestConfBolt extends BaseBasicBolt {
     @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         String name = input.getString(0);
-        collector.emit(new Values(name, _conf.get(name)));
+        collector.emit(new Values(name, conf.get(name)));
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return _componentConf;
+        return componentConf;
     }
 }

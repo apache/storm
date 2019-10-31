@@ -22,7 +22,7 @@ public class ValuesMapper implements TupleValueMapper<Values> {
     private final int[] indices;
 
     /**
-     * Constructs a new {@link ValuesMapper} that extracts value from a {@link Tuple} at specified indices
+     * Constructs a new {@link ValuesMapper} that extracts value from a {@link Tuple} at specified indices.
      *
      * @param indices the indices
      */

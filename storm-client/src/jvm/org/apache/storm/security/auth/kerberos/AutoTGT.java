@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Automatically take a user's TGT, and push it, and renew it in Nimbus.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsRegistrant {
     protected static final AtomicReference<KerberosTicket> kerbTicket = new AtomicReference<>();
     private static final Logger LOG = LoggerFactory.getLogger(AutoTGT.class);
@@ -44,6 +45,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
     private Map<String, Object> conf;
     private Map<String, String> credentials;
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private static KerberosTicket getTGT(Subject subject) {
         Set<KerberosTicket> tickets = subject.getPrivateCredentials(KerberosTicket.class);
         for (KerberosTicket ticket : tickets) {
@@ -55,6 +57,16 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         return null;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+    public static KerberosTicket getTGT(Map<String, String> credentials) {
+        KerberosTicket ret = null;
+        if (credentials != null && credentials.containsKey("TGT") && credentials.get("TGT") != null) {
+            ret = ClientAuthUtils.deserializeKerberosTicket(DatatypeConverter.parseBase64Binary(credentials.get("TGT")));
+        }
+        return ret;
+    }
+
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static void saveTGT(KerberosTicket tgt, Map<String, String> credentials) {
         try {
 
@@ -63,14 +75,6 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static KerberosTicket getTGT(Map<String, String> credentials) {
-        KerberosTicket ret = null;
-        if (credentials != null && credentials.containsKey("TGT") && credentials.get("TGT") != null) {
-            ret = ClientAuthUtils.deserializeKerberosTicket(DatatypeConverter.parseBase64Binary(credentials.get("TGT")));
-        }
-        return ret;
     }
 
     public static void clearCredentials(Subject subject, KerberosTicket tgt) {
@@ -116,12 +120,12 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         this.credentials = credentials;
         //Log the user in and get the TGT
         try {
-            Configuration login_conf = ClientAuthUtils.getConfiguration(conf);
-            ClientCallbackHandler client_callback_handler = new ClientCallbackHandler(login_conf);
+            Configuration loginConf = ClientAuthUtils.getConfiguration(conf);
+            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(loginConf);
 
             //login our user
-            Configuration.setConfiguration(login_conf);
-            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, client_callback_handler);
+            Configuration.setConfiguration(loginConf);
+            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, clientCallbackHandler);
             try {
                 lc.login();
                 final Subject subject = lc.getSubject();
@@ -129,19 +133,19 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
                 if (tgt == null) { //error
                     throw new RuntimeException("Fail to verify user principal with section \""
-                                               + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + login_conf);
+                                               + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + loginConf);
                 }
 
                 if (!tgt.isForwardable()) {
-                    throw new RuntimeException("The TGT found is not forwardable. Please use -f option.");
+                    throw new RuntimeException("The TGT found is not forwardable. Please use -f option with 'kinit'.");
                 }
 
                 if (!tgt.isRenewable()) {
-                    throw new RuntimeException("The TGT found is not renewable. Please use -r option.");
+                    throw new RuntimeException("The TGT found is not renewable. Please use -r option with 'kinit'.");
                 }
 
                 if (tgt.getClientAddresses() != null) {
-                    throw new RuntimeException("The TGT found is not address-less. Please use -A option.");
+                    throw new RuntimeException("The TGT found is not address-less. Please use -A option with 'kinit'.");
                 }
 
                 LOG.info("Pushing TGT for " + tgt.getClient() + " to topology.");
@@ -167,6 +171,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         loginHadoopUser(subject);
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private void populateSubjectWithTGT(Subject subject, Map<String, String> credentials) {
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {

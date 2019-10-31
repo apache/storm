@@ -14,9 +14,6 @@ package org.apache.storm.trident.windowing.strategy;
 
 import org.apache.storm.trident.windowing.config.WindowConfig;
 
-/**
- *
- */
 public abstract class BaseWindowStrategy<T> implements WindowStrategy<T> {
     protected final WindowConfig windowConfig;
 

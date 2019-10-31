@@ -43,7 +43,7 @@ public abstract class BaseTickTupleAwareRichBolt extends BaseRichBolt {
      * Process a single tick tuple of input. Tick tuple doesn't need to be acked. It provides default "DO NOTHING" implementation for
      * convenient. Override this method if needed.
      *
-     * More details on {@link org.apache.storm.task.IBolt#execute(Tuple)}.
+     * <p>More details on {@link org.apache.storm.task.IBolt#execute(Tuple)}.
      *
      * @param tuple The input tuple to be processed.
      */
@@ -56,5 +56,5 @@ public abstract class BaseTickTupleAwareRichBolt extends BaseRichBolt {
      *
      * @param tuple The input tuple to be processed.
      */
-    protected abstract void process(final Tuple tuple);
+    protected abstract void process(Tuple tuple);
 }

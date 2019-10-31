@@ -14,20 +14,21 @@ package org.apache.storm.jms.spout;
 
 import java.io.Serializable;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class JmsMessageID implements Comparable<JmsMessageID>, Serializable {
 
-    private String jmsID;
+    private final String jmsId;
 
-    private Long sequence;
+    private final Long sequence;
 
-    public JmsMessageID(long sequence, String jmsID) {
-        this.jmsID = jmsID;
+    public JmsMessageID(long sequence, String jmsId) {
+        this.jmsId = jmsId;
         this.sequence = sequence;
     }
 
-
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public String getJmsID() {
-        return this.jmsID;
+        return this.jmsId;
     }
 
     @Override
@@ -44,7 +45,7 @@ public class JmsMessageID implements Comparable<JmsMessageID>, Serializable {
     public boolean equals(Object o) {
         if (o instanceof JmsMessageID) {
             JmsMessageID id = (JmsMessageID) o;
-            return this.jmsID.equals(id.jmsID);
+            return this.jmsId.equals(id.jmsId);
         } else {
             return false;
         }

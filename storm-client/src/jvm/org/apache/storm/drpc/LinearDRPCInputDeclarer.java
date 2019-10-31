@@ -16,41 +16,42 @@ import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.topology.ComponentConfigurationDeclarer;
 import org.apache.storm.tuple.Fields;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface LinearDRPCInputDeclarer extends ComponentConfigurationDeclarer<LinearDRPCInputDeclarer> {
-    public LinearDRPCInputDeclarer fieldsGrouping(Fields fields);
+    LinearDRPCInputDeclarer fieldsGrouping(Fields fields);
 
-    public LinearDRPCInputDeclarer fieldsGrouping(String streamId, Fields fields);
+    LinearDRPCInputDeclarer fieldsGrouping(String streamId, Fields fields);
 
-    public LinearDRPCInputDeclarer globalGrouping();
+    LinearDRPCInputDeclarer globalGrouping();
 
-    public LinearDRPCInputDeclarer globalGrouping(String streamId);
+    LinearDRPCInputDeclarer globalGrouping(String streamId);
 
-    public LinearDRPCInputDeclarer shuffleGrouping();
+    LinearDRPCInputDeclarer shuffleGrouping();
 
-    public LinearDRPCInputDeclarer shuffleGrouping(String streamId);
+    LinearDRPCInputDeclarer shuffleGrouping(String streamId);
 
-    public LinearDRPCInputDeclarer localOrShuffleGrouping();
+    LinearDRPCInputDeclarer localOrShuffleGrouping();
 
-    public LinearDRPCInputDeclarer localOrShuffleGrouping(String streamId);
+    LinearDRPCInputDeclarer localOrShuffleGrouping(String streamId);
 
-    public LinearDRPCInputDeclarer noneGrouping();
+    LinearDRPCInputDeclarer noneGrouping();
 
-    public LinearDRPCInputDeclarer noneGrouping(String streamId);
+    LinearDRPCInputDeclarer noneGrouping(String streamId);
 
-    public LinearDRPCInputDeclarer allGrouping();
+    LinearDRPCInputDeclarer allGrouping();
 
-    public LinearDRPCInputDeclarer allGrouping(String streamId);
+    LinearDRPCInputDeclarer allGrouping(String streamId);
 
-    public LinearDRPCInputDeclarer directGrouping();
+    LinearDRPCInputDeclarer directGrouping();
 
-    public LinearDRPCInputDeclarer directGrouping(String streamId);
+    LinearDRPCInputDeclarer directGrouping(String streamId);
 
-    public LinearDRPCInputDeclarer partialKeyGrouping(Fields fields);
+    LinearDRPCInputDeclarer partialKeyGrouping(Fields fields);
 
-    public LinearDRPCInputDeclarer partialKeyGrouping(String streamId, Fields fields);
+    LinearDRPCInputDeclarer partialKeyGrouping(String streamId, Fields fields);
 
-    public LinearDRPCInputDeclarer customGrouping(CustomStreamGrouping grouping);
+    LinearDRPCInputDeclarer customGrouping(CustomStreamGrouping grouping);
 
-    public LinearDRPCInputDeclarer customGrouping(String streamId, CustomStreamGrouping grouping);
+    LinearDRPCInputDeclarer customGrouping(String streamId, CustomStreamGrouping grouping);
 
 }

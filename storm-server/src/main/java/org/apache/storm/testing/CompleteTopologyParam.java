@@ -21,24 +21,24 @@ import org.apache.storm.Testing;
  */
 public class CompleteTopologyParam {
     /**
-     * The mocked spout sources
+     * The mocked spout sources.
      */
     private MockedSources mockedSources = new MockedSources();
     /**
-     * the config for the topology when it was submitted to the cluster
+     * the config for the topology when it was submitted to the cluster.
      */
     private Map<String, Object> topoConf = new Config();
     /**
-     * whether cleanup the state?
+     * Indicates whether to cleanup the state.
      */
     private boolean cleanupState = true;
     /**
-     * the topology name you want to submit to the cluster
+     * the topology name you want to submit to the cluster.
      */
     private String topologyName;
 
     /**
-     * the timeout of topology you want to submit to the cluster
+     * the timeout of topology you want to submit to the cluster.
      */
     private int timeoutMs = Testing.TEST_TIMEOUT_MS;
 

@@ -98,8 +98,8 @@ class StatefulProcessorBolt<K, V> extends BaseStatefulBolt<KeyValueState<K, V>> 
                 statefulProcessors.add((StatefulProcessor<K, V>) node.getProcessor());
                 if (node.getProcessor() instanceof UpdateStateByKeyProcessor) {
                     if (++updateStateByKeyCount > 1) {
-                        throw new IllegalArgumentException("Cannot have more than one updateStateByKey processor " +
-                                                           "in a StatefulProcessorBolt");
+                        throw new IllegalArgumentException("Cannot have more than one updateStateByKey processor "
+                                + "in a StatefulProcessorBolt");
                     }
                 }
 

@@ -45,14 +45,14 @@ public class PacemakerClient implements ISaslClient {
     private static Timer timer = new Timer(true);
     private final Bootstrap bootstrap;
     private final EventLoopGroup workerEventLoopGroup;
-    private String client_name;
+    private String clientName;
     private String secret;
     private AtomicBoolean ready;
     private AtomicBoolean shutdown;
     private AtomicReference<Channel> channelRef;
-    private InetSocketAddress remote_addr;
+    private InetSocketAddress remoteAddr;
     private int maxPending = 100;
-    private HBMessage messages[];
+    private HBMessage[] messages;
     private LinkedBlockingQueue<Integer> availableMessageSlots;
     private ThriftNettyClientCodec.AuthMethod authMethod;
     private static final int maxRetries = 10;
@@ -63,21 +63,19 @@ public class PacemakerClient implements ISaslClient {
 
     public PacemakerClient(Map<String, Object> config, String host) {
         this.host = host;
-        int port = (int) config.get(Config.PACEMAKER_PORT);
-        client_name = (String) config.get(Config.TOPOLOGY_NAME);
-        if (client_name == null) {
-            client_name = "pacemaker-client";
+        clientName = (String) config.get(Config.TOPOLOGY_NAME);
+        if (clientName == null) {
+            clientName = "pacemaker-client";
         }
-        int maxWorkers = (int)config.get(Config.PACEMAKER_CLIENT_MAX_THREADS);
 
         String auth = (String) config.get(Config.PACEMAKER_AUTH_METHOD);
 
         switch (auth) {
 
             case "DIGEST":
-                Configuration login_conf = ClientAuthUtils.getConfiguration(config);
+                Configuration loginConf = ClientAuthUtils.getConfiguration(config);
                 authMethod = ThriftNettyClientCodec.AuthMethod.DIGEST;
-                secret = ClientAuthUtils.makeDigestPayload(login_conf, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
+                secret = ClientAuthUtils.makeDigestPayload(loginConf, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
                 if (secret == null) {
                     LOG.error("Can't start pacemaker server without digest secret.");
                     throw new RuntimeException("Can't start pacemaker server without digest secret.");
@@ -106,6 +104,7 @@ public class PacemakerClient implements ISaslClient {
         ThreadFactory workerFactory = new NettyRenameThreadFactory(this.host + "-pm");
         // 0 means DEFAULT_EVENT_LOOP_THREADS
         // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
+        int maxWorkers = (int)config.get(Config.PACEMAKER_CLIENT_MAX_THREADS);
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
         int thriftMessageMaxSize = (Integer) config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
         bootstrap = new Bootstrap()
@@ -118,8 +117,9 @@ public class PacemakerClient implements ISaslClient {
             .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             .handler(new ThriftNettyClientCodec(this, config, authMethod, host, thriftMessageMaxSize));
 
-        remote_addr = new InetSocketAddress(host, port);
-        bootstrap.connect(remote_addr);
+        int port = (int) config.get(Config.PACEMAKER_PORT);
+        remoteAddr = new InetSocketAddress(host, port);
+        bootstrap.connect(remoteAddr);
     }
 
     private void setupMessaging() {
@@ -145,10 +145,12 @@ public class PacemakerClient implements ISaslClient {
         this.notifyAll();
     }
 
+    @Override
     public String name() {
-        return client_name;
+        return clientName;
     }
 
+    @Override
     public String secretKey() {
         return secret;
     }
@@ -208,19 +210,19 @@ public class PacemakerClient implements ISaslClient {
     }
 
     public void gotMessage(HBMessage m) {
-        int message_id = m.get_message_id();
-        if (message_id >= 0 && message_id < maxPending) {
+        int messageId = m.get_message_id();
+        if (messageId >= 0 && messageId < maxPending) {
 
             LOG.debug("Pacemaker client got message: {}", m.toString());
-            HBMessage request = messages[message_id];
+            HBMessage request = messages[messageId];
 
             if (request == null) {
-                LOG.debug("No message for slot: {}", Integer.toString(message_id));
+                LOG.debug("No message for slot: {}", Integer.toString(messageId));
             } else {
                 synchronized (request) {
-                    messages[message_id] = m;
+                    messages[messageId] = m;
                     request.notifyAll();
-                    availableMessageSlots.add(message_id);
+                    availableMessageSlots.add(messageId);
                 }
             }
         } else {
@@ -231,6 +233,7 @@ public class PacemakerClient implements ISaslClient {
     public void reconnect() {
         final PacemakerClient client = this;
         timer.schedule(new TimerTask() {
+            @Override
             public void run() {
                 client.doReconnect();
             }
@@ -243,7 +246,7 @@ public class PacemakerClient implements ISaslClient {
         LOG.info("reconnecting to {}", host);
         close_channel();
         if (!shutdown.get()) {
-            bootstrap.connect(remote_addr);
+            bootstrap.connect(remoteAddr);
         }
     }
 
@@ -255,7 +258,7 @@ public class PacemakerClient implements ISaslClient {
     private synchronized void close_channel() {
         if (channelRef.get() != null) {
             channelRef.get().close();
-            LOG.debug("channel {} closed", remote_addr);
+            LOG.debug("channel {} closed", remoteAddr);
             channelRef.set(null);
         }
     }

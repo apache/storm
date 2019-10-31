@@ -59,7 +59,7 @@ public class KafkaTridentSpoutMigration {
         private final long firstOffset;
         private final long lastOffset;
 
-        public PartitionMetadata(long firstOffset, long lastOffset) {
+        PartitionMetadata(long firstOffset, long lastOffset) {
             this.firstOffset = firstOffset;
             this.lastOffset = lastOffset;
         }

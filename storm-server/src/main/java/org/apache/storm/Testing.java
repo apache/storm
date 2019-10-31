@@ -79,7 +79,7 @@ public class Testing {
 
     /**
      * Continue to execute body repeatedly until condition is true or TEST_TIMEOUT_MS has
-     * passed
+     * passed.
      * @param condition what we are waiting for
      * @param body what to run in the loop
      * @throws AssertionError if the loop timed out.
@@ -90,7 +90,7 @@ public class Testing {
 
     /**
      * Continue to execute body repeatedly until condition is true or TEST_TIMEOUT_MS has
-     * passed
+     * passed.
      * @param timeoutMs the number of ms to wait before timing out.
      * @param condition what we are waiting for
      * @param body what to run in the loop
@@ -113,19 +113,20 @@ public class Testing {
     }
 
     /**
-     * Convenience method for data.stream.allMatch(pred)
+     * Convenience method for data.stream.allMatch(pred).
      */
     public static <T> boolean isEvery(Collection<T> data, Predicate<T> pred) {
         return data.stream().allMatch(pred);
     }
 
     /**
-     * Run with simulated time
+     * Run with simulated time.
+     *
      * @deprecated use ```
-     * try (Time.SimulatedTime time = new Time.SimulatedTime()) {
-     *  ...
-     * }
-     * ```
+     *     try (Time.SimulatedTime time = new Time.SimulatedTime()) {
+     *      ...
+     *     }
+     *     ```
      * @param code what to run
      */
     @Deprecated
@@ -157,22 +158,23 @@ public class Testing {
             conf = new HashMap<>();
         }
         return new LocalCluster.Builder()
-            .withSupervisors(supervisors)
-            .withPortsPerSupervisor(ports)
-            .withDaemonConf(conf)
-            .withNimbusDaemon(param.isNimbusDaemon())
-            .withTracked(id)
-            .withSimulatedTime(simulated)
-            .build();
+                .withSupervisors(supervisors)
+                .withPortsPerSupervisor(ports)
+                .withDaemonConf(conf)
+                .withNimbusDaemon(param.isNimbusDaemon())
+                .withTracked(id)
+                .withSimulatedTime(simulated)
+                .build();
     }
 
     /**
-     * Run with a local cluster
+     * Run with a local cluster.
+     *
      * @deprecated use ```
-     * try (LocalCluster cluster = new LocalCluster()) {
-     *  ...
-     * }
-     * ```
+     *     try (LocalCluster cluster = new LocalCluster()) {
+     *      ...
+     *     }
+     *     ```
      * @param code what to run
      */
     @Deprecated
@@ -181,12 +183,13 @@ public class Testing {
     }
 
     /**
-     * Run with a local cluster
+     * Run with a local cluster.
+     *
      * @deprecated use ```
-     * try (LocalCluster cluster = new LocalCluster.Builder()....build()) {
-     *  ...
-     * }
-     * ```
+     *     try (LocalCluster cluster = new LocalCluster.Builder()....build()) {
+     *      ...
+     *     }
+     *     ```
      * @param param configs to set in the cluster
      * @param code what to run
      */
@@ -200,12 +203,13 @@ public class Testing {
     }
 
     /**
-     * Run with a local cluster
+     * Run with a local cluster.
+     *
      * @deprecated use ```
-     * try (LocalCluster cluster = new LocalCluster.Builder()....build()) {
-     *  ...
-     * }
-     * ```
+     *     try (LocalCluster cluster = new LocalCluster.Builder()....build()) {
+     *      ...
+     *     }
+     *     ```
      * @param clusterConf some configs to set in the cluster
      */
     @Deprecated
@@ -235,12 +239,13 @@ public class Testing {
     }
 
     /**
-     * Run with a local cluster
+     * Run with a local cluster.
+     *
      * @deprecated use ```
-     * try (LocalCluster cluster = new LocalCluster.Builder().withSimulatedTime().build()) {
-     *  ...
-     * }
-     * ```
+     *     try (LocalCluster cluster = new LocalCluster.Builder().withSimulatedTime().build()) {
+     *      ...
+     *     }
+     *     ```
      * @param code what to run
      */
     @Deprecated
@@ -249,12 +254,13 @@ public class Testing {
     }
 
     /**
-     * Run with a local cluster
+     * Run with a local cluster.
+     *
      * @deprecated use ```
-     * try (LocalCluster cluster = new LocalCluster.Builder().withSimulatedTime()....build()) {
-     *  ...
-     * }
-     * ```
+     *     try (LocalCluster cluster = new LocalCluster.Builder().withSimulatedTime()....build()) {
+     *      ...
+     *     }
+     *     ```
      * @param param configs to set in the cluster
      * @param code what to run
      */
@@ -268,12 +274,13 @@ public class Testing {
     }
 
     /**
-     * Run with a local cluster
+     * Run with a local cluster.
+     *
      * @deprecated use ```
-     * try (LocalCluster cluster = new LocalCluster.Builder().withTracked().build()) {
-     *  ...
-     * }
-     * ```
+     *     try (LocalCluster cluster = new LocalCluster.Builder().withTracked().build()) {
+     *      ...
+     *     }
+     *     ```
      * @param code what to run
      */
     @Deprecated
@@ -282,26 +289,13 @@ public class Testing {
     }
 
     /**
-     * In a tracked topology some metrics are tracked.  This provides a way to get those metrics.
-     * This is intended mostly for internal testing.
-     * @param id the id of the tracked cluster
-     * @param key the name of the metric to get.
-     * @return the metric
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated
-    public static int globalAmt(String id, String key) {
-        LOG.warn("Reading tracked metrics for ID {}", id);
-        return ((ConcurrentHashMap<String, AtomicInteger>) RegisteredGlobalState.getState(id)).get(key).get();
-    }
-
-    /**
-     * Run with a local tracked cluster
+     * Run with a local tracked cluster.
+     *
      * @deprecated use ```
-     * try (LocalCluster cluster = new LocalCluster.Builder().withTracked()....build()) {
-     *  ...
-     * }
-     * ```
+     *     try (LocalCluster cluster = new LocalCluster.Builder().withTracked()....build()) {
+     *      ...
+     *     }
+     *     ```
      * @param param configs to set in the cluster
      * @param code what to run
      */
@@ -315,6 +309,21 @@ public class Testing {
     }
 
     /**
+     * In a tracked topology some metrics are tracked.  This provides a way to get those metrics.
+     * This is intended mostly for internal testing.
+     *
+     * @param id the id of the tracked cluster
+     * @param key the name of the metric to get.
+     * @return the metric
+     */
+    @SuppressWarnings("unchecked")
+    @Deprecated
+    public static int globalAmt(String id, String key) {
+        LOG.warn("Reading tracked metrics for ID {}", id);
+        return ((ConcurrentHashMap<String, AtomicInteger>) RegisteredGlobalState.getState(id)).get(key).get();
+    }
+
+    /**
      * Track and capture a topology.
      * This is intended mostly for internal testing.
      */
@@ -324,10 +333,10 @@ public class Testing {
     }
 
     /**
-     * Rewrites a topology so that all the tuples flowing through it are captured
+     * Rewrites a topology so that all the tuples flowing through it are captured.
      * @param topology the topology to rewrite
      * @return the modified topology and a new Bolt that can retrieve the
-     * captured tuples.
+     *     captured tuples.
      */
     public static CapturedTopology<StormTopology> captureTopology(StormTopology topology) {
         topology = topology.deepCopy(); //Don't modify the original
@@ -366,12 +375,11 @@ public class Testing {
 
     /**
      * Run a topology to completion capturing all of the messages that are emitted.  This only works when all of the spouts are
-     * instances of {@link org.apache.storm.testing.CompletableSpout}
+     * instances of {@link org.apache.storm.testing.CompletableSpout}.
      * @param cluster the cluster to submit the topology to
      * @param topology the topology itself
-     * @return a map of the component to the list of tuples it emitted.
-     * @throws InterruptedException
-     * @throws TException on any error from nimbus.
+     * @return a map of the component to the list of tuples it emitted
+     * @throws TException on any error from nimbus
      */
     public static Map<String, List<FixedTuple>> completeTopology(ILocalCluster cluster, StormTopology topology) throws InterruptedException,
         TException {
@@ -383,15 +391,13 @@ public class Testing {
      * instances of {@link org.apache.storm.testing.CompletableSpout} or are overwritten by MockedSources in param
      * @param cluster the cluster to submit the topology to
      * @param topology the topology itself
-     * @param param parameters to describe how to complete a topology.
-     * @return a map of the component to the list of tuples it emitted.
-     * @throws InterruptedException
+     * @param param parameters to describe how to complete a topology
+     * @return a map of the component to the list of tuples it emitted
      * @throws TException on any error from nimbus.
      */
     public static Map<String, List<FixedTuple>> completeTopology(ILocalCluster cluster, StormTopology topology,
                                                                  CompleteTopologyParam param) throws TException, InterruptedException {
         Map<String, List<FixedTuple>> ret = null;
-        IStormClusterState state = cluster.getClusterState();
         CapturedTopology<StormTopology> capTopo = captureTopology(topology);
         topology = capTopo.topology;
         String topoName = param.getTopologyName();
@@ -407,8 +413,10 @@ public class Testing {
                 spouts.get(mocked.getKey()).set_spout_object(Thrift.serializeComponentObject(newSpout));
             }
         }
-        List<Object> spoutObjects = spouts.values().stream().
-            map((spec) -> Thrift.deserializeComponentObject(spec.get_spout_object())).collect(Collectors.toList());
+        List<Object> spoutObjects = spouts.values()
+                .stream()
+                .map((spec) -> Thrift.deserializeComponentObject(spec.get_spout_object()))
+                .collect(Collectors.toList());
 
         for (Object o : spoutObjects) {
             if (!(o instanceof CompletableSpout)) {
@@ -427,6 +435,7 @@ public class Testing {
             cluster.advanceClusterTime(11);
         }
 
+        IStormClusterState state = cluster.getClusterState();
         String topoId = state.getTopoId(topoName).get();
         //Give the topology time to come up without using it to wait for the spouts to complete
         simulateWait(cluster);
@@ -435,28 +444,28 @@ public class Testing {
             timeoutMs = TEST_TIMEOUT_MS;
         }
         whileTimeout(timeoutMs,
-                     () -> !isEvery(spoutObjects, (o) -> ((CompletableSpout) o).isExhausted()),
-                     () -> {
-                         try {
-                             simulateWait(cluster);
-                         } catch (Exception e) {
-                             throw new RuntimeException();
-                         }
-                     });
+            () -> !isEvery(spoutObjects, (o) -> ((CompletableSpout) o).isExhausted()),
+            () -> {
+                try {
+                    simulateWait(cluster);
+                } catch (Exception e) {
+                    throw new RuntimeException();
+                }
+            });
 
         KillOptions killOpts = new KillOptions();
         killOpts.set_wait_secs(0);
         cluster.killTopologyWithOpts(topoName, killOpts);
 
         whileTimeout(timeoutMs,
-                     () -> state.assignmentInfo(topoId, null) != null,
-                     () -> {
-                         try {
-                             simulateWait(cluster);
-                         } catch (Exception e) {
-                             throw new RuntimeException();
-                         }
-                     });
+            () -> state.assignmentInfo(topoId, null) != null,
+            () -> {
+                try {
+                    simulateWait(cluster);
+                } catch (Exception e) {
+                    throw new RuntimeException();
+                }
+            });
 
         if (param.getCleanupState()) {
             for (Object o : spoutObjects) {
@@ -471,7 +480,7 @@ public class Testing {
     }
 
     /**
-     * If using simulated time simulate waiting for 10 seconds.  This is intended for internal testing only.
+     * If using simulated time simulate waiting for 10 seconds. This is intended for internal testing only.
      */
     public static void simulateWait(ILocalCluster cluster) throws InterruptedException {
         if (Time.isSimulating()) {
@@ -481,7 +490,7 @@ public class Testing {
     }
 
     /**
-     * Get all of the tuples from a given component on the default stream
+     * Get all of the tuples from a given component on the default stream.
      * @param results the results of running a completed topology
      * @param componentId the id of the component to look at
      * @return a list of the tuple values.
@@ -491,7 +500,7 @@ public class Testing {
     }
 
     /**
-     * Get all of the tuples from a given component on a given stream
+     * Get all of the tuples from a given component on a given stream.
      * @param results the results of running a completed topology
      * @param componentId the id of the component to look at
      * @param streamId the id of the stream to look for.
@@ -520,63 +529,63 @@ public class Testing {
     }
 
     /**
-     * Simulated time wait for a tracked topology.  This is intended for internal testing
+     * Simulated time wait for a tracked topology.  This is intended for internal testing.
      */
     public static void trackedWait(CapturedTopology<TrackedTopology> topo) {
         topo.topology.trackedWait();
     }
 
     /**
-     * Simulated time wait for a tracked topology.  This is intended for internal testing
+     * Simulated time wait for a tracked topology.  This is intended for internal testing.
      */
     public static void trackedWait(CapturedTopology<TrackedTopology> topo, Integer amt) {
         topo.topology.trackedWait(amt);
     }
 
     /**
-     * Simulated time wait for a tracked topology.  This is intended for internal testing
+     * Simulated time wait for a tracked topology.  This is intended for internal testing.
      */
     public static void trackedWait(CapturedTopology<TrackedTopology> topo, Integer amt, Integer timeoutMs) {
         topo.topology.trackedWait(amt, timeoutMs);
     }
 
     /**
-     * Simulated time wait for a tracked topology.  This is intended for internal testing
+     * Simulated time wait for a tracked topology.  This is intended for internal testing.
      */
     public static void trackedWait(TrackedTopology topo) {
         topo.trackedWait();
     }
 
     /**
-     * Simulated time wait for a tracked topology.  This is intended for internal testing
+     * Simulated time wait for a tracked topology.  This is intended for internal testing.
      */
     public static void trackedWait(TrackedTopology topo, Integer amt) {
         topo.trackedWait(amt);
     }
 
     /**
-     * Simulated time wait for a tracked topology.  This is intended for internal testing
+     * Simulated time wait for a tracked topology.  This is intended for internal testing.
      */
     public static void trackedWait(TrackedTopology topo, Integer amt, Integer timeoutMs) {
         topo.trackedWait(amt, timeoutMs);
     }
 
     /**
-     * Simulated time wait for a cluster.  This is intended for internal testing
+     * Simulated time wait for a cluster.  This is intended for internal testing.
      */
     public static void advanceClusterTime(ILocalCluster cluster, Integer secs) throws InterruptedException {
         advanceClusterTime(cluster, secs, 1);
     }
 
     /**
-     * Simulated time wait for a cluster.  This is intended for internal testing
+     * Simulated time wait for a cluster.  This is intended for internal testing.
      */
     public static void advanceClusterTime(ILocalCluster cluster, Integer secs, Integer step) throws InterruptedException {
         cluster.advanceClusterTime(secs, step);
     }
 
     /**
-     * Count how many times each element appears in the Collection
+     * Count how many times each element appears in the Collection.
      * @param c a collection of values
      * @return a map of the unique values in c to the count of those values.
      */
@@ -627,7 +636,7 @@ public class Testing {
     }
 
     /**
-     * Create a {@link org.apache.storm.tuple.Tuple} for use with testing
+     * Create a {@link org.apache.storm.tuple.Tuple} for use with testing.
      * @param values the values to appear in the tuple
      */
     public static Tuple testTuple(List<Object> values) {
@@ -635,7 +644,7 @@ public class Testing {
     }
 
     /**
-     * Create a {@link org.apache.storm.tuple.Tuple} for use with testing
+     * Create a {@link org.apache.storm.tuple.Tuple} for use with testing.
      * @param values the values to appear in the tuple
      * @param param parametrs describing more details about the tuple
      */
@@ -691,8 +700,8 @@ public class Testing {
     /**
      * Simply produces a boolean to see if a specific state is true or false.
      */
-    public static interface Condition {
-        public boolean exec();
+    public interface Condition {
+        boolean exec();
     }
 
     /**

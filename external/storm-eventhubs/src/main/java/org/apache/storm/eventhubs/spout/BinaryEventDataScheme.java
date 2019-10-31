@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 /**
  * An Event Data Scheme which deserializes message payload into the raw bytes.
  *
- * The resulting tuple would contain three items, the first being the message bytes, and the second a map of properties that include
+ * <p>The resulting tuple would contain three items, the first being the message bytes, and the second a map of properties that include
  * metadata, which can be used to determine who processes the message, and how it is processed.The third is the system properties which
  * exposes information like enqueue-time, offset and sequence number
  */

@@ -157,6 +157,7 @@ public class SocketSpout implements IRichSpout {
     }
 
     private class SocketReaderRunnable implements Runnable {
+        @Override
         public void run() {
             while (running) {
                 try {

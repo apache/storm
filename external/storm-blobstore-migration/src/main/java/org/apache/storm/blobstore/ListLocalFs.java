@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.blobstore;
 
 import java.util.Map;
@@ -30,7 +31,7 @@ public class ListLocalFs {
     
     public static void main(String[] args) throws Exception {
         
-        if(args.length != 1) {
+        if (args.length != 1) {
             System.out.println("Need 1 arguments, but have " + Integer.toString(args.length));
             System.out.println("listLocalFs <local_blobstore_dir>");
             System.out.println("Migrates blobs from LocalFsBlobStore to HdfsBlobStore");

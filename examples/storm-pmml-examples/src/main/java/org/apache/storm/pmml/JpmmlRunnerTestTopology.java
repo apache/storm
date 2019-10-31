@@ -18,6 +18,8 @@
 
 package org.apache.storm.pmml;
 
+import com.google.common.collect.Lists;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -40,13 +42,11 @@ import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 
-import com.google.common.collect.Lists;
-
 /**
  * Topology that loads a PMML Model and raw input data from a CSV file. The {@link RawInputFromCSVSpout}
  * creates a stream of tuples with raw inputs, and the {@link PMMLPredictorBolt} computes the predicted scores.
  *
- * The location of the PMML Model and CSV files can be specified as CLI argument. Alternatively, the PMML Model can also
+ * <p>The location of the PMML Model and CSV files can be specified as CLI argument. Alternatively, the PMML Model can also
  * be uploaded to the Blobstore and used in the topology specifying the blobKey. If no arguments are given,
  * it loads the default example as described in the README file
  */
@@ -79,8 +79,8 @@ public class JpmmlRunnerTestTopology {
     private void parseArgs(String[] args) {
         if (Arrays.stream(args).anyMatch(option -> option.equals("-h"))) {
             printUsage();
-        } else if (Arrays.stream(args).anyMatch(option -> option.equals("-f")) &&
-                Arrays.stream(args).anyMatch(option -> option.equals("-b"))) {
+        } else if (Arrays.stream(args).anyMatch(option -> option.equals("-f"))
+                && Arrays.stream(args).anyMatch(option -> option.equals("-b"))) {
             System.out.println("Please specify only one option of [-b, -f]");
             printUsage();
         } else {

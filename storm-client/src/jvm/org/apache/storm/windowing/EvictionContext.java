@@ -13,7 +13,7 @@
 package org.apache.storm.windowing;
 
 /**
- * Context information that can be used by the eviction policy
+ * Context information that can be used by the eviction policy.
  */
 public interface EvictionContext {
     /**
@@ -25,7 +25,7 @@ public interface EvictionContext {
     Long getReferenceTime();
 
     /**
-     * Returns the sliding count for count based windows
+     * Returns the sliding count for count based windows.
      *
      * @return the sliding count
      */
@@ -33,7 +33,7 @@ public interface EvictionContext {
 
 
     /**
-     * Returns the sliding interval for time based windows
+     * Returns the sliding interval for time based windows.
      *
      * @return the sliding interval
      */

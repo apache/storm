@@ -24,13 +24,13 @@ public class TransportFactory {
     public static IContext makeContext(Map<String, Object> topoConf) {
 
         //get factory class name
-        String transport_plugin_klassName = (String) topoConf.get(Config.STORM_MESSAGING_TRANSPORT);
-        LOG.info("Storm peer transport plugin:" + transport_plugin_klassName);
+        String transportPluginClassName = (String) topoConf.get(Config.STORM_MESSAGING_TRANSPORT);
+        LOG.info("Storm peer transport plugin:" + transportPluginClassName);
 
         IContext transport;
         try {
             //create a factory class
-            Class klass = Class.forName(transport_plugin_klassName);
+            Class klass = Class.forName(transportPluginClassName);
             //obtain a context object
             Object obj = klass.newInstance();
             if (obj instanceof IContext) {
@@ -45,7 +45,7 @@ public class TransportFactory {
                 transport = (IContext) method.invoke(obj, topoConf);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Fail to construct messaging plugin from plugin " + transport_plugin_klassName, e);
+            throw new RuntimeException("Fail to construct messaging plugin from plugin " + transportPluginClassName, e);
         }
         return transport;
     }

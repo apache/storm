@@ -59,6 +59,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         this.xsfer = executor.getExecutorTransfer();
     }
 
+    @Override
     public List<Integer> emit(String streamId, Collection<Tuple> anchors, List<Object> tuple) {
         try {
             return boltEmit(streamId, anchors, tuple, null);
@@ -97,8 +98,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
                     if (rootIds.size() > 0) {
                         long edgeId = MessageId.generateId(random);
                         ((TupleImpl) a).updateAckVal(edgeId);
-                        for (Long root_id : rootIds) {
-                            putXor(anchorsToIds, root_id, edgeId);
+                        for (Long rootId : rootIds) {
+                            putXor(anchorsToIds, rootId, edgeId);
                         }
                     }
                 }
@@ -201,7 +202,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     private void putXor(Map<Long, Long> pending, Long key, Long id) {
         Long curr = pending.get(key);
         if (curr == null) {
-            curr = 0l;
+            curr = 0L;
         }
         pending.put(key, Utils.bitXor(curr, id));
     }

@@ -12,6 +12,8 @@
 
 package org.apache.storm.testing;
 
+import static org.apache.storm.utils.Utils.get;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,32 +25,30 @@ import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 
-import static org.apache.storm.utils.Utils.get;
-
 public class FixedTupleSpout implements IRichSpout, CompletableSpout {
     private static final Map<String, Integer> acked = new HashMap<String, Integer>();
     private static final Map<String, Integer> failed = new HashMap<String, Integer>();
-    private List<FixedTuple> _tuples;
-    private SpoutOutputCollector _collector;
-    private TopologyContext _context;
-    private List<FixedTuple> _serveTuples;
-    private Map<String, FixedTuple> _pending;
-    private String _id;
-    private Fields _fields;
+    private List<FixedTuple> tuples;
+    private SpoutOutputCollector collector;
+    private TopologyContext context;
+    private List<FixedTuple> serveTuples;
+    private Map<String, FixedTuple> pending;
+    private String id;
+    private Fields fields;
 
     public FixedTupleSpout(List tuples) {
         this(tuples, (Fields) null);
     }
 
     public FixedTupleSpout(List tuples, Fields fields) {
-        _id = UUID.randomUUID().toString();
+        id = UUID.randomUUID().toString();
         synchronized (acked) {
-            acked.put(_id, 0);
+            acked.put(id, 0);
         }
         synchronized (failed) {
-            failed.put(_id, 0);
+            failed.put(id, 0);
         }
-        _tuples = new ArrayList<FixedTuple>();
+        this.tuples = new ArrayList<FixedTuple>();
         for (Object o : tuples) {
             FixedTuple ft;
             if (o instanceof FixedTuple) {
@@ -56,9 +56,9 @@ public class FixedTupleSpout implements IRichSpout, CompletableSpout {
             } else {
                 ft = new FixedTuple((List) o);
             }
-            _tuples.add(ft);
+            this.tuples.add(ft);
         }
-        _fields = fields;
+        this.fields = fields;
     }
 
     public static int getNumAcked(String stormId) {
@@ -79,7 +79,7 @@ public class FixedTupleSpout implements IRichSpout, CompletableSpout {
     }
 
     public List<FixedTuple> getSourceTuples() {
-        return _tuples;
+        return tuples;
     }
 
     public int getCompleted() {
@@ -87,25 +87,26 @@ public class FixedTupleSpout implements IRichSpout, CompletableSpout {
         int failedAmt;
 
         synchronized (acked) {
-            ackedAmt = acked.get(_id);
+            ackedAmt = acked.get(id);
         }
         synchronized (failed) {
-            failedAmt = failed.get(_id);
+            failedAmt = failed.get(id);
         }
         return ackedAmt + failedAmt;
     }
 
     public void cleanup() {
         synchronized (acked) {
-            acked.remove(_id);
+            acked.remove(id);
         }
         synchronized (failed) {
-            failed.remove(_id);
+            failed.remove(id);
         }
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        _context = context;
+        this.context = context;
         List<Integer> tasks = context.getComponentTasks(context.getThisComponentId());
         int startIndex;
         for (startIndex = 0; startIndex < tasks.size(); startIndex++) {
@@ -113,37 +114,41 @@ public class FixedTupleSpout implements IRichSpout, CompletableSpout {
                 break;
             }
         }
-        _collector = collector;
-        _pending = new HashMap<String, FixedTuple>();
-        _serveTuples = new ArrayList<FixedTuple>();
-        for (int i = startIndex; i < _tuples.size(); i += tasks.size()) {
-            _serveTuples.add(_tuples.get(i));
+        this.collector = collector;
+        pending = new HashMap<String, FixedTuple>();
+        serveTuples = new ArrayList<FixedTuple>();
+        for (int i = startIndex; i < tuples.size(); i += tasks.size()) {
+            serveTuples.add(tuples.get(i));
         }
     }
 
+    @Override
     public void close() {
     }
 
+    @Override
     public void nextTuple() {
-        if (_serveTuples.size() > 0) {
-            FixedTuple ft = _serveTuples.remove(0);
+        if (serveTuples.size() > 0) {
+            FixedTuple ft = serveTuples.remove(0);
             String id = UUID.randomUUID().toString();
-            _pending.put(id, ft);
-            _collector.emit(ft.stream, ft.values, id);
+            pending.put(id, ft);
+            collector.emit(ft.stream, ft.values, id);
         }
     }
 
+    @Override
     public void ack(Object msgId) {
         synchronized (acked) {
-            int curr = get(acked, _id, 0);
-            acked.put(_id, curr + 1);
+            int curr = get(acked, id, 0);
+            acked.put(id, curr + 1);
         }
     }
 
+    @Override
     public void fail(Object msgId) {
         synchronized (failed) {
-            int curr = get(failed, _id, 0);
-            failed.put(_id, curr + 1);
+            int curr = get(failed, id, 0);
+            failed.put(id, curr + 1);
         }
     }
 
@@ -157,8 +162,8 @@ public class FixedTupleSpout implements IRichSpout, CompletableSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        if (_fields != null) {
-            declarer.declare(_fields);
+        if (fields != null) {
+            declarer.declare(fields);
         }
     }
 

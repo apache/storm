@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  * Filter for debugging purposes. The `isKeep()` method simply prints the tuple to `System.out` and returns `true`.
  */
 public class Debug extends BaseFilter {
-    private final Logger LOG = LoggerFactory.getLogger(Debug.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Debug.class);
 
     private final String name;
     private boolean useLogger;
@@ -38,8 +38,6 @@ public class Debug extends BaseFilter {
 
     /**
      * Creates a `Debug` filter with a string identifier.
-     *
-     * @param name
      */
     public Debug(String name) {
         this.name = "DEBUG(" + name + "): ";

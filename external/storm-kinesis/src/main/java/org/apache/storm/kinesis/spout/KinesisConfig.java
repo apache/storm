@@ -38,13 +38,22 @@ public class KinesisConfig implements Serializable {
     private final ZkInfo zkInfo;
     // object representing information on paramaters to use while connecting to kinesis using kinesis client
     private final KinesisConnectionInfo kinesisConnectionInfo;
-    // this number represents the number of messages that are still not committed to zk. it will prevent the spout from emitting further.
-    // for e.g. if 1 failed and 2,3,4,5..... all have been acked by storm, they still cant be committed to zk because 1 is still in failed set. As a result
-    // the acked queue can infinitely grow without any of them being committed to zk. topology max pending does not help since from storm's view they are acked
+    /**
+     * This number represents the number of messages that are still not committed to zk. it will prevent the spout from
+     * emitting further. for e.g. if 1 failed and 2,3,4,5..... all have been acked by storm, they still can't be
+     * committed to zk because 1 is still in failed set. As a result the acked queue can infinitely grow without any of
+     * them being committed to zk. topology max pending does not help since from storm's view they are acked
+     */
     private final Long maxUncommittedRecords;
 
-    public KinesisConfig(String streamName, ShardIteratorType shardIteratorType, RecordToTupleMapper recordToTupleMapper, Date timestamp, FailedMessageRetryHandler
-            failedMessageRetryHandler, ZkInfo zkInfo, KinesisConnectionInfo kinesisConnectionInfo, Long maxUncommittedRecords) {
+    public KinesisConfig(String streamName,
+            ShardIteratorType shardIteratorType,
+            RecordToTupleMapper recordToTupleMapper,
+            Date timestamp,
+            FailedMessageRetryHandler failedMessageRetryHandler,
+            ZkInfo zkInfo,
+            KinesisConnectionInfo kinesisConnectionInfo,
+            Long maxUncommittedRecords) {
         this.streamName = streamName;
         this.shardIteratorType = shardIteratorType;
         this.recordToTupleMapper = recordToTupleMapper;
@@ -56,14 +65,16 @@ public class KinesisConfig implements Serializable {
         validate();
     }
 
-    private void validate () {
+    private void validate() {
         if (streamName == null || streamName.length() < 1) {
             throw new IllegalArgumentException("streamName is required and cannot be of length 0.");
         }
-        if (shardIteratorType == null || shardIteratorType.equals(ShardIteratorType.AFTER_SEQUENCE_NUMBER) || shardIteratorType.equals(ShardIteratorType
-                .AT_SEQUENCE_NUMBER)) {
-            throw new IllegalArgumentException("shardIteratorType has to be one of the " + ShardIteratorType.AT_TIMESTAMP + "," + ShardIteratorType.LATEST +
-                    "," + ShardIteratorType.TRIM_HORIZON);
+        if (shardIteratorType == null
+                || shardIteratorType.equals(ShardIteratorType.AFTER_SEQUENCE_NUMBER)
+                || shardIteratorType.equals(ShardIteratorType.AT_SEQUENCE_NUMBER)) {
+            throw new IllegalArgumentException("shardIteratorType has to be one of the " + ShardIteratorType.AT_TIMESTAMP
+                    + "," + ShardIteratorType.LATEST
+                    + "," + ShardIteratorType.TRIM_HORIZON);
         }
         if (shardIteratorType.equals(ShardIteratorType.AT_TIMESTAMP) && timestamp == null) {
             throw new IllegalArgumentException("timestamp must be provided if shardIteratorType is " + ShardIteratorType.AT_TIMESTAMP);
@@ -101,33 +112,33 @@ public class KinesisConfig implements Serializable {
         return timestamp;
     }
 
-    public FailedMessageRetryHandler getFailedMessageRetryHandler () {
+    public FailedMessageRetryHandler getFailedMessageRetryHandler() {
         return failedMessageRetryHandler;
     }
 
-    public ZkInfo getZkInfo () {
+    public ZkInfo getZkInfo() {
         return zkInfo;
     }
 
-    public KinesisConnectionInfo getKinesisConnectionInfo () {
+    public KinesisConnectionInfo getKinesisConnectionInfo() {
         return kinesisConnectionInfo;
     }
 
-    public Long getMaxUncommittedRecords () {
+    public Long getMaxUncommittedRecords() {
         return maxUncommittedRecords;
     }
 
     @Override
     public String toString() {
-        return "KinesisConfig{" +
-                "streamName='" + streamName + '\'' +
-                ", shardIteratorType=" + shardIteratorType +
-                ", recordToTupleMapper=" + recordToTupleMapper +
-                ", timestamp=" + timestamp +
-                ", zkInfo=" + zkInfo +
-                ", kinesisConnectionInfo=" + kinesisConnectionInfo +
-                ", failedMessageRetryHandler =" + failedMessageRetryHandler +
-                ", maxUncommittedRecords=" + maxUncommittedRecords +
-                '}';
+        return "KinesisConfig{"
+                + "streamName='" + streamName + '\''
+                + ", shardIteratorType=" + shardIteratorType
+                + ", recordToTupleMapper=" + recordToTupleMapper
+                + ", timestamp=" + timestamp
+                + ", zkInfo=" + zkInfo
+                + ", kinesisConnectionInfo=" + kinesisConnectionInfo
+                + ", failedMessageRetryHandler =" + failedMessageRetryHandler
+                + ", maxUncommittedRecords=" + maxUncommittedRecords
+                + '}';
     }
 }

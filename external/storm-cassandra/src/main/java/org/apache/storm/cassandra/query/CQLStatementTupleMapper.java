@@ -23,6 +23,7 @@ import org.apache.storm.tuple.ITuple;
 /**
  * Default interface to map a {@link org.apache.storm.tuple.ITuple} to a CQL {@link com.datastax.driver.core.Statement}.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface CQLStatementTupleMapper extends Serializable {
 
     /**
@@ -35,7 +36,8 @@ public interface CQLStatementTupleMapper extends Serializable {
      */
     List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple);
 
-    public static class DynamicCQLStatementTupleMapper implements CQLStatementTupleMapper {
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+    class DynamicCQLStatementTupleMapper implements CQLStatementTupleMapper {
         private List<CQLStatementBuilder> builders;
 
         public DynamicCQLStatementTupleMapper(List<CQLStatementBuilder> builders) {

@@ -18,6 +18,13 @@
 
 package org.apache.storm.pmml.runner.jpmml;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.storm.pmml.model.ModelOutputs;
 import org.apache.storm.pmml.runner.PmmlModelRunner;
 import org.apache.storm.tuple.Tuple;
@@ -28,19 +35,12 @@ import org.jpmml.evaluator.FieldValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * JPMML implementation of {@link PmmlModelRunner}. It extracts the raw inputs from the tuple for all
  * 'active fields', and builds a tuple with the predicted scores for the 'predicted fields' and 'output fields'.
  * In this implementation all the declared streams will have the same scored tuple.
  *
- * The 'predicted', 'active', and 'output' fields are extracted from the PMML model.
+ * <p>The 'predicted', 'active', and 'output' fields are extracted from the PMML model.
  */
 public class JPmmlModelRunner implements PmmlModelRunner<Tuple,
         Map<FieldName, Object>,
@@ -64,6 +64,7 @@ public class JPmmlModelRunner implements PmmlModelRunner<Tuple,
     }
 
     /**
+     * Extract raw inputs.
      * @return The raw inputs extracted from the tuple for all 'active fields'
      */
     @Override
@@ -97,8 +98,9 @@ public class JPmmlModelRunner implements PmmlModelRunner<Tuple,
     }
 
     /**
+     * Retrieve scores.
      * @return the predicted scores for the 'predicted fields' and 'output fields'.
-     * All the declared streams will have the same scored tuple.
+     *     All the declared streams will have the same scored tuple.
      */
     @Override
     public Map<String, List<Object>> scoredTuplePerStream(Tuple input) {

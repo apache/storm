@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Provides {@link RedisKeyValueState}
+ * Provides {@link RedisKeyValueState}.
  */
 public class RedisKeyValueStateProvider implements StateProvider {
     private static final Logger LOG = LoggerFactory.getLogger(RedisKeyValueStateProvider.class);
@@ -124,14 +124,14 @@ public class RedisKeyValueStateProvider implements StateProvider {
 
         @Override
         public String toString() {
-            return "StateConfig{" +
-                   "keyClass='" + keyClass + '\'' +
-                   ", valueClass='" + valueClass + '\'' +
-                   ", keySerializerClass='" + keySerializerClass + '\'' +
-                   ", valueSerializerClass='" + valueSerializerClass + '\'' +
-                   ", jedisPoolConfig=" + jedisPoolConfig +
-                   ", jedisClusterConfig=" + jedisClusterConfig +
-                   '}';
+            return "StateConfig{"
+                    + "keyClass='" + keyClass + '\''
+                    + ", valueClass='" + valueClass + '\''
+                    + ", keySerializerClass='" + keySerializerClass + '\''
+                    + ", valueSerializerClass='" + valueSerializerClass + '\''
+                    + ", jedisPoolConfig=" + jedisPoolConfig
+                    + ", jedisClusterConfig=" + jedisClusterConfig
+                    + '}';
         }
     }
 

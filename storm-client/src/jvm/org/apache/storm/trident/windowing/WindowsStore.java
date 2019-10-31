@@ -26,28 +26,28 @@ public interface WindowsStore extends Serializable {
     /**
      * This can be used as a separator while generating a key from sequence of strings.
      */
-    public static final String KEY_SEPARATOR = "|";
+    String KEY_SEPARATOR = "|";
 
-    public Object get(String key);
+    Object get(String key);
 
-    public Iterable<Object> get(List<String> keys);
+    Iterable<Object> get(List<String> keys);
 
-    public Iterable<String> getAllKeys();
+    Iterable<String> getAllKeys();
 
-    public void put(String key, Object value);
+    void put(String key, Object value);
 
-    public void putAll(Collection<Entry> entries);
+    void putAll(Collection<Entry> entries);
 
-    public void remove(String key);
+    void remove(String key);
 
-    public void removeAll(Collection<String> keys);
+    void removeAll(Collection<String> keys);
 
-    public void shutdown();
+    void shutdown();
 
     /**
      * This class wraps key and value objects which can be passed to {@code putAll} method.
      */
-    public static class Entry implements Serializable {
+    class Entry implements Serializable {
         public final String key;
         public final Object value;
 

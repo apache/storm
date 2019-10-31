@@ -223,12 +223,30 @@ public class DependencyResolverMain {
 
     private static Options buildOptions() {
         Options options = new Options();
-        options.addOption(null, OPTION_ARTIFACTS_LONG, true, "REQUIRED string representation of artifacts");
-        options.addOption(null, OPTION_ARTIFACT_REPOSITORIES_LONG, true, "OPTIONAL string representation of artifact repositories");
-        options.addOption(null, OPTION_MAVEN_LOCAL_REPOSITORY_DIRECTORY_LONG, true, "OPTIONAL string representation of local maven repository directory path");
-        options.addOption(null, OPTION_PROXY_URL_LONG, true, "OPTIONAL URL representation of proxy server");
-        options.addOption(null, OPTION_PROXY_USERNAME_LONG, true, "OPTIONAL Username of proxy server (basic auth)");
-        options.addOption(null, OPTION_PROXY_PASSWORD_LONG, true, "OPTIONAL Password of proxy server (basic auth)");
+        options.addOption(null,
+                OPTION_ARTIFACTS_LONG,
+                true,
+                "REQUIRED string representation of artifacts");
+        options.addOption(null,
+                OPTION_ARTIFACT_REPOSITORIES_LONG,
+                true,
+                "OPTIONAL string representation of artifact repositories");
+        options.addOption(null,
+                OPTION_MAVEN_LOCAL_REPOSITORY_DIRECTORY_LONG,
+                true,
+                "OPTIONAL string representation of local maven repository directory path");
+        options.addOption(null,
+                OPTION_PROXY_URL_LONG,
+                true,
+                "OPTIONAL URL representation of proxy server");
+        options.addOption(null,
+                OPTION_PROXY_USERNAME_LONG,
+                true,
+                "OPTIONAL Username of proxy server (basic auth)");
+        options.addOption(null,
+                OPTION_PROXY_PASSWORD_LONG,
+                true,
+                "OPTIONAL Password of proxy server (basic auth)");
         return options;
     }
 }

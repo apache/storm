@@ -25,5 +25,6 @@ public interface Reducer<T> extends BiFunction<T, T, T> {
      * @param arg2 the second argument
      * @return the result
      */
+    @Override
     T apply(T arg1, T arg2);
 }

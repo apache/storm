@@ -24,6 +24,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+
+import org.apache.storm.daemon.worker.BackPressureTracker.BackpressureState;
 import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.shade.org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.apache.storm.utils.JCQueue;
@@ -38,7 +40,7 @@ public class BackPressureTrackerTest {
         int taskIdNoBackPressure = 1;
         JCQueue noBackPressureQueue = mock(JCQueue.class);
         BackPressureTracker tracker = new BackPressureTracker(WORKER_ID,
-            Collections.singletonMap(taskIdNoBackPressure, noBackPressureQueue));
+                Collections.singletonMap(taskIdNoBackPressure, noBackPressureQueue));
 
         BackPressureStatus status = tracker.getCurrStatus();
 
@@ -57,7 +59,8 @@ public class BackPressureTrackerTest {
             taskIdNoBackPressure, noBackPressureQueue,
             taskIdBackPressure, backPressureQueue));
 
-        boolean backpressureChanged = tracker.recordBackPressure(taskIdBackPressure);
+        BackpressureState state = tracker.getBackpressureState(taskIdBackPressure);
+        boolean backpressureChanged = tracker.recordBackPressure(state);
         BackPressureStatus status = tracker.getCurrStatus();
 
         assertThat(backpressureChanged, is(true));
@@ -72,9 +75,10 @@ public class BackPressureTrackerTest {
         JCQueue queue = mock(JCQueue.class);
         BackPressureTracker tracker = new BackPressureTracker(WORKER_ID, ImmutableMap.of(
             taskId, queue));
-        tracker.recordBackPressure(taskId);
+        BackpressureState state = tracker.getBackpressureState(taskId);
+        tracker.recordBackPressure(state);
 
-        boolean backpressureChanged = tracker.recordBackPressure(taskId);
+        boolean backpressureChanged = tracker.recordBackPressure(state);
         BackPressureStatus status = tracker.getCurrStatus();
 
         assertThat(backpressureChanged, is(false));
@@ -89,7 +93,8 @@ public class BackPressureTrackerTest {
         when(queue.isEmptyOverflow()).thenReturn(true);
         BackPressureTracker tracker = new BackPressureTracker(WORKER_ID, ImmutableMap.of(
             taskId, queue));
-        tracker.recordBackPressure(taskId);
+        BackpressureState state = tracker.getBackpressureState(taskId);
+        tracker.recordBackPressure(state);
 
         boolean backpressureChanged = tracker.refreshBpTaskList();
         BackPressureStatus status = tracker.getCurrStatus();
@@ -106,7 +111,8 @@ public class BackPressureTrackerTest {
         when(queue.isEmptyOverflow()).thenReturn(false);
         BackPressureTracker tracker = new BackPressureTracker(WORKER_ID, ImmutableMap.of(
             taskId, queue));
-        tracker.recordBackPressure(taskId);
+        BackpressureState state = tracker.getBackpressureState(taskId);
+        tracker.recordBackPressure(state);
 
         boolean backpressureChanged = tracker.refreshBpTaskList();
         BackPressureStatus status = tracker.getCurrStatus();
@@ -114,6 +120,23 @@ public class BackPressureTrackerTest {
         assertThat(backpressureChanged, is(false));
         assertThat(status.workerId, is(WORKER_ID));
         assertThat(status.bpTasks, contains(taskId));
+    }
+
+    @Test
+    public void testSetLastOverflowCount() {
+        int taskId = 1;
+        int overflow = 5;
+        JCQueue queue = mock(JCQueue.class);
+        BackPressureTracker tracker = new BackPressureTracker(WORKER_ID, ImmutableMap.of(
+            taskId, queue));
+        BackpressureState state = tracker.getBackpressureState(taskId);
+        tracker.recordBackPressure(state);
+        tracker.setLastOverflowCount(state, overflow);
+
+        BackpressureState retrievedState = tracker.getBackpressureState(taskId);
+        int lastOverflowCount = tracker.getLastOverflowCount(retrievedState);
+
+        assertThat(lastOverflowCount, is(overflow));
     }
 
 }

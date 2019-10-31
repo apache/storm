@@ -16,8 +16,8 @@ import org.apache.storm.trident.spout.IBatchID;
 
 
 public class TransactionAttempt implements IBatchID {
-    Long _txid;
-    int _attemptId;
+    Long txid;
+    int attemptId;
 
 
     // for kryo compatibility
@@ -26,25 +26,27 @@ public class TransactionAttempt implements IBatchID {
     }
 
     public TransactionAttempt(Long txid, int attemptId) {
-        _txid = txid;
-        _attemptId = attemptId;
+        this.txid = txid;
+        this.attemptId = attemptId;
     }
 
     public Long getTransactionId() {
-        return _txid;
+        return txid;
     }
 
+    @Override
     public Object getId() {
-        return _txid;
+        return txid;
     }
 
+    @Override
     public int getAttemptId() {
-        return _attemptId;
+        return attemptId;
     }
 
     @Override
     public int hashCode() {
-        return _txid.hashCode();
+        return txid.hashCode();
     }
 
     @Override
@@ -53,11 +55,11 @@ public class TransactionAttempt implements IBatchID {
             return false;
         }
         TransactionAttempt other = (TransactionAttempt) o;
-        return _txid.equals(other._txid) && _attemptId == other._attemptId;
+        return txid.equals(other.txid) && attemptId == other.attemptId;
     }
 
     @Override
     public String toString() {
-        return "" + _txid + ":" + _attemptId;
+        return "" + txid + ":" + attemptId;
     }
 }

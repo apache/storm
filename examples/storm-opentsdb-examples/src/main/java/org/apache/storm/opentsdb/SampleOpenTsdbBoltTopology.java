@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.opentsdb;
 
 import java.util.Collections;
@@ -33,7 +34,7 @@ import org.apache.storm.topology.TopologyBuilder;
 public class SampleOpenTsdbBoltTopology {
 
     public static void main(String[] args) throws Exception {
-        if(args.length == 0) {
+        if (args.length == 0) {
             throw new IllegalArgumentException("There should be at least one argument. Run as `SampleOpenTsdbBoltTopology <tsdb-url>`");
         }
 

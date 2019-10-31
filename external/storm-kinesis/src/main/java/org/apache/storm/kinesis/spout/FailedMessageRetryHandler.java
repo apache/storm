@@ -22,27 +22,27 @@ import java.io.Serializable;
 
 public interface FailedMessageRetryHandler extends Serializable {
     /**
-     * message with messageId failed in the spout
-     * @param messageId
+     * message with messageId failed in the spout.
+     * @param messageId the message id
      * @return true if this failed message was scheduled to be retried, false otherwise
      */
-    boolean failed (KinesisMessageId messageId);
+    boolean failed(KinesisMessageId messageId);
 
     /**
-     * message with messageId succeeded/acked in the spout
-     * @param messageId
+     * message with messageId succeeded/acked in the spout.
+     * @param messageId the message id
      */
-    void acked (KinesisMessageId messageId);
+    void acked(KinesisMessageId messageId);
 
     /**
-     * Get the next failed message's id to retry if any, null otherwise
+     * Get the next failed message's id to retry if any, null otherwise.
      * @return messageId
      */
-    KinesisMessageId getNextFailedMessageToRetry ();
+    KinesisMessageId getNextFailedMessageToRetry();
 
     /**
-     * message with messageId returned by last call to getNextFailedMessageToRetry was emitted/retried by the spout
-     * @param messageId
+     * message with messageId returned by last call to getNextFailedMessageToRetry was emitted/retried by the spout.
+     * @param messageId the message id
      */
-    void failedMessageEmitted (KinesisMessageId messageId);
+    void failedMessageEmitted(KinesisMessageId messageId);
 }

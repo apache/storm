@@ -12,6 +12,8 @@
 
 package org.apache.storm.hbase.topology;
 
+import static org.apache.storm.utils.Utils.tuple;
+
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Random;
@@ -24,14 +26,13 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.utils.Utils.tuple;
-
 public class TotalWordCounter implements IBasicBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(TotalWordCounter.class);
     private static final Random RANDOM = new Random();
     private BigInteger total = BigInteger.ZERO;
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 
@@ -39,6 +40,7 @@ public class TotalWordCounter implements IBasicBolt {
      * Just output the word value with a count of 1.
      * The HBaseBolt will handle incrementing the counter.
      */
+    @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         total = total.add(new BigInteger(input.getValues().get(1).toString()));
         collector.emit(tuple(total.toString()));
@@ -48,10 +50,12 @@ public class TotalWordCounter implements IBasicBolt {
         }
     }
 
+    @Override
     public void cleanup() {
         LOG.info("Final total = " + total);
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("total"));
     }

@@ -170,6 +170,9 @@ public class DirectoryCleaner {
             } else {
                 LOG.warn("No more files able to delete this round, but {} is over quota by {} MB",
                     forPerDir ? "this directory" : "root directory", toDeleteSize * 1e-6);
+                LOG.warn("No more files eligible to be deleted this round, but {} is over {} quota by {} MB",
+                        forPerDir ? "worker directory: " + dirs.get(0).toAbsolutePath().normalize() : "log root directory",
+                        forPerDir ? "per-worker" : "global", toDeleteSize * 1e-6);
             }
         }
         return new DeletionMeta(deletedSize, deletedFiles);

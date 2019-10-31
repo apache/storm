@@ -48,13 +48,13 @@ import org.apache.storm.validation.ConfigValidation.PowerOf2Validator;
 import org.apache.storm.validation.ConfigValidation.StringValidator;
 import org.apache.storm.validation.ConfigValidation.UserResourcePoolEntryValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
-import org.apache.storm.validation.ConfigValidationAnnotations.isImplementationOfClass;
-import org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
-import org.apache.storm.validation.ConfigValidationAnnotations.isListEntryType;
-import org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
-import org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
-import org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplicateInList;
-import org.apache.storm.validation.ConfigValidationAnnotations.isString;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsImplementationOfClass;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsListEntryCustom;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsListEntryType;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryCustom;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryType;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsNoDuplicateInList;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsString;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -766,34 +766,34 @@ public class TestConfigValidate {
     }
 
     public class TestConfig extends HashMap<String, Object> {
-        @isMapEntryType(keyType = String.class, valueType = Integer.class)
+        @IsMapEntryType(keyType = String.class, valueType = Integer.class)
         public static final String TEST_MAP_CONFIG = "test.map.config";
 
-        @isMapEntryCustom(
+        @IsMapEntryCustom(
             keyValidatorClasses = { StringValidator.class },
             valueValidatorClasses = { PositiveNumberValidator.class, IntegerValidator.class })
         public static final String TEST_MAP_CONFIG_2 = "test.map.config.2";
 
-        @isListEntryType(type = Number.class)
+        @IsListEntryType(type = Number.class)
         @NotNull
         public static final String TEST_MAP_CONFIG_3 = "test.map.config.3";
 
-        @isListEntryCustom(
+        @IsListEntryCustom(
             entryValidatorClasses = { PositiveNumberValidator.class, NotNullValidator.class })
-        @isNoDuplicateInList
+        @IsNoDuplicateInList
         public static final String TEST_MAP_CONFIG_4 = "test.map.config.4";
 
-        @isString(acceptedValues = { "aaa", "bbb", "ccc" })
+        @IsString(acceptedValues = { "aaa", "bbb", "ccc" })
         public static final String TEST_MAP_CONFIG_5 = "test.map.config.5";
 
-        @isMapEntryCustom(keyValidatorClasses = { StringValidator.class }, valueValidatorClasses = { ImpersonationAclUserEntryValidator
+        @IsMapEntryCustom(keyValidatorClasses = { StringValidator.class }, valueValidatorClasses = { ImpersonationAclUserEntryValidator
             .class })
         public static final String TEST_MAP_CONFIG_6 = "test.map.config.6";
 
-        @isMapEntryCustom(keyValidatorClasses = { StringValidator.class }, valueValidatorClasses = { UserResourcePoolEntryValidator.class })
+        @IsMapEntryCustom(keyValidatorClasses = { StringValidator.class }, valueValidatorClasses = { UserResourcePoolEntryValidator.class })
         public static final String TEST_MAP_CONFIG_7 = "test.map.config.7";
 
-        @isImplementationOfClass(implementsClass = org.apache.storm.networktopography.DNSToSwitchMapping.class)
+        @IsImplementationOfClass(implementsClass = org.apache.storm.networktopography.DNSToSwitchMapping.class)
         @NotNull
         public static final String TEST_MAP_CONFIG_8 = "test.map.config.8";
     }

@@ -128,6 +128,7 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
         ctx.close();
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private void getSASLCredentials() throws IOException {
         String secretKey;
         topologyName = server.name();

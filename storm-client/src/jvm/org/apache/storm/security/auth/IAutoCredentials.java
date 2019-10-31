@@ -20,14 +20,14 @@ import javax.security.auth.Subject;
  */
 public interface IAutoCredentials {
 
-    public void prepare(Map<String, Object> conf);
+    void prepare(Map<String, Object> conf);
 
     /**
      * Called to populate the credentials on the client side.
      *
      * @param credentials the credentials to be populated.
      */
-    public void populateCredentials(Map<String, String> credentials);
+    void populateCredentials(Map<String, String> credentials);
 
     /**
      * Called to initially populate the subject on the worker side with credentials passed in.
@@ -35,7 +35,7 @@ public interface IAutoCredentials {
      * @param subject     the subject to optionally put credentials in.
      * @param credentials the credentials to be used.
      */
-    public void populateSubject(Subject subject, Map<String, String> credentials);
+    void populateSubject(Subject subject, Map<String, String> credentials);
 
 
     /**
@@ -45,6 +45,6 @@ public interface IAutoCredentials {
      * @param subject     the subject to optionally put credentials in.
      * @param credentials the credentials to be used.
      */
-    public void updateSubject(Subject subject, Map<String, String> credentials);
+    void updateSubject(Subject subject, Map<String, String> credentials);
 
 }

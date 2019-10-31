@@ -15,7 +15,7 @@ package org.apache.storm.streams;
 import java.io.Serializable;
 
 /**
- * A wrapper for the stream state which can be used to query the state via {@link Stream#stateQuery(StreamState)}
+ * A wrapper for the stream state which can be used to query the state via {@link Stream#stateQuery(StreamState)}.
  *
  * @param <K> the key type
  * @param <V> the value type

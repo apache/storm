@@ -26,22 +26,22 @@ import org.apache.storm.utils.InprocMessaging;
 
 
 public class FeederSpout extends BaseRichSpout {
-    private int _id;
-    private Fields _outFields;
-    private SpoutOutputCollector _collector;
-    private AckFailDelegate _ackFailDelegate;
+    private int id;
+    private Fields outFields;
+    private SpoutOutputCollector collector;
+    private AckFailDelegate ackFailDelegate;
 
     public FeederSpout(List<String> outFields) {
         this(new Fields(outFields));
     }
 
     public FeederSpout(Fields outFields) {
-        _id = InprocMessaging.acquireNewPort();
-        _outFields = outFields;
+        id = InprocMessaging.acquireNewPort();
+        this.outFields = outFields;
     }
 
     public void setAckFailDelegate(AckFailDelegate d) {
-        _ackFailDelegate = d;
+        ackFailDelegate = d;
     }
 
     public void feed(List<Object> tuple) {
@@ -49,49 +49,55 @@ public class FeederSpout extends BaseRichSpout {
     }
 
     public void feed(List<Object> tuple, Object msgId) {
-        InprocMessaging.sendMessage(_id, new Values(tuple, msgId));
+        InprocMessaging.sendMessage(id, new Values(tuple, msgId));
     }
 
     public void feedNoWait(List<Object> tuple, Object msgId) {
-        InprocMessaging.sendMessageNoWait(_id, new Values(tuple, msgId));
+        InprocMessaging.sendMessageNoWait(id, new Values(tuple, msgId));
     }
 
     public void waitForReader() {
-        InprocMessaging.waitForReader(_id);
+        InprocMessaging.waitForReader(id);
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        _collector = collector;
+        this.collector = collector;
     }
 
+    @Override
     public void close() {
 
     }
 
+    @Override
     public void nextTuple() {
-        List<Object> toEmit = (List<Object>) InprocMessaging.pollMessage(_id);
+        List<Object> toEmit = (List<Object>) InprocMessaging.pollMessage(id);
         if (toEmit != null) {
             List<Object> tuple = (List<Object>) toEmit.get(0);
             Object msgId = toEmit.get(1);
 
-            _collector.emit(tuple, msgId);
+            collector.emit(tuple, msgId);
         }
     }
 
+    @Override
     public void ack(Object msgId) {
-        if (_ackFailDelegate != null) {
-            _ackFailDelegate.ack(msgId);
+        if (ackFailDelegate != null) {
+            ackFailDelegate.ack(msgId);
         }
     }
 
+    @Override
     public void fail(Object msgId) {
-        if (_ackFailDelegate != null) {
-            _ackFailDelegate.fail(msgId);
+        if (ackFailDelegate != null) {
+            ackFailDelegate.fail(msgId);
         }
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(_outFields);
+        declarer.declare(outFields);
     }
 
     @Override

@@ -13,5 +13,5 @@
 package org.apache.storm.daemon;
 
 public interface DaemonCommon {
-    public boolean isWaiting();
+    boolean isWaiting();
 }

@@ -12,9 +12,9 @@
 
 package org.apache.storm.mqtt.common;
 
-
 import org.apache.storm.mqtt.MqttMessage;
 import org.apache.storm.mqtt.ssl.KeyStoreLoader;
+
 import org.fusesource.mqtt.client.BlockingConnection;
 import org.fusesource.mqtt.client.MQTT;
 import org.fusesource.mqtt.client.QoS;

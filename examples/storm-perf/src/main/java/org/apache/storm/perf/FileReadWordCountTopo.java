@@ -29,11 +29,11 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
-/***
+/**
  * This topo helps measure speed of word count.
- *  Spout loads a file into memory on initialization, then emits the lines in an endless loop.
+ *
+ * <p>Spout loads a file into memory on initialization, then emits the lines in an endless loop.
  */
-
 public class FileReadWordCountTopo {
     public static final String SPOUT_ID = "spout";
     public static final String COUNT_ID = "counter";

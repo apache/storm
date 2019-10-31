@@ -28,12 +28,13 @@ import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
-/***
- *  This topo helps measure the messaging peak throughput between a spout and a bolt.
- *  Spout generates a stream of a fixed string.
- *  Bolt will simply ack and discard the tuple received
+/**
+ * This topo helps measure the messaging peak throughput between a spout and a bolt.
+ *
+ * <p>Spout generates a stream of a fixed string.
+ *
+ * <p>Bolt will simply ack and discard the tuple received.
  */
-
 public class ConstSpoutNullBoltTopo {
 
     public static final String TOPOLOGY_NAME = "ConstSpoutNullBoltTopo";
@@ -79,7 +80,7 @@ public class ConstSpoutNullBoltTopo {
     }
 
     /**
-     * ConstSpout -> DevNullBolt with configurable grouping (default localOrShuffle)
+     * ConstSpout -> DevNullBolt with configurable grouping (default localOrShuffle).
      */
     public static void main(String[] args) throws Exception {
         int runTime = -1;

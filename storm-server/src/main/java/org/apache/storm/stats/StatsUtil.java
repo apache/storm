@@ -265,8 +265,6 @@ public class StatsUtil {
         Map win2sid2acked = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, ACKED), TO_STRING);
         Map win2sid2failed = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, FAILED), TO_STRING);
         Map win2sid2emitted = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, EMITTED), TO_STRING);
-        Map win2sid2transferred = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING);
-        Map win2sid2compLat = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
 
         outputStats.put(ACKED, win2sid2acked.get(window));
         outputStats.put(FAILED, win2sid2failed.get(window));
@@ -276,6 +274,7 @@ public class StatsUtil {
         }
         outputStats.put(EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
 
+        Map win2sid2transferred = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING);
         Map<String, Long> sid2transferred = (Map) win2sid2transferred.get(window);
         if (sid2transferred == null) {
             sid2transferred = new HashMap<>();
@@ -283,6 +282,7 @@ public class StatsUtil {
         outputStats.put(TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
         outputStats = swapMapOrder(outputStats);
 
+        Map win2sid2compLat = windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
         Map sid2compLat = (Map) win2sid2compLat.get(window);
         Map sid2acked = (Map) win2sid2acked.get(window);
         mergeMaps(outputStats, aggSpoutStreamsLatAndCount(sid2compLat, sid2acked));
@@ -301,8 +301,6 @@ public class StatsUtil {
      */
     public static <K, V extends Number> Map<String, Object> aggPreMergeTopoPageBolt(
         Map<String, Object> beat, String window, boolean includeSys) {
-        Map<String, Object> ret = new HashMap<>();
-
         Map<String, Object> subRet = new HashMap<>();
         subRet.put(NUM_EXECUTORS, 1);
         subRet.put(NUM_TASKS, beat.get(NUM_TASKS));
@@ -334,6 +332,7 @@ public class StatsUtil {
         subRet.putAll(aggBoltLatAndCount(
             win2sid2execLat.get(window), win2sid2procLat.get(window), win2sid2exec.get(window)));
 
+        Map<String, Object> ret = new HashMap<>();
         ret.put((String) beat.get("comp-id"), subRet);
         return ret;
     }
@@ -343,8 +342,6 @@ public class StatsUtil {
      */
     public static <K, V extends Number> Map<String, Object> aggPreMergeTopoPageSpout(
         Map<String, Object> m, String window, boolean includeSys) {
-        Map<String, Object> ret = new HashMap<>();
-
         Map<String, Object> subRet = new HashMap<>();
         subRet.put(NUM_EXECUTORS, 1);
         subRet.put(NUM_TASKS, m.get(NUM_TASKS));
@@ -372,6 +369,7 @@ public class StatsUtil {
             windowSetConverter(ClientStatsUtil.getMapByKey(stat2win2sid2num, ACKED), TO_STRING);
         subRet.putAll(aggSpoutLatAndCount(win2sid2compLat.get(window), win2sid2acked.get(window)));
 
+        Map<String, Object> ret = new HashMap<>();
         ret.put((String) m.get("comp-id"), subRet);
         return ret;
     }
@@ -522,8 +520,6 @@ public class StatsUtil {
      */
     public static Map<String, Object> aggTopoExecStats(
         String window, boolean includeSys, Map<String, Object> accStats, Map<String, Object> beat, String compType) {
-        Map<String, Object> ret = new HashMap<>();
-
         boolean isSpout = compType.equals(ClientStatsUtil.SPOUT);
         // component id -> stats
         Map<String, Object> cid2stats;
@@ -552,6 +548,7 @@ public class StatsUtil {
             w2acked = aggregateCountStreams(ClientStatsUtil.getMapByKey(stats, ACKED));
         }
 
+        Map<String, Object> ret = new HashMap<>();
         Set workerSet = (Set) accStats.get(WORKERS_SET);
         workerSet.add(Lists.newArrayList(beat.get(HOST), beat.get(PORT)));
         ret.put(WORKERS_SET, workerSet);
@@ -1222,6 +1219,7 @@ public class StatsUtil {
      * @param includeSys       whether to include system streams
      * @param userAuthorized   whether the user is authorized to view topology info
      * @param filterSupervisor if not null, only return WorkerSummaries for that supervisor
+     * @param owner            owner of the topology
      */
     public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName,
                                                      Map<Integer, String> task2Component,
@@ -1229,7 +1227,10 @@ public class StatsUtil {
                                                      Map<List<Long>, List<Object>> exec2NodePort,
                                                      Map<String, String> nodeHost,
                                                      Map<WorkerSlot, WorkerResources> worker2Resources,
-                                                     boolean includeSys, boolean userAuthorized, String filterSupervisor) {
+                                                     boolean includeSys,
+                                                     boolean userAuthorized,
+                                                     String filterSupervisor,
+                                                     String owner) {
 
         // host,port => WorkerSummary
         HashMap<WorkerSlot, WorkerSummary> workerSummaryMap = new HashMap<>();
@@ -1255,6 +1256,7 @@ public class StatsUtil {
                         ws.set_topology_id(stormId);
                         ws.set_topology_name(stormName);
                         ws.set_num_executors(0);
+                        ws.set_owner(owner);
                         if (resources != null) {
                             ws.set_assigned_memonheap(resources.get_mem_on_heap());
                             ws.set_assigned_memoffheap(resources.get_mem_off_heap());
@@ -1306,32 +1308,6 @@ public class StatsUtil {
             }
         }
         return new ArrayList<WorkerSummary>(workerSummaryMap.values());
-    }
-
-    /**
-     * Aggregate statistics per worker for a topology. Optionally filtering on specific supervisors.
-     * <br/>
-     * Convenience overload when called from the topology page code (in that case we want data for all workers in the topology, not filtered
-     * by supervisor)
-     *
-     * @param stormId        topology id
-     * @param stormName      storm topology
-     * @param task2Component a Map of {task id -> component}
-     * @param beats          a converted HashMap of executor heartbeats, {executor -> heartbeat}
-     * @param exec2NodePort  a Map of {executor -> host+port}
-     * @param includeSys     whether to include system streams
-     * @param userAuthorized whether the user is authorized to view topology info
-     */
-    public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName,
-                                                     Map<Integer, String> task2Component,
-                                                     Map<List<Integer>, Map<String, Object>> beats,
-                                                     Map<List<Long>, List<Object>> exec2NodePort,
-                                                     Map<String, String> nodeHost,
-                                                     Map<WorkerSlot, WorkerResources> worker2Resources,
-                                                     boolean includeSys, boolean userAuthorized) {
-        return aggWorkerStats(stormId, stormName,
-                              task2Component, beats, exec2NodePort, nodeHost, worker2Resources,
-                              includeSys, userAuthorized, null);
     }
 
     // =====================================================================================

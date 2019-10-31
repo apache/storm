@@ -24,33 +24,33 @@ package org.apache.storm.streams.tuple;
  * @param <T7> the type of the seventh element
  */
 public class Tuple7<T1, T2, T3, T4, T5, T6, T7> {
-    public final T1 _1;
-    public final T2 _2;
-    public final T3 _3;
-    public final T4 _4;
-    public final T5 _5;
-    public final T6 _6;
-    public final T7 _7;
+    public final T1 value1;
+    public final T2 value2;
+    public final T3 value3;
+    public final T4 value4;
+    public final T5 value5;
+    public final T6 value6;
+    public final T7 value7;
 
     /**
      * Constructs a new tuple.
      *
-     * @param _1 the first element
-     * @param _2 the second element
-     * @param _3 the third element
-     * @param _4 the fourth element
-     * @param _5 the fifth element
-     * @param _6 the sixth element
-     * @param _7 the seventh element
+     * @param value1 the first element
+     * @param value2 the second element
+     * @param value3 the third element
+     * @param value4 the fourth element
+     * @param value5 the fifth element
+     * @param value6 the sixth element
+     * @param value7 the seventh element
      */
-    public Tuple7(T1 _1, T2 _2, T3 _3, T4 _4, T5 _5, T6 _6, T7 _7) {
-        this._1 = _1;
-        this._2 = _2;
-        this._3 = _3;
-        this._4 = _4;
-        this._5 = _5;
-        this._6 = _6;
-        this._7 = _7;
+    public Tuple7(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7) {
+        this.value1 = value1;
+        this.value2 = value2;
+        this.value3 = value3;
+        this.value4 = value4;
+        this.value5 = value5;
+        this.value6 = value6;
+        this.value7 = value7;
     }
 
     @Override
@@ -64,42 +64,42 @@ public class Tuple7<T1, T2, T3, T4, T5, T6, T7> {
 
         Tuple7<?, ?, ?, ?, ?, ?, ?> tuple7 = (Tuple7<?, ?, ?, ?, ?, ?, ?>) o;
 
-        if (_1 != null ? !_1.equals(tuple7._1) : tuple7._1 != null) {
+        if (value1 != null ? !value1.equals(tuple7.value1) : tuple7.value1 != null) {
             return false;
         }
-        if (_2 != null ? !_2.equals(tuple7._2) : tuple7._2 != null) {
+        if (value2 != null ? !value2.equals(tuple7.value2) : tuple7.value2 != null) {
             return false;
         }
-        if (_3 != null ? !_3.equals(tuple7._3) : tuple7._3 != null) {
+        if (value3 != null ? !value3.equals(tuple7.value3) : tuple7.value3 != null) {
             return false;
         }
-        if (_4 != null ? !_4.equals(tuple7._4) : tuple7._4 != null) {
+        if (value4 != null ? !value4.equals(tuple7.value4) : tuple7.value4 != null) {
             return false;
         }
-        if (_5 != null ? !_5.equals(tuple7._5) : tuple7._5 != null) {
+        if (value5 != null ? !value5.equals(tuple7.value5) : tuple7.value5 != null) {
             return false;
         }
-        if (_6 != null ? !_6.equals(tuple7._6) : tuple7._6 != null) {
+        if (value6 != null ? !value6.equals(tuple7.value6) : tuple7.value6 != null) {
             return false;
         }
-        return _7 != null ? _7.equals(tuple7._7) : tuple7._7 == null;
+        return value7 != null ? value7.equals(tuple7.value7) : tuple7.value7 == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = _1 != null ? _1.hashCode() : 0;
-        result = 31 * result + (_2 != null ? _2.hashCode() : 0);
-        result = 31 * result + (_3 != null ? _3.hashCode() : 0);
-        result = 31 * result + (_4 != null ? _4.hashCode() : 0);
-        result = 31 * result + (_5 != null ? _5.hashCode() : 0);
-        result = 31 * result + (_6 != null ? _6.hashCode() : 0);
-        result = 31 * result + (_7 != null ? _7.hashCode() : 0);
+        int result = value1 != null ? value1.hashCode() : 0;
+        result = 31 * result + (value2 != null ? value2.hashCode() : 0);
+        result = 31 * result + (value3 != null ? value3.hashCode() : 0);
+        result = 31 * result + (value4 != null ? value4.hashCode() : 0);
+        result = 31 * result + (value5 != null ? value5.hashCode() : 0);
+        result = 31 * result + (value6 != null ? value6.hashCode() : 0);
+        result = 31 * result + (value7 != null ? value7.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "(" + _1 + "," + _2 + "," + _3 + "," + _4 + "," + _5 + "," + _6 + "," + _7 + ")";
+        return "(" + value1 + "," + value2 + "," + value3 + "," + value4 + "," + value5 + "," + value6 + "," + value7 + ")";
     }
 }

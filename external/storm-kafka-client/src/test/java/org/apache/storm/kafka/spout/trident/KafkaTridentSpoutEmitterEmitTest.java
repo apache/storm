@@ -26,10 +26,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.MockConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
@@ -50,6 +56,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,6 +77,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
     private final long firstOffsetInKafka = 0;
     private final int recordsInKafka = 100;
     private final long lastOffsetInKafka = 99;
+    private final long startTimeStamp = 1557214606103L;
 
     @BeforeEach
     public void setUp() {
@@ -81,15 +89,20 @@ public class KafkaTridentSpoutEmitterEmitTest {
         records.forEach(record -> consumer.addRecord(record));
     }
 
-    private KafkaTridentSpoutEmitter<String, String> createEmitter(FirstPollOffsetStrategy firstPollOffsetStrategy) {
+    private KafkaTridentSpoutEmitter<String, String> createEmitter(Consumer<String,String> kafkaConsumer, FirstPollOffsetStrategy firstPollOffsetStrategy) {
         return new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
-                .setRecordTranslator(r -> new Values(r.offset()), new Fields("offset"))
-                .setFirstPollOffsetStrategy(firstPollOffsetStrategy)
-                .setPollTimeoutMs(1)
-                .build(),
-            topologyContextMock,
-            config -> consumer, new TopicAssigner());
+                SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
+                        .setRecordTranslator(r -> new Values(r.offset()), new Fields("offset"))
+                        .setFirstPollOffsetStrategy(firstPollOffsetStrategy)
+                        .setPollTimeoutMs(1)
+                        .setStartTimeStamp(startTimeStamp)
+                        .build(),
+                topologyContextMock,
+                config -> kafkaConsumer, new TopicAssigner());
+    }
+
+    private KafkaTridentSpoutEmitter<String, String> createEmitter(FirstPollOffsetStrategy firstPollOffsetStrategy) {
+        return createEmitter(consumer,firstPollOffsetStrategy);
     }
 
     private Map<String, Object> doEmitNewBatchTest(FirstPollOffsetStrategy firstPollOffsetStrategy, TridentCollector collectorMock, TopicPartition tp, Map<String, Object> previousBatchMeta) {
@@ -126,7 +139,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = FirstPollOffsetStrategy.class, names = {"EARLIEST", "LATEST"})
+    @EnumSource(value = FirstPollOffsetStrategy.class, names = {"EARLIEST", "LATEST", "TIMESTAMP"})
     public void testEmitNewBatchWithPreviousMeta(FirstPollOffsetStrategy firstPollOffsetStrategy) {
         //Check that non-null meta makes the spout seek according to the provided metadata, and that the returned meta is correct
         long firstExpectedEmittedOffset = 50;
@@ -239,11 +252,11 @@ public class KafkaTridentSpoutEmitterEmitTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = FirstPollOffsetStrategy.class, names = {"EARLIEST", "LATEST"})
+    @EnumSource(value = FirstPollOffsetStrategy.class, names = {"EARLIEST", "LATEST", "TIMESTAMP"})
     public void testUnconditionalStrategyWhenSpoutWorkerIsRestarted(FirstPollOffsetStrategy firstPollOffsetStrategy) {
         /**
-         * EARLIEST/LATEST should act like UNCOMMITTED_EARLIEST/LATEST if the emitter is new but the topology has not restarted (storm id
-         * has not changed)
+         * EARLIEST/LATEST/TIMESTAMP should act like UNCOMMITTED_EARLIEST/LATEST/TIMESTAMP if the emitter is new but the
+         * topology has not restarted (storm id has not changed)
          */
         long preRestartEmittedOffset = 20;
         int lastBatchEmittedRecords = 10;
@@ -301,6 +314,42 @@ public class KafkaTridentSpoutEmitterEmitTest {
         Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());
 
         verify(collectorMock, never()).emit(anyList());
+    }
+
+    @Test
+    public void testTimeStampStrategyWhenTopologyIsRedeployed() {
+        /**
+         * TIMESTAMP strategy should be applied if the emitter is new and the topology has been redeployed (storm id has changed)
+         * Offset should be reset according to the offset corresponding to startTimeStamp
+         */
+        long preRestartEmittedOffset = 20;
+        int preRestartEmittedRecords = 10;
+        long timeStampStartOffset = 2L;
+        long pollTimeout = 1L;
+        KafkaTridentSpoutBatchMetadata preExecutorRestartLastMeta = new KafkaTridentSpoutBatchMetadata(preRestartEmittedOffset, preRestartEmittedOffset + preRestartEmittedRecords - 1, "Some older topology");
+        
+        KafkaConsumer<String, String> kafkaConsumer = Mockito.mock(KafkaConsumer.class);
+        when(kafkaConsumer.assignment()).thenReturn(Collections.singleton(partition));
+        OffsetAndTimestamp offsetAndTimestamp = new OffsetAndTimestamp(timeStampStartOffset, startTimeStamp);
+        HashMap<TopicPartition, OffsetAndTimestamp> map = new HashMap<>();
+        map.put(partition, offsetAndTimestamp);
+        when(kafkaConsumer.offsetsForTimes(Collections.singletonMap(partition, startTimeStamp))).thenReturn(map);
+        HashMap<TopicPartition, List<ConsumerRecord<String, String>>> topicPartitionMap = new HashMap<>();
+        List<ConsumerRecord<String, String>> newRecords = SpoutWithMockedConsumerSetupHelper.createRecords(partition, timeStampStartOffset, recordsInKafka);
+        topicPartitionMap.put(partition, newRecords);
+        when(kafkaConsumer.poll(pollTimeout)).thenReturn(new ConsumerRecords<>(topicPartitionMap));
+
+        KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(kafkaConsumer, FirstPollOffsetStrategy.TIMESTAMP);
+        TransactionAttempt txid = new TransactionAttempt(0L, 0);
+        KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(partition);
+        Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());
+
+        verify(collectorMock, times(recordsInKafka)).emit(emitCaptor.capture());
+        verify(kafkaConsumer, times(1)).seek(partition, timeStampStartOffset);
+        List<List<Object>> emits = emitCaptor.getAllValues();
+        assertThat(emits.get(0).get(0), is(timeStampStartOffset));
+        KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(meta);
+        assertThat("The batch should start at the first offset for startTimestamp", deserializedMeta.getFirstOffset(), is(timeStampStartOffset));
     }
 
 }

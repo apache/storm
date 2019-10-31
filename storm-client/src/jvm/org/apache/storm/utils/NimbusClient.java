@@ -63,7 +63,7 @@ public class NimbusClient extends ThriftClient {
      */
     public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, null);
-        client = new Nimbus.Client(_protocol);
+        client = new Nimbus.Client(protocol);
         isLocal = false;
     }
 
@@ -78,7 +78,7 @@ public class NimbusClient extends ThriftClient {
      */
     public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
-        client = new Nimbus.Client(_protocol);
+        client = new Nimbus.Client(protocol);
         isLocal = false;
     }
 
@@ -90,7 +90,7 @@ public class NimbusClient extends ThriftClient {
      */
     public NimbusClient(Map<String, Object> conf, String host) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, null, null, null);
-        client = new Nimbus.Client(_protocol);
+        client = new Nimbus.Client(protocol);
         isLocal = false;
     }
 

@@ -25,12 +25,12 @@ public enum ControlMessage implements INettySerializable {
 
     private final short code;
 
-    //private constructor
-    private ControlMessage(short code) {
+    ControlMessage(short code) {
         this.code = code;
     }
 
     /**
+     * Create message.
      * @param encoded status code
      * @return a control message per an encoded status code
      */
@@ -44,11 +44,11 @@ public enum ControlMessage implements INettySerializable {
     }
 
     public static ControlMessage read(byte[] serial) {
-        ByteBuf cm_buffer = Unpooled.wrappedBuffer(serial);
-        try{
-        return mkMessage(cm_buffer.getShort(0));
+        ByteBuf cmBuffer = Unpooled.wrappedBuffer(serial);
+        try {
+            return mkMessage(cmBuffer.getShort(0));
         } finally {
-            cm_buffer.release();
+            cmBuffer.release();
         }
     }
 

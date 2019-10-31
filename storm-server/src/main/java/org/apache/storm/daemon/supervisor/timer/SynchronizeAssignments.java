@@ -118,7 +118,7 @@ public class SynchronizeAssignments implements Runnable {
     ) throws TException {
         List<SupervisorAssignments> supervisorAssignmentsList = new ArrayList();
         Map<String, Object> validatedNumaMap = Utils.getNumaMap(supervisor.getConf());
-        for(Map.Entry<String, Object> numaEntry : validatedNumaMap.entrySet()) {
+        for (Map.Entry<String, Object> numaEntry : validatedNumaMap.entrySet()) {
             String numaId = numaEntry.getKey();
             SupervisorAssignments assignments = nimbus.getSupervisorAssignments(
                     node + Constants.NUMA_ID_SEPARATOR + numaId

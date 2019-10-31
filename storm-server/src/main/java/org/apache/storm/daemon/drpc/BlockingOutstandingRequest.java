@@ -26,42 +26,42 @@ import org.apache.storm.utils.WrappedDRPCExecutionException;
 
 public class BlockingOutstandingRequest extends OutstandingRequest {
     public static final RequestFactory<BlockingOutstandingRequest> FACTORY = BlockingOutstandingRequest::new;
-    private Semaphore _sem;
-    private volatile String _result = null;
-    private volatile DRPCExecutionException _e = null;
+    private Semaphore sem;
+    private volatile String result = null;
+    private volatile DRPCExecutionException drpcExecutionException = null;
 
     public BlockingOutstandingRequest(String function, DRPCRequest req) {
         super(function, req);
-        _sem = new Semaphore(0);
+        sem = new Semaphore(0);
     }
 
     public String getResult() throws DRPCExecutionException {
         try {
-            _sem.acquire();
+            sem.acquire();
         } catch (InterruptedException e) {
             //Ignored
         }
 
-        if (_result != null) {
-            return _result;
+        if (result != null) {
+            return result;
         }
 
-        if (_e == null) {
-            _e = new WrappedDRPCExecutionException("Internal Error: No Result and No Exception");
-            _e.set_type(DRPCExceptionType.INTERNAL_ERROR);
+        if (drpcExecutionException == null) {
+            drpcExecutionException = new WrappedDRPCExecutionException("Internal Error: No Result and No Exception");
+            drpcExecutionException.set_type(DRPCExceptionType.INTERNAL_ERROR);
         }
-        throw _e;
+        throw drpcExecutionException;
     }
 
     @Override
     public void returnResult(String result) {
-        _result = result;
-        _sem.release();
+        this.result = result;
+        sem.release();
     }
 
     @Override
     public void fail(DRPCExecutionException e) {
-        _e = e;
-        _sem.release();
+        drpcExecutionException = e;
+        sem.release();
     }
 }

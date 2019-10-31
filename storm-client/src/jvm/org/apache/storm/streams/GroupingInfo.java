@@ -91,8 +91,8 @@ abstract class GroupingInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "GroupingInfo{" +
-               "fields=" + fields +
-               '}';
+        return "GroupingInfo{"
+                + "fields=" + fields
+                + '}';
     }
 }

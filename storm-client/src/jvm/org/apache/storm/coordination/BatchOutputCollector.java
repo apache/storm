@@ -43,7 +43,7 @@ public abstract class BatchOutputCollector {
     public abstract void emitDirect(int taskId, String streamId, List<Object> tuple);
 
     /**
-     * Flush any buffered tuples (when batching is enabled)
+     * Flush any buffered tuples (when batching is enabled).
      */
     public abstract void flush();
 

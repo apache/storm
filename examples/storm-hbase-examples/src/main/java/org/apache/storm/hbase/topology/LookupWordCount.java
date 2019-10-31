@@ -38,7 +38,6 @@ public class LookupWordCount {
         config.put("hbase.conf", hbConf);
 
         WordSpout spout = new WordSpout();
-        TotalWordCounter totalBolt = new TotalWordCounter();
 
         SimpleHBaseMapper mapper = new SimpleHBaseMapper().withRowKeyField("word");
         HBaseProjectionCriteria projectionCriteria = new HBaseProjectionCriteria();
@@ -46,14 +45,15 @@ public class LookupWordCount {
 
         WordCountValueMapper rowToTupleMapper = new WordCountValueMapper();
 
-        HBaseLookupBolt hBaseLookupBolt = new HBaseLookupBolt("WordCount", mapper, rowToTupleMapper)
-            .withConfigKey("hbase.conf")
-            .withProjectionCriteria(projectionCriteria);
+        HBaseLookupBolt lookupBolt = new HBaseLookupBolt("WordCount", mapper, rowToTupleMapper)
+                .withConfigKey("hbase.conf")
+                .withProjectionCriteria(projectionCriteria);
 
         //wordspout -> lookupbolt -> totalCountBolt
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(WORD_SPOUT, spout, 1);
-        builder.setBolt(LOOKUP_BOLT, hBaseLookupBolt, 1).shuffleGrouping(WORD_SPOUT);
+        builder.setBolt(LOOKUP_BOLT, lookupBolt, 1).shuffleGrouping(WORD_SPOUT);
+        TotalWordCounter totalBolt = new TotalWordCounter();
         builder.setBolt(TOTAL_COUNT_BOLT, totalBolt, 1).fieldsGrouping(LOOKUP_BOLT, new Fields("columnName"));
         String topoName = "test";
         if (args.length == 1) {

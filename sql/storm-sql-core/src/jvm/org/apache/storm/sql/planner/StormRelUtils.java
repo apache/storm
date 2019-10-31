@@ -28,8 +28,12 @@ public class StormRelUtils {
     private static final AtomicInteger classSequence = new AtomicInteger(0);
 
     public static String getClassName(StreamsRel relNode) {
-        return "Generated_" + relNode.getClass().getSimpleName().toUpperCase() + "_" + relNode.getId() + "_" +
-               classSequence.getAndIncrement();
+        return "Generated_"
+                + relNode.getClass().getSimpleName().toUpperCase()
+                + "_"
+                + relNode.getId()
+                + "_"
+                + classSequence.getAndIncrement();
     }
 
     public static StreamsRel getStormRelInput(RelNode input) {

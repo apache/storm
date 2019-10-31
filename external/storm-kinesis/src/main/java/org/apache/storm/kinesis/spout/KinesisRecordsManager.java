@@ -24,9 +24,6 @@ import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededExcepti
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -36,20 +33,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.apache.storm.spout.SpoutOutputCollector;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class KinesisRecordsManager {
     private static final Logger LOG = LoggerFactory.getLogger(KinesisRecordsManager.class);
     // object handling zk interaction
-    private transient ZKConnection zkConnection;
+    private transient ZkConnection zkConnection;
     // object handling interaction with kinesis
     private transient KinesisConnection kinesisConnection;
     // Kinesis Spout KinesisConfig object
-    private transient final KinesisConfig kinesisConfig;
+    private final transient KinesisConfig kinesisConfig;
     // Queue of records per shard fetched from kinesis and are waiting to be emitted
     private transient Map<String, LinkedList<Record>> toEmitPerShard = new HashMap<>();
     // Map of records  that were fetched from kinesis as a result of failure and are waiting to be emitted
     private transient Map<KinesisMessageId, Record> failedandFetchedRecords = new HashMap<>();
-    // Sequence numbers per shard that have been emitted. LinkedHashSet as we need to remove on ack or fail. At the same time order is needed to figure out the
-    // sequence number to commit. Logic explained in commit
+    /**
+     * Sequence numbers per shard that have been emitted. LinkedHashSet as we need to remove on ack or fail.
+     * At the same time order is needed to figure out the sequence number to commit. Logic explained in commit
+     */
     private transient Map<String, TreeSet<BigInteger>> emittedPerShard = new HashMap<>();
     // sorted acked sequence numbers - needed to figure out what sequence number can be committed
     private transient Map<String, TreeSet<BigInteger>> ackedPerShard = new HashMap<>();
@@ -66,13 +70,13 @@ class KinesisRecordsManager {
     // boolean to track deactivated state
     private transient boolean deactivated;
 
-    KinesisRecordsManager (KinesisConfig kinesisConfig) {
+    KinesisRecordsManager(KinesisConfig kinesisConfig) {
         this.kinesisConfig = kinesisConfig;
-        this.zkConnection = new ZKConnection(kinesisConfig.getZkInfo());
+        this.zkConnection = new ZkConnection(kinesisConfig.getZkInfo());
         this.kinesisConnection = new KinesisConnection(kinesisConfig.getKinesisConnectionInfo());
     }
 
-    void initialize (int myTaskIndex, int totalTasks) {
+    void initialize(int myTaskIndex, int totalTasks) {
         deactivated = false;
         lastCommitTime = System.currentTimeMillis();
         kinesisConnection.initialize();
@@ -90,7 +94,7 @@ class KinesisRecordsManager {
         refreshShardIteratorsForNewRecords();
     }
 
-    void next (SpoutOutputCollector collector) {
+    void next(SpoutOutputCollector collector) {
         if (shouldCommit()) {
             commit();
         }
@@ -98,7 +102,8 @@ class KinesisRecordsManager {
         if (failedMessageId  != null) {
             // if the retry service returns a message that is not in failed set then ignore it. should never happen
             BigInteger failedSequenceNumber = new BigInteger(failedMessageId.getSequenceNumber());
-            if (failedPerShard.containsKey(failedMessageId.getShardId()) && failedPerShard.get(failedMessageId.getShardId()).contains(failedSequenceNumber)) {
+            if (failedPerShard.containsKey(failedMessageId.getShardId())
+                    && failedPerShard.get(failedMessageId.getShardId()).contains(failedSequenceNumber)) {
                 if (!failedandFetchedRecords.containsKey(failedMessageId)) {
                     fetchFailedRecords(failedMessageId);
                 }
@@ -107,8 +112,8 @@ class KinesisRecordsManager {
                     kinesisConfig.getFailedMessageRetryHandler().failedMessageEmitted(failedMessageId);
                     return;
                 } else {
-                    LOG.warn("failedMessageEmitted not called on retrier for " + failedMessageId + ". This can happen a few times but should not happen " +
-                            "infinitely");
+                    LOG.warn("failedMessageEmitted not called on retrier for " + failedMessageId
+                            + ". This can happen a few times but should not happen infinitely");
                 }
             } else {
                 LOG.warn("failedPerShard does not contain " + failedMessageId + ". This should never happen.");
@@ -132,29 +137,34 @@ class KinesisRecordsManager {
         emitNewRecord(collector);
     }
 
-    void ack (KinesisMessageId kinesisMessageId) {
+    void ack(KinesisMessageId kinesisMessageId) {
         // for an acked message add it to acked set and remove it from emitted and failed
         String shardId = kinesisMessageId.getShardId();
         BigInteger sequenceNumber = new BigInteger(kinesisMessageId.getSequenceNumber());
         LOG.debug("Ack received for shardId: {} sequenceNumber: {}", shardId, sequenceNumber);
-        // if an ack is received for a message then add it to the ackedPerShard TreeSet. TreeSet because while committing we need to figure out what is the
+        // if an ack is received for a message then add it to the ackedPerShard TreeSet. TreeSet because while
+        // committing we need to figure out what is the
         // highest sequence number that can be committed for this shard
         if (!ackedPerShard.containsKey(shardId)) {
             ackedPerShard.put(shardId, new TreeSet<BigInteger>());
         }
         ackedPerShard.get(shardId).add(sequenceNumber);
-        // if the acked message was in emittedPerShard that means we need to remove it from the emittedPerShard(which keeps track of in flight tuples)
+        // if the acked message was in emittedPerShard that means we need to remove it from the emittedPerShard (which
+        // keeps track of in flight tuples)
         if (emittedPerShard.containsKey(shardId)) {
             TreeSet<BigInteger> emitted = emittedPerShard.get(shardId);
             emitted.remove(sequenceNumber);
         }
-        // an acked message should not be in failed since if it fails and gets re-emitted it moves to emittedPerShard from failedPerShard. Defensive coding.
+        // an acked message should not be in failed since if it fails and gets re-emitted it moves to emittedPerShard
+        // from failedPerShard. Defensive coding.
         // Remove it from failedPerShard anyway
         if (failedPerShard.containsKey(shardId)) {
             failedPerShard.get(shardId).remove(sequenceNumber);
         }
-        // if an ack is for a message that failed once at least and was re-emitted then the record itself will be in failedAndFetchedRecords. We use that to
-        // determine if the FailedMessageRetryHandler needs to be told about it and then remove the record itself to clean up memory
+        // if an ack is for a message that failed once at least and was re-emitted then the record itself will be in
+        // failedAndFetchedRecords. We use that to
+        // determine if the FailedMessageRetryHandler needs to be told about it and then remove the record itself to
+        // clean up memory
         if (failedandFetchedRecords.containsKey(kinesisMessageId)) {
             kinesisConfig.getFailedMessageRetryHandler().acked(kinesisMessageId);
             failedandFetchedRecords.remove(kinesisMessageId);
@@ -165,7 +175,7 @@ class KinesisRecordsManager {
         }
     }
 
-    void fail (KinesisMessageId kinesisMessageId) {
+    void fail(KinesisMessageId kinesisMessageId) {
         String shardId = kinesisMessageId.getShardId();
         BigInteger sequenceNumber = new BigInteger(kinesisMessageId.getSequenceNumber());
         LOG.debug("Fail received for shardId: {} sequenceNumber: {}", shardId, sequenceNumber);
@@ -186,13 +196,18 @@ class KinesisRecordsManager {
         }
     }
 
-    void commit () {
-        // We have three mutually disjoint treesets per shard at any given time to keep track of what sequence number can be committed to zookeeper.
-        // emittedPerShard, ackedPerShard and failedPerShard. Any record starts by entering emittedPerShard. On ack it moves from emittedPerShard to
-        // ackedPerShard and on fail if retry service tells us to retry then it moves from emittedPerShard to failedPerShard. The failed records will move from
+    void commit() {
+        // We have three mutually disjoint treesets per shard at any given time to keep track of what sequence number
+        // can be committed to zookeeper.
+        // emittedPerShard, ackedPerShard and failedPerShard. Any record starts by entering emittedPerShard. On ack
+        // it moves from emittedPerShard to
+        // ackedPerShard and on fail if retry service tells us to retry then it moves from emittedPerShard to
+        // failedPerShard. The failed records will move from
         // failedPerShard to emittedPerShard when the failed record is emitted again as a retry.
-        // Logic for deciding what sequence number to commit is find the highest sequence number from ackedPerShard called X such that there is no sequence
-        // number Y in emittedPerShard or failedPerShard that satisfies X > Y. For e.g. if ackedPerShard is 1,4,5, emittedPerShard is 2,6 and
+        // Logic for deciding what sequence number to commit is find the highest sequence number from ackedPerShard
+        // called X such that there is no sequence
+        // number Y in emittedPerShard or failedPerShard that satisfies X > Y. For e.g. if ackedPerShard is 1,4,5,
+        // emittedPerShard is 2,6 and
         // failedPerShard is 3,7 then we can only commit 1 and not 4 because 2 is still pending and 3 has failed
         for (String shardId: toEmitPerShard.keySet()) {
             if (ackedPerShard.containsKey(shardId)) {
@@ -202,7 +217,8 @@ class KinesisRecordsManager {
                 }
                 if (emittedPerShard.containsKey(shardId) && !emittedPerShard.get(shardId).isEmpty()) {
                     BigInteger smallestEmittedSequenceNumber = emittedPerShard.get(shardId).first();
-                    if (commitSequenceNumberBound == null || (commitSequenceNumberBound.compareTo(smallestEmittedSequenceNumber) == 1)) {
+                    if (commitSequenceNumberBound == null
+                            || (commitSequenceNumberBound.compareTo(smallestEmittedSequenceNumber) == 1)) {
                         commitSequenceNumberBound = smallestEmittedSequenceNumber;
                     }
                 }
@@ -210,7 +226,8 @@ class KinesisRecordsManager {
                 BigInteger ackedSequenceNumberToCommit = null;
                 while (ackedSequenceNumbers.hasNext()) {
                     BigInteger ackedSequenceNumber = ackedSequenceNumbers.next();
-                    if (commitSequenceNumberBound == null || (commitSequenceNumberBound.compareTo(ackedSequenceNumber) == 1)) {
+                    if (commitSequenceNumberBound == null
+                            || (commitSequenceNumberBound.compareTo(ackedSequenceNumber) == 1)) {
                         ackedSequenceNumberToCommit = ackedSequenceNumber;
                         ackedSequenceNumbers.remove();
                     } else {
@@ -220,7 +237,9 @@ class KinesisRecordsManager {
                 if (ackedSequenceNumberToCommit != null) {
                     Map<Object, Object> state = new HashMap<>();
                     state.put("committedSequenceNumber", ackedSequenceNumberToCommit.toString());
-                    LOG.debug("Committing sequence number {} for shardId {}", ackedSequenceNumberToCommit.toString(), shardId);
+                    LOG.debug("Committing sequence number {} for shardId {}",
+                            ackedSequenceNumberToCommit.toString(),
+                            shardId);
                     zkConnection.commitState(kinesisConfig.getStreamName(), shardId, state);
                 }
             }
@@ -228,34 +247,38 @@ class KinesisRecordsManager {
         lastCommitTime = System.currentTimeMillis();
     }
 
-    void activate () {
+    void activate() {
         LOG.info("Activate called");
         deactivated = false;
         kinesisConnection.initialize();
     }
 
-    void deactivate () {
+    void deactivate() {
         LOG.info("Deactivate called");
         deactivated = true;
         commit();
         kinesisConnection.shutdown();
     }
 
-    void close () {
+    void close() {
         commit();
         kinesisConnection.shutdown();
         zkConnection.shutdown();
     }
 
-    // fetch records from kinesis starting at sequence number for message passed as argument. Any other messages fetched and are in the failed queue will also
+    // fetch records from kinesis starting at sequence number for message passed as argument. Any other messages fetched
+    // and are in the failed queue will also
     // be kept in memory to avoid going to kinesis again for retry
-    private void fetchFailedRecords (KinesisMessageId kinesisMessageId) {
+    private void fetchFailedRecords(KinesisMessageId kinesisMessageId) {
         // if shard iterator not present for this message, get it
         if (!shardIteratorPerFailedMessage.containsKey(kinesisMessageId)) {
             refreshShardIteratorForFailedRecord(kinesisMessageId);
         }
         String shardIterator = shardIteratorPerFailedMessage.get(kinesisMessageId);
-        LOG.debug("Fetching failed records for shard id :{} at sequence number {} using shardIterator {}", kinesisMessageId.getShardId(), kinesisMessageId.getSequenceNumber(), shardIterator);
+        LOG.debug("Fetching failed records for shard id :{} at sequence number {} using shardIterator {}",
+                kinesisMessageId.getShardId(),
+                kinesisMessageId.getSequenceNumber(),
+                shardIterator);
         try {
             GetRecordsResult getRecordsResult = kinesisConnection.fetchRecords(shardIterator);
             if (getRecordsResult != null) {
@@ -269,7 +292,9 @@ class KinesisRecordsManager {
                 } else {
                     // add all fetched records to the set of failed records if they are present in failed set
                     for (Record record: records) {
-                        KinesisMessageId current = new KinesisMessageId(kinesisMessageId.getStreamName(), kinesisMessageId.getShardId(), record.getSequenceNumber());
+                        KinesisMessageId current = new KinesisMessageId(kinesisMessageId.getStreamName(),
+                                kinesisMessageId.getShardId(),
+                                record.getSequenceNumber());
                         if (failedPerShard.get(kinesisMessageId.getShardId()).contains(new BigInteger(current.getSequenceNumber()))) {
                             failedandFetchedRecords.put(current, record);
                             shardIteratorPerFailedMessage.remove(current);
@@ -292,12 +317,15 @@ class KinesisRecordsManager {
         }
     }
 
-    private void fetchNewRecords () {
+    private void fetchNewRecords() {
         for (Map.Entry<String, LinkedList<Record>> entry : toEmitPerShard.entrySet()) {
             String shardId = entry.getKey();
             try {
                 String shardIterator = shardIteratorPerShard.get(shardId);
-                LOG.debug("Fetching new records for shard id :{} using shardIterator {} after sequence number {}", shardId, shardIterator, fetchedSequenceNumberPerShard.get(shardId));
+                LOG.debug("Fetching new records for shard id :{} using shardIterator {} after sequence number {}",
+                        shardId,
+                        shardIterator,
+                        fetchedSequenceNumberPerShard.get(shardId));
                 GetRecordsResult getRecordsResult = kinesisConnection.fetchRecords(shardIterator);
                 if (getRecordsResult != null) {
                     List<Record> records = getRecordsResult.getRecords();
@@ -328,28 +356,30 @@ class KinesisRecordsManager {
         }
     }
 
-    private void emitNewRecord (SpoutOutputCollector collector) {
+    private void emitNewRecord(SpoutOutputCollector collector) {
         for (Map.Entry<String, LinkedList<Record>> entry: toEmitPerShard.entrySet()) {
             String shardId = entry.getKey();
             LinkedList<Record> listOfRecords = entry.getValue();
             Record record;
             while ((record = listOfRecords.pollFirst()) != null) {
-                KinesisMessageId kinesisMessageId = new KinesisMessageId(kinesisConfig.getStreamName(), shardId, record.getSequenceNumber());
+                KinesisMessageId kinesisMessageId = new KinesisMessageId(kinesisConfig.getStreamName(),
+                        shardId,
+                        record.getSequenceNumber());
                 if (emitRecord(collector, record, kinesisMessageId)) {
-                   return;
+                    return;
                 }
             }
         }
     }
 
-    private boolean emitFailedRecord (SpoutOutputCollector collector, KinesisMessageId kinesisMessageId) {
+    private boolean emitFailedRecord(SpoutOutputCollector collector, KinesisMessageId kinesisMessageId) {
         if (!failedandFetchedRecords.containsKey(kinesisMessageId)) {
             return false;
         }
         return emitRecord(collector, failedandFetchedRecords.get(kinesisMessageId), kinesisMessageId);
     }
 
-    private boolean emitRecord (SpoutOutputCollector collector, Record record, KinesisMessageId kinesisMessageId) {
+    private boolean emitRecord(SpoutOutputCollector collector, Record record, KinesisMessageId kinesisMessageId) {
         boolean result = false;
         List<Object> tuple = kinesisConfig.getRecordToTupleMapper().getTuple(record);
         // if a record is returned put the sequence number in the emittedPerShard to tie back with ack or fail
@@ -368,11 +398,11 @@ class KinesisRecordsManager {
         return result;
     }
 
-    private boolean shouldCommit () {
+    private boolean shouldCommit() {
         return (System.currentTimeMillis() - lastCommitTime >= kinesisConfig.getZkInfo().getCommitIntervalMs());
     }
 
-    private void initializeFetchedSequenceNumbers () {
+    private void initializeFetchedSequenceNumbers() {
         for (String shardId : toEmitPerShard.keySet()) {
             Map<Object, Object> state = zkConnection.readState(kinesisConfig.getStreamName(), shardId);
             // if state found for this shard in zk, then set the sequence number in fetchedSequenceNumber
@@ -386,38 +416,47 @@ class KinesisRecordsManager {
         }
     }
 
-    private void refreshShardIteratorsForNewRecords () {
+    private void refreshShardIteratorsForNewRecords() {
         for (String shardId: toEmitPerShard.keySet()) {
             refreshShardIteratorForNewRecords(shardId);
         }
     }
 
-    private void refreshShardIteratorForNewRecords (String shardId) {
+    private void refreshShardIteratorForNewRecords(String shardId) {
         String shardIterator = null;
         String lastFetchedSequenceNumber = fetchedSequenceNumberPerShard.get(shardId);
-        ShardIteratorType shardIteratorType = (lastFetchedSequenceNumber == null ? kinesisConfig.getShardIteratorType() : ShardIteratorType
-                .AFTER_SEQUENCE_NUMBER);
+        ShardIteratorType shardIteratorType = (lastFetchedSequenceNumber == null
+                ? kinesisConfig.getShardIteratorType()
+                : ShardIteratorType.AFTER_SEQUENCE_NUMBER);
         // Set the shard iterator for last fetched sequence number to start from correct position in shard
-        shardIterator = kinesisConnection.getShardIterator(kinesisConfig.getStreamName(), shardId, shardIteratorType, lastFetchedSequenceNumber, kinesisConfig
-                .getTimestamp());
+        shardIterator = kinesisConnection.getShardIterator(kinesisConfig.getStreamName(),
+                shardId,
+                shardIteratorType,
+                lastFetchedSequenceNumber,
+                kinesisConfig.getTimestamp());
         if (shardIterator != null && !shardIterator.isEmpty()) {
-            LOG.warn("Refreshing shard iterator for new records for shardId " + shardId + " with shardIterator " + shardIterator);
+            LOG.warn("Refreshing shard iterator for new records for shardId " + shardId
+                    + " with shardIterator " + shardIterator);
             shardIteratorPerShard.put(shardId, shardIterator);
         }
     }
 
-    private void refreshShardIteratorForFailedRecord (KinesisMessageId kinesisMessageId) {
+    private void refreshShardIteratorForFailedRecord(KinesisMessageId kinesisMessageId) {
         String shardIterator = null;
         // Set the shard iterator for last fetched sequence number to start from correct position in shard
-        shardIterator = kinesisConnection.getShardIterator(kinesisConfig.getStreamName(), kinesisMessageId.getShardId(), ShardIteratorType
-                .AT_SEQUENCE_NUMBER, kinesisMessageId.getSequenceNumber(), null);
+        shardIterator = kinesisConnection.getShardIterator(kinesisConfig.getStreamName(),
+                kinesisMessageId.getShardId(),
+                ShardIteratorType.AT_SEQUENCE_NUMBER,
+                kinesisMessageId.getSequenceNumber(),
+                null);
         if (shardIterator != null && !shardIterator.isEmpty()) {
-            LOG.warn("Refreshing shard iterator for failed records for message " + kinesisMessageId + " with shardIterator " + shardIterator);
+            LOG.warn("Refreshing shard iterator for failed records for message " + kinesisMessageId
+                    + " with shardIterator " + shardIterator);
             shardIteratorPerFailedMessage.put(kinesisMessageId, shardIterator);
         }
     }
 
-    private Long getUncommittedRecordsCount () {
+    private Long getUncommittedRecordsCount() {
         Long result = 0L;
         for (Map.Entry<String, TreeSet<BigInteger>> emitted: emittedPerShard.entrySet()) {
             result += emitted.getValue().size();
@@ -432,7 +471,7 @@ class KinesisRecordsManager {
         return result;
     }
 
-    private boolean shouldFetchNewRecords () {
+    private boolean shouldFetchNewRecords() {
         // check to see if any shard has already fetched records waiting to be emitted, in which case dont fetch more
         boolean fetchRecords = true;
         for (Map.Entry<String, LinkedList<Record>> entry: toEmitPerShard.entrySet()) {

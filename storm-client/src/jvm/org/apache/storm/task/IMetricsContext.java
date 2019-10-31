@@ -26,30 +26,33 @@ import org.apache.storm.metric.api.ReducedMetric;
 
 public interface IMetricsContext {
     /**
+     * Register metric.
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
     @Deprecated
     <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs);
 
     /**
+     * Register metric.
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
     @Deprecated
     ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs);
 
     /**
+     * Register metric.
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
     @Deprecated
     CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs);
     
-    public Timer registerTimer(String name);
+    Timer registerTimer(String name);
 
-    public Histogram registerHistogram(String name);
+    Histogram registerHistogram(String name);
 
-    public Meter registerMeter(String name);
+    Meter registerMeter(String name);
 
-    public Counter registerCounter(String name);
+    Counter registerCounter(String name);
 
-    public <T> Gauge<T> registerGauge(String name, Gauge<T> gauge);
+    <T> Gauge<T> registerGauge(String name, Gauge<T> gauge);
 }

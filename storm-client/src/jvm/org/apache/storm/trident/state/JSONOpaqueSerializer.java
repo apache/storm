@@ -18,6 +18,7 @@ import java.util.List;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.shade.org.json.simple.parser.ParseException;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class JSONOpaqueSerializer implements Serializer<OpaqueValue> {
 
     @Override

@@ -12,7 +12,6 @@
 
 package org.apache.storm.hdfs.trident.sync;
 
-
 import org.apache.storm.trident.tuple.TridentTuple;
 
 /**

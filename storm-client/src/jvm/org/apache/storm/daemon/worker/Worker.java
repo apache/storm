@@ -261,17 +261,16 @@ public class Worker implements Shutdownable, DaemonCommon {
             });
 
         workerState.checkForUpdatedBlobsTimer.scheduleRecurring(0,
-                                                                (Integer) conf
-                                                                    .getOrDefault(Config.WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS, 10),
-                                                                () -> {
-                                                                    try {
-                                                                        LOG.debug("Checking if blobs have updated");
-                                                                        updateBlobUpdates();
-                                                                    } catch (IOException e) {
-                                                                        // IOException from reading the version files to be ignored
-                                                                        LOG.error(e.getStackTrace().toString());
-                                                                    }
-                                                                }
+                (Integer) conf.getOrDefault(Config.WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS, 10),
+            () -> {
+                try {
+                    LOG.debug("Checking if blobs have updated");
+                    updateBlobUpdates();
+                } catch (IOException e) {
+                    // IOException from reading the version files to be ignored
+                    LOG.error(e.getStackTrace().toString());
+                }
+            }
         );
 
         // The jitter allows the clients to get the data at different times, and avoids thundering herd
@@ -309,15 +308,15 @@ public class Worker implements Shutdownable, DaemonCommon {
         }
 
         workerState.flushTupleTimer.scheduleRecurringMs(flushIntervalMillis, flushIntervalMillis,
-                                                        () -> {
-                                                            // send flush tuple to all local executors
-                                                            for (int i = 0; i < executors.size(); i++) {
-                                                                IRunningExecutor exec = executors.get(i);
-                                                                if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID) {
-                                                                    exec.publishFlushTuple();
-                                                                }
-                                                            }
-                                                        }
+            () -> {
+                // send flush tuple to all local executors
+                for (int i = 0; i < executors.size(); i++) {
+                    IRunningExecutor exec = executors.get(i);
+                    if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID) {
+                        exec.publishFlushTuple();
+                    }
+                }
+            }
         );
         LOG.info("Flush tuple will be generated every {} millis", flushIntervalMillis);
     }
@@ -373,14 +372,14 @@ public class Worker implements Shutdownable, DaemonCommon {
             );
         }
 
-        Map<String, Object> zkHB = ClientStatsUtil.mkZkWorkerHb(
+        Map<String, Object> zkHb = ClientStatsUtil.mkZkWorkerHb(
                 workerState.topologyId, stats, workerState.uptime.upTime()
         );
 
         try {
             workerState.stormClusterState
                 .workerHeartbeat(workerState.topologyId, workerState.assignmentId, (long) workerState.port,
-                                 ClientStatsUtil.thriftifyZkWorkerHb(zkHB));
+                                 ClientStatsUtil.thriftifyZkWorkerHb(zkHb));
         } catch (Exception ex) {
             LOG.error("Worker failed to write heartbeats to ZK or Pacemaker...will retry", ex);
         }
@@ -499,11 +498,11 @@ public class Worker implements Shutdownable, DaemonCommon {
             workerState.resetLogLevelsTimer.close();
             workerState.flushTupleTimer.close();
             workerState.backPressureCheckTimer.close();
-            
+
             // this is fine because the only time this is shared is when it's a local context,
             // in which case it's a noop
             workerState.mqContext.term();
-            
+
             workerState.closeResources();
 
             metricRegistry.stop();

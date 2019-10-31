@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -178,9 +179,9 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
                 ac.setAuthorizedID(zid);
             }
 
-            //When zid and zid are not equal, nid is attempting to impersonate zid, We
+            //When nid and zid are not equal, nid is attempting to impersonate zid, We
             //add the nid as the real user in reqContext's subject which will be used during authorization.
-            if (!nid.equals(zid)) {
+            if (!Objects.equals(nid, zid)) {
                 LOG.info("Impersonation attempt  authenticationID = {} authorizationID = {}",
                          nid, zid);
                 if (!allowImpersonation) {

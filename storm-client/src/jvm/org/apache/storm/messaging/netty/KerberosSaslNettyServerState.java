@@ -16,5 +16,6 @@ import org.apache.storm.shade.io.netty.util.AttributeKey;
 
 final class KerberosSaslNettyServerState {
 
-    public static final AttributeKey<KerberosSaslNettyServer> KERBOROS_SASL_NETTY_SERVER = AttributeKey.valueOf("kerboros.sasl.netty.server");
+    public static final AttributeKey<KerberosSaslNettyServer> KERBOROS_SASL_NETTY_SERVER =
+            AttributeKey.valueOf("kerboros.sasl.netty.server");
 }

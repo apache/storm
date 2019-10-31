@@ -31,7 +31,7 @@ public interface CqlMapper extends Serializable {
     List<Column> map(ITuple tuple);
 
 
-    public static final class SelectableCqlMapper implements CqlMapper {
+    final class SelectableCqlMapper implements CqlMapper {
 
         private final List<FieldSelector> selectors;
 
@@ -49,8 +49,9 @@ public interface CqlMapper extends Serializable {
         @Override
         public List<Column> map(ITuple tuple) {
             List<Column> columns = new ArrayList<>(selectors.size());
-            for (FieldSelector selector : selectors)
+            for (FieldSelector selector : selectors) {
                 columns.add(selector.select(tuple));
+            }
             return columns;
         }
     }
@@ -58,7 +59,7 @@ public interface CqlMapper extends Serializable {
     /**
      * Default {@link CqlMapper} to map all tuple values to column.
      */
-    public static final class DefaultCqlMapper implements CqlMapper {
+    final class DefaultCqlMapper implements CqlMapper {
 
         /**
          * Creates a new {@link org.apache.storm.cassandra.query.CqlMapper.DefaultCqlMapper} instance.
@@ -71,8 +72,9 @@ public interface CqlMapper extends Serializable {
         @Override
         public List<Column> map(ITuple tuple) {
             List<Column> columns = new ArrayList<>(tuple.size());
-            for (String name : tuple.getFields())
+            for (String name : tuple.getFields()) {
                 columns.add(new Column(name, tuple.getValueByField(name)));
+            }
             return columns;
         }
     }

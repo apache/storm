@@ -22,8 +22,8 @@ import org.apache.storm.tuple.ITuple;
 
 /**
  * Default interface to map a {@link org.apache.storm.tuple.ITuple} to a CQL {@link com.datastax.driver.core.Statement}.
- *
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public abstract class BaseCQLStatementTupleMapper implements CQLStatementTupleMapper, Serializable {
 
     /**

@@ -117,6 +117,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
      * Processor that pulls the SaslServer object out of the transport, and assumes the remote user's UGI before calling through to the
      * original processor. This is used on the server side to set the UGI for each specific call.
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private static class TUGIWrapProcessor implements TProcessor {
         final TProcessor wrapped;
 
@@ -124,6 +125,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
             this.wrapped = wrapped;
         }
 
+        @Override
         public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context
             ReqContext reqContext = ReqContext.context();
@@ -163,6 +165,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
         /**
          * Get the full name of the user.
          */
+        @Override
         public String getName() {
             return name;
         }

@@ -24,19 +24,19 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
 /**
- * Extends AbstractList so that it can be emitted directly as Storm tuples
+ * Extends AbstractList so that it can be emitted directly as Storm tuples.
  */
 public class TridentTupleView extends AbstractList<Object> implements TridentTuple {
     public static final TridentTupleView EMPTY_TUPLE = new TridentTupleView(null, new ValuePointer[0], new HashMap());
-    private final ValuePointer[] _index;
-    private final Map<String, ValuePointer> _fieldIndex;
-    private final List<List<Object>> _delegates;
+    private final ValuePointer[] index;
+    private final Map<String, ValuePointer> fieldIndex;
+    private final List<List<Object>> delegates;
 
     // index and fieldIndex are precomputed, delegates built up over many operations using persistent data structures
     public TridentTupleView(List delegates, ValuePointer[] index, Map<String, ValuePointer> fieldIndex) {
-        _delegates = delegates;
-        _index = index;
-        _fieldIndex = fieldIndex;
+        this.delegates = delegates;
+        this.index = index;
+        this.fieldIndex = fieldIndex;
     }
 
     private static List<String> indexToFieldsList(ValuePointer[] index) {
@@ -64,7 +64,7 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
 
     @Override
     public int size() {
-        return _index.length;
+        return index.length;
     }
 
     @Override
@@ -74,7 +74,7 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
 
     @Override
     public Fields getFields() {
-        return new Fields(indexToFieldsList(_index));
+        return new Fields(indexToFieldsList(index));
     }
 
     @Override
@@ -94,7 +94,7 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
 
     @Override
     public Object getValue(int i) {
-        return getValueByPointer(_index[i]);
+        return getValueByPointer(index[i]);
     }
 
     @Override
@@ -144,7 +144,7 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
 
     @Override
     public Object getValueByField(String field) {
-        return getValueByPointer(_fieldIndex.get(field));
+        return getValueByPointer(fieldIndex.get(field));
     }
 
     @Override
@@ -193,71 +193,71 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
     }
 
     private Object getValueByPointer(ValuePointer ptr) {
-        return _delegates.get(ptr.delegateIndex).get(ptr.index);
+        return delegates.get(ptr.delegateIndex).get(ptr.index);
     }
 
     public static class ProjectionFactory implements Factory {
-        Map<String, ValuePointer> _fieldIndex;
-        ValuePointer[] _index;
-        Factory _parent;
+        Map<String, ValuePointer> fieldIndex;
+        ValuePointer[] index;
+        Factory parent;
 
         public ProjectionFactory(Factory parent, Fields projectFields) {
-            _parent = parent;
+            this.parent = parent;
             if (projectFields == null) {
                 projectFields = new Fields();
             }
             Map<String, ValuePointer> parentFieldIndex = parent.getFieldIndex();
-            _fieldIndex = new HashMap<>();
+            fieldIndex = new HashMap<>();
             for (String f : projectFields) {
-                _fieldIndex.put(f, parentFieldIndex.get(f));
+                fieldIndex.put(f, parentFieldIndex.get(f));
             }
-            _index = ValuePointer.buildIndex(projectFields, _fieldIndex);
+            index = ValuePointer.buildIndex(projectFields, fieldIndex);
         }
 
         public TridentTuple create(TridentTuple parent) {
-            if (_index.length == 0) {
+            if (index.length == 0) {
                 return EMPTY_TUPLE;
             } else {
-                return new TridentTupleView(((TridentTupleView) parent)._delegates, _index, _fieldIndex);
+                return new TridentTupleView(((TridentTupleView) parent).delegates, index, fieldIndex);
             }
         }
 
         @Override
         public Map<String, ValuePointer> getFieldIndex() {
-            return _fieldIndex;
+            return fieldIndex;
         }
 
         @Override
         public int numDelegates() {
-            return _parent.numDelegates();
+            return parent.numDelegates();
         }
 
         @Override
         public List<String> getOutputFields() {
-            return indexToFieldsList(_index);
+            return indexToFieldsList(index);
         }
     }
 
     public static class FreshOutputFactory implements Factory {
-        Map<String, ValuePointer> _fieldIndex;
-        ValuePointer[] _index;
+        Map<String, ValuePointer> fieldIndex;
+        ValuePointer[] index;
 
         public FreshOutputFactory(Fields selfFields) {
-            _fieldIndex = new HashMap<>();
+            fieldIndex = new HashMap<>();
             for (int i = 0; i < selfFields.size(); i++) {
                 String field = selfFields.get(i);
-                _fieldIndex.put(field, new ValuePointer(0, i, field));
+                fieldIndex.put(field, new ValuePointer(0, i, field));
             }
-            _index = ValuePointer.buildIndex(selfFields, _fieldIndex);
+            index = ValuePointer.buildIndex(selfFields, fieldIndex);
         }
 
         public TridentTuple create(List<Object> selfVals) {
-            return new TridentTupleView(Arrays.asList(selfVals), _index, _fieldIndex);
+            return new TridentTupleView(Arrays.asList(selfVals), index, fieldIndex);
         }
 
         @Override
         public Map<String, ValuePointer> getFieldIndex() {
-            return _fieldIndex;
+            return fieldIndex;
         }
 
         @Override
@@ -267,22 +267,22 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
 
         @Override
         public List<String> getOutputFields() {
-            return indexToFieldsList(_index);
+            return indexToFieldsList(index);
         }
     }
 
     public static class OperationOutputFactory implements Factory {
-        Map<String, ValuePointer> _fieldIndex;
-        ValuePointer[] _index;
-        Factory _parent;
+        Map<String, ValuePointer> fieldIndex;
+        ValuePointer[] index;
+        Factory parent;
 
         public OperationOutputFactory(Factory parent, Fields selfFields) {
-            _parent = parent;
-            _fieldIndex = new HashMap<>(parent.getFieldIndex());
+            this.parent = parent;
+            fieldIndex = new HashMap<>(parent.getFieldIndex());
             int myIndex = parent.numDelegates();
             for (int i = 0; i < selfFields.size(); i++) {
                 String field = selfFields.get(i);
-                _fieldIndex.put(field, new ValuePointer(myIndex, i, field));
+                fieldIndex.put(field, new ValuePointer(myIndex, i, field));
             }
             List<String> myOrder = new ArrayList<>(parent.getOutputFields());
 
@@ -296,28 +296,28 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
                 myOrder.add(f);
             }
 
-            _index = ValuePointer.buildIndex(new Fields(myOrder), _fieldIndex);
+            index = ValuePointer.buildIndex(new Fields(myOrder), fieldIndex);
         }
 
         public TridentTuple create(TridentTupleView parent, List<Object> selfVals) {
-            List<List<Object>> curr = new ArrayList<>(parent._delegates);
+            List<List<Object>> curr = new ArrayList<>(parent.delegates);
             curr.add(selfVals);
-            return new TridentTupleView(curr, _index, _fieldIndex);
+            return new TridentTupleView(curr, index, fieldIndex);
         }
 
         @Override
         public Map<String, ValuePointer> getFieldIndex() {
-            return _fieldIndex;
+            return fieldIndex;
         }
 
         @Override
         public int numDelegates() {
-            return _parent.numDelegates() + 1;
+            return parent.numDelegates() + 1;
         }
 
         @Override
         public List<String> getOutputFields() {
-            return indexToFieldsList(_index);
+            return indexToFieldsList(index);
         }
     }
 

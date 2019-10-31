@@ -49,7 +49,7 @@ public class TridentTopologyBuilder {
     static final String SPOUT_COORD_PREFIX = "$spoutcoord-";
     Map<GlobalStreamId, String> batchIds = new HashMap<>();
     Map<String, TransactionalSpoutComponent> spouts = new HashMap<>();
-    Map<String, SpoutComponent> _batchPerTupleSpouts = new HashMap<>();
+    Map<String, SpoutComponent> batchPerTupleSpouts = new HashMap<>();
     Map<String, Component> bolts = new HashMap<>();
 
     public static String spoutCoordinator(String spoutId) {
@@ -65,7 +65,7 @@ public class TridentTopologyBuilder {
         batchGroups.put(streamName, batchGroup);
         markBatchGroups(id, batchGroups);
         SpoutComponent c = new SpoutComponent(spout, streamName, parallelism, batchGroup);
-        _batchPerTupleSpouts.put(id, c);
+        batchPerTupleSpouts.put(id, c);
         return new SpoutDeclarerImpl(c);
     }
 
@@ -121,7 +121,7 @@ public class TridentTopologyBuilder {
         //this takes care of setting up coord streams for spouts and bolts
         for (GlobalStreamId s : batchIds.keySet()) {
             String b = batchIds.get(s);
-            ret.put(new GlobalStreamId(s.get_componentId(), TridentBoltExecutor.COORD_STREAM(b)), b);
+            ret.put(new GlobalStreamId(s.get_componentId(), TridentBoltExecutor.coordStream(b)), b);
         }
 
         return ret;
@@ -183,8 +183,8 @@ public class TridentTopologyBuilder {
             }
         }
 
-        for (String id : _batchPerTupleSpouts.keySet()) {
-            SpoutComponent c = _batchPerTupleSpouts.get(id);
+        for (String id : batchPerTupleSpouts.keySet()) {
+            SpoutComponent c = batchPerTupleSpouts.get(id);
             SpoutDeclarer d =
                 builder.setSpout(id, new RichSpoutBatchTriggerer((IRichSpout) c.spout, c.streamName, c.batchGroupId), c.parallelism);
 
@@ -225,7 +225,7 @@ public class TridentTopologyBuilder {
                 }
                 CoordSpec spec = specs.get(batch);
                 CoordType ct;
-                if (_batchPerTupleSpouts.containsKey(s.get_componentId())) {
+                if (batchPerTupleSpouts.containsKey(s.get_componentId())) {
                     ct = CoordType.single();
                 } else {
                     ct = CoordType.all();
@@ -250,7 +250,7 @@ public class TridentTopologyBuilder {
             Map<String, Set<String>> batchToComponents = getBoltBatchToComponentSubscriptions(id);
             for (Map.Entry<String, Set<String>> entry : batchToComponents.entrySet()) {
                 for (String comp : entry.getValue()) {
-                    d.directGrouping(comp, TridentBoltExecutor.COORD_STREAM(entry.getKey()));
+                    d.directGrouping(comp, TridentBoltExecutor.coordStream(entry.getKey()));
                 }
             }
 
@@ -289,7 +289,7 @@ public class TridentTopologyBuilder {
         return ret;
     }
 
-    private static interface InputDeclaration {
+    private interface InputDeclaration {
         void declare(InputDeclarer declarer);
 
         String getComponent();
@@ -298,14 +298,14 @@ public class TridentTopologyBuilder {
     }
 
     private static class SpoutComponent {
-        public final Object spout;
-        public final Integer parallelism;
-        public final Map<String, Object> componentConf = new HashMap<>();
+        final Object spout;
+        final Integer parallelism;
+        final Map<String, Object> componentConf = new HashMap<>();
         final String batchGroupId;
         final String streamName;
         final Set<SharedMemory> sharedMemory = new HashSet<>();
 
-        public SpoutComponent(Object spout, String streamName, Integer parallelism, String batchGroupId) {
+        SpoutComponent(Object spout, String streamName, Integer parallelism, String batchGroupId) {
             this.spout = spout;
             this.streamName = streamName;
             this.parallelism = parallelism;
@@ -321,7 +321,7 @@ public class TridentTopologyBuilder {
     private static class TransactionalSpoutComponent extends SpoutComponent {
         public String commitStateId;
 
-        public TransactionalSpoutComponent(Object spout, String streamName, Integer parallelism, String commitStateId,
+        TransactionalSpoutComponent(Object spout, String streamName, Integer parallelism, String commitStateId,
                                            String batchGroupId) {
             super(spout, streamName, parallelism, batchGroupId);
             this.commitStateId = commitStateId;
@@ -341,7 +341,7 @@ public class TridentTopologyBuilder {
         public final Set<String> committerBatches;
         public final Set<SharedMemory> sharedMemory = new HashSet<>();
 
-        public Component(ITridentBatchBolt bolt, Integer parallelism, Set<String> committerBatches) {
+        Component(ITridentBatchBolt bolt, Integer parallelism, Set<String> committerBatches) {
             this.bolt = bolt;
             this.parallelism = parallelism;
             this.committerBatches = committerBatches;
@@ -356,7 +356,7 @@ public class TridentTopologyBuilder {
     private static class SpoutDeclarerImpl extends BaseConfigurationDeclarer<SpoutDeclarer> implements SpoutDeclarer {
         SpoutComponent component;
 
-        public SpoutDeclarerImpl(SpoutComponent component) {
+        SpoutDeclarerImpl(SpoutComponent component) {
             this.component = component;
         }
 
@@ -388,7 +388,7 @@ public class TridentTopologyBuilder {
     private static class BoltDeclarerImpl extends BaseConfigurationDeclarer<BoltDeclarer> implements BoltDeclarer {
         Component component;
 
-        public BoltDeclarerImpl(Component component) {
+        BoltDeclarerImpl(Component component) {
             this.component = component;
         }
 

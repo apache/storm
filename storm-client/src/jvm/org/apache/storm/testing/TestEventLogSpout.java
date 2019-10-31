@@ -12,6 +12,8 @@
 
 package org.apache.storm.testing;
 
+import static org.apache.storm.utils.Utils.get;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -24,13 +26,11 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.utils.Utils.get;
-
 public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout {
     private static final Map<String, Integer> acked = new HashMap<String, Integer>();
     private static final Map<String, Integer> failed = new HashMap<String, Integer>();
     public static Logger LOG = LoggerFactory.getLogger(TestEventLogSpout.class);
-    SpoutOutputCollector _collector;
+    SpoutOutputCollector collector;
     private String uid;
     private long totalCount;
     private long eventId = 0;
@@ -62,13 +62,15 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         }
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        _collector = collector;
+        this.collector = collector;
         this.source = context.getThisTaskId();
         long taskCount = context.getComponentTasks(context.getThisComponentId()).size();
         myCount = totalCount / taskCount;
     }
 
+    @Override
     public void close() {
 
     }
@@ -101,13 +103,15 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         return false;
     }
 
+    @Override
     public void nextTuple() {
         if (eventId < myCount) {
             eventId++;
-            _collector.emit(new Values(source, eventId), eventId);
+            collector.emit(new Values(source, eventId), eventId);
         }
     }
 
+    @Override
     public void ack(Object msgId) {
         synchronized (acked) {
             int curr = get(acked, uid, 0);
@@ -115,6 +119,7 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         }
     }
 
+    @Override
     public void fail(Object msgId) {
         synchronized (failed) {
             int curr = get(failed, uid, 0);
@@ -122,6 +127,7 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
         }
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("source", "eventId"));
     }

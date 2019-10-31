@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.metrics.hdrhistogram;
 
-import org.apache.storm.metric.api.IMetric;
 import org.HdrHistogram.Histogram;
+import org.apache.storm.metric.api.IMetric;
 
 /**
  * A metric wrapping an HdrHistogram.
  */
 public class HistogramMetric implements IMetric {
-    private final Histogram _histo;
-
+    private final Histogram histo;
 
     public HistogramMetric(final int numberOfSignificantValueDigits) {
         this(null, numberOfSignificantValueDigits);
@@ -57,23 +57,27 @@ public class HistogramMetric implements IMetric {
     public HistogramMetric(Long lowestDiscernibleValue, Long highestTrackableValue,
                      final int numberOfSignificantValueDigits) {
         boolean autoResize = false;
-        if (lowestDiscernibleValue == null) lowestDiscernibleValue = 1L;
+        if (lowestDiscernibleValue == null) {
+            lowestDiscernibleValue = 1L;
+        }
         if (highestTrackableValue == null) {
             highestTrackableValue = 2 * lowestDiscernibleValue;
             autoResize = true;
         }
-        _histo = new Histogram(lowestDiscernibleValue, highestTrackableValue, numberOfSignificantValueDigits);
-        if (autoResize) _histo.setAutoResize(true);
+        histo = new Histogram(lowestDiscernibleValue, highestTrackableValue, numberOfSignificantValueDigits);
+        if (autoResize) {
+            histo.setAutoResize(true);
+        }
     }
 
     public void recordValue(long val) {
-        _histo.recordValue(val);
+        histo.recordValue(val);
     }
 
     @Override
     public Object getValueAndReset() {
-          Histogram copy = _histo.copy();
-          _histo.reset();
-          return copy;
+        Histogram copy = histo.copy();
+        histo.reset();
+        return copy;
     }
 }

@@ -18,12 +18,12 @@
 
 package org.apache.storm.spout;
 
+import static java.util.Arrays.asList;
+
 import java.nio.ByteBuffer;
 import java.util.List;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-
-import static java.util.Arrays.asList;
 
 public class RawMultiScheme implements MultiScheme {
     @Override

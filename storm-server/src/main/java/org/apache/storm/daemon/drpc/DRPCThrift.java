@@ -24,36 +24,37 @@ import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.generated.DistributedRPC;
 import org.apache.storm.generated.DistributedRPCInvocations;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCThrift implements DistributedRPC.Iface, DistributedRPCInvocations.Iface {
-    private final DRPC _drpc;
+    private final DRPC drpc;
 
     public DRPCThrift(DRPC drpc) {
-        _drpc = drpc;
+        this.drpc = drpc;
     }
 
     @Override
     public void result(String id, String result) throws AuthorizationException {
-        _drpc.returnResult(id, result);
+        drpc.returnResult(id, result);
     }
 
     @Override
     public DRPCRequest fetchRequest(String functionName) throws AuthorizationException {
-        return _drpc.fetchRequest(functionName);
+        return drpc.fetchRequest(functionName);
     }
 
     @Override
     public void failRequest(String id) throws AuthorizationException {
-        _drpc.failRequest(id, null);
+        drpc.failRequest(id, null);
     }
 
     @Override
     public void failRequestV2(String id, DRPCExecutionException e) throws AuthorizationException {
-        _drpc.failRequest(id, e);
+        drpc.failRequest(id, e);
     }
 
     @Override
     public String execute(String functionName, String funcArgs)
         throws DRPCExecutionException, AuthorizationException {
-        return _drpc.executeBlocking(functionName, funcArgs);
+        return drpc.executeBlocking(functionName, funcArgs);
     }
 }

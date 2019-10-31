@@ -29,6 +29,7 @@ import org.apache.storm.utils.DRPCClient;
  *
  * @see <a href="http://storm.apache.org/documentation/Distributed-RPC.html">Distributed RPC</a>
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class BasicDRPCTopology {
     public static void main(String[] args) throws Exception {
         Config conf = new Config();

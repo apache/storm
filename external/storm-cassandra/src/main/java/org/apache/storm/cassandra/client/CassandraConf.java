@@ -62,7 +62,7 @@ public class CassandraConf implements Serializable {
      */
     private String username;
     /**
-     * The authorized cassandra password
+     * The authorized cassandra password.
      */
     private String password;
     /**

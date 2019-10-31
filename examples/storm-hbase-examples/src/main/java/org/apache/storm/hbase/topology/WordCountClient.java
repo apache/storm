@@ -24,7 +24,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 /**
  * Connects to the 'WordCount' table and prints counts for each word.
  *
- * Assumes you have run (or are running) <code>PersistentWordCount</code>
+ * <p>Assumes you have run (or are running) <code>PersistentWordCount</code>
  */
 public class WordCountClient {
 

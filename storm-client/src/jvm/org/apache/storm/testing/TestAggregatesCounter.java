@@ -12,6 +12,8 @@
 
 package org.apache.storm.testing;
 
+import static org.apache.storm.utils.Utils.tuple;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.task.OutputCollector;
@@ -23,36 +25,38 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.utils.Utils.tuple;
-
 
 public class TestAggregatesCounter extends BaseRichBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
 
-    Map<String, Integer> _counts;
-    OutputCollector _collector;
+    Map<String, Integer> counts;
+    OutputCollector collector;
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        _collector = collector;
-        _counts = new HashMap<String, Integer>();
+        this.collector = collector;
+        counts = new HashMap<String, Integer>();
     }
 
+    @Override
     public void execute(Tuple input) {
         String word = (String) input.getValues().get(0);
         int count = (Integer) input.getValues().get(1);
-        _counts.put(word, count);
+        counts.put(word, count);
         int globalCount = 0;
-        for (String w : _counts.keySet()) {
-            globalCount += _counts.get(w);
+        for (String w : counts.keySet()) {
+            globalCount += counts.get(w);
         }
-        _collector.emit(tuple(globalCount));
-        _collector.ack(input);
+        collector.emit(tuple(globalCount));
+        collector.ack(input);
     }
 
+    @Override
     public void cleanup() {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("agg-global"));
     }

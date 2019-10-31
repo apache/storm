@@ -15,16 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.common;
 
 /**
  * Provider interface for credential key.
  */
 public interface CredentialKeyProvider {
-  /**
-   * The lookup key for the config key string
-   *
-   * @return the config key string
-   */
-  String getCredentialKey(String configKey);
+    /**
+     * The lookup key for the config key string.
+     *
+     * @return the config key string
+     */
+    String getCredentialKey(String configKey);
 }

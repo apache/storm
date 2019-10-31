@@ -20,18 +20,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * This class is a utility to track the rate of something.
  */
 public class RateTracker implements Closeable {
-    private final int _bucketSizeMillis;
+    private final int bucketSizeMillis;
     //Old Buckets and their length are only touched when rotating or gathering the metrics, which should not be that frequent
     // As such all access to them should be protected by synchronizing with the RateTracker instance
-    private final long[] _bucketTime;
-    private final long[] _oldBuckets;
+    private final long[] bucketTime;
+    private final long[] oldBuckets;
 
-    private final AtomicLong _bucketStart;
-    private final AtomicLong _currentBucket;
+    private final AtomicLong bucketStart;
+    private final AtomicLong currentBucket;
 
-    private final TimerTask _task;
+    private final TimerTask task;
 
     /**
+     * Constructor.
+     *
      * @param validTimeWindowInMils events that happened before validTimeWindowInMils are not considered when reporting the rate.
      * @param numBuckets            the number of time sildes to divide validTimeWindows. The more buckets, the smother the reported results
      *                              will be.
@@ -41,7 +43,7 @@ public class RateTracker implements Closeable {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param validTimeWindowInMils events that happened before validTimeWindow are not considered when reporting the rate.
      * @param numBuckets            the number of time sildes to divide validTimeWindows. The more buckets, the smother the reported results
@@ -50,34 +52,35 @@ public class RateTracker implements Closeable {
      */
     RateTracker(int validTimeWindowInMils, int numBuckets, long startTime) {
         numBuckets = Math.max(numBuckets, 1);
-        _bucketSizeMillis = validTimeWindowInMils / numBuckets;
-        if (_bucketSizeMillis < 1) {
+        bucketSizeMillis = validTimeWindowInMils / numBuckets;
+        if (bucketSizeMillis < 1) {
             throw new IllegalArgumentException(
                 "validTimeWindowInMilis and numOfSildes cause each slide to have a window that is too small");
         }
-        _bucketTime = new long[numBuckets - 1];
-        _oldBuckets = new long[numBuckets - 1];
+        bucketTime = new long[numBuckets - 1];
+        oldBuckets = new long[numBuckets - 1];
 
-        _bucketStart = new AtomicLong(startTime >= 0 ? startTime : System.currentTimeMillis());
-        _currentBucket = new AtomicLong(0);
+        bucketStart = new AtomicLong(startTime >= 0 ? startTime : System.currentTimeMillis());
+        currentBucket = new AtomicLong(0);
         if (startTime < 0) {
-            _task = new Fresher();
-            MetricStatTimer._timer.scheduleAtFixedRate(_task, _bucketSizeMillis, _bucketSizeMillis);
+            task = new Fresher();
+            MetricStatTimer.timer.scheduleAtFixedRate(task, bucketSizeMillis, bucketSizeMillis);
         } else {
-            _task = null;
+            task = null;
         }
     }
 
     /**
-     * Notify the tracker upon new arrivals
+     * Notify the tracker upon new arrivals.
      *
      * @param count number of arrivals
      */
     public void notify(long count) {
-        _currentBucket.addAndGet(count);
+        currentBucket.addAndGet(count);
     }
 
     /**
+     * Get report rate.
      * @return the approximate average rate per second.
      */
     public synchronized double reportRate() {
@@ -85,11 +88,11 @@ public class RateTracker implements Closeable {
     }
 
     synchronized double reportRate(long currentTime) {
-        long duration = Math.max(1l, currentTime - _bucketStart.get());
-        long events = _currentBucket.get();
-        for (int i = 0; i < _oldBuckets.length; i++) {
-            events += _oldBuckets[i];
-            duration += _bucketTime[i];
+        long duration = Math.max(1L, currentTime - bucketStart.get());
+        long events = currentBucket.get();
+        for (int i = 0; i < oldBuckets.length; i++) {
+            events += oldBuckets[i];
+            duration += bucketTime[i];
         }
 
         return events * 1000.0 / duration;
@@ -97,8 +100,8 @@ public class RateTracker implements Closeable {
 
     @Override
     public void close() {
-        if (_task != null) {
-            _task.cancel();
+        if (task != null) {
+            task.cancel();
         }
     }
 
@@ -108,7 +111,7 @@ public class RateTracker implements Closeable {
      * @param numToEclipse the number of rotations to perform.
      */
     final void forceRotate(int numToEclipse, long interval) {
-        long time = _bucketStart.get();
+        long time = bucketStart.get();
         for (int i = 0; i < numToEclipse; i++) {
             time += interval;
             rotateBuckets(time);
@@ -116,20 +119,21 @@ public class RateTracker implements Closeable {
     }
 
     private synchronized void rotateBuckets(long time) {
-        long timeSpent = time - _bucketStart.getAndSet(time);
-        long currentVal = _currentBucket.getAndSet(0);
-        for (int i = 0; i < _oldBuckets.length; i++) {
-            long tmpTime = _bucketTime[i];
-            _bucketTime[i] = timeSpent;
+        long timeSpent = time - bucketStart.getAndSet(time);
+        long currentVal = currentBucket.getAndSet(0);
+        for (int i = 0; i < oldBuckets.length; i++) {
+            long tmpTime = bucketTime[i];
+            bucketTime[i] = timeSpent;
             timeSpent = tmpTime;
 
-            long cnt = _oldBuckets[i];
-            _oldBuckets[i] = currentVal;
+            long cnt = oldBuckets[i];
+            oldBuckets[i] = currentVal;
             currentVal = cnt;
         }
     }
 
     private class Fresher extends TimerTask {
+        @Override
         public void run() {
             rotateBuckets(System.currentTimeMillis());
         }

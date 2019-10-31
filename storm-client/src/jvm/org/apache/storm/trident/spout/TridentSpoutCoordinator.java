@@ -33,23 +33,23 @@ public class TridentSpoutCoordinator implements IBasicBolt {
     public static final Logger LOG = LoggerFactory.getLogger(TridentSpoutCoordinator.class);
     private static final String META_DIR = "meta";
 
-    ITridentSpout<Object> _spout;
-    ITridentSpout.BatchCoordinator<Object> _coord;
-    RotatingTransactionalState _state;
-    TransactionalState _underlyingState;
-    String _id;
+    ITridentSpout<Object> spout;
+    ITridentSpout.BatchCoordinator<Object> coord;
+    RotatingTransactionalState state;
+    TransactionalState underlyingState;
+    String id;
 
 
     public TridentSpoutCoordinator(String id, ITridentSpout<Object> spout) {
-        _spout = spout;
-        _id = id;
+        this.spout = spout;
+        this.id = id;
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TopologyContext context) {
-        _coord = _spout.getCoordinator(_id, conf, context);
-        _underlyingState = TransactionalState.newCoordinatorState(conf, _id);
-        _state = new RotatingTransactionalState(_underlyingState, META_DIR);
+        coord = spout.getCoordinator(id, conf, context);
+        underlyingState = TransactionalState.newCoordinatorState(conf, id);
+        state = new RotatingTransactionalState(underlyingState, META_DIR);
     }
 
     @Override
@@ -57,13 +57,13 @@ public class TridentSpoutCoordinator implements IBasicBolt {
         TransactionAttempt attempt = (TransactionAttempt) tuple.getValue(0);
 
         if (tuple.getSourceStreamId().equals(MasterBatchCoordinator.SUCCESS_STREAM_ID)) {
-            _state.cleanupBefore(attempt.getTransactionId());
-            _coord.success(attempt.getTransactionId());
+            state.cleanupBefore(attempt.getTransactionId());
+            coord.success(attempt.getTransactionId());
         } else {
             long txid = attempt.getTransactionId();
-            Object prevMeta = _state.getPreviousState(txid);
-            Object meta = _coord.initializeTransaction(txid, prevMeta, _state.getState(txid));
-            _state.overrideState(txid, meta);
+            Object prevMeta = state.getPreviousState(txid);
+            Object meta = coord.initializeTransaction(txid, prevMeta, state.getState(txid));
+            state.overrideState(txid, meta);
             collector.emit(MasterBatchCoordinator.BATCH_STREAM_ID, new Values(attempt, meta));
         }
 
@@ -71,8 +71,8 @@ public class TridentSpoutCoordinator implements IBasicBolt {
 
     @Override
     public void cleanup() {
-        _coord.close();
-        _underlyingState.close();
+        coord.close();
+        underlyingState.close();
     }
 
     @Override

@@ -15,7 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.jdbc.topology;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.sql.Types;
 import java.util.List;
@@ -35,9 +39,9 @@ import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
 import org.apache.storm.jdbc.spout.UserSpout;
 import org.apache.storm.tuple.Fields;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
+/**
+ * For topology-related code reusage.
+ */
 public abstract class AbstractUserTopology {
     private static final List<String> setupSqls = Lists.newArrayList(
             "drop table if exists user",
@@ -62,9 +66,15 @@ public abstract class AbstractUserTopology {
 
     protected static final String TABLE_NAME = "user";
     protected static final String JDBC_CONF = "jdbc.conf";
-    protected static final String SELECT_QUERY = "select dept_name from department, user_department where department.dept_id = user_department.dept_id" +
-            " and user_department.user_id = ?";
+    protected static final String SELECT_QUERY = "select dept_name from department, "
+            + "user_department where department.dept_id = user_department.dept_id "
+            + "and user_department.user_id = ?";
 
+    /**
+     * A main method template to extend.
+     * @param args main method arguments
+     * @throws Exception any expection occuring durch cluster setup or operation
+     */
     public void execute(String[] args) throws Exception {
         if (args.length != 4 && args.length != 5) {
             System.out.println("Usage: " + this.getClass().getSimpleName() + " <dataSourceClassName> <dataSource.url> "
@@ -76,7 +86,7 @@ public abstract class AbstractUserTopology {
         map.put("dataSource.url", args[1]);//jdbc:mysql://localhost/test
         map.put("dataSource.user", args[2]);//root
 
-        if(args.length == 4) {
+        if (args.length == 4) {
             map.put("dataSource.password", args[3]);//password
         }
 

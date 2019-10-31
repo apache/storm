@@ -31,7 +31,7 @@ public class TextFileReader extends AbstractFileReader {
     public static final String BUFFER_SIZE = "hdfsspout.reader.buffer.bytes";
 
     private static final int DEFAULT_BUFF_SIZE = 4096;
-    private final Logger LOG = LoggerFactory.getLogger(TextFileReader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TextFileReader.class);
     private BufferedReader reader;
     private TextFileReader.Offset offset;
 
@@ -59,10 +59,12 @@ public class TextFileReader extends AbstractFileReader {
 
     }
 
+    @Override
     public Offset getFileOffset() {
         return offset.clone();
     }
 
+    @Override
     public List<Object> next() throws IOException, ParseException {
         String line = readLineAndTrackOffset(reader);
         if (line != null) {
@@ -122,26 +124,26 @@ public class TextFileReader extends AbstractFileReader {
                     this.lineNumber = Long.parseLong(parts[1].split("=")[1]);
                 }
             } catch (Exception e) {
-                throw new IllegalArgumentException("'" + offset +
-                                                   "' cannot be interpreted. It is not in expected format for TextFileReader." +
-                                                   " Format e.g.  {char=123:line=5}");
+                throw new IllegalArgumentException("'" + offset
+                        + "' cannot be interpreted. It is not in expected format for TextFileReader."
+                        + " Format e.g.  {char=123:line=5}");
             }
         }
 
         @Override
         public String toString() {
-            return '{' +
-                   "char=" + charOffset +
-                   ":line=" + lineNumber +
-                   ":}";
+            return '{'
+                    + "char=" + charOffset
+                    + ":line=" + lineNumber
+                    + ":}";
         }
 
         @Override
         public boolean isNextOffset(FileOffset rhs) {
             if (rhs instanceof Offset) {
                 Offset other = ((Offset) rhs);
-                return other.charOffset > charOffset &&
-                       other.lineNumber == lineNumber + 1;
+                return other.charOffset > charOffset
+                        && other.lineNumber == lineNumber + 1;
             }
             return false;
         }

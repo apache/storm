@@ -13,21 +13,22 @@
 package org.apache.storm.metric.api;
 
 public class CombinedMetric implements IMetric {
-    private final ICombiner _combiner;
-    private Object _value;
+    private final ICombiner combiner;
+    private Object value;
 
     public CombinedMetric(ICombiner combiner) {
-        _combiner = combiner;
-        _value = _combiner.identity();
+        this.combiner = combiner;
+        value = this.combiner.identity();
     }
 
     public void update(Object value) {
-        _value = _combiner.combine(_value, value);
+        this.value = combiner.combine(this.value, value);
     }
 
+    @Override
     public Object getValueAndReset() {
-        Object ret = _value;
-        _value = _combiner.identity();
+        Object ret = value;
+        value = combiner.identity();
         return ret;
     }
 }

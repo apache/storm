@@ -13,6 +13,7 @@
 package org.apache.storm.scheduler.blacklist;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -53,7 +54,8 @@ public class BlacklistScheduler implements IScheduler {
     //key is supervisor key ,value is supervisor ports
     protected EvictingQueue<HashMap<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow;
     protected int windowSize;
-    protected Set<String> blacklistHost;
+    protected volatile Set<String> blacklistedSupervisorIds;     // supervisor ids
+    private boolean blacklistOnBadSlots;
     private Map<String, Object> conf;
 
     public BlacklistScheduler(IScheduler underlyingScheduler, StormMetricsRegistry metricsRegistry) {
@@ -88,10 +90,13 @@ public class BlacklistScheduler implements IScheduler {
         windowSize = toleranceTime / nimbusMonitorFreqSecs;
         badSupervisorsToleranceSlidingWindow = EvictingQueue.create(windowSize);
         cachedSupervisors = new HashMap<>();
-        blacklistHost = new HashSet<>();
+        blacklistedSupervisorIds = new HashSet<>();
+        blacklistOnBadSlots = ObjectReader.getBoolean(
+                this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_ASSUME_SUPERVISOR_BAD_BASED_ON_BAD_SLOT),
+                true);
 
         //nimbus:num-blacklisted-supervisor + non-blacklisted supervisor = nimbus:num-supervisors
-        metricsRegistry.registerGauge("nimbus:num-blacklisted-supervisor", () -> blacklistHost.size());
+        metricsRegistry.registerGauge("nimbus:num-blacklisted-supervisor", () -> blacklistedSupervisorIds.size());
     }
 
     @Override
@@ -110,8 +115,8 @@ public class BlacklistScheduler implements IScheduler {
         Map<String, SupervisorDetails> supervisors = cluster.getSupervisors();
         blacklistStrategy.resumeFromBlacklist();
         badSupervisors(supervisors);
-        Set<String> blacklistHosts = getBlacklistHosts(cluster, topologies);
-        this.blacklistHost = blacklistHosts;
+        blacklistedSupervisorIds = refreshBlacklistedSupervisorIds(cluster, topologies);
+        Set<String> blacklistHosts = getBlacklistHosts(cluster, blacklistedSupervisorIds);
         cluster.setBlacklistedHosts(blacklistHosts);
         removeLongTimeDisappearFromCache();
 
@@ -132,20 +137,20 @@ public class BlacklistScheduler implements IScheduler {
         for (String key : badSupervisorKeys) {
             badSupervisors.put(key, cachedSupervisors.get(key));
         }
-
         for (Map.Entry<String, SupervisorDetails> entry : supervisors.entrySet()) {
             String key = entry.getKey();
             SupervisorDetails supervisorDetails = entry.getValue();
             if (cachedSupervisors.containsKey(key)) {
-                Set<Integer> badSlots = badSlots(supervisorDetails, key);
-                if (badSlots.size() > 0) { //supervisor contains bad slots
-                    badSupervisors.put(key, badSlots);
+                if (blacklistOnBadSlots) {
+                    Set<Integer> badSlots = badSlots(supervisorDetails, key);
+                    if (badSlots.size() > 0) { //supervisor contains bad slots
+                        badSupervisors.put(key, badSlots);
+                    }
                 }
             } else {
                 cachedSupervisors.put(key, supervisorDetails.getAllPorts()); //new supervisor to cache
             }
         }
-
         badSupervisorsToleranceSlidingWindow.add(badSupervisors);
     }
 
@@ -160,16 +165,20 @@ public class BlacklistScheduler implements IScheduler {
             allPorts.addAll(cachedSupervisorPorts);
             cachedSupervisors.put(supervisorKey, allPorts);
         }
-
         Set<Integer> badSlots = Sets.difference(cachedSupervisorPorts, supervisorPorts);
         return badSlots;
     }
 
-    private Set<String> getBlacklistHosts(Cluster cluster, Topologies topologies) {
-        Set<String> blacklistSet = blacklistStrategy.getBlacklist(new ArrayList<>(badSupervisorsToleranceSlidingWindow),
-                                                                  cluster, topologies);
+    private Set<String> refreshBlacklistedSupervisorIds(Cluster cluster, Topologies topologies) {
+        Set<String> blacklistedSupervisors = blacklistStrategy.getBlacklist(new ArrayList<>(badSupervisorsToleranceSlidingWindow),
+                cluster, topologies);
+        LOG.info("Supervisors {} are blacklisted.", blacklistedSupervisors);
+        return blacklistedSupervisors;
+    }
+
+    private Set<String> getBlacklistHosts(Cluster cluster, Set<String> blacklistIds) {
         Set<String> blacklistHostSet = new HashSet<>();
-        for (String supervisor : blacklistSet) {
+        for (String supervisor : blacklistIds) {
             String host = cluster.getHost(supervisor);
             if (host != null) {
                 blacklistHostSet.add(host);
@@ -193,7 +202,8 @@ public class BlacklistScheduler implements IScheduler {
             for (String supervisor : supervisors) {
                 int supervisorCount = supervisorCountMap.getOrDefault(supervisor, 0);
                 Set<Integer> slots = item.get(supervisor);
-                if (slots.equals(cachedSupervisors.get(supervisor))) { // treat supervisor as bad only if all of its slots matched the cached supervisor
+                // treat supervisor as bad only if all of its slots matched the cached supervisor
+                if (slots.equals(cachedSupervisors.get(supervisor))) {
                     // track how many times a cached supervisor has been marked bad
                     supervisorCountMap.put(supervisor, supervisorCount + 1);
                 }
@@ -250,5 +260,9 @@ public class BlacklistScheduler implements IScheduler {
 
             throw e;
         }
+    }
+
+    public Set<String> getBlacklistSupervisorIds() {
+        return Collections.unmodifiableSet(blacklistedSupervisorIds);
     }
 }

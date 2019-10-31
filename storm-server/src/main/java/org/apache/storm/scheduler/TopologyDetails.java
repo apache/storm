@@ -244,6 +244,10 @@ public class TopologyDetails {
         return ret;
     }
 
+    public String getComponentFromExecutor(ExecutorDetails exec) {
+        return executorToComponent.get(exec);
+    }
+
     /**
      * Gets the on heap memory requirement for a certain task within a topology.
      *
@@ -338,7 +342,7 @@ public class TopologyDetails {
     }
 
     /**
-     * Get an approximate total resources needed for this topology.
+     * Get an approximate total resources needed for this topology. ignores shared memory.
      * @return the approximate total resources needed for this topology.
      */
     public NormalizedResourceRequest getApproximateTotalResources() {
@@ -350,15 +354,27 @@ public class TopologyDetails {
     }
 
     /**
+     * Get approximate resources for given topology executors. ignores shared memory.
+     *
+     * @param execs the executors the inquiry is concerning.
+     * @return the approximate resources for the executors.
+     */
+    public NormalizedResourceRequest getApproximateResources(Set<ExecutorDetails> execs) {
+        NormalizedResourceRequest ret = new NormalizedResourceRequest();
+        execs.stream()
+            .filter(x -> hasExecInTopo(x))
+            .forEach(x -> ret.add(resourceList.get(x)));
+        return ret;
+    }
+
+    /**
      * Get the total CPU requirement for executor.
      *
-     * @param exec
-     * @return Map<String   ,       Double> generic resource mapping requirement for the executor
+     * @return generic resource mapping requirement for the executor
      */
     public Double getTotalCpuReqTask(ExecutorDetails exec) {
         if (hasExecInTopo(exec)) {
-            return resourceList
-                .get(exec).getTotalCpu();
+            return resourceList.get(exec).getTotalCpu();
         }
         return null;
     }

@@ -101,9 +101,7 @@ public class HdfsState implements State {
      * Reads the last txn record from index file if it exists, if not from .tmp file if exists.
      *
      * @param indexFilePath the index file path
-     * @return the txn record from the index file or a default initial record.
-     *
-     * @throws IOException
+     * @return the txn record from the index file or a default initial record
      */
     private TxnRecord getTxnRecord(Path indexFilePath) throws IOException {
         Path tmpPath = tmpFilePath(indexFilePath.toString());
@@ -186,13 +184,13 @@ public class HdfsState implements State {
     }
 
     /**
-     * for unit tests
+     * for unit tests.
      */
     void close() throws IOException {
         this.options.closeOutputFile();
     }
 
-    public static abstract class Options implements Serializable {
+    public abstract static class Options implements Serializable {
 
         protected String fsUrl;
         protected String configKey;
@@ -216,10 +214,11 @@ public class HdfsState implements State {
 
         abstract void doCommit(Long txId) throws IOException;
 
-        abstract void doRecover(Path srcPath, long nBytes) throws Exception;
+        abstract void doRecover(Path srcPath, long numberOfBytes) throws Exception;
 
         protected void rotateOutputFile(boolean doRotateAction) throws IOException {
             LOG.info("Rotating output file...");
+            @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
             long start = System.currentTimeMillis();
             closeOutputFile();
             this.rotation++;
@@ -279,14 +278,14 @@ public class HdfsState implements State {
         /**
          * Recovers nBytes from srcFile to the new file created by calling rotateOutputFile and then deletes the srcFile.
          */
-        private void recover(String srcFile, long nBytes) {
+        private void recover(String srcFile, long numberOfBytes) {
             try {
                 Path srcPath = new Path(srcFile);
                 rotateOutputFile(false);
                 this.rotationPolicy.reset();
-                if (nBytes > 0) {
-                    doRecover(srcPath, nBytes);
-                    LOG.info("Recovered {} bytes from {} to {}", nBytes, srcFile, currentFile);
+                if (numberOfBytes > 0) {
+                    doRecover(srcPath, numberOfBytes);
+                    LOG.info("Recovered {} bytes from {} to {}", numberOfBytes, srcFile, currentFile);
                 } else {
                     LOG.info("Nothing to recover from {}", srcFile);
                 }
@@ -380,11 +379,11 @@ public class HdfsState implements State {
         }
 
         @Override
-        void doRecover(Path srcPath, long nBytes) throws IOException {
+        void doRecover(Path srcPath, long numberOfBytes) throws IOException {
             this.offset = 0;
             FSDataInputStream is = this.fs.open(srcPath);
-            copyBytes(is, out, nBytes);
-            this.offset = nBytes;
+            copyBytes(is, out, numberOfBytes);
+            this.offset = numberOfBytes;
         }
 
         private void copyBytes(FSDataInputStream is, FSDataOutputStream out, long bytesToCopy) throws IOException {
@@ -468,7 +467,9 @@ public class HdfsState implements State {
         @Override
         void doPrepare(Map<String, Object> conf, int partitionIndex, int numPartitions) throws IOException {
             LOG.info("Preparing Sequence File State...");
-            if (this.format == null) throw new IllegalStateException("SequenceFormat must be specified.");
+            if (this.format == null) {
+                throw new IllegalStateException("SequenceFormat must be specified.");
+            }
 
             this.fs = FileSystem.get(URI.create(this.fsUrl), hdfsConfig);
             this.codecFactory = new CompressionCodecFactory(hdfsConfig);
@@ -491,9 +492,10 @@ public class HdfsState implements State {
 
 
         @Override
-        void doRecover(Path srcPath, long nBytes) throws Exception {
+        void doRecover(Path srcPath, long numberOfBytes) throws Exception {
             SequenceFile.Reader reader = new SequenceFile.Reader(this.hdfsConfig,
-                                                                 SequenceFile.Reader.file(srcPath), SequenceFile.Reader.length(nBytes));
+                    SequenceFile.Reader.file(srcPath),
+                    SequenceFile.Reader.length(numberOfBytes));
 
             Writable key = (Writable) this.format.keyClass().newInstance();
             Writable value = (Writable) this.format.valueClass().newInstance();
@@ -531,10 +533,9 @@ public class HdfsState implements State {
     }
 
     /**
-     * TxnRecord [txnid, data_file_path, data_file_offset]
-     * <p>
-     * This is written to the index file during beginCommit() and used for recovery.
-     * </p>
+     * TxnRecord [txnid, data_file_path, data_file_offset].
+     *
+     * <p>This is written to the index file during beginCommit() and used for recovery.
      */
     private static class TxnRecord {
         private long txnid;

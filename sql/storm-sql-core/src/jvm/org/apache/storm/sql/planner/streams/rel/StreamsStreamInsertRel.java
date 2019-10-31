@@ -19,10 +19,11 @@
 
 package org.apache.storm.sql.planner.streams.rel;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+
+import java.util.List;
+
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;

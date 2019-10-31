@@ -12,7 +12,6 @@
 
 package org.apache.storm.mqtt.common;
 
-
 import java.net.URI;
 import java.security.KeyStore;
 import javax.net.ssl.KeyManagerFactory;
@@ -31,8 +30,8 @@ public class SslUtils {
             throw new IllegalArgumentException("Unrecognized URI scheme: " + scheme);
         }
         if (!scheme.equalsIgnoreCase("tcp") && loader == null) {
-            throw new IllegalStateException("A TLS/SSL MQTT URL was specified, but no KeyStoreLoader configured. " +
-                                            "A KeyStoreLoader implementation is required when using TLS/SSL.");
+            throw new IllegalStateException("A TLS/SSL MQTT URL was specified, but no KeyStoreLoader configured. "
+                    + "A KeyStoreLoader implementation is required when using TLS/SSL.");
         }
     }
 

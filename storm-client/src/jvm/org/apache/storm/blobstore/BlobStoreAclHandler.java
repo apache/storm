@@ -46,7 +46,7 @@ public class BlobStoreAclHandler {
     public static final List<AccessControl> WORLD_EVERYTHING =
         Arrays.asList(new AccessControl(AccessControlType.OTHER, READ | WRITE | ADMIN));
     public static final List<AccessControl> DEFAULT = new ArrayList<AccessControl>();
-    private final IPrincipalToLocal _ptol;
+    private final IPrincipalToLocal ptol;
     private final IGroupMappingServiceProvider groupMappingServiceProvider;
     private Set<String> supervisors;
     private Set<String> admins;
@@ -54,7 +54,7 @@ public class BlobStoreAclHandler {
     private boolean doAclValidation;
 
     public BlobStoreAclHandler(Map<String, Object> conf) {
-        _ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
+        ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
         if (conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN) != null) {
             groupMappingServiceProvider = ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf);
         } else {
@@ -77,7 +77,7 @@ public class BlobStoreAclHandler {
         }
     }
 
-    private static AccessControlType parseACLType(String type) {
+    private static AccessControlType parseAclType(String type) {
         if ("other".equalsIgnoreCase(type) || "o".equalsIgnoreCase(type)) {
             return AccessControlType.OTHER;
         } else if ("user".equalsIgnoreCase(type) || "u".equalsIgnoreCase(type)) {
@@ -125,7 +125,7 @@ public class BlobStoreAclHandler {
             access = parts[2];
         }
         AccessControl ret = new AccessControl();
-        ret.set_type(parseACLType(type));
+        ret.set_type(parseAclType(type));
         ret.set_name(name);
         ret.set_access(parseAccess(access));
         return ret;
@@ -160,6 +160,7 @@ public class BlobStoreAclHandler {
         return ret.toString();
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static void validateSettableACLs(String key, List<AccessControl> acls) throws AuthorizationException {
         Set<String> aclUsers = new HashSet<>();
         List<String> duplicateUsers = new ArrayList<>();
@@ -181,7 +182,7 @@ public class BlobStoreAclHandler {
         Set<String> user = new HashSet<String>();
         if (who != null) {
             for (Principal p : who.getPrincipals()) {
-                user.add(_ptol.toLocal(p));
+                user.add(ptol.toLocal(p));
             }
         }
         return user;
@@ -264,7 +265,6 @@ public class BlobStoreAclHandler {
      *             5 implies READ and ADMIN privileges.
      * @param who  Is the user against whom the permissions are validated for a key using the ACL and the mask.
      * @param key  Key used to identify the blob.
-     * @throws AuthorizationException
      */
     public void hasAnyPermissions(List<AccessControl> acl, int mask, Subject who, String key) throws AuthorizationException {
         if (!doAclValidation) {
@@ -294,7 +294,6 @@ public class BlobStoreAclHandler {
      *             5 implies READ and ADMIN privileges.
      * @param who  Is the user against whom the permissions are validated for a key using the ACL and the mask.
      * @param key  Key used to identify the blob.
-     * @throws AuthorizationException
      */
     public void hasPermissions(List<AccessControl> acl, int mask, Subject who, String key) throws AuthorizationException {
         if (!doAclValidation) {
@@ -318,7 +317,7 @@ public class BlobStoreAclHandler {
     }
 
     public void normalizeSettableBlobMeta(String key, SettableBlobMeta meta, Subject who, int opMask) {
-        meta.set_acl(normalizeSettableACLs(key, meta.get_acl(), who, opMask));
+        meta.set_acl(normalizeSettableAcls(key, meta.get_acl(), who, opMask));
     }
 
     private String namedPerms(int mask) {
@@ -351,7 +350,7 @@ public class BlobStoreAclHandler {
         }
     }
 
-    private List<AccessControl> removeBadACLs(List<AccessControl> accessControls) {
+    private List<AccessControl> removeBadAcls(List<AccessControl> accessControls) {
         List<AccessControl> resultAcl = new ArrayList<AccessControl>();
         for (AccessControl control : accessControls) {
             if (control.get_type().equals(AccessControlType.OTHER) && (control.get_access() == 0)) {
@@ -364,12 +363,12 @@ public class BlobStoreAclHandler {
         return resultAcl;
     }
 
-    private final List<AccessControl> normalizeSettableACLs(String key, List<AccessControl> acls, Subject who,
+    private List<AccessControl> normalizeSettableAcls(String key, List<AccessControl> acls, Subject who,
                                                             int opMask) {
-        List<AccessControl> cleanAcls = removeBadACLs(acls);
+        List<AccessControl> cleanAcls = removeBadAcls(acls);
         Set<String> userNames = getUserNamesFromSubject(who);
         for (String user : userNames) {
-            fixACLsForUser(cleanAcls, user, opMask);
+            fixAclsForUser(cleanAcls, user, opMask);
         }
         fixEmptyNameACLForUsers(cleanAcls, userNames, opMask);
         if ((who == null || userNames.isEmpty()) && !worldEverything(acls)) {
@@ -393,39 +392,40 @@ public class BlobStoreAclHandler {
         return isWorldEverything;
     }
 
-    private void fixACLsForUser(List<AccessControl> acls, String user, int mask) {
-        boolean foundUserACL = false;
-        List<AccessControl> emptyUserACLs = new ArrayList<>();
+    private void fixAclsForUser(List<AccessControl> acls, String user, int mask) {
+        boolean foundUserAcl = false;
+        List<AccessControl> emptyUserAcls = new ArrayList<>();
 
         for (AccessControl control : acls) {
             if (control.get_type() == AccessControlType.USER) {
                 if (!control.is_set_name()) {
-                    emptyUserACLs.add(control);
+                    emptyUserAcls.add(control);
                 } else if (control.get_name().equals(user)) {
                     int currentAccess = control.get_access();
                     if ((currentAccess & mask) != mask) {
                         control.set_access(currentAccess | mask);
                     }
-                    foundUserACL = true;
+                    foundUserAcl = true;
                 }
             }
         }
 
         // if ACLs have two user ACLs for empty user and principal, discard empty user ACL
-        if (!emptyUserACLs.isEmpty() && foundUserACL) {
-            acls.removeAll(emptyUserACLs);
+        if (!emptyUserAcls.isEmpty() && foundUserAcl) {
+            acls.removeAll(emptyUserAcls);
         }
 
         // add default user ACL when only empty user ACL is not present
-        if (emptyUserACLs.isEmpty() && !foundUserACL) {
-            AccessControl userACL = new AccessControl();
-            userACL.set_type(AccessControlType.USER);
-            userACL.set_name(user);
-            userACL.set_access(mask);
-            acls.add(userACL);
+        if (emptyUserAcls.isEmpty() && !foundUserAcl) {
+            AccessControl userAcl = new AccessControl();
+            userAcl.set_type(AccessControlType.USER);
+            userAcl.set_name(user);
+            userAcl.set_access(mask);
+            acls.add(userAcl);
         }
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private void fixEmptyNameACLForUsers(List<AccessControl> acls, Set<String> users, int mask) {
         List<AccessControl> aclsToAdd = new ArrayList<>();
         List<AccessControl> aclsToRemove = new ArrayList<>();
@@ -455,7 +455,7 @@ public class BlobStoreAclHandler {
         Set<String> user = new HashSet<String>();
         if (who != null) {
             for (Principal p : who.getPrincipals()) {
-                user.add(_ptol.toLocal(p));
+                user.add(ptol.toLocal(p));
             }
         }
         return user;

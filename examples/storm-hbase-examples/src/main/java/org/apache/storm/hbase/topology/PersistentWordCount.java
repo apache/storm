@@ -12,7 +12,6 @@
 
 package org.apache.storm.hbase.topology;
 
-
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -63,8 +62,10 @@ public class PersistentWordCount {
         if (args.length == 2) {
             topoName = args[0];
         } else if (args.length == 4) {
-            System.out.println("hdfs url: " + args[0] + ", keytab file: " + args[2] +
-                               ", principal name: " + args[3] + ", toplogy name: " + args[1]);
+            System.out.println("hdfs url: " + args[0]
+                    + ", keytab file: " + args[2]
+                    + ", principal name: " + args[3]
+                    + ", toplogy name: " + args[1]);
             hbConf.put(HBaseSecurityUtil.STORM_KEYTAB_FILE_KEY, args[2]);
             hbConf.put(HBaseSecurityUtil.STORM_USER_NAME_KEY, args[3]);
             config.setNumWorkers(3);

@@ -16,7 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.opentsdb.bolt;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.apache.storm.opentsdb.client.ClientResponse;
@@ -31,14 +40,6 @@ import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 /**
  * Basic bolt implementation for storing timeseries datapoints to OpenTSDB.
  * <p/>
@@ -46,7 +47,7 @@ import java.util.Set;
  * All these datapoints are batched till the given {@code batchSize} or {@code flushIntervalInSeconds} is reached.
  * <p/>
  *
- * Example topology:
+ * <p>Example topology:
  * <blockquote><pre>
  * OpenTsdbClient.Builder builder =  OpenTsdbClient.newBuilder(openTsdbUrl).sync(30_000).returnDetails();
  * final OpenTsdbBolt openTsdbBolt = new OpenTsdbBolt(builder, Collections.singletonList(TupleOpenTsdbDatapointMapper.DEFAULT_MAPPER));
@@ -69,12 +70,14 @@ public class OpenTsdbBolt extends BaseRichBolt {
     private Map<OpenTsdbMetricDatapoint, Tuple> metricPointsWithTuple = new HashMap<>();
     private OutputCollector collector;
 
-    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder, ITupleOpenTsdbDatapointMapper tupleOpenTsdbDatapointMapper) {
+    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder,
+            ITupleOpenTsdbDatapointMapper tupleOpenTsdbDatapointMapper) {
         this.openTsdbClientBuilder = openTsdbClientBuilder;
         this.tupleOpenTsdbDatapointMappers = Collections.singletonList(tupleOpenTsdbDatapointMapper);
     }
 
-    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder, List<? extends ITupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers) {
+    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder,
+            List<? extends ITupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers) {
         this.openTsdbClientBuilder = openTsdbClientBuilder;
         this.tupleOpenTsdbDatapointMappers = tupleOpenTsdbDatapointMappers;
     }

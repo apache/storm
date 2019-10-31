@@ -218,8 +218,8 @@ public class Thrift {
     }
 
     public static SpoutSpec prepareSerializedSpoutDetails(IRichSpout spout, Map<String, StreamInfo> outputs) {
-        return new SpoutSpec(ComponentObject.serialized_java
-            (Utils.javaSerialize(spout)), prepareComponentCommon(new HashMap<>(), outputs, null, null));
+        return new SpoutSpec(ComponentObject.serialized_java(Utils.javaSerialize(spout)),
+                prepareComponentCommon(new HashMap<>(), outputs, null, null));
     }
 
     public static Bolt prepareSerializedBoltDetails(Map<GlobalStreamId, Grouping> inputs, IBolt bolt, Map<String, StreamInfo> outputs,
@@ -256,15 +256,15 @@ public class Thrift {
         return details;
     }
 
-    public static StormTopology buildTopology(HashMap<String, SpoutDetails> spoutMap,
-                                              HashMap<String, BoltDetails> boltMap, HashMap<String, StateSpoutSpec> stateMap) {
-        return buildTopology(spoutMap, boltMap);
-    }
-
     private static void addInputs(BoltDeclarer declarer, Map<GlobalStreamId, Grouping> inputs) {
         for (Entry<GlobalStreamId, Grouping> entry : inputs.entrySet()) {
             declarer.grouping(entry.getKey(), entry.getValue());
         }
+    }
+
+    public static StormTopology buildTopology(HashMap<String, SpoutDetails> spoutMap,
+                                              HashMap<String, BoltDetails> boltMap, HashMap<String, StateSpoutSpec> stateMap) {
+        return buildTopology(spoutMap, boltMap);
     }
 
     public static StormTopology buildTopology(Map<String, SpoutDetails> spoutMap, Map<String, BoltDetails> boltMap) {

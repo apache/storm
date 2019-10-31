@@ -25,7 +25,7 @@ public interface ExecutionResultCollector {
 
     void handle(OutputCollector collector, ExecutionResultHandler handler);
 
-    public static final class SucceedCollector implements ExecutionResultCollector {
+    final class SucceedCollector implements ExecutionResultCollector {
 
         private final List<Tuple> inputs;
 
@@ -51,12 +51,16 @@ public interface ExecutionResultCollector {
          */
         @Override
         public void handle(OutputCollector collector, ExecutionResultHandler handler) {
-            for (Tuple t : inputs) handler.onQuerySuccess(collector, t);
-            for (Tuple t : inputs) collector.ack(t);
+            for (Tuple t : inputs) {
+                handler.onQuerySuccess(collector, t);
+            }
+            for (Tuple t : inputs) {
+                collector.ack(t);
+            }
         }
     }
 
-    public static final class FailedCollector implements ExecutionResultCollector {
+    final class FailedCollector implements ExecutionResultCollector {
 
         private final Throwable cause;
         private final List<Tuple> inputs;

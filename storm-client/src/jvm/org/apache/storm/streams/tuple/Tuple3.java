@@ -20,21 +20,21 @@ package org.apache.storm.streams.tuple;
  * @param <T3> the type of the third element
  */
 public final class Tuple3<T1, T2, T3> {
-    public final T1 _1;
-    public final T2 _2;
-    public final T3 _3;
+    public final T1 value1;
+    public final T2 value2;
+    public final T3 value3;
 
     /**
      * Constructs a new tuple.
      *
-     * @param _1 the first element
-     * @param _2 the second element
-     * @param _3 the third element
+     * @param value1 the first element
+     * @param value2 the second element
+     * @param value3 the third element
      */
-    public Tuple3(T1 _1, T2 _2, T3 _3) {
-        this._1 = _1;
-        this._2 = _2;
-        this._3 = _3;
+    public Tuple3(T1 value1, T2 value2, T3 value3) {
+        this.value1 = value1;
+        this.value2 = value2;
+        this.value3 = value3;
     }
 
     @Override
@@ -48,26 +48,26 @@ public final class Tuple3<T1, T2, T3> {
 
         Tuple3<?, ?, ?> tuple3 = (Tuple3<?, ?, ?>) o;
 
-        if (_1 != null ? !_1.equals(tuple3._1) : tuple3._1 != null) {
+        if (value1 != null ? !value1.equals(tuple3.value1) : tuple3.value1 != null) {
             return false;
         }
-        if (_2 != null ? !_2.equals(tuple3._2) : tuple3._2 != null) {
+        if (value2 != null ? !value2.equals(tuple3.value2) : tuple3.value2 != null) {
             return false;
         }
-        return _3 != null ? _3.equals(tuple3._3) : tuple3._3 == null;
+        return value3 != null ? value3.equals(tuple3.value3) : tuple3.value3 == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = _1 != null ? _1.hashCode() : 0;
-        result = 31 * result + (_2 != null ? _2.hashCode() : 0);
-        result = 31 * result + (_3 != null ? _3.hashCode() : 0);
+        int result = value1 != null ? value1.hashCode() : 0;
+        result = 31 * result + (value2 != null ? value2.hashCode() : 0);
+        result = 31 * result + (value3 != null ? value3.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "(" + _1 + "," + _2 + "," + _3 + ")";
+        return "(" + value1 + "," + value2 + "," + value3 + ")";
     }
 }

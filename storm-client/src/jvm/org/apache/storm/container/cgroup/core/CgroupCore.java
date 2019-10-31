@@ -16,6 +16,6 @@ import org.apache.storm.container.cgroup.SubSystemType;
 
 public interface CgroupCore {
 
-    public SubSystemType getType();
+    SubSystemType getType();
 
 }

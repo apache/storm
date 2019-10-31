@@ -12,6 +12,9 @@
 
 package org.apache.storm.hdfs.spout;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -192,6 +195,9 @@ public class TestHdfsSpout {
         Path file1 = new Path(source.toString() + "/file_empty.txt");
         createTextFile(file1, 0);
 
+        //Ensure the second file has a later modified timestamp, as the spout should pick the first file first.
+        Thread.sleep(2);
+
         Path file2 = new Path(source.toString() + "/file.txt");
         createTextFile(file2, 5);
 
@@ -203,15 +209,13 @@ public class TestHdfsSpout {
             conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
             openSpout(spout, 0, conf);
 
-            // consume empty file
-            runSpout(spout, "r1");
-            Path arc1 = new Path(archive.toString() + "/file_empty.txt");
-            checkCollectorOutput_txt((MockCollector) spout.getCollector(), arc1);
-
-            // consume file 2
-            runSpout(spout, "r5", "a0", "a1", "a2", "a3", "a4");
+            // Read once. Since the first file is empty, the spout should continue with file 2
+            runSpout(spout, "r6", "a0", "a1", "a2", "a3", "a4");
+            //File 1 should be moved to archive
+            assertThat(fs.isFile(new Path(archive.toString() + "/file_empty.txt")), is(true));
+            //File 2 should be read
             Path arc2 = new Path(archive.toString() + "/file.txt");
-            checkCollectorOutput_txt((MockCollector) spout.getCollector(), arc1, arc2);
+            checkCollectorOutput_txt((MockCollector) spout.getCollector(), arc2);
         }
     }
 
@@ -681,11 +685,8 @@ public class TestHdfsSpout {
 
     private void createTextFile(Path file, int lineCount) throws IOException {
         FSDataOutputStream os = fs.create(file);
-        int size = 0;
         for (int i = 0; i < lineCount; i++) {
             os.writeBytes("line " + i + System.lineSeparator());
-            String msg = "line " + i + System.lineSeparator();
-            size += msg.getBytes().length;
         }
         os.close();
     }
@@ -772,10 +773,11 @@ public class TestHdfsSpout {
         private final int componentId;
 
         public MockTopologyContext(int componentId, Map<String, Object> topoConf) {
-            super(null, topoConf, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            super(null, topoConf, null, null, null, null, null, null, null, 0, 0, null, null, null, null, null, null, null);
             this.componentId = componentId;
         }
 
+        @Override
         public String getThisComponentId() {
             return Integer.toString(componentId);
         }

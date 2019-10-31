@@ -12,7 +12,6 @@
 
 package org.apache.storm.jdbc.mapper;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang.Validate;

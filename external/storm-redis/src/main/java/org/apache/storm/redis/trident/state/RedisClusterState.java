@@ -26,7 +26,7 @@ public class RedisClusterState implements State {
     private JedisCluster jedisCluster;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param jedisCluster JedisCluster
      */
@@ -38,20 +38,20 @@ public class RedisClusterState implements State {
      * {@inheritDoc}
      */
     @Override
-    public void beginCommit(Long aLong) {
+    public void beginCommit(Long someLong) {
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void commit(Long aLong) {
+    public void commit(Long someLong) {
     }
 
     /**
      * Borrows JedisCluster instance.
-     * <p/>
-     * Note that you should return borrowed instance when you finish using instance.
+     *
+     * <p>Note that you should return borrowed instance when you finish using instance.
      *
      * @return JedisCluster instance
      */
@@ -79,7 +79,7 @@ public class RedisClusterState implements State {
         private JedisClusterConfig jedisClusterConfig;
 
         /**
-         * Constructor
+         * Constructor.
          *
          * @param config configuration of JedisCluster
          */

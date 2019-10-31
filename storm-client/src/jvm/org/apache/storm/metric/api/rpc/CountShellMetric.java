@@ -15,11 +15,15 @@ package org.apache.storm.metric.api.rpc;
 import org.apache.storm.metric.api.CountMetric;
 
 public class CountShellMetric extends CountMetric implements IShellMetric {
-    /***
+    /**
+     * Update metric from RPC.
+     *
      * @param value should be null or long
-     *  if value is null, it will call incr()
-     *  if value is long, it will call incrBy((long)params)
-     * */
+     *     if value is null, it will call incr()
+     *     if value is long, it will call incrBy((long)params)
+     */
+    @Override
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public void updateMetricFromRPC(Object value) {
         if (value == null) {
             incr();

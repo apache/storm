@@ -63,7 +63,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private final AtomicInteger readRetry = new AtomicInteger(0);
     private final String assignmentId;
     private final int supervisorPort;
-    private final ISupervisor iSuper;
+    private final ISupervisor supervisor;
     private final AsyncLocalizer localizer;
     private final ContainerLauncher launcher;
     private final String host;
@@ -78,7 +78,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         this.stormClusterState = supervisor.getStormClusterState();
         this.assignmentId = supervisor.getAssignmentId();
         this.supervisorPort = supervisor.getThriftServerPort();
-        this.iSuper = supervisor.getiSupervisor();
+        this.supervisor = supervisor.getiSupervisor();
         this.localizer = supervisor.getAsyncLocalizer();
         this.host = supervisor.getHostName();
         this.localState = supervisor.getLocalState();
@@ -128,7 +128,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private Slot mkSlot(int port) throws Exception {
         return new Slot(
                 localizer, superConf, launcher, host, port,
-                localState, stormClusterState, iSuper, cachedAssignments,
+                localState, stormClusterState, supervisor, cachedAssignments,
                 metricsExec, metricsProcessor, slotMetrics
         );
     }
@@ -151,12 +151,12 @@ public class ReadClusterState implements Runnable, AutoCloseable {
             LOG.debug("All assignment: {}", allAssignments);
             LOG.debug("Topology Ids -> Profiler Actions {}", topoIdToProfilerActions);
             for (Integer port : allAssignments.keySet()) {
-                if (iSuper.confirmAssigned(port)) {
+                if (supervisor.confirmAssigned(port)) {
                     assignedPorts.add(port);
                 }
             }
             HashSet<Integer> allPorts = new HashSet<>(assignedPorts);
-            iSuper.assigned(allPorts);
+            supervisor.assigned(allPorts);
             allPorts.addAll(slots.keySet());
 
             Map<Integer, Set<TopoProfileAction>> filtered = new HashMap<>();
@@ -211,7 +211,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
 
     protected Map<Integer, LocalAssignment> readAssignments(Map<String, Assignment> assignmentsSnapshot) {
         try {
-            Map<Integer, LocalAssignment> portLA = new HashMap<>();
+            Map<Integer, LocalAssignment> portLocalAssignment = new HashMap<>();
             for (Map.Entry<String, Assignment> assignEntry : assignmentsSnapshot.entrySet()) {
                 String topoId = assignEntry.getKey();
                 Assignment assignment = assignEntry.getValue();
@@ -224,16 +224,16 @@ public class ReadClusterState implements Runnable, AutoCloseable {
 
                     LocalAssignment la = entry.getValue();
 
-                    if (!portLA.containsKey(port)) {
-                        portLA.put(port, la);
+                    if (!portLocalAssignment.containsKey(port)) {
+                        portLocalAssignment.put(port, la);
                     } else {
                         throw new RuntimeException("Should not have multiple topologies assigned to one port "
-                                                   + port + " " + la + " " + portLA);
+                                                   + port + " " + la + " " + portLocalAssignment);
                     }
                 }
             }
             readRetry.set(0);
-            return portLA;
+            return portLocalAssignment;
         } catch (RuntimeException e) {
             if (readRetry.get() > 2) {
                 throw e;

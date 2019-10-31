@@ -34,8 +34,9 @@ import org.apache.storm.cassandra.query.ObjectMapperOperation;
 import org.apache.storm.tuple.ITuple;
 
 /**
- * Tuple mapper that is able to map objects annotated with {@link com.datastax.driver.mapping.annotations.Table} to CQL statements
+ * Tuple mapper that is able to map objects annotated with {@link com.datastax.driver.mapping.annotations.Table} to CQL statements.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class ObjectMapperCqlStatementMapper implements CQLStatementTupleMapper {
     private static final Map<Session, MappingManager> mappingManagers = new WeakHashMap<>();
 
@@ -83,7 +84,7 @@ public class ObjectMapperCqlStatementMapper implements CQLStatementTupleMapper {
                 options.add(Option.timestamp(((Number) timestampObject).longValue()));
             } else if (timestampObject instanceof Instant) {
                 Instant timestamp = (Instant) timestampObject;
-                options.add(Option.timestamp(timestamp.getEpochSecond() * 1000_0000l + timestamp.getNano() / 1000l));
+                options.add(Option.timestamp(timestamp.getEpochSecond() * 1000_0000L + timestamp.getNano() / 1000L));
             }
         }
 

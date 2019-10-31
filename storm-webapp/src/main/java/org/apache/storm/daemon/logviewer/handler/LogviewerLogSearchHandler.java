@@ -212,7 +212,7 @@ public class LogviewerLogSearchHandler {
      * @param user username
      * @param search search string
      * @param numMatchesStr the count of maximum matches. Note that this number is with respect to each port, not to each log or each search
-     * request
+     *     request
      * @param portStr worker port, null or '*' if the request wants to search from all worker logs
      * @param fileOffsetStr index (offset) of the log files
      * @param offsetStr start offset for log file
@@ -311,7 +311,10 @@ public class LogviewerLogSearchHandler {
     }
 
     @VisibleForTesting
-    Map<String, Object> substringSearch(Path file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
+    Map<String, Object> substringSearch(Path file,
+            String searchString,
+            int numMatches,
+            int startByteOffset) throws InvalidRequestException {
         return substringSearch(file, searchString, false, numMatches, startByteOffset);
     }
 
@@ -795,7 +798,7 @@ public class LogviewerLogSearchHandler {
         private Integer newByteOffset;
         private byte[] newBeforeBytes;
 
-        public SubstringSearchResult(List<Map<String, Object>> matches, Integer newByteOffset, byte[] newBeforeBytes) {
+        SubstringSearchResult(List<Map<String, Object>> matches, Integer newByteOffset, byte[] newBeforeBytes) {
             this.matches = matches;
             this.newByteOffset = newByteOffset;
             this.newBeforeBytes = newBeforeBytes;

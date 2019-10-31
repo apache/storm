@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
 import org.apache.storm.tuple.ITuple;
 
-
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class BatchCQLStatementTupleMapper implements CQLStatementTupleMapper {
 
     private final List<CQLStatementTupleMapper> mappers;
@@ -30,8 +30,6 @@ public class BatchCQLStatementTupleMapper implements CQLStatementTupleMapper {
 
     /**
      * Creates a new {@link BatchCQLStatementTupleMapper} instance.
-     * @param type
-     * @param mappers
      */
     public BatchCQLStatementTupleMapper(BatchStatement.Type type, List<CQLStatementTupleMapper> mappers) {
         this.mappers = new ArrayList<>(mappers);
@@ -44,8 +42,9 @@ public class BatchCQLStatementTupleMapper implements CQLStatementTupleMapper {
     @Override
     public List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple) {
         final BatchStatement batch = new BatchStatement(this.type);
-        for (CQLStatementTupleMapper m : mappers)
+        for (CQLStatementTupleMapper m : mappers) {
             batch.addAll(m.map(conf, session, tuple));
+        }
         return Arrays.asList((Statement) batch);
     }
 }

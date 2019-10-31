@@ -30,19 +30,21 @@ import org.slf4j.LoggerFactory;
 public class JoinResult extends BaseRichBolt {
     public static final Logger LOG = LoggerFactory.getLogger(JoinResult.class);
 
-    String returnComponent;
-    Map<Object, Tuple> returns = new HashMap<>();
-    Map<Object, Tuple> results = new HashMap<>();
-    OutputCollector _collector;
+    private String returnComponent;
+    private Map<Object, Tuple> returns = new HashMap<>();
+    private Map<Object, Tuple> results = new HashMap<>();
+    private OutputCollector collector;
 
     public JoinResult(String returnComponent) {
         this.returnComponent = returnComponent;
     }
 
+    @Override
     public void prepare(Map<String, Object> map, TopologyContext context, OutputCollector collector) {
-        _collector = collector;
+        this.collector = collector;
     }
 
+    @Override
     public void execute(Tuple tuple) {
         Object requestId = tuple.getValue(0);
         if (tuple.getSourceComponent().equals(returnComponent)) {
@@ -58,12 +60,13 @@ public class JoinResult extends BaseRichBolt {
             List<Tuple> anchors = new ArrayList<>();
             anchors.add(result);
             anchors.add(returner);
-            _collector.emit(anchors, new Values("" + result.getValue(1), returner.getValue(1)));
-            _collector.ack(result);
-            _collector.ack(returner);
+            collector.emit(anchors, new Values("" + result.getValue(1), returner.getValue(1)));
+            collector.ack(result);
+            collector.ack(returner);
         }
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("result", "return-info"));
     }

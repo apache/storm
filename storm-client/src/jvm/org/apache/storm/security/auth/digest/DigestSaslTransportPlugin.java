@@ -36,6 +36,7 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(DigestSaslTransportPlugin.class);
     private WorkerTokenAuthorizer workerTokenAuthorizer;
 
+    @Override
     protected TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException {
         if (workerTokenAuthorizer == null) {
             workerTokenAuthorizer = new WorkerTokenAuthorizer(conf, type);
