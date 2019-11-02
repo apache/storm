@@ -275,6 +275,11 @@ public class TCKTest {
                Collections.singletonList("A string list"),
                is(context.getTopologyDef().getConfig().get("list.property.target")));
 
+        //Test substitution where the target type is a List element
+        assertThat("List element property is not replaced by the expected value",
+                "A string list",
+                is(context.getTopologyDef().getConfig().get("list.element.property.target")));
+
     }
     
     @Test
