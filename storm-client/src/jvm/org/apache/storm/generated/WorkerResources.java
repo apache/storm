@@ -847,15 +847,15 @@ public class WorkerResources implements org.apache.storm.thrift.TBase<WorkerReso
           case 6: // RESOURCES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map666 = iprot.readMapBegin();
-                struct.resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map666.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key667;
-                double _val668;
-                for (int _i669 = 0; _i669 < _map666.size; ++_i669)
+                org.apache.storm.thrift.protocol.TMap _map716 = iprot.readMapBegin();
+                struct.resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map716.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key717;
+                double _val718;
+                for (int _i719 = 0; _i719 < _map716.size; ++_i719)
                 {
-                  _key667 = iprot.readString();
-                  _val668 = iprot.readDouble();
-                  struct.resources.put(_key667, _val668);
+                  _key717 = iprot.readString();
+                  _val718 = iprot.readDouble();
+                  struct.resources.put(_key717, _val718);
                 }
                 iprot.readMapEnd();
               }
@@ -867,15 +867,15 @@ public class WorkerResources implements org.apache.storm.thrift.TBase<WorkerReso
           case 7: // SHARED_RESOURCES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map670 = iprot.readMapBegin();
-                struct.shared_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map670.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key671;
-                double _val672;
-                for (int _i673 = 0; _i673 < _map670.size; ++_i673)
+                org.apache.storm.thrift.protocol.TMap _map720 = iprot.readMapBegin();
+                struct.shared_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map720.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key721;
+                double _val722;
+                for (int _i723 = 0; _i723 < _map720.size; ++_i723)
                 {
-                  _key671 = iprot.readString();
-                  _val672 = iprot.readDouble();
-                  struct.shared_resources.put(_key671, _val672);
+                  _key721 = iprot.readString();
+                  _val722 = iprot.readDouble();
+                  struct.shared_resources.put(_key721, _val722);
                 }
                 iprot.readMapEnd();
               }
@@ -927,10 +927,10 @@ public class WorkerResources implements org.apache.storm.thrift.TBase<WorkerReso
           oprot.writeFieldBegin(RESOURCES_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.resources.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter674 : struct.resources.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter724 : struct.resources.entrySet())
             {
-              oprot.writeString(_iter674.getKey());
-              oprot.writeDouble(_iter674.getValue());
+              oprot.writeString(_iter724.getKey());
+              oprot.writeDouble(_iter724.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -942,10 +942,10 @@ public class WorkerResources implements org.apache.storm.thrift.TBase<WorkerReso
           oprot.writeFieldBegin(SHARED_RESOURCES_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.shared_resources.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter675 : struct.shared_resources.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter725 : struct.shared_resources.entrySet())
             {
-              oprot.writeString(_iter675.getKey());
-              oprot.writeDouble(_iter675.getValue());
+              oprot.writeString(_iter725.getKey());
+              oprot.writeDouble(_iter725.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1010,20 +1010,20 @@ public class WorkerResources implements org.apache.storm.thrift.TBase<WorkerReso
       if (struct.is_set_resources()) {
         {
           oprot.writeI32(struct.resources.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter676 : struct.resources.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter726 : struct.resources.entrySet())
           {
-            oprot.writeString(_iter676.getKey());
-            oprot.writeDouble(_iter676.getValue());
+            oprot.writeString(_iter726.getKey());
+            oprot.writeDouble(_iter726.getValue());
           }
         }
       }
       if (struct.is_set_shared_resources()) {
         {
           oprot.writeI32(struct.shared_resources.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter677 : struct.shared_resources.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter727 : struct.shared_resources.entrySet())
           {
-            oprot.writeString(_iter677.getKey());
-            oprot.writeDouble(_iter677.getValue());
+            oprot.writeString(_iter727.getKey());
+            oprot.writeDouble(_iter727.getValue());
           }
         }
       }
@@ -1055,30 +1055,30 @@ public class WorkerResources implements org.apache.storm.thrift.TBase<WorkerReso
       }
       if (incoming.get(5)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map678 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map678.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key679;
-          double _val680;
-          for (int _i681 = 0; _i681 < _map678.size; ++_i681)
+          org.apache.storm.thrift.protocol.TMap _map728 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map728.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key729;
+          double _val730;
+          for (int _i731 = 0; _i731 < _map728.size; ++_i731)
           {
-            _key679 = iprot.readString();
-            _val680 = iprot.readDouble();
-            struct.resources.put(_key679, _val680);
+            _key729 = iprot.readString();
+            _val730 = iprot.readDouble();
+            struct.resources.put(_key729, _val730);
           }
         }
         struct.set_resources_isSet(true);
       }
       if (incoming.get(6)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map682 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.shared_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map682.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key683;
-          double _val684;
-          for (int _i685 = 0; _i685 < _map682.size; ++_i685)
+          org.apache.storm.thrift.protocol.TMap _map732 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.shared_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map732.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key733;
+          double _val734;
+          for (int _i735 = 0; _i735 < _map732.size; ++_i735)
           {
-            _key683 = iprot.readString();
-            _val684 = iprot.readDouble();
-            struct.shared_resources.put(_key683, _val684);
+            _key733 = iprot.readString();
+            _val734 = iprot.readDouble();
+            struct.shared_resources.put(_key733, _val734);
           }
         }
         struct.set_shared_resources_isSet(true);

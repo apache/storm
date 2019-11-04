@@ -60,6 +60,8 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
   private static final org.apache.storm.thrift.protocol.TField ASSIGNED_SHARED_ON_HEAP_MEMORY_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("assigned_shared_on_heap_memory", org.apache.storm.thrift.protocol.TType.DOUBLE, (short)532);
   private static final org.apache.storm.thrift.protocol.TField ASSIGNED_REGULAR_OFF_HEAP_MEMORY_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("assigned_regular_off_heap_memory", org.apache.storm.thrift.protocol.TType.DOUBLE, (short)533);
   private static final org.apache.storm.thrift.protocol.TField ASSIGNED_SHARED_OFF_HEAP_MEMORY_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("assigned_shared_off_heap_memory", org.apache.storm.thrift.protocol.TType.DOUBLE, (short)534);
+  private static final org.apache.storm.thrift.protocol.TField REQUESTED_GENERIC_RESOURCES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("requested_generic_resources", org.apache.storm.thrift.protocol.TType.MAP, (short)535);
+  private static final org.apache.storm.thrift.protocol.TField ASSIGNED_GENERIC_RESOURCES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("assigned_generic_resources", org.apache.storm.thrift.protocol.TType.MAP, (short)536);
 
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new TopologyPageInfoStandardSchemeFactory();
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new TopologyPageInfoTupleSchemeFactory();
@@ -96,6 +98,8 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
   private double assigned_shared_on_heap_memory; // optional
   private double assigned_regular_off_heap_memory; // optional
   private double assigned_shared_off_heap_memory; // optional
+  private @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> requested_generic_resources; // optional
+  private @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> assigned_generic_resources; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
@@ -130,7 +134,9 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
     ASSIGNED_REGULAR_ON_HEAP_MEMORY((short)531, "assigned_regular_on_heap_memory"),
     ASSIGNED_SHARED_ON_HEAP_MEMORY((short)532, "assigned_shared_on_heap_memory"),
     ASSIGNED_REGULAR_OFF_HEAP_MEMORY((short)533, "assigned_regular_off_heap_memory"),
-    ASSIGNED_SHARED_OFF_HEAP_MEMORY((short)534, "assigned_shared_off_heap_memory");
+    ASSIGNED_SHARED_OFF_HEAP_MEMORY((short)534, "assigned_shared_off_heap_memory"),
+    REQUESTED_GENERIC_RESOURCES((short)535, "requested_generic_resources"),
+    ASSIGNED_GENERIC_RESOURCES((short)536, "assigned_generic_resources");
 
     private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -210,6 +216,10 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           return ASSIGNED_REGULAR_OFF_HEAP_MEMORY;
         case 534: // ASSIGNED_SHARED_OFF_HEAP_MEMORY
           return ASSIGNED_SHARED_OFF_HEAP_MEMORY;
+        case 535: // REQUESTED_GENERIC_RESOURCES
+          return REQUESTED_GENERIC_RESOURCES;
+        case 536: // ASSIGNED_GENERIC_RESOURCES
+          return ASSIGNED_GENERIC_RESOURCES;
         default:
           return null;
       }
@@ -271,7 +281,7 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
   private static final int __ASSIGNED_REGULAR_OFF_HEAP_MEMORY_ISSET_ID = 17;
   private static final int __ASSIGNED_SHARED_OFF_HEAP_MEMORY_ISSET_ID = 18;
   private int __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.NAME,_Fields.UPTIME_SECS,_Fields.STATUS,_Fields.NUM_TASKS,_Fields.NUM_WORKERS,_Fields.NUM_EXECUTORS,_Fields.TOPOLOGY_CONF,_Fields.ID_TO_SPOUT_AGG_STATS,_Fields.ID_TO_BOLT_AGG_STATS,_Fields.SCHED_STATUS,_Fields.TOPOLOGY_STATS,_Fields.OWNER,_Fields.DEBUG_OPTIONS,_Fields.REPLICATION_COUNT,_Fields.WORKERS,_Fields.STORM_VERSION,_Fields.TOPOLOGY_VERSION,_Fields.REQUESTED_MEMONHEAP,_Fields.REQUESTED_MEMOFFHEAP,_Fields.REQUESTED_CPU,_Fields.ASSIGNED_MEMONHEAP,_Fields.ASSIGNED_MEMOFFHEAP,_Fields.ASSIGNED_CPU,_Fields.REQUESTED_REGULAR_ON_HEAP_MEMORY,_Fields.REQUESTED_SHARED_ON_HEAP_MEMORY,_Fields.REQUESTED_REGULAR_OFF_HEAP_MEMORY,_Fields.REQUESTED_SHARED_OFF_HEAP_MEMORY,_Fields.ASSIGNED_REGULAR_ON_HEAP_MEMORY,_Fields.ASSIGNED_SHARED_ON_HEAP_MEMORY,_Fields.ASSIGNED_REGULAR_OFF_HEAP_MEMORY,_Fields.ASSIGNED_SHARED_OFF_HEAP_MEMORY};
+  private static final _Fields optionals[] = {_Fields.NAME,_Fields.UPTIME_SECS,_Fields.STATUS,_Fields.NUM_TASKS,_Fields.NUM_WORKERS,_Fields.NUM_EXECUTORS,_Fields.TOPOLOGY_CONF,_Fields.ID_TO_SPOUT_AGG_STATS,_Fields.ID_TO_BOLT_AGG_STATS,_Fields.SCHED_STATUS,_Fields.TOPOLOGY_STATS,_Fields.OWNER,_Fields.DEBUG_OPTIONS,_Fields.REPLICATION_COUNT,_Fields.WORKERS,_Fields.STORM_VERSION,_Fields.TOPOLOGY_VERSION,_Fields.REQUESTED_MEMONHEAP,_Fields.REQUESTED_MEMOFFHEAP,_Fields.REQUESTED_CPU,_Fields.ASSIGNED_MEMONHEAP,_Fields.ASSIGNED_MEMOFFHEAP,_Fields.ASSIGNED_CPU,_Fields.REQUESTED_REGULAR_ON_HEAP_MEMORY,_Fields.REQUESTED_SHARED_ON_HEAP_MEMORY,_Fields.REQUESTED_REGULAR_OFF_HEAP_MEMORY,_Fields.REQUESTED_SHARED_OFF_HEAP_MEMORY,_Fields.ASSIGNED_REGULAR_ON_HEAP_MEMORY,_Fields.ASSIGNED_SHARED_ON_HEAP_MEMORY,_Fields.ASSIGNED_REGULAR_OFF_HEAP_MEMORY,_Fields.ASSIGNED_SHARED_OFF_HEAP_MEMORY,_Fields.REQUESTED_GENERIC_RESOURCES,_Fields.ASSIGNED_GENERIC_RESOURCES};
   public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -344,6 +354,14 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.DOUBLE)));
     tmpMap.put(_Fields.ASSIGNED_SHARED_OFF_HEAP_MEMORY, new org.apache.storm.thrift.meta_data.FieldMetaData("assigned_shared_off_heap_memory", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.DOUBLE)));
+    tmpMap.put(_Fields.REQUESTED_GENERIC_RESOURCES, new org.apache.storm.thrift.meta_data.FieldMetaData("requested_generic_resources", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.MapMetaData(org.apache.storm.thrift.protocol.TType.MAP, 
+            new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING), 
+            new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.DOUBLE))));
+    tmpMap.put(_Fields.ASSIGNED_GENERIC_RESOURCES, new org.apache.storm.thrift.meta_data.FieldMetaData("assigned_generic_resources", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.MapMetaData(org.apache.storm.thrift.protocol.TType.MAP, 
+            new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING), 
+            new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.DOUBLE))));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
     org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TopologyPageInfo.class, metaDataMap);
   }
@@ -449,6 +467,14 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
     this.assigned_shared_on_heap_memory = other.assigned_shared_on_heap_memory;
     this.assigned_regular_off_heap_memory = other.assigned_regular_off_heap_memory;
     this.assigned_shared_off_heap_memory = other.assigned_shared_off_heap_memory;
+    if (other.is_set_requested_generic_resources()) {
+      java.util.Map<java.lang.String,java.lang.Double> __this__requested_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(other.requested_generic_resources);
+      this.requested_generic_resources = __this__requested_generic_resources;
+    }
+    if (other.is_set_assigned_generic_resources()) {
+      java.util.Map<java.lang.String,java.lang.Double> __this__assigned_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(other.assigned_generic_resources);
+      this.assigned_generic_resources = __this__assigned_generic_resources;
+    }
   }
 
   public TopologyPageInfo deepCopy() {
@@ -508,6 +534,8 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
     this.assigned_regular_off_heap_memory = 0.0;
     set_assigned_shared_off_heap_memory_isSet(false);
     this.assigned_shared_off_heap_memory = 0.0;
+    this.requested_generic_resources = null;
+    this.assigned_generic_resources = null;
   }
 
   @org.apache.storm.thrift.annotation.Nullable
@@ -1278,6 +1306,76 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
     __isset_bitfield = org.apache.storm.thrift.EncodingUtils.setBit(__isset_bitfield, __ASSIGNED_SHARED_OFF_HEAP_MEMORY_ISSET_ID, value);
   }
 
+  public int get_requested_generic_resources_size() {
+    return (this.requested_generic_resources == null) ? 0 : this.requested_generic_resources.size();
+  }
+
+  public void put_to_requested_generic_resources(java.lang.String key, double val) {
+    if (this.requested_generic_resources == null) {
+      this.requested_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>();
+    }
+    this.requested_generic_resources.put(key, val);
+  }
+
+  @org.apache.storm.thrift.annotation.Nullable
+  public java.util.Map<java.lang.String,java.lang.Double> get_requested_generic_resources() {
+    return this.requested_generic_resources;
+  }
+
+  public void set_requested_generic_resources(@org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> requested_generic_resources) {
+    this.requested_generic_resources = requested_generic_resources;
+  }
+
+  public void unset_requested_generic_resources() {
+    this.requested_generic_resources = null;
+  }
+
+  /** Returns true if field requested_generic_resources is set (has been assigned a value) and false otherwise */
+  public boolean is_set_requested_generic_resources() {
+    return this.requested_generic_resources != null;
+  }
+
+  public void set_requested_generic_resources_isSet(boolean value) {
+    if (!value) {
+      this.requested_generic_resources = null;
+    }
+  }
+
+  public int get_assigned_generic_resources_size() {
+    return (this.assigned_generic_resources == null) ? 0 : this.assigned_generic_resources.size();
+  }
+
+  public void put_to_assigned_generic_resources(java.lang.String key, double val) {
+    if (this.assigned_generic_resources == null) {
+      this.assigned_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>();
+    }
+    this.assigned_generic_resources.put(key, val);
+  }
+
+  @org.apache.storm.thrift.annotation.Nullable
+  public java.util.Map<java.lang.String,java.lang.Double> get_assigned_generic_resources() {
+    return this.assigned_generic_resources;
+  }
+
+  public void set_assigned_generic_resources(@org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> assigned_generic_resources) {
+    this.assigned_generic_resources = assigned_generic_resources;
+  }
+
+  public void unset_assigned_generic_resources() {
+    this.assigned_generic_resources = null;
+  }
+
+  /** Returns true if field assigned_generic_resources is set (has been assigned a value) and false otherwise */
+  public boolean is_set_assigned_generic_resources() {
+    return this.assigned_generic_resources != null;
+  }
+
+  public void set_assigned_generic_resources_isSet(boolean value) {
+    if (!value) {
+      this.assigned_generic_resources = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
     switch (field) {
     case ID:
@@ -1536,6 +1634,22 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       }
       break;
 
+    case REQUESTED_GENERIC_RESOURCES:
+      if (value == null) {
+        unset_requested_generic_resources();
+      } else {
+        set_requested_generic_resources((java.util.Map<java.lang.String,java.lang.Double>)value);
+      }
+      break;
+
+    case ASSIGNED_GENERIC_RESOURCES:
+      if (value == null) {
+        unset_assigned_generic_resources();
+      } else {
+        set_assigned_generic_resources((java.util.Map<java.lang.String,java.lang.Double>)value);
+      }
+      break;
+
     }
   }
 
@@ -1638,6 +1752,12 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
     case ASSIGNED_SHARED_OFF_HEAP_MEMORY:
       return get_assigned_shared_off_heap_memory();
 
+    case REQUESTED_GENERIC_RESOURCES:
+      return get_requested_generic_resources();
+
+    case ASSIGNED_GENERIC_RESOURCES:
+      return get_assigned_generic_resources();
+
     }
     throw new java.lang.IllegalStateException();
   }
@@ -1713,6 +1833,10 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       return is_set_assigned_regular_off_heap_memory();
     case ASSIGNED_SHARED_OFF_HEAP_MEMORY:
       return is_set_assigned_shared_off_heap_memory();
+    case REQUESTED_GENERIC_RESOURCES:
+      return is_set_requested_generic_resources();
+    case ASSIGNED_GENERIC_RESOURCES:
+      return is_set_assigned_generic_resources();
     }
     throw new java.lang.IllegalStateException();
   }
@@ -2020,6 +2144,24 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
         return false;
     }
 
+    boolean this_present_requested_generic_resources = true && this.is_set_requested_generic_resources();
+    boolean that_present_requested_generic_resources = true && that.is_set_requested_generic_resources();
+    if (this_present_requested_generic_resources || that_present_requested_generic_resources) {
+      if (!(this_present_requested_generic_resources && that_present_requested_generic_resources))
+        return false;
+      if (!this.requested_generic_resources.equals(that.requested_generic_resources))
+        return false;
+    }
+
+    boolean this_present_assigned_generic_resources = true && this.is_set_assigned_generic_resources();
+    boolean that_present_assigned_generic_resources = true && that.is_set_assigned_generic_resources();
+    if (this_present_assigned_generic_resources || that_present_assigned_generic_resources) {
+      if (!(this_present_assigned_generic_resources && that_present_assigned_generic_resources))
+        return false;
+      if (!this.assigned_generic_resources.equals(that.assigned_generic_resources))
+        return false;
+    }
+
     return true;
   }
 
@@ -2154,6 +2296,14 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
     hashCode = hashCode * 8191 + ((is_set_assigned_shared_off_heap_memory()) ? 131071 : 524287);
     if (is_set_assigned_shared_off_heap_memory())
       hashCode = hashCode * 8191 + org.apache.storm.thrift.TBaseHelper.hashCode(assigned_shared_off_heap_memory);
+
+    hashCode = hashCode * 8191 + ((is_set_requested_generic_resources()) ? 131071 : 524287);
+    if (is_set_requested_generic_resources())
+      hashCode = hashCode * 8191 + requested_generic_resources.hashCode();
+
+    hashCode = hashCode * 8191 + ((is_set_assigned_generic_resources()) ? 131071 : 524287);
+    if (is_set_assigned_generic_resources())
+      hashCode = hashCode * 8191 + assigned_generic_resources.hashCode();
 
     return hashCode;
   }
@@ -2486,6 +2636,26 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
         return lastComparison;
       }
     }
+    lastComparison = java.lang.Boolean.valueOf(is_set_requested_generic_resources()).compareTo(other.is_set_requested_generic_resources());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_requested_generic_resources()) {
+      lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.requested_generic_resources, other.requested_generic_resources);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = java.lang.Boolean.valueOf(is_set_assigned_generic_resources()).compareTo(other.is_set_assigned_generic_resources());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_assigned_generic_resources()) {
+      lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.assigned_generic_resources, other.assigned_generic_resources);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -2748,6 +2918,26 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       sb.append(this.assigned_shared_off_heap_memory);
       first = false;
     }
+    if (is_set_requested_generic_resources()) {
+      if (!first) sb.append(", ");
+      sb.append("requested_generic_resources:");
+      if (this.requested_generic_resources == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.requested_generic_resources);
+      }
+      first = false;
+    }
+    if (is_set_assigned_generic_resources()) {
+      if (!first) sb.append(", ");
+      sb.append("assigned_generic_resources:");
+      if (this.assigned_generic_resources == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.assigned_generic_resources);
+      }
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }
@@ -2870,16 +3060,16 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           case 9: // ID_TO_SPOUT_AGG_STATS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map482 = iprot.readMapBegin();
-                struct.id_to_spout_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map482.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key483;
-                @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val484;
-                for (int _i485 = 0; _i485 < _map482.size; ++_i485)
+                org.apache.storm.thrift.protocol.TMap _map512 = iprot.readMapBegin();
+                struct.id_to_spout_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map512.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key513;
+                @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val514;
+                for (int _i515 = 0; _i515 < _map512.size; ++_i515)
                 {
-                  _key483 = iprot.readString();
-                  _val484 = new ComponentAggregateStats();
-                  _val484.read(iprot);
-                  struct.id_to_spout_agg_stats.put(_key483, _val484);
+                  _key513 = iprot.readString();
+                  _val514 = new ComponentAggregateStats();
+                  _val514.read(iprot);
+                  struct.id_to_spout_agg_stats.put(_key513, _val514);
                 }
                 iprot.readMapEnd();
               }
@@ -2891,16 +3081,16 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           case 10: // ID_TO_BOLT_AGG_STATS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map486 = iprot.readMapBegin();
-                struct.id_to_bolt_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map486.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key487;
-                @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val488;
-                for (int _i489 = 0; _i489 < _map486.size; ++_i489)
+                org.apache.storm.thrift.protocol.TMap _map516 = iprot.readMapBegin();
+                struct.id_to_bolt_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map516.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key517;
+                @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val518;
+                for (int _i519 = 0; _i519 < _map516.size; ++_i519)
                 {
-                  _key487 = iprot.readString();
-                  _val488 = new ComponentAggregateStats();
-                  _val488.read(iprot);
-                  struct.id_to_bolt_agg_stats.put(_key487, _val488);
+                  _key517 = iprot.readString();
+                  _val518 = new ComponentAggregateStats();
+                  _val518.read(iprot);
+                  struct.id_to_bolt_agg_stats.put(_key517, _val518);
                 }
                 iprot.readMapEnd();
               }
@@ -2954,14 +3144,14 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           case 16: // WORKERS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list490 = iprot.readListBegin();
-                struct.workers = new java.util.ArrayList<WorkerSummary>(_list490.size);
-                @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem491;
-                for (int _i492 = 0; _i492 < _list490.size; ++_i492)
+                org.apache.storm.thrift.protocol.TList _list520 = iprot.readListBegin();
+                struct.workers = new java.util.ArrayList<WorkerSummary>(_list520.size);
+                @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem521;
+                for (int _i522 = 0; _i522 < _list520.size; ++_i522)
                 {
-                  _elem491 = new WorkerSummary();
-                  _elem491.read(iprot);
-                  struct.workers.add(_elem491);
+                  _elem521 = new WorkerSummary();
+                  _elem521.read(iprot);
+                  struct.workers.add(_elem521);
                 }
                 iprot.readListEnd();
               }
@@ -3098,6 +3288,46 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 535: // REQUESTED_GENERIC_RESOURCES
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
+              {
+                org.apache.storm.thrift.protocol.TMap _map523 = iprot.readMapBegin();
+                struct.requested_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map523.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key524;
+                double _val525;
+                for (int _i526 = 0; _i526 < _map523.size; ++_i526)
+                {
+                  _key524 = iprot.readString();
+                  _val525 = iprot.readDouble();
+                  struct.requested_generic_resources.put(_key524, _val525);
+                }
+                iprot.readMapEnd();
+              }
+              struct.set_requested_generic_resources_isSet(true);
+            } else { 
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 536: // ASSIGNED_GENERIC_RESOURCES
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
+              {
+                org.apache.storm.thrift.protocol.TMap _map527 = iprot.readMapBegin();
+                struct.assigned_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map527.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key528;
+                double _val529;
+                for (int _i530 = 0; _i530 < _map527.size; ++_i530)
+                {
+                  _key528 = iprot.readString();
+                  _val529 = iprot.readDouble();
+                  struct.assigned_generic_resources.put(_key528, _val529);
+                }
+                iprot.readMapEnd();
+              }
+              struct.set_assigned_generic_resources_isSet(true);
+            } else { 
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -3162,10 +3392,10 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           oprot.writeFieldBegin(ID_TO_SPOUT_AGG_STATS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, struct.id_to_spout_agg_stats.size()));
-            for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter493 : struct.id_to_spout_agg_stats.entrySet())
+            for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter531 : struct.id_to_spout_agg_stats.entrySet())
             {
-              oprot.writeString(_iter493.getKey());
-              _iter493.getValue().write(oprot);
+              oprot.writeString(_iter531.getKey());
+              _iter531.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -3177,10 +3407,10 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           oprot.writeFieldBegin(ID_TO_BOLT_AGG_STATS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, struct.id_to_bolt_agg_stats.size()));
-            for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter494 : struct.id_to_bolt_agg_stats.entrySet())
+            for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter532 : struct.id_to_bolt_agg_stats.entrySet())
             {
-              oprot.writeString(_iter494.getKey());
-              _iter494.getValue().write(oprot);
+              oprot.writeString(_iter532.getKey());
+              _iter532.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -3225,9 +3455,9 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           oprot.writeFieldBegin(WORKERS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.workers.size()));
-            for (WorkerSummary _iter495 : struct.workers)
+            for (WorkerSummary _iter533 : struct.workers)
             {
-              _iter495.write(oprot);
+              _iter533.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -3317,6 +3547,36 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
         oprot.writeFieldBegin(ASSIGNED_SHARED_OFF_HEAP_MEMORY_FIELD_DESC);
         oprot.writeDouble(struct.assigned_shared_off_heap_memory);
         oprot.writeFieldEnd();
+      }
+      if (struct.requested_generic_resources != null) {
+        if (struct.is_set_requested_generic_resources()) {
+          oprot.writeFieldBegin(REQUESTED_GENERIC_RESOURCES_FIELD_DESC);
+          {
+            oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.requested_generic_resources.size()));
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter534 : struct.requested_generic_resources.entrySet())
+            {
+              oprot.writeString(_iter534.getKey());
+              oprot.writeDouble(_iter534.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+          oprot.writeFieldEnd();
+        }
+      }
+      if (struct.assigned_generic_resources != null) {
+        if (struct.is_set_assigned_generic_resources()) {
+          oprot.writeFieldBegin(ASSIGNED_GENERIC_RESOURCES_FIELD_DESC);
+          {
+            oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.assigned_generic_resources.size()));
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter535 : struct.assigned_generic_resources.entrySet())
+            {
+              oprot.writeString(_iter535.getKey());
+              oprot.writeDouble(_iter535.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+          oprot.writeFieldEnd();
+        }
       }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
@@ -3430,7 +3690,13 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       if (struct.is_set_assigned_shared_off_heap_memory()) {
         optionals.set(30);
       }
-      oprot.writeBitSet(optionals, 31);
+      if (struct.is_set_requested_generic_resources()) {
+        optionals.set(31);
+      }
+      if (struct.is_set_assigned_generic_resources()) {
+        optionals.set(32);
+      }
+      oprot.writeBitSet(optionals, 33);
       if (struct.is_set_name()) {
         oprot.writeString(struct.name);
       }
@@ -3455,20 +3721,20 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       if (struct.is_set_id_to_spout_agg_stats()) {
         {
           oprot.writeI32(struct.id_to_spout_agg_stats.size());
-          for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter496 : struct.id_to_spout_agg_stats.entrySet())
+          for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter536 : struct.id_to_spout_agg_stats.entrySet())
           {
-            oprot.writeString(_iter496.getKey());
-            _iter496.getValue().write(oprot);
+            oprot.writeString(_iter536.getKey());
+            _iter536.getValue().write(oprot);
           }
         }
       }
       if (struct.is_set_id_to_bolt_agg_stats()) {
         {
           oprot.writeI32(struct.id_to_bolt_agg_stats.size());
-          for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter497 : struct.id_to_bolt_agg_stats.entrySet())
+          for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter537 : struct.id_to_bolt_agg_stats.entrySet())
           {
-            oprot.writeString(_iter497.getKey());
-            _iter497.getValue().write(oprot);
+            oprot.writeString(_iter537.getKey());
+            _iter537.getValue().write(oprot);
           }
         }
       }
@@ -3490,9 +3756,9 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       if (struct.is_set_workers()) {
         {
           oprot.writeI32(struct.workers.size());
-          for (WorkerSummary _iter498 : struct.workers)
+          for (WorkerSummary _iter538 : struct.workers)
           {
-            _iter498.write(oprot);
+            _iter538.write(oprot);
           }
         }
       }
@@ -3544,6 +3810,26 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       if (struct.is_set_assigned_shared_off_heap_memory()) {
         oprot.writeDouble(struct.assigned_shared_off_heap_memory);
       }
+      if (struct.is_set_requested_generic_resources()) {
+        {
+          oprot.writeI32(struct.requested_generic_resources.size());
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter539 : struct.requested_generic_resources.entrySet())
+          {
+            oprot.writeString(_iter539.getKey());
+            oprot.writeDouble(_iter539.getValue());
+          }
+        }
+      }
+      if (struct.is_set_assigned_generic_resources()) {
+        {
+          oprot.writeI32(struct.assigned_generic_resources.size());
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter540 : struct.assigned_generic_resources.entrySet())
+          {
+            oprot.writeString(_iter540.getKey());
+            oprot.writeDouble(_iter540.getValue());
+          }
+        }
+      }
     }
 
     @Override
@@ -3551,7 +3837,7 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       struct.id = iprot.readString();
       struct.set_id_isSet(true);
-      java.util.BitSet incoming = iprot.readBitSet(31);
+      java.util.BitSet incoming = iprot.readBitSet(33);
       if (incoming.get(0)) {
         struct.name = iprot.readString();
         struct.set_name_isSet(true);
@@ -3582,32 +3868,32 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       }
       if (incoming.get(7)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map499 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.id_to_spout_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map499.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key500;
-          @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val501;
-          for (int _i502 = 0; _i502 < _map499.size; ++_i502)
+          org.apache.storm.thrift.protocol.TMap _map541 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.id_to_spout_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map541.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key542;
+          @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val543;
+          for (int _i544 = 0; _i544 < _map541.size; ++_i544)
           {
-            _key500 = iprot.readString();
-            _val501 = new ComponentAggregateStats();
-            _val501.read(iprot);
-            struct.id_to_spout_agg_stats.put(_key500, _val501);
+            _key542 = iprot.readString();
+            _val543 = new ComponentAggregateStats();
+            _val543.read(iprot);
+            struct.id_to_spout_agg_stats.put(_key542, _val543);
           }
         }
         struct.set_id_to_spout_agg_stats_isSet(true);
       }
       if (incoming.get(8)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map503 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.id_to_bolt_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map503.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key504;
-          @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val505;
-          for (int _i506 = 0; _i506 < _map503.size; ++_i506)
+          org.apache.storm.thrift.protocol.TMap _map545 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.id_to_bolt_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map545.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key546;
+          @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val547;
+          for (int _i548 = 0; _i548 < _map545.size; ++_i548)
           {
-            _key504 = iprot.readString();
-            _val505 = new ComponentAggregateStats();
-            _val505.read(iprot);
-            struct.id_to_bolt_agg_stats.put(_key504, _val505);
+            _key546 = iprot.readString();
+            _val547 = new ComponentAggregateStats();
+            _val547.read(iprot);
+            struct.id_to_bolt_agg_stats.put(_key546, _val547);
           }
         }
         struct.set_id_to_bolt_agg_stats_isSet(true);
@@ -3636,14 +3922,14 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       }
       if (incoming.get(14)) {
         {
-          org.apache.storm.thrift.protocol.TList _list507 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.workers = new java.util.ArrayList<WorkerSummary>(_list507.size);
-          @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem508;
-          for (int _i509 = 0; _i509 < _list507.size; ++_i509)
+          org.apache.storm.thrift.protocol.TList _list549 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.workers = new java.util.ArrayList<WorkerSummary>(_list549.size);
+          @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem550;
+          for (int _i551 = 0; _i551 < _list549.size; ++_i551)
           {
-            _elem508 = new WorkerSummary();
-            _elem508.read(iprot);
-            struct.workers.add(_elem508);
+            _elem550 = new WorkerSummary();
+            _elem550.read(iprot);
+            struct.workers.add(_elem550);
           }
         }
         struct.set_workers_isSet(true);
@@ -3711,6 +3997,36 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       if (incoming.get(30)) {
         struct.assigned_shared_off_heap_memory = iprot.readDouble();
         struct.set_assigned_shared_off_heap_memory_isSet(true);
+      }
+      if (incoming.get(31)) {
+        {
+          org.apache.storm.thrift.protocol.TMap _map552 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.requested_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map552.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key553;
+          double _val554;
+          for (int _i555 = 0; _i555 < _map552.size; ++_i555)
+          {
+            _key553 = iprot.readString();
+            _val554 = iprot.readDouble();
+            struct.requested_generic_resources.put(_key553, _val554);
+          }
+        }
+        struct.set_requested_generic_resources_isSet(true);
+      }
+      if (incoming.get(32)) {
+        {
+          org.apache.storm.thrift.protocol.TMap _map556 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.assigned_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map556.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key557;
+          double _val558;
+          for (int _i559 = 0; _i559 < _map556.size; ++_i559)
+          {
+            _key557 = iprot.readString();
+            _val558 = iprot.readDouble();
+            struct.assigned_generic_resources.put(_key557, _val558);
+          }
+        }
+        struct.set_assigned_generic_resources_isSet(true);
       }
     }
   }
