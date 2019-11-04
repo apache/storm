@@ -23,13 +23,18 @@ public class NoOpMetricStore implements MetricStore {
     public void insert(Metric metric) {}
 
     @Override
-    public boolean populateValue(Metric metric) { return true; }
+    public boolean populateValue(Metric metric) {
+        return true;
+    }
 
     @Override
-    public void close(){}
+    public void close() {
+    }
 
     @Override
-    public void scan(FilterOptions filter, ScanCallback scanCallback) {}
+    public void scan(FilterOptions filter, ScanCallback scanCallback) {
+
+    }
 }
 
 
