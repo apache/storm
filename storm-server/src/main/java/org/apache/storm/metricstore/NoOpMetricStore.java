@@ -17,10 +17,11 @@ import org.apache.storm.metric.StormMetricsRegistry;
 
 public class NoOpMetricStore implements MetricStore {
 
+    @Override
     public void prepare(Map<String, Object> config, StormMetricsRegistry metricsRegistry) {}
 
     @Override
-    public void insert(Metric metric) {}
+    public void insert(Metric metric) { }
 
     @Override
     public boolean populateValue(Metric metric) {
@@ -28,13 +29,10 @@ public class NoOpMetricStore implements MetricStore {
     }
 
     @Override
-    public void close() {
-    }
+    public void close() { }
 
     @Override
-    public void scan(FilterOptions filter, ScanCallback scanCallback) {
-
-    }
+    public void scan(FilterOptions filter, ScanCallback scanCallback) { }
 }
 
 
