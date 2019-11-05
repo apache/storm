@@ -126,7 +126,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         } else {
             String comp = td.getExecutorToComponent().get(exec);
             NormalizedResourceRequest requestedResources = td.getTotalResources(exec);
-            LOG.error("Not Enough Resources to schedule Task {} - {} {}", exec, comp, requestedResources);
+            LOG.warn("Not Enough Resources to schedule Task {} - {} {}", exec, comp, requestedResources);
             return false;
         }
     }
