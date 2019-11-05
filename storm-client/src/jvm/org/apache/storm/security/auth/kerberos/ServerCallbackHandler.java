@@ -13,6 +13,7 @@
 package org.apache.storm.security.auth.kerberos;
 
 import java.io.IOException;
+import java.util.Map;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -35,8 +36,10 @@ public class ServerCallbackHandler implements CallbackHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ServerCallbackHandler.class);
     private final boolean impersonationAllowed;
 
-    public ServerCallbackHandler(Configuration configuration, boolean impersonationAllowed) throws IOException {
+    public ServerCallbackHandler(Map<String, Object> topoConf, boolean impersonationAllowed) throws IOException {
         this.impersonationAllowed = impersonationAllowed;
+
+        Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
         if (configuration == null) {
             return;
         }

@@ -83,11 +83,8 @@ public class ThriftClient implements AutoCloseable {
                 socket.setTimeout(timeout);
             }
 
-            //locate login configuration 
-            Configuration loginConf = ClientAuthUtils.getConfiguration(conf);
-
             //construct a transport plugin
-            ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(type, conf, loginConf);
+            ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(type, conf);
 
             //TODO get this from type instead of hardcoding to Nimbus.
             //establish client-server transport via plugin

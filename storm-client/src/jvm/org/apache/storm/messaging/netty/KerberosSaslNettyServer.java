@@ -25,7 +25,6 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.Sasl;
@@ -49,28 +48,17 @@ class KerberosSaslNettyServer {
 
     KerberosSaslNettyServer(Map<String, Object> topoConf, String jaasSection, List<String> authorizedUsers) {
         this.authorizedUsers = authorizedUsers;
-        LOG.debug("Getting Configuration.");
-        Configuration loginConf;
-        try {
-            loginConf = ClientAuthUtils.getConfiguration(topoConf);
-        } catch (Throwable t) {
-            LOG.error("Failed to get loginConf: ", t);
-            throw t;
-        }
 
         LOG.debug("KerberosSaslNettyServer: authmethod {}", SaslUtils.KERBEROS);
 
         KerberosSaslCallbackHandler ch = new KerberosSaslNettyServer.KerberosSaslCallbackHandler(authorizedUsers);
+        String jaasConfFile = ClientAuthUtils.getJaasConf(topoConf);
 
         //login our principal
         subject = null;
         try {
-            LOG.debug("Setting Configuration to login_config: {}", loginConf);
-            //specify a configuration object to be used
-            Configuration.setConfiguration(loginConf);
-            //now login
-            LOG.debug("Trying to login.");
-            Login login = new Login(jaasSection, ch);
+            LOG.debug("Trying to login using {}.", jaasConfFile);
+            Login login = new Login(jaasSection, ch, jaasConfFile);
             subject = login.getSubject();
             LOG.debug("Got Subject: {}", subject.toString());
         } catch (LoginException ex) {
@@ -84,7 +72,7 @@ class KerberosSaslNettyServer {
             throw new RuntimeException("Fail to verify user principal with section \""
                                        + jaasSection
                                        + "\" in login configuration file "
-                                       + loginConf);
+                                       + jaasConfFile);
         }
 
         try {
