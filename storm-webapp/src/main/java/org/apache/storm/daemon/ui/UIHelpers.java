@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,6 +86,7 @@ import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.IVersionInfo;
@@ -632,7 +634,30 @@ public class UIHelpers {
                 ? StatsUtil.floatStr((supervisorUsedCpu * 100.0) / supervisorTotalCpu) : "0.0");
         result.put("bugtracker-url", conf.get(DaemonConfig.UI_PROJECT_BUGTRACKER_URL));
         result.put("central-log-url", conf.get(DaemonConfig.UI_CENTRAL_LOGGING_URL));
+
+        Map<String, Double> usedGenericResources = new HashMap<>();
+        Map<String, Double> totalGenericResources = new HashMap<>();
+        for (SupervisorSummary ss : supervisorSummaries) {
+            usedGenericResources = NormalizedResourceRequest.addResourceMap(usedGenericResources, ss.get_used_generic_resources());
+            totalGenericResources = NormalizedResourceRequest.addResourceMap(totalGenericResources, ss.get_total_resources());
+        }
+        Map<String, Double> availGenericResources = NormalizedResourceRequest
+                .subtractResourceMap(totalGenericResources, usedGenericResources);
+        result.put("availGenerics", prettifyGenericResources(availGenericResources));
+        result.put("totalGenerics", prettifyGenericResources(totalGenericResources));
         return result;
+    }
+
+    private static String prettifyGenericResources(Map<String, Double> resourceMap) {
+        if (resourceMap == null) {
+            return null;
+        }
+        TreeMap<String, Double> treeGenericResources = new TreeMap<>(); // use TreeMap for deterministic ordering
+        treeGenericResources.putAll(resourceMap);
+        NormalizedResourceRequest.filterGenericResources(treeGenericResources);
+        return treeGenericResources.toString()
+                .replaceAll("[{}]", "")
+                .replace(",", "");
     }
 
     /**
@@ -745,12 +770,14 @@ public class UIHelpers {
                 topologySummary.get_requested_memoffheap()
                         + topologySummary.get_assigned_memonheap());
         result.put("requestedCpu", topologySummary.get_requested_cpu());
+        result.put("requestedGenericResources", prettifyGenericResources(topologySummary.get_requested_generic_resources()));
         result.put("assignedMemOnHeap", topologySummary.get_assigned_memonheap());
         result.put("assignedMemOffHeap", topologySummary.get_assigned_memoffheap());
         result.put("assignedTotalMem",
                 topologySummary.get_assigned_memoffheap()
                         + topologySummary.get_assigned_memonheap());
         result.put("assignedCpu", topologySummary.get_assigned_cpu());
+        result.put("assignedGenericResources", prettifyGenericResources(topologySummary.get_assigned_generic_resources()));
         result.put("topologyVersion", topologySummary.get_topology_version());
         result.put("stormVersion", topologySummary.get_storm_version());
         return result;
@@ -909,6 +936,15 @@ public class UIHelpers {
         result.put("availMem", totalMemory - supervisorSummary.get_used_mem());
         result.put("availCpu", totalCpu - supervisorSummary.get_used_cpu());
         result.put("version", supervisorSummary.get_version());
+
+        Map<String, Double> totalGenericResources = new HashMap<>(totalResources);
+        result.put("totalGenericResources", prettifyGenericResources(totalGenericResources));
+        Map<String, Double> usedGenericResources = supervisorSummary.get_used_generic_resources();
+        result.put("usedGenericResources", prettifyGenericResources(usedGenericResources));
+        Map<String, Double> availGenericResources = NormalizedResourceRequest
+                .subtractResourceMap(totalGenericResources, usedGenericResources);
+        result.put("availGenericResources", prettifyGenericResources(availGenericResources));
+
         return result;
     }
 
@@ -1165,6 +1201,9 @@ public class UIHelpers {
             result.put(
                     "requestedCpu",
                     commonAggregateStats.get_resources_map().get(Constants.COMMON_CPU_RESOURCE_NAME));
+            result.put(
+                    "requestedGenericResourcesComp",
+                    prettifyGenericResources(commonAggregateStats.get_resources_map()));
         }
         return result;
     }
@@ -1546,10 +1585,12 @@ public class UIHelpers {
         result.put("requestedSharedOnHeapMem", topologyPageInfo.get_requested_shared_on_heap_memory());
         result.put("requestedRegularOffHeapMem", topologyPageInfo.get_requested_regular_off_heap_memory());
         result.put("requestedSharedOffHeapMem", topologyPageInfo.get_requested_shared_off_heap_memory());
+        result.put("requestedGenericResources", prettifyGenericResources(topologyPageInfo.get_requested_generic_resources()));
         result.put("assignedRegularOnHeapMem", topologyPageInfo.get_assigned_regular_on_heap_memory());
         result.put("assignedSharedOnHeapMem", topologyPageInfo.get_assigned_shared_on_heap_memory());
         result.put("assignedRegularOffHeapMem", topologyPageInfo.get_assigned_regular_off_heap_memory());
         result.put("assignedSharedOffHeapMem", topologyPageInfo.get_assigned_shared_off_heap_memory());
+        result.put("assignedGenericResources", prettifyGenericResources(topologyPageInfo.get_assigned_generic_resources()));
         result.put("topologyStats", getTopologyStatsMap(topologyPageInfo.get_topology_stats()));
         List<Map> workerSummaries = new ArrayList();
         if (topologyPageInfo.is_set_workers()) {
@@ -2025,6 +2066,8 @@ public class UIHelpers {
                 componentPageInfo.get_resources_map().get(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME));
         result.put("requestedCpu",
                 componentPageInfo.get_resources_map().get(Constants.COMMON_CPU_RESOURCE_NAME));
+        result.put("requestedGenericResources",
+                prettifyGenericResources(componentPageInfo.get_resources_map()));
 
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
         result.put("topologyId", id);

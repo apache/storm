@@ -18,27 +18,38 @@
 
 package org.apache.storm.scheduler;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 
 public class SupervisorResources {
     private final double totalMem;
     private final double totalCpu;
     private final double usedMem;
     private final double usedCpu;
+    private Map<String, Double> totalGenericResources;
+    private Map<String, Double> usedGenericResources;
 
     /**
      * Constructor for a Supervisor's resources.
      *
      * @param totalMem the total mem on the supervisor
      * @param totalCpu the total CPU on the supervisor
+     * @param totalGenericResources the total generic resources on the supervisor
      * @param usedMem  the used mem on the supervisor
      * @param usedCpu  the used CPU on the supervisor
+     * @param usedGenericResources the used generic resources on the supervisor
      */
-    public SupervisorResources(double totalMem, double totalCpu, double usedMem, double usedCpu) {
+    public SupervisorResources(double totalMem, double totalCpu, Map<String, Double> totalGenericResources,
+                               double usedMem, double usedCpu, Map<String, Double> usedGenericResources) {
         this.totalMem = totalMem;
         this.totalCpu = totalCpu;
         this.usedMem = usedMem;
         this.usedCpu = usedCpu;
+        this.totalGenericResources = totalGenericResources != null ? totalGenericResources : new HashMap<>();
+        this.usedGenericResources = usedGenericResources != null ? usedGenericResources : new HashMap<>();
     }
 
     public double getUsedMem() {
@@ -65,15 +76,29 @@ public class SupervisorResources {
         return totalMem - usedMem;
     }
 
-    SupervisorResources add(WorkerResources wr) {
+    public Map<String, Double> getTotalGenericResources() {
+        return new HashMap<>(totalGenericResources);
+    }
+
+    public Map<String, Double> getUsedGenericResources() {
+        return new HashMap<>(usedGenericResources);
+    }
+
+    public SupervisorResources add(WorkerResources wr) {
+        usedGenericResources = NormalizedResourceRequest.addResourceMap(usedGenericResources, wr.get_resources());
+        NormalizedResourceRequest.filterGenericResources(usedGenericResources);
+
         return new SupervisorResources(
-            totalMem,
-            totalCpu,
-            usedMem + wr.get_mem_off_heap() + wr.get_mem_on_heap(),
-            usedCpu + wr.get_cpu());
+                totalMem,
+                totalCpu,
+                getTotalGenericResources(),
+                usedMem + wr.get_mem_off_heap() + wr.get_mem_on_heap(),
+                usedCpu + wr.get_cpu(),
+                getUsedGenericResources());
     }
 
     public SupervisorResources addMem(Double value) {
-        return new SupervisorResources(totalMem, totalCpu, usedMem + value, usedCpu);
+        return new SupervisorResources(totalMem, totalCpu, getTotalGenericResources(),
+                usedMem + value, usedCpu, getUsedGenericResources());
     }
 }

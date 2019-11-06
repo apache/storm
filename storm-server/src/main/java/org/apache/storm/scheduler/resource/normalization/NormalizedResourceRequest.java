@@ -178,6 +178,43 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
         return ret;
     }
 
+    /*
+     * return map with non generic resources removded
+     */
+    public static void filterGenericResources(Map<String, Double> map) {
+        map.remove(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME);
+        map.remove(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME);
+        map.remove(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME);
+        map.remove(Constants.COMMON_CPU_RESOURCE_NAME);
+    }
+
+    /*
+     * return a map that is the sum of resources1 + resources2
+     */
+    public static Map<String, Double> addResourceMap(Map<String, Double> resources1, Map<String, Double> resources2) {
+        Map<String,Double> sum = new HashMap<>(resources1);
+        for (Map.Entry<String,Double> me : resources2.entrySet()) {
+            Double cur = sum.getOrDefault(me.getKey(), 0.0) + me.getValue();
+            sum.put(me.getKey(), cur);
+        }
+        return sum;
+    }
+
+    /*
+     * return a map that is the difference of resources1 - resources2
+     */
+    public static Map<String, Double> subtractResourceMap(Map<String, Double> resource1, Map<String, Double> resource2) {
+        if (resource1 == null || resource2 == null) {
+            return new HashMap<>();
+        }
+        Map<String, Double> difference = new HashMap<>(resource1);
+        for (Map.Entry<String,Double> me : resource2.entrySet()) {
+            Double sub = difference.getOrDefault(me.getKey(), 0.0) - me.getValue();
+            difference.put(me.getKey(), sub);
+        }
+        return difference;
+    }
+
     public double getOnHeapMemoryMb() {
         return onHeap;
     }

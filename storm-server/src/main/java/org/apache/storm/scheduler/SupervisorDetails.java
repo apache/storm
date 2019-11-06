@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,6 +152,15 @@ public class SupervisorDetails {
      */
     public double getTotalCpu() {
         return totalResources.getTotalCpu();
+    }
+
+    /*
+     * Get the total Generic resources on this supervisor.
+     */
+    public Map<String, Double> getTotalGenericResources() {
+        Map<String, Double> genericResources = totalResources.toNormalizedMap();
+        NormalizedResourceRequest.filterGenericResources(genericResources);
+        return genericResources;
     }
 
     /**
