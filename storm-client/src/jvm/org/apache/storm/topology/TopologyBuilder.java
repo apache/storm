@@ -473,15 +473,6 @@ public class TopologyBuilder {
         return setSpout(id, new LambdaSpout(supplier), parallelismHint);
     }
 
-    public void setStateSpout(String id, IRichStateSpout stateSpout) throws IllegalArgumentException {
-        setStateSpout(id, stateSpout, null);
-    }
-
-    public void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelismHint) throws IllegalArgumentException {
-        validateUnusedId(id);
-        // TODO: finish
-    }
-
     /**
      * Add a new worker lifecycle hook.
      *

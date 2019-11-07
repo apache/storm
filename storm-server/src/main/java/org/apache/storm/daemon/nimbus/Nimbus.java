@@ -360,12 +360,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         return sb;
     };
-    private static final TopologyStateTransition STARTUP_WHEN_KILLED_TRANSITION = (args, nimbus, topoId, base) -> {
+    private static final TopologyStateTransition GAIN_LEADERSHIP_WHEN_KILLED_TRANSITION = (args, nimbus, topoId, base) -> {
         int delay = base.get_topology_action_options().get_kill_options().get_wait_secs();
         nimbus.delayEvent(topoId, delay, TopologyActions.REMOVE, null);
         return null;
     };
-    private static final TopologyStateTransition STARTUP_WHEN_REBALANCING_TRANSITION = (args, nimbus, topoId, base) -> {
+    private static final TopologyStateTransition GAIN_LEADERSHIP_WHEN_REBALANCING_TRANSITION = (args, nimbus, topoId, base) -> {
         int delay = base.get_topology_action_options().get_rebalance_options().get_wait_secs();
         nimbus.delayEvent(topoId, delay, TopologyActions.DO_REBALANCE, null);
         return null;
@@ -385,12 +385,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 .put(TopologyActions.KILL, KILL_TRANSITION)
                 .build())
             .put(TopologyStatus.KILLED, new ImmutableMap.Builder<TopologyActions, TopologyStateTransition>()
-                .put(TopologyActions.STARTUP, STARTUP_WHEN_KILLED_TRANSITION)
+                .put(TopologyActions.GAIN_LEADERSHIP, GAIN_LEADERSHIP_WHEN_KILLED_TRANSITION)
                 .put(TopologyActions.KILL, KILL_TRANSITION)
                 .put(TopologyActions.REMOVE, REMOVE_TRANSITION)
                 .build())
             .put(TopologyStatus.REBALANCING, new ImmutableMap.Builder<TopologyActions, TopologyStateTransition>()
-                .put(TopologyActions.STARTUP, STARTUP_WHEN_REBALANCING_TRANSITION)
+                .put(TopologyActions.GAIN_LEADERSHIP, GAIN_LEADERSHIP_WHEN_REBALANCING_TRANSITION)
                 .put(TopologyActions.KILL, KILL_TRANSITION)
                 .put(TopologyActions.DO_REBALANCE, DO_REBALANCE_TRANSITION)
                 .build())
@@ -462,6 +462,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private AtomicReference<Map<String, Set<List<Integer>>>> idToExecutors;
     //May be null if worker tokens are not supported by the thrift transport.
     private WorkerTokenManager workerTokenManager;
+    private boolean wasLeader = false;
 
     public Nimbus(Map<String, Object> conf, INimbus inimbus, StormMetricsRegistry metricsRegistry) throws Exception {
         this(conf, inimbus, null, null, null, null, null, metricsRegistry);
@@ -1086,6 +1087,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @SuppressWarnings("unchecked")
+    /**
+     * Create a normalized topology conf.
+     *
+     * @param conf  the nimbus conf
+     * @param topoConf initial topology conf
+     * @param topology  the Storm topology
+     */
     private static Map<String, Object> normalizeConf(Map<String, Object> conf, Map<String, Object> topoConf, StormTopology topology) {
         //ensure that serializations are same for all tasks no matter what's on
         // the supervisors. this also allows you to declare the serializations as a sequence
@@ -1113,6 +1121,31 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         ret.put(Config.TOPOLOGY_ACKER_EXECUTORS, mergedConf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
         ret.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, mergedConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS));
         ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, mergedConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM));
+
+        // Don't allow topoConf to override various cluster-specific properties.
+        // Specifically adding the cluster settings to the topoConf here will make sure these settings
+        // also override the subsequently generated conf picked up locally on the classpath.
+        //
+        // We will be dealing with 3 confs:
+        // 1) the submitted topoConf created here
+        // 2) the combined classpath conf with the topoConf added on top
+        // 3) the nimbus conf with conf 2 above added on top.
+        //
+        // By first forcing the topology conf to contain the nimbus settings, we guarantee all three confs
+        // will have the correct settings that cannot be overriden by the submitter.
+        ret.put(Config.STORM_CGROUP_HIERARCHY_DIR, conf.get(Config.STORM_CGROUP_HIERARCHY_DIR));
+        ret.put(Config.WORKER_METRICS, conf.get(Config.WORKER_METRICS));
+
+        if (mergedConf.containsKey(Config.TOPOLOGY_WORKER_TIMEOUT_SECS)) {
+            int workerTimeoutSecs = (Integer) ObjectReader.getInt(mergedConf.get(Config.TOPOLOGY_WORKER_TIMEOUT_SECS));
+            int workerMaxTimeoutSecs = (Integer) ObjectReader.getInt(mergedConf.get(Config.WORKER_MAX_TIMEOUT_SECS));
+            if (workerTimeoutSecs > workerMaxTimeoutSecs) {
+                ret.put(Config.TOPOLOGY_WORKER_TIMEOUT_SECS, workerMaxTimeoutSecs);
+                String topoId = (String) mergedConf.get(Config.STORM_ID);
+                LOG.warn("Topology {} topology.worker.timeout.secs is too large. Reducing from {} to {}",
+                    topoId, workerTimeoutSecs, workerMaxTimeoutSecs);
+            }
+        }
         return ret;
     }
 
@@ -1296,12 +1329,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 exec.prepare();
             }
 
-            if (isLeader()) {
-                for (String topoId : state.activeStorms()) {
-                    transition(topoId, TopologyActions.STARTUP, null);
-                }
-                clusterMetricSet.setActive(true);
-            }
+            // Leadership coordination may be incomplete when launchServer is called. Previous behavior did a one time check
+            // which could cause Nimbus to not process TopologyActions.GAIN_LEADERSHIP transitions. Similar problem exists for
+            // HA Nimbus on being newly elected as leader. Change to a recurring pattern addresses these problems.
+            timer.scheduleRecurring(3, 5,
+                () -> {
+                    try {
+                        boolean isLeader = isLeader();
+                        if (isLeader && !wasLeader) {
+                            for (String topoId : state.activeStorms()) {
+                                transition(topoId, TopologyActions.GAIN_LEADERSHIP, null);
+                            }
+                            clusterMetricSet.setActive(true);
+                        }
+                        wasLeader = isLeader;
+                    } catch (Exception e) {
+                        throw  new RuntimeException(e);
+                    }
+                });
 
             final boolean doNotReassign = (Boolean) conf.getOrDefault(ServerConfigUtils.NIMBUS_DO_NOT_REASSIGN, false);
             timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS)),
@@ -1729,8 +1774,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                         throw new RuntimeException(message);
                     }
 
-                    if (TopologyActions.STARTUP != event) {
-                        //STARTUP is a system event so don't log an issue
+                    if (TopologyActions.GAIN_LEADERSHIP != event) {
+                        //GAIN_LEADERSHIP is a system event so don't log an issue
                         LOG.info(message);
                     }
                     transition = NOOP_TRANSITION;
@@ -1862,8 +1907,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         IStormClusterState state = stormClusterState;
         Map<List<Integer>, Map<String, Object>> executorBeats =
             StatsUtil.convertExecutorBeats(state.executorBeats(topoId, existingAssignment.get_executor_node_port()));
-        heartbeatsCache.updateFromZkHeartbeat(topoId, executorBeats, allExecutors,
-            ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+        heartbeatsCache.updateFromZkHeartbeat(topoId, executorBeats, allExecutors, getTopologyHeartbeatTimeoutSecs(topoId));
     }
 
     /**
@@ -1880,17 +1924,21 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 updateHeartbeatsFromZkHeartbeat(topoId, topologyToExecutors.get(topoId), entry.getValue());
             } else {
                 LOG.debug("Timing out old heartbeats for {}", topoId);
-                heartbeatsCache.timeoutOldHeartbeats(topoId, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+                heartbeatsCache.timeoutOldHeartbeats(topoId, getTopologyHeartbeatTimeoutSecs(topoId));
             }
         }
     }
 
-    private void updateCachedHeartbeatsFromWorker(SupervisorWorkerHeartbeat workerHeartbeat) {
-        heartbeatsCache.updateHeartbeat(workerHeartbeat, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+    private void updateCachedHeartbeatsFromWorker(SupervisorWorkerHeartbeat workerHeartbeat, int heartbeatTimeoutSecs) {
+        heartbeatsCache.updateHeartbeat(workerHeartbeat, heartbeatTimeoutSecs);
     }
 
     private void updateCachedHeartbeatsFromSupervisor(SupervisorWorkerHeartbeats workerHeartbeats) {
-        workerHeartbeats.get_worker_heartbeats().forEach(this::updateCachedHeartbeatsFromWorker);
+        for (SupervisorWorkerHeartbeat hb : workerHeartbeats.get_worker_heartbeats()) {
+            String topoId = hb.get_storm_id();
+            int heartbeatTimeoutSecs = getTopologyHeartbeatTimeoutSecs(topoId);
+            updateCachedHeartbeatsFromWorker(hb, heartbeatTimeoutSecs);
+        }
         if (!heartbeatsReadyFlag.get() && !Strings.isNullOrEmpty(workerHeartbeats.get_supervisor_id())) {
             heartbeatsRecoveryStrategy.reportNodeId(workerHeartbeats.get_supervisor_id());
         }
@@ -1927,8 +1975,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private Set<List<Integer>> aliveExecutors(String topoId, Set<List<Integer>> allExecutors, Assignment assignment) {
-        return heartbeatsCache.getAliveExecutors(topoId, allExecutors, assignment,
-            ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_LAUNCH_SECS)));
+        return heartbeatsCache.getAliveExecutors(topoId, allExecutors, assignment, getTopologyLaunchHeartbeatTimeoutSec(topoId));
     }
 
     private List<List<Integer>> computeExecutors(String topoId, StormBase base, Map<String, Object> topoConf,
@@ -2508,6 +2555,35 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         base.set_principal((String) topoConf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL));
     }
 
+    // Topology may set custom heartbeat timeout.
+    private int getTopologyHeartbeatTimeoutSecs(Map<String, Object> topoConf) {
+        int defaultNimbusTimeout = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS));
+        if (topoConf.containsKey(Config.TOPOLOGY_WORKER_TIMEOUT_SECS)) {
+            int topoTimeout = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKER_TIMEOUT_SECS));
+            topoTimeout = Math.max(topoTimeout, defaultNimbusTimeout);
+            return topoTimeout;
+        }
+
+        return defaultNimbusTimeout;
+    }
+
+    private int getTopologyHeartbeatTimeoutSecs(String topoId) {
+        try {
+            Map<String, Object> topoConf = tryReadTopoConf(topoId, topoCache);
+            return getTopologyHeartbeatTimeoutSecs(topoConf);
+        } catch (Exception e) {
+            // contain any exception
+            LOG.warn("Exception when getting heartbeat timeout.", e.getMessage());
+            return ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS));
+        }
+    }
+
+    private int getTopologyLaunchHeartbeatTimeoutSec(String topoId) {
+        int nimbusLaunchTimeout = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_LAUNCH_SECS));
+        int topoHeartbeatTimeoutSecs = getTopologyHeartbeatTimeoutSecs(topoId);
+        return Math.max(nimbusLaunchTimeout, topoHeartbeatTimeoutSecs);
+    }
+
     private void startTopology(String topoName, String topoId, TopologyStatus initStatus, String owner,
                                String principal, Map<String, Object> topoConf, StormTopology stormTopology)
         throws KeyNotFoundException, AuthorizationException, IOException, InvalidTopologyException {
@@ -3058,6 +3134,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (!(Boolean) conf.getOrDefault(DaemonConfig.STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED, false)) {
                 topoConf.remove(Config.TOPOLOGY_CLASSPATH_BEGINNING);
             }
+
             String topoVersionString = topology.get_storm_version();
             if (topoVersionString == null) {
                 topoVersionString = (String) conf.getOrDefault(Config.SUPERVISOR_WORKER_DEFAULT_VERSION, VersionInfo.getVersion());
@@ -4705,11 +4782,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         String id = hb.get_storm_id();
         try {
             Map<String, Object> topoConf = tryReadTopoConf(id, topoCache);
-            topoConf = Utils.merge(conf, topoConf);
             String topoName = (String) topoConf.get(Config.TOPOLOGY_NAME);
             checkAuthorization(topoName, topoConf, "sendSupervisorWorkerHeartbeat");
             if (isLeader()) {
-                updateCachedHeartbeatsFromWorker(hb);
+                int heartbeatTimeoutSecs = getTopologyHeartbeatTimeoutSecs(topoConf);
+                updateCachedHeartbeatsFromWorker(hb, heartbeatTimeoutSecs);
             }
         } catch (Exception e) {
             LOG.warn("Send HB exception. (topology id='{}')", id, e);

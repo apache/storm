@@ -117,10 +117,6 @@ public class SupervisorUtils {
         return _instance.readWorkerHeartbeatImpl(conf, workerId);
     }
 
-    public static boolean isWorkerHbTimedOut(int now, LSWorkerHeartbeat whb, Map<String, Object> conf) {
-        return _instance.isWorkerHbTimedOutImpl(now, whb, conf);
-    }
-
     public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) {
         Map<String, LSWorkerHeartbeat> workerHeartbeats = new HashMap<>();
 
@@ -142,9 +138,5 @@ public class SupervisorUtils {
             LOG.warn("Failed to read local heartbeat for workerId : {},Ignoring exception.", workerId, e);
             return null;
         }
-    }
-
-    private boolean isWorkerHbTimedOutImpl(int now, LSWorkerHeartbeat whb, Map<String, Object> conf) {
-        return (now - whb.get_time_secs()) > ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
     }
 }

@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
@@ -49,6 +50,7 @@ import org.apache.storm.metricstore.MetricException;
 import org.apache.storm.metricstore.WorkerMetricsProcessor;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
@@ -89,6 +91,7 @@ public abstract class Container implements Killable {
     protected ContainerMemoryTracker containerMemoryTracker;
     private long lastMetricProcessTime = 0L;
     private Timer.Context shutdownTimer = null;
+    private String cachedUser;
 
     /**
      * Create a new Container.
@@ -418,6 +421,13 @@ public abstract class Container implements Killable {
         }
         data.put(DaemonConfig.LOGS_USERS, logsUsers.toArray());
 
+        if (topoConf.get(Config.TOPOLOGY_WORKER_TIMEOUT_SECS) != null) {
+            int topoTimeout = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKER_TIMEOUT_SECS));
+            int defaultWorkerTimeout = ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+            topoTimeout = Math.max(topoTimeout, defaultWorkerTimeout);
+            data.put(Config.TOPOLOGY_WORKER_TIMEOUT_SECS, topoTimeout);
+        }
+
         File file = ServerConfigUtils.getLogMetaDataFile(conf, topologyId, port);
 
         Yaml yaml = new Yaml();
@@ -520,20 +530,36 @@ public abstract class Container implements Killable {
      * @throws IOException on any error
      */
     protected String getWorkerUser() throws IOException {
+        if (cachedUser != null) {
+            return cachedUser;
+        }
+
         LOG.info("GET worker-user for {}", workerId);
         File file = new File(ConfigUtils.workerUserFile(conf, workerId));
-
         if (ops.fileExists(file)) {
-            return ops.slurpString(file).trim();
-        } else if (assignment != null && assignment.is_set_owner()) {
-            return assignment.get_owner();
+            cachedUser = ops.slurpString(file).trim();
+            if (!StringUtils.isBlank(cachedUser)) {
+                return cachedUser;
+            }
         }
+
+        if (assignment != null && assignment.is_set_owner()) {
+            cachedUser = assignment.get_owner();
+            if (!StringUtils.isBlank(cachedUser)) {
+                return cachedUser;
+            }
+        }
+
         if (ConfigUtils.isLocalMode(conf)) {
-            return System.getProperty("user.name");
+            cachedUser = System.getProperty("user.name");
+            return cachedUser;
         } else {
             File f = new File(ConfigUtils.workerArtifactsRoot(conf));
             if (f.exists()) {
-                return Files.getOwner(f.toPath()).getName();
+                cachedUser = Files.getOwner(f.toPath()).getName();
+                if (!StringUtils.isBlank(cachedUser)) {
+                    return cachedUser;
+                }
             }
             throw new IllegalStateException("Could not recover the user for " + workerId);
         }

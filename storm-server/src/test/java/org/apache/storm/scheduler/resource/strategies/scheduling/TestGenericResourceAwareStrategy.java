@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.scheduler.Cluster;
@@ -235,6 +236,71 @@ public class TestGenericResourceAwareStrategy {
 
         assertEquals(expectedScheduling, foundScheduling);
     }
+
+    private TopologyDetails createTestStormTopology(StormTopology stormTopology, int priority, String name, Config conf) {
+        conf.put(Config.TOPOLOGY_PRIORITY, priority);
+        conf.put(Config.TOPOLOGY_NAME, name);
+        return new TopologyDetails(name , conf, stormTopology, 0,
+                genExecsAndComps(stormTopology), currentTime, "user");
+    }
+
+    /*
+     * test requiring eviction until Generic Resource (gpu) is evicted.
+     */
+    @Test
+    public void testGrasRequiringEviction() {
+        int spoutParallelism = 3;
+        double cpuPercent = 10;
+        double memoryOnHeap = 10;
+        double memoryOffHeap = 10;
+        // Sufficient Cpu/Memory. But insufficient gpu to schedule all topologies (gpu1, noGpu, gpu2).
+
+        // gpu topology (requires 3 gpu's in total)
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("spout", new TestSpout(), spoutParallelism).addResource("gpu.count", 1.0);
+        StormTopology stormTopologyWithGpu = builder.createTopology();
+
+        // non-gpu topology
+        builder = new TopologyBuilder();
+        builder.setSpout("spout", new TestSpout(), spoutParallelism);
+        StormTopology stormTopologyNoGpu = builder.createTopology();
+
+        Config conf = createGrasClusterConfig(cpuPercent, memoryOnHeap, memoryOffHeap, null, Collections.emptyMap());
+        conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_TOPOLOGY_SCHEDULING_ATTEMPTS, 2);    // allow 1 round of evictions
+
+        String gpu1 = "hasGpu1";
+        String noGpu = "hasNoGpu";
+        String gpu2 = "hasGpu2";
+        TopologyDetails topo[] = {
+                createTestStormTopology(stormTopologyWithGpu, 10, gpu1, conf),
+                createTestStormTopology(stormTopologyNoGpu, 10, noGpu, conf),
+                createTestStormTopology(stormTopologyWithGpu, 9, gpu2, conf)
+        };
+        Topologies topologies = new Topologies(topo[0], topo[1]);
+
+        Map<String, Double> genericResourcesMap = new HashMap<>();
+        genericResourcesMap.put("gpu.count", 1.0);
+        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 500, 2000, genericResourcesMap);
+        Cluster cluster = new Cluster(new INimbusTest(), new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
+
+        // should schedule gpu1 and noGpu successfully
+        scheduler = new ResourceAwareScheduler();
+        scheduler.prepare(conf);
+        scheduler.schedule(topologies, cluster);
+        assertTopologiesFullyScheduled(cluster, gpu1);
+        assertTopologiesFullyScheduled(cluster, noGpu);
+
+        // should evict gpu1 and noGpu topologies in order to schedule gpu2 topology; then fail to reschedule gpu1 topology;
+        // then schedule noGpu topology.
+        // Scheduling used to ignore gpu resource when deciding when to stop evicting, and gpu2 would fail to schedule.
+        topologies = new Topologies(topo[0], topo[1], topo[2]);
+        cluster = new Cluster(cluster, topologies);
+        scheduler.schedule(topologies, cluster);
+        assertTopologiesNotScheduled(cluster, gpu1);
+        assertTopologiesFullyScheduled(cluster, noGpu);
+        assertTopologiesFullyScheduled(cluster, gpu2);
+    }
+
 
     @Test
     public void testAntiAffinityWithMultipleTopologies() {

@@ -81,9 +81,10 @@ def get_java_cmd():
         cmd = os.path.join(JAVA_HOME, 'bin', cmd)
     return cmd
 
-def confvalue(name, storm_config_opts, extrapaths, daemon=True):
+def confvalue(name, storm_config_opts, extrapaths, overriding_conf_file=None, daemon=True):
     command = [
-        JAVA_CMD, "-client", get_config_opts(storm_config_opts), "-Dstorm.conf.file=" + CONF_FILE,
+        JAVA_CMD, "-client", get_config_opts(storm_config_opts),
+        "-Dstorm.conf.file=" + (overriding_conf_file if overriding_conf_file else ""),
         "-cp", get_classpath(extrajars=extrapaths, daemon=daemon), "org.apache.storm.command.ConfigValue", name
     ]
     output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
@@ -229,9 +230,12 @@ def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir
         raise RuntimeError("dependency handler returns non-json response: sysout<%s>", output)
 
 
-def exec_storm_class(klass, storm_config_opts, jvmtype="-server", jvmopts=[], extrajars=[], args=[], fork=False, daemon=True, client=False, daemonName=""):
-    storm_log_dir = confvalue("storm.log.dir", storm_config_opts=storm_config_opts, extrapaths=[CLUSTER_CONF_DIR])
-    if(storm_log_dir == None or storm_log_dir == "null"):
+def exec_storm_class(klass, storm_config_opts, jvmtype="-server", jvmopts=[],
+                     extrajars=[], main_class_args=[], fork=False, daemon=True, client=False, daemonName="",
+                     overriding_conf_file=None):
+    storm_log_dir = confvalue("storm.log.dir", storm_config_opts=storm_config_opts,
+                              extrapaths=[CLUSTER_CONF_DIR], overriding_conf_file=overriding_conf_file)
+    if storm_log_dir is None or storm_log_dir in ["null", ""]:
         storm_log_dir = os.path.join(STORM_DIR, "logs")
     all_args = [
         JAVA_CMD, jvmtype,
@@ -240,9 +244,9 @@ def exec_storm_class(klass, storm_config_opts, jvmtype="-server", jvmopts=[], ex
        "-Dstorm.home=" + STORM_DIR,
        "-Dstorm.log.dir=" + storm_log_dir,
        "-Djava.library.path=" + confvalue("java.library.path", storm_config_opts, extrajars, daemon=daemon),
-       "-Dstorm.conf.file=" + CONF_FILE,
+       "-Dstorm.conf.file=" + (overriding_conf_file if overriding_conf_file else ""),
        "-cp", get_classpath(extrajars, daemon, client=client),
-    ] + jvmopts + [klass] + list(args)
+    ] + jvmopts + [klass] + list(main_class_args)
     print("Running: " + " ".join(all_args))
     sys.stdout.flush()
     exit_code = 0
@@ -278,24 +282,26 @@ def run_client_jar(klass, args, daemon=False, client=True, extrajvmopts=[]):
         klass, args.storm_config_opts,
         jvmtype="-client",
         extrajars=extra_jars,
-        args=args.topology_main_args,
+        main_class_args=args.main_args,
         daemon=False,
         jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
                 ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
+                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)],
+        overriding_conf_file=args.config)
 
 
 def print_localconfvalue(args):
-    print(args.conf_name + ": " + confvalue(args.conf_name, args.storm_config_opts, [USER_CONF_DIR]))
+    print(args.conf_name + ": " + confvalue(args.conf_name, args.storm_config_opts,
+                                            [USER_CONF_DIR], overriding_conf_file=args.config))
 
 
 def print_remoteconfvalue(args):
-    print(args.conf_name + ": " + confvalue(args.conf_name, args.storm_config_opts, [CLUSTER_CONF_DIR]))
+    print(args.conf_name + ": " + confvalue(args.conf_name, args.storm_config_opts,
+                                            [CLUSTER_CONF_DIR], overriding_conf_file=args.config))
 
 
 def initialize_main_command():
     main_parser = argparse.ArgumentParser(prog="storm", formatter_class=SortingHelpFormatter)
-    add_common_options(main_parser)
 
     subparsers = main_parser.add_subparsers(help="")
 
@@ -360,12 +366,25 @@ def initialize_remoteconfvalue_subcommand(subparsers):
     add_common_options(sub_parser)
 
 
-def add_common_options(parser):
+def add_common_options(parser, main_args=True):
     parser.add_argument("--config", default=None, help="Override default storm conf file")
     parser.add_argument(
         "-storm_config_opts", "-c", action="append", default=[],
         help="Override storm conf properties , e.g. nimbus.ui.port=4443"
     )
+    if main_args:
+        parser.add_argument(
+            "main_args", metavar="main_args",
+            nargs='*', help="Runs the main method with the specified arguments."
+        )
+
+def remove_common_options(sys_args):
+    flags_to_filter = ["-c", "-storm_config_opts", "--config"]
+    filtered_sys_args = [
+        sys_args[i] for i in range(0, len(sys_args)) if (not (sys_args[i] in flags_to_filter) and ((i<1) or
+                                         not (sys_args[i - 1] in flags_to_filter)))
+    ]
+    return filtered_sys_args
 
 def add_topology_jar_options(parser):
     parser.add_argument(
@@ -375,10 +394,6 @@ def add_topology_jar_options(parser):
     parser.add_argument(
         "topology_main_class", metavar="topology-main-class",
     help="main class of the topology jar being submitted"
-    )
-    parser.add_argument(
-        "topology_main_args", metavar="topology_main_args",
-        nargs='*', help="Runs the main method with the specified arguments."
     )
 
 
@@ -510,12 +525,6 @@ def check_positive(value):
         raise argparse.ArgumentTypeError("%s is not a positive integer" % value)
     return ivalue
 
-def check_even_list(cred_list):
-    if not (len(cred_list) % 2):
-        raise argparse.ArgumentTypeError("please provide a list of cred key and value pairs")
-    return cred_list
-
-
 def initialize_upload_credentials_subcommand(subparsers):
     command_help = """Uploads a new set of credentials to a running topology."""
     sub_parser = subparsers.add_parser("upload-credentials", help=command_help, formatter_class=SortingHelpFormatter)
@@ -533,8 +542,7 @@ def initialize_upload_credentials_subcommand(subparsers):
     )
 
     sub_parser.add_argument(
-        "cred_list", nargs='*', help="List of credkeys and their values [credkey credvalue]*",
-        type=check_even_list
+        "cred_list", nargs='*', help="List of credkeys and their values [credkey credvalue]*"
     )
 
     sub_parser.set_defaults(func=upload_credentials)
@@ -563,7 +571,7 @@ def initialize_sql_subcommand(subparsers):
     group.add_argument("--explain", action="store_true", help="activate explain mode")
 
     sub_parser.set_defaults(func=sql)
-    add_common_options(sub_parser)
+    add_common_options(sub_parser, main_args=False)
 
 
 def initialize_blobstore_subcommand(subparsers):
@@ -580,8 +588,8 @@ def initialize_blobstore_subcommand(subparsers):
         "list", help="lists blobs currently in the blob store", formatter_class=SortingHelpFormatter
     )
     list_parser.add_argument(
-        "keys", nargs='+')
-    add_common_options(list_parser)
+        "keys", nargs='*')
+    add_common_options(list_parser, main_args=False)
 
     cat_parser = sub_sub_parsers.add_parser(
         "cat", help="read a blob and then either write it to a file, or STDOUT (requires read access).", formatter_class=SortingHelpFormatter
@@ -892,7 +900,7 @@ def initialize_shell_subcommand(subparsers):
     sub_parser.add_argument("args", nargs='*', default=[])
 
     sub_parser.set_defaults(func=shell)
-    add_common_options(sub_parser)
+    add_common_options(sub_parser, main_args=False)
 
 
 def initialize_repl_subcommand(subparsers):
@@ -987,7 +995,7 @@ def initialize_drpc_client_subcommand(subparsers):
     sub_parser.add_argument("function_arguments", nargs='*', default=[])
 
     sub_parser.set_defaults(func=drpc_client)
-    add_common_options(sub_parser)
+    add_common_options(sub_parser, main_args=False)
 
 
 def initialize_drpc_subcommand(subparsers):
@@ -1061,7 +1069,7 @@ def local(args):
     extrajvmopts = ["-Dstorm.local.sleeptime=" + args.local_ttl]
     if args.java_debug:
         extrajvmopts += ["-agentlib:jdwp=" + args.java_debug]
-    args.topology_main_args = [args.topology_main_class] + args.topology_main_args
+    args.main_args = [args.topology_main_class] + args.main_args
     run_client_jar(
         "org.apache.storm.LocalCluster", args,
         client=False, daemon=False, extrajvmopts=extrajvmopts)
@@ -1098,26 +1106,31 @@ def sql(args):
         "org.apache.storm.sql.StormSqlRunner", storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
         extrajars=extra_jars,
-        args=sql_args,
+        main_class_args=sql_args,
         daemon=False,
         jvmopts=["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
+                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)],
+        overriding_conf_file=args.config)
 
 
 def kill(args):
     exec_storm_class(
         "org.apache.storm.command.KillTopology",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def upload_credentials(args):
+    if (len(args.cred_list) % 2 != 0):
+        raise argparse.ArgumentTypeError("please provide a list of cred key and value pairs " + cred_list)
     exec_storm_class(
         "org.apache.storm.command.UploadCredentials",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def blob(args):
@@ -1125,32 +1138,36 @@ def blob(args):
         raise argparse.ArgumentTypeError("Replication factor needed when doing blob update")
     exec_storm_class(
         "org.apache.storm.command.Blobstore",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def heartbeats(args):
     exec_storm_class(
         "org.apache.storm.command.Heartbeats",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def activate(args):
     exec_storm_class(
         "org.apache.storm.command.Activate",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 def listtopos(args):
     exec_storm_class(
         "org.apache.storm.command.ListTopologies",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 def set_log_level(args):
     for log_level in args.l:
@@ -1163,16 +1180,18 @@ def set_log_level(args):
             raise argparse.ArgumentTypeError("Should be in the form[logger name]=[log level][:optional timeout]")
     exec_storm_class(
         "org.apache.storm.command.SetLogLevel",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 def deactivate(args):
     exec_storm_class(
         "org.apache.storm.command.Deactivate",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def rebalance(args):
@@ -1186,41 +1205,46 @@ def rebalance(args):
             raise argparse.ArgumentTypeError("Should be in the form component_name:new_executor_count")
     exec_storm_class(
         "org.apache.storm.command.Rebalance",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def get_errors(args):
     exec_storm_class(
         "org.apache.storm.command.GetErrors",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def healthcheck(args):
     exec_storm_class(
         "org.apache.storm.command.HealthCheck",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def kill_workers(args):
     exec_storm_class(
         "org.apache.storm.command.KillWorkers",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def admin(args):
     exec_storm_class(
         "org.apache.storm.command.AdminCommands",
-        args=sys.argv[2:], storm_config_opts=args.storm_config_opts,
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def shell(args):
@@ -1230,24 +1254,27 @@ def shell(args):
     runnerargs.extend(args.args)
     exec_storm_class(
         "org.apache.storm.command.ShellSubmission", storm_config_opts=args.storm_config_opts,
-        args=runnerargs,
+        main_class_args=runnerargs,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR],
-        fork=True)
+        fork=True,
+        overriding_conf_file=args.config)
     os.system("rm " + tmpjarpath)
 
 
 def repl(args):
     cppaths = [CLUSTER_CONF_DIR]
     exec_storm_class(
-        "clojure.main", storm_config_opts=args.storm_config_opts, jvmtype="-client", extrajars=cppaths
+        "clojure.main", storm_config_opts=args.storm_config_opts, jvmtype="-client", extrajars=cppaths,
+        overriding_conf_file=args.config
     )
 
 
-def get_log4j2_conf_dir(storm_config_opts):
+def get_log4j2_conf_dir(storm_config_opts, args):
     cppaths = [CLUSTER_CONF_DIR]
     storm_log4j2_conf_dir = confvalue(
-        "storm.log4j2.conf.dir", storm_config_opts=storm_config_opts, extrapaths=cppaths
+        "storm.log4j2.conf.dir", storm_config_opts=storm_config_opts,
+        extrapaths=cppaths, overriding_conf_file=args.config
     )
     if(not storm_log4j2_conf_dir or storm_log4j2_conf_dir == "null"):
         storm_log4j2_conf_dir = STORM_LOG4J2_CONF_DIR
@@ -1260,18 +1287,19 @@ def nimbus(args):
     cppaths = [CLUSTER_CONF_DIR]
     storm_config_opts = get_config_opts(args.storm_config_opts)
     jvmopts = shlex.split(confvalue(
-        "nimbus.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths
+        "nimbus.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths, overriding_conf_file=args.config
         )) + [
             "-Djava.deserialization.disabled=true",
             "-Dlogfile.name=nimbus.log",
-            "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml"),
+            "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts, args), "cluster.xml"),
         ]
     exec_storm_class(
         "org.apache.storm.daemon.nimbus.Nimbus", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="nimbus",
         extrajars=cppaths,
-        jvmopts=jvmopts)
+        jvmopts=jvmopts,
+        overriding_conf_file=args.config)
 
 
 def pacemaker(args):
@@ -1279,47 +1307,51 @@ def pacemaker(args):
     storm_config_opts = get_config_opts(args.storm_config_opts)
 
     jvmopts = shlex.split(confvalue(
-        "pacemaker.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths)
+        "pacemaker.childopts", storm_config_opts=storm_config_opts,
+        extrapaths=cppaths, overriding_conf_file=args.config)
     ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=pacemaker.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml"),
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts, args), "cluster.xml"),
         ]
     exec_storm_class(
         "org.apache.storm.pacemaker.Pacemaker", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="pacemaker",
         extrajars=cppaths,
-        jvmopts=jvmopts)
+        jvmopts=jvmopts,
+        overriding_conf_file=args.config)
 
 
 def supervisor(args):
     cppaths = [CLUSTER_CONF_DIR]
     storm_config_opts = get_config_opts(args.storm_config_opts)
     jvmopts = shlex.split(confvalue(
-        "supervisor.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths)
+        "supervisor.childopts", storm_config_opts=storm_config_opts,
+        extrapaths=cppaths, overriding_conf_file=args.config)
     ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=" + STORM_SUPERVISOR_LOG_FILE,
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml"),
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts, args), "cluster.xml"),
         ]
     exec_storm_class(
         "org.apache.storm.daemon.supervisor.Supervisor", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="supervisor",
         extrajars=cppaths,
-        jvmopts=jvmopts)
+        jvmopts=jvmopts,
+        overriding_conf_file=args.config)
 
 
 def ui(args):
     cppaths = [CLUSTER_CONF_DIR]
     storm_config_opts = get_config_opts(args.storm_config_opts)
     jvmopts = shlex.split(confvalue(
-        "ui.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths)
+        "ui.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths, overriding_conf_file=args.config)
     ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=ui.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml")
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts, args), "cluster.xml")
     ]
 
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
@@ -1329,7 +1361,8 @@ def ui(args):
         jvmtype="-server",
         daemonName="ui",
         jvmopts=jvmopts,
-        extrajars=allextrajars)
+        extrajars=allextrajars,
+        overriding_conf_file=args.config)
 
 
 def logviewer(args):
@@ -1337,12 +1370,13 @@ def logviewer(args):
     storm_config_opts = get_config_opts(args.storm_config_opts)
     jvmopts = shlex.split(
         confvalue(
-            "logviewer.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths
+            "logviewer.childopts", storm_config_opts=storm_config_opts,
+            extrapaths=cppaths, overriding_conf_file=args.config
         )
     ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=logviewer.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml")
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts, args), "cluster.xml")
     ]
 
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
@@ -1352,11 +1386,12 @@ def logviewer(args):
         jvmtype="-server",
         daemonName="logviewer",
         jvmopts=jvmopts,
-        extrajars=allextrajars)
+        extrajars=allextrajars,
+        overriding_conf_file=args.config)
 
 
 def drpc_client(args):
-    if not args.function and not (len(args.function_arguments) % 2):
+    if not args.function and (len(args.function_arguments) % 2):
         raise argparse.ArgumentTypeError(
             "If no -f is supplied arguments need to be in the form [function arg]. " +
             "This has {} args".format(
@@ -1366,9 +1401,10 @@ def drpc_client(args):
 
     exec_storm_class(
         "org.apache.storm.command.BasicDrpcClient",
-        args=sys.argv[2],
+        main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        overriding_conf_file=args.config)
 
 
 def drpc(args):
@@ -1376,12 +1412,12 @@ def drpc(args):
     storm_config_opts = get_config_opts(args.storm_config_opts)
     jvmopts = shlex.split(
         confvalue(
-            "drpc.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths
+            "drpc.childopts", storm_config_opts=storm_config_opts, extrapaths=cppaths, overriding_conf_file=args.config
         )
     ) + [
         "-Djava.deserialization.disabled=true",
         "-Dlogfile.name=drpc.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml")
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts, args), "cluster.xml")
     ]
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
     allextrajars.append(CLUSTER_CONF_DIR)
@@ -1390,28 +1426,31 @@ def drpc(args):
         jvmtype="-server",
         daemonName="drpc",
         jvmopts=jvmopts,
-        extrajars=allextrajars)
+        extrajars=allextrajars,
+        overriding_conf_file=args.config)
 
 
 def dev_zookeeper(args):
     storm_config_opts = get_config_opts(args.storm_config_opts)
     jvmopts = [
         "-Dlogfile.name=dev-zookeeper.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts), "cluster.xml")
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(storm_config_opts, args), "cluster.xml")
     ]
     exec_storm_class(
         "org.apache.storm.command.DevZookeeper", storm_config_opts=args.storm_config_opts,
         jvmtype="-server",
         daemonName="dev_zookeeper",
         jvmopts=jvmopts,
-        extrajars=[CLUSTER_CONF_DIR])
+        extrajars=[CLUSTER_CONF_DIR],
+        overriding_conf_file=args.config)
 
 
 def version(args):
     exec_storm_class(
         "org.apache.storm.utils.VersionInfo", storm_config_opts=args.storm_config_opts,
         jvmtype="-client",
-        extrajars=[CLUSTER_CONF_DIR])
+        extrajars=[CLUSTER_CONF_DIR],
+        overriding_conf_file=args.config)
 
 
 def print_classpath(args):
@@ -1425,10 +1464,9 @@ def print_server_classpath(args):
 def monitor(args):
     exec_storm_class(
         "org.apache.storm.command.Monitor", storm_config_opts=args.storm_config_opts,
-        args=sys.argv[2],
+        main_class_args=remove_common_options(sys.argv[2:]),
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
-
 
 def main():
     init_storm_env()
@@ -1436,7 +1474,9 @@ def main():
     if len(sys.argv) == 1:
         storm_parser.print_help(sys.stderr)
         sys.exit(1)
-    raw_args = storm_parser.parse_args()
+    raw_args, unknown_args = storm_parser.parse_known_args()
+    if hasattr(raw_args, "main_args"):
+        raw_args.main_args += unknown_args
     raw_args.func(raw_args)
 
 

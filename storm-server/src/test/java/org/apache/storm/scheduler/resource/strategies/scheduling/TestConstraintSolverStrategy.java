@@ -195,12 +195,12 @@ public class TestConstraintSolverStrategy {
                 @Override
                 protected SolverResult backtrackSearch(SearcherState state) {
                     //Each time we try to schedule a new component simulate taking 1 second longer
-                    Time.advanceTime(1_000);
+                    Time.advanceTime(1_001);
                     return super.backtrackSearch(state);
 
                 }
             };
-            basicFailureTest(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS, 2, cs);
+            basicFailureTest(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS, 1, cs);
         }
     }
 
@@ -215,6 +215,8 @@ public class TestConstraintSolverStrategy {
         // Add 1 topology with large number of executors and constraints. Too many can cause a java.lang.StackOverflowError
         Config config = createCSSClusterConfig(10, 10, 0, null);
         config.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, 50000);
+        config.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS, 120);
+        config.put(DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY, 120);
 
         List<List<String>> constraints = new LinkedList<>();
         addContraints("spout-0", "spout-0", constraints);
@@ -237,15 +239,9 @@ public class TestConstraintSolverStrategy {
         scheduler.schedule(topologies, cluster);
 
         boolean scheduleSuccess = isStatusSuccess(cluster.getStatus(topo.getId()));
-
-        if (parallelismMultiplier == 1) {
-            Assert.assertTrue(scheduleSuccess);
-        } else if (parallelismMultiplier == 20) {
-            // For default JVM, scheduling currently fails due to StackOverflow.
-            // For now just log the results of the test. Change to assert when StackOverflow issue is fixed.
-            LOG.info("testScheduleLargeExecutorCount scheduling {} with {}x executor multiplier", scheduleSuccess ? "succeeds" : "fails",
-                    parallelismMultiplier);
-        }
+        LOG.info("testScheduleLargeExecutorCount scheduling {} with {}x executor multiplier", scheduleSuccess ? "succeeds" : "fails",
+                parallelismMultiplier);
+        Assert.assertTrue(scheduleSuccess);
     }
 
     @Test
