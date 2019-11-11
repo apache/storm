@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
-import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,7 +158,7 @@ public class SupervisorDetails {
      */
     public Map<String, Double> getTotalGenericResources() {
         Map<String, Double> genericResources = totalResources.toNormalizedMap();
-        NormalizedResourceRequest.filterGenericResources(genericResources);
+        NormalizedResourceRequest.removeNonGenericResources(genericResources);
         return genericResources;
     }
 

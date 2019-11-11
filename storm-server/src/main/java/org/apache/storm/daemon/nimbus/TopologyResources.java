@@ -94,7 +94,7 @@ public final class TopologyResources {
         for (WorkerResources worker : workers) {
             genericResources = NormalizedResourceRequest.addResourceMap(genericResources, worker.get_resources());
         }
-        NormalizedResourceRequest.filterGenericResources(genericResources);
+        NormalizedResourceRequest.removeNonGenericResources(genericResources);
         return genericResources;
     }
 

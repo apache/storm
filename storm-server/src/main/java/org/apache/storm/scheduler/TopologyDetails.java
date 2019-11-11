@@ -457,7 +457,7 @@ public class TopologyDetails {
 
     public Map<String, Double> getTotalRequestedGenericResources() {
         Map<String, Double> map = getApproximateTotalResources().toNormalizedMap();
-        NormalizedResourceRequest.filterGenericResources(map);
+        NormalizedResourceRequest.removeNonGenericResources(map);
         return map;
     }
 

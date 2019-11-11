@@ -179,9 +179,9 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
     }
 
     /*
-     * return map with non generic resources removded
+     * return map with non generic resources removed
      */
-    public static void filterGenericResources(Map<String, Double> map) {
+    public static void removeNonGenericResources(Map<String, Double> map) {
         map.remove(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME);
         map.remove(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME);
         map.remove(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME);

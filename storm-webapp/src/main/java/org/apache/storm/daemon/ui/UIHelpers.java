@@ -654,7 +654,7 @@ public class UIHelpers {
         }
         TreeMap<String, Double> treeGenericResources = new TreeMap<>(); // use TreeMap for deterministic ordering
         treeGenericResources.putAll(resourceMap);
-        NormalizedResourceRequest.filterGenericResources(treeGenericResources);
+        NormalizedResourceRequest.removeNonGenericResources(treeGenericResources);
         return treeGenericResources.toString()
                 .replaceAll("[{}]", "")
                 .replace(",", "");

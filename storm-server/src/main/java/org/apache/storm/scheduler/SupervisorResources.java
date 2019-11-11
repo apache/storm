@@ -86,7 +86,7 @@ public class SupervisorResources {
 
     public SupervisorResources add(WorkerResources wr) {
         usedGenericResources = NormalizedResourceRequest.addResourceMap(usedGenericResources, wr.get_resources());
-        NormalizedResourceRequest.filterGenericResources(usedGenericResources);
+        NormalizedResourceRequest.removeNonGenericResources(usedGenericResources);
 
         return new SupervisorResources(
                 totalMem,
