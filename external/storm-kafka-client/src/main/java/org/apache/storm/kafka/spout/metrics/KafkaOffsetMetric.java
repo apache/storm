@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.RetriableException;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
 import org.apache.storm.metric.api.IMetric;
 import org.slf4j.Logger;
@@ -76,8 +77,17 @@ public class KafkaOffsetMetric<K, V> implements IMetric {
         Map<String,TopicMetrics> topicMetricsMap = new HashMap<>();
         Set<TopicPartition> topicPartitions = offsetManagers.keySet();
 
-        Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(topicPartitions);
-        Map<TopicPartition, Long> endOffsets = consumer.endOffsets(topicPartitions);
+        Map<TopicPartition, Long> beginningOffsets;
+        Map<TopicPartition, Long> endOffsets;
+
+        try {
+            beginningOffsets = consumer.beginningOffsets(topicPartitions);
+            endOffsets = consumer.endOffsets(topicPartitions);
+        } catch (RetriableException e) {
+            LOG.warn("Failed to get offsets from Kafka! Will retry on next metrics tick.", e);
+            return null;
+        }
+
         //map to hold partition level and topic level metrics
         Map<String, Long> result = new HashMap<>();
 
