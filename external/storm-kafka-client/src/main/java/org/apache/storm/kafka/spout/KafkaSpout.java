@@ -74,7 +74,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     protected SpoutOutputCollector collector;
 
     // Kafka
-    private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
+    protected final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
     private final ConsumerFactory<K, V> kafkaConsumerFactory;
     private final TopicAssigner topicAssigner;
     private transient Consumer<K, V> consumer;
