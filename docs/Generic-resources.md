@@ -36,4 +36,4 @@ Example of Usage:
 
 ### Generic Resources in UI
 
-![Storm Cluster UI](https://user-images.githubusercontent.com/50145295/68497812-06d1b280-021b-11ea-9f96-8946bf4193fc.png)
+![Storm Cluster UI](images/storm_ui.png)
