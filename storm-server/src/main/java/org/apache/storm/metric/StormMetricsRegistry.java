@@ -68,6 +68,10 @@ public class StormMetricsRegistry {
         registry.removeMatching((name, metric) -> nameToMetric.containsKey(name));
     }
 
+    public Meter getMeter(String meterName) {
+        return registry.getMeters().get(meterName);
+    }
+
     public void startMetricsReporters(Map<String, Object> daemonConf) {
         reporters = MetricsUtils.getPreparableReporters(daemonConf);
         for (PreparableReporter reporter : reporters) {
