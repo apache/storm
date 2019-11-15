@@ -26,6 +26,7 @@ import org.apache.storm.utils.EnumUtil;
 class SlotMetrics {
 
     final Meter numWorkersLaunched;
+    final Meter numWorkerStartTimedOut;
     final Map<Slot.KillReason, Meter> numWorkersKilledFor;
     final Timer workerLaunchDuration;
     final Map<Slot.MachineState, Meter> transitionIntoState;
@@ -34,6 +35,7 @@ class SlotMetrics {
 
     SlotMetrics(StormMetricsRegistry metricsRegistry) {
         numWorkersLaunched = metricsRegistry.registerMeter("supervisor:num-workers-launched");
+        numWorkerStartTimedOut = metricsRegistry.registerMeter("supervisor:num-worker-start-timed-out");
         numWorkersKilledFor = Collections.unmodifiableMap(EnumUtil.toEnumMap(Slot.KillReason.class,
             killReason -> metricsRegistry.registerMeter("supervisor:num-workers-killed-" + killReason.toString())));
         workerLaunchDuration = metricsRegistry.registerTimer("supervisor:worker-launch-duration");
