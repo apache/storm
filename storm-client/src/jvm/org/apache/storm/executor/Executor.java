@@ -338,6 +338,10 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         if (stormMetricRegistry == null) {
             return;
         }
+        boolean enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
+        if (!enableV2MetricsDataPoints) {
+            return;
+        }
         for (Map.Entry<String, Gauge> entry : stormMetricRegistry.registry().getGauges().entrySet()) {
             String name = entry.getKey();
             Object v = entry.getValue().getValue();
