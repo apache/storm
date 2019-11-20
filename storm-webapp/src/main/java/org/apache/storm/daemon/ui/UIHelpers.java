@@ -49,6 +49,7 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.BoltAggregateStats;
 import org.apache.storm.generated.ClusterSummary;
+import org.apache.storm.generated.ClusterTopologyOverview;
 import org.apache.storm.generated.CommonAggregateStats;
 import org.apache.storm.generated.ComponentAggregateStats;
 import org.apache.storm.generated.ComponentPageInfo;
@@ -80,6 +81,7 @@ import org.apache.storm.generated.SupervisorPageInfo;
 import org.apache.storm.generated.SupervisorSummary;
 import org.apache.storm.generated.TopologyHistoryInfo;
 import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologyOverview;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.generated.TopologySummary;
@@ -757,6 +759,27 @@ public class UIHelpers {
     }
 
     /**
+     * getTopologyOveriewMap.
+     * @param topologyOverview topologyOverview
+     * @return getTopologyOverviewMap
+     */
+    public static Map<String, Object> getTopologyOverviewMap(TopologyOverview topologyOverview) {
+        Map<String, Object> result = new HashMap();
+        result.put("id", topologyOverview.get_id());
+        result.put("encodedId", Utils.urlEncodeUtf8(topologyOverview.get_id()));
+        result.put("owner", topologyOverview.get_owner());
+        result.put("name", topologyOverview.get_name());
+        result.put("status", topologyOverview.get_status());
+        result.put("uptime", UIHelpers.prettyUptimeSec(topologyOverview.get_uptime_secs()));
+        result.put("uptimeSeconds", topologyOverview.get_uptime_secs());
+        result.put("minWorkerUptime", UIHelpers.prettyUptimeSec((topologyOverview.get_min_worker_uptime_secs())));
+        result.put("minWorkerUptimeSecondss", topologyOverview.get_min_worker_uptime_secs());
+        result.put("topologyVersion", topologyOverview.get_topology_version());
+        result.put("stormVersion", topologyOverview.get_storm_version());
+        return result;
+    }
+
+    /**
      * Get a specific owner resource summary.
      * @param ownerResourceSummaries Result from thrift call.
      * @param client client
@@ -799,6 +822,22 @@ public class UIHelpers {
             }
         }
         return topologySummaries;
+    }
+
+    /**
+     * getTopologiesOverviewMap.
+     * @param topologies topologies
+     * @return getTopologiesOverviewMap
+     */
+    private static List<Map> getTopologiesOverviewMap(List<TopologyOverview> topologies) {
+        List<Map> topologyOverviewMaps = new ArrayList();
+
+        if (topologies != null) {
+            for (TopologyOverview topologyOverview : topologies) {
+                topologyOverviewMaps.add(getTopologyOverviewMap(topologyOverview));
+            }
+        }
+        return topologyOverviewMaps;
     }
 
     /**
@@ -1071,6 +1110,18 @@ public class UIHelpers {
         Map<String, Object> result = new HashMap();
         result.put("topologies", getTopologiesMap(null, topologies));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
+        return result;
+    }
+
+    /**
+     * getClusterTopologiesOverview.
+     * @param topologies topologies
+     * @param config config
+     * @return getClusterTopologiesOverview
+     */
+    public static Map<String, Object> getClusterTopologiesOverview(ClusterTopologyOverview topologies, Map<String,Object> config) {
+        Map<String, Object> result = new HashMap();
+        result.put("topologies", getTopologiesOverviewMap(topologies.get_topology_overviews()));
         return result;
     }
 

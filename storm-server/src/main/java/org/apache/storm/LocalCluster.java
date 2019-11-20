@@ -54,6 +54,7 @@ import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.BeginDownloadResult;
 import org.apache.storm.generated.ClusterSummary;
+import org.apache.storm.generated.ClusterTopologyOverview;
 import org.apache.storm.generated.ComponentPageInfo;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.GetInfoOptions;
@@ -1012,6 +1013,12 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public List<OwnerResourceSummary> getOwnerResourceSummaries(String owner) throws AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLEMENTED YET");
+    }
+
+    @Override
+    public ClusterTopologyOverview getTopologyOverviewPageInfo() throws AuthorizationException, TException {
         // TODO Auto-generated method stub
         throw new RuntimeException("NOT IMPLEMENTED YET");
     }

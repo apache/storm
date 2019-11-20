@@ -1,0 +1,74 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+
+<script id="topology-overview-template" type="text/html">
+    <table id="topology-overview-table" class="table table-striped compact">
+        <thead>
+        <tr>
+            <th>
+                <span data-toggle="tooltip" data-placement="top" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
+                    Name
+                </span>
+            </th>
+            <th>
+                <span data-toggle="tooltip" data-placement="top" title="The owner that submitted the Topology, if authentication is enabled.">
+                    Owner
+                </span>
+            </th>
+            <th>
+                <span data-toggle="tooltip" data-placement="top" title="The status can be one of ACTIVE, INACTIVE, KILLED, or REBALANCING.">
+                    Status
+                </span>
+            </th>
+            <th>
+                <span data-toggle="tooltip" data-placement="top" title="The time since the Topology was submitted.">
+                    Uptime
+                </span>
+            </th>
+            <th>
+                <span data-toggle="tooltip" data-placement="top" title="The minimum worker uptime for the Topology.">
+                    Min Worker Uptime
+                </span>
+            </th>
+            <th>
+                <span data-toggle="tooltip" data-placement="left" title="This shows information from the scheduler about the latest attempt to schedule the Topology on the cluster.">
+                    Scheduler Info
+                </span>
+            </th>
+            <th>
+                <span data-toggle="tooltip" data-placement="left" title="The version of this topology">
+                    Topology Version
+                </span>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        {{#topologies}}
+        <tr>
+            <td><a href="/topology.html?id={{encodedId}}">{{name}}</a></td>
+            <td><a href="/owner.html?id={{owner}}">{{owner}}</a></td>
+            <td>{{status}}</td>
+            <td>{{uptime}}</td>
+            <td>{{minWorkerUptime}}</td>
+            <td>{{schedulerInfo}}</td>
+            <td>{{topologyVersion}}</td>
+        </tr>
+        {{/topologies}}
+        </tbody>
+    </table>
+</script>
