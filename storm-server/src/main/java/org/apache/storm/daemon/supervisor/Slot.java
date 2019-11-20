@@ -684,6 +684,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         long timeDiffms = (Time.currentTimeMillis() - dynamicState.startTime);
         long hbFirstTimeoutMs = getFirstHbTimeoutMs(staticState, dynamicState);
         if (timeDiffms > hbFirstTimeoutMs) {
+            staticState.slotMetrics.numWorkerStartTimedOut.mark();
             LOG.warn("SLOT {}: Container {} failed to launch in {} ms.", staticState.port, dynamicState.container,
                     hbFirstTimeoutMs);
             return killContainerFor(KillReason.HB_TIMEOUT, dynamicState, staticState);
