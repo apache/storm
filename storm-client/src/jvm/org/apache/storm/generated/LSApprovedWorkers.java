@@ -341,15 +341,15 @@ public class LSApprovedWorkers implements org.apache.storm.thrift.TBase<LSApprov
           case 1: // APPROVED_WORKERS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map800 = iprot.readMapBegin();
-                struct.approved_workers = new java.util.HashMap<java.lang.String,java.lang.Integer>(2*_map800.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key801;
-                int _val802;
-                for (int _i803 = 0; _i803 < _map800.size; ++_i803)
+                org.apache.storm.thrift.protocol.TMap _map808 = iprot.readMapBegin();
+                struct.approved_workers = new java.util.HashMap<java.lang.String,java.lang.Integer>(2*_map808.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key809;
+                int _val810;
+                for (int _i811 = 0; _i811 < _map808.size; ++_i811)
                 {
-                  _key801 = iprot.readString();
-                  _val802 = iprot.readI32();
-                  struct.approved_workers.put(_key801, _val802);
+                  _key809 = iprot.readString();
+                  _val810 = iprot.readI32();
+                  struct.approved_workers.put(_key809, _val810);
                 }
                 iprot.readMapEnd();
               }
@@ -375,10 +375,10 @@ public class LSApprovedWorkers implements org.apache.storm.thrift.TBase<LSApprov
         oprot.writeFieldBegin(APPROVED_WORKERS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I32, struct.approved_workers.size()));
-          for (java.util.Map.Entry<java.lang.String, java.lang.Integer> _iter804 : struct.approved_workers.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Integer> _iter812 : struct.approved_workers.entrySet())
           {
-            oprot.writeString(_iter804.getKey());
-            oprot.writeI32(_iter804.getValue());
+            oprot.writeString(_iter812.getKey());
+            oprot.writeI32(_iter812.getValue());
           }
           oprot.writeMapEnd();
         }
@@ -403,10 +403,10 @@ public class LSApprovedWorkers implements org.apache.storm.thrift.TBase<LSApprov
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
         oprot.writeI32(struct.approved_workers.size());
-        for (java.util.Map.Entry<java.lang.String, java.lang.Integer> _iter805 : struct.approved_workers.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.lang.Integer> _iter813 : struct.approved_workers.entrySet())
         {
-          oprot.writeString(_iter805.getKey());
-          oprot.writeI32(_iter805.getValue());
+          oprot.writeString(_iter813.getKey());
+          oprot.writeI32(_iter813.getValue());
         }
       }
     }
@@ -415,15 +415,15 @@ public class LSApprovedWorkers implements org.apache.storm.thrift.TBase<LSApprov
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, LSApprovedWorkers struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
-        org.apache.storm.thrift.protocol.TMap _map806 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I32, iprot.readI32());
-        struct.approved_workers = new java.util.HashMap<java.lang.String,java.lang.Integer>(2*_map806.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key807;
-        int _val808;
-        for (int _i809 = 0; _i809 < _map806.size; ++_i809)
+        org.apache.storm.thrift.protocol.TMap _map814 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I32, iprot.readI32());
+        struct.approved_workers = new java.util.HashMap<java.lang.String,java.lang.Integer>(2*_map814.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key815;
+        int _val816;
+        for (int _i817 = 0; _i817 < _map814.size; ++_i817)
         {
-          _key807 = iprot.readString();
-          _val808 = iprot.readI32();
-          struct.approved_workers.put(_key807, _val808);
+          _key815 = iprot.readString();
+          _val816 = iprot.readI32();
+          struct.approved_workers.put(_key815, _val816);
         }
       }
       struct.set_approved_workers_isSet(true);

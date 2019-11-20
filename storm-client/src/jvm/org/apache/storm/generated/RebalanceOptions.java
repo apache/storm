@@ -773,15 +773,15 @@ public class RebalanceOptions implements org.apache.storm.thrift.TBase<Rebalance
           case 3: // NUM_EXECUTORS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map566 = iprot.readMapBegin();
-                struct.num_executors = new java.util.HashMap<java.lang.String,java.lang.Integer>(2*_map566.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key567;
-                int _val568;
-                for (int _i569 = 0; _i569 < _map566.size; ++_i569)
+                org.apache.storm.thrift.protocol.TMap _map574 = iprot.readMapBegin();
+                struct.num_executors = new java.util.HashMap<java.lang.String,java.lang.Integer>(2*_map574.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key575;
+                int _val576;
+                for (int _i577 = 0; _i577 < _map574.size; ++_i577)
                 {
-                  _key567 = iprot.readString();
-                  _val568 = iprot.readI32();
-                  struct.num_executors.put(_key567, _val568);
+                  _key575 = iprot.readString();
+                  _val576 = iprot.readI32();
+                  struct.num_executors.put(_key575, _val576);
                 }
                 iprot.readMapEnd();
               }
@@ -793,27 +793,27 @@ public class RebalanceOptions implements org.apache.storm.thrift.TBase<Rebalance
           case 4: // TOPOLOGY_RESOURCES_OVERRIDES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map570 = iprot.readMapBegin();
-                struct.topology_resources_overrides = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Double>>(2*_map570.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key571;
-                @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> _val572;
-                for (int _i573 = 0; _i573 < _map570.size; ++_i573)
+                org.apache.storm.thrift.protocol.TMap _map578 = iprot.readMapBegin();
+                struct.topology_resources_overrides = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Double>>(2*_map578.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key579;
+                @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> _val580;
+                for (int _i581 = 0; _i581 < _map578.size; ++_i581)
                 {
-                  _key571 = iprot.readString();
+                  _key579 = iprot.readString();
                   {
-                    org.apache.storm.thrift.protocol.TMap _map574 = iprot.readMapBegin();
-                    _val572 = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map574.size);
-                    @org.apache.storm.thrift.annotation.Nullable java.lang.String _key575;
-                    double _val576;
-                    for (int _i577 = 0; _i577 < _map574.size; ++_i577)
+                    org.apache.storm.thrift.protocol.TMap _map582 = iprot.readMapBegin();
+                    _val580 = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map582.size);
+                    @org.apache.storm.thrift.annotation.Nullable java.lang.String _key583;
+                    double _val584;
+                    for (int _i585 = 0; _i585 < _map582.size; ++_i585)
                     {
-                      _key575 = iprot.readString();
-                      _val576 = iprot.readDouble();
-                      _val572.put(_key575, _val576);
+                      _key583 = iprot.readString();
+                      _val584 = iprot.readDouble();
+                      _val580.put(_key583, _val584);
                     }
                     iprot.readMapEnd();
                   }
-                  struct.topology_resources_overrides.put(_key571, _val572);
+                  struct.topology_resources_overrides.put(_key579, _val580);
                 }
                 iprot.readMapEnd();
               }
@@ -866,10 +866,10 @@ public class RebalanceOptions implements org.apache.storm.thrift.TBase<Rebalance
           oprot.writeFieldBegin(NUM_EXECUTORS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I32, struct.num_executors.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Integer> _iter578 : struct.num_executors.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Integer> _iter586 : struct.num_executors.entrySet())
             {
-              oprot.writeString(_iter578.getKey());
-              oprot.writeI32(_iter578.getValue());
+              oprot.writeString(_iter586.getKey());
+              oprot.writeI32(_iter586.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -881,15 +881,15 @@ public class RebalanceOptions implements org.apache.storm.thrift.TBase<Rebalance
           oprot.writeFieldBegin(TOPOLOGY_RESOURCES_OVERRIDES_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, struct.topology_resources_overrides.size()));
-            for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Double>> _iter579 : struct.topology_resources_overrides.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Double>> _iter587 : struct.topology_resources_overrides.entrySet())
             {
-              oprot.writeString(_iter579.getKey());
+              oprot.writeString(_iter587.getKey());
               {
-                oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, _iter579.getValue().size()));
-                for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter580 : _iter579.getValue().entrySet())
+                oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, _iter587.getValue().size()));
+                for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter588 : _iter587.getValue().entrySet())
                 {
-                  oprot.writeString(_iter580.getKey());
-                  oprot.writeDouble(_iter580.getValue());
+                  oprot.writeString(_iter588.getKey());
+                  oprot.writeDouble(_iter588.getValue());
                 }
                 oprot.writeMapEnd();
               }
@@ -959,25 +959,25 @@ public class RebalanceOptions implements org.apache.storm.thrift.TBase<Rebalance
       if (struct.is_set_num_executors()) {
         {
           oprot.writeI32(struct.num_executors.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Integer> _iter581 : struct.num_executors.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Integer> _iter589 : struct.num_executors.entrySet())
           {
-            oprot.writeString(_iter581.getKey());
-            oprot.writeI32(_iter581.getValue());
+            oprot.writeString(_iter589.getKey());
+            oprot.writeI32(_iter589.getValue());
           }
         }
       }
       if (struct.is_set_topology_resources_overrides()) {
         {
           oprot.writeI32(struct.topology_resources_overrides.size());
-          for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Double>> _iter582 : struct.topology_resources_overrides.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Double>> _iter590 : struct.topology_resources_overrides.entrySet())
           {
-            oprot.writeString(_iter582.getKey());
+            oprot.writeString(_iter590.getKey());
             {
-              oprot.writeI32(_iter582.getValue().size());
-              for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter583 : _iter582.getValue().entrySet())
+              oprot.writeI32(_iter590.getValue().size());
+              for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter591 : _iter590.getValue().entrySet())
               {
-                oprot.writeString(_iter583.getKey());
-                oprot.writeDouble(_iter583.getValue());
+                oprot.writeString(_iter591.getKey());
+                oprot.writeDouble(_iter591.getValue());
               }
             }
           }
@@ -1005,41 +1005,41 @@ public class RebalanceOptions implements org.apache.storm.thrift.TBase<Rebalance
       }
       if (incoming.get(2)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map584 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I32, iprot.readI32());
-          struct.num_executors = new java.util.HashMap<java.lang.String,java.lang.Integer>(2*_map584.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key585;
-          int _val586;
-          for (int _i587 = 0; _i587 < _map584.size; ++_i587)
+          org.apache.storm.thrift.protocol.TMap _map592 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I32, iprot.readI32());
+          struct.num_executors = new java.util.HashMap<java.lang.String,java.lang.Integer>(2*_map592.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key593;
+          int _val594;
+          for (int _i595 = 0; _i595 < _map592.size; ++_i595)
           {
-            _key585 = iprot.readString();
-            _val586 = iprot.readI32();
-            struct.num_executors.put(_key585, _val586);
+            _key593 = iprot.readString();
+            _val594 = iprot.readI32();
+            struct.num_executors.put(_key593, _val594);
           }
         }
         struct.set_num_executors_isSet(true);
       }
       if (incoming.get(3)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map588 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
-          struct.topology_resources_overrides = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Double>>(2*_map588.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key589;
-          @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> _val590;
-          for (int _i591 = 0; _i591 < _map588.size; ++_i591)
+          org.apache.storm.thrift.protocol.TMap _map596 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
+          struct.topology_resources_overrides = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Double>>(2*_map596.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key597;
+          @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> _val598;
+          for (int _i599 = 0; _i599 < _map596.size; ++_i599)
           {
-            _key589 = iprot.readString();
+            _key597 = iprot.readString();
             {
-              org.apache.storm.thrift.protocol.TMap _map592 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-              _val590 = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map592.size);
-              @org.apache.storm.thrift.annotation.Nullable java.lang.String _key593;
-              double _val594;
-              for (int _i595 = 0; _i595 < _map592.size; ++_i595)
+              org.apache.storm.thrift.protocol.TMap _map600 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+              _val598 = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map600.size);
+              @org.apache.storm.thrift.annotation.Nullable java.lang.String _key601;
+              double _val602;
+              for (int _i603 = 0; _i603 < _map600.size; ++_i603)
               {
-                _key593 = iprot.readString();
-                _val594 = iprot.readDouble();
-                _val590.put(_key593, _val594);
+                _key601 = iprot.readString();
+                _val602 = iprot.readDouble();
+                _val598.put(_key601, _val602);
               }
             }
-            struct.topology_resources_overrides.put(_key589, _val590);
+            struct.topology_resources_overrides.put(_key597, _val598);
           }
         }
         struct.set_topology_resources_overrides_isSet(true);

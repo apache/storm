@@ -857,41 +857,8 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
           case 1: // ACKED
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map160 = iprot.readMapBegin();
-                struct.acked = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map160.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key161;
-                @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val162;
-                for (int _i163 = 0; _i163 < _map160.size; ++_i163)
-                {
-                  _key161 = iprot.readString();
-                  {
-                    org.apache.storm.thrift.protocol.TMap _map164 = iprot.readMapBegin();
-                    _val162 = new java.util.HashMap<GlobalStreamId,java.lang.Long>(2*_map164.size);
-                    @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key165;
-                    long _val166;
-                    for (int _i167 = 0; _i167 < _map164.size; ++_i167)
-                    {
-                      _key165 = new GlobalStreamId();
-                      _key165.read(iprot);
-                      _val166 = iprot.readI64();
-                      _val162.put(_key165, _val166);
-                    }
-                    iprot.readMapEnd();
-                  }
-                  struct.acked.put(_key161, _val162);
-                }
-                iprot.readMapEnd();
-              }
-              struct.set_acked_isSet(true);
-            } else { 
-              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-            }
-            break;
-          case 2: // FAILED
-            if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
-              {
                 org.apache.storm.thrift.protocol.TMap _map168 = iprot.readMapBegin();
-                struct.failed = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map168.size);
+                struct.acked = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map168.size);
                 @org.apache.storm.thrift.annotation.Nullable java.lang.String _key169;
                 @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val170;
                 for (int _i171 = 0; _i171 < _map168.size; ++_i171)
@@ -911,7 +878,40 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
                     }
                     iprot.readMapEnd();
                   }
-                  struct.failed.put(_key169, _val170);
+                  struct.acked.put(_key169, _val170);
+                }
+                iprot.readMapEnd();
+              }
+              struct.set_acked_isSet(true);
+            } else { 
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 2: // FAILED
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
+              {
+                org.apache.storm.thrift.protocol.TMap _map176 = iprot.readMapBegin();
+                struct.failed = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map176.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key177;
+                @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val178;
+                for (int _i179 = 0; _i179 < _map176.size; ++_i179)
+                {
+                  _key177 = iprot.readString();
+                  {
+                    org.apache.storm.thrift.protocol.TMap _map180 = iprot.readMapBegin();
+                    _val178 = new java.util.HashMap<GlobalStreamId,java.lang.Long>(2*_map180.size);
+                    @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key181;
+                    long _val182;
+                    for (int _i183 = 0; _i183 < _map180.size; ++_i183)
+                    {
+                      _key181 = new GlobalStreamId();
+                      _key181.read(iprot);
+                      _val182 = iprot.readI64();
+                      _val178.put(_key181, _val182);
+                    }
+                    iprot.readMapEnd();
+                  }
+                  struct.failed.put(_key177, _val178);
                 }
                 iprot.readMapEnd();
               }
@@ -923,28 +923,28 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
           case 3: // PROCESS_MS_AVG
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map176 = iprot.readMapBegin();
-                struct.process_ms_avg = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Double>>(2*_map176.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key177;
-                @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Double> _val178;
-                for (int _i179 = 0; _i179 < _map176.size; ++_i179)
+                org.apache.storm.thrift.protocol.TMap _map184 = iprot.readMapBegin();
+                struct.process_ms_avg = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Double>>(2*_map184.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key185;
+                @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Double> _val186;
+                for (int _i187 = 0; _i187 < _map184.size; ++_i187)
                 {
-                  _key177 = iprot.readString();
+                  _key185 = iprot.readString();
                   {
-                    org.apache.storm.thrift.protocol.TMap _map180 = iprot.readMapBegin();
-                    _val178 = new java.util.HashMap<GlobalStreamId,java.lang.Double>(2*_map180.size);
-                    @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key181;
-                    double _val182;
-                    for (int _i183 = 0; _i183 < _map180.size; ++_i183)
+                    org.apache.storm.thrift.protocol.TMap _map188 = iprot.readMapBegin();
+                    _val186 = new java.util.HashMap<GlobalStreamId,java.lang.Double>(2*_map188.size);
+                    @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key189;
+                    double _val190;
+                    for (int _i191 = 0; _i191 < _map188.size; ++_i191)
                     {
-                      _key181 = new GlobalStreamId();
-                      _key181.read(iprot);
-                      _val182 = iprot.readDouble();
-                      _val178.put(_key181, _val182);
+                      _key189 = new GlobalStreamId();
+                      _key189.read(iprot);
+                      _val190 = iprot.readDouble();
+                      _val186.put(_key189, _val190);
                     }
                     iprot.readMapEnd();
                   }
-                  struct.process_ms_avg.put(_key177, _val178);
+                  struct.process_ms_avg.put(_key185, _val186);
                 }
                 iprot.readMapEnd();
               }
@@ -956,28 +956,28 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
           case 4: // EXECUTED
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map184 = iprot.readMapBegin();
-                struct.executed = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map184.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key185;
-                @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val186;
-                for (int _i187 = 0; _i187 < _map184.size; ++_i187)
+                org.apache.storm.thrift.protocol.TMap _map192 = iprot.readMapBegin();
+                struct.executed = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map192.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key193;
+                @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val194;
+                for (int _i195 = 0; _i195 < _map192.size; ++_i195)
                 {
-                  _key185 = iprot.readString();
+                  _key193 = iprot.readString();
                   {
-                    org.apache.storm.thrift.protocol.TMap _map188 = iprot.readMapBegin();
-                    _val186 = new java.util.HashMap<GlobalStreamId,java.lang.Long>(2*_map188.size);
-                    @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key189;
-                    long _val190;
-                    for (int _i191 = 0; _i191 < _map188.size; ++_i191)
+                    org.apache.storm.thrift.protocol.TMap _map196 = iprot.readMapBegin();
+                    _val194 = new java.util.HashMap<GlobalStreamId,java.lang.Long>(2*_map196.size);
+                    @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key197;
+                    long _val198;
+                    for (int _i199 = 0; _i199 < _map196.size; ++_i199)
                     {
-                      _key189 = new GlobalStreamId();
-                      _key189.read(iprot);
-                      _val190 = iprot.readI64();
-                      _val186.put(_key189, _val190);
+                      _key197 = new GlobalStreamId();
+                      _key197.read(iprot);
+                      _val198 = iprot.readI64();
+                      _val194.put(_key197, _val198);
                     }
                     iprot.readMapEnd();
                   }
-                  struct.executed.put(_key185, _val186);
+                  struct.executed.put(_key193, _val194);
                 }
                 iprot.readMapEnd();
               }
@@ -989,28 +989,28 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
           case 5: // EXECUTE_MS_AVG
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map192 = iprot.readMapBegin();
-                struct.execute_ms_avg = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Double>>(2*_map192.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key193;
-                @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Double> _val194;
-                for (int _i195 = 0; _i195 < _map192.size; ++_i195)
+                org.apache.storm.thrift.protocol.TMap _map200 = iprot.readMapBegin();
+                struct.execute_ms_avg = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Double>>(2*_map200.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key201;
+                @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Double> _val202;
+                for (int _i203 = 0; _i203 < _map200.size; ++_i203)
                 {
-                  _key193 = iprot.readString();
+                  _key201 = iprot.readString();
                   {
-                    org.apache.storm.thrift.protocol.TMap _map196 = iprot.readMapBegin();
-                    _val194 = new java.util.HashMap<GlobalStreamId,java.lang.Double>(2*_map196.size);
-                    @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key197;
-                    double _val198;
-                    for (int _i199 = 0; _i199 < _map196.size; ++_i199)
+                    org.apache.storm.thrift.protocol.TMap _map204 = iprot.readMapBegin();
+                    _val202 = new java.util.HashMap<GlobalStreamId,java.lang.Double>(2*_map204.size);
+                    @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key205;
+                    double _val206;
+                    for (int _i207 = 0; _i207 < _map204.size; ++_i207)
                     {
-                      _key197 = new GlobalStreamId();
-                      _key197.read(iprot);
-                      _val198 = iprot.readDouble();
-                      _val194.put(_key197, _val198);
+                      _key205 = new GlobalStreamId();
+                      _key205.read(iprot);
+                      _val206 = iprot.readDouble();
+                      _val202.put(_key205, _val206);
                     }
                     iprot.readMapEnd();
                   }
-                  struct.execute_ms_avg.put(_key193, _val194);
+                  struct.execute_ms_avg.put(_key201, _val202);
                 }
                 iprot.readMapEnd();
               }
@@ -1036,15 +1036,15 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
         oprot.writeFieldBegin(ACKED_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, struct.acked.size()));
-          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter200 : struct.acked.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter208 : struct.acked.entrySet())
           {
-            oprot.writeString(_iter200.getKey());
+            oprot.writeString(_iter208.getKey());
             {
-              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, _iter200.getValue().size()));
-              for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter201 : _iter200.getValue().entrySet())
+              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, _iter208.getValue().size()));
+              for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter209 : _iter208.getValue().entrySet())
               {
-                _iter201.getKey().write(oprot);
-                oprot.writeI64(_iter201.getValue());
+                _iter209.getKey().write(oprot);
+                oprot.writeI64(_iter209.getValue());
               }
               oprot.writeMapEnd();
             }
@@ -1057,15 +1057,15 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
         oprot.writeFieldBegin(FAILED_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, struct.failed.size()));
-          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter202 : struct.failed.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter210 : struct.failed.entrySet())
           {
-            oprot.writeString(_iter202.getKey());
+            oprot.writeString(_iter210.getKey());
             {
-              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, _iter202.getValue().size()));
-              for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter203 : _iter202.getValue().entrySet())
+              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, _iter210.getValue().size()));
+              for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter211 : _iter210.getValue().entrySet())
               {
-                _iter203.getKey().write(oprot);
-                oprot.writeI64(_iter203.getValue());
+                _iter211.getKey().write(oprot);
+                oprot.writeI64(_iter211.getValue());
               }
               oprot.writeMapEnd();
             }
@@ -1078,15 +1078,15 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
         oprot.writeFieldBegin(PROCESS_MS_AVG_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, struct.process_ms_avg.size()));
-          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Double>> _iter204 : struct.process_ms_avg.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Double>> _iter212 : struct.process_ms_avg.entrySet())
           {
-            oprot.writeString(_iter204.getKey());
+            oprot.writeString(_iter212.getKey());
             {
-              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.DOUBLE, _iter204.getValue().size()));
-              for (java.util.Map.Entry<GlobalStreamId, java.lang.Double> _iter205 : _iter204.getValue().entrySet())
+              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.DOUBLE, _iter212.getValue().size()));
+              for (java.util.Map.Entry<GlobalStreamId, java.lang.Double> _iter213 : _iter212.getValue().entrySet())
               {
-                _iter205.getKey().write(oprot);
-                oprot.writeDouble(_iter205.getValue());
+                _iter213.getKey().write(oprot);
+                oprot.writeDouble(_iter213.getValue());
               }
               oprot.writeMapEnd();
             }
@@ -1099,15 +1099,15 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
         oprot.writeFieldBegin(EXECUTED_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, struct.executed.size()));
-          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter206 : struct.executed.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter214 : struct.executed.entrySet())
           {
-            oprot.writeString(_iter206.getKey());
+            oprot.writeString(_iter214.getKey());
             {
-              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, _iter206.getValue().size()));
-              for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter207 : _iter206.getValue().entrySet())
+              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, _iter214.getValue().size()));
+              for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter215 : _iter214.getValue().entrySet())
               {
-                _iter207.getKey().write(oprot);
-                oprot.writeI64(_iter207.getValue());
+                _iter215.getKey().write(oprot);
+                oprot.writeI64(_iter215.getValue());
               }
               oprot.writeMapEnd();
             }
@@ -1120,15 +1120,15 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
         oprot.writeFieldBegin(EXECUTE_MS_AVG_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, struct.execute_ms_avg.size()));
-          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Double>> _iter208 : struct.execute_ms_avg.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Double>> _iter216 : struct.execute_ms_avg.entrySet())
           {
-            oprot.writeString(_iter208.getKey());
+            oprot.writeString(_iter216.getKey());
             {
-              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.DOUBLE, _iter208.getValue().size()));
-              for (java.util.Map.Entry<GlobalStreamId, java.lang.Double> _iter209 : _iter208.getValue().entrySet())
+              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.DOUBLE, _iter216.getValue().size()));
+              for (java.util.Map.Entry<GlobalStreamId, java.lang.Double> _iter217 : _iter216.getValue().entrySet())
               {
-                _iter209.getKey().write(oprot);
-                oprot.writeDouble(_iter209.getValue());
+                _iter217.getKey().write(oprot);
+                oprot.writeDouble(_iter217.getValue());
               }
               oprot.writeMapEnd();
             }
@@ -1156,75 +1156,75 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
         oprot.writeI32(struct.acked.size());
-        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter210 : struct.acked.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter218 : struct.acked.entrySet())
         {
-          oprot.writeString(_iter210.getKey());
+          oprot.writeString(_iter218.getKey());
           {
-            oprot.writeI32(_iter210.getValue().size());
-            for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter211 : _iter210.getValue().entrySet())
+            oprot.writeI32(_iter218.getValue().size());
+            for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter219 : _iter218.getValue().entrySet())
             {
-              _iter211.getKey().write(oprot);
-              oprot.writeI64(_iter211.getValue());
+              _iter219.getKey().write(oprot);
+              oprot.writeI64(_iter219.getValue());
             }
           }
         }
       }
       {
         oprot.writeI32(struct.failed.size());
-        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter212 : struct.failed.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter220 : struct.failed.entrySet())
         {
-          oprot.writeString(_iter212.getKey());
+          oprot.writeString(_iter220.getKey());
           {
-            oprot.writeI32(_iter212.getValue().size());
-            for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter213 : _iter212.getValue().entrySet())
+            oprot.writeI32(_iter220.getValue().size());
+            for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter221 : _iter220.getValue().entrySet())
             {
-              _iter213.getKey().write(oprot);
-              oprot.writeI64(_iter213.getValue());
+              _iter221.getKey().write(oprot);
+              oprot.writeI64(_iter221.getValue());
             }
           }
         }
       }
       {
         oprot.writeI32(struct.process_ms_avg.size());
-        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Double>> _iter214 : struct.process_ms_avg.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Double>> _iter222 : struct.process_ms_avg.entrySet())
         {
-          oprot.writeString(_iter214.getKey());
+          oprot.writeString(_iter222.getKey());
           {
-            oprot.writeI32(_iter214.getValue().size());
-            for (java.util.Map.Entry<GlobalStreamId, java.lang.Double> _iter215 : _iter214.getValue().entrySet())
+            oprot.writeI32(_iter222.getValue().size());
+            for (java.util.Map.Entry<GlobalStreamId, java.lang.Double> _iter223 : _iter222.getValue().entrySet())
             {
-              _iter215.getKey().write(oprot);
-              oprot.writeDouble(_iter215.getValue());
+              _iter223.getKey().write(oprot);
+              oprot.writeDouble(_iter223.getValue());
             }
           }
         }
       }
       {
         oprot.writeI32(struct.executed.size());
-        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter216 : struct.executed.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Long>> _iter224 : struct.executed.entrySet())
         {
-          oprot.writeString(_iter216.getKey());
+          oprot.writeString(_iter224.getKey());
           {
-            oprot.writeI32(_iter216.getValue().size());
-            for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter217 : _iter216.getValue().entrySet())
+            oprot.writeI32(_iter224.getValue().size());
+            for (java.util.Map.Entry<GlobalStreamId, java.lang.Long> _iter225 : _iter224.getValue().entrySet())
             {
-              _iter217.getKey().write(oprot);
-              oprot.writeI64(_iter217.getValue());
+              _iter225.getKey().write(oprot);
+              oprot.writeI64(_iter225.getValue());
             }
           }
         }
       }
       {
         oprot.writeI32(struct.execute_ms_avg.size());
-        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Double>> _iter218 : struct.execute_ms_avg.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.util.Map<GlobalStreamId,java.lang.Double>> _iter226 : struct.execute_ms_avg.entrySet())
         {
-          oprot.writeString(_iter218.getKey());
+          oprot.writeString(_iter226.getKey());
           {
-            oprot.writeI32(_iter218.getValue().size());
-            for (java.util.Map.Entry<GlobalStreamId, java.lang.Double> _iter219 : _iter218.getValue().entrySet())
+            oprot.writeI32(_iter226.getValue().size());
+            for (java.util.Map.Entry<GlobalStreamId, java.lang.Double> _iter227 : _iter226.getValue().entrySet())
             {
-              _iter219.getKey().write(oprot);
-              oprot.writeDouble(_iter219.getValue());
+              _iter227.getKey().write(oprot);
+              oprot.writeDouble(_iter227.getValue());
             }
           }
         }
@@ -1235,33 +1235,8 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, BoltStats struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
-        org.apache.storm.thrift.protocol.TMap _map220 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
-        struct.acked = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map220.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key221;
-        @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val222;
-        for (int _i223 = 0; _i223 < _map220.size; ++_i223)
-        {
-          _key221 = iprot.readString();
-          {
-            org.apache.storm.thrift.protocol.TMap _map224 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-            _val222 = new java.util.HashMap<GlobalStreamId,java.lang.Long>(2*_map224.size);
-            @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key225;
-            long _val226;
-            for (int _i227 = 0; _i227 < _map224.size; ++_i227)
-            {
-              _key225 = new GlobalStreamId();
-              _key225.read(iprot);
-              _val226 = iprot.readI64();
-              _val222.put(_key225, _val226);
-            }
-          }
-          struct.acked.put(_key221, _val222);
-        }
-      }
-      struct.set_acked_isSet(true);
-      {
         org.apache.storm.thrift.protocol.TMap _map228 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
-        struct.failed = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map228.size);
+        struct.acked = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map228.size);
         @org.apache.storm.thrift.annotation.Nullable java.lang.String _key229;
         @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val230;
         for (int _i231 = 0; _i231 < _map228.size; ++_i231)
@@ -1280,82 +1255,107 @@ public class BoltStats implements org.apache.storm.thrift.TBase<BoltStats, BoltS
               _val230.put(_key233, _val234);
             }
           }
-          struct.failed.put(_key229, _val230);
+          struct.acked.put(_key229, _val230);
         }
       }
-      struct.set_failed_isSet(true);
+      struct.set_acked_isSet(true);
       {
         org.apache.storm.thrift.protocol.TMap _map236 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
-        struct.process_ms_avg = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Double>>(2*_map236.size);
+        struct.failed = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map236.size);
         @org.apache.storm.thrift.annotation.Nullable java.lang.String _key237;
-        @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Double> _val238;
+        @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val238;
         for (int _i239 = 0; _i239 < _map236.size; ++_i239)
         {
           _key237 = iprot.readString();
           {
-            org.apache.storm.thrift.protocol.TMap _map240 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-            _val238 = new java.util.HashMap<GlobalStreamId,java.lang.Double>(2*_map240.size);
+            org.apache.storm.thrift.protocol.TMap _map240 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+            _val238 = new java.util.HashMap<GlobalStreamId,java.lang.Long>(2*_map240.size);
             @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key241;
-            double _val242;
+            long _val242;
             for (int _i243 = 0; _i243 < _map240.size; ++_i243)
             {
               _key241 = new GlobalStreamId();
               _key241.read(iprot);
-              _val242 = iprot.readDouble();
+              _val242 = iprot.readI64();
               _val238.put(_key241, _val242);
             }
           }
-          struct.process_ms_avg.put(_key237, _val238);
+          struct.failed.put(_key237, _val238);
         }
       }
-      struct.set_process_ms_avg_isSet(true);
+      struct.set_failed_isSet(true);
       {
         org.apache.storm.thrift.protocol.TMap _map244 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
-        struct.executed = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map244.size);
+        struct.process_ms_avg = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Double>>(2*_map244.size);
         @org.apache.storm.thrift.annotation.Nullable java.lang.String _key245;
-        @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val246;
+        @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Double> _val246;
         for (int _i247 = 0; _i247 < _map244.size; ++_i247)
         {
           _key245 = iprot.readString();
           {
-            org.apache.storm.thrift.protocol.TMap _map248 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-            _val246 = new java.util.HashMap<GlobalStreamId,java.lang.Long>(2*_map248.size);
+            org.apache.storm.thrift.protocol.TMap _map248 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+            _val246 = new java.util.HashMap<GlobalStreamId,java.lang.Double>(2*_map248.size);
             @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key249;
-            long _val250;
+            double _val250;
             for (int _i251 = 0; _i251 < _map248.size; ++_i251)
             {
               _key249 = new GlobalStreamId();
               _key249.read(iprot);
-              _val250 = iprot.readI64();
+              _val250 = iprot.readDouble();
               _val246.put(_key249, _val250);
             }
           }
-          struct.executed.put(_key245, _val246);
+          struct.process_ms_avg.put(_key245, _val246);
         }
       }
-      struct.set_executed_isSet(true);
+      struct.set_process_ms_avg_isSet(true);
       {
         org.apache.storm.thrift.protocol.TMap _map252 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
-        struct.execute_ms_avg = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Double>>(2*_map252.size);
+        struct.executed = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Long>>(2*_map252.size);
         @org.apache.storm.thrift.annotation.Nullable java.lang.String _key253;
-        @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Double> _val254;
+        @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Long> _val254;
         for (int _i255 = 0; _i255 < _map252.size; ++_i255)
         {
           _key253 = iprot.readString();
           {
-            org.apache.storm.thrift.protocol.TMap _map256 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-            _val254 = new java.util.HashMap<GlobalStreamId,java.lang.Double>(2*_map256.size);
+            org.apache.storm.thrift.protocol.TMap _map256 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+            _val254 = new java.util.HashMap<GlobalStreamId,java.lang.Long>(2*_map256.size);
             @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key257;
-            double _val258;
+            long _val258;
             for (int _i259 = 0; _i259 < _map256.size; ++_i259)
             {
               _key257 = new GlobalStreamId();
               _key257.read(iprot);
-              _val258 = iprot.readDouble();
+              _val258 = iprot.readI64();
               _val254.put(_key257, _val258);
             }
           }
-          struct.execute_ms_avg.put(_key253, _val254);
+          struct.executed.put(_key253, _val254);
+        }
+      }
+      struct.set_executed_isSet(true);
+      {
+        org.apache.storm.thrift.protocol.TMap _map260 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
+        struct.execute_ms_avg = new java.util.HashMap<java.lang.String,java.util.Map<GlobalStreamId,java.lang.Double>>(2*_map260.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key261;
+        @org.apache.storm.thrift.annotation.Nullable java.util.Map<GlobalStreamId,java.lang.Double> _val262;
+        for (int _i263 = 0; _i263 < _map260.size; ++_i263)
+        {
+          _key261 = iprot.readString();
+          {
+            org.apache.storm.thrift.protocol.TMap _map264 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+            _val262 = new java.util.HashMap<GlobalStreamId,java.lang.Double>(2*_map264.size);
+            @org.apache.storm.thrift.annotation.Nullable GlobalStreamId _key265;
+            double _val266;
+            for (int _i267 = 0; _i267 < _map264.size; ++_i267)
+            {
+              _key265 = new GlobalStreamId();
+              _key265.read(iprot);
+              _val266 = iprot.readDouble();
+              _val262.put(_key265, _val266);
+            }
+          }
+          struct.execute_ms_avg.put(_key261, _val262);
         }
       }
       struct.set_execute_ms_avg_isSet(true);

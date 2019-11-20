@@ -341,13 +341,13 @@ public class TopologyHistoryInfo implements org.apache.storm.thrift.TBase<Topolo
           case 1: // TOPO_IDS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list862 = iprot.readListBegin();
-                struct.topo_ids = new java.util.ArrayList<java.lang.String>(_list862.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem863;
-                for (int _i864 = 0; _i864 < _list862.size; ++_i864)
+                org.apache.storm.thrift.protocol.TList _list870 = iprot.readListBegin();
+                struct.topo_ids = new java.util.ArrayList<java.lang.String>(_list870.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem871;
+                for (int _i872 = 0; _i872 < _list870.size; ++_i872)
                 {
-                  _elem863 = iprot.readString();
-                  struct.topo_ids.add(_elem863);
+                  _elem871 = iprot.readString();
+                  struct.topo_ids.add(_elem871);
                 }
                 iprot.readListEnd();
               }
@@ -373,9 +373,9 @@ public class TopologyHistoryInfo implements org.apache.storm.thrift.TBase<Topolo
         oprot.writeFieldBegin(TOPO_IDS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, struct.topo_ids.size()));
-          for (java.lang.String _iter865 : struct.topo_ids)
+          for (java.lang.String _iter873 : struct.topo_ids)
           {
-            oprot.writeString(_iter865);
+            oprot.writeString(_iter873);
           }
           oprot.writeListEnd();
         }
@@ -406,9 +406,9 @@ public class TopologyHistoryInfo implements org.apache.storm.thrift.TBase<Topolo
       if (struct.is_set_topo_ids()) {
         {
           oprot.writeI32(struct.topo_ids.size());
-          for (java.lang.String _iter866 : struct.topo_ids)
+          for (java.lang.String _iter874 : struct.topo_ids)
           {
-            oprot.writeString(_iter866);
+            oprot.writeString(_iter874);
           }
         }
       }
@@ -420,13 +420,13 @@ public class TopologyHistoryInfo implements org.apache.storm.thrift.TBase<Topolo
       java.util.BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.storm.thrift.protocol.TList _list867 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
-          struct.topo_ids = new java.util.ArrayList<java.lang.String>(_list867.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem868;
-          for (int _i869 = 0; _i869 < _list867.size; ++_i869)
+          org.apache.storm.thrift.protocol.TList _list875 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
+          struct.topo_ids = new java.util.ArrayList<java.lang.String>(_list875.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem876;
+          for (int _i877 = 0; _i877 < _list875.size; ++_i877)
           {
-            _elem868 = iprot.readString();
-            struct.topo_ids.add(_elem868);
+            _elem876 = iprot.readString();
+            struct.topo_ids.add(_elem876);
           }
         }
         struct.set_topo_ids_isSet(true);

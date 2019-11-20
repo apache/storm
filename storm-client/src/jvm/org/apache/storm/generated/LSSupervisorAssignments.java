@@ -352,16 +352,16 @@ public class LSSupervisorAssignments implements org.apache.storm.thrift.TBase<LS
           case 1: // ASSIGNMENTS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map810 = iprot.readMapBegin();
-                struct.assignments = new java.util.HashMap<java.lang.Integer,LocalAssignment>(2*_map810.size);
-                int _key811;
-                @org.apache.storm.thrift.annotation.Nullable LocalAssignment _val812;
-                for (int _i813 = 0; _i813 < _map810.size; ++_i813)
+                org.apache.storm.thrift.protocol.TMap _map818 = iprot.readMapBegin();
+                struct.assignments = new java.util.HashMap<java.lang.Integer,LocalAssignment>(2*_map818.size);
+                int _key819;
+                @org.apache.storm.thrift.annotation.Nullable LocalAssignment _val820;
+                for (int _i821 = 0; _i821 < _map818.size; ++_i821)
                 {
-                  _key811 = iprot.readI32();
-                  _val812 = new LocalAssignment();
-                  _val812.read(iprot);
-                  struct.assignments.put(_key811, _val812);
+                  _key819 = iprot.readI32();
+                  _val820 = new LocalAssignment();
+                  _val820.read(iprot);
+                  struct.assignments.put(_key819, _val820);
                 }
                 iprot.readMapEnd();
               }
@@ -387,10 +387,10 @@ public class LSSupervisorAssignments implements org.apache.storm.thrift.TBase<LS
         oprot.writeFieldBegin(ASSIGNMENTS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.I32, org.apache.storm.thrift.protocol.TType.STRUCT, struct.assignments.size()));
-          for (java.util.Map.Entry<java.lang.Integer, LocalAssignment> _iter814 : struct.assignments.entrySet())
+          for (java.util.Map.Entry<java.lang.Integer, LocalAssignment> _iter822 : struct.assignments.entrySet())
           {
-            oprot.writeI32(_iter814.getKey());
-            _iter814.getValue().write(oprot);
+            oprot.writeI32(_iter822.getKey());
+            _iter822.getValue().write(oprot);
           }
           oprot.writeMapEnd();
         }
@@ -415,10 +415,10 @@ public class LSSupervisorAssignments implements org.apache.storm.thrift.TBase<LS
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
         oprot.writeI32(struct.assignments.size());
-        for (java.util.Map.Entry<java.lang.Integer, LocalAssignment> _iter815 : struct.assignments.entrySet())
+        for (java.util.Map.Entry<java.lang.Integer, LocalAssignment> _iter823 : struct.assignments.entrySet())
         {
-          oprot.writeI32(_iter815.getKey());
-          _iter815.getValue().write(oprot);
+          oprot.writeI32(_iter823.getKey());
+          _iter823.getValue().write(oprot);
         }
       }
     }
@@ -427,16 +427,16 @@ public class LSSupervisorAssignments implements org.apache.storm.thrift.TBase<LS
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, LSSupervisorAssignments struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
-        org.apache.storm.thrift.protocol.TMap _map816 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.I32, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.assignments = new java.util.HashMap<java.lang.Integer,LocalAssignment>(2*_map816.size);
-        int _key817;
-        @org.apache.storm.thrift.annotation.Nullable LocalAssignment _val818;
-        for (int _i819 = 0; _i819 < _map816.size; ++_i819)
+        org.apache.storm.thrift.protocol.TMap _map824 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.I32, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.assignments = new java.util.HashMap<java.lang.Integer,LocalAssignment>(2*_map824.size);
+        int _key825;
+        @org.apache.storm.thrift.annotation.Nullable LocalAssignment _val826;
+        for (int _i827 = 0; _i827 < _map824.size; ++_i827)
         {
-          _key817 = iprot.readI32();
-          _val818 = new LocalAssignment();
-          _val818.read(iprot);
-          struct.assignments.put(_key817, _val818);
+          _key825 = iprot.readI32();
+          _val826 = new LocalAssignment();
+          _val826.read(iprot);
+          struct.assignments.put(_key825, _val826);
         }
       }
       struct.set_assignments_isSet(true);

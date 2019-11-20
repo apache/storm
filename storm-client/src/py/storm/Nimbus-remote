@@ -82,6 +82,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  TopologyPageInfo getTopologyPageInfo(string id, string window, bool is_include_sys)')
     print('  SupervisorPageInfo getSupervisorPageInfo(string id, string host, bool is_include_sys)')
     print('  ComponentPageInfo getComponentPageInfo(string topology_id, string component_id, string window, bool is_include_sys)')
+    print('  ClusterTopologyOverview getTopologyOverviewPageInfo()')
     print('  string getTopologyConf(string id)')
     print('  StormTopology getTopology(string id)')
     print('  StormTopology getUserTopology(string id)')
@@ -410,6 +411,12 @@ elif cmd == 'getComponentPageInfo':
         print('getComponentPageInfo requires 4 args')
         sys.exit(1)
     pp.pprint(client.getComponentPageInfo(args[0], args[1], args[2], eval(args[3]),))
+
+elif cmd == 'getTopologyOverviewPageInfo':
+    if len(args) != 0:
+        print('getTopologyOverviewPageInfo requires 0 args')
+        sys.exit(1)
+    pp.pprint(client.getTopologyOverviewPageInfo())
 
 elif cmd == 'getTopologyConf':
     if len(args) != 1:

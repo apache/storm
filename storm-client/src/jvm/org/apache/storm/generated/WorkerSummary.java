@@ -1540,15 +1540,15 @@ public class WorkerSummary implements org.apache.storm.thrift.TBase<WorkerSummar
           case 7: // COMPONENT_TO_NUM_TASKS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map456 = iprot.readMapBegin();
-                struct.component_to_num_tasks = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map456.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key457;
-                long _val458;
-                for (int _i459 = 0; _i459 < _map456.size; ++_i459)
+                org.apache.storm.thrift.protocol.TMap _map464 = iprot.readMapBegin();
+                struct.component_to_num_tasks = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map464.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key465;
+                long _val466;
+                for (int _i467 = 0; _i467 < _map464.size; ++_i467)
                 {
-                  _key457 = iprot.readString();
-                  _val458 = iprot.readI64();
-                  struct.component_to_num_tasks.put(_key457, _val458);
+                  _key465 = iprot.readString();
+                  _val466 = iprot.readI64();
+                  struct.component_to_num_tasks.put(_key465, _val466);
                 }
                 iprot.readMapEnd();
               }
@@ -1685,10 +1685,10 @@ public class WorkerSummary implements org.apache.storm.thrift.TBase<WorkerSummar
           oprot.writeFieldBegin(COMPONENT_TO_NUM_TASKS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, struct.component_to_num_tasks.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter460 : struct.component_to_num_tasks.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter468 : struct.component_to_num_tasks.entrySet())
             {
-              oprot.writeString(_iter460.getKey());
-              oprot.writeI64(_iter460.getValue());
+              oprot.writeString(_iter468.getKey());
+              oprot.writeI64(_iter468.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1830,10 +1830,10 @@ public class WorkerSummary implements org.apache.storm.thrift.TBase<WorkerSummar
       if (struct.is_set_component_to_num_tasks()) {
         {
           oprot.writeI32(struct.component_to_num_tasks.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter461 : struct.component_to_num_tasks.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter469 : struct.component_to_num_tasks.entrySet())
           {
-            oprot.writeString(_iter461.getKey());
-            oprot.writeI64(_iter461.getValue());
+            oprot.writeString(_iter469.getKey());
+            oprot.writeI64(_iter469.getValue());
           }
         }
       }
@@ -1896,15 +1896,15 @@ public class WorkerSummary implements org.apache.storm.thrift.TBase<WorkerSummar
       }
       if (incoming.get(6)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map462 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-          struct.component_to_num_tasks = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map462.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key463;
-          long _val464;
-          for (int _i465 = 0; _i465 < _map462.size; ++_i465)
+          org.apache.storm.thrift.protocol.TMap _map470 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+          struct.component_to_num_tasks = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map470.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key471;
+          long _val472;
+          for (int _i473 = 0; _i473 < _map470.size; ++_i473)
           {
-            _key463 = iprot.readString();
-            _val464 = iprot.readI64();
-            struct.component_to_num_tasks.put(_key463, _val464);
+            _key471 = iprot.readString();
+            _val472 = iprot.readI64();
+            struct.component_to_num_tasks.put(_key471, _val472);
           }
         }
         struct.set_component_to_num_tasks_isSet(true);

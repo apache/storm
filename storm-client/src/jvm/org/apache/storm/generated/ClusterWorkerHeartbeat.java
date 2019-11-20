@@ -605,17 +605,17 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
           case 2: // EXECUTOR_STATS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map772 = iprot.readMapBegin();
-                struct.executor_stats = new java.util.HashMap<ExecutorInfo,ExecutorStats>(2*_map772.size);
-                @org.apache.storm.thrift.annotation.Nullable ExecutorInfo _key773;
-                @org.apache.storm.thrift.annotation.Nullable ExecutorStats _val774;
-                for (int _i775 = 0; _i775 < _map772.size; ++_i775)
+                org.apache.storm.thrift.protocol.TMap _map780 = iprot.readMapBegin();
+                struct.executor_stats = new java.util.HashMap<ExecutorInfo,ExecutorStats>(2*_map780.size);
+                @org.apache.storm.thrift.annotation.Nullable ExecutorInfo _key781;
+                @org.apache.storm.thrift.annotation.Nullable ExecutorStats _val782;
+                for (int _i783 = 0; _i783 < _map780.size; ++_i783)
                 {
-                  _key773 = new ExecutorInfo();
-                  _key773.read(iprot);
-                  _val774 = new ExecutorStats();
-                  _val774.read(iprot);
-                  struct.executor_stats.put(_key773, _val774);
+                  _key781 = new ExecutorInfo();
+                  _key781.read(iprot);
+                  _val782 = new ExecutorStats();
+                  _val782.read(iprot);
+                  struct.executor_stats.put(_key781, _val782);
                 }
                 iprot.readMapEnd();
               }
@@ -662,10 +662,10 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
         oprot.writeFieldBegin(EXECUTOR_STATS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.STRUCT, struct.executor_stats.size()));
-          for (java.util.Map.Entry<ExecutorInfo, ExecutorStats> _iter776 : struct.executor_stats.entrySet())
+          for (java.util.Map.Entry<ExecutorInfo, ExecutorStats> _iter784 : struct.executor_stats.entrySet())
           {
-            _iter776.getKey().write(oprot);
-            _iter776.getValue().write(oprot);
+            _iter784.getKey().write(oprot);
+            _iter784.getValue().write(oprot);
           }
           oprot.writeMapEnd();
         }
@@ -697,10 +697,10 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
       oprot.writeString(struct.storm_id);
       {
         oprot.writeI32(struct.executor_stats.size());
-        for (java.util.Map.Entry<ExecutorInfo, ExecutorStats> _iter777 : struct.executor_stats.entrySet())
+        for (java.util.Map.Entry<ExecutorInfo, ExecutorStats> _iter785 : struct.executor_stats.entrySet())
         {
-          _iter777.getKey().write(oprot);
-          _iter777.getValue().write(oprot);
+          _iter785.getKey().write(oprot);
+          _iter785.getValue().write(oprot);
         }
       }
       oprot.writeI32(struct.time_secs);
@@ -713,17 +713,17 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
       struct.storm_id = iprot.readString();
       struct.set_storm_id_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TMap _map778 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.executor_stats = new java.util.HashMap<ExecutorInfo,ExecutorStats>(2*_map778.size);
-        @org.apache.storm.thrift.annotation.Nullable ExecutorInfo _key779;
-        @org.apache.storm.thrift.annotation.Nullable ExecutorStats _val780;
-        for (int _i781 = 0; _i781 < _map778.size; ++_i781)
+        org.apache.storm.thrift.protocol.TMap _map786 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.executor_stats = new java.util.HashMap<ExecutorInfo,ExecutorStats>(2*_map786.size);
+        @org.apache.storm.thrift.annotation.Nullable ExecutorInfo _key787;
+        @org.apache.storm.thrift.annotation.Nullable ExecutorStats _val788;
+        for (int _i789 = 0; _i789 < _map786.size; ++_i789)
         {
-          _key779 = new ExecutorInfo();
-          _key779.read(iprot);
-          _val780 = new ExecutorStats();
-          _val780.read(iprot);
-          struct.executor_stats.put(_key779, _val780);
+          _key787 = new ExecutorInfo();
+          _key787.read(iprot);
+          _val788 = new ExecutorStats();
+          _val788.read(iprot);
+          struct.executor_stats.put(_key787, _val788);
         }
       }
       struct.set_executor_stats_isSet(true);

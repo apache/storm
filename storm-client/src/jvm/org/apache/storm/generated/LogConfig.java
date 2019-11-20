@@ -344,16 +344,16 @@ public class LogConfig implements org.apache.storm.thrift.TBase<LogConfig, LogCo
           case 2: // NAMED_LOGGER_LEVEL
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map852 = iprot.readMapBegin();
-                struct.named_logger_level = new java.util.HashMap<java.lang.String,LogLevel>(2*_map852.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key853;
-                @org.apache.storm.thrift.annotation.Nullable LogLevel _val854;
-                for (int _i855 = 0; _i855 < _map852.size; ++_i855)
+                org.apache.storm.thrift.protocol.TMap _map860 = iprot.readMapBegin();
+                struct.named_logger_level = new java.util.HashMap<java.lang.String,LogLevel>(2*_map860.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key861;
+                @org.apache.storm.thrift.annotation.Nullable LogLevel _val862;
+                for (int _i863 = 0; _i863 < _map860.size; ++_i863)
                 {
-                  _key853 = iprot.readString();
-                  _val854 = new LogLevel();
-                  _val854.read(iprot);
-                  struct.named_logger_level.put(_key853, _val854);
+                  _key861 = iprot.readString();
+                  _val862 = new LogLevel();
+                  _val862.read(iprot);
+                  struct.named_logger_level.put(_key861, _val862);
                 }
                 iprot.readMapEnd();
               }
@@ -380,10 +380,10 @@ public class LogConfig implements org.apache.storm.thrift.TBase<LogConfig, LogCo
           oprot.writeFieldBegin(NAMED_LOGGER_LEVEL_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, struct.named_logger_level.size()));
-            for (java.util.Map.Entry<java.lang.String, LogLevel> _iter856 : struct.named_logger_level.entrySet())
+            for (java.util.Map.Entry<java.lang.String, LogLevel> _iter864 : struct.named_logger_level.entrySet())
             {
-              oprot.writeString(_iter856.getKey());
-              _iter856.getValue().write(oprot);
+              oprot.writeString(_iter864.getKey());
+              _iter864.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -415,10 +415,10 @@ public class LogConfig implements org.apache.storm.thrift.TBase<LogConfig, LogCo
       if (struct.is_set_named_logger_level()) {
         {
           oprot.writeI32(struct.named_logger_level.size());
-          for (java.util.Map.Entry<java.lang.String, LogLevel> _iter857 : struct.named_logger_level.entrySet())
+          for (java.util.Map.Entry<java.lang.String, LogLevel> _iter865 : struct.named_logger_level.entrySet())
           {
-            oprot.writeString(_iter857.getKey());
-            _iter857.getValue().write(oprot);
+            oprot.writeString(_iter865.getKey());
+            _iter865.getValue().write(oprot);
           }
         }
       }
@@ -430,16 +430,16 @@ public class LogConfig implements org.apache.storm.thrift.TBase<LogConfig, LogCo
       java.util.BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map858 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.named_logger_level = new java.util.HashMap<java.lang.String,LogLevel>(2*_map858.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key859;
-          @org.apache.storm.thrift.annotation.Nullable LogLevel _val860;
-          for (int _i861 = 0; _i861 < _map858.size; ++_i861)
+          org.apache.storm.thrift.protocol.TMap _map866 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.named_logger_level = new java.util.HashMap<java.lang.String,LogLevel>(2*_map866.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key867;
+          @org.apache.storm.thrift.annotation.Nullable LogLevel _val868;
+          for (int _i869 = 0; _i869 < _map866.size; ++_i869)
           {
-            _key859 = iprot.readString();
-            _val860 = new LogLevel();
-            _val860.read(iprot);
-            struct.named_logger_level.put(_key859, _val860);
+            _key867 = iprot.readString();
+            _val868 = new LogLevel();
+            _val868.read(iprot);
+            struct.named_logger_level.put(_key867, _val868);
           }
         }
         struct.set_named_logger_level_isSet(true);

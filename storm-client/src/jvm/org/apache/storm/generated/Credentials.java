@@ -423,15 +423,15 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
           case 1: // CREDS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map596 = iprot.readMapBegin();
-                struct.creds = new java.util.HashMap<java.lang.String,java.lang.String>(2*_map596.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key597;
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _val598;
-                for (int _i599 = 0; _i599 < _map596.size; ++_i599)
+                org.apache.storm.thrift.protocol.TMap _map604 = iprot.readMapBegin();
+                struct.creds = new java.util.HashMap<java.lang.String,java.lang.String>(2*_map604.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key605;
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _val606;
+                for (int _i607 = 0; _i607 < _map604.size; ++_i607)
                 {
-                  _key597 = iprot.readString();
-                  _val598 = iprot.readString();
-                  struct.creds.put(_key597, _val598);
+                  _key605 = iprot.readString();
+                  _val606 = iprot.readString();
+                  struct.creds.put(_key605, _val606);
                 }
                 iprot.readMapEnd();
               }
@@ -465,10 +465,10 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
         oprot.writeFieldBegin(CREDS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRING, struct.creds.size()));
-          for (java.util.Map.Entry<java.lang.String, java.lang.String> _iter600 : struct.creds.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.String> _iter608 : struct.creds.entrySet())
           {
-            oprot.writeString(_iter600.getKey());
-            oprot.writeString(_iter600.getValue());
+            oprot.writeString(_iter608.getKey());
+            oprot.writeString(_iter608.getValue());
           }
           oprot.writeMapEnd();
         }
@@ -500,10 +500,10 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
         oprot.writeI32(struct.creds.size());
-        for (java.util.Map.Entry<java.lang.String, java.lang.String> _iter601 : struct.creds.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.lang.String> _iter609 : struct.creds.entrySet())
         {
-          oprot.writeString(_iter601.getKey());
-          oprot.writeString(_iter601.getValue());
+          oprot.writeString(_iter609.getKey());
+          oprot.writeString(_iter609.getValue());
         }
       }
       java.util.BitSet optionals = new java.util.BitSet();
@@ -520,15 +520,15 @@ public class Credentials implements org.apache.storm.thrift.TBase<Credentials, C
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, Credentials struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
-        org.apache.storm.thrift.protocol.TMap _map602 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
-        struct.creds = new java.util.HashMap<java.lang.String,java.lang.String>(2*_map602.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key603;
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _val604;
-        for (int _i605 = 0; _i605 < _map602.size; ++_i605)
+        org.apache.storm.thrift.protocol.TMap _map610 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
+        struct.creds = new java.util.HashMap<java.lang.String,java.lang.String>(2*_map610.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key611;
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _val612;
+        for (int _i613 = 0; _i613 < _map610.size; ++_i613)
         {
-          _key603 = iprot.readString();
-          _val604 = iprot.readString();
-          struct.creds.put(_key603, _val604);
+          _key611 = iprot.readString();
+          _val612 = iprot.readString();
+          struct.creds.put(_key611, _val612);
         }
       }
       struct.set_creds_isSet(true);

@@ -212,6 +212,22 @@ struct ClusterSummary {
   4: required list<NimbusSummary> nimbuses;
 }
 
+struct TopologyOverview {
+  1: required string id;
+  2: required string name;
+  3: required i32 uptime_secs;
+  4: required string status;
+  5: optional string storm_version;
+  6: optional string topology_version;
+  7: optional string sched_status;
+  8: optional string owner;
+  9: optional i32 min_worker_uptime_secs;
+}
+
+struct ClusterTopologyOverview {
+  1: optional list<TopologyOverview> topology_overviews;
+}
+
 struct ErrorInfo {
   1: required string error;
   2: required i32 error_time_secs;
@@ -779,6 +795,7 @@ service Nimbus {
   TopologyPageInfo getTopologyPageInfo(1: string id, 2: string window, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   SupervisorPageInfo getSupervisorPageInfo(1: string id, 2: string host, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   ComponentPageInfo getComponentPageInfo(1: string topology_id, 2: string component_id, 3: string window, 4: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  ClusterTopologyOverview getTopologyOverviewPageInfo() throws (1: AuthorizationException aze);
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   /**
