@@ -19,7 +19,7 @@
 package org.apache.storm.daemon.ui.resources;
 
 import com.codahale.metrics.Meter;
-import java.io.UnsupportedEncodingException;
+
 import java.util.Map;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -80,6 +80,7 @@ public class StormApiResource {
     private final Meter topologyOpResponseMeter;
     private final Meter topologyLagRequestMeter;
     private final Meter getOwnerResourceSummariesMeter;
+    private final Meter clusterTopologyOverviewMeter;
 
     @Inject
     public StormApiResource(StormMetricsRegistry metricsRegistry) {
@@ -102,6 +103,7 @@ public class StormApiResource {
         this.topologyOpResponseMeter = metricsRegistry.registerMeter("ui:num-topology-op-response-http-requests");
         this.topologyLagRequestMeter = metricsRegistry.registerMeter("ui:num-topology-lag-http-requests");
         this.getOwnerResourceSummariesMeter = metricsRegistry.registerMeter("ui:num-get-owner-resource-summaries-http-request");
+        this.clusterTopologyOverviewMeter = metricsRegistry.registerMeter("ui:num-cluster-topology-overview-requests");
     }
 
     /**
@@ -271,6 +273,27 @@ public class StormApiResource {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getAllTopologiesSummary(
                             nimbusClient.getClient().getClusterInfo().get_topologies(),
+                            config
+                    ),
+                    callback
+            );
+        }
+    }
+
+    /**
+     * /api/v1/topology/overview -> topo overview.
+     */
+    @GET
+    @Path("/topology/overview")
+    @AuthNimbusOp("getClusterInfo")
+    @Produces("application/json")
+    public Response getTopologyOverview(@Context SecurityContext securityContext,
+                                        @QueryParam(callbackParameterName) String callback) throws TException {
+        clusterTopologyOverviewMeter.mark();
+        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+            return UIHelpers.makeStandardResponse(
+                    UIHelpers.getClusterTopologiesOverview(
+                            nimbusClient.getClient().getTopologyOverviewPageInfo(),
                             config
                     ),
                     callback

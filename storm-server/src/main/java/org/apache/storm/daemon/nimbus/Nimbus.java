@@ -87,6 +87,7 @@ import org.apache.storm.generated.BeginDownloadResult;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.BoltAggregateStats;
 import org.apache.storm.generated.ClusterSummary;
+import org.apache.storm.generated.ClusterTopologyOverview;
 import org.apache.storm.generated.CommonAggregateStats;
 import org.apache.storm.generated.ComponentAggregateStats;
 import org.apache.storm.generated.ComponentPageInfo;
@@ -136,6 +137,7 @@ import org.apache.storm.generated.TopologyActionOptions;
 import org.apache.storm.generated.TopologyHistoryInfo;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyInitialStatus;
+import org.apache.storm.generated.TopologyOverview;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.generated.TopologySummary;
@@ -257,6 +259,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Meter getTopologyCalls;
     private final Meter getUserTopologyCalls;
     private final Meter getClusterInfoCalls;
+    private final Meter getClusterTopologyOverviewCalls;
     private final Meter getLeaderCalls;
     private final Meter isTopologyNameAllowedCalls;
     private final Meter getTopologyInfoWithOptsCalls;
@@ -505,6 +508,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.getTopologyCalls = metricsRegistry.registerMeter("nimbus:num-getTopology-calls");
         this.getUserTopologyCalls = metricsRegistry.registerMeter("nimbus:num-getUserTopology-calls");
         this.getClusterInfoCalls = metricsRegistry.registerMeter("nimbus:num-getClusterInfo-calls");
+        this.getClusterTopologyOverviewCalls = metricsRegistry.registerMeter("nimbus:num-getClusterTopologyOverview-calls");
         this.getLeaderCalls = metricsRegistry.registerMeter("nimbus:num-getLeader-calls");
         this.isTopologyNameAllowedCalls = metricsRegistry.registerMeter("nimbus:num-isTopologyNameAllowed-calls");
         this.getTopologyInfoWithOptsCalls = metricsRegistry.registerMeter(
@@ -2929,6 +2933,52 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
+    private ClusterTopologyOverview getClusterTopologyOverview() throws Exception {
+        IStormClusterState state = stormClusterState;
+        ClusterTopologyOverview clusterTopologyOverview = new ClusterTopologyOverview();
+        Map<String, StormBase> bases = state.topologyBases();
+        for (Entry<String, StormBase> entry : bases.entrySet()) {
+            StormBase base = entry.getValue();
+            if (base == null) {
+                continue;
+            }
+            String topoId = entry.getKey();
+            TopologyOverview overview = new TopologyOverview(topoId, base.get_name(),
+                    Time.deltaSecs(base.get_launch_time_secs()), extractStatusStr(base));
+            try {
+                StormTopology topo = tryReadTopology(topoId, topoCache);
+                if (topo != null && topo.is_set_storm_version()) {
+                    overview.set_storm_version(topo.get_storm_version());
+                }
+            } catch (NotAliveException e) {
+                //Ignored it is not set
+            }
+
+            if (base.is_set_owner()) {
+                overview.set_owner(base.get_owner());
+            }
+
+            if (base.is_set_topology_version()) {
+                overview.set_topology_version(base.get_topology_version());
+            }
+
+            int minWorkerUptime = 0;
+            try {
+                List<WorkerSummary> workerSummaries = getWorkerSummaries(topoId);
+                if (workerSummaries != null) {
+                    int startVal = workerSummaries.isEmpty() ? 0 : Integer.MAX_VALUE;
+                    minWorkerUptime = workerSummaries.stream().map(x -> x.get_uptime_secs()).reduce(startVal, (x, y) -> Math.min(x, y));
+                }
+            } catch (Exception e) {
+                // ignore exception
+            }
+            overview.set_min_worker_uptime_secs(minWorkerUptime);
+            clusterTopologyOverview.add_to_topology_overviews(overview);
+        }
+
+        return clusterTopologyOverview;
+    }
+
     private ClusterSummary getClusterInfoImpl() throws Exception {
         IStormClusterState state = stormClusterState;
         Map<String, SupervisorInfo> infos = state.allSupervisorInfo();
@@ -4113,12 +4163,20 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 
-    @Override
-    public TopologyPageInfo getTopologyPageInfo(String topoId, String window, boolean includeSys)
-        throws NotAliveException, AuthorizationException, TException {
+    private List<WorkerSummary> getWorkerSummaries(String topoId)
+            throws NotAliveException, AuthorizationException, IOException, InvalidTopologyException {
         try {
-            getTopologyPageInfoCalls.mark();
             CommonTopoInfo common = getCommonTopoInfo(topoId, "getTopologyPageInfo");
+            return getWorkerSummaries(topoId, common, false);
+        } catch (Exception e) {
+            LOG.warn("Get worker summaries. (topology id='{}')", topoId, e);
+            throw e;
+        }
+    }
+
+    private List<WorkerSummary> getWorkerSummaries(String topoId, CommonTopoInfo common, boolean includeSys)
+            throws NotAliveException {
+        try {
             String topoName = common.topoName;
             IStormClusterState state = stormClusterState;
             Assignment assignment = common.assignment;
@@ -4153,6 +4211,43 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                            true, //this is the topology page, so we know the user is authorized
                                                            null,
                                                            owner);
+            }
+            return workerSummaries;
+        } catch (Exception e) {
+            LOG.warn("Get worker summaries. (topology id='{}')", topoId, e);
+            throw e;
+        }
+    }
+
+    @Override
+    public TopologyPageInfo getTopologyPageInfo(String topoId, String window, boolean includeSys)
+        throws NotAliveException, AuthorizationException, TException {
+        try {
+            getTopologyPageInfoCalls.mark();
+            CommonTopoInfo common = getCommonTopoInfo(topoId, "getTopologyPageInfo");
+            IStormClusterState state = stormClusterState;
+            Assignment assignment = common.assignment;
+            Map<List<Integer>, Map<String, Object>> beats = common.beats;
+            Map<Integer, String> taskToComp = common.taskToComponent;
+            StormTopology topology = common.topology;
+            StormBase base = common.base;
+            if (base == null) {
+                throw new WrappedNotAliveException(topoId);
+            }
+            String owner = base.get_owner();
+            Map<WorkerSlot, WorkerResources> workerToResources = getWorkerResourcesForTopology(topoId);
+            List<WorkerSummary> workerSummaries = null;
+            Map<List<Long>, List<Object>> exec2NodePort = new HashMap<>();
+            if (assignment != null) {
+                Map<List<Long>, NodeInfo> execToNodeInfo = assignment.get_executor_node_port();
+                Map<String, String> nodeToHost = assignment.get_node_host();
+                for (Entry<List<Long>, NodeInfo> entry : execToNodeInfo.entrySet()) {
+                    NodeInfo ni = entry.getValue();
+                    List<Object> nodePort = Arrays.asList(ni.get_node(), ni.get_port_iterator().next());
+                    exec2NodePort.put(entry.getKey(), nodePort);
+                }
+
+                workerSummaries = getWorkerSummaries(topoId, common, includeSys);
             }
 
             TopologyPageInfo topoPageInfo = StatsUtil.aggTopoExecsStats(topoId,
@@ -4220,7 +4315,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoPageInfo.set_requested_generic_resources(resources.getRequestedGenericResources());
             }
             int launchTimeSecs = common.launchTimeSecs;
-            topoPageInfo.set_name(topoName);
+            topoPageInfo.set_name(common.topoName);
             topoPageInfo.set_status(extractStatusStr(base));
             topoPageInfo.set_uptime_secs(Time.deltaSecs(launchTimeSecs));
             topoPageInfo.set_topology_conf(JSONValue.toJSONString(topoConf));
@@ -4588,6 +4683,21 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             return getClusterInfoImpl();
         } catch (Exception e) {
             LOG.warn("Get cluster info exception.", e);
+            if (e instanceof TException) {
+                throw (TException) e;
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ClusterTopologyOverview getTopologyOverviewPageInfo() throws AuthorizationException, TException {
+        try {
+            getClusterTopologyOverviewCalls.mark();
+            checkAuthorization(null, null, "getClusterInfo");
+            return getClusterTopologyOverview();
+        } catch (Exception e) {
+            LOG.warn("Get topology overview exception.", e);
             if (e instanceof TException) {
                 throw (TException) e;
             }
