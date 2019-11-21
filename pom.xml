@@ -236,6 +236,15 @@
             </roles>
             <timezone>-6</timezone>
         </developer>
+        <developer>
+            <id>agresch</id>
+            <name>Aaron Gresch</name>
+            <email>agresch@gmail.com</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
 
     </developers>
 
