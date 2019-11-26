@@ -126,18 +126,21 @@ public class AsyncLocalizerTest {
             when(jarBlob.getLocalVersion()).thenReturn(-1L);
             when(jarBlob.getRemoteVersion(any())).thenReturn(100L);
             when(jarBlob.fetchUnzipToTemp(any())).thenReturn(100L);
+            when(jarBlob.isUsed()).thenReturn(true);
 
             LocallyCachedTopologyBlob codeBlob = mock(LocallyCachedTopologyBlob.class);
             doReturn(codeBlob).when(victim).getTopoCode(topoId, localAssignment.get_owner());
             when(codeBlob.getLocalVersion()).thenReturn(-1L);
             when(codeBlob.getRemoteVersion(any())).thenReturn(200L);
             when(codeBlob.fetchUnzipToTemp(any())).thenReturn(200L);
+            when(codeBlob.isUsed()).thenReturn(true);
 
             LocallyCachedTopologyBlob confBlob = mock(LocallyCachedTopologyBlob.class);
             doReturn(confBlob).when(victim).getTopoConf(topoId, localAssignment.get_owner());
             when(confBlob.getLocalVersion()).thenReturn(-1L);
             when(confBlob.getRemoteVersion(any())).thenReturn(300L);
             when(confBlob.fetchUnzipToTemp(any())).thenReturn(300L);
+            when(confBlob.isUsed()).thenReturn(true);
 
             when(mockedReflectionUtils.newInstanceImpl(ClientBlobStore.class)).thenReturn(blobStore);
 
