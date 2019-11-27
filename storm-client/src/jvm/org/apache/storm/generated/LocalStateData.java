@@ -352,16 +352,16 @@ public class LocalStateData implements org.apache.storm.thrift.TBase<LocalStateD
           case 1: // SERIALIZED_PARTS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map782 = iprot.readMapBegin();
-                struct.serialized_parts = new java.util.HashMap<java.lang.String,ThriftSerializedObject>(2*_map782.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key783;
-                @org.apache.storm.thrift.annotation.Nullable ThriftSerializedObject _val784;
-                for (int _i785 = 0; _i785 < _map782.size; ++_i785)
+                org.apache.storm.thrift.protocol.TMap _map832 = iprot.readMapBegin();
+                struct.serialized_parts = new java.util.HashMap<java.lang.String,ThriftSerializedObject>(2*_map832.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key833;
+                @org.apache.storm.thrift.annotation.Nullable ThriftSerializedObject _val834;
+                for (int _i835 = 0; _i835 < _map832.size; ++_i835)
                 {
-                  _key783 = iprot.readString();
-                  _val784 = new ThriftSerializedObject();
-                  _val784.read(iprot);
-                  struct.serialized_parts.put(_key783, _val784);
+                  _key833 = iprot.readString();
+                  _val834 = new ThriftSerializedObject();
+                  _val834.read(iprot);
+                  struct.serialized_parts.put(_key833, _val834);
                 }
                 iprot.readMapEnd();
               }
@@ -387,10 +387,10 @@ public class LocalStateData implements org.apache.storm.thrift.TBase<LocalStateD
         oprot.writeFieldBegin(SERIALIZED_PARTS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, struct.serialized_parts.size()));
-          for (java.util.Map.Entry<java.lang.String, ThriftSerializedObject> _iter786 : struct.serialized_parts.entrySet())
+          for (java.util.Map.Entry<java.lang.String, ThriftSerializedObject> _iter836 : struct.serialized_parts.entrySet())
           {
-            oprot.writeString(_iter786.getKey());
-            _iter786.getValue().write(oprot);
+            oprot.writeString(_iter836.getKey());
+            _iter836.getValue().write(oprot);
           }
           oprot.writeMapEnd();
         }
@@ -415,10 +415,10 @@ public class LocalStateData implements org.apache.storm.thrift.TBase<LocalStateD
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
         oprot.writeI32(struct.serialized_parts.size());
-        for (java.util.Map.Entry<java.lang.String, ThriftSerializedObject> _iter787 : struct.serialized_parts.entrySet())
+        for (java.util.Map.Entry<java.lang.String, ThriftSerializedObject> _iter837 : struct.serialized_parts.entrySet())
         {
-          oprot.writeString(_iter787.getKey());
-          _iter787.getValue().write(oprot);
+          oprot.writeString(_iter837.getKey());
+          _iter837.getValue().write(oprot);
         }
       }
     }
@@ -427,16 +427,16 @@ public class LocalStateData implements org.apache.storm.thrift.TBase<LocalStateD
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, LocalStateData struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
-        org.apache.storm.thrift.protocol.TMap _map788 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.serialized_parts = new java.util.HashMap<java.lang.String,ThriftSerializedObject>(2*_map788.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key789;
-        @org.apache.storm.thrift.annotation.Nullable ThriftSerializedObject _val790;
-        for (int _i791 = 0; _i791 < _map788.size; ++_i791)
+        org.apache.storm.thrift.protocol.TMap _map838 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.serialized_parts = new java.util.HashMap<java.lang.String,ThriftSerializedObject>(2*_map838.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key839;
+        @org.apache.storm.thrift.annotation.Nullable ThriftSerializedObject _val840;
+        for (int _i841 = 0; _i841 < _map838.size; ++_i841)
         {
-          _key789 = iprot.readString();
-          _val790 = new ThriftSerializedObject();
-          _val790.read(iprot);
-          struct.serialized_parts.put(_key789, _val790);
+          _key839 = iprot.readString();
+          _val840 = new ThriftSerializedObject();
+          _val840.read(iprot);
+          struct.serialized_parts.put(_key839, _val840);
         }
       }
       struct.set_serialized_parts_isSet(true);

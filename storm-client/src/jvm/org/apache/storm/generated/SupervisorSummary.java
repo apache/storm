@@ -40,6 +40,7 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
   private static final org.apache.storm.thrift.protocol.TField FRAGMENTED_MEM_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("fragmented_mem", org.apache.storm.thrift.protocol.TType.DOUBLE, (short)10);
   private static final org.apache.storm.thrift.protocol.TField FRAGMENTED_CPU_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("fragmented_cpu", org.apache.storm.thrift.protocol.TType.DOUBLE, (short)11);
   private static final org.apache.storm.thrift.protocol.TField BLACKLISTED_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("blacklisted", org.apache.storm.thrift.protocol.TType.BOOL, (short)12);
+  private static final org.apache.storm.thrift.protocol.TField USED_GENERIC_RESOURCES_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("used_generic_resources", org.apache.storm.thrift.protocol.TType.MAP, (short)13);
 
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new SupervisorSummaryStandardSchemeFactory();
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new SupervisorSummaryTupleSchemeFactory();
@@ -56,6 +57,7 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
   private double fragmented_mem; // optional
   private double fragmented_cpu; // optional
   private boolean blacklisted; // optional
+  private @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> used_generic_resources; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
@@ -70,7 +72,8 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     USED_CPU((short)9, "used_cpu"),
     FRAGMENTED_MEM((short)10, "fragmented_mem"),
     FRAGMENTED_CPU((short)11, "fragmented_cpu"),
-    BLACKLISTED((short)12, "blacklisted");
+    BLACKLISTED((short)12, "blacklisted"),
+    USED_GENERIC_RESOURCES((short)13, "used_generic_resources");
 
     private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -110,6 +113,8 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
           return FRAGMENTED_CPU;
         case 12: // BLACKLISTED
           return BLACKLISTED;
+        case 13: // USED_GENERIC_RESOURCES
+          return USED_GENERIC_RESOURCES;
         default:
           return null;
       }
@@ -160,7 +165,7 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
   private static final int __FRAGMENTED_CPU_ISSET_ID = 6;
   private static final int __BLACKLISTED_ISSET_ID = 7;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.VERSION,_Fields.TOTAL_RESOURCES,_Fields.USED_MEM,_Fields.USED_CPU,_Fields.FRAGMENTED_MEM,_Fields.FRAGMENTED_CPU,_Fields.BLACKLISTED};
+  private static final _Fields optionals[] = {_Fields.VERSION,_Fields.TOTAL_RESOURCES,_Fields.USED_MEM,_Fields.USED_CPU,_Fields.FRAGMENTED_MEM,_Fields.FRAGMENTED_CPU,_Fields.BLACKLISTED,_Fields.USED_GENERIC_RESOURCES};
   public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -190,6 +195,10 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.DOUBLE)));
     tmpMap.put(_Fields.BLACKLISTED, new org.apache.storm.thrift.meta_data.FieldMetaData("blacklisted", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.BOOL)));
+    tmpMap.put(_Fields.USED_GENERIC_RESOURCES, new org.apache.storm.thrift.meta_data.FieldMetaData("used_generic_resources", org.apache.storm.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.storm.thrift.meta_data.MapMetaData(org.apache.storm.thrift.protocol.TType.MAP, 
+            new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING), 
+            new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.DOUBLE))));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
     org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(SupervisorSummary.class, metaDataMap);
   }
@@ -243,6 +252,10 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     this.fragmented_mem = other.fragmented_mem;
     this.fragmented_cpu = other.fragmented_cpu;
     this.blacklisted = other.blacklisted;
+    if (other.is_set_used_generic_resources()) {
+      java.util.Map<java.lang.String,java.lang.Double> __this__used_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(other.used_generic_resources);
+      this.used_generic_resources = __this__used_generic_resources;
+    }
   }
 
   public SupervisorSummary deepCopy() {
@@ -272,6 +285,7 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     this.fragmented_cpu = 0.0;
     set_blacklisted_isSet(false);
     this.blacklisted = false;
+    this.used_generic_resources = null;
   }
 
   @org.apache.storm.thrift.annotation.Nullable
@@ -557,6 +571,41 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     __isset_bitfield = org.apache.storm.thrift.EncodingUtils.setBit(__isset_bitfield, __BLACKLISTED_ISSET_ID, value);
   }
 
+  public int get_used_generic_resources_size() {
+    return (this.used_generic_resources == null) ? 0 : this.used_generic_resources.size();
+  }
+
+  public void put_to_used_generic_resources(java.lang.String key, double val) {
+    if (this.used_generic_resources == null) {
+      this.used_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>();
+    }
+    this.used_generic_resources.put(key, val);
+  }
+
+  @org.apache.storm.thrift.annotation.Nullable
+  public java.util.Map<java.lang.String,java.lang.Double> get_used_generic_resources() {
+    return this.used_generic_resources;
+  }
+
+  public void set_used_generic_resources(@org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Double> used_generic_resources) {
+    this.used_generic_resources = used_generic_resources;
+  }
+
+  public void unset_used_generic_resources() {
+    this.used_generic_resources = null;
+  }
+
+  /** Returns true if field used_generic_resources is set (has been assigned a value) and false otherwise */
+  public boolean is_set_used_generic_resources() {
+    return this.used_generic_resources != null;
+  }
+
+  public void set_used_generic_resources_isSet(boolean value) {
+    if (!value) {
+      this.used_generic_resources = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
     switch (field) {
     case HOST:
@@ -655,6 +704,14 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       }
       break;
 
+    case USED_GENERIC_RESOURCES:
+      if (value == null) {
+        unset_used_generic_resources();
+      } else {
+        set_used_generic_resources((java.util.Map<java.lang.String,java.lang.Double>)value);
+      }
+      break;
+
     }
   }
 
@@ -697,6 +754,9 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     case BLACKLISTED:
       return is_blacklisted();
 
+    case USED_GENERIC_RESOURCES:
+      return get_used_generic_resources();
+
     }
     throw new java.lang.IllegalStateException();
   }
@@ -732,6 +792,8 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       return is_set_fragmented_cpu();
     case BLACKLISTED:
       return is_set_blacklisted();
+    case USED_GENERIC_RESOURCES:
+      return is_set_used_generic_resources();
     }
     throw new java.lang.IllegalStateException();
   }
@@ -859,6 +921,15 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
         return false;
     }
 
+    boolean this_present_used_generic_resources = true && this.is_set_used_generic_resources();
+    boolean that_present_used_generic_resources = true && that.is_set_used_generic_resources();
+    if (this_present_used_generic_resources || that_present_used_generic_resources) {
+      if (!(this_present_used_generic_resources && that_present_used_generic_resources))
+        return false;
+      if (!this.used_generic_resources.equals(that.used_generic_resources))
+        return false;
+    }
+
     return true;
   }
 
@@ -907,6 +978,10 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
     hashCode = hashCode * 8191 + ((is_set_blacklisted()) ? 131071 : 524287);
     if (is_set_blacklisted())
       hashCode = hashCode * 8191 + ((blacklisted) ? 131071 : 524287);
+
+    hashCode = hashCode * 8191 + ((is_set_used_generic_resources()) ? 131071 : 524287);
+    if (is_set_used_generic_resources())
+      hashCode = hashCode * 8191 + used_generic_resources.hashCode();
 
     return hashCode;
   }
@@ -1039,6 +1114,16 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
         return lastComparison;
       }
     }
+    lastComparison = java.lang.Boolean.valueOf(is_set_used_generic_resources()).compareTo(other.is_set_used_generic_resources());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_used_generic_resources()) {
+      lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.used_generic_resources, other.used_generic_resources);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -1135,6 +1220,16 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       if (!first) sb.append(", ");
       sb.append("blacklisted:");
       sb.append(this.blacklisted);
+      first = false;
+    }
+    if (is_set_used_generic_resources()) {
+      if (!first) sb.append(", ");
+      sb.append("used_generic_resources:");
+      if (this.used_generic_resources == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.used_generic_resources);
+      }
       first = false;
     }
     sb.append(")");
@@ -1253,15 +1348,15 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
           case 7: // TOTAL_RESOURCES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map126 = iprot.readMapBegin();
-                struct.total_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map126.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key127;
-                double _val128;
-                for (int _i129 = 0; _i129 < _map126.size; ++_i129)
+                org.apache.storm.thrift.protocol.TMap _map146 = iprot.readMapBegin();
+                struct.total_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map146.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key147;
+                double _val148;
+                for (int _i149 = 0; _i149 < _map146.size; ++_i149)
                 {
-                  _key127 = iprot.readString();
-                  _val128 = iprot.readDouble();
-                  struct.total_resources.put(_key127, _val128);
+                  _key147 = iprot.readString();
+                  _val148 = iprot.readDouble();
+                  struct.total_resources.put(_key147, _val148);
                 }
                 iprot.readMapEnd();
               }
@@ -1310,6 +1405,26 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 13: // USED_GENERIC_RESOURCES
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
+              {
+                org.apache.storm.thrift.protocol.TMap _map150 = iprot.readMapBegin();
+                struct.used_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map150.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key151;
+                double _val152;
+                for (int _i153 = 0; _i153 < _map150.size; ++_i153)
+                {
+                  _key151 = iprot.readString();
+                  _val152 = iprot.readDouble();
+                  struct.used_generic_resources.put(_key151, _val152);
+                }
+                iprot.readMapEnd();
+              }
+              struct.set_used_generic_resources_isSet(true);
+            } else { 
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -1354,10 +1469,10 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
           oprot.writeFieldBegin(TOTAL_RESOURCES_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.total_resources.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter130 : struct.total_resources.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter154 : struct.total_resources.entrySet())
             {
-              oprot.writeString(_iter130.getKey());
-              oprot.writeDouble(_iter130.getValue());
+              oprot.writeString(_iter154.getKey());
+              oprot.writeDouble(_iter154.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1388,6 +1503,21 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
         oprot.writeFieldBegin(BLACKLISTED_FIELD_DESC);
         oprot.writeBool(struct.blacklisted);
         oprot.writeFieldEnd();
+      }
+      if (struct.used_generic_resources != null) {
+        if (struct.is_set_used_generic_resources()) {
+          oprot.writeFieldBegin(USED_GENERIC_RESOURCES_FIELD_DESC);
+          {
+            oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.used_generic_resources.size()));
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter155 : struct.used_generic_resources.entrySet())
+            {
+              oprot.writeString(_iter155.getKey());
+              oprot.writeDouble(_iter155.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+          oprot.writeFieldEnd();
+        }
       }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
@@ -1433,17 +1563,20 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       if (struct.is_set_blacklisted()) {
         optionals.set(6);
       }
-      oprot.writeBitSet(optionals, 7);
+      if (struct.is_set_used_generic_resources()) {
+        optionals.set(7);
+      }
+      oprot.writeBitSet(optionals, 8);
       if (struct.is_set_version()) {
         oprot.writeString(struct.version);
       }
       if (struct.is_set_total_resources()) {
         {
           oprot.writeI32(struct.total_resources.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter131 : struct.total_resources.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter156 : struct.total_resources.entrySet())
           {
-            oprot.writeString(_iter131.getKey());
-            oprot.writeDouble(_iter131.getValue());
+            oprot.writeString(_iter156.getKey());
+            oprot.writeDouble(_iter156.getValue());
           }
         }
       }
@@ -1462,6 +1595,16 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       if (struct.is_set_blacklisted()) {
         oprot.writeBool(struct.blacklisted);
       }
+      if (struct.is_set_used_generic_resources()) {
+        {
+          oprot.writeI32(struct.used_generic_resources.size());
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter157 : struct.used_generic_resources.entrySet())
+          {
+            oprot.writeString(_iter157.getKey());
+            oprot.writeDouble(_iter157.getValue());
+          }
+        }
+      }
     }
 
     @Override
@@ -1477,22 +1620,22 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       struct.set_num_used_workers_isSet(true);
       struct.supervisor_id = iprot.readString();
       struct.set_supervisor_id_isSet(true);
-      java.util.BitSet incoming = iprot.readBitSet(7);
+      java.util.BitSet incoming = iprot.readBitSet(8);
       if (incoming.get(0)) {
         struct.version = iprot.readString();
         struct.set_version_isSet(true);
       }
       if (incoming.get(1)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map132 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.total_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map132.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key133;
-          double _val134;
-          for (int _i135 = 0; _i135 < _map132.size; ++_i135)
+          org.apache.storm.thrift.protocol.TMap _map158 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.total_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map158.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key159;
+          double _val160;
+          for (int _i161 = 0; _i161 < _map158.size; ++_i161)
           {
-            _key133 = iprot.readString();
-            _val134 = iprot.readDouble();
-            struct.total_resources.put(_key133, _val134);
+            _key159 = iprot.readString();
+            _val160 = iprot.readDouble();
+            struct.total_resources.put(_key159, _val160);
           }
         }
         struct.set_total_resources_isSet(true);
@@ -1516,6 +1659,21 @@ public class SupervisorSummary implements org.apache.storm.thrift.TBase<Supervis
       if (incoming.get(6)) {
         struct.blacklisted = iprot.readBool();
         struct.set_blacklisted_isSet(true);
+      }
+      if (incoming.get(7)) {
+        {
+          org.apache.storm.thrift.protocol.TMap _map162 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.used_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map162.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key163;
+          double _val164;
+          for (int _i165 = 0; _i165 < _map162.size; ++_i165)
+          {
+            _key163 = iprot.readString();
+            _val164 = iprot.readDouble();
+            struct.used_generic_resources.put(_key163, _val164);
+          }
+        }
+        struct.set_used_generic_resources_isSet(true);
       }
     }
   }

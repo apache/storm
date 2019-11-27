@@ -5438,11 +5438,11 @@ class getComponentPendingProfileActions_result(object):
             if fid == 0:
                 if ftype == TType.LIST:
                     self.success = []
-                    (_etype824, _size821) = iprot.readListBegin()
-                    for _i825 in range(_size821):
-                        _elem826 = ProfileRequest()
-                        _elem826.read(iprot)
-                        self.success.append(_elem826)
+                    (_etype869, _size866) = iprot.readListBegin()
+                    for _i870 in range(_size866):
+                        _elem871 = ProfileRequest()
+                        _elem871.read(iprot)
+                        self.success.append(_elem871)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -5459,8 +5459,8 @@ class getComponentPendingProfileActions_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
             oprot.writeListBegin(TType.STRUCT, len(self.success))
-            for iter827 in self.success:
-                iter827.write(oprot)
+            for iter872 in self.success:
+                iter872.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -10148,11 +10148,11 @@ class getOwnerResourceSummaries_result(object):
             if fid == 0:
                 if ftype == TType.LIST:
                     self.success = []
-                    (_etype831, _size828) = iprot.readListBegin()
-                    for _i832 in range(_size828):
-                        _elem833 = OwnerResourceSummary()
-                        _elem833.read(iprot)
-                        self.success.append(_elem833)
+                    (_etype876, _size873) = iprot.readListBegin()
+                    for _i877 in range(_size873):
+                        _elem878 = OwnerResourceSummary()
+                        _elem878.read(iprot)
+                        self.success.append(_elem878)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -10175,8 +10175,8 @@ class getOwnerResourceSummaries_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
             oprot.writeListBegin(TType.STRUCT, len(self.success))
-            for iter834 in self.success:
-                iter834.write(oprot)
+            for iter879 in self.success:
+                iter879.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.aze is not None:

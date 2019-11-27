@@ -631,13 +631,13 @@ public class LSTopoHistory implements org.apache.storm.thrift.TBase<LSTopoHistor
           case 3: // USERS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list828 = iprot.readListBegin();
-                struct.users = new java.util.ArrayList<java.lang.String>(_list828.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem829;
-                for (int _i830 = 0; _i830 < _list828.size; ++_i830)
+                org.apache.storm.thrift.protocol.TList _list878 = iprot.readListBegin();
+                struct.users = new java.util.ArrayList<java.lang.String>(_list878.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem879;
+                for (int _i880 = 0; _i880 < _list878.size; ++_i880)
                 {
-                  _elem829 = iprot.readString();
-                  struct.users.add(_elem829);
+                  _elem879 = iprot.readString();
+                  struct.users.add(_elem879);
                 }
                 iprot.readListEnd();
               }
@@ -649,13 +649,13 @@ public class LSTopoHistory implements org.apache.storm.thrift.TBase<LSTopoHistor
           case 4: // GROUPS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list831 = iprot.readListBegin();
-                struct.groups = new java.util.ArrayList<java.lang.String>(_list831.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem832;
-                for (int _i833 = 0; _i833 < _list831.size; ++_i833)
+                org.apache.storm.thrift.protocol.TList _list881 = iprot.readListBegin();
+                struct.groups = new java.util.ArrayList<java.lang.String>(_list881.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem882;
+                for (int _i883 = 0; _i883 < _list881.size; ++_i883)
                 {
-                  _elem832 = iprot.readString();
-                  struct.groups.add(_elem832);
+                  _elem882 = iprot.readString();
+                  struct.groups.add(_elem882);
                 }
                 iprot.readListEnd();
               }
@@ -689,9 +689,9 @@ public class LSTopoHistory implements org.apache.storm.thrift.TBase<LSTopoHistor
         oprot.writeFieldBegin(USERS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, struct.users.size()));
-          for (java.lang.String _iter834 : struct.users)
+          for (java.lang.String _iter884 : struct.users)
           {
-            oprot.writeString(_iter834);
+            oprot.writeString(_iter884);
           }
           oprot.writeListEnd();
         }
@@ -701,9 +701,9 @@ public class LSTopoHistory implements org.apache.storm.thrift.TBase<LSTopoHistor
         oprot.writeFieldBegin(GROUPS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, struct.groups.size()));
-          for (java.lang.String _iter835 : struct.groups)
+          for (java.lang.String _iter885 : struct.groups)
           {
-            oprot.writeString(_iter835);
+            oprot.writeString(_iter885);
           }
           oprot.writeListEnd();
         }
@@ -730,16 +730,16 @@ public class LSTopoHistory implements org.apache.storm.thrift.TBase<LSTopoHistor
       oprot.writeI64(struct.time_stamp);
       {
         oprot.writeI32(struct.users.size());
-        for (java.lang.String _iter836 : struct.users)
+        for (java.lang.String _iter886 : struct.users)
         {
-          oprot.writeString(_iter836);
+          oprot.writeString(_iter886);
         }
       }
       {
         oprot.writeI32(struct.groups.size());
-        for (java.lang.String _iter837 : struct.groups)
+        for (java.lang.String _iter887 : struct.groups)
         {
-          oprot.writeString(_iter837);
+          oprot.writeString(_iter887);
         }
       }
     }
@@ -752,24 +752,24 @@ public class LSTopoHistory implements org.apache.storm.thrift.TBase<LSTopoHistor
       struct.time_stamp = iprot.readI64();
       struct.set_time_stamp_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TList _list838 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
-        struct.users = new java.util.ArrayList<java.lang.String>(_list838.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem839;
-        for (int _i840 = 0; _i840 < _list838.size; ++_i840)
+        org.apache.storm.thrift.protocol.TList _list888 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
+        struct.users = new java.util.ArrayList<java.lang.String>(_list888.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem889;
+        for (int _i890 = 0; _i890 < _list888.size; ++_i890)
         {
-          _elem839 = iprot.readString();
-          struct.users.add(_elem839);
+          _elem889 = iprot.readString();
+          struct.users.add(_elem889);
         }
       }
       struct.set_users_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TList _list841 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
-        struct.groups = new java.util.ArrayList<java.lang.String>(_list841.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem842;
-        for (int _i843 = 0; _i843 < _list841.size; ++_i843)
+        org.apache.storm.thrift.protocol.TList _list891 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
+        struct.groups = new java.util.ArrayList<java.lang.String>(_list891.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _elem892;
+        for (int _i893 = 0; _i893 < _list891.size; ++_i893)
         {
-          _elem842 = iprot.readString();
-          struct.groups.add(_elem842);
+          _elem892 = iprot.readString();
+          struct.groups.add(_elem892);
         }
       }
       struct.set_groups_isSet(true);
