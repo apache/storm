@@ -76,6 +76,23 @@
               Avail CPU (%)
             </span>
           </th>
+
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The generic resources capacity of a supervisor.">
+              Total Generic Resources
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The generic resources that have been allocated.">
+              Used Generic Resources
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The generic resources that are available.">
+              Avail Generic Resources
+            </span>
+          </th>
+
           {{/schedulerDisplayResource}}
           <th>
             <span data-toggle="tooltip" data-placement="top" title="Version">
@@ -106,6 +123,9 @@
             <td>{{totalCpu}}</td>
             <td>{{usedCpu}}</td>
             <td>{{availCpu}}</td>
+            <td>{{totalGenericResources}}</td>
+            <td>{{usedGenericResources}}</td>
+            <td>{{availGenericResources}}</td>
             {{/schedulerDisplayResource}}
             <td>{{version}}</td>
             <td>{{blacklisted}}</td>

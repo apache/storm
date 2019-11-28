@@ -185,6 +185,7 @@ Metrics associated with the supervisor, which launches the workers for a topolog
 | supervisor:num-launched | meter | number of times the supervisor is launched. |
 | supervisor:num-shell-exceptions | meter | number of exceptions calling shell commands. |
 | supervisor:num-slots-used-gauge | gauge | number of slots used on the supervisor. |
+| supervisor:num-worker-start-timed-out | meter | number of times worker start timed out. |
 | supervisor:num-worker-transitions-into-empty | meter | number of transitions into empty state. |
 | supervisor:num-worker-transitions-into-kill | meter | number of transitions into kill state. |
 | supervisor:num-worker-transitions-into-kill-and-relaunch | meter | number of transitions into kill-and-relaunch state |

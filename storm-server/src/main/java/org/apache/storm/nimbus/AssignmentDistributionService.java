@@ -21,9 +21,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.generated.SupervisorAssignments;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.SupervisorClient;
@@ -146,7 +149,8 @@ public class AssignmentDistributionService implements Closeable {
      * @param serverPort node thrift server port.
      * @param assignments the {@link org.apache.storm.generated.SupervisorAssignments}
      */
-    public void addAssignmentsForNode(String node, String host, Integer serverPort, SupervisorAssignments assignments) {
+    public void addAssignmentsForNode(String node, String host, Integer serverPort, SupervisorAssignments assignments,
+                                      StormMetricsRegistry metricsRegistry) {
         try {
             //For some reasons, we can not get supervisor port info, eg: supervisor shutdown,
             //Just skip for this scheduling round.
@@ -155,7 +159,8 @@ public class AssignmentDistributionService implements Closeable {
                 return;
             }
 
-            boolean success = nextQueue().offer(NodeAssignments.getInstance(node, host, serverPort, assignments), 5L, TimeUnit.SECONDS);
+            boolean success = nextQueue().offer(NodeAssignments.getInstance(node, host, serverPort,
+                                                assignments, metricsRegistry), 5L, TimeUnit.SECONDS);
             if (!success) {
                 LOG.warn("Discard an assignment distribution for node {} because the target sub queue is full.", node);
             }
@@ -211,17 +216,20 @@ public class AssignmentDistributionService implements Closeable {
         private String host;
         private Integer serverPort;
         private SupervisorAssignments assignments;
+        private StormMetricsRegistry metricsRegistry;
 
-        private NodeAssignments(String node, String host, Integer serverPort, SupervisorAssignments assignments) {
+        private NodeAssignments(String node, String host, Integer serverPort, SupervisorAssignments assignments,
+                                StormMetricsRegistry metricsRegistry) {
             this.node = node;
             this.host = host;
             this.serverPort = serverPort;
             this.assignments = assignments;
+            this.metricsRegistry = metricsRegistry;
         }
 
         public static NodeAssignments getInstance(String node, String host, Integer serverPort,
-                                                  SupervisorAssignments assignments) {
-            return new NodeAssignments(node, host, serverPort, assignments);
+                                                  SupervisorAssignments assignments, StormMetricsRegistry metricsRegistry) {
+            return new NodeAssignments(node, host, serverPort, assignments, metricsRegistry);
         }
 
         //supervisor assignment id/supervisor id
@@ -241,6 +249,9 @@ public class AssignmentDistributionService implements Closeable {
             return this.assignments;
         }
 
+        public StormMetricsRegistry getMetricsRegistry() {
+            return metricsRegistry;
+        }
     }
 
     /**
@@ -289,14 +300,13 @@ public class AssignmentDistributionService implements Closeable {
                     try {
                         client.getIface().sendSupervisorAssignments(assignments.getAssignments());
                     } catch (Exception e) {
-                        //just ignore the exception.
+                        assignments.getMetricsRegistry().getMeter(Constants.NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS).mark();
                         LOG.error("Exception when trying to send assignments to node {}: {}", assignments.getNode(), e.getMessage());
                     }
                 } catch (Throwable e) {
                     //just ignore any error/exception.
                     LOG.error("Exception to create supervisor client for node {}: {}", assignments.getNode(), e.getMessage());
                 }
-
             }
         }
     }

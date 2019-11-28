@@ -455,6 +455,12 @@ public class TopologyDetails {
         return totalCpu;
     }
 
+    public Map<String, Double> getTotalRequestedGenericResources() {
+        Map<String, Double> map = getApproximateTotalResources().toNormalizedMap();
+        NormalizedResourceRequest.removeNonGenericResources(map);
+        return map;
+    }
+
     /**
      * get the resources requirements for a executor.
      *

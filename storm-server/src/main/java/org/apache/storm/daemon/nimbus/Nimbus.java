@@ -268,6 +268,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Meter shutdownCalls;
     private final Meter processWorkerMetricsCalls;
     private final Meter mkAssignmentsErrors;
+    private final Meter sendAssignmentExceptions;   // used in AssignmentDistributionService.java
 
     //Timer
     private final Timer fileUploadDuration;
@@ -305,7 +306,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         IStormClusterState state = nimbus.getStormClusterState();
         Assignment oldAssignment = state.assignmentInfo(topoId, null);
         state.removeStorm(topoId);
-        notifySupervisorsAsKilled(state, oldAssignment, nimbus.getAssignmentsDistributer());
+        notifySupervisorsAsKilled(state, oldAssignment, nimbus.getAssignmentsDistributer(), nimbus.getMetricsRegistry());
         nimbus.heartbeatsCache.removeTopo(topoId);
         nimbus.getIdToExecutors().getAndUpdate(new Dissoc<>(topoId));
         return null;
@@ -517,6 +518,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.shutdownCalls = metricsRegistry.registerMeter("nimbus:num-shutdown-calls");
         this.processWorkerMetricsCalls = metricsRegistry.registerMeter("nimbus:process-worker-metric-calls");
         this.mkAssignmentsErrors = metricsRegistry.registerMeter("nimbus:mkAssignments-Errors");
+        this.sendAssignmentExceptions = metricsRegistry.registerMeter(Constants.NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS);
         this.fileUploadDuration = metricsRegistry.registerTimer("nimbus:files-upload-duration-ms");
         this.schedulingDuration = metricsRegistry.registerTimer("nimbus:topology-scheduling-duration-ms");
         this.numAddedExecPerScheduling = metricsRegistry.registerHistogram("nimbus:num-added-executors-per-scheduling");
@@ -1578,7 +1580,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      */
     private static void notifySupervisorsAssignments(Map<String, Assignment> assignments,
                                                      AssignmentDistributionService service, Map<String, String> nodeHost,
-                                                     Map<String, SupervisorDetails> supervisorDetails) {
+                                                     Map<String, SupervisorDetails> supervisorDetails,
+                                                     StormMetricsRegistry metricsRegistry) {
         for (Map.Entry<String, String> nodeEntry : nodeHost.entrySet()) {
             try {
                 String nodeId = nodeEntry.getKey();
@@ -1586,7 +1589,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 supervisorAssignments.set_storm_assignment(assignmentsForNode(assignments, nodeEntry.getKey()));
                 SupervisorDetails details = supervisorDetails.get(nodeId);
                 Integer serverPort = details != null ? details.getServerPort() : null;
-                service.addAssignmentsForNode(nodeId, nodeEntry.getValue(), serverPort, supervisorAssignments);
+                service.addAssignmentsForNode(nodeId, nodeEntry.getValue(), serverPort, supervisorAssignments, metricsRegistry);
             } catch (Throwable tr1) {
                 //just skip when any error happens wait for next round assignments reassign
                 LOG.error("Exception when add assignments distribution task for node {}", nodeEntry.getKey());
@@ -1595,10 +1598,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private static void notifySupervisorsAsKilled(IStormClusterState clusterState, Assignment oldAss,
-                                                  AssignmentDistributionService service) {
+                                                  AssignmentDistributionService service, StormMetricsRegistry metricsRegistry) {
         Map<String, String> nodeHost = assignmentChangedNodes(oldAss, null);
         notifySupervisorsAssignments(clusterState.assignmentsInfo(), service, nodeHost,
-                                     basicSupervisorDetailsMap(clusterState));
+                                     basicSupervisorDetailsMap(clusterState), metricsRegistry);
     }
 
     @VisibleForTesting
@@ -1652,6 +1655,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private AssignmentDistributionService getAssignmentsDistributer() {
         return assignmentsDistributer;
+    }
+
+    private StormMetricsRegistry getMetricsRegistry() {
+        return metricsRegistry;
     }
 
     @VisibleForTesting
@@ -2520,7 +2527,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 totalAssignmentsChangedNodes.putAll(assignmentChangedNodes(existingAssignment, assignment));
             }
             notifySupervisorsAssignments(newAssignments, assignmentsDistributer, totalAssignmentsChangedNodes,
-                    basicSupervisorDetailsMap);
+                                        basicSupervisorDetailsMap, getMetricsRegistry());
 
             Map<String, Collection<WorkerSlot>> addedSlots = new HashMap<>();
             for (Entry<String, Assignment> entry : newAssignments.entrySet()) {
@@ -2895,6 +2902,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         if (resources != null) {
             ret.set_used_mem(resources.getUsedMem());
             ret.set_used_cpu(resources.getUsedCpu());
+            ret.set_used_generic_resources(resources.getUsedGenericResources());
             if (isFragmented(resources)) {
                 final double availableCpu = resources.getAvailableCpu();
                 if (availableCpu < 0) {
@@ -2994,9 +3002,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 summary.set_requested_memonheap(resources.getRequestedMemOnHeap());
                 summary.set_requested_memoffheap(resources.getRequestedMemOffHeap());
                 summary.set_requested_cpu(resources.getRequestedCpu());
+                summary.set_requested_generic_resources(resources.getRequestedGenericResources());
                 summary.set_assigned_memonheap(resources.getAssignedMemOnHeap());
                 summary.set_assigned_memoffheap(resources.getAssignedMemOffHeap());
                 summary.set_assigned_cpu(resources.getAssignedCpu());
+                summary.set_assigned_generic_resources(resources.getAssignedGenericResources());
             }
             try {
                 summary.set_replication_count(getBlobReplicationCount(ConfigUtils.masterStormCodeKey(topoId)));
@@ -4206,6 +4216,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoPageInfo.set_assigned_regular_off_heap_memory(resources.getAssignedNonSharedMemOffHeap());
                 topoPageInfo.set_assigned_shared_on_heap_memory(resources.getAssignedSharedMemOnHeap());
                 topoPageInfo.set_assigned_regular_on_heap_memory(resources.getAssignedNonSharedMemOnHeap());
+                topoPageInfo.set_assigned_generic_resources(resources.getAssignedGenericResources());
+                topoPageInfo.set_requested_generic_resources(resources.getRequestedGenericResources());
             }
             int launchTimeSecs = common.launchTimeSecs;
             topoPageInfo.set_name(topoName);

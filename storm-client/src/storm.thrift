@@ -180,6 +180,8 @@ struct TopologySummary {
 524: optional double assigned_memonheap;
 525: optional double assigned_memoffheap;
 526: optional double assigned_cpu;
+527: optional map<string, double> requested_generic_resources;
+528: optional map<string, double> assigned_generic_resources;
 }
 
 struct SupervisorSummary {
@@ -195,6 +197,7 @@ struct SupervisorSummary {
   10: optional double fragmented_mem;
   11: optional double fragmented_cpu;
   12: optional bool blacklisted;
+  13: optional map<string, double> used_generic_resources;
 }
 
 struct NimbusSummary {
@@ -389,6 +392,8 @@ struct TopologyPageInfo {
 532: optional double assigned_shared_on_heap_memory;
 533: optional double assigned_regular_off_heap_memory;
 534: optional double assigned_shared_off_heap_memory;
+535: optional map<string, double> requested_generic_resources;
+536: optional map<string, double> assigned_generic_resources;
 }
 
 struct ExecutorAggregateStats {

@@ -713,15 +713,15 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           case 1: // WINDOW_TO_EMITTED
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map406 = iprot.readMapBegin();
-                struct.window_to_emitted = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map406.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key407;
-                long _val408;
-                for (int _i409 = 0; _i409 < _map406.size; ++_i409)
+                org.apache.storm.thrift.protocol.TMap _map436 = iprot.readMapBegin();
+                struct.window_to_emitted = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map436.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key437;
+                long _val438;
+                for (int _i439 = 0; _i439 < _map436.size; ++_i439)
                 {
-                  _key407 = iprot.readString();
-                  _val408 = iprot.readI64();
-                  struct.window_to_emitted.put(_key407, _val408);
+                  _key437 = iprot.readString();
+                  _val438 = iprot.readI64();
+                  struct.window_to_emitted.put(_key437, _val438);
                 }
                 iprot.readMapEnd();
               }
@@ -733,15 +733,15 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           case 2: // WINDOW_TO_TRANSFERRED
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map410 = iprot.readMapBegin();
-                struct.window_to_transferred = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map410.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key411;
-                long _val412;
-                for (int _i413 = 0; _i413 < _map410.size; ++_i413)
+                org.apache.storm.thrift.protocol.TMap _map440 = iprot.readMapBegin();
+                struct.window_to_transferred = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map440.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key441;
+                long _val442;
+                for (int _i443 = 0; _i443 < _map440.size; ++_i443)
                 {
-                  _key411 = iprot.readString();
-                  _val412 = iprot.readI64();
-                  struct.window_to_transferred.put(_key411, _val412);
+                  _key441 = iprot.readString();
+                  _val442 = iprot.readI64();
+                  struct.window_to_transferred.put(_key441, _val442);
                 }
                 iprot.readMapEnd();
               }
@@ -753,15 +753,15 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           case 3: // WINDOW_TO_COMPLETE_LATENCIES_MS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map414 = iprot.readMapBegin();
-                struct.window_to_complete_latencies_ms = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map414.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key415;
-                double _val416;
-                for (int _i417 = 0; _i417 < _map414.size; ++_i417)
+                org.apache.storm.thrift.protocol.TMap _map444 = iprot.readMapBegin();
+                struct.window_to_complete_latencies_ms = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map444.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key445;
+                double _val446;
+                for (int _i447 = 0; _i447 < _map444.size; ++_i447)
                 {
-                  _key415 = iprot.readString();
-                  _val416 = iprot.readDouble();
-                  struct.window_to_complete_latencies_ms.put(_key415, _val416);
+                  _key445 = iprot.readString();
+                  _val446 = iprot.readDouble();
+                  struct.window_to_complete_latencies_ms.put(_key445, _val446);
                 }
                 iprot.readMapEnd();
               }
@@ -773,15 +773,15 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           case 4: // WINDOW_TO_ACKED
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map418 = iprot.readMapBegin();
-                struct.window_to_acked = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map418.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key419;
-                long _val420;
-                for (int _i421 = 0; _i421 < _map418.size; ++_i421)
+                org.apache.storm.thrift.protocol.TMap _map448 = iprot.readMapBegin();
+                struct.window_to_acked = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map448.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key449;
+                long _val450;
+                for (int _i451 = 0; _i451 < _map448.size; ++_i451)
                 {
-                  _key419 = iprot.readString();
-                  _val420 = iprot.readI64();
-                  struct.window_to_acked.put(_key419, _val420);
+                  _key449 = iprot.readString();
+                  _val450 = iprot.readI64();
+                  struct.window_to_acked.put(_key449, _val450);
                 }
                 iprot.readMapEnd();
               }
@@ -793,15 +793,15 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           case 5: // WINDOW_TO_FAILED
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map422 = iprot.readMapBegin();
-                struct.window_to_failed = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map422.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key423;
-                long _val424;
-                for (int _i425 = 0; _i425 < _map422.size; ++_i425)
+                org.apache.storm.thrift.protocol.TMap _map452 = iprot.readMapBegin();
+                struct.window_to_failed = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map452.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key453;
+                long _val454;
+                for (int _i455 = 0; _i455 < _map452.size; ++_i455)
                 {
-                  _key423 = iprot.readString();
-                  _val424 = iprot.readI64();
-                  struct.window_to_failed.put(_key423, _val424);
+                  _key453 = iprot.readString();
+                  _val454 = iprot.readI64();
+                  struct.window_to_failed.put(_key453, _val454);
                 }
                 iprot.readMapEnd();
               }
@@ -828,10 +828,10 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           oprot.writeFieldBegin(WINDOW_TO_EMITTED_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, struct.window_to_emitted.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter426 : struct.window_to_emitted.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter456 : struct.window_to_emitted.entrySet())
             {
-              oprot.writeString(_iter426.getKey());
-              oprot.writeI64(_iter426.getValue());
+              oprot.writeString(_iter456.getKey());
+              oprot.writeI64(_iter456.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -843,10 +843,10 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           oprot.writeFieldBegin(WINDOW_TO_TRANSFERRED_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, struct.window_to_transferred.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter427 : struct.window_to_transferred.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter457 : struct.window_to_transferred.entrySet())
             {
-              oprot.writeString(_iter427.getKey());
-              oprot.writeI64(_iter427.getValue());
+              oprot.writeString(_iter457.getKey());
+              oprot.writeI64(_iter457.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -858,10 +858,10 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           oprot.writeFieldBegin(WINDOW_TO_COMPLETE_LATENCIES_MS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.window_to_complete_latencies_ms.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter428 : struct.window_to_complete_latencies_ms.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter458 : struct.window_to_complete_latencies_ms.entrySet())
             {
-              oprot.writeString(_iter428.getKey());
-              oprot.writeDouble(_iter428.getValue());
+              oprot.writeString(_iter458.getKey());
+              oprot.writeDouble(_iter458.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -873,10 +873,10 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           oprot.writeFieldBegin(WINDOW_TO_ACKED_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, struct.window_to_acked.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter429 : struct.window_to_acked.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter459 : struct.window_to_acked.entrySet())
             {
-              oprot.writeString(_iter429.getKey());
-              oprot.writeI64(_iter429.getValue());
+              oprot.writeString(_iter459.getKey());
+              oprot.writeI64(_iter459.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -888,10 +888,10 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
           oprot.writeFieldBegin(WINDOW_TO_FAILED_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, struct.window_to_failed.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter430 : struct.window_to_failed.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter460 : struct.window_to_failed.entrySet())
             {
-              oprot.writeString(_iter430.getKey());
-              oprot.writeI64(_iter430.getValue());
+              oprot.writeString(_iter460.getKey());
+              oprot.writeI64(_iter460.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -935,50 +935,50 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
       if (struct.is_set_window_to_emitted()) {
         {
           oprot.writeI32(struct.window_to_emitted.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter431 : struct.window_to_emitted.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter461 : struct.window_to_emitted.entrySet())
           {
-            oprot.writeString(_iter431.getKey());
-            oprot.writeI64(_iter431.getValue());
+            oprot.writeString(_iter461.getKey());
+            oprot.writeI64(_iter461.getValue());
           }
         }
       }
       if (struct.is_set_window_to_transferred()) {
         {
           oprot.writeI32(struct.window_to_transferred.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter432 : struct.window_to_transferred.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter462 : struct.window_to_transferred.entrySet())
           {
-            oprot.writeString(_iter432.getKey());
-            oprot.writeI64(_iter432.getValue());
+            oprot.writeString(_iter462.getKey());
+            oprot.writeI64(_iter462.getValue());
           }
         }
       }
       if (struct.is_set_window_to_complete_latencies_ms()) {
         {
           oprot.writeI32(struct.window_to_complete_latencies_ms.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter433 : struct.window_to_complete_latencies_ms.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter463 : struct.window_to_complete_latencies_ms.entrySet())
           {
-            oprot.writeString(_iter433.getKey());
-            oprot.writeDouble(_iter433.getValue());
+            oprot.writeString(_iter463.getKey());
+            oprot.writeDouble(_iter463.getValue());
           }
         }
       }
       if (struct.is_set_window_to_acked()) {
         {
           oprot.writeI32(struct.window_to_acked.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter434 : struct.window_to_acked.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter464 : struct.window_to_acked.entrySet())
           {
-            oprot.writeString(_iter434.getKey());
-            oprot.writeI64(_iter434.getValue());
+            oprot.writeString(_iter464.getKey());
+            oprot.writeI64(_iter464.getValue());
           }
         }
       }
       if (struct.is_set_window_to_failed()) {
         {
           oprot.writeI32(struct.window_to_failed.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter435 : struct.window_to_failed.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter465 : struct.window_to_failed.entrySet())
           {
-            oprot.writeString(_iter435.getKey());
-            oprot.writeI64(_iter435.getValue());
+            oprot.writeString(_iter465.getKey());
+            oprot.writeI64(_iter465.getValue());
           }
         }
       }
@@ -990,75 +990,75 @@ public class TopologyStats implements org.apache.storm.thrift.TBase<TopologyStat
       java.util.BitSet incoming = iprot.readBitSet(5);
       if (incoming.get(0)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map436 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-          struct.window_to_emitted = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map436.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key437;
-          long _val438;
-          for (int _i439 = 0; _i439 < _map436.size; ++_i439)
+          org.apache.storm.thrift.protocol.TMap _map466 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+          struct.window_to_emitted = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map466.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key467;
+          long _val468;
+          for (int _i469 = 0; _i469 < _map466.size; ++_i469)
           {
-            _key437 = iprot.readString();
-            _val438 = iprot.readI64();
-            struct.window_to_emitted.put(_key437, _val438);
+            _key467 = iprot.readString();
+            _val468 = iprot.readI64();
+            struct.window_to_emitted.put(_key467, _val468);
           }
         }
         struct.set_window_to_emitted_isSet(true);
       }
       if (incoming.get(1)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map440 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-          struct.window_to_transferred = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map440.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key441;
-          long _val442;
-          for (int _i443 = 0; _i443 < _map440.size; ++_i443)
+          org.apache.storm.thrift.protocol.TMap _map470 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+          struct.window_to_transferred = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map470.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key471;
+          long _val472;
+          for (int _i473 = 0; _i473 < _map470.size; ++_i473)
           {
-            _key441 = iprot.readString();
-            _val442 = iprot.readI64();
-            struct.window_to_transferred.put(_key441, _val442);
+            _key471 = iprot.readString();
+            _val472 = iprot.readI64();
+            struct.window_to_transferred.put(_key471, _val472);
           }
         }
         struct.set_window_to_transferred_isSet(true);
       }
       if (incoming.get(2)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map444 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.window_to_complete_latencies_ms = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map444.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key445;
-          double _val446;
-          for (int _i447 = 0; _i447 < _map444.size; ++_i447)
+          org.apache.storm.thrift.protocol.TMap _map474 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.window_to_complete_latencies_ms = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map474.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key475;
+          double _val476;
+          for (int _i477 = 0; _i477 < _map474.size; ++_i477)
           {
-            _key445 = iprot.readString();
-            _val446 = iprot.readDouble();
-            struct.window_to_complete_latencies_ms.put(_key445, _val446);
+            _key475 = iprot.readString();
+            _val476 = iprot.readDouble();
+            struct.window_to_complete_latencies_ms.put(_key475, _val476);
           }
         }
         struct.set_window_to_complete_latencies_ms_isSet(true);
       }
       if (incoming.get(3)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map448 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-          struct.window_to_acked = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map448.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key449;
-          long _val450;
-          for (int _i451 = 0; _i451 < _map448.size; ++_i451)
+          org.apache.storm.thrift.protocol.TMap _map478 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+          struct.window_to_acked = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map478.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key479;
+          long _val480;
+          for (int _i481 = 0; _i481 < _map478.size; ++_i481)
           {
-            _key449 = iprot.readString();
-            _val450 = iprot.readI64();
-            struct.window_to_acked.put(_key449, _val450);
+            _key479 = iprot.readString();
+            _val480 = iprot.readI64();
+            struct.window_to_acked.put(_key479, _val480);
           }
         }
         struct.set_window_to_acked_isSet(true);
       }
       if (incoming.get(4)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map452 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-          struct.window_to_failed = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map452.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key453;
-          long _val454;
-          for (int _i455 = 0; _i455 < _map452.size; ++_i455)
+          org.apache.storm.thrift.protocol.TMap _map482 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+          struct.window_to_failed = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map482.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key483;
+          long _val484;
+          for (int _i485 = 0; _i485 < _map482.size; ++_i485)
           {
-            _key453 = iprot.readString();
-            _val454 = iprot.readI64();
-            struct.window_to_failed.put(_key453, _val454);
+            _key483 = iprot.readString();
+            _val484 = iprot.readI64();
+            struct.window_to_failed.put(_key483, _val484);
           }
         }
         struct.set_window_to_failed_isSet(true);

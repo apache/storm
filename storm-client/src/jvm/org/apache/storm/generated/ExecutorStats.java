@@ -633,27 +633,27 @@ public class ExecutorStats implements org.apache.storm.thrift.TBase<ExecutorStat
           case 1: // EMITTED
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map320 = iprot.readMapBegin();
-                struct.emitted = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Long>>(2*_map320.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key321;
-                @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Long> _val322;
-                for (int _i323 = 0; _i323 < _map320.size; ++_i323)
+                org.apache.storm.thrift.protocol.TMap _map350 = iprot.readMapBegin();
+                struct.emitted = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Long>>(2*_map350.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key351;
+                @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Long> _val352;
+                for (int _i353 = 0; _i353 < _map350.size; ++_i353)
                 {
-                  _key321 = iprot.readString();
+                  _key351 = iprot.readString();
                   {
-                    org.apache.storm.thrift.protocol.TMap _map324 = iprot.readMapBegin();
-                    _val322 = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map324.size);
-                    @org.apache.storm.thrift.annotation.Nullable java.lang.String _key325;
-                    long _val326;
-                    for (int _i327 = 0; _i327 < _map324.size; ++_i327)
+                    org.apache.storm.thrift.protocol.TMap _map354 = iprot.readMapBegin();
+                    _val352 = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map354.size);
+                    @org.apache.storm.thrift.annotation.Nullable java.lang.String _key355;
+                    long _val356;
+                    for (int _i357 = 0; _i357 < _map354.size; ++_i357)
                     {
-                      _key325 = iprot.readString();
-                      _val326 = iprot.readI64();
-                      _val322.put(_key325, _val326);
+                      _key355 = iprot.readString();
+                      _val356 = iprot.readI64();
+                      _val352.put(_key355, _val356);
                     }
                     iprot.readMapEnd();
                   }
-                  struct.emitted.put(_key321, _val322);
+                  struct.emitted.put(_key351, _val352);
                 }
                 iprot.readMapEnd();
               }
@@ -665,27 +665,27 @@ public class ExecutorStats implements org.apache.storm.thrift.TBase<ExecutorStat
           case 2: // TRANSFERRED
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map328 = iprot.readMapBegin();
-                struct.transferred = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Long>>(2*_map328.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key329;
-                @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Long> _val330;
-                for (int _i331 = 0; _i331 < _map328.size; ++_i331)
+                org.apache.storm.thrift.protocol.TMap _map358 = iprot.readMapBegin();
+                struct.transferred = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Long>>(2*_map358.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key359;
+                @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Long> _val360;
+                for (int _i361 = 0; _i361 < _map358.size; ++_i361)
                 {
-                  _key329 = iprot.readString();
+                  _key359 = iprot.readString();
                   {
-                    org.apache.storm.thrift.protocol.TMap _map332 = iprot.readMapBegin();
-                    _val330 = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map332.size);
-                    @org.apache.storm.thrift.annotation.Nullable java.lang.String _key333;
-                    long _val334;
-                    for (int _i335 = 0; _i335 < _map332.size; ++_i335)
+                    org.apache.storm.thrift.protocol.TMap _map362 = iprot.readMapBegin();
+                    _val360 = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map362.size);
+                    @org.apache.storm.thrift.annotation.Nullable java.lang.String _key363;
+                    long _val364;
+                    for (int _i365 = 0; _i365 < _map362.size; ++_i365)
                     {
-                      _key333 = iprot.readString();
-                      _val334 = iprot.readI64();
-                      _val330.put(_key333, _val334);
+                      _key363 = iprot.readString();
+                      _val364 = iprot.readI64();
+                      _val360.put(_key363, _val364);
                     }
                     iprot.readMapEnd();
                   }
-                  struct.transferred.put(_key329, _val330);
+                  struct.transferred.put(_key359, _val360);
                 }
                 iprot.readMapEnd();
               }
@@ -728,15 +728,15 @@ public class ExecutorStats implements org.apache.storm.thrift.TBase<ExecutorStat
         oprot.writeFieldBegin(EMITTED_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, struct.emitted.size()));
-          for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Long>> _iter336 : struct.emitted.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Long>> _iter366 : struct.emitted.entrySet())
           {
-            oprot.writeString(_iter336.getKey());
+            oprot.writeString(_iter366.getKey());
             {
-              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, _iter336.getValue().size()));
-              for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter337 : _iter336.getValue().entrySet())
+              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, _iter366.getValue().size()));
+              for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter367 : _iter366.getValue().entrySet())
               {
-                oprot.writeString(_iter337.getKey());
-                oprot.writeI64(_iter337.getValue());
+                oprot.writeString(_iter367.getKey());
+                oprot.writeI64(_iter367.getValue());
               }
               oprot.writeMapEnd();
             }
@@ -749,15 +749,15 @@ public class ExecutorStats implements org.apache.storm.thrift.TBase<ExecutorStat
         oprot.writeFieldBegin(TRANSFERRED_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, struct.transferred.size()));
-          for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Long>> _iter338 : struct.transferred.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Long>> _iter368 : struct.transferred.entrySet())
           {
-            oprot.writeString(_iter338.getKey());
+            oprot.writeString(_iter368.getKey());
             {
-              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, _iter338.getValue().size()));
-              for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter339 : _iter338.getValue().entrySet())
+              oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, _iter368.getValue().size()));
+              for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter369 : _iter368.getValue().entrySet())
               {
-                oprot.writeString(_iter339.getKey());
-                oprot.writeI64(_iter339.getValue());
+                oprot.writeString(_iter369.getKey());
+                oprot.writeI64(_iter369.getValue());
               }
               oprot.writeMapEnd();
             }
@@ -793,30 +793,30 @@ public class ExecutorStats implements org.apache.storm.thrift.TBase<ExecutorStat
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
         oprot.writeI32(struct.emitted.size());
-        for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Long>> _iter340 : struct.emitted.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Long>> _iter370 : struct.emitted.entrySet())
         {
-          oprot.writeString(_iter340.getKey());
+          oprot.writeString(_iter370.getKey());
           {
-            oprot.writeI32(_iter340.getValue().size());
-            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter341 : _iter340.getValue().entrySet())
+            oprot.writeI32(_iter370.getValue().size());
+            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter371 : _iter370.getValue().entrySet())
             {
-              oprot.writeString(_iter341.getKey());
-              oprot.writeI64(_iter341.getValue());
+              oprot.writeString(_iter371.getKey());
+              oprot.writeI64(_iter371.getValue());
             }
           }
         }
       }
       {
         oprot.writeI32(struct.transferred.size());
-        for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Long>> _iter342 : struct.transferred.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.util.Map<java.lang.String,java.lang.Long>> _iter372 : struct.transferred.entrySet())
         {
-          oprot.writeString(_iter342.getKey());
+          oprot.writeString(_iter372.getKey());
           {
-            oprot.writeI32(_iter342.getValue().size());
-            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter343 : _iter342.getValue().entrySet())
+            oprot.writeI32(_iter372.getValue().size());
+            for (java.util.Map.Entry<java.lang.String, java.lang.Long> _iter373 : _iter372.getValue().entrySet())
             {
-              oprot.writeString(_iter343.getKey());
-              oprot.writeI64(_iter343.getValue());
+              oprot.writeString(_iter373.getKey());
+              oprot.writeI64(_iter373.getValue());
             }
           }
         }
@@ -829,50 +829,50 @@ public class ExecutorStats implements org.apache.storm.thrift.TBase<ExecutorStat
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, ExecutorStats struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
-        org.apache.storm.thrift.protocol.TMap _map344 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
-        struct.emitted = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Long>>(2*_map344.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key345;
-        @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Long> _val346;
-        for (int _i347 = 0; _i347 < _map344.size; ++_i347)
+        org.apache.storm.thrift.protocol.TMap _map374 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
+        struct.emitted = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Long>>(2*_map374.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key375;
+        @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Long> _val376;
+        for (int _i377 = 0; _i377 < _map374.size; ++_i377)
         {
-          _key345 = iprot.readString();
+          _key375 = iprot.readString();
           {
-            org.apache.storm.thrift.protocol.TMap _map348 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-            _val346 = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map348.size);
-            @org.apache.storm.thrift.annotation.Nullable java.lang.String _key349;
-            long _val350;
-            for (int _i351 = 0; _i351 < _map348.size; ++_i351)
+            org.apache.storm.thrift.protocol.TMap _map378 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+            _val376 = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map378.size);
+            @org.apache.storm.thrift.annotation.Nullable java.lang.String _key379;
+            long _val380;
+            for (int _i381 = 0; _i381 < _map378.size; ++_i381)
             {
-              _key349 = iprot.readString();
-              _val350 = iprot.readI64();
-              _val346.put(_key349, _val350);
+              _key379 = iprot.readString();
+              _val380 = iprot.readI64();
+              _val376.put(_key379, _val380);
             }
           }
-          struct.emitted.put(_key345, _val346);
+          struct.emitted.put(_key375, _val376);
         }
       }
       struct.set_emitted_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TMap _map352 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
-        struct.transferred = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Long>>(2*_map352.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key353;
-        @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Long> _val354;
-        for (int _i355 = 0; _i355 < _map352.size; ++_i355)
+        org.apache.storm.thrift.protocol.TMap _map382 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.MAP, iprot.readI32());
+        struct.transferred = new java.util.HashMap<java.lang.String,java.util.Map<java.lang.String,java.lang.Long>>(2*_map382.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key383;
+        @org.apache.storm.thrift.annotation.Nullable java.util.Map<java.lang.String,java.lang.Long> _val384;
+        for (int _i385 = 0; _i385 < _map382.size; ++_i385)
         {
-          _key353 = iprot.readString();
+          _key383 = iprot.readString();
           {
-            org.apache.storm.thrift.protocol.TMap _map356 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-            _val354 = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map356.size);
-            @org.apache.storm.thrift.annotation.Nullable java.lang.String _key357;
-            long _val358;
-            for (int _i359 = 0; _i359 < _map356.size; ++_i359)
+            org.apache.storm.thrift.protocol.TMap _map386 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+            _val384 = new java.util.HashMap<java.lang.String,java.lang.Long>(2*_map386.size);
+            @org.apache.storm.thrift.annotation.Nullable java.lang.String _key387;
+            long _val388;
+            for (int _i389 = 0; _i389 < _map386.size; ++_i389)
             {
-              _key357 = iprot.readString();
-              _val358 = iprot.readI64();
-              _val354.put(_key357, _val358);
+              _key387 = iprot.readString();
+              _val388 = iprot.readI64();
+              _val384.put(_key387, _val388);
             }
           }
-          struct.transferred.put(_key353, _val354);
+          struct.transferred.put(_key383, _val384);
         }
       }
       struct.set_transferred_isSet(true);
