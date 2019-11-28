@@ -206,8 +206,8 @@ public class Task {
     public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> pendingEmits) {
         Tuple tuple = getTuple(stream, values);
         List<Integer> tasks = getOutgoingTasks(stream, values);
-        for (Integer t : tasks) {
-            AddressedTuple addressedTuple = new AddressedTuple(t, tuple);
+        for (int i = 0; i < tasks.size(); i++) {
+            AddressedTuple addressedTuple = new AddressedTuple(tasks.get(i), tuple);
             transfer.tryTransfer(addressedTuple, pendingEmits);
         }
     }
