@@ -15,10 +15,13 @@ package org.apache.storm.daemon.supervisor;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 
+import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -77,6 +80,14 @@ public class SlotTest {
         return resources;
     }
 
+    static WorkerResources mkWorkerResources(Double cpu, Double mem_on_heap, Double mem_off_heap, Map<String, Double> resources) {
+        WorkerResources workerResources = mkWorkerResources(cpu, mem_on_heap, mem_off_heap);
+        if (resources != null) {
+            workerResources.set_resources(resources);
+        }
+        return workerResources;
+    }
+
     static LSWorkerHeartbeat mkWorkerHB(String id, int port, List<ExecutorInfo> exec, Integer timeSecs) {
         LSWorkerHeartbeat ret = new LSWorkerHeartbeat();
         ret.set_topology_id(id);
@@ -108,12 +119,64 @@ public class SlotTest {
     }
 
     @Test
-    public void testEquivilant() {
+    public void testWorkerResourceEquality() {
+        WorkerResources resourcesRNull = mkWorkerResources(100.0, 100.0, 100.0, null);
+        WorkerResources resourcesREmpty = mkWorkerResources(100.0, 100.0, 100.0, Maps.newHashMap());
+        assertTrue(Slot.customWorkerResourcesEquality(resourcesRNull,resourcesREmpty));
+
+        Map resources = new HashMap<String, Double>();
+        resources.put("network.resource.units", 0.0);
+        WorkerResources resourcesRNetwork = mkWorkerResources(100.0, 100.0, 100.0,resources);
+        assertTrue(Slot.customWorkerResourcesEquality(resourcesREmpty, resourcesRNetwork));
+
+
+        Map resourcesNetwork = new HashMap<String, Double>();
+        resourcesNetwork.put("network.resource.units", 50.0);
+        WorkerResources resourcesRNetworkNonZero = mkWorkerResources(100.0, 100.0, 100.0,resourcesNetwork);
+        assertFalse(Slot.customWorkerResourcesEquality(resourcesREmpty, resourcesRNetworkNonZero));
+
+        Map resourcesNetworkOne = new HashMap<String, Double>();
+        resourcesNetworkOne.put("network.resource.units", 50.0);
+        WorkerResources resourcesRNetworkOne = mkWorkerResources(100.0, 100.0, 100.0,resourcesNetworkOne);
+        assertTrue(Slot.customWorkerResourcesEquality(resourcesRNetworkOne, resourcesRNetworkNonZero));
+
+        Map resourcesNetworkTwo = new HashMap<String, Double>();
+        resourcesNetworkTwo.put("network.resource.units", 100.0);
+        WorkerResources resourcesRNetworkTwo = mkWorkerResources(100.0, 100.0, 100.0,resourcesNetworkTwo);
+        assertFalse(Slot.customWorkerResourcesEquality(resourcesRNetworkOne, resourcesRNetworkTwo));
+
+        WorkerResources resourcesCpuNull = mkWorkerResources(null, 100.0,100.0);
+        WorkerResources resourcesCPUZero = mkWorkerResources(0.0, 100.0,100.0);
+        assertTrue(Slot.customWorkerResourcesEquality(resourcesCpuNull, resourcesCPUZero));
+
+        WorkerResources resourcesOnHeapMemNull = mkWorkerResources(100.0, null,100.0);
+        WorkerResources resourcesOnHeapMemZero = mkWorkerResources(100.0, 0.0,100.0);
+        assertTrue(Slot.customWorkerResourcesEquality(resourcesOnHeapMemNull, resourcesOnHeapMemZero));
+
+        WorkerResources resourcesOffHeapMemNull = mkWorkerResources(100.0, 100.0,null);
+        WorkerResources resourcesOffHeapMemZero = mkWorkerResources(100.0, 100.0,0.0);
+        assertTrue(Slot.customWorkerResourcesEquality(resourcesOffHeapMemNull, resourcesOffHeapMemZero));
+
+    }
+
+    @Test
+    public void testEquivalent() {
         LocalAssignment a = mkLocalAssignment("A", mkExecutorInfoList(1, 2, 3, 4, 5), mkWorkerResources(100.0, 100.0, 100.0));
         LocalAssignment aResized = mkLocalAssignment("A", mkExecutorInfoList(1, 2, 3, 4, 5), mkWorkerResources(100.0, 200.0, 100.0));
         LocalAssignment b = mkLocalAssignment("B", mkExecutorInfoList(1, 2, 3, 4, 5, 6), mkWorkerResources(100.0, 100.0, 100.0));
         LocalAssignment bReordered = mkLocalAssignment("B", mkExecutorInfoList(6, 5, 4, 3, 2, 1), mkWorkerResources(100.0, 100.0, 100.0));
 
+        LocalAssignment c = mkLocalAssignment("C", mkExecutorInfoList(188, 261),mkWorkerResources(400.0,10000.0,0.0));
+
+        WorkerResources workerResources = mkWorkerResources(400.0, 10000.0, 0.0);
+        Map<String, Double> additionalResources = workerResources.get_resources();
+        if( additionalResources == null) additionalResources = new HashMap<>();
+        additionalResources.put("network.resource.units", 0.0);
+
+        workerResources.set_resources(additionalResources);
+        LocalAssignment cReordered = mkLocalAssignment("C", mkExecutorInfoList(188, 261), workerResources);
+
+        assertTrue(Slot.equivalent(c,cReordered));
         assertTrue(Slot.equivalent(null, null));
         assertTrue(Slot.equivalent(a, a));
         assertTrue(Slot.equivalent(b, bReordered));
