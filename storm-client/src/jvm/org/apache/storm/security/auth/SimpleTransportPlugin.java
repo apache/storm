@@ -130,7 +130,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
         }
 
         @Override
-        public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
+        public void process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context 
             ReqContext reqContext = ReqContext.context();
 
@@ -171,7 +171,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             reqContext.setSubject(s);
 
             //invoke service handler
-            return wrapped.process(inProt, outProt);
+            wrapped.process(inProt, outProt);
         }
     }
 }
