@@ -14,6 +14,7 @@ package org.apache.storm.daemon.worker;
 
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.storm.generated.LogConfig;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
@@ -200,6 +202,32 @@ public class LogConfigManagerTest {
             assertEquals("INFO", rootResult.get_reset_log_level());
             assertEquals(inThirtySeconds, rootResult.get_reset_log_level_timeout_epoch());
         }
+    }
+
+    @Test
+    public void testProcessLogConfigChangeThrowsNullPointerExceptionWhenTargetLogLevelIsNotSet() {
+        LogConfigManager logConfigManager = new LogConfigManager();
+
+        LogConfig logConfig = new LogConfig();
+        LogLevel logLevel = new LogLevel();
+        logLevel.set_action(LogLevelAction.UPDATE);
+        logLevel.set_reset_log_level("INFO");
+        logConfig.put_to_named_logger_level("RESET_LOG", logLevel);
+
+        assertThrows(NullPointerException.class, () -> logConfigManager.processLogConfigChange(logConfig));
+    }
+
+    @Test
+    public void testProcessLogConfigChangeExecutesSuccessfullyWhenTargetLogLevelIsSet() {
+        LogConfigManager logConfigManager = new LogConfigManager();
+
+        LogConfig logConfig = new LogConfig();
+        LogLevel logLevel = new LogLevel();
+        logLevel.set_action(LogLevelAction.UPDATE);
+        logLevel.set_target_log_level("DEBUG");
+        logConfig.put_to_named_logger_level("TARGET_LOG", logLevel);
+
+        logConfigManager.processLogConfigChange(logConfig);
     }
 
     @Test

@@ -25,11 +25,11 @@ public class SetLogLevelTest {
         SetLogLevel.LogLevelsParser logLevelsParser = new SetLogLevel.LogLevelsParser(LogLevelAction.UPDATE);
         LogLevel logLevel = ((Map<String, LogLevel>) logLevelsParser.parse("com.foo.one=warn")).get("com.foo.one");
         Assert.assertEquals(0, logLevel.get_reset_log_level_timeout_secs());
-        Assert.assertEquals("WARN", logLevel.get_reset_log_level());
+        Assert.assertEquals("WARN", logLevel.get_target_log_level());
 
         logLevel = ((Map<String, LogLevel>) logLevelsParser.parse("com.foo.two=DEBUG:10")).get("com.foo.two");
         Assert.assertEquals(10, logLevel.get_reset_log_level_timeout_secs());
-        Assert.assertEquals("DEBUG", logLevel.get_reset_log_level());
+        Assert.assertEquals("DEBUG", logLevel.get_target_log_level());
     }
 
     @Test(expected = NumberFormatException.class)
