@@ -57,5 +57,6 @@ public class Constants {
     public static final String COMMON_TOTAL_MEMORY_RESOURCE_NAME = "memory.mb";
 
     public static final String NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS = "nimbus:num-send-assignment-exceptions";
+    public static final String SUPERVISOR_HEALTH_CHECK_TIMEOUTS = "supervisor:health-check-timeouts";
 }
     
