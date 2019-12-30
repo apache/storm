@@ -49,14 +49,12 @@ import org.apache.storm.utils.ExtendedThreadPoolExecutor;
 public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable {
     protected ThriftConnectionType type;
     protected Map<String, Object> conf;
-    protected Configuration loginConf;
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map<String, Object> conf, Configuration loginConf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> conf) {
         this.type = type;
         this.conf = conf;
-        this.loginConf = loginConf;
     }
 
     @Override

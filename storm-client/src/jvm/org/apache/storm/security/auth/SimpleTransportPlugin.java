@@ -48,14 +48,12 @@ public class SimpleTransportPlugin implements ITransportPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleTransportPlugin.class);
     protected ThriftConnectionType type;
     protected Map<String, Object> topoConf;
-    protected Configuration loginConf;
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration loginConf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf) {
         this.type = type;
         this.topoConf = topoConf;
-        this.loginConf = loginConf;
     }
 
     @Override
