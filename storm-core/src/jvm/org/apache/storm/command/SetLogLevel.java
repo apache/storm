@@ -92,7 +92,7 @@ public class SetLogLevel {
                 splits = splits[1].split(":");
                 Integer timeout = 0;
                 Level level = Level.valueOf(splits[0]);
-                logLevel.set_reset_log_level(level.toString());
+                logLevel.set_target_log_level(level.toString());
                 if (splits.length > 1) {
                     timeout = Integer.parseInt(splits[1]);
                 }
