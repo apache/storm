@@ -12,6 +12,8 @@
 
 package org.apache.storm.hooks.info;
 
+import java.util.List;
+
 import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
@@ -28,9 +30,9 @@ public class BoltExecuteInfo {
     }
 
     public void applyOn(TopologyContext topologyContext) {
-        for (int i = 0; i < topologyContext.getHooks().size(); i++) { // perf critical loop. dont use iterators
-            ITaskHook hook = topologyContext.getHooks().get(i);
-            hook.boltExecute(this);
+        List<ITaskHook> hooks = topologyContext.getHooks();
+        for (int i = 0; i < hooks.size(); i++) {
+            hooks.get(i).boltExecute(this);
         }
     }
 }
