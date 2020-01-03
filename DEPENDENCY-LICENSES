@@ -124,7 +124,7 @@ List of third-party dependencies grouped by their license type.
         * Apache Parquet Hadoop Bundle (org.apache.parquet:parquet-hadoop-bundle:1.8.1 - https://parquet.apache.org)
         * Apache Solr Solrj (org.apache.solr:solr-solrj:5.5.5 - http://lucene.apache.org/solr-parent/solr-solrj)
         * Apache Thrift (org.apache.thrift:libfb303:0.9.3 - http://thrift.apache.org)
-        * Apache Thrift (org.apache.thrift:libthrift:0.12.0 - http://thrift.apache.org)
+        * Apache Thrift (org.apache.thrift:libthrift:0.13.0 - http://thrift.apache.org)
         * Apache Thrift (org.apache.thrift:libthrift:0.9.3 - http://thrift.apache.org)
         * Apache Twill API (org.apache.twill:twill-api:0.6.0-incubating - http://twill.incubator.apache.org/twill-api)
         * Apache Twill common library (org.apache.twill:twill-common:0.6.0-incubating - http://twill.incubator.apache.org/twill-common)
