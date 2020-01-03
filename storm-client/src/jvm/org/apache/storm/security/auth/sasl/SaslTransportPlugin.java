@@ -124,7 +124,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
         }
 
         @Override
-        public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
+        public void process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context
             ReqContext reqContext = ReqContext.context();
 
@@ -133,7 +133,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
             TSaslServerTransport saslTrans = (TSaslServerTransport) trans;
 
             if (trans instanceof NoOpTTrasport) {
-                return false;
+                return;
             }
 
             //remote address
@@ -149,7 +149,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
             reqContext.setSubject(remoteUser);
 
             //invoke service handler
-            return wrapped.process(inProt, outProt);
+            wrapped.process(inProt, outProt);
         }
     }
 
