@@ -124,7 +124,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected ArrayList<Task> idToTask;
     protected int idToTaskBase;
     protected String hostname;
-    private StormMetricRegistry stormMetricRegistry;
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
@@ -335,13 +334,11 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     // updates v1 metric dataPoints with v2 metric API data
     private void addV2Metrics(List<IMetricsConsumer.DataPoint> dataPoints) {
-        if (stormMetricRegistry == null) {
-            return;
-        }
         boolean enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
         if (!enableV2MetricsDataPoints) {
             return;
         }
+        StormMetricRegistry stormMetricRegistry = workerData.getMetricRegistry();
         for (Map.Entry<String, Gauge> entry : stormMetricRegistry.registry().getGauges().entrySet()) {
             String name = entry.getKey();
             Object v = entry.getValue().getValue();
@@ -349,7 +346,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                 IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(name, v);
                 dataPoints.add(dataPoint);
             } else {
-                LOG.warn("Cannot report {}, it's value is not a Number {}", name, v);
+                LOG.warn("Cannot report {}, its value is not a Number {}", name, v);
             }
         }
         for (Map.Entry<String, Counter> entry : stormMetricRegistry.registry().getCounters().entrySet()) {
@@ -646,9 +643,4 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     public void setLocalExecutorTransfer(ExecutorTransfer executorTransfer) {
         this.executorTransfer = executorTransfer;
     }
-
-    public void setMetricRegistry(StormMetricRegistry stormMetricRegistry) {
-        this.stormMetricRegistry = stormMetricRegistry;
-    }
-
 }
