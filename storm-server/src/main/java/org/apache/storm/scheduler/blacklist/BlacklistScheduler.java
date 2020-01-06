@@ -115,6 +115,7 @@ public class BlacklistScheduler implements IScheduler {
         Map<String, SupervisorDetails> supervisors = cluster.getSupervisors();
         blacklistStrategy.resumeFromBlacklist();
         badSupervisors(supervisors);
+        // this step also frees up some bad supervisors to greylist due to resource shortage
         blacklistedSupervisorIds = refreshBlacklistedSupervisorIds(cluster, topologies);
         Set<String> blacklistHosts = getBlacklistHosts(cluster, blacklistedSupervisorIds);
         cluster.setBlacklistedHosts(blacklistHosts);

@@ -83,6 +83,7 @@ public class Cluster implements ISchedulingState {
     private final ResourceMetrics resourceMetrics;
     private SchedulerAssignmentImpl assignment;
     private Set<String> blackListedHosts = new HashSet<>();
+    private List<String> greyListedSupervisors = new ArrayList<>();
     private INimbus inimbus;
     private double minWorkerCpu = 0.0;
 
@@ -101,7 +102,7 @@ public class Cluster implements ISchedulingState {
         Map<String, ? extends SchedulerAssignment> map,
         Topologies topologies,
         Map<String, Object> conf) {
-        this(nimbus, resourceMetrics, supervisors, map, topologies, conf, null, null, null);
+        this(nimbus, resourceMetrics, supervisors, map, topologies, conf, null, null, null, null);
     }
 
     /**
@@ -117,6 +118,7 @@ public class Cluster implements ISchedulingState {
             new HashMap<>(src.conf),
             src.status,
             src.blackListedHosts,
+            src.greyListedSupervisors,
             src.networkTopography);
     }
 
@@ -137,6 +139,7 @@ public class Cluster implements ISchedulingState {
             new HashMap<>(src.conf),
             src.status,
             src.blackListedHosts,
+            src.greyListedSupervisors,
             src.networkTopography);
     }
 
@@ -149,6 +152,7 @@ public class Cluster implements ISchedulingState {
         Map<String, Object> conf,
         Map<String, String> status,
         Set<String> blackListedHosts,
+        List<String> greyListedSupervisors,
         Map<String, List<String>> networkTopography) {
         this.inimbus = nimbus;
         this.resourceMetrics = resourceMetrics;
@@ -199,6 +203,10 @@ public class Cluster implements ISchedulingState {
 
         if (blackListedHosts != null) {
             this.blackListedHosts.addAll(blackListedHosts);
+        }
+
+        if (greyListedSupervisors != null) {
+            this.greyListedSupervisors.addAll(greyListedSupervisors);
         }
         setAssignments(assignments, true);
     }
@@ -1087,5 +1095,14 @@ public class Cluster implements ISchedulingState {
 
     public double getMinWorkerCpu() {
         return minWorkerCpu;
+    }
+
+    public List<String> getGreyListedSupervisors() {
+        return greyListedSupervisors;
+    }
+
+    public void setGreyListedSupervisors(Set<String> greyListedSupervisors) {
+        this.greyListedSupervisors.clear();
+        this.greyListedSupervisors.addAll(greyListedSupervisors);
     }
 }
