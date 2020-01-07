@@ -13,6 +13,7 @@
 package org.apache.storm.security.auth.kerberos;
 
 import java.io.IOException;
+import java.util.Map;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -36,7 +37,8 @@ public class ClientCallbackHandler implements CallbackHandler {
      *
      * <p>For digest, you should have a pair of user name and password defined in this figgure.
      */
-    public ClientCallbackHandler(Configuration configuration) throws IOException {
+    public ClientCallbackHandler(Map<String, Object> topoConf) throws IOException {
+        Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
         if (configuration == null) {
             return;
         }

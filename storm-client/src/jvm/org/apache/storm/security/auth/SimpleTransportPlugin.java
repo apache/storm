@@ -48,14 +48,12 @@ public class SimpleTransportPlugin implements ITransportPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleTransportPlugin.class);
     protected ThriftConnectionType type;
     protected Map<String, Object> topoConf;
-    protected Configuration loginConf;
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration loginConf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf) {
         this.type = type;
         this.topoConf = topoConf;
-        this.loginConf = loginConf;
     }
 
     @Override
@@ -130,7 +128,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
         }
 
         @Override
-        public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
+        public void process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context 
             ReqContext reqContext = ReqContext.context();
 
@@ -171,7 +169,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             reqContext.setSubject(s);
 
             //invoke service handler
-            return wrapped.process(inProt, outProt);
+            wrapped.process(inProt, outProt);
         }
     }
 }

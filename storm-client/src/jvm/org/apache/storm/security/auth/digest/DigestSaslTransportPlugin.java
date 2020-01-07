@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
@@ -44,7 +46,7 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
         //create an authentication callback handler
         CallbackHandler serverCallbackHandler = new SimpleSaslServerCallbackHandler(impersonationAllowed,
                                                                                     workerTokenAuthorizer,
-                                                                                    new JassPasswordProvider(loginConf));
+                                                                                    new JassPasswordProvider(conf));
 
         //create a transport factory that will invoke our auth callback for digest
         TSaslServerTransport.Factory factory = new TSaslServerTransport.Factory();
@@ -60,7 +62,11 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
         WorkerToken token = WorkerTokenClientCallbackHandler.findWorkerTokenInSubject(type);
         if (token != null) {
             clientCallbackHandler = new WorkerTokenClientCallbackHandler(token);
-        } else if (loginConf != null) {
+        } else {
+            Configuration loginConf = ClientAuthUtils.getConfiguration(conf);
+            if (loginConf == null) {
+                throw new IOException("Could not find any way to authenticate with the server.");
+            }
             AppConfigurationEntry[] configurationEntries = loginConf.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
             if (configurationEntries == null) {
                 String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_CLIENT
@@ -76,8 +82,6 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
                 password = (String) options.getOrDefault("password", password);
             }
             clientCallbackHandler = new SimpleSaslClientCallbackHandler(username, password);
-        } else {
-            throw new IOException("Could not find any way to authenticate with the server.");
         }
 
         TSaslClientTransport wrapperTransport = new TSaslClientTransport(DIGEST,

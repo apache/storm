@@ -58,15 +58,15 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             workerTokenAuthorizer = new WorkerTokenAuthorizer(conf, type);
         }
         //create an authentication callback handler
-        CallbackHandler serverCallbackHandler = new ServerCallbackHandler(loginConf, impersonationAllowed);
+        CallbackHandler serverCallbackHandler = new ServerCallbackHandler(conf, impersonationAllowed);
+
+        String jaasConfFile = ClientAuthUtils.getJaasConf(conf);
 
         //login our principal
         Subject subject = null;
         try {
-            //specify a configuration object to be used
-            Configuration.setConfiguration(loginConf);
             //now login
-            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_SERVER, serverCallbackHandler);
+            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_SERVER, serverCallbackHandler, jaasConfFile);
             subject = login.getSubject();
             login.startThreadIfNeeded();
         } catch (LoginException ex) {
@@ -77,10 +77,10 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         //check the credential of our principal
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) {
             throw new RuntimeException("Fail to verify user principal with section \""
-                                       + ClientAuthUtils.LOGIN_CONTEXT_SERVER + "\" in login configuration file " + loginConf);
+                                       + ClientAuthUtils.LOGIN_CONTEXT_SERVER + "\" in login configuration file " + jaasConfFile);
         }
 
-        String principal = ClientAuthUtils.get(loginConf, ClientAuthUtils.LOGIN_CONTEXT_SERVER, "principal");
+        String principal = ClientAuthUtils.get(conf, ClientAuthUtils.LOGIN_CONTEXT_SERVER, "principal");
         LOG.debug("principal:" + principal);
         KerberosName serviceKerberosName = new KerberosName(principal);
         String serviceName = serviceKerberosName.getServiceName();
@@ -107,11 +107,9 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     private Login mkLogin() throws IOException {
         try {
             //create an authentication callback handler
-            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(loginConf);
-            //specify a configuration object to be used
-            Configuration.setConfiguration(loginConf);
+            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(conf);
             //now login
-            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, clientCallbackHandler);
+            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, clientCallbackHandler, ClientAuthUtils.getJaasConf(conf));
             login.startThreadIfNeeded();
             return login;
         } catch (LoginException ex) {
@@ -142,7 +140,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
     private TTransport kerberosConnect(TTransport transport, String serverHost, String asUser) throws IOException {
         //login our user
-        SortedMap<String, ?> authConf = ClientAuthUtils.pullConfig(loginConf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
+        SortedMap<String, ?> authConf = ClientAuthUtils.pullConfig(conf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
         if (authConf == null) {
             throw new RuntimeException("Error in parsing the kerberos login Configuration, returned null");
         }
@@ -180,11 +178,11 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         final Subject subject = login.getSubject();
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) { //error
             throw new RuntimeException("Fail to verify user principal with section \""
-                                       + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + loginConf);
+                    + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + ClientAuthUtils.getJaasConf(conf));
         }
 
         final String principal = StringUtils.isBlank(asUser) ? getPrincipal(subject) : asUser;
-        String serviceName = ClientAuthUtils.get(loginConf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT, "serviceName");
+        String serviceName = ClientAuthUtils.get(conf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT, "serviceName");
         if (serviceName == null) {
             serviceName = ClientAuthUtils.SERVICE;
         }

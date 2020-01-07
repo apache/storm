@@ -29,9 +29,8 @@ public interface ITransportPlugin {
      *
      * @param type      the type of connection this will process.
      * @param topoConf  Storm configuration
-     * @param loginConf login configuration
      */
-    void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration loginConf);
+    void prepare(ThriftConnectionType type, Map<String, Object> topoConf);
 
     /**
      * Create a server associated with a given port, service handler, and purpose.

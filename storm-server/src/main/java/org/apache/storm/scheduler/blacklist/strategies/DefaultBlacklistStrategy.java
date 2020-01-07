@@ -85,9 +85,12 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
             }
         }
         Set<String> toRelease = releaseBlacklistWhenNeeded(cluster, new ArrayList<>(blacklist.keySet()));
+        // After having computed the final blacklist,
+        // the nodes which are released due to resource shortage will be put to the "greylist".
         if (toRelease != null) {
             LOG.debug("Releasing {} nodes because of low resources", toRelease.size());
-            for (String key: toRelease) {
+            cluster.setGreyListedSupervisors(toRelease);
+            for (String key : toRelease) {
                 blacklist.remove(key);
             }
         }

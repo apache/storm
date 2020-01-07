@@ -262,22 +262,26 @@ public class AsyncLocalizer implements AutoCloseable {
                     while (!done) {
                         try {
                             synchronized (blob) {
-                                long localVersion = blob.getLocalVersion();
-                                long remoteVersion = blob.getRemoteVersion(blobStore);
-                                if (localVersion != remoteVersion || !blob.isFullyDownloaded()) {
-                                    if (blob.isFullyDownloaded()) {
-                                        //Avoid case of different blob version
-                                        // when blob is not downloaded (first time download)
-                                        numBlobUpdateVersionChanged.mark();
+                                if (blob.isUsed()) {
+                                    long localVersion = blob.getLocalVersion();
+                                    long remoteVersion = blob.getRemoteVersion(blobStore);
+                                    if (localVersion != remoteVersion || !blob.isFullyDownloaded()) {
+                                        if (blob.isFullyDownloaded()) {
+                                            //Avoid case of different blob version
+                                            // when blob is not downloaded (first time download)
+                                            numBlobUpdateVersionChanged.mark();
+                                        }
+                                        Timer.Context t = singleBlobLocalizationDuration.time();
+                                        try {
+                                            long newVersion = blob.fetchUnzipToTemp(blobStore);
+                                            blob.informReferencesAndCommitNewVersion(newVersion);
+                                            t.stop();
+                                        } finally {
+                                            blob.cleanupOrphanedData();
+                                        }
                                     }
-                                    Timer.Context t = singleBlobLocalizationDuration.time();
-                                    try {
-                                        long newVersion = blob.fetchUnzipToTemp(blobStore);
-                                        blob.informReferencesAndCommitNewVersion(newVersion);
-                                        t.stop();
-                                    } finally {
-                                        blob.cleanupOrphanedData();
-                                    }
+                                } else {
+                                    LOG.debug("Skipping update of unused blob {}", blob);
                                 }
                             }
                             done = true;
