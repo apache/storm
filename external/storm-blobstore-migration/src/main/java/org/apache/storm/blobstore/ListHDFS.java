@@ -49,11 +49,11 @@ public class ListHDFS {
         hdfsConf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "org.apache.storm.security.auth.DefaultPrincipalToLocal");
         if (args.length >= 2) {
             System.out.println("SETTING HDFS PRINCIPAL!");
-            hdfsConf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, args[1]);
+            hdfsConf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, args[1]);
         }
         if (args.length >= 3) {
             System.out.println("SETTING HDFS KEYTAB!");
-            hdfsConf.put(Config.BLOBSTORE_HDFS_KEYTAB, args[2]);
+            hdfsConf.put(Config.STORM_HDFS_LOGIN_KEYTAB, args[2]);
         }
         
         /* CREATE THE BLOBSTORES */
