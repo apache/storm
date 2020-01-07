@@ -31,7 +31,7 @@ import java.util.Map;
 
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.daemon.supervisor.Supervisor;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ public class HealthChecker {
     private static final String TIMEOUT = "timeout";
     private static final String FAILED_WITH_EXIT_CODE = "failed_with_exit_code";
 
-    public static int healthCheck(Map<String, Object> conf, Supervisor supervisor) {
+    public static int healthCheck(Map<String, Object> conf, StormMetricsRegistry metricRegistry) {
         String healthDir = ServerConfigUtils.absoluteHealthCheckDir(conf);
         List<String> results = new ArrayList<>();
         if (healthDir != null) {
@@ -76,8 +76,8 @@ public class HealthChecker {
             return 1;
         } else if (results.contains(TIMEOUT)) {
             LOG.warn("The supervisor healthchecks timedout!!!");
-            if (supervisor != null) {
-                Meter timeoutMeter = supervisor.getMetricsRegistry().getMeter(Constants.SUPERVISOR_HEALTH_CHECK_TIMEOUTS);
+            if (metricRegistry != null) {
+                Meter timeoutMeter = metricRegistry.getMeter(Constants.SUPERVISOR_HEALTH_CHECK_TIMEOUTS);
                 if (timeoutMeter != null) {
                     timeoutMeter.mark();
                 }
