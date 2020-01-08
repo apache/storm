@@ -3060,16 +3060,16 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           case 9: // ID_TO_SPOUT_AGG_STATS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map512 = iprot.readMapBegin();
-                struct.id_to_spout_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map512.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key513;
-                @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val514;
-                for (int _i515 = 0; _i515 < _map512.size; ++_i515)
+                org.apache.storm.thrift.protocol.TMap _map520 = iprot.readMapBegin();
+                struct.id_to_spout_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map520.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key521;
+                @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val522;
+                for (int _i523 = 0; _i523 < _map520.size; ++_i523)
                 {
-                  _key513 = iprot.readString();
-                  _val514 = new ComponentAggregateStats();
-                  _val514.read(iprot);
-                  struct.id_to_spout_agg_stats.put(_key513, _val514);
+                  _key521 = iprot.readString();
+                  _val522 = new ComponentAggregateStats();
+                  _val522.read(iprot);
+                  struct.id_to_spout_agg_stats.put(_key521, _val522);
                 }
                 iprot.readMapEnd();
               }
@@ -3081,16 +3081,16 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           case 10: // ID_TO_BOLT_AGG_STATS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map516 = iprot.readMapBegin();
-                struct.id_to_bolt_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map516.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key517;
-                @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val518;
-                for (int _i519 = 0; _i519 < _map516.size; ++_i519)
+                org.apache.storm.thrift.protocol.TMap _map524 = iprot.readMapBegin();
+                struct.id_to_bolt_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map524.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key525;
+                @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val526;
+                for (int _i527 = 0; _i527 < _map524.size; ++_i527)
                 {
-                  _key517 = iprot.readString();
-                  _val518 = new ComponentAggregateStats();
-                  _val518.read(iprot);
-                  struct.id_to_bolt_agg_stats.put(_key517, _val518);
+                  _key525 = iprot.readString();
+                  _val526 = new ComponentAggregateStats();
+                  _val526.read(iprot);
+                  struct.id_to_bolt_agg_stats.put(_key525, _val526);
                 }
                 iprot.readMapEnd();
               }
@@ -3144,14 +3144,14 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           case 16: // WORKERS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list520 = iprot.readListBegin();
-                struct.workers = new java.util.ArrayList<WorkerSummary>(_list520.size);
-                @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem521;
-                for (int _i522 = 0; _i522 < _list520.size; ++_i522)
+                org.apache.storm.thrift.protocol.TList _list528 = iprot.readListBegin();
+                struct.workers = new java.util.ArrayList<WorkerSummary>(_list528.size);
+                @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem529;
+                for (int _i530 = 0; _i530 < _list528.size; ++_i530)
                 {
-                  _elem521 = new WorkerSummary();
-                  _elem521.read(iprot);
-                  struct.workers.add(_elem521);
+                  _elem529 = new WorkerSummary();
+                  _elem529.read(iprot);
+                  struct.workers.add(_elem529);
                 }
                 iprot.readListEnd();
               }
@@ -3291,15 +3291,15 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           case 535: // REQUESTED_GENERIC_RESOURCES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map523 = iprot.readMapBegin();
-                struct.requested_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map523.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key524;
-                double _val525;
-                for (int _i526 = 0; _i526 < _map523.size; ++_i526)
+                org.apache.storm.thrift.protocol.TMap _map531 = iprot.readMapBegin();
+                struct.requested_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map531.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key532;
+                double _val533;
+                for (int _i534 = 0; _i534 < _map531.size; ++_i534)
                 {
-                  _key524 = iprot.readString();
-                  _val525 = iprot.readDouble();
-                  struct.requested_generic_resources.put(_key524, _val525);
+                  _key532 = iprot.readString();
+                  _val533 = iprot.readDouble();
+                  struct.requested_generic_resources.put(_key532, _val533);
                 }
                 iprot.readMapEnd();
               }
@@ -3311,15 +3311,15 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           case 536: // ASSIGNED_GENERIC_RESOURCES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map527 = iprot.readMapBegin();
-                struct.assigned_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map527.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key528;
-                double _val529;
-                for (int _i530 = 0; _i530 < _map527.size; ++_i530)
+                org.apache.storm.thrift.protocol.TMap _map535 = iprot.readMapBegin();
+                struct.assigned_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map535.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key536;
+                double _val537;
+                for (int _i538 = 0; _i538 < _map535.size; ++_i538)
                 {
-                  _key528 = iprot.readString();
-                  _val529 = iprot.readDouble();
-                  struct.assigned_generic_resources.put(_key528, _val529);
+                  _key536 = iprot.readString();
+                  _val537 = iprot.readDouble();
+                  struct.assigned_generic_resources.put(_key536, _val537);
                 }
                 iprot.readMapEnd();
               }
@@ -3392,10 +3392,10 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           oprot.writeFieldBegin(ID_TO_SPOUT_AGG_STATS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, struct.id_to_spout_agg_stats.size()));
-            for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter531 : struct.id_to_spout_agg_stats.entrySet())
+            for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter539 : struct.id_to_spout_agg_stats.entrySet())
             {
-              oprot.writeString(_iter531.getKey());
-              _iter531.getValue().write(oprot);
+              oprot.writeString(_iter539.getKey());
+              _iter539.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -3407,10 +3407,10 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           oprot.writeFieldBegin(ID_TO_BOLT_AGG_STATS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, struct.id_to_bolt_agg_stats.size()));
-            for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter532 : struct.id_to_bolt_agg_stats.entrySet())
+            for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter540 : struct.id_to_bolt_agg_stats.entrySet())
             {
-              oprot.writeString(_iter532.getKey());
-              _iter532.getValue().write(oprot);
+              oprot.writeString(_iter540.getKey());
+              _iter540.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -3455,9 +3455,9 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           oprot.writeFieldBegin(WORKERS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.workers.size()));
-            for (WorkerSummary _iter533 : struct.workers)
+            for (WorkerSummary _iter541 : struct.workers)
             {
-              _iter533.write(oprot);
+              _iter541.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -3553,10 +3553,10 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           oprot.writeFieldBegin(REQUESTED_GENERIC_RESOURCES_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.requested_generic_resources.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter534 : struct.requested_generic_resources.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter542 : struct.requested_generic_resources.entrySet())
             {
-              oprot.writeString(_iter534.getKey());
-              oprot.writeDouble(_iter534.getValue());
+              oprot.writeString(_iter542.getKey());
+              oprot.writeDouble(_iter542.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -3568,10 +3568,10 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
           oprot.writeFieldBegin(ASSIGNED_GENERIC_RESOURCES_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.assigned_generic_resources.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter535 : struct.assigned_generic_resources.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter543 : struct.assigned_generic_resources.entrySet())
             {
-              oprot.writeString(_iter535.getKey());
-              oprot.writeDouble(_iter535.getValue());
+              oprot.writeString(_iter543.getKey());
+              oprot.writeDouble(_iter543.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -3721,20 +3721,20 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       if (struct.is_set_id_to_spout_agg_stats()) {
         {
           oprot.writeI32(struct.id_to_spout_agg_stats.size());
-          for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter536 : struct.id_to_spout_agg_stats.entrySet())
+          for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter544 : struct.id_to_spout_agg_stats.entrySet())
           {
-            oprot.writeString(_iter536.getKey());
-            _iter536.getValue().write(oprot);
+            oprot.writeString(_iter544.getKey());
+            _iter544.getValue().write(oprot);
           }
         }
       }
       if (struct.is_set_id_to_bolt_agg_stats()) {
         {
           oprot.writeI32(struct.id_to_bolt_agg_stats.size());
-          for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter537 : struct.id_to_bolt_agg_stats.entrySet())
+          for (java.util.Map.Entry<java.lang.String, ComponentAggregateStats> _iter545 : struct.id_to_bolt_agg_stats.entrySet())
           {
-            oprot.writeString(_iter537.getKey());
-            _iter537.getValue().write(oprot);
+            oprot.writeString(_iter545.getKey());
+            _iter545.getValue().write(oprot);
           }
         }
       }
@@ -3756,9 +3756,9 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       if (struct.is_set_workers()) {
         {
           oprot.writeI32(struct.workers.size());
-          for (WorkerSummary _iter538 : struct.workers)
+          for (WorkerSummary _iter546 : struct.workers)
           {
-            _iter538.write(oprot);
+            _iter546.write(oprot);
           }
         }
       }
@@ -3813,20 +3813,20 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       if (struct.is_set_requested_generic_resources()) {
         {
           oprot.writeI32(struct.requested_generic_resources.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter539 : struct.requested_generic_resources.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter547 : struct.requested_generic_resources.entrySet())
           {
-            oprot.writeString(_iter539.getKey());
-            oprot.writeDouble(_iter539.getValue());
+            oprot.writeString(_iter547.getKey());
+            oprot.writeDouble(_iter547.getValue());
           }
         }
       }
       if (struct.is_set_assigned_generic_resources()) {
         {
           oprot.writeI32(struct.assigned_generic_resources.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter540 : struct.assigned_generic_resources.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter548 : struct.assigned_generic_resources.entrySet())
           {
-            oprot.writeString(_iter540.getKey());
-            oprot.writeDouble(_iter540.getValue());
+            oprot.writeString(_iter548.getKey());
+            oprot.writeDouble(_iter548.getValue());
           }
         }
       }
@@ -3868,32 +3868,32 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       }
       if (incoming.get(7)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map541 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.id_to_spout_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map541.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key542;
-          @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val543;
-          for (int _i544 = 0; _i544 < _map541.size; ++_i544)
+          org.apache.storm.thrift.protocol.TMap _map549 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.id_to_spout_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map549.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key550;
+          @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val551;
+          for (int _i552 = 0; _i552 < _map549.size; ++_i552)
           {
-            _key542 = iprot.readString();
-            _val543 = new ComponentAggregateStats();
-            _val543.read(iprot);
-            struct.id_to_spout_agg_stats.put(_key542, _val543);
+            _key550 = iprot.readString();
+            _val551 = new ComponentAggregateStats();
+            _val551.read(iprot);
+            struct.id_to_spout_agg_stats.put(_key550, _val551);
           }
         }
         struct.set_id_to_spout_agg_stats_isSet(true);
       }
       if (incoming.get(8)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map545 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.id_to_bolt_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map545.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key546;
-          @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val547;
-          for (int _i548 = 0; _i548 < _map545.size; ++_i548)
+          org.apache.storm.thrift.protocol.TMap _map553 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.id_to_bolt_agg_stats = new java.util.HashMap<java.lang.String,ComponentAggregateStats>(2*_map553.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key554;
+          @org.apache.storm.thrift.annotation.Nullable ComponentAggregateStats _val555;
+          for (int _i556 = 0; _i556 < _map553.size; ++_i556)
           {
-            _key546 = iprot.readString();
-            _val547 = new ComponentAggregateStats();
-            _val547.read(iprot);
-            struct.id_to_bolt_agg_stats.put(_key546, _val547);
+            _key554 = iprot.readString();
+            _val555 = new ComponentAggregateStats();
+            _val555.read(iprot);
+            struct.id_to_bolt_agg_stats.put(_key554, _val555);
           }
         }
         struct.set_id_to_bolt_agg_stats_isSet(true);
@@ -3922,14 +3922,14 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       }
       if (incoming.get(14)) {
         {
-          org.apache.storm.thrift.protocol.TList _list549 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.workers = new java.util.ArrayList<WorkerSummary>(_list549.size);
-          @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem550;
-          for (int _i551 = 0; _i551 < _list549.size; ++_i551)
+          org.apache.storm.thrift.protocol.TList _list557 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.workers = new java.util.ArrayList<WorkerSummary>(_list557.size);
+          @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem558;
+          for (int _i559 = 0; _i559 < _list557.size; ++_i559)
           {
-            _elem550 = new WorkerSummary();
-            _elem550.read(iprot);
-            struct.workers.add(_elem550);
+            _elem558 = new WorkerSummary();
+            _elem558.read(iprot);
+            struct.workers.add(_elem558);
           }
         }
         struct.set_workers_isSet(true);
@@ -4000,30 +4000,30 @@ public class TopologyPageInfo implements org.apache.storm.thrift.TBase<TopologyP
       }
       if (incoming.get(31)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map552 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.requested_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map552.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key553;
-          double _val554;
-          for (int _i555 = 0; _i555 < _map552.size; ++_i555)
+          org.apache.storm.thrift.protocol.TMap _map560 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.requested_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map560.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key561;
+          double _val562;
+          for (int _i563 = 0; _i563 < _map560.size; ++_i563)
           {
-            _key553 = iprot.readString();
-            _val554 = iprot.readDouble();
-            struct.requested_generic_resources.put(_key553, _val554);
+            _key561 = iprot.readString();
+            _val562 = iprot.readDouble();
+            struct.requested_generic_resources.put(_key561, _val562);
           }
         }
         struct.set_requested_generic_resources_isSet(true);
       }
       if (incoming.get(32)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map556 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.assigned_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map556.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key557;
-          double _val558;
-          for (int _i559 = 0; _i559 < _map556.size; ++_i559)
+          org.apache.storm.thrift.protocol.TMap _map564 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.assigned_generic_resources = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map564.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key565;
+          double _val566;
+          for (int _i567 = 0; _i567 < _map564.size; ++_i567)
           {
-            _key557 = iprot.readString();
-            _val558 = iprot.readDouble();
-            struct.assigned_generic_resources.put(_key557, _val558);
+            _key565 = iprot.readString();
+            _val566 = iprot.readDouble();
+            struct.assigned_generic_resources.put(_key565, _val566);
           }
         }
         struct.set_assigned_generic_resources_isSet(true);

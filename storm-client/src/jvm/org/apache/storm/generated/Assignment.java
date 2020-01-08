@@ -942,15 +942,15 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           case 2: // NODE_HOST
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map736 = iprot.readMapBegin();
-                struct.node_host = new java.util.HashMap<java.lang.String,java.lang.String>(2*_map736.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key737;
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _val738;
-                for (int _i739 = 0; _i739 < _map736.size; ++_i739)
+                org.apache.storm.thrift.protocol.TMap _map744 = iprot.readMapBegin();
+                struct.node_host = new java.util.HashMap<java.lang.String,java.lang.String>(2*_map744.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key745;
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _val746;
+                for (int _i747 = 0; _i747 < _map744.size; ++_i747)
                 {
-                  _key737 = iprot.readString();
-                  _val738 = iprot.readString();
-                  struct.node_host.put(_key737, _val738);
+                  _key745 = iprot.readString();
+                  _val746 = iprot.readString();
+                  struct.node_host.put(_key745, _val746);
                 }
                 iprot.readMapEnd();
               }
@@ -962,26 +962,26 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           case 3: // EXECUTOR_NODE_PORT
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map740 = iprot.readMapBegin();
-                struct.executor_node_port = new java.util.HashMap<java.util.List<java.lang.Long>,NodeInfo>(2*_map740.size);
-                @org.apache.storm.thrift.annotation.Nullable java.util.List<java.lang.Long> _key741;
-                @org.apache.storm.thrift.annotation.Nullable NodeInfo _val742;
-                for (int _i743 = 0; _i743 < _map740.size; ++_i743)
+                org.apache.storm.thrift.protocol.TMap _map748 = iprot.readMapBegin();
+                struct.executor_node_port = new java.util.HashMap<java.util.List<java.lang.Long>,NodeInfo>(2*_map748.size);
+                @org.apache.storm.thrift.annotation.Nullable java.util.List<java.lang.Long> _key749;
+                @org.apache.storm.thrift.annotation.Nullable NodeInfo _val750;
+                for (int _i751 = 0; _i751 < _map748.size; ++_i751)
                 {
                   {
-                    org.apache.storm.thrift.protocol.TList _list744 = iprot.readListBegin();
-                    _key741 = new java.util.ArrayList<java.lang.Long>(_list744.size);
-                    long _elem745;
-                    for (int _i746 = 0; _i746 < _list744.size; ++_i746)
+                    org.apache.storm.thrift.protocol.TList _list752 = iprot.readListBegin();
+                    _key749 = new java.util.ArrayList<java.lang.Long>(_list752.size);
+                    long _elem753;
+                    for (int _i754 = 0; _i754 < _list752.size; ++_i754)
                     {
-                      _elem745 = iprot.readI64();
-                      _key741.add(_elem745);
+                      _elem753 = iprot.readI64();
+                      _key749.add(_elem753);
                     }
                     iprot.readListEnd();
                   }
-                  _val742 = new NodeInfo();
-                  _val742.read(iprot);
-                  struct.executor_node_port.put(_key741, _val742);
+                  _val750 = new NodeInfo();
+                  _val750.read(iprot);
+                  struct.executor_node_port.put(_key749, _val750);
                 }
                 iprot.readMapEnd();
               }
@@ -993,25 +993,25 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           case 4: // EXECUTOR_START_TIME_SECS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map747 = iprot.readMapBegin();
-                struct.executor_start_time_secs = new java.util.HashMap<java.util.List<java.lang.Long>,java.lang.Long>(2*_map747.size);
-                @org.apache.storm.thrift.annotation.Nullable java.util.List<java.lang.Long> _key748;
-                long _val749;
-                for (int _i750 = 0; _i750 < _map747.size; ++_i750)
+                org.apache.storm.thrift.protocol.TMap _map755 = iprot.readMapBegin();
+                struct.executor_start_time_secs = new java.util.HashMap<java.util.List<java.lang.Long>,java.lang.Long>(2*_map755.size);
+                @org.apache.storm.thrift.annotation.Nullable java.util.List<java.lang.Long> _key756;
+                long _val757;
+                for (int _i758 = 0; _i758 < _map755.size; ++_i758)
                 {
                   {
-                    org.apache.storm.thrift.protocol.TList _list751 = iprot.readListBegin();
-                    _key748 = new java.util.ArrayList<java.lang.Long>(_list751.size);
-                    long _elem752;
-                    for (int _i753 = 0; _i753 < _list751.size; ++_i753)
+                    org.apache.storm.thrift.protocol.TList _list759 = iprot.readListBegin();
+                    _key756 = new java.util.ArrayList<java.lang.Long>(_list759.size);
+                    long _elem760;
+                    for (int _i761 = 0; _i761 < _list759.size; ++_i761)
                     {
-                      _elem752 = iprot.readI64();
-                      _key748.add(_elem752);
+                      _elem760 = iprot.readI64();
+                      _key756.add(_elem760);
                     }
                     iprot.readListEnd();
                   }
-                  _val749 = iprot.readI64();
-                  struct.executor_start_time_secs.put(_key748, _val749);
+                  _val757 = iprot.readI64();
+                  struct.executor_start_time_secs.put(_key756, _val757);
                 }
                 iprot.readMapEnd();
               }
@@ -1023,17 +1023,17 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           case 5: // WORKER_RESOURCES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map754 = iprot.readMapBegin();
-                struct.worker_resources = new java.util.HashMap<NodeInfo,WorkerResources>(2*_map754.size);
-                @org.apache.storm.thrift.annotation.Nullable NodeInfo _key755;
-                @org.apache.storm.thrift.annotation.Nullable WorkerResources _val756;
-                for (int _i757 = 0; _i757 < _map754.size; ++_i757)
+                org.apache.storm.thrift.protocol.TMap _map762 = iprot.readMapBegin();
+                struct.worker_resources = new java.util.HashMap<NodeInfo,WorkerResources>(2*_map762.size);
+                @org.apache.storm.thrift.annotation.Nullable NodeInfo _key763;
+                @org.apache.storm.thrift.annotation.Nullable WorkerResources _val764;
+                for (int _i765 = 0; _i765 < _map762.size; ++_i765)
                 {
-                  _key755 = new NodeInfo();
-                  _key755.read(iprot);
-                  _val756 = new WorkerResources();
-                  _val756.read(iprot);
-                  struct.worker_resources.put(_key755, _val756);
+                  _key763 = new NodeInfo();
+                  _key763.read(iprot);
+                  _val764 = new WorkerResources();
+                  _val764.read(iprot);
+                  struct.worker_resources.put(_key763, _val764);
                 }
                 iprot.readMapEnd();
               }
@@ -1045,15 +1045,15 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           case 6: // TOTAL_SHARED_OFF_HEAP
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map758 = iprot.readMapBegin();
-                struct.total_shared_off_heap = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map758.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key759;
-                double _val760;
-                for (int _i761 = 0; _i761 < _map758.size; ++_i761)
+                org.apache.storm.thrift.protocol.TMap _map766 = iprot.readMapBegin();
+                struct.total_shared_off_heap = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map766.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key767;
+                double _val768;
+                for (int _i769 = 0; _i769 < _map766.size; ++_i769)
                 {
-                  _key759 = iprot.readString();
-                  _val760 = iprot.readDouble();
-                  struct.total_shared_off_heap.put(_key759, _val760);
+                  _key767 = iprot.readString();
+                  _val768 = iprot.readDouble();
+                  struct.total_shared_off_heap.put(_key767, _val768);
                 }
                 iprot.readMapEnd();
               }
@@ -1093,10 +1093,10 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           oprot.writeFieldBegin(NODE_HOST_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRING, struct.node_host.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.String> _iter762 : struct.node_host.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.String> _iter770 : struct.node_host.entrySet())
             {
-              oprot.writeString(_iter762.getKey());
-              oprot.writeString(_iter762.getValue());
+              oprot.writeString(_iter770.getKey());
+              oprot.writeString(_iter770.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1108,17 +1108,17 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           oprot.writeFieldBegin(EXECUTOR_NODE_PORT_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.LIST, org.apache.storm.thrift.protocol.TType.STRUCT, struct.executor_node_port.size()));
-            for (java.util.Map.Entry<java.util.List<java.lang.Long>, NodeInfo> _iter763 : struct.executor_node_port.entrySet())
+            for (java.util.Map.Entry<java.util.List<java.lang.Long>, NodeInfo> _iter771 : struct.executor_node_port.entrySet())
             {
               {
-                oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.I64, _iter763.getKey().size()));
-                for (long _iter764 : _iter763.getKey())
+                oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.I64, _iter771.getKey().size()));
+                for (long _iter772 : _iter771.getKey())
                 {
-                  oprot.writeI64(_iter764);
+                  oprot.writeI64(_iter772);
                 }
                 oprot.writeListEnd();
               }
-              _iter763.getValue().write(oprot);
+              _iter771.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -1130,17 +1130,17 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           oprot.writeFieldBegin(EXECUTOR_START_TIME_SECS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.LIST, org.apache.storm.thrift.protocol.TType.I64, struct.executor_start_time_secs.size()));
-            for (java.util.Map.Entry<java.util.List<java.lang.Long>, java.lang.Long> _iter765 : struct.executor_start_time_secs.entrySet())
+            for (java.util.Map.Entry<java.util.List<java.lang.Long>, java.lang.Long> _iter773 : struct.executor_start_time_secs.entrySet())
             {
               {
-                oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.I64, _iter765.getKey().size()));
-                for (long _iter766 : _iter765.getKey())
+                oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.I64, _iter773.getKey().size()));
+                for (long _iter774 : _iter773.getKey())
                 {
-                  oprot.writeI64(_iter766);
+                  oprot.writeI64(_iter774);
                 }
                 oprot.writeListEnd();
               }
-              oprot.writeI64(_iter765.getValue());
+              oprot.writeI64(_iter773.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1152,10 +1152,10 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           oprot.writeFieldBegin(WORKER_RESOURCES_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.STRUCT, struct.worker_resources.size()));
-            for (java.util.Map.Entry<NodeInfo, WorkerResources> _iter767 : struct.worker_resources.entrySet())
+            for (java.util.Map.Entry<NodeInfo, WorkerResources> _iter775 : struct.worker_resources.entrySet())
             {
-              _iter767.getKey().write(oprot);
-              _iter767.getValue().write(oprot);
+              _iter775.getKey().write(oprot);
+              _iter775.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -1167,10 +1167,10 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
           oprot.writeFieldBegin(TOTAL_SHARED_OFF_HEAP_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.total_shared_off_heap.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter768 : struct.total_shared_off_heap.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter776 : struct.total_shared_off_heap.entrySet())
             {
-              oprot.writeString(_iter768.getKey());
-              oprot.writeDouble(_iter768.getValue());
+              oprot.writeString(_iter776.getKey());
+              oprot.writeDouble(_iter776.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1225,62 +1225,62 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
       if (struct.is_set_node_host()) {
         {
           oprot.writeI32(struct.node_host.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.String> _iter769 : struct.node_host.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.String> _iter777 : struct.node_host.entrySet())
           {
-            oprot.writeString(_iter769.getKey());
-            oprot.writeString(_iter769.getValue());
+            oprot.writeString(_iter777.getKey());
+            oprot.writeString(_iter777.getValue());
           }
         }
       }
       if (struct.is_set_executor_node_port()) {
         {
           oprot.writeI32(struct.executor_node_port.size());
-          for (java.util.Map.Entry<java.util.List<java.lang.Long>, NodeInfo> _iter770 : struct.executor_node_port.entrySet())
+          for (java.util.Map.Entry<java.util.List<java.lang.Long>, NodeInfo> _iter778 : struct.executor_node_port.entrySet())
           {
             {
-              oprot.writeI32(_iter770.getKey().size());
-              for (long _iter771 : _iter770.getKey())
+              oprot.writeI32(_iter778.getKey().size());
+              for (long _iter779 : _iter778.getKey())
               {
-                oprot.writeI64(_iter771);
+                oprot.writeI64(_iter779);
               }
             }
-            _iter770.getValue().write(oprot);
+            _iter778.getValue().write(oprot);
           }
         }
       }
       if (struct.is_set_executor_start_time_secs()) {
         {
           oprot.writeI32(struct.executor_start_time_secs.size());
-          for (java.util.Map.Entry<java.util.List<java.lang.Long>, java.lang.Long> _iter772 : struct.executor_start_time_secs.entrySet())
+          for (java.util.Map.Entry<java.util.List<java.lang.Long>, java.lang.Long> _iter780 : struct.executor_start_time_secs.entrySet())
           {
             {
-              oprot.writeI32(_iter772.getKey().size());
-              for (long _iter773 : _iter772.getKey())
+              oprot.writeI32(_iter780.getKey().size());
+              for (long _iter781 : _iter780.getKey())
               {
-                oprot.writeI64(_iter773);
+                oprot.writeI64(_iter781);
               }
             }
-            oprot.writeI64(_iter772.getValue());
+            oprot.writeI64(_iter780.getValue());
           }
         }
       }
       if (struct.is_set_worker_resources()) {
         {
           oprot.writeI32(struct.worker_resources.size());
-          for (java.util.Map.Entry<NodeInfo, WorkerResources> _iter774 : struct.worker_resources.entrySet())
+          for (java.util.Map.Entry<NodeInfo, WorkerResources> _iter782 : struct.worker_resources.entrySet())
           {
-            _iter774.getKey().write(oprot);
-            _iter774.getValue().write(oprot);
+            _iter782.getKey().write(oprot);
+            _iter782.getValue().write(oprot);
           }
         }
       }
       if (struct.is_set_total_shared_off_heap()) {
         {
           oprot.writeI32(struct.total_shared_off_heap.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter775 : struct.total_shared_off_heap.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter783 : struct.total_shared_off_heap.entrySet())
           {
-            oprot.writeString(_iter775.getKey());
-            oprot.writeDouble(_iter775.getValue());
+            oprot.writeString(_iter783.getKey());
+            oprot.writeDouble(_iter783.getValue());
           }
         }
       }
@@ -1297,96 +1297,96 @@ public class Assignment implements org.apache.storm.thrift.TBase<Assignment, Ass
       java.util.BitSet incoming = iprot.readBitSet(6);
       if (incoming.get(0)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map776 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
-          struct.node_host = new java.util.HashMap<java.lang.String,java.lang.String>(2*_map776.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key777;
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _val778;
-          for (int _i779 = 0; _i779 < _map776.size; ++_i779)
+          org.apache.storm.thrift.protocol.TMap _map784 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRING, iprot.readI32());
+          struct.node_host = new java.util.HashMap<java.lang.String,java.lang.String>(2*_map784.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key785;
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _val786;
+          for (int _i787 = 0; _i787 < _map784.size; ++_i787)
           {
-            _key777 = iprot.readString();
-            _val778 = iprot.readString();
-            struct.node_host.put(_key777, _val778);
+            _key785 = iprot.readString();
+            _val786 = iprot.readString();
+            struct.node_host.put(_key785, _val786);
           }
         }
         struct.set_node_host_isSet(true);
       }
       if (incoming.get(1)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map780 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.LIST, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.executor_node_port = new java.util.HashMap<java.util.List<java.lang.Long>,NodeInfo>(2*_map780.size);
-          @org.apache.storm.thrift.annotation.Nullable java.util.List<java.lang.Long> _key781;
-          @org.apache.storm.thrift.annotation.Nullable NodeInfo _val782;
-          for (int _i783 = 0; _i783 < _map780.size; ++_i783)
+          org.apache.storm.thrift.protocol.TMap _map788 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.LIST, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.executor_node_port = new java.util.HashMap<java.util.List<java.lang.Long>,NodeInfo>(2*_map788.size);
+          @org.apache.storm.thrift.annotation.Nullable java.util.List<java.lang.Long> _key789;
+          @org.apache.storm.thrift.annotation.Nullable NodeInfo _val790;
+          for (int _i791 = 0; _i791 < _map788.size; ++_i791)
           {
             {
-              org.apache.storm.thrift.protocol.TList _list784 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-              _key781 = new java.util.ArrayList<java.lang.Long>(_list784.size);
-              long _elem785;
-              for (int _i786 = 0; _i786 < _list784.size; ++_i786)
+              org.apache.storm.thrift.protocol.TList _list792 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+              _key789 = new java.util.ArrayList<java.lang.Long>(_list792.size);
+              long _elem793;
+              for (int _i794 = 0; _i794 < _list792.size; ++_i794)
               {
-                _elem785 = iprot.readI64();
-                _key781.add(_elem785);
+                _elem793 = iprot.readI64();
+                _key789.add(_elem793);
               }
             }
-            _val782 = new NodeInfo();
-            _val782.read(iprot);
-            struct.executor_node_port.put(_key781, _val782);
+            _val790 = new NodeInfo();
+            _val790.read(iprot);
+            struct.executor_node_port.put(_key789, _val790);
           }
         }
         struct.set_executor_node_port_isSet(true);
       }
       if (incoming.get(2)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map787 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.LIST, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-          struct.executor_start_time_secs = new java.util.HashMap<java.util.List<java.lang.Long>,java.lang.Long>(2*_map787.size);
-          @org.apache.storm.thrift.annotation.Nullable java.util.List<java.lang.Long> _key788;
-          long _val789;
-          for (int _i790 = 0; _i790 < _map787.size; ++_i790)
+          org.apache.storm.thrift.protocol.TMap _map795 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.LIST, org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+          struct.executor_start_time_secs = new java.util.HashMap<java.util.List<java.lang.Long>,java.lang.Long>(2*_map795.size);
+          @org.apache.storm.thrift.annotation.Nullable java.util.List<java.lang.Long> _key796;
+          long _val797;
+          for (int _i798 = 0; _i798 < _map795.size; ++_i798)
           {
             {
-              org.apache.storm.thrift.protocol.TList _list791 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-              _key788 = new java.util.ArrayList<java.lang.Long>(_list791.size);
-              long _elem792;
-              for (int _i793 = 0; _i793 < _list791.size; ++_i793)
+              org.apache.storm.thrift.protocol.TList _list799 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+              _key796 = new java.util.ArrayList<java.lang.Long>(_list799.size);
+              long _elem800;
+              for (int _i801 = 0; _i801 < _list799.size; ++_i801)
               {
-                _elem792 = iprot.readI64();
-                _key788.add(_elem792);
+                _elem800 = iprot.readI64();
+                _key796.add(_elem800);
               }
             }
-            _val789 = iprot.readI64();
-            struct.executor_start_time_secs.put(_key788, _val789);
+            _val797 = iprot.readI64();
+            struct.executor_start_time_secs.put(_key796, _val797);
           }
         }
         struct.set_executor_start_time_secs_isSet(true);
       }
       if (incoming.get(3)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map794 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.worker_resources = new java.util.HashMap<NodeInfo,WorkerResources>(2*_map794.size);
-          @org.apache.storm.thrift.annotation.Nullable NodeInfo _key795;
-          @org.apache.storm.thrift.annotation.Nullable WorkerResources _val796;
-          for (int _i797 = 0; _i797 < _map794.size; ++_i797)
+          org.apache.storm.thrift.protocol.TMap _map802 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRUCT, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.worker_resources = new java.util.HashMap<NodeInfo,WorkerResources>(2*_map802.size);
+          @org.apache.storm.thrift.annotation.Nullable NodeInfo _key803;
+          @org.apache.storm.thrift.annotation.Nullable WorkerResources _val804;
+          for (int _i805 = 0; _i805 < _map802.size; ++_i805)
           {
-            _key795 = new NodeInfo();
-            _key795.read(iprot);
-            _val796 = new WorkerResources();
-            _val796.read(iprot);
-            struct.worker_resources.put(_key795, _val796);
+            _key803 = new NodeInfo();
+            _key803.read(iprot);
+            _val804 = new WorkerResources();
+            _val804.read(iprot);
+            struct.worker_resources.put(_key803, _val804);
           }
         }
         struct.set_worker_resources_isSet(true);
       }
       if (incoming.get(4)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map798 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.total_shared_off_heap = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map798.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key799;
-          double _val800;
-          for (int _i801 = 0; _i801 < _map798.size; ++_i801)
+          org.apache.storm.thrift.protocol.TMap _map806 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.total_shared_off_heap = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map806.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key807;
+          double _val808;
+          for (int _i809 = 0; _i809 < _map806.size; ++_i809)
           {
-            _key799 = iprot.readString();
-            _val800 = iprot.readDouble();
-            struct.total_shared_off_heap.put(_key799, _val800);
+            _key807 = iprot.readString();
+            _val808 = iprot.readDouble();
+            struct.total_shared_off_heap.put(_key807, _val808);
           }
         }
         struct.set_total_shared_off_heap_isSet(true);

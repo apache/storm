@@ -438,13 +438,13 @@ public class NodeInfo implements org.apache.storm.thrift.TBase<NodeInfo, NodeInf
           case 2: // PORT
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.SET) {
               {
-                org.apache.storm.thrift.protocol.TSet _set708 = iprot.readSetBegin();
-                struct.port = new java.util.HashSet<java.lang.Long>(2*_set708.size);
-                long _elem709;
-                for (int _i710 = 0; _i710 < _set708.size; ++_i710)
+                org.apache.storm.thrift.protocol.TSet _set716 = iprot.readSetBegin();
+                struct.port = new java.util.HashSet<java.lang.Long>(2*_set716.size);
+                long _elem717;
+                for (int _i718 = 0; _i718 < _set716.size; ++_i718)
                 {
-                  _elem709 = iprot.readI64();
-                  struct.port.add(_elem709);
+                  _elem717 = iprot.readI64();
+                  struct.port.add(_elem717);
                 }
                 iprot.readSetEnd();
               }
@@ -475,9 +475,9 @@ public class NodeInfo implements org.apache.storm.thrift.TBase<NodeInfo, NodeInf
         oprot.writeFieldBegin(PORT_FIELD_DESC);
         {
           oprot.writeSetBegin(new org.apache.storm.thrift.protocol.TSet(org.apache.storm.thrift.protocol.TType.I64, struct.port.size()));
-          for (long _iter711 : struct.port)
+          for (long _iter719 : struct.port)
           {
-            oprot.writeI64(_iter711);
+            oprot.writeI64(_iter719);
           }
           oprot.writeSetEnd();
         }
@@ -503,9 +503,9 @@ public class NodeInfo implements org.apache.storm.thrift.TBase<NodeInfo, NodeInf
       oprot.writeString(struct.node);
       {
         oprot.writeI32(struct.port.size());
-        for (long _iter712 : struct.port)
+        for (long _iter720 : struct.port)
         {
-          oprot.writeI64(_iter712);
+          oprot.writeI64(_iter720);
         }
       }
     }
@@ -516,13 +516,13 @@ public class NodeInfo implements org.apache.storm.thrift.TBase<NodeInfo, NodeInf
       struct.node = iprot.readString();
       struct.set_node_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TSet _set713 = new org.apache.storm.thrift.protocol.TSet(org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
-        struct.port = new java.util.HashSet<java.lang.Long>(2*_set713.size);
-        long _elem714;
-        for (int _i715 = 0; _i715 < _set713.size; ++_i715)
+        org.apache.storm.thrift.protocol.TSet _set721 = new org.apache.storm.thrift.protocol.TSet(org.apache.storm.thrift.protocol.TType.I64, iprot.readI32());
+        struct.port = new java.util.HashSet<java.lang.Long>(2*_set721.size);
+        long _elem722;
+        for (int _i723 = 0; _i723 < _set721.size; ++_i723)
         {
-          _elem714 = iprot.readI64();
-          struct.port.add(_elem714);
+          _elem722 = iprot.readI64();
+          struct.port.add(_elem722);
         }
       }
       struct.set_port_isSet(true);

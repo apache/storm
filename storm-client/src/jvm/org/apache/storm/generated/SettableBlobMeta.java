@@ -428,14 +428,14 @@ public class SettableBlobMeta implements org.apache.storm.thrift.TBase<SettableB
           case 1: // ACL
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list656 = iprot.readListBegin();
-                struct.acl = new java.util.ArrayList<AccessControl>(_list656.size);
-                @org.apache.storm.thrift.annotation.Nullable AccessControl _elem657;
-                for (int _i658 = 0; _i658 < _list656.size; ++_i658)
+                org.apache.storm.thrift.protocol.TList _list664 = iprot.readListBegin();
+                struct.acl = new java.util.ArrayList<AccessControl>(_list664.size);
+                @org.apache.storm.thrift.annotation.Nullable AccessControl _elem665;
+                for (int _i666 = 0; _i666 < _list664.size; ++_i666)
                 {
-                  _elem657 = new AccessControl();
-                  _elem657.read(iprot);
-                  struct.acl.add(_elem657);
+                  _elem665 = new AccessControl();
+                  _elem665.read(iprot);
+                  struct.acl.add(_elem665);
                 }
                 iprot.readListEnd();
               }
@@ -469,9 +469,9 @@ public class SettableBlobMeta implements org.apache.storm.thrift.TBase<SettableB
         oprot.writeFieldBegin(ACL_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.acl.size()));
-          for (AccessControl _iter659 : struct.acl)
+          for (AccessControl _iter667 : struct.acl)
           {
-            _iter659.write(oprot);
+            _iter667.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -501,9 +501,9 @@ public class SettableBlobMeta implements org.apache.storm.thrift.TBase<SettableB
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
         oprot.writeI32(struct.acl.size());
-        for (AccessControl _iter660 : struct.acl)
+        for (AccessControl _iter668 : struct.acl)
         {
-          _iter660.write(oprot);
+          _iter668.write(oprot);
         }
       }
       java.util.BitSet optionals = new java.util.BitSet();
@@ -520,14 +520,14 @@ public class SettableBlobMeta implements org.apache.storm.thrift.TBase<SettableB
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, SettableBlobMeta struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
       {
-        org.apache.storm.thrift.protocol.TList _list661 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.acl = new java.util.ArrayList<AccessControl>(_list661.size);
-        @org.apache.storm.thrift.annotation.Nullable AccessControl _elem662;
-        for (int _i663 = 0; _i663 < _list661.size; ++_i663)
+        org.apache.storm.thrift.protocol.TList _list669 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.acl = new java.util.ArrayList<AccessControl>(_list669.size);
+        @org.apache.storm.thrift.annotation.Nullable AccessControl _elem670;
+        for (int _i671 = 0; _i671 < _list669.size; ++_i671)
         {
-          _elem662 = new AccessControl();
-          _elem662.read(iprot);
-          struct.acl.add(_elem662);
+          _elem670 = new AccessControl();
+          _elem670.read(iprot);
+          struct.acl.add(_elem670);
         }
       }
       struct.set_acl_isSet(true);

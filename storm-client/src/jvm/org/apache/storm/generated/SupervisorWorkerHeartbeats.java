@@ -441,14 +441,14 @@ public class SupervisorWorkerHeartbeats implements org.apache.storm.thrift.TBase
           case 2: // WORKER_HEARTBEATS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list928 = iprot.readListBegin();
-                struct.worker_heartbeats = new java.util.ArrayList<SupervisorWorkerHeartbeat>(_list928.size);
-                @org.apache.storm.thrift.annotation.Nullable SupervisorWorkerHeartbeat _elem929;
-                for (int _i930 = 0; _i930 < _list928.size; ++_i930)
+                org.apache.storm.thrift.protocol.TList _list936 = iprot.readListBegin();
+                struct.worker_heartbeats = new java.util.ArrayList<SupervisorWorkerHeartbeat>(_list936.size);
+                @org.apache.storm.thrift.annotation.Nullable SupervisorWorkerHeartbeat _elem937;
+                for (int _i938 = 0; _i938 < _list936.size; ++_i938)
                 {
-                  _elem929 = new SupervisorWorkerHeartbeat();
-                  _elem929.read(iprot);
-                  struct.worker_heartbeats.add(_elem929);
+                  _elem937 = new SupervisorWorkerHeartbeat();
+                  _elem937.read(iprot);
+                  struct.worker_heartbeats.add(_elem937);
                 }
                 iprot.readListEnd();
               }
@@ -479,9 +479,9 @@ public class SupervisorWorkerHeartbeats implements org.apache.storm.thrift.TBase
         oprot.writeFieldBegin(WORKER_HEARTBEATS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.worker_heartbeats.size()));
-          for (SupervisorWorkerHeartbeat _iter931 : struct.worker_heartbeats)
+          for (SupervisorWorkerHeartbeat _iter939 : struct.worker_heartbeats)
           {
-            _iter931.write(oprot);
+            _iter939.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -507,9 +507,9 @@ public class SupervisorWorkerHeartbeats implements org.apache.storm.thrift.TBase
       oprot.writeString(struct.supervisor_id);
       {
         oprot.writeI32(struct.worker_heartbeats.size());
-        for (SupervisorWorkerHeartbeat _iter932 : struct.worker_heartbeats)
+        for (SupervisorWorkerHeartbeat _iter940 : struct.worker_heartbeats)
         {
-          _iter932.write(oprot);
+          _iter940.write(oprot);
         }
       }
     }
@@ -520,14 +520,14 @@ public class SupervisorWorkerHeartbeats implements org.apache.storm.thrift.TBase
       struct.supervisor_id = iprot.readString();
       struct.set_supervisor_id_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TList _list933 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.worker_heartbeats = new java.util.ArrayList<SupervisorWorkerHeartbeat>(_list933.size);
-        @org.apache.storm.thrift.annotation.Nullable SupervisorWorkerHeartbeat _elem934;
-        for (int _i935 = 0; _i935 < _list933.size; ++_i935)
+        org.apache.storm.thrift.protocol.TList _list941 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.worker_heartbeats = new java.util.ArrayList<SupervisorWorkerHeartbeat>(_list941.size);
+        @org.apache.storm.thrift.annotation.Nullable SupervisorWorkerHeartbeat _elem942;
+        for (int _i943 = 0; _i943 < _list941.size; ++_i943)
         {
-          _elem934 = new SupervisorWorkerHeartbeat();
-          _elem934.read(iprot);
-          struct.worker_heartbeats.add(_elem934);
+          _elem942 = new SupervisorWorkerHeartbeat();
+          _elem942.read(iprot);
+          struct.worker_heartbeats.add(_elem942);
         }
       }
       struct.set_worker_heartbeats_isSet(true);

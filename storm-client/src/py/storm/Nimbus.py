@@ -373,6 +373,9 @@ class Iface(object):
         """
         pass
 
+    def getTopologyOverviewPageInfo(self):
+        pass
+
     def getTopologyConf(self, id):
         """
         Parameters:
@@ -1879,6 +1882,34 @@ class Client(Iface):
             raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "getComponentPageInfo failed: unknown result")
 
+    def getTopologyOverviewPageInfo(self):
+        self.send_getTopologyOverviewPageInfo()
+        return self.recv_getTopologyOverviewPageInfo()
+
+    def send_getTopologyOverviewPageInfo(self):
+        self._oprot.writeMessageBegin('getTopologyOverviewPageInfo', TMessageType.CALL, self._seqid)
+        args = getTopologyOverviewPageInfo_args()
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_getTopologyOverviewPageInfo(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = getTopologyOverviewPageInfo_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        if result.aze is not None:
+            raise result.aze
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyOverviewPageInfo failed: unknown result")
+
     def getTopologyConf(self, id):
         """
         Parameters:
@@ -2276,6 +2307,7 @@ class Processor(Iface, TProcessor):
         self._processMap["getTopologyPageInfo"] = Processor.process_getTopologyPageInfo
         self._processMap["getSupervisorPageInfo"] = Processor.process_getSupervisorPageInfo
         self._processMap["getComponentPageInfo"] = Processor.process_getComponentPageInfo
+        self._processMap["getTopologyOverviewPageInfo"] = Processor.process_getTopologyOverviewPageInfo
         self._processMap["getTopologyConf"] = Processor.process_getTopologyConf
         self._processMap["getTopology"] = Processor.process_getTopology
         self._processMap["getUserTopology"] = Processor.process_getUserTopology
@@ -3407,6 +3439,32 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.EXCEPTION
             result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
         oprot.writeMessageBegin("getComponentPageInfo", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
+    def process_getTopologyOverviewPageInfo(self, seqid, iprot, oprot):
+        args = getTopologyOverviewPageInfo_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = getTopologyOverviewPageInfo_result()
+        try:
+            result.success = self._handler.getTopologyOverviewPageInfo()
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("getTopologyOverviewPageInfo", msg_type, seqid)
         result.write(oprot)
         oprot.writeMessageEnd()
         oprot.trans.flush()
@@ -5444,11 +5502,11 @@ class getComponentPendingProfileActions_result(object):
             if fid == 0:
                 if ftype == TType.LIST:
                     self.success = []
-                    (_etype869, _size866) = iprot.readListBegin()
-                    for _i870 in range(_size866):
-                        _elem871 = ProfileRequest()
-                        _elem871.read(iprot)
-                        self.success.append(_elem871)
+                    (_etype876, _size873) = iprot.readListBegin()
+                    for _i877 in range(_size873):
+                        _elem878 = ProfileRequest()
+                        _elem878.read(iprot)
+                        self.success.append(_elem878)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -5465,8 +5523,8 @@ class getComponentPendingProfileActions_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
             oprot.writeListBegin(TType.STRUCT, len(self.success))
-            for iter872 in self.success:
-                iter872.write(oprot)
+            for iter879 in self.success:
+                iter879.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -9481,6 +9539,124 @@ getComponentPageInfo_result.thrift_spec = (
 )
 
 
+class getTopologyOverviewPageInfo_args(object):
+
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologyOverviewPageInfo_args')
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologyOverviewPageInfo_args)
+getTopologyOverviewPageInfo_args.thrift_spec = (
+)
+
+
+class getTopologyOverviewPageInfo_result(object):
+    """
+    Attributes:
+     - success
+     - aze
+
+    """
+
+
+    def __init__(self, success=None, aze=None,):
+        self.success = success
+        self.aze = aze
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = ClusterTopologyOverview()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologyOverviewPageInfo_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 1)
+            self.aze.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologyOverviewPageInfo_result)
+getTopologyOverviewPageInfo_result.thrift_spec = (
+    (0, TType.STRUCT, 'success', [ClusterTopologyOverview, None], None, ),  # 0
+    (1, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 1
+)
+
+
 class getTopologyConf_args(object):
     """
     Attributes:
@@ -10154,11 +10330,11 @@ class getOwnerResourceSummaries_result(object):
             if fid == 0:
                 if ftype == TType.LIST:
                     self.success = []
-                    (_etype876, _size873) = iprot.readListBegin()
-                    for _i877 in range(_size873):
-                        _elem878 = OwnerResourceSummary()
-                        _elem878.read(iprot)
-                        self.success.append(_elem878)
+                    (_etype883, _size880) = iprot.readListBegin()
+                    for _i884 in range(_size880):
+                        _elem885 = OwnerResourceSummary()
+                        _elem885.read(iprot)
+                        self.success.append(_elem885)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -10181,8 +10357,8 @@ class getOwnerResourceSummaries_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
             oprot.writeListBegin(TType.STRUCT, len(self.success))
-            for iter879 in self.success:
-                iter879.write(oprot)
+            for iter886 in self.success:
+                iter886.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.aze is not None:

@@ -835,15 +835,15 @@ public class CommonAggregateStats implements org.apache.storm.thrift.TBase<Commo
           case 7: // RESOURCES_MAP
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map426 = iprot.readMapBegin();
-                struct.resources_map = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map426.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key427;
-                double _val428;
-                for (int _i429 = 0; _i429 < _map426.size; ++_i429)
+                org.apache.storm.thrift.protocol.TMap _map434 = iprot.readMapBegin();
+                struct.resources_map = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map434.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key435;
+                double _val436;
+                for (int _i437 = 0; _i437 < _map434.size; ++_i437)
                 {
-                  _key427 = iprot.readString();
-                  _val428 = iprot.readDouble();
-                  struct.resources_map.put(_key427, _val428);
+                  _key435 = iprot.readString();
+                  _val436 = iprot.readDouble();
+                  struct.resources_map.put(_key435, _val436);
                 }
                 iprot.readMapEnd();
               }
@@ -900,10 +900,10 @@ public class CommonAggregateStats implements org.apache.storm.thrift.TBase<Commo
           oprot.writeFieldBegin(RESOURCES_MAP_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, struct.resources_map.size()));
-            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter430 : struct.resources_map.entrySet())
+            for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter438 : struct.resources_map.entrySet())
             {
-              oprot.writeString(_iter430.getKey());
-              oprot.writeDouble(_iter430.getValue());
+              oprot.writeString(_iter438.getKey());
+              oprot.writeDouble(_iter438.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -971,10 +971,10 @@ public class CommonAggregateStats implements org.apache.storm.thrift.TBase<Commo
       if (struct.is_set_resources_map()) {
         {
           oprot.writeI32(struct.resources_map.size());
-          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter431 : struct.resources_map.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.lang.Double> _iter439 : struct.resources_map.entrySet())
           {
-            oprot.writeString(_iter431.getKey());
-            oprot.writeDouble(_iter431.getValue());
+            oprot.writeString(_iter439.getKey());
+            oprot.writeDouble(_iter439.getValue());
           }
         }
       }
@@ -1010,15 +1010,15 @@ public class CommonAggregateStats implements org.apache.storm.thrift.TBase<Commo
       }
       if (incoming.get(6)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map432 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.resources_map = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map432.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key433;
-          double _val434;
-          for (int _i435 = 0; _i435 < _map432.size; ++_i435)
+          org.apache.storm.thrift.protocol.TMap _map440 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.resources_map = new java.util.HashMap<java.lang.String,java.lang.Double>(2*_map440.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key441;
+          double _val442;
+          for (int _i443 = 0; _i443 < _map440.size; ++_i443)
           {
-            _key433 = iprot.readString();
-            _val434 = iprot.readDouble();
-            struct.resources_map.put(_key433, _val434);
+            _key441 = iprot.readString();
+            _val442 = iprot.readDouble();
+            struct.resources_map.put(_key441, _val442);
           }
         }
         struct.set_resources_map_isSet(true);

@@ -686,14 +686,14 @@ public class LocalAssignment implements org.apache.storm.thrift.TBase<LocalAssig
           case 2: // EXECUTORS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list842 = iprot.readListBegin();
-                struct.executors = new java.util.ArrayList<ExecutorInfo>(_list842.size);
-                @org.apache.storm.thrift.annotation.Nullable ExecutorInfo _elem843;
-                for (int _i844 = 0; _i844 < _list842.size; ++_i844)
+                org.apache.storm.thrift.protocol.TList _list850 = iprot.readListBegin();
+                struct.executors = new java.util.ArrayList<ExecutorInfo>(_list850.size);
+                @org.apache.storm.thrift.annotation.Nullable ExecutorInfo _elem851;
+                for (int _i852 = 0; _i852 < _list850.size; ++_i852)
                 {
-                  _elem843 = new ExecutorInfo();
-                  _elem843.read(iprot);
-                  struct.executors.add(_elem843);
+                  _elem851 = new ExecutorInfo();
+                  _elem851.read(iprot);
+                  struct.executors.add(_elem851);
                 }
                 iprot.readListEnd();
               }
@@ -749,9 +749,9 @@ public class LocalAssignment implements org.apache.storm.thrift.TBase<LocalAssig
         oprot.writeFieldBegin(EXECUTORS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.executors.size()));
-          for (ExecutorInfo _iter845 : struct.executors)
+          for (ExecutorInfo _iter853 : struct.executors)
           {
-            _iter845.write(oprot);
+            _iter853.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -796,9 +796,9 @@ public class LocalAssignment implements org.apache.storm.thrift.TBase<LocalAssig
       oprot.writeString(struct.topology_id);
       {
         oprot.writeI32(struct.executors.size());
-        for (ExecutorInfo _iter846 : struct.executors)
+        for (ExecutorInfo _iter854 : struct.executors)
         {
-          _iter846.write(oprot);
+          _iter854.write(oprot);
         }
       }
       java.util.BitSet optionals = new java.util.BitSet();
@@ -829,14 +829,14 @@ public class LocalAssignment implements org.apache.storm.thrift.TBase<LocalAssig
       struct.topology_id = iprot.readString();
       struct.set_topology_id_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TList _list847 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.executors = new java.util.ArrayList<ExecutorInfo>(_list847.size);
-        @org.apache.storm.thrift.annotation.Nullable ExecutorInfo _elem848;
-        for (int _i849 = 0; _i849 < _list847.size; ++_i849)
+        org.apache.storm.thrift.protocol.TList _list855 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.executors = new java.util.ArrayList<ExecutorInfo>(_list855.size);
+        @org.apache.storm.thrift.annotation.Nullable ExecutorInfo _elem856;
+        for (int _i857 = 0; _i857 < _list855.size; ++_i857)
         {
-          _elem848 = new ExecutorInfo();
-          _elem848.read(iprot);
-          struct.executors.add(_elem848);
+          _elem856 = new ExecutorInfo();
+          _elem856.read(iprot);
+          struct.executors.add(_elem856);
         }
       }
       struct.set_executors_isSet(true);

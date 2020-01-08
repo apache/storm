@@ -442,14 +442,14 @@ public class SupervisorPageInfo implements org.apache.storm.thrift.TBase<Supervi
           case 1: // SUPERVISOR_SUMMARIES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list496 = iprot.readListBegin();
-                struct.supervisor_summaries = new java.util.ArrayList<SupervisorSummary>(_list496.size);
-                @org.apache.storm.thrift.annotation.Nullable SupervisorSummary _elem497;
-                for (int _i498 = 0; _i498 < _list496.size; ++_i498)
+                org.apache.storm.thrift.protocol.TList _list504 = iprot.readListBegin();
+                struct.supervisor_summaries = new java.util.ArrayList<SupervisorSummary>(_list504.size);
+                @org.apache.storm.thrift.annotation.Nullable SupervisorSummary _elem505;
+                for (int _i506 = 0; _i506 < _list504.size; ++_i506)
                 {
-                  _elem497 = new SupervisorSummary();
-                  _elem497.read(iprot);
-                  struct.supervisor_summaries.add(_elem497);
+                  _elem505 = new SupervisorSummary();
+                  _elem505.read(iprot);
+                  struct.supervisor_summaries.add(_elem505);
                 }
                 iprot.readListEnd();
               }
@@ -461,14 +461,14 @@ public class SupervisorPageInfo implements org.apache.storm.thrift.TBase<Supervi
           case 2: // WORKER_SUMMARIES
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list499 = iprot.readListBegin();
-                struct.worker_summaries = new java.util.ArrayList<WorkerSummary>(_list499.size);
-                @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem500;
-                for (int _i501 = 0; _i501 < _list499.size; ++_i501)
+                org.apache.storm.thrift.protocol.TList _list507 = iprot.readListBegin();
+                struct.worker_summaries = new java.util.ArrayList<WorkerSummary>(_list507.size);
+                @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem508;
+                for (int _i509 = 0; _i509 < _list507.size; ++_i509)
                 {
-                  _elem500 = new WorkerSummary();
-                  _elem500.read(iprot);
-                  struct.worker_summaries.add(_elem500);
+                  _elem508 = new WorkerSummary();
+                  _elem508.read(iprot);
+                  struct.worker_summaries.add(_elem508);
                 }
                 iprot.readListEnd();
               }
@@ -495,9 +495,9 @@ public class SupervisorPageInfo implements org.apache.storm.thrift.TBase<Supervi
           oprot.writeFieldBegin(SUPERVISOR_SUMMARIES_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.supervisor_summaries.size()));
-            for (SupervisorSummary _iter502 : struct.supervisor_summaries)
+            for (SupervisorSummary _iter510 : struct.supervisor_summaries)
             {
-              _iter502.write(oprot);
+              _iter510.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -509,9 +509,9 @@ public class SupervisorPageInfo implements org.apache.storm.thrift.TBase<Supervi
           oprot.writeFieldBegin(WORKER_SUMMARIES_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.worker_summaries.size()));
-            for (WorkerSummary _iter503 : struct.worker_summaries)
+            for (WorkerSummary _iter511 : struct.worker_summaries)
             {
-              _iter503.write(oprot);
+              _iter511.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -546,18 +546,18 @@ public class SupervisorPageInfo implements org.apache.storm.thrift.TBase<Supervi
       if (struct.is_set_supervisor_summaries()) {
         {
           oprot.writeI32(struct.supervisor_summaries.size());
-          for (SupervisorSummary _iter504 : struct.supervisor_summaries)
+          for (SupervisorSummary _iter512 : struct.supervisor_summaries)
           {
-            _iter504.write(oprot);
+            _iter512.write(oprot);
           }
         }
       }
       if (struct.is_set_worker_summaries()) {
         {
           oprot.writeI32(struct.worker_summaries.size());
-          for (WorkerSummary _iter505 : struct.worker_summaries)
+          for (WorkerSummary _iter513 : struct.worker_summaries)
           {
-            _iter505.write(oprot);
+            _iter513.write(oprot);
           }
         }
       }
@@ -569,28 +569,28 @@ public class SupervisorPageInfo implements org.apache.storm.thrift.TBase<Supervi
       java.util.BitSet incoming = iprot.readBitSet(2);
       if (incoming.get(0)) {
         {
-          org.apache.storm.thrift.protocol.TList _list506 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.supervisor_summaries = new java.util.ArrayList<SupervisorSummary>(_list506.size);
-          @org.apache.storm.thrift.annotation.Nullable SupervisorSummary _elem507;
-          for (int _i508 = 0; _i508 < _list506.size; ++_i508)
+          org.apache.storm.thrift.protocol.TList _list514 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.supervisor_summaries = new java.util.ArrayList<SupervisorSummary>(_list514.size);
+          @org.apache.storm.thrift.annotation.Nullable SupervisorSummary _elem515;
+          for (int _i516 = 0; _i516 < _list514.size; ++_i516)
           {
-            _elem507 = new SupervisorSummary();
-            _elem507.read(iprot);
-            struct.supervisor_summaries.add(_elem507);
+            _elem515 = new SupervisorSummary();
+            _elem515.read(iprot);
+            struct.supervisor_summaries.add(_elem515);
           }
         }
         struct.set_supervisor_summaries_isSet(true);
       }
       if (incoming.get(1)) {
         {
-          org.apache.storm.thrift.protocol.TList _list509 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.worker_summaries = new java.util.ArrayList<WorkerSummary>(_list509.size);
-          @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem510;
-          for (int _i511 = 0; _i511 < _list509.size; ++_i511)
+          org.apache.storm.thrift.protocol.TList _list517 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.worker_summaries = new java.util.ArrayList<WorkerSummary>(_list517.size);
+          @org.apache.storm.thrift.annotation.Nullable WorkerSummary _elem518;
+          for (int _i519 = 0; _i519 < _list517.size; ++_i519)
           {
-            _elem510 = new WorkerSummary();
-            _elem510.read(iprot);
-            struct.worker_summaries.add(_elem510);
+            _elem518 = new WorkerSummary();
+            _elem518.read(iprot);
+            struct.worker_summaries.add(_elem518);
           }
         }
         struct.set_worker_summaries_isSet(true);

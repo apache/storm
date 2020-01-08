@@ -347,16 +347,16 @@ public class SupervisorAssignments implements org.apache.storm.thrift.TBase<Supe
           case 1: // STORM_ASSIGNMENT
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map936 = iprot.readMapBegin();
-                struct.storm_assignment = new java.util.HashMap<java.lang.String,Assignment>(2*_map936.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key937;
-                @org.apache.storm.thrift.annotation.Nullable Assignment _val938;
-                for (int _i939 = 0; _i939 < _map936.size; ++_i939)
+                org.apache.storm.thrift.protocol.TMap _map944 = iprot.readMapBegin();
+                struct.storm_assignment = new java.util.HashMap<java.lang.String,Assignment>(2*_map944.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key945;
+                @org.apache.storm.thrift.annotation.Nullable Assignment _val946;
+                for (int _i947 = 0; _i947 < _map944.size; ++_i947)
                 {
-                  _key937 = iprot.readString();
-                  _val938 = new Assignment();
-                  _val938.read(iprot);
-                  struct.storm_assignment.put(_key937, _val938);
+                  _key945 = iprot.readString();
+                  _val946 = new Assignment();
+                  _val946.read(iprot);
+                  struct.storm_assignment.put(_key945, _val946);
                 }
                 iprot.readMapEnd();
               }
@@ -383,10 +383,10 @@ public class SupervisorAssignments implements org.apache.storm.thrift.TBase<Supe
           oprot.writeFieldBegin(STORM_ASSIGNMENT_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, struct.storm_assignment.size()));
-            for (java.util.Map.Entry<java.lang.String, Assignment> _iter940 : struct.storm_assignment.entrySet())
+            for (java.util.Map.Entry<java.lang.String, Assignment> _iter948 : struct.storm_assignment.entrySet())
             {
-              oprot.writeString(_iter940.getKey());
-              _iter940.getValue().write(oprot);
+              oprot.writeString(_iter948.getKey());
+              _iter948.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -418,10 +418,10 @@ public class SupervisorAssignments implements org.apache.storm.thrift.TBase<Supe
       if (struct.is_set_storm_assignment()) {
         {
           oprot.writeI32(struct.storm_assignment.size());
-          for (java.util.Map.Entry<java.lang.String, Assignment> _iter941 : struct.storm_assignment.entrySet())
+          for (java.util.Map.Entry<java.lang.String, Assignment> _iter949 : struct.storm_assignment.entrySet())
           {
-            oprot.writeString(_iter941.getKey());
-            _iter941.getValue().write(oprot);
+            oprot.writeString(_iter949.getKey());
+            _iter949.getValue().write(oprot);
           }
         }
       }
@@ -433,16 +433,16 @@ public class SupervisorAssignments implements org.apache.storm.thrift.TBase<Supe
       java.util.BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map942 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.storm_assignment = new java.util.HashMap<java.lang.String,Assignment>(2*_map942.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key943;
-          @org.apache.storm.thrift.annotation.Nullable Assignment _val944;
-          for (int _i945 = 0; _i945 < _map942.size; ++_i945)
+          org.apache.storm.thrift.protocol.TMap _map950 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.storm_assignment = new java.util.HashMap<java.lang.String,Assignment>(2*_map950.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key951;
+          @org.apache.storm.thrift.annotation.Nullable Assignment _val952;
+          for (int _i953 = 0; _i953 < _map950.size; ++_i953)
           {
-            _key943 = iprot.readString();
-            _val944 = new Assignment();
-            _val944.read(iprot);
-            struct.storm_assignment.put(_key943, _val944);
+            _key951 = iprot.readString();
+            _val952 = new Assignment();
+            _val952.read(iprot);
+            struct.storm_assignment.put(_key951, _val952);
           }
         }
         struct.set_storm_assignment_isSet(true);

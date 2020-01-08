@@ -1698,14 +1698,14 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
           case 4: // EXECUTORS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
               {
-                org.apache.storm.thrift.protocol.TList _list390 = iprot.readListBegin();
-                struct.executors = new java.util.ArrayList<ExecutorSummary>(_list390.size);
-                @org.apache.storm.thrift.annotation.Nullable ExecutorSummary _elem391;
-                for (int _i392 = 0; _i392 < _list390.size; ++_i392)
+                org.apache.storm.thrift.protocol.TList _list398 = iprot.readListBegin();
+                struct.executors = new java.util.ArrayList<ExecutorSummary>(_list398.size);
+                @org.apache.storm.thrift.annotation.Nullable ExecutorSummary _elem399;
+                for (int _i400 = 0; _i400 < _list398.size; ++_i400)
                 {
-                  _elem391 = new ExecutorSummary();
-                  _elem391.read(iprot);
-                  struct.executors.add(_elem391);
+                  _elem399 = new ExecutorSummary();
+                  _elem399.read(iprot);
+                  struct.executors.add(_elem399);
                 }
                 iprot.readListEnd();
               }
@@ -1725,26 +1725,26 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
           case 6: // ERRORS
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map393 = iprot.readMapBegin();
-                struct.errors = new java.util.HashMap<java.lang.String,java.util.List<ErrorInfo>>(2*_map393.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key394;
-                @org.apache.storm.thrift.annotation.Nullable java.util.List<ErrorInfo> _val395;
-                for (int _i396 = 0; _i396 < _map393.size; ++_i396)
+                org.apache.storm.thrift.protocol.TMap _map401 = iprot.readMapBegin();
+                struct.errors = new java.util.HashMap<java.lang.String,java.util.List<ErrorInfo>>(2*_map401.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key402;
+                @org.apache.storm.thrift.annotation.Nullable java.util.List<ErrorInfo> _val403;
+                for (int _i404 = 0; _i404 < _map401.size; ++_i404)
                 {
-                  _key394 = iprot.readString();
+                  _key402 = iprot.readString();
                   {
-                    org.apache.storm.thrift.protocol.TList _list397 = iprot.readListBegin();
-                    _val395 = new java.util.ArrayList<ErrorInfo>(_list397.size);
-                    @org.apache.storm.thrift.annotation.Nullable ErrorInfo _elem398;
-                    for (int _i399 = 0; _i399 < _list397.size; ++_i399)
+                    org.apache.storm.thrift.protocol.TList _list405 = iprot.readListBegin();
+                    _val403 = new java.util.ArrayList<ErrorInfo>(_list405.size);
+                    @org.apache.storm.thrift.annotation.Nullable ErrorInfo _elem406;
+                    for (int _i407 = 0; _i407 < _list405.size; ++_i407)
                     {
-                      _elem398 = new ErrorInfo();
-                      _elem398.read(iprot);
-                      _val395.add(_elem398);
+                      _elem406 = new ErrorInfo();
+                      _elem406.read(iprot);
+                      _val403.add(_elem406);
                     }
                     iprot.readListEnd();
                   }
-                  struct.errors.put(_key394, _val395);
+                  struct.errors.put(_key402, _val403);
                 }
                 iprot.readMapEnd();
               }
@@ -1756,16 +1756,16 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
           case 7: // COMPONENT_DEBUG
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.MAP) {
               {
-                org.apache.storm.thrift.protocol.TMap _map400 = iprot.readMapBegin();
-                struct.component_debug = new java.util.HashMap<java.lang.String,DebugOptions>(2*_map400.size);
-                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key401;
-                @org.apache.storm.thrift.annotation.Nullable DebugOptions _val402;
-                for (int _i403 = 0; _i403 < _map400.size; ++_i403)
+                org.apache.storm.thrift.protocol.TMap _map408 = iprot.readMapBegin();
+                struct.component_debug = new java.util.HashMap<java.lang.String,DebugOptions>(2*_map408.size);
+                @org.apache.storm.thrift.annotation.Nullable java.lang.String _key409;
+                @org.apache.storm.thrift.annotation.Nullable DebugOptions _val410;
+                for (int _i411 = 0; _i411 < _map408.size; ++_i411)
                 {
-                  _key401 = iprot.readString();
-                  _val402 = new DebugOptions();
-                  _val402.read(iprot);
-                  struct.component_debug.put(_key401, _val402);
+                  _key409 = iprot.readString();
+                  _val410 = new DebugOptions();
+                  _val410.read(iprot);
+                  struct.component_debug.put(_key409, _val410);
                 }
                 iprot.readMapEnd();
               }
@@ -1884,9 +1884,9 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
         oprot.writeFieldBegin(EXECUTORS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.executors.size()));
-          for (ExecutorSummary _iter404 : struct.executors)
+          for (ExecutorSummary _iter412 : struct.executors)
           {
-            _iter404.write(oprot);
+            _iter412.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -1901,14 +1901,14 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
         oprot.writeFieldBegin(ERRORS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.LIST, struct.errors.size()));
-          for (java.util.Map.Entry<java.lang.String, java.util.List<ErrorInfo>> _iter405 : struct.errors.entrySet())
+          for (java.util.Map.Entry<java.lang.String, java.util.List<ErrorInfo>> _iter413 : struct.errors.entrySet())
           {
-            oprot.writeString(_iter405.getKey());
+            oprot.writeString(_iter413.getKey());
             {
-              oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, _iter405.getValue().size()));
-              for (ErrorInfo _iter406 : _iter405.getValue())
+              oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, _iter413.getValue().size()));
+              for (ErrorInfo _iter414 : _iter413.getValue())
               {
-                _iter406.write(oprot);
+                _iter414.write(oprot);
               }
               oprot.writeListEnd();
             }
@@ -1922,10 +1922,10 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
           oprot.writeFieldBegin(COMPONENT_DEBUG_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, struct.component_debug.size()));
-            for (java.util.Map.Entry<java.lang.String, DebugOptions> _iter407 : struct.component_debug.entrySet())
+            for (java.util.Map.Entry<java.lang.String, DebugOptions> _iter415 : struct.component_debug.entrySet())
             {
-              oprot.writeString(_iter407.getKey());
-              _iter407.getValue().write(oprot);
+              oprot.writeString(_iter415.getKey());
+              _iter415.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -2010,22 +2010,22 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
       oprot.writeI32(struct.uptime_secs);
       {
         oprot.writeI32(struct.executors.size());
-        for (ExecutorSummary _iter408 : struct.executors)
+        for (ExecutorSummary _iter416 : struct.executors)
         {
-          _iter408.write(oprot);
+          _iter416.write(oprot);
         }
       }
       oprot.writeString(struct.status);
       {
         oprot.writeI32(struct.errors.size());
-        for (java.util.Map.Entry<java.lang.String, java.util.List<ErrorInfo>> _iter409 : struct.errors.entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.util.List<ErrorInfo>> _iter417 : struct.errors.entrySet())
         {
-          oprot.writeString(_iter409.getKey());
+          oprot.writeString(_iter417.getKey());
           {
-            oprot.writeI32(_iter409.getValue().size());
-            for (ErrorInfo _iter410 : _iter409.getValue())
+            oprot.writeI32(_iter417.getValue().size());
+            for (ErrorInfo _iter418 : _iter417.getValue())
             {
-              _iter410.write(oprot);
+              _iter418.write(oprot);
             }
           }
         }
@@ -2068,10 +2068,10 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
       if (struct.is_set_component_debug()) {
         {
           oprot.writeI32(struct.component_debug.size());
-          for (java.util.Map.Entry<java.lang.String, DebugOptions> _iter411 : struct.component_debug.entrySet())
+          for (java.util.Map.Entry<java.lang.String, DebugOptions> _iter419 : struct.component_debug.entrySet())
           {
-            oprot.writeString(_iter411.getKey());
-            _iter411.getValue().write(oprot);
+            oprot.writeString(_iter419.getKey());
+            _iter419.getValue().write(oprot);
           }
         }
       }
@@ -2117,55 +2117,55 @@ public class TopologyInfo implements org.apache.storm.thrift.TBase<TopologyInfo,
       struct.uptime_secs = iprot.readI32();
       struct.set_uptime_secs_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TList _list412 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.executors = new java.util.ArrayList<ExecutorSummary>(_list412.size);
-        @org.apache.storm.thrift.annotation.Nullable ExecutorSummary _elem413;
-        for (int _i414 = 0; _i414 < _list412.size; ++_i414)
+        org.apache.storm.thrift.protocol.TList _list420 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.executors = new java.util.ArrayList<ExecutorSummary>(_list420.size);
+        @org.apache.storm.thrift.annotation.Nullable ExecutorSummary _elem421;
+        for (int _i422 = 0; _i422 < _list420.size; ++_i422)
         {
-          _elem413 = new ExecutorSummary();
-          _elem413.read(iprot);
-          struct.executors.add(_elem413);
+          _elem421 = new ExecutorSummary();
+          _elem421.read(iprot);
+          struct.executors.add(_elem421);
         }
       }
       struct.set_executors_isSet(true);
       struct.status = iprot.readString();
       struct.set_status_isSet(true);
       {
-        org.apache.storm.thrift.protocol.TMap _map415 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.LIST, iprot.readI32());
-        struct.errors = new java.util.HashMap<java.lang.String,java.util.List<ErrorInfo>>(2*_map415.size);
-        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key416;
-        @org.apache.storm.thrift.annotation.Nullable java.util.List<ErrorInfo> _val417;
-        for (int _i418 = 0; _i418 < _map415.size; ++_i418)
+        org.apache.storm.thrift.protocol.TMap _map423 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.LIST, iprot.readI32());
+        struct.errors = new java.util.HashMap<java.lang.String,java.util.List<ErrorInfo>>(2*_map423.size);
+        @org.apache.storm.thrift.annotation.Nullable java.lang.String _key424;
+        @org.apache.storm.thrift.annotation.Nullable java.util.List<ErrorInfo> _val425;
+        for (int _i426 = 0; _i426 < _map423.size; ++_i426)
         {
-          _key416 = iprot.readString();
+          _key424 = iprot.readString();
           {
-            org.apache.storm.thrift.protocol.TList _list419 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-            _val417 = new java.util.ArrayList<ErrorInfo>(_list419.size);
-            @org.apache.storm.thrift.annotation.Nullable ErrorInfo _elem420;
-            for (int _i421 = 0; _i421 < _list419.size; ++_i421)
+            org.apache.storm.thrift.protocol.TList _list427 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+            _val425 = new java.util.ArrayList<ErrorInfo>(_list427.size);
+            @org.apache.storm.thrift.annotation.Nullable ErrorInfo _elem428;
+            for (int _i429 = 0; _i429 < _list427.size; ++_i429)
             {
-              _elem420 = new ErrorInfo();
-              _elem420.read(iprot);
-              _val417.add(_elem420);
+              _elem428 = new ErrorInfo();
+              _elem428.read(iprot);
+              _val425.add(_elem428);
             }
           }
-          struct.errors.put(_key416, _val417);
+          struct.errors.put(_key424, _val425);
         }
       }
       struct.set_errors_isSet(true);
       java.util.BitSet incoming = iprot.readBitSet(11);
       if (incoming.get(0)) {
         {
-          org.apache.storm.thrift.protocol.TMap _map422 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.component_debug = new java.util.HashMap<java.lang.String,DebugOptions>(2*_map422.size);
-          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key423;
-          @org.apache.storm.thrift.annotation.Nullable DebugOptions _val424;
-          for (int _i425 = 0; _i425 < _map422.size; ++_i425)
+          org.apache.storm.thrift.protocol.TMap _map430 = new org.apache.storm.thrift.protocol.TMap(org.apache.storm.thrift.protocol.TType.STRING, org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.component_debug = new java.util.HashMap<java.lang.String,DebugOptions>(2*_map430.size);
+          @org.apache.storm.thrift.annotation.Nullable java.lang.String _key431;
+          @org.apache.storm.thrift.annotation.Nullable DebugOptions _val432;
+          for (int _i433 = 0; _i433 < _map430.size; ++_i433)
           {
-            _key423 = iprot.readString();
-            _val424 = new DebugOptions();
-            _val424.read(iprot);
-            struct.component_debug.put(_key423, _val424);
+            _key431 = iprot.readString();
+            _val432 = new DebugOptions();
+            _val432.read(iprot);
+            struct.component_debug.put(_key431, _val432);
           }
         }
         struct.set_component_debug_isSet(true);
