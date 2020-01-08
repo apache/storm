@@ -23,7 +23,6 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
@@ -55,26 +54,16 @@ public class KerberosSaslNettyClient {
                   SaslUtils.KERBEROS);
 
         LOG.info("Creating Kerberos Client.");
-
-        Configuration loginConf;
-        try {
-            loginConf = ClientAuthUtils.getConfiguration(topoConf);
-        } catch (Throwable t) {
-            LOG.error("Failed to get loginConf: ", t);
-            throw t;
-        }
         LOG.debug("KerberosSaslNettyClient: authmethod {}", SaslUtils.KERBEROS);
 
         SaslClientCallbackHandler ch = new SaslClientCallbackHandler();
 
+        String jaasConfFile = ClientAuthUtils.getJaasConf(topoConf);
+
         subject = null;
         try {
-            LOG.debug("Setting Configuration to login_config: {}", loginConf);
-            //specify a configuration object to be used
-            Configuration.setConfiguration(loginConf);
-            //now login
-            LOG.debug("Trying to login.");
-            Login login = new Login(jaasSection, ch);
+            LOG.debug("Trying to login using {}.", jaasConfFile);
+            Login login = new Login(jaasSection, ch, jaasConfFile);
             subject = login.getSubject();
             LOG.debug("Got Subject: {}", subject.toString());
         } catch (LoginException ex) {
@@ -88,12 +77,12 @@ public class KerberosSaslNettyClient {
             throw new RuntimeException("Fail to verify user principal with section \""
                     + jaasSection
                     + "\" in login configuration file "
-                    + loginConf);
+                    + jaasConfFile);
         }
 
         String serviceName = null;
         try {
-            serviceName = ClientAuthUtils.get(loginConf, jaasSection, "serviceName");
+            serviceName = ClientAuthUtils.get(topoConf, jaasSection, "serviceName");
         } catch (IOException e) {
             LOG.error("Failed to get service name.", e);
             throw new RuntimeException(e);

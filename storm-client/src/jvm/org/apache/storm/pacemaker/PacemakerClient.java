@@ -73,9 +73,8 @@ public class PacemakerClient implements ISaslClient {
         switch (auth) {
 
             case "DIGEST":
-                Configuration loginConf = ClientAuthUtils.getConfiguration(config);
                 authMethod = ThriftNettyClientCodec.AuthMethod.DIGEST;
-                secret = ClientAuthUtils.makeDigestPayload(loginConf, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
+                secret = ClientAuthUtils.makeDigestPayload(config, ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
                 if (secret == null) {
                     LOG.error("Can't start pacemaker server without digest secret.");
                     throw new RuntimeException("Can't start pacemaker server without digest secret.");

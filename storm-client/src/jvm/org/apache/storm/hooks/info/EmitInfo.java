@@ -31,8 +31,9 @@ public class EmitInfo {
     }
 
     public void applyOn(TopologyContext topologyContext) {
-        for (ITaskHook hook : topologyContext.getHooks()) {
-            hook.emit(this);
+        List<ITaskHook> hooks = topologyContext.getHooks();
+        for (int i = 0; i < hooks.size(); i++) {
+            hooks.get(i).emit(this);
         }
     }
 }

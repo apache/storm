@@ -30,6 +30,8 @@ import org.apache.storm.scheduler.SchedulerAssignmentImpl;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.utils.Utils;
 import org.junit.After;
 import org.junit.Assert;
@@ -220,6 +222,55 @@ public class TestBlacklistScheduler {
         cluster = new Cluster(iNimbus, resourceMetrics, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
         scheduler.schedule(topologies, cluster);
         Assert.assertEquals("blacklist", Collections.emptySet(), cluster.getBlacklistedHosts());
+    }
+
+    @Test
+    public void TestGreylist() {
+        INimbus iNimbus = new TestUtilsForBlacklistScheduler.INimbusTest();
+
+        Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(2, 3);
+
+        Config config = new Config();
+        config.putAll(Utils.readDefaultConfig());
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_TIME, 200);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT, 2);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME, 300);
+        config.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 0.0);
+        config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 0);
+        config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, DefaultResourceAwareStrategy.class.getName());
+        config.put(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, true);
+
+        Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
+
+        TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 1, 1, 1, 1, currentTime - 2, true);
+        TopologyDetails topo2 = TestUtilsForBlacklistScheduler.getTopology("topo-2", config, 1, 1, 1, 1, currentTime - 8, true);
+        Topologies topologies = new Topologies(topoMap);
+
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
+        Cluster cluster = new Cluster(iNimbus, resourceMetrics, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
+        scheduler = new BlacklistScheduler(new ResourceAwareScheduler(), metricsRegistry);
+
+        scheduler.prepare(config);
+        scheduler.schedule(topologies, cluster);
+        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap, "sup-0"), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+        scheduler.schedule(topologies, cluster);
+        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap, "sup-0"), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+        scheduler.schedule(topologies, cluster);
+        cluster = new Cluster(iNimbus, resourceMetrics, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+        scheduler.schedule(topologies, cluster);
+        Assert.assertEquals("blacklist", Collections.singleton("host-0"), cluster.getBlacklistedHosts());
+
+        topoMap.put(topo1.getId(), topo1);
+        topoMap.put(topo2.getId(), topo2);
+        topologies = new Topologies(topoMap);
+        cluster = new Cluster(iNimbus, resourceMetrics, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+        scheduler.schedule(topologies, cluster);
+        Assert.assertEquals("blacklist", Collections.emptySet(), cluster.getBlacklistedHosts());
+        Assert.assertEquals("greylist", Collections.singletonList("sup-0"), cluster.getGreyListedSupervisors());
+        LOG.debug("Now only these slots remain available: {}", cluster.getAvailableSlots());
+        Assert.assertTrue(cluster.getAvailableSlots(supMap.get("sup-0")).containsAll(cluster.getAvailableSlots()));
     }
 
     @Test

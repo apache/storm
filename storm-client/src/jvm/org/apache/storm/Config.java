@@ -263,6 +263,13 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_CPU_PCORE_PERCENT = "topology.metrics.consumer.cpu.pcore.percent";
+
+    /**
+     * This config allows a topology to report metrics data points from the V2 metrics API through the metrics tick.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_ENABLE_V2_METRICS_TICK = "topology.enable.v2.metrics.tick";
+
     /**
      * The class name of the {@link org.apache.storm.state.StateProvider} implementation. If not specified defaults to {@link
      * org.apache.storm.state.InMemoryKeyValueStateProvider}. This can be overridden at the component level.

@@ -12,6 +12,8 @@
 
 package org.apache.storm.hooks.info;
 
+import java.util.List;
+
 import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.task.TopologyContext;
 
@@ -27,8 +29,9 @@ public class SpoutAckInfo {
     }
 
     public void applyOn(TopologyContext topologyContext) {
-        for (ITaskHook hook : topologyContext.getHooks()) {
-            hook.spoutAck(this);
+        List<ITaskHook> hooks = topologyContext.getHooks();
+        for (int i = 0; i < hooks.size(); i++) {
+            hooks.get(i).spoutAck(this);
         }
     }
 }

@@ -121,11 +121,10 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         //Log the user in and get the TGT
         try {
             Configuration loginConf = ClientAuthUtils.getConfiguration(conf);
-            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(loginConf);
+            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(conf);
 
             //login our user
-            Configuration.setConfiguration(loginConf);
-            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, clientCallbackHandler);
+            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, null, clientCallbackHandler, loginConf);
             try {
                 lc.login();
                 final Subject subject = lc.getSubject();
