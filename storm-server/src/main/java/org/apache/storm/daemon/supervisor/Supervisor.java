@@ -35,6 +35,7 @@ import java.util.function.BiConsumer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.StormTimer;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -215,7 +216,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         return sharedContext;
     }
 
-    StormMetricsRegistry getMetricsRegistry() {
+    public StormMetricsRegistry getMetricsRegistry() {
         return metricsRegistry;
     }
     
@@ -342,6 +343,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             //This will only get updated once
             metricsRegistry.registerMeter("supervisor:num-launched").mark();
             metricsRegistry.registerMeter("supervisor:num-shell-exceptions", ShellUtils.numShellExceptions);
+            metricsRegistry.registerMeter(Constants.SUPERVISOR_HEALTH_CHECK_TIMEOUTS);
             killErrorMeter = metricsRegistry.registerMeter("supervisor:num-kill-worker-errors");
             metricsRegistry.startMetricsReporters(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(() -> {
