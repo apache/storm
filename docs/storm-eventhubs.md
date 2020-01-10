@@ -1,5 +1,5 @@
 ---
-title: Azue Event Hubs Integration
+title: Azure Event Hubs Integration
 layout: documentation
 documentation: true
 ---
