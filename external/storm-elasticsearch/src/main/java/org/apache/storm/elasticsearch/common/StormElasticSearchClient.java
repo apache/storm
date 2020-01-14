@@ -28,6 +28,7 @@ import org.elasticsearch.client.RestClientBuilder;
  */
 public final class StormElasticSearchClient implements Serializable {
 
+    private static final long serialVersionUID = -3910184447842451527L;
     private final EsConfig esConfig;
 
     public StormElasticSearchClient(EsConfig esConfig) {

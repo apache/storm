@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
  * <p>Note: Each HBaseBolt defined in a topology is tied to a specific table.
  */
 public class HBaseLookupBolt extends AbstractHBaseBolt {
+    private static final long serialVersionUID = -8206079974670011700L;
     private static final Logger LOG = LoggerFactory.getLogger(HBaseLookupBolt.class);
 
     private HBaseValueMapper rowToTupleMapper;

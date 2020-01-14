@@ -32,7 +32,7 @@ import org.bson.conversions.Bson;
  * Note: Each MongoUpdateBolt defined in a topology is tied to a specific collection.
  */
 public class MongoUpdateBolt extends AbstractMongoBolt {
-
+    private static final long serialVersionUID = -5520612633851250677L;
     private QueryFilterCreator queryCreator;
     private MongoUpdateMapper mapper;
 

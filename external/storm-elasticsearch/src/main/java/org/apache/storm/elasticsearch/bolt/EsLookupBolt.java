@@ -41,6 +41,7 @@ import org.elasticsearch.client.Response;
  */
 public class EsLookupBolt extends AbstractEsBolt {
 
+    private static final long serialVersionUID = -5863240030393506846L;
     private final EsTupleMapper tupleMapper;
     private final EsLookupResultOutput output;
 

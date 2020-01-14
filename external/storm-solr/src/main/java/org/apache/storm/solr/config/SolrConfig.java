@@ -20,6 +20,7 @@ import org.apache.solr.client.solrj.impl.CloudSolrClient;
  * the bolts should be put in this class.
  */
 public class SolrConfig implements Serializable {
+    private static final long serialVersionUID = 824246049392319577L;
     private final String zkHostString;
     private final int tickTupleInterval;
     private final boolean enableKerberos;

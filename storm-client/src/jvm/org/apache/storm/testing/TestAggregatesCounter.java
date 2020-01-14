@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 
 public class TestAggregatesCounter extends BaseRichBolt {
+    private static final long serialVersionUID = -7255514005282492298L;
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
 
     Map<String, Integer> counts;

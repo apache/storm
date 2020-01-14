@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 
 public class TestGlobalCount extends BaseRichBolt {
+    private static final long serialVersionUID = 4775069550435937436L;
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
     OutputCollector collector;
     private int count;

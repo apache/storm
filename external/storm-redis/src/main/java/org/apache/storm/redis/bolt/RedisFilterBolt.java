@@ -38,6 +38,7 @@ import redis.clients.jedis.JedisCommands;
  * specify STRING to data type of RedisFilterMapper.
  */
 public class RedisFilterBolt extends AbstractRedisBolt {
+    private static final long serialVersionUID = 7644541495686215703L;
     private final RedisFilterMapper filterMapper;
     private final RedisDataTypeDescription.RedisDataType dataType;
     private final String additionalKey;

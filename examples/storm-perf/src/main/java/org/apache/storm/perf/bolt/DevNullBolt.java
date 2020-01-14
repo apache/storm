@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 
 public class DevNullBolt extends BaseRichBolt {
+    private static final long serialVersionUID = 3353976718364358702L;
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DevNullBolt.class);
     private OutputCollector collector;
     private Long sleepNanos;
@@ -55,3 +56,4 @@ public class DevNullBolt extends BaseRichBolt {
 
     }
 }
+

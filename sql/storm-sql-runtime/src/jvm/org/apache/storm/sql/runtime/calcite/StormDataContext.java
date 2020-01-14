@@ -35,6 +35,7 @@ import org.apache.calcite.util.Holder;
  * This is based on SlimDataContext in Calcite, and borrow some from DataContextImpl in Calcite.
  */
 public class StormDataContext implements DataContext, Serializable {
+    private static final long serialVersionUID = 6125430051858677738L;
     private final ImmutableMap<Object, Object> map;
 
     /**

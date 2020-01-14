@@ -244,6 +244,7 @@ public class WindowTridentProcessor implements TridentProcessor {
     }
 
     public static class TriggerInfo implements Serializable {
+        private static final long serialVersionUID = 9139910244018337048L;
         public final String windowTaskId;
         public final int triggerId;
 

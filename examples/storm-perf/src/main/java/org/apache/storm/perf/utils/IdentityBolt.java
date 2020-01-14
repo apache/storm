@@ -26,6 +26,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 
 public class IdentityBolt extends BaseRichBolt {
+    private static final long serialVersionUID = 7556207705817740527L;
     private OutputCollector collector;
 
     @Override

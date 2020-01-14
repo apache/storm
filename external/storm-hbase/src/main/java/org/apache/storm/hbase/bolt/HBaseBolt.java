@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
  */
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class HBaseBolt extends AbstractHBaseBolt {
+    private static final long serialVersionUID = 2138011224544163322L;
     private static final Logger LOG = LoggerFactory.getLogger(HBaseBolt.class);
     private static final int DEFAULT_FLUSH_INTERVAL_SECS = 1;
 

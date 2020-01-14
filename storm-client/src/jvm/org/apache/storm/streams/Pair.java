@@ -21,6 +21,7 @@ import java.io.Serializable;
  * @param <T2> the type of the second value
  */
 public final class Pair<T1, T2> implements Serializable {
+    private static final long serialVersionUID = 2101669874873044684L;
     /**
      * The first value.
      */

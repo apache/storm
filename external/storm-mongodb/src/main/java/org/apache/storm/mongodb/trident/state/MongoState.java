@@ -53,6 +53,7 @@ public class MongoState implements State {
     }
 
     public static class Options implements Serializable {
+        private static final long serialVersionUID = 241563415043284544L;
         private String url;
         private String collectionName;
         private MongoMapper mapper;

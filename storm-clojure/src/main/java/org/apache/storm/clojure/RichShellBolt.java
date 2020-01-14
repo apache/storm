@@ -27,6 +27,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 
 public class RichShellBolt extends ShellBolt implements IRichBolt {
+    private static final long serialVersionUID = -7472732843055548796L;
     private Map<String, StreamInfo> outputs;
     
     public RichShellBolt(String[] command, Map<String, StreamInfo> outputs) {

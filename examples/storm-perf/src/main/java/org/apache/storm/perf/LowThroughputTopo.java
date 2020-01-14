@@ -128,6 +128,7 @@ public class LowThroughputTopo {
     }
 
     private static class LatencyPrintBolt extends BaseRichBolt {
+        private static final long serialVersionUID = -3566535176387956870L;
         private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(LatencyPrintBolt.class);
         private OutputCollector collector;
 

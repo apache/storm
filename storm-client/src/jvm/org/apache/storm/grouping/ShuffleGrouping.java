@@ -24,6 +24,7 @@ import org.apache.storm.task.WorkerTopologyContext;
 
 
 public class ShuffleGrouping implements CustomStreamGrouping, Serializable {
+    private static final long serialVersionUID = 943531521968484394L;
     private ArrayList<List<Integer>> choices;
     private AtomicInteger current;
 

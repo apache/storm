@@ -33,6 +33,7 @@ import java.util.Arrays;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 public class KinesisConnectionInfo implements Serializable {
+    private static final long serialVersionUID = 8799748040190430626L;
     private final byte[] serializedKinesisCredsProvider;
     private final byte[] serializedkinesisClientConfig;
     private final Integer recordsLimit;

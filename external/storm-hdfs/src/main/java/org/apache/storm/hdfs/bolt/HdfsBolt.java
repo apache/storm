@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HdfsBolt extends AbstractHdfsBolt {
+    private static final long serialVersionUID = 8732488717499902331L;
     private static final Logger LOG = LoggerFactory.getLogger(HdfsBolt.class);
 
     private transient FSDataOutputStream out;

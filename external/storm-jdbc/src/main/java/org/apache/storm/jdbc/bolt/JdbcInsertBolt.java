@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
  * Note: Each JdbcInsertBolt defined in a topology is tied to a specific table.
  */
 public class JdbcInsertBolt extends AbstractJdbcBolt {
+    private static final long serialVersionUID = -2719870314706220578L;
     private static final Logger LOG = LoggerFactory.getLogger(JdbcInsertBolt.class);
 
     private String tableName;

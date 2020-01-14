@@ -84,6 +84,7 @@ public class BackPressureTopo {
     }
 
     private static class ThrottledBolt extends BaseRichBolt {
+        private static final long serialVersionUID = -8621048146348639308L;
         private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(ThrottledBolt.class);
         private OutputCollector collector;
         private long sleepMs;

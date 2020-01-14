@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SolrFieldTypeFinder implements Serializable {
     private static final Logger log = LoggerFactory.getLogger(SolrFieldTypeFinder.class);
+    private static final long serialVersionUID = -1391557042986740247L;
     private SchemaBuilder schemaBuilder;
     private Schema schema;
     private Map<String, FieldTypeWrapper> fieldToWrapper;
@@ -160,6 +161,7 @@ public class SolrFieldTypeFinder implements Serializable {
      * Class wrapping all the information for fields and types.
      * */
     public static class FieldTypeWrapper implements Serializable {
+        private static final long serialVersionUID = -5979401951074712331L;
         Field field;
         FieldType type;
 

@@ -37,7 +37,7 @@ import org.bson.Document;
  * Note: Each MongoInsertBolt defined in a topology is tied to a specific collection.
  */
 public class MongoInsertBolt extends AbstractMongoBolt {
-
+    private static final long serialVersionUID = 5181213261367939689L;
     private static final int DEFAULT_FLUSH_INTERVAL_SECS = 1;
 
     private MongoMapper mapper;

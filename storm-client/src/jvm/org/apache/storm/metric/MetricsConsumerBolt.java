@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MetricsConsumerBolt implements IBolt {
+    private static final long serialVersionUID = -1695280507309378859L;
     public static final Logger LOG = LoggerFactory.getLogger(MetricsConsumerBolt.class);
     private final int maxRetainMetricTuples;
     private final Predicate<IMetricsConsumer.DataPoint> filterPredicate;

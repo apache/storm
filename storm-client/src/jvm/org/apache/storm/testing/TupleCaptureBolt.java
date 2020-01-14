@@ -25,6 +25,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 
 public class TupleCaptureBolt implements IRichBolt {
+    private static final long serialVersionUID = 5890898753697275340L;
 
     /*
      * Even though normally bolts do not need to care about thread safety, this particular bolt is different.

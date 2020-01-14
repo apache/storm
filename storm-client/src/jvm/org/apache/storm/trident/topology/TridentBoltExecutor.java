@@ -42,6 +42,7 @@ import org.apache.storm.utils.TupleUtils;
 import org.apache.storm.utils.Utils;
 
 public class TridentBoltExecutor implements IRichBolt {
+    private static final long serialVersionUID = -8909197875841579381L;
     public static final String COORD_STREAM_PREFIX = "$coord-";
     Map<GlobalStreamId, String> batchGroupIds;
     Map<String, CoordSpec> coordSpecs;
@@ -292,6 +293,7 @@ public class TridentBoltExecutor implements IRichBolt {
     }
 
     public static class CoordType implements Serializable {
+        private static final long serialVersionUID = 2995299720884889969L;
         public boolean singleCount;
 
         protected CoordType(boolean singleCount) {

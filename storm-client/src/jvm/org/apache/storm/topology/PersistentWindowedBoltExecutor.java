@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * needed.
  */
 public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBoltExecutor implements IStatefulBolt<T> {
+    private static final long serialVersionUID = 4285670329066110008L;
     private static final Logger LOG = LoggerFactory.getLogger(PersistentWindowedBoltExecutor.class);
     private final IStatefulWindowedBolt<T> statefulWindowedBolt;
     private transient OutputCollector outputCollector;

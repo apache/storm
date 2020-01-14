@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class InMemoryWindowsStore implements WindowsStore, Serializable {
 
+    private static final long serialVersionUID = -7277405573842278243L;
     private final ConcurrentHashMap<String, Object> store = new ConcurrentHashMap<>();
 
     private int maxSize;
