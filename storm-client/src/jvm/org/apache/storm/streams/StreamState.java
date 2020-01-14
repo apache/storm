@@ -21,6 +21,7 @@ import java.io.Serializable;
  * @param <V> the value type
  */
 public class StreamState<K, V> implements Serializable {
+    private static final long serialVersionUID = -1798276005568323248L;
     private final transient PairStream<K, V> stream;
 
     StreamState(PairStream<K, V> stream) {

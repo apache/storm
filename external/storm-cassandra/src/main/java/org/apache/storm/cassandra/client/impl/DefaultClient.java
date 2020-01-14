@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 public class DefaultClient implements SimpleClient, Closeable, Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultClient.class);
+    private static final long serialVersionUID = -5197633787983669015L;
 
     private String keyspace;
 

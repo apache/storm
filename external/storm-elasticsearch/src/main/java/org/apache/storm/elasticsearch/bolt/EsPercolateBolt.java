@@ -41,6 +41,7 @@ import org.elasticsearch.client.Response;
  */
 public class EsPercolateBolt extends AbstractEsBolt {
 
+    private static final long serialVersionUID = 8103823842646188246L;
     private final EsTupleMapper tupleMapper;
 
     /**

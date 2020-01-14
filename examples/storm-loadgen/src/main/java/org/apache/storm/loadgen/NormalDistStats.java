@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
  */
 public class NormalDistStats implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(NormalDistStats.class);
+    private static final long serialVersionUID = -303929340157333380L;
     public final double mean;
     public final double stddev;
     public final double min;

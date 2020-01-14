@@ -29,6 +29,8 @@ import org.apache.storm.cassandra.query.selector.FieldSelector;
 
 public class DynamicStatementBuilder implements Serializable {
 
+    private static final long serialVersionUID = 4417334935956874165L;
+
     private DynamicStatementBuilder() {
     }
 

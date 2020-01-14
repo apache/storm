@@ -51,6 +51,7 @@ public class RocketMqState implements State {
     }
 
     public static class Options implements Serializable {
+        private static final long serialVersionUID = -3054717962557026238L;
         private TopicSelector selector;
         private TupleToMessageMapper mapper;
         private Properties properties;

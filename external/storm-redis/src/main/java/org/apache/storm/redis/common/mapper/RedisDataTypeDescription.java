@@ -18,6 +18,7 @@ import java.io.Serializable;
  * RedisDataTypeDescription defines data type and additional key if needed for lookup / store tuples.
  */
 public class RedisDataTypeDescription implements Serializable {
+    private static final long serialVersionUID = 5515442424703303981L;
     private RedisDataType dataType;
     private String additionalKey;
 

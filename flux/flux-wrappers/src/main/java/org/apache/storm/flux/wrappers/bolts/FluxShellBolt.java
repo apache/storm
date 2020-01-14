@@ -34,6 +34,7 @@ import org.apache.storm.tuple.Fields;
  *
  */
 public class FluxShellBolt extends ShellBolt implements IRichBolt {
+    private static final long serialVersionUID = 8588346470875136116L;
     private Map<String, String[]> outputFields;
     private Map<String, Object> componentConfig;
     

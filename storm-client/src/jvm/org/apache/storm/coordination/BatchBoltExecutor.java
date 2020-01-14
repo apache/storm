@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCallback {
+    private static final long serialVersionUID = -5196067238417939797L;
     public static final Logger LOG = LoggerFactory.getLogger(BatchBoltExecutor.class);
 
     private byte[] boltSer;

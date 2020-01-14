@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HiveBolt extends BaseRichBolt {
+    private static final long serialVersionUID = -8477018696751233324L;
     private static final Logger LOG = LoggerFactory.getLogger(HiveBolt.class);
     @VisibleForTesting
     Map<HiveEndPoint, HiveWriter> allWriters;

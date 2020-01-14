@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
-
+    private static final long serialVersionUID = 3874909124472122932L;
     public static final int DEFAULT_EMIT_FREQUENCY = 2;
     private static final Logger LOG = LoggerFactory.getLogger(BatchCassandraWriterBolt.class);
     private LinkedBlockingQueue<Tuple> queue;

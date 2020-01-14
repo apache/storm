@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
  */
 public class InputStream implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(InputStream.class);
+    private static final long serialVersionUID = -6336477049725202777L;
     public final String fromComponent;
     public final String toComponent;
     public final String id;

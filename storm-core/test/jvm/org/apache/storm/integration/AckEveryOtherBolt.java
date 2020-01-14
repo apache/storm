@@ -24,7 +24,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 
 class AckEveryOtherBolt extends BaseRichBolt {
-
+    private static final long serialVersionUID = 3748356000664791772L;
     private boolean state = true;
     private OutputCollector collector;
 

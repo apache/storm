@@ -16,6 +16,7 @@ import java.io.Serializable;
 import org.apache.storm.trident.state.StateSpec;
 
 public class NodeStateInfo implements Serializable {
+    private static final long serialVersionUID = -2571123910252410646L;
     public String id;
     public StateSpec spec;
 

@@ -32,6 +32,8 @@ import java.util.List;
 
 public class TestRecordToTupleMapper implements RecordToTupleMapper, Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(TestRecordToTupleMapper.class);
+    private static final long serialVersionUID = -8825697100165763982L;
+
     @Override
     public Fields getOutputFields() {
         return new Fields("partitionKey", "sequenceNumber", "data");

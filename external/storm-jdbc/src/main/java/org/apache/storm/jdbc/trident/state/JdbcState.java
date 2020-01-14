@@ -110,6 +110,7 @@ public class JdbcState implements State {
     }
 
     public static class Options implements Serializable {
+        private static final long serialVersionUID = -1642655048655000396L;
         private JdbcMapper mapper;
         private JdbcLookupMapper jdbcLookupMapper;
         private ConnectionProvider connectionProvider;

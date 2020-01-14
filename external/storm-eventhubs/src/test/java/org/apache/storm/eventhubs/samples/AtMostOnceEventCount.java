@@ -28,6 +28,8 @@ import org.apache.storm.eventhubs.spout.IStateStore;
 import org.apache.storm.eventhubs.spout.SimplePartitionManager;
 
 public class AtMostOnceEventCount extends EventCount implements Serializable {
+    private static final long serialVersionUID = 2276482213939453480L;
+
     public static void main(String[] args) throws Exception {
         AtMostOnceEventCount scenario = new AtMostOnceEventCount();
 

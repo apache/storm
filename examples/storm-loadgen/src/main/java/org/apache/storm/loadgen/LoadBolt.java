@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
  * A bolt that simulates a real world bolt based off of statistics about it.
  */
 public class LoadBolt extends BaseRichBolt {
+    private static final long serialVersionUID = 9147991310167687246L;
     private static final Logger LOG = LoggerFactory.getLogger(LoadBolt.class);
     private final List<OutputStream> outputStreamStats;
     private List<OutputStreamEngine> outputStreams;

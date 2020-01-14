@@ -22,6 +22,7 @@ import org.apache.storm.utils.RegisteredGlobalState;
 
 
 public class NonRichBoltTracker implements IBolt {
+    private static final long serialVersionUID = -9005809961297778879L;
     IBolt delegate;
     String trackId;
 

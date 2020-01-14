@@ -34,6 +34,7 @@ import org.apache.storm.utils.ReflectionUtils;
 // TaskID is always -1, therefore you can only send-unanchored tuples to co-located SystemBolt.
 // This bolt was conceived to export worker stats via metrics api.
 public class SystemBolt implements IBolt {
+    private static final long serialVersionUID = 214170906976413844L;
     private static boolean prepareWasCalled = false;
 
     @SuppressWarnings({ "unchecked" })

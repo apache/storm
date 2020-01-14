@@ -61,6 +61,7 @@ import org.slf4j.LoggerFactory;
  * An {@link IWindowedBolt} wrapper that does the windowing of tuples.
  */
 public class WindowedBoltExecutor implements IRichBolt {
+    private static final long serialVersionUID = 5785781562791368189L;
     public static final String LATE_TUPLE_FIELD = "late_tuple";
     private static final Logger LOG = LoggerFactory.getLogger(WindowedBoltExecutor.class);
     private static final int DEFAULT_WATERMARK_EVENT_INTERVAL_MS = 1000; // 1s

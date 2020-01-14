@@ -20,7 +20,7 @@ import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
 import org.apache.storm.tuple.Tuple;
 
 public class CassandraWriterBolt extends BaseCassandraBolt<Tuple> {
-
+    private static final long serialVersionUID = 5043125450713195041L;
     private AsyncResultHandler<Tuple> asyncResultHandler;
 
     /**

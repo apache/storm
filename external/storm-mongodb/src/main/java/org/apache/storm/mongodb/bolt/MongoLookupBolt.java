@@ -34,7 +34,7 @@ import org.bson.conversions.Bson;
  * Note: Each MongoLookupBolt defined in a topology is tied to a specific collection.
  */
 public class MongoLookupBolt extends AbstractMongoBolt {
-
+    private static final long serialVersionUID = -5170877102054804819L;
     private QueryFilterCreator queryCreator;
     private MongoLookupMapper mapper;
 

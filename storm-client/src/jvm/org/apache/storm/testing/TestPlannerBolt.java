@@ -22,6 +22,8 @@ import org.apache.storm.tuple.Tuple;
 
 
 public class TestPlannerBolt extends BaseRichBolt {
+    private static final long serialVersionUID = 8925038999299062798L;
+
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
 

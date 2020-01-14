@@ -201,7 +201,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
     }
 
     public static class Options<T> implements Serializable {
-
+        private static final long serialVersionUID = -6513148451415208612L;
         public Serializer<T> serializer = null;
         public int cacheSize = 5000;
         public String globalKey = "$HBASE_STATE_GLOBAL$";

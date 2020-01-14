@@ -39,6 +39,7 @@ public class KafkaTridentSpoutCoordinator<K,V> implements
     IOpaquePartitionedTridentSpout.Coordinator<List<Map<String, Object>>>,
     IPartitionedTridentSpout.Coordinator<List<Map<String, Object>>>,
         Serializable {
+    private static final long serialVersionUID = 831108958500512737L;
     //Initial delay for the assignment refresh timer
     public static final long TIMER_DELAY_MS = 500;
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutCoordinator.class);

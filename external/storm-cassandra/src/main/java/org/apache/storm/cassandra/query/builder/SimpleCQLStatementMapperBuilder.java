@@ -28,6 +28,7 @@ import org.apache.storm.cassandra.query.selector.FieldSelector;
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class SimpleCQLStatementMapperBuilder implements CQLStatementBuilder<SimpleCQLStatementMapper>, Serializable {
 
+    private static final long serialVersionUID = 7042291088422917602L;
     private final String queryString;
 
     private CqlMapper mapper;

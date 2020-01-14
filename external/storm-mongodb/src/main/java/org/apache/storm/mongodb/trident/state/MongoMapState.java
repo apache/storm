@@ -84,6 +84,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
     }
 
     public static class Options<T> implements Serializable {
+        private static final long serialVersionUID = 3252817063788089651L;
         public String url;
         public String collectionName;
         public MongoMapper mapper;

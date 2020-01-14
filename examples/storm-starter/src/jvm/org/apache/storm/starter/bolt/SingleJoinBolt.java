@@ -33,6 +33,7 @@ import org.apache.storm.utils.TimeCacheMap;
  * NOTE: Prefer to use the built-in JoinBolt wherever applicable
  */
 public class SingleJoinBolt extends BaseRichBolt {
+    private static final long serialVersionUID = 2986304714244016387L;
     OutputCollector collector;
     Fields idFields;
     Fields outFields;

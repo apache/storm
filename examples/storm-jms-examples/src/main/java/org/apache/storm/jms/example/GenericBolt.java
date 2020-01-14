@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author tgoetz
  */
-@SuppressWarnings("serial")
 public class GenericBolt extends BaseRichBolt {
+    private static final long serialVersionUID = 8669713806304573619L;
     private static final Logger LOG = LoggerFactory.getLogger(GenericBolt.class);
     private OutputCollector collector;
     private boolean autoAck = false;

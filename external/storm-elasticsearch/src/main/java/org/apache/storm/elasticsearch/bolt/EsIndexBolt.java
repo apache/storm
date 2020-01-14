@@ -36,6 +36,7 @@ import org.apache.storm.tuple.Tuple;
  * Basic bolt for storing tuple to ES document.
  */
 public class EsIndexBolt extends AbstractEsBolt {
+    private static final long serialVersionUID = -7642077255818586463L;
     private final EsTupleMapper tupleMapper;
 
     /**
