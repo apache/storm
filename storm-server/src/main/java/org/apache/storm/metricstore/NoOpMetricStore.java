@@ -14,7 +14,7 @@ package org.apache.storm.metricstore;
 import java.util.Map;
 import org.apache.storm.metric.StormMetricsRegistry;
 
-
+@SuppressWarnings("unused")
 public class NoOpMetricStore implements MetricStore {
 
     @Override
