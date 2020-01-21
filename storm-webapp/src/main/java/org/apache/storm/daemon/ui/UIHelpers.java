@@ -1192,17 +1192,17 @@ public class UIHelpers {
         result.put("failed", commonAggregateStats.get_failed());
         if (commonAggregateStats.is_set_resources_map()) {
             result.put(
-                    "componentRequestedMemOnHeap",
+                    "requestedMemOnHeap",
                     commonAggregateStats.get_resources_map().get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME)
             );
             result.put(
-                    "componentRequestedMemOffHeap",
+                    "requestedMemOffHeap",
                     commonAggregateStats.get_resources_map().get(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME));
             result.put(
-                    "componentRequestedCpu",
+                    "requestedCpu",
                     commonAggregateStats.get_resources_map().get(Constants.COMMON_CPU_RESOURCE_NAME));
             result.put(
-                    "componentRequestedGenericResourcesComp",
+                    "requestedGenericResourcesComp",
                     prettifyGenericResources(commonAggregateStats.get_resources_map()));
         }
         return result;
