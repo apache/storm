@@ -683,7 +683,7 @@ public class SlotTest {
             when(nContainer.readHeartbeat()).thenReturn(chb, chb);
 
             ISupervisor iSuper = mock(ISupervisor.class);
-            long heartbeatTimeoutMs = 5000;
+            long heartbeatTimeoutMs = 10_000L;
             StaticState staticState = new StaticState(localizer, heartbeatTimeoutMs, 120_000, 1000, 1000,
                                                       containerLauncher, "localhost", port, iSuper, state, cb, null, null, new SlotMetrics(new StormMetricsRegistry()));
 
