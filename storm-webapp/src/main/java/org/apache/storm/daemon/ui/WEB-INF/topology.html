@@ -142,6 +142,10 @@ function sendLoggerLevel(id){
             return;
         }
     }
+    if (!loggerName) {
+        alert ("Logger name must be provided. Use \"ROOT\" if you want to change current default log behavior.");
+        return;
+    }
     var data = {};
     var loggerSetting;
 
