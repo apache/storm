@@ -171,6 +171,12 @@ public class DaemonConfig implements Validated {
     public static final String STORM_HEALTH_CHECK_TIMEOUT_MS = "storm.health.check.timeout.ms";
 
     /**
+     * Boolean setting to configure if health checks should fail when timeouts occur or not.
+     */
+    @IsBoolean
+    public static final String STORM_HEALTH_CHECK_FAIL_ON_TIMEOUTS = "storm.health.check.fail.on.timeouts";
+
+    /**
      * This is the user that the Nimbus daemon process is running as. May be used when security is enabled to authorize actions in the
      * cluster.
      */

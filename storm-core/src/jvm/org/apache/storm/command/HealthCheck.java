@@ -20,7 +20,7 @@ public class HealthCheck {
 
     public static void main(String[] args) {
         Map<String, Object> conf = Utils.readStormConfig();
-        System.exit(HealthChecker.healthCheck(conf));
+        System.exit(HealthChecker.healthCheck(conf, null));
     }
 
 }
