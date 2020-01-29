@@ -901,7 +901,7 @@ public class ConfigValidation {
                     LOG.warn("We loosen some constraints here to support topologies of older version running on the current version");
                     validateField(name, className.replace("backtype.storm", "org.apache.storm"));
                 } else {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Failed to validate config " + name + " with value " + className, e);
                 }
             }
         }
