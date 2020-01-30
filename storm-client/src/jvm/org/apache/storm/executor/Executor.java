@@ -335,10 +335,12 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>();
             if (nameToRegistry != null) {
                 for (Map.Entry<String, IMetric> entry : nameToRegistry.entrySet()) {
+                    String name = entry.getKey();
                     IMetric metric = entry.getValue();
                     Object value = metric.getValueAndReset();
+                    Map<String, String> dimensions = metric.getDimensions();
                     if (value != null) {
-                        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), value);
+                        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(name, value, dimensions);
                         dataPoints.add(dataPoint);
                     }
                 }
