@@ -803,18 +803,21 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         }
 
         if (dynamicState.container.didMainProcessExit()) {
-            LOG.warn("SLOT {}: main process has exited", staticState.port);
+            LOG.warn("SLOT {}: main process has exited for topology: {}",
+                    staticState.port, dynamicState.currentAssignment.get_topology_id());
             return killContainerFor(KillReason.PROCESS_EXIT, dynamicState, staticState);
         }
 
         if (dynamicState.container.isMemoryLimitViolated(dynamicState.currentAssignment)) {
-            LOG.warn("SLOT {}: violated memory limits", staticState.port);
+            LOG.warn("SLOT {}: violated memory limits for topology: {}",
+                    staticState.port, dynamicState.currentAssignment.get_topology_id());
             return killContainerFor(KillReason.MEMORY_VIOLATION, dynamicState, staticState);
         }
 
         LSWorkerHeartbeat hb = dynamicState.container.readHeartbeat();
         if (hb == null) {
-            LOG.warn("SLOT {}: HB returned as null", staticState.port);
+            LOG.warn("SLOT {}: HB returned as null for topology: {}",
+                    staticState.port, dynamicState.currentAssignment.get_topology_id());
             //This can happen if the supervisor crashed after launching a
             // worker that never came up.
             return killContainerFor(KillReason.HB_NULL, dynamicState, staticState);
@@ -823,7 +826,8 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         long timeDiffMs = (Time.currentTimeSecs() - hb.get_time_secs()) * 1000;
         long hbTimeoutMs = getHbTimeoutMs(staticState, dynamicState);
         if (timeDiffMs > hbTimeoutMs) {
-            LOG.warn("SLOT {}: HB is too old {} > {}", staticState.port, timeDiffMs, hbTimeoutMs);
+            LOG.warn("SLOT {}: HB is too old {} > {} for topology: {}",
+                    staticState.port, timeDiffMs, hbTimeoutMs, dynamicState.currentAssignment.get_topology_id());
             return killContainerFor(KillReason.HB_TIMEOUT, dynamicState, staticState);
         }
 
