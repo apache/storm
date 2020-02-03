@@ -830,6 +830,9 @@ public class StatsUtil {
         Map<String, Map<K, Double>> ret = new HashMap<>();
 
         Map<String, Map<K, List>> expands = expandAveragesSeq(avgSeq, countSeq);
+        if (expands == null) {
+            return ret;
+        }
         for (Map.Entry<String, Map<K, List>> entry : expands.entrySet()) {
             String k = entry.getKey();
 
@@ -2304,6 +2307,9 @@ public class StatsUtil {
             } else {
                 initVal = mergeWithAddPair(initVal, expandAverages(avg, count));
             }
+        }
+        if (initVal == null) {
+            initVal = new HashMap<>();
         }
         return initVal;
     }
