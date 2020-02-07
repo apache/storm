@@ -217,7 +217,7 @@ public class ResourceAwareScheduler implements IScheduler {
 
                         if (!evictedSomething) {
                             StringBuilder message = new StringBuilder();
-                            message.append("Not enough resources to schedule ");
+                            message.append("Not enough resources to schedule after evicting lower priority topologies. ");
                             message.append(topologySchedulingResources.getRemainingRequiredResourcesMessage());
                             message.append(result.getErrorMessage());
                             markFailedTopology(topologySubmitter, cluster, td, message.toString());
@@ -236,7 +236,12 @@ public class ResourceAwareScheduler implements IScheduler {
                 return;
             }
         }
-        markFailedTopology(topologySubmitter, cluster, td, "Failed to schedule within " + maxSchedulingAttempts + " attempts");
+        // We can only reach here when we failed to free enough space by evicting current topologies after {maxSchedulingAttempts}
+        // while that scheduler did evict something at each attempt.
+        markFailedTopology(topologySubmitter, cluster, td,
+            "Failed to make enough resources for " + td.getId()
+                    + " by evicting lower priority topologies within " + maxSchedulingAttempts + " attempts. "
+                    + topologySchedulingResources.getRemainingRequiredResourcesMessage());
     }
 
     /*
@@ -373,7 +378,6 @@ public class ResourceAwareScheduler implements IScheduler {
 
         String getRemainingRequiredResourcesMessage() {
             StringBuilder message = new StringBuilder();
-            message.append("After evicting lower priority topologies: ");
 
             NormalizedResourceOffer clusterRemainingAvailableResources = new NormalizedResourceOffer();
             clusterRemainingAvailableResources.add(clusterAvailableResources);
