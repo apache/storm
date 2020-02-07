@@ -399,9 +399,17 @@ public class ClientAuthUtils {
                 Set<Object> creds = subject.getPrivateCredentials();
                 synchronized (creds) {
                     WorkerToken previous = findWorkerToken(subject, type);
-                    creds.add(token);
-                    if (previous != null) {
-                        creds.remove(previous);
+                    boolean notAlreadyContained = creds.add(token);
+                    if (notAlreadyContained) {
+                        if (previous != null) {
+                            //this means token is not equal to previous so we should remove previous
+                            creds.remove(previous);
+                            LOG.info("Replaced WorkerToken for service type {}", type);
+                        } else {
+                            LOG.info("Added new WorkerToken for service type {}", type);
+                        }
+                    } else {
+                        LOG.info("The new WorkerToken for service type {} is the same as the previous token", type);
                     }
                 }
             }

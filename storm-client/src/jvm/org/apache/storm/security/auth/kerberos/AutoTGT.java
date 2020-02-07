@@ -173,6 +173,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private void populateSubjectWithTGT(Subject subject, Map<String, String> credentials) {
+        LOG.info("Populating TGT from credentials");
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {
             clearCredentials(subject, tgt);
