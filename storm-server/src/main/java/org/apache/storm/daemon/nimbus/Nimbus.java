@@ -3356,12 +3356,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (subject != null) {
                 options.set_principal(subject.getPrincipals().iterator().next().getName());
             }
-            String topoId = toTopoId(topoName);
-            StormTopology stormTopology = tryReadTopology(topoId, topoCache);
-            StormBase base = new StormBase();
-            base.set_name(topoName);
-            idToExecutors.getAndUpdate(new Assoc<>(topoId,
-                    new HashSet<>(computeExecutors(topoId, base, topoConf, stormTopology))));
 
             transitionName(topoName, TopologyActions.REBALANCE, options, true);
             notifyTopologyActionListener(topoName, operation);
