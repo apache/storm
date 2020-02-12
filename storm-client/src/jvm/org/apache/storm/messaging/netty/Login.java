@@ -34,7 +34,6 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import org.apache.log4j.Logger;
-import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.shade.org.apache.zookeeper.Shell;
 import org.apache.storm.shade.org.apache.zookeeper.client.ZooKeeperSaslClient;
 
@@ -296,8 +295,14 @@ public class Login {
                     + System.getProperty(ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY, "Client") + ")");
         }
         Configuration configuration = this.getConfiguration(jaasConfFile);
-        LoginContext loginContext = new LoginContext(loginContextName, null, callbackHandler, configuration);
-        loginContext.login();
+        LoginContext loginContext;
+        try {
+            loginContext = new LoginContext(loginContextName, null, callbackHandler, configuration);
+            loginContext.login();
+        } catch (LoginException e) {
+            LOG.error("Login using jaas conf " + jaasConfFile + " failed");
+            throw e;
+        }
         LOG.info("Successfully logged in to context " + loginContextName + " using " + jaasConfFile);
         return loginContext;
     }
