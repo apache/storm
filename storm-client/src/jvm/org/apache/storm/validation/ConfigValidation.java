@@ -79,7 +79,7 @@ public class ConfigValidation {
                     throw new RuntimeException(e);
                 }
             }
-            LOG.debug("Will use {} for validation", ret);
+            LOG.info("Will use {} for validation", ret);
             configClasses = ret;
         }
         return configClasses;
