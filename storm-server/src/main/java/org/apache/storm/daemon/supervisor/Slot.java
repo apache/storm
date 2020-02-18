@@ -13,6 +13,7 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -510,7 +511,18 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
             if (!equivalent(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
                 //Scheduling changed
-                staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
+                try {
+                    staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
+                } catch (FileNotFoundException fileNotFoundEx) {
+                    LOG.error("Failed to extract assignment details for localizer.", fileNotFoundEx);
+                    LOG.info("We need to wait for localization to finish before launching container...");
+                    //We cannot launch the container yet the resources may still be updating
+                    return dynamicState.withState(MachineState.WAITING_FOR_BLOB_UPDATE)
+                                       .withPendingLocalization(dynamicState.pendingLocalization, null);
+                } catch (IOException ioException) {
+                    LOG.error("Possible failure to talk to blobstore...", ioException);
+                    throw ioException;
+                }
                 // Switch to the new assignment even if localization hasn't completed, or go to empty state
                 // if no new assignment.
                 return prepareForNewAssignmentNoWorkersRunning(dynamicState
