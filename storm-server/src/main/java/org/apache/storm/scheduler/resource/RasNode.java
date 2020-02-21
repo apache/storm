@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Represents a single node in the cluster.
  */
-public class RasNode {
+public class RasNode implements Comparable<RasNode> {
     private static final Logger LOG = LoggerFactory.getLogger(RasNode.class);
     private final String nodeId;
     private final Cluster cluster;
@@ -522,5 +522,10 @@ public class RasNode {
         } else {
             return 0.0;
         }
+    }
+
+    @Override
+    public int compareTo(RasNode o) {
+        return this.nodeId.compareTo(o.nodeId);
     }
 }
