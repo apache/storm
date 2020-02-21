@@ -16,8 +16,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -55,6 +57,8 @@ public class ResourceAwareScheduler implements IScheduler {
     private int maxSchedulingAttempts;
     private int schedulingTimeoutSeconds;
     private ExecutorService backgroundScheduling;
+    // record evicted topologies on each scheduling round, only used in test purpose now
+    private Set<String> evictedTopologies = new HashSet<>();
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
         markFailedTopology(u, c, td, message, null);
@@ -99,6 +103,9 @@ public class ResourceAwareScheduler implements IScheduler {
     public void schedule(Topologies topologies, Cluster cluster) {
         Map<String, User> userMap = getUsers(cluster);
         List<TopologyDetails> orderedTopologies = new ArrayList<>(schedulingPriorityStrategy.getOrderedTopologies(cluster, userMap));
+
+        // clear evictedTopologies at the beginning of each round of scheduling
+        evictedTopologies.clear();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Ordered list of topologies is: {}", orderedTopologies.stream().map((t) -> t.getId()).collect(Collectors.toList()));
         }
@@ -202,7 +209,7 @@ public class ResourceAwareScheduler implements IScheduler {
                             if (evictAssignemnt != null && !evictAssignemnt.getSlots().isEmpty()) {
                                 Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
                                 topologySchedulingResources.adjustResourcesForEvictedTopology(toSchedule, topologyEvict);
-
+                                evictedTopologies.add(topologyEvict.getId());
                                 LOG.debug("Evicting Topology {} with workers: {} from user {}", topologyEvict.getName(), workersToEvict,
                                     topologyEvict.getTopologySubmitter());
                                 evictedSomething = true;
@@ -237,6 +244,10 @@ public class ResourceAwareScheduler implements IScheduler {
             }
         }
         markFailedTopology(topologySubmitter, cluster, td, "Failed to schedule within " + maxSchedulingAttempts + " attempts");
+    }
+
+    public Set<String> getEvictedTopologies() {
+        return this.evictedTopologies;
     }
 
     /*

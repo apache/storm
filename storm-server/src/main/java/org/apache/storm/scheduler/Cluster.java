@@ -890,6 +890,20 @@ public class Cluster implements ISchedulingState {
     }
 
     @Override
+    public Map<String, Double> getClusterTotalGenericResource() {
+        Map<String, Double> ret = new HashMap<>();
+        for (SupervisorDetails sup : supervisors.values()) {
+            Map<String, Double> supGenericResources = sup.getTotalGenericResources();
+            for (Map.Entry<String, Double> entry : supGenericResources.entrySet()) {
+                String resourceName = entry.getKey();
+                Double amount = entry.getValue();
+                ret.put(resourceName, ret.getOrDefault(resourceName, 0.0) + amount);
+            }
+        }
+        return ret;
+    }
+
+    @Override
     public Map<String, List<String>> getNetworkTopography() {
         return networkTopography;
     }
