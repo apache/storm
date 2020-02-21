@@ -172,7 +172,10 @@ public final class VersionInfo {
                 try {
                     Path parent = p.getParent();
                     List<String> children = new ArrayList<>();
-                    Files.list(parent).forEach(path -> children.add(path.toString()));
+                    Files.list(parent)
+                        //avoid infinite recursion
+                        .filter(path -> !path.endsWith("*"))
+                        .forEach(path -> children.add(path.toString()));
                     IVersionInfo resFromChildren = getFromClasspath(children, propFileName);
                     if (resFromChildren != null) {
                         ret = resFromChildren;
