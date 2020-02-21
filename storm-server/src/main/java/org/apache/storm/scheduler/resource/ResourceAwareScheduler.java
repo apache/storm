@@ -166,7 +166,7 @@ public class ResourceAwareScheduler implements IScheduler {
                     Future<SchedulingResult> schedulingFuture = backgroundScheduling.submit(
                         () -> finalRasStrategy.schedule(toSchedule, td));
                     try {
-                        result = schedulingFuture.get(schedulingTimeoutSeconds, TimeUnit.SECONDS);
+                        result = schedulingFuture.get(schedulingTimeoutSeconds + 1, TimeUnit.SECONDS);
                     } catch (TimeoutException te) {
                         markFailedTopology(topologySubmitter, cluster, td, "Scheduling took too long for "
                                 + td.getId() + " using strategy " + rasStrategy.getClass().getName() + " timeout after "
@@ -226,7 +226,17 @@ public class ResourceAwareScheduler implements IScheduler {
                         //Only place we fall though to do the loop over again...
                     } else { //Any other failure result
                         //The assumption is that the strategy set the status...
-                        topologySubmitter.markTopoUnsuccess(td, cluster);
+                        String msg = "";
+                        if (result.getStatus() != null) {
+                            msg += result.getStatus().name() + ":";
+                        }
+                        if (result.getErrorMessage() != null && !result.getErrorMessage().isEmpty()) {
+                            msg += result.getErrorMessage();
+                        }
+                        if (result.getMessage() != null && !result.getMessage().isEmpty()) {
+                            msg += " " + result.getMessage();
+                        }
+                        topologySubmitter.markTopoUnsuccess(td, cluster, msg);
                         return;
                     }
                 }
