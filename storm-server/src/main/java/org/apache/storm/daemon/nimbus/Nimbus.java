@@ -2044,20 +2044,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      * compute a topology-id -> alive executors map.
      *
      * @param existingAssignment  the current assignments
-     * @param topologies          the current topologies
      * @param topologyToExecutors the executors for the current topologies
      * @param scratchTopologyId   the topology being rebalanced and should be excluded
      * @return the map of topology id to alive executors
      */
     private Map<String, Set<List<Integer>>> computeTopologyToAliveExecutors(Map<String, Assignment> existingAssignment,
-                                                                            Topologies topologies,
                                                                             Map<String, Set<List<Integer>>> topologyToExecutors,
                                                                             String scratchTopologyId) {
         Map<String, Set<List<Integer>>> ret = new HashMap<>();
         for (Entry<String, Assignment> entry : existingAssignment.entrySet()) {
             String topoId = entry.getKey();
             Assignment assignment = entry.getValue();
-            TopologyDetails td = topologies.getById(topoId);
             Set<List<Integer>> allExecutors = topologyToExecutors.get(topoId);
             Set<List<Integer>> aliveExecutors;
             if (topoId.equals(scratchTopologyId)) {
@@ -2226,8 +2223,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         updateAllHeartbeats(existingAssignments, topoToExec, zkHeartbeatTopologies);
 
-        Map<String, Set<List<Integer>>> topoToAliveExecutors = computeTopologyToAliveExecutors(existingAssignments, topologies,
-                                                                                               topoToExec, scratchTopologyId);
+        Map<String, Set<List<Integer>>> topoToAliveExecutors = computeTopologyToAliveExecutors(existingAssignments, topoToExec,
+                                                                                                scratchTopologyId);
         Map<String, Set<Long>> supervisorToDeadPorts = computeSupervisorToDeadPorts(existingAssignments, topoToExec,
                                                                                     topoToAliveExecutors);
         Map<String, SchedulerAssignmentImpl> topoToSchedAssignment = computeTopologyToSchedulerAssignment(existingAssignments,
@@ -2373,8 +2370,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 for (Iterator<Entry<String, StormBase>> it = bases.entrySet().iterator(); it.hasNext(); ) {
                     Entry<String, StormBase> entry = it.next();
                     String id = entry.getKey();
+                    StormBase base = entry.getValue();
                     try {
-                        tds.put(id, readTopologyDetails(id, entry.getValue()));
+                        tds.put(id, readTopologyDetails(id, base));
                     } catch (KeyNotFoundException e) {
                         //A race happened and it is probably not running
                         it.remove();

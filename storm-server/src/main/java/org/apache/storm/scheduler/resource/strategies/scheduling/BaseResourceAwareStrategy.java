@@ -510,7 +510,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * this component and then from each neighboring component in sorted order. Do this until there is nothing left to schedule.
      *
      * @param td                  The topology the executors belong to
-     * @param unassignedExecutors a collection of unassigned executors that need to be unassigned. Should only try to assign executors from
+     * @param unassignedExecutors a collection of unassigned executors that need to be assigned. Should only try to assign executors from
      *                            this list
      * @return a list of executors in sorted order
      */
@@ -521,7 +521,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
         Map<String, Queue<ExecutorDetails>> compToExecsToSchedule = new HashMap<>();
         for (Component component : componentMap.values()) {
-            compToExecsToSchedule.put(component.getId(), new LinkedList<ExecutorDetails>());
+            compToExecsToSchedule.put(component.getId(), new LinkedList<>());
             for (ExecutorDetails exec : component.getExecs()) {
                 if (unassignedExecutors.contains(exec)) {
                     compToExecsToSchedule.get(component.getId()).add(exec);
@@ -533,7 +533,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         sortedComponents.addAll(componentMap.values());
 
         for (Component currComp : sortedComponents) {
-            Map<String, Component> neighbors = new HashMap<String, Component>();
+            Map<String, Component> neighbors = new HashMap<>();
             for (String compId : Sets.union(currComp.getChildren(), currComp.getParents())) {
                 neighbors.put(compId, componentMap.get(compId));
             }
