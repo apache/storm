@@ -18,6 +18,8 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -60,21 +62,34 @@ public class TestConstraintSolverStrategy {
     private static final int NORMAL_BOLT_PARALLEL = 11;
     //Dropping the parallelism of the bolts to 3 instead of 11 so we can find a solution in a reasonable amount of work when backtracking.
     private static final int BACKTRACK_BOLT_PARALLEL = 3;
+    private static final int CO_LOCATION_CNT = 2;
 
-    public Map<String, Object> makeTestTopoConf() {
+    /**
+     * Make test Topology configuration, but with the newer spread constraints that allow associating a number
+     * with the spread. This number represents the maximum co-located component count. Default under the old
+     * configuration is assumed to be 1.
+     *
+     * @param maxCoLocationCnt Maximum co-located component (spoout-0), minimum value is 1.
+     * @return
+     */
+    public Map<String, Object> makeTestTopoConf(int maxCoLocationCnt) {
+        if (maxCoLocationCnt < 1) {
+            maxCoLocationCnt = 1;
+        }
         List<List<String>> constraints = new LinkedList<>();
         addContraints("spout-0", "bolt-0", constraints);
         addContraints("bolt-2", "spout-0", constraints);
         addContraints("bolt-1", "bolt-2", constraints);
         addContraints("bolt-1", "bolt-0", constraints);
         addContraints("bolt-1", "spout-0", constraints);
-        List<String> spread = new LinkedList<>();
-        spread.add("spout-0");
+
+        Map<String, Integer> spreads = new HashMap<>();
+        spreads.put("spout-0", maxCoLocationCnt);
 
         Map<String, Object> config = Utils.readDefaultConfig();
+        setConstraintConfig(constraints, spreads, config, true);
+
         config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
-        config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spread);
-        config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
         config.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
         config.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 100_000);
         config.put(Config.TOPOLOGY_PRIORITY, 1);
@@ -83,6 +98,10 @@ public class TestConstraintSolverStrategy {
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
 
         return config;
+    }
+
+    public Map<String, Object> makeTestTopoConf() {
+        return makeTestTopoConf(1);
     }
 
     public TopologyDetails makeTopology(Map<String, Object> config, int boltParallel) {
@@ -101,8 +120,8 @@ public class TestConstraintSolverStrategy {
         return new Cluster(new INimbusTest(), new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
     }
 
-    public void basicUnitTestWithKillAndRecover(ConstraintSolverStrategy cs, int boltParallel) {
-        Map<String, Object> config = makeTestTopoConf();
+    public void basicUnitTestWithKillAndRecover(ConstraintSolverStrategy cs, int boltParallel, int coLocationCnt) {
+        Map<String, Object> config = makeTestTopoConf(coLocationCnt);
         cs.prepare(config);
 
         TopologyDetails topo = makeTopology(config, boltParallel);
@@ -116,7 +135,7 @@ public class TestConstraintSolverStrategy {
         Assert.assertTrue("Assert scheduling topology success " + result, result.isSuccess());
         Assert.assertEquals("topo all executors scheduled? " + cluster.getUnassignedExecutors(topo),
             0, cluster.getUnassignedExecutors(topo).size());
-        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo));
+        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo, null));
         LOG.info("Slots Used {}", cluster.getAssignmentById(topo.getId()).getSlots());
         LOG.info("Assignment {}", cluster.getAssignmentById(topo.getId()).getSlotToExecutors());
 
@@ -146,7 +165,7 @@ public class TestConstraintSolverStrategy {
 
         Assert.assertTrue("Assert scheduling topology success " + result, result.isSuccess());
         Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
-        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo));
+        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo, null));
     }
 
     @Test
@@ -159,12 +178,30 @@ public class TestConstraintSolverStrategy {
                 return super.sortByValues(map).descendingMap();
             }
         };
-        basicUnitTestWithKillAndRecover(cs, BACKTRACK_BOLT_PARALLEL);
+        basicUnitTestWithKillAndRecover(cs, BACKTRACK_BOLT_PARALLEL, 2);
+    }
+
+    @Test
+    public void testConstraintSolverForceBacktrackWithSpreadCoLocation() {
+        //The best way to force backtracking is to change the heuristic so the components are reversed, so it is hard
+        // to find an answer.
+        ConstraintSolverStrategy cs = new ConstraintSolverStrategy() {
+            @Override
+            public <K extends Comparable<K>, V extends Comparable<V>> NavigableMap<K, V> sortByValues(final Map<K, V> map) {
+                return super.sortByValues(map).descendingMap();
+            }
+        };
+        basicUnitTestWithKillAndRecover(cs, BACKTRACK_BOLT_PARALLEL, CO_LOCATION_CNT);
     }
 
     @Test
     public void testConstraintSolver() {
-        basicUnitTestWithKillAndRecover(new ConstraintSolverStrategy(), NORMAL_BOLT_PARALLEL);
+        basicUnitTestWithKillAndRecover(new ConstraintSolverStrategy(), NORMAL_BOLT_PARALLEL, 1);
+    }
+
+    @Test
+    public void testConstraintSolverWithSpreadCoLocation() {
+        basicUnitTestWithKillAndRecover(new ConstraintSolverStrategy(), NORMAL_BOLT_PARALLEL, CO_LOCATION_CNT);
     }
 
     public void basicFailureTest(String confKey, Object confValue, ConstraintSolverStrategy cs) {
@@ -204,6 +241,52 @@ public class TestConstraintSolverStrategy {
         }
     }
 
+    private void setConstraintConfig(List<List<String>> constraints, Map<String, Integer> spreads, Map<String, Object> config, boolean consolidated) {
+        if (consolidated) {
+            // single configuration for each component
+            Map<String, List<String>> modifiedConstraints = new HashMap<>();
+            for (List<String> constraint: constraints) {
+                if (constraint.size() < 2) {
+                    continue;
+                }
+                String comp = constraint.get(0);
+                List<String> others = constraint.subList(1, constraint.size());
+                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).addAll(others);
+            }
+            for (String comp: spreads.keySet()) {
+                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).add(""+spreads.get(comp));
+            }
+            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
+        } else {
+            // constraint and MaxCoLocationCnts are separate - no maxCoLocationCnt implied as 1
+            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
+            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spreads.entrySet().stream().map(e -> Arrays.asList()));
+        }
+    }
+
+    private void setConstraintConfig(List<List<String>> constraints, List<String> spreads, Map<String, Object> config, boolean consolidated) {
+        if (consolidated) {
+            // single configuration for each component
+            Map<String, List<String>> modifiedConstraints = new HashMap<>();
+            for (List<String> constraint: constraints) {
+                if (constraint.size() < 2) {
+                    continue;
+                }
+                String comp = constraint.get(0);
+                List<String> others = constraint.subList(1, constraint.size());
+                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).addAll(others);
+            }
+            for (String comp: spreads) {
+                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).add("1");
+            }
+            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
+        } else {
+            // constraint and MaxCoLocationCnts are separate - maxCoLocationCnt implied as 1
+            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
+            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spreads);
+        }
+    }
+
     /*
      * Test scheduling large number of executors and constraints.
      *
@@ -227,7 +310,12 @@ public class TestConstraintSolverStrategy {
         addContraints("bolt-1", "bolt-0", constraints);
         addContraints("bolt-1", "spout-0", constraints);
 
-        config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
+        Map<String, Integer> spreads = new HashMap<>();
+        spreads.put("spout-0", parallelismMultiplier);
+        spreads.put("bolt-1", parallelismMultiplier);
+
+        setConstraintConfig(constraints, spreads, config, true);
+
         TopologyDetails topo = genTopology("testTopo-" + parallelismMultiplier, config, 10, 10, 30 * parallelismMultiplier, 30 * parallelismMultiplier, 31414, 0, "user");
         Topologies topologies = new Topologies(topo);
 
@@ -246,23 +334,26 @@ public class TestConstraintSolverStrategy {
 
     @Test
     public void testIntegrationWithRAS() {
-        List<List<String>> constraints = new LinkedList<>();
-        addContraints("spout-0", "bolt-0", constraints);
-        addContraints("bolt-1", "bolt-1", constraints);
-        addContraints("bolt-1", "bolt-2", constraints);
-        List<String> spread = new LinkedList<>();
-        spread.add("spout-0");
-
         Map<String, Object> config = Utils.readDefaultConfig();
         config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, ConstraintSolverStrategy.class.getName());
-        config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spread);
-        config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
         config.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
         config.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 100_000);
         config.put(Config.TOPOLOGY_PRIORITY, 1);
         config.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 100);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
+
+        List<List<String>> constraints = new LinkedList<>();
+        addContraints("spout-0", "bolt-0", constraints);
+        // commented out unsatisfiable constraint since there are 300 executors and cannot fit on 30 nodes, added as spread
+        // addContraints("bolt-1", "bolt-1", constraints);
+        addContraints("bolt-1", "bolt-2", constraints);
+
+        Map<String, Integer> spreads = new HashMap<String, Integer>();
+        spreads.put("spout-0", 1);
+        spreads.put("bolt-1",10);
+
+        setConstraintConfig(constraints, spreads, config, true);
 
         TopologyDetails topo = genTopology("testTopo", config, 2, 3, 30, 300, 0, 0, "user");
         Map<String, TopologyDetails> topoMap = new HashMap<>();
