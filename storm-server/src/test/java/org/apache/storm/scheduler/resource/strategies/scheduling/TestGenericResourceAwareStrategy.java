@@ -300,8 +300,7 @@ public class TestGenericResourceAwareStrategy {
         assertTopologiesFullyScheduled(cluster, noGpu);
         assertTopologiesFullyScheduled(cluster, gpu2);
     }
-
-
+    
     @Test
     public void testAntiAffinityWithMultipleTopologies() {
         INimbus iNimbus = new INimbusTest();
