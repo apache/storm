@@ -488,10 +488,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
 
         //check if exec can be on worker based on user defined component exclusions
         String execComp = execToComp.get(exec);
-        Map<String, Integer> compAssignments = state.workerCompAssignment.get(worker);
-        if (compAssignments != null && constraintConfig.incompatibleComponents.containsKey(execComp)) {
+        Map<String, Integer> compAssignmentCnts = state.workerCompAssignmentCnts.get(worker);
+        if (compAssignmentCnts != null && constraintConfig.incompatibleComponents.containsKey(execComp)) {
             Set<String> subMatrix = constraintConfig.incompatibleComponents.get(execComp);
-            for (String comp : compAssignments.keySet()) {
+            for (String comp : compAssignmentCnts.keySet()) {
                 if (subMatrix.contains(comp)) {
                     LOG.trace("{} found {} constraint violation {} on {}", exec, execComp, comp, worker);
                     return false;
@@ -502,10 +502,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         //check if exec satisfy spread
         if (constraintConfig.maxCoLocationCnts.containsKey(execComp)) {
             int coLocationMaxCnt = constraintConfig.maxCoLocationCnts.get(execComp);
-            if (state.nodeCompAssignment.containsKey(node)
-                    && state.nodeCompAssignment.get(node).getOrDefault(execComp, 0) >= coLocationMaxCnt) {
+            if (state.nodeCompAssignmentCnts.containsKey(node)
+                    && state.nodeCompAssignmentCnts.get(node).getOrDefault(execComp, 0) >= coLocationMaxCnt) {
                 LOG.trace("{} Found MaxCoLocationCnt violation {} on node {}, count {} >= colocation count {}",
-                        exec, execComp, node.getId(), state.nodeCompAssignment.get(node).get(execComp), coLocationMaxCnt);
+                        exec, execComp, node.getId(), state.nodeCompAssignmentCnts.get(node).get(execComp), coLocationMaxCnt);
                 return false;
             }
         }
@@ -530,7 +530,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             // check if component is declared for spreading
             if (spreadCompCnts.containsKey(comp)) {
                 // lower (1 and above only) value is most constrained should have higher count
-                count += (1_000.0 / spreadCompCnts.get(comp));
+                count += (compToExecs.size() / spreadCompCnts.get(comp));
             }
             compConstraintCountMap.put(comp, count); // higher count sorts to the front
         });
@@ -592,10 +592,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         final long startTimeMillis;
         private final long maxEndTimeMs;
         // A map of the worker to the components in the worker to be able to enforce constraints.
-        private final Map<WorkerSlot, Map<String, Integer>> workerCompAssignment;
+        private final Map<WorkerSlot, Map<String, Integer>> workerCompAssignmentCnts;
         private final boolean[] okToRemoveFromWorker;
         // for the currently tested assignment a Map of the node to the components on it to be able to enforce constraints
-        private final Map<RasNode, Map<String, Integer>> nodeCompAssignment;
+        private final Map<RasNode, Map<String, Integer>> nodeCompAssignmentCnts;
         private final boolean[] okToRemoveFromNode;
         // Static State
         // The list of all executors (preferably sorted to make assignments simpler).
@@ -613,14 +613,14 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         // The current executor we are trying to schedule
         private int execIndex = 0;
 
-        private SearcherState(Map<WorkerSlot, Map<String, Integer>> workerCompAssignment, Map<RasNode,
-                Map<String, Integer>> nodeCompAssignment, int maxStatesSearched, long maxTimeMs,
+        private SearcherState(Map<WorkerSlot, Map<String, Integer>> workerCompAssignmentCnts,
+                              Map<RasNode, Map<String, Integer>> nodeCompAssignmentCnts, int maxStatesSearched, long maxTimeMs,
                               List<ExecutorDetails> execs, TopologyDetails td) {
             assert !execs.isEmpty();
             assert execs != null;
 
-            this.workerCompAssignment = workerCompAssignment;
-            this.nodeCompAssignment = nodeCompAssignment;
+            this.workerCompAssignmentCnts = workerCompAssignmentCnts;
+            this.nodeCompAssignmentCnts = nodeCompAssignmentCnts;
             this.maxStatesSearched = maxStatesSearched;
             this.execs = execs;
             okToRemoveFromWorker = new boolean[execs.size()];
@@ -684,10 +684,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             String comp = execToComp.get(exec);
             LOG.trace("Trying assignment of {} {} to {}", exec, comp, workerSlot);
             // It is possible that this component is already scheduled on this node or worker.  If so when we backtrack we cannot remove it
-            Map<String, Integer> oneMap = workerCompAssignment.computeIfAbsent(workerSlot, (k) -> new HashMap<>());
+            Map<String, Integer> oneMap = workerCompAssignmentCnts.computeIfAbsent(workerSlot, (k) -> new HashMap<>());
             oneMap.put(comp, oneMap.getOrDefault(comp, 0) + 1); // increment assignment count
             okToRemoveFromWorker[execIndex] = true;
-            oneMap = nodeCompAssignment.computeIfAbsent(node, (k) -> new HashMap<>());
+            oneMap = nodeCompAssignmentCnts.computeIfAbsent(node, (k) -> new HashMap<>());
             oneMap.put(comp, oneMap.getOrDefault(comp, 0) + 1); // increment assignment count
             okToRemoveFromNode[execIndex] = true;
             node.assignSingleExecutor(workerSlot, exec, td);
@@ -703,12 +703,12 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             String comp = execToComp.get(exec);
             LOG.trace("Backtracking {} {} from {}", exec, comp, workerSlot);
             if (okToRemoveFromWorker[execIndex]) {
-                Map<String, Integer> oneMap = workerCompAssignment.get(workerSlot);
+                Map<String, Integer> oneMap = workerCompAssignmentCnts.get(workerSlot);
                 oneMap.put(comp, oneMap.getOrDefault(comp, 0) - 1); // decrement assignment count
                 okToRemoveFromWorker[execIndex] = false;
             }
             if (okToRemoveFromNode[execIndex]) {
-                Map<String, Integer> oneMap = nodeCompAssignment.get(node);
+                Map<String, Integer> oneMap = nodeCompAssignmentCnts.get(node);
                 oneMap.put(comp, oneMap.getOrDefault(comp, 0) - 1); // decrement assignment count
                 okToRemoveFromNode[execIndex] = false;
             }
@@ -720,16 +720,16 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
          * Useful for debugging and tests.
          */
         public void logNodeCompAssignments() {
-            if (nodeCompAssignment == null || nodeCompAssignment.isEmpty()) {
+            if (nodeCompAssignmentCnts == null || nodeCompAssignmentCnts.isEmpty()) {
                 LOG.info("NodeCompAssignment is empty");
                 return;
             }
             StringBuffer sb = new StringBuffer();
             int cntAllNodes = 0;
             int cntFilledNodes = 0;
-            for (RasNode node: new TreeSet<RasNode>(nodeCompAssignment.keySet())) {
+            for (RasNode node: new TreeSet<RasNode>(nodeCompAssignmentCnts.keySet())) {
                 cntAllNodes++;
-                Map<String, Integer> oneMap = nodeCompAssignment.get(node);
+                Map<String, Integer> oneMap = nodeCompAssignmentCnts.get(node);
                 if (oneMap.isEmpty()) {
                     continue;
                 }
