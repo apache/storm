@@ -76,6 +76,14 @@ public class Topologies implements Iterable<TopologyDetails> {
         return ret;
     }
 
+    public void addTopology(TopologyDetails details) {
+        if (this.topologies.put(details.getId(), details) != null) {
+            throw new IllegalArgumentException(
+                    "Cannot have multiple topologies with the id " + details.getId());
+        }
+        this.nameToId.put(details.getName(), details.getId());
+    }
+
     public Collection<String> getAllIds() {
         return topologies.keySet();
     }
