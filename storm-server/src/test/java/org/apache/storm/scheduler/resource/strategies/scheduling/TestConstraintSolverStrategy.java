@@ -35,13 +35,13 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
-import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,20 @@ import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareSched
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
+@RunWith(Parameterized.class)
 public class TestConstraintSolverStrategy {
+    @Parameters
+    public static Object[] data() {
+        return new Object[] { false, true };
+    }
+    //public static Collection<Object[]> data(){
+    //    return Arrays.asList(new Object[][] {
+    //            // First param is consolidatedConfigFlag
+    //            {Boolean.TRUE},
+    //            {Boolean.FALSE}
+    //    });
+    //}
+
     private static final Logger LOG = LoggerFactory.getLogger(TestConstraintSolverStrategy.class);
     private static final int MAX_TRAVERSAL_DEPTH = 2000;
     private static final int NORMAL_BOLT_PARALLEL = 11;
@@ -64,12 +77,34 @@ public class TestConstraintSolverStrategy {
     private static final int BACKTRACK_BOLT_PARALLEL = 3;
     private static final int CO_LOCATION_CNT = 2;
 
+    // class members
+    public Boolean consolidatedConfigFlag = Boolean.TRUE;
+
+    public TestConstraintSolverStrategy(boolean consolidatedConfigFlag) {
+        this.consolidatedConfigFlag = consolidatedConfigFlag;
+        LOG.info("Running tests with consolidatedConfigFlag={}", ""+consolidatedConfigFlag);
+    }
+    /**
+     * Helper function to add a constraint specifying two components that cannot co-exist.
+     * Note that it is redundant to specify the converse.
+     *
+     * @param comp1 first component name
+     * @param comp2 second component name
+     * @param constraints the resulting constraint list of lists which is updated
+     */
+    public static void addConstraints(String comp1, String comp2, List<List<String>> constraints) {
+        LinkedList<String> constraintPair = new LinkedList<>();
+        constraintPair.add(comp1);
+        constraintPair.add(comp2);
+        constraints.add(constraintPair);
+    }
+
     /**
      * Make test Topology configuration, but with the newer spread constraints that allow associating a number
      * with the spread. This number represents the maximum co-located component count. Default under the old
      * configuration is assumed to be 1.
      *
-     * @param maxCoLocationCnt Maximum co-located component (spoout-0), minimum value is 1.
+     * @param maxCoLocationCnt Maximum co-located component (spout-0), minimum value is 1.
      * @return
      */
     public Map<String, Object> makeTestTopoConf(int maxCoLocationCnt) {
@@ -77,17 +112,18 @@ public class TestConstraintSolverStrategy {
             maxCoLocationCnt = 1;
         }
         List<List<String>> constraints = new LinkedList<>();
-        addContraints("spout-0", "bolt-0", constraints);
-        addContraints("bolt-2", "spout-0", constraints);
-        addContraints("bolt-1", "bolt-2", constraints);
-        addContraints("bolt-1", "bolt-0", constraints);
-        addContraints("bolt-1", "spout-0", constraints);
+        addConstraints("spout-0", "bolt-0", constraints);
+        addConstraints("bolt-2", "spout-0", constraints);
+        addConstraints("bolt-1", "bolt-2", constraints);
+        addConstraints("bolt-1", "bolt-0", constraints);
+        addConstraints("bolt-1", "spout-0", constraints);
 
         Map<String, Integer> spreads = new HashMap<>();
         spreads.put("spout-0", maxCoLocationCnt);
 
         Map<String, Object> config = Utils.readDefaultConfig();
-        setConstraintConfig(constraints, spreads, config, true);
+
+        setConstraintConfig(constraints, spreads, config);
 
         config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
         config.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
@@ -98,6 +134,74 @@ public class TestConstraintSolverStrategy {
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
 
         return config;
+    }
+
+    /**
+     * Set Config.TOPOLOGY_RAS_CONSTRAINTS (when consolidatedConfigFlag is true) or both
+     * Config.TOPOLOGY_RAS_CONSTRAINTS/Config.TOPOLOGY_SPREAD_COMPONENTS (when consolidatedConfigFlag is false).
+     *
+     * When consolidatedConfigFlag when true, use the new more consolidated format to set Config.TOPOLOGY_RAS_CONSTRAINTS.
+     * When false, use the old configuration format for Config.TOPOLOGY_RAS_CONSTRAINTS/TOPOLOGY_SPREAD_COMPONENTS.
+     *
+     * @param constraints List of components, where the first one cannot co-exist with the others in the list
+     * @param spreads Map of component and its maxCoLocationCnt
+     * @param config Configuration to be updated
+     */
+    private void setConstraintConfig(List<List<String>> constraints, Map<String, Integer> spreads, Map<String, Object> config) {
+        if (consolidatedConfigFlag) {
+            // single configuration for each component
+            Map<String, List<String>> modifiedConstraints = new HashMap<>();
+            for (List<String> constraint: constraints) {
+                if (constraint.size() < 2) {
+                    continue;
+                }
+                String comp = constraint.get(0);
+                List<String> others = constraint.subList(1, constraint.size());
+                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).addAll(others);
+            }
+            for (String comp: spreads.keySet()) {
+                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).add(""+spreads.get(comp));
+            }
+            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
+        } else {
+            // constraint and MaxCoLocationCnts are separate - no maxCoLocationCnt implied as 1
+            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
+            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spreads.entrySet().stream().map(e -> Arrays.asList()));
+        }
+    }
+
+    /**
+     * Set Config.TOPOLOGY_RAS_CONSTRAINTS (when consolidated is true) or both
+     * Config.TOPOLOGY_RAS_CONSTRAINTS/Config.TOPOLOGY_SPREAD_COMPONENTS (when consolidated is false).
+     *
+     * When consolidatedConfigFlag when true, use the new more consolidated format to set Config.TOPOLOGY_RAS_CONSTRAINTS.
+     * When false, use the old configuration format for Config.TOPOLOGY_RAS_CONSTRAINTS/TOPOLOGY_SPREAD_COMPONENTS.
+     *
+     * @param constraints List of components, where the first one cannot co-exist with the others in the list
+     * @param spreads List of components that can have only one Executor on a node (i.e. their maxCoLocationCnt = 1)
+     * @param config Configuration to be updated
+     */
+    private void setConstraintConfig(List<List<String>> constraints, List<String> spreads, Map<String, Object> config) {
+        if (consolidatedConfigFlag) {
+            // single configuration for each component
+            Map<String, List<String>> modifiedConstraints = new HashMap<>();
+            for (List<String> constraint: constraints) {
+                if (constraint.size() < 2) {
+                    continue;
+                }
+                String comp = constraint.get(0);
+                List<String> others = constraint.subList(1, constraint.size());
+                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).addAll(others);
+            }
+            for (String comp: spreads) {
+                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).add("1");
+            }
+            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
+        } else {
+            // constraint and MaxCoLocationCnts are separate - maxCoLocationCnt implied as 1
+            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
+            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spreads);
+        }
     }
 
     public Map<String, Object> makeTestTopoConf() {
@@ -241,60 +345,30 @@ public class TestConstraintSolverStrategy {
         }
     }
 
-    private void setConstraintConfig(List<List<String>> constraints, Map<String, Integer> spreads, Map<String, Object> config, boolean consolidated) {
-        if (consolidated) {
-            // single configuration for each component
-            Map<String, List<String>> modifiedConstraints = new HashMap<>();
-            for (List<String> constraint: constraints) {
-                if (constraint.size() < 2) {
-                    continue;
-                }
-                String comp = constraint.get(0);
-                List<String> others = constraint.subList(1, constraint.size());
-                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).addAll(others);
-            }
-            for (String comp: spreads.keySet()) {
-                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).add(""+spreads.get(comp));
-            }
-            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
-        } else {
-            // constraint and MaxCoLocationCnts are separate - no maxCoLocationCnt implied as 1
-            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
-            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spreads.entrySet().stream().map(e -> Arrays.asList()));
-        }
-    }
-
-    private void setConstraintConfig(List<List<String>> constraints, List<String> spreads, Map<String, Object> config, boolean consolidated) {
-        if (consolidated) {
-            // single configuration for each component
-            Map<String, List<String>> modifiedConstraints = new HashMap<>();
-            for (List<String> constraint: constraints) {
-                if (constraint.size() < 2) {
-                    continue;
-                }
-                String comp = constraint.get(0);
-                List<String> others = constraint.subList(1, constraint.size());
-                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).addAll(others);
-            }
-            for (String comp: spreads) {
-                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).add("1");
-            }
-            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
-        } else {
-            // constraint and MaxCoLocationCnts are separate - maxCoLocationCnt implied as 1
-            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
-            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spreads);
-        }
+    @Test
+    public void testScheduleLargeExecutorConstraintCountSmall() {
+        testScheduleLargeExecutorConstraintCount(1);
     }
 
     /*
      * Test scheduling large number of executors and constraints.
+     * This test can succeed only with new style config that allows maxCoLocationCnt = parallelismMultiplier.
+     * In prior code, this test would succeed because effectively the old code did not properly enforce the
+     * SPREAD constraint.
      *
      * Cluster has sufficient resources for scheduling to succeed but can fail due to StackOverflowError.
      */
-    @ParameterizedTest
-    @ValueSource(ints = {1, 20})
-    public void testScheduleLargeExecutorConstraintCount(int parallelismMultiplier) {
+    @Test
+    public void testScheduleLargeExecutorConstraintCountLarge() {
+        testScheduleLargeExecutorConstraintCount(20);
+    }
+
+    private void testScheduleLargeExecutorConstraintCount(int parallelismMultiplier) {
+        if (parallelismMultiplier > 1 && !consolidatedConfigFlag) {
+            Assert.assertFalse("Large parallelism test requires new consolidated constraint format with maxCoLocationCnt=" + parallelismMultiplier, consolidatedConfigFlag);
+            return;
+        }
+
         // Add 1 topology with large number of executors and constraints. Too many can cause a java.lang.StackOverflowError
         Config config = createCSSClusterConfig(10, 10, 0, null);
         config.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, 50000);
@@ -302,19 +376,19 @@ public class TestConstraintSolverStrategy {
         config.put(DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY, 120);
 
         List<List<String>> constraints = new LinkedList<>();
-        addContraints("spout-0", "spout-0", constraints);
-        addContraints("bolt-1", "bolt-1", constraints);
-        addContraints("spout-0", "bolt-0", constraints);
-        addContraints("bolt-2", "spout-0", constraints);
-        addContraints("bolt-1", "bolt-2", constraints);
-        addContraints("bolt-1", "bolt-0", constraints);
-        addContraints("bolt-1", "spout-0", constraints);
+        addConstraints("spout-0", "spout-0", constraints);
+        addConstraints("bolt-1", "bolt-1", constraints);
+        addConstraints("spout-0", "bolt-0", constraints);
+        addConstraints("bolt-2", "spout-0", constraints);
+        addConstraints("bolt-1", "bolt-2", constraints);
+        addConstraints("bolt-1", "bolt-0", constraints);
+        addConstraints("bolt-1", "spout-0", constraints);
 
         Map<String, Integer> spreads = new HashMap<>();
         spreads.put("spout-0", parallelismMultiplier);
         spreads.put("bolt-1", parallelismMultiplier);
 
-        setConstraintConfig(constraints, spreads, config, true);
+        setConstraintConfig(constraints, spreads, config);
 
         TopologyDetails topo = genTopology("testTopo-" + parallelismMultiplier, config, 10, 10, 30 * parallelismMultiplier, 30 * parallelismMultiplier, 31414, 0, "user");
         Topologies topologies = new Topologies(topo);
@@ -327,8 +401,8 @@ public class TestConstraintSolverStrategy {
         scheduler.schedule(topologies, cluster);
 
         boolean scheduleSuccess = isStatusSuccess(cluster.getStatus(topo.getId()));
-        LOG.info("testScheduleLargeExecutorCount scheduling {} with {}x executor multiplier", scheduleSuccess ? "succeeds" : "fails",
-                parallelismMultiplier);
+        LOG.info("testScheduleLargeExecutorCount scheduling {} with {}x executor multiplier, consolidatedConfigFlag={}",
+                scheduleSuccess ? "succeeds" : "fails", parallelismMultiplier, consolidatedConfigFlag);
         Assert.assertTrue(scheduleSuccess);
     }
 
@@ -344,16 +418,16 @@ public class TestConstraintSolverStrategy {
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
 
         List<List<String>> constraints = new LinkedList<>();
-        addContraints("spout-0", "bolt-0", constraints);
+        addConstraints("spout-0", "bolt-0", constraints);
         // commented out unsatisfiable constraint since there are 300 executors and cannot fit on 30 nodes, added as spread
         // addContraints("bolt-1", "bolt-1", constraints);
-        addContraints("bolt-1", "bolt-2", constraints);
+        addConstraints("bolt-1", "bolt-2", constraints);
 
         Map<String, Integer> spreads = new HashMap<String, Integer>();
         spreads.put("spout-0", 1);
         spreads.put("bolt-1",10);
 
-        setConstraintConfig(constraints, spreads, config, true);
+        setConstraintConfig(constraints, spreads, config);
 
         TopologyDetails topo = genTopology("testTopo", config, 2, 3, 30, 300, 0, 0, "user");
         Map<String, TopologyDetails> topoMap = new HashMap<>();
@@ -394,12 +468,5 @@ public class TestConstraintSolverStrategy {
         } finally {
             rs.cleanup();
         }
-    }
-
-    public static void addContraints(String comp1, String comp2, List<List<String>> constraints) {
-        LinkedList<String> constraintPair = new LinkedList<>();
-        constraintPair.add(comp1);
-        constraintPair.add(comp2);
-        constraints.add(constraintPair);
     }
 }
