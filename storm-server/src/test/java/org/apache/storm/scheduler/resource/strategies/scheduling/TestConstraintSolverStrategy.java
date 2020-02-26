@@ -62,13 +62,6 @@ public class TestConstraintSolverStrategy {
     public static Object[] data() {
         return new Object[] { false, true };
     }
-    //public static Collection<Object[]> data(){
-    //    return Arrays.asList(new Object[][] {
-    //            // First param is consolidatedConfigFlag
-    //            {Boolean.TRUE},
-    //            {Boolean.FALSE}
-    //    });
-    //}
 
     private static final Logger LOG = LoggerFactory.getLogger(TestConstraintSolverStrategy.class);
     private static final int MAX_TRAVERSAL_DEPTH = 2000;
@@ -84,6 +77,7 @@ public class TestConstraintSolverStrategy {
         this.consolidatedConfigFlag = consolidatedConfigFlag;
         LOG.info("Running tests with consolidatedConfigFlag={}", ""+consolidatedConfigFlag);
     }
+
     /**
      * Helper function to add a constraint specifying two components that cannot co-exist.
      * Note that it is redundant to specify the converse.
@@ -458,11 +452,10 @@ public class TestConstraintSolverStrategy {
         Map<String, SchedulerAssignment> newAssignments = new HashMap<>();
         newAssignments.put(topo.getId(), new SchedulerAssignmentImpl(topo.getId(), newExecToSlot, null, null));
         cluster.setAssignments(newAssignments, false);
-        
+
         rs.prepare(config);
         try {
             rs.schedule(topologies, cluster);
-
             assertStatusSuccess(cluster, topo.getId());
             Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
         } finally {
