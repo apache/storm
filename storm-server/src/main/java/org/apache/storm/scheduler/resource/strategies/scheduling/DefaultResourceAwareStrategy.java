@@ -79,7 +79,8 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         }
 
         executorsNotScheduled.removeAll(scheduledTasks);
-        LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
+        LOG.debug("Scheduling left over tasks {} (most likely sys tasks) from topology {}",
+                executorsNotScheduled, td.getId());
         // schedule left over system tasks
         for (ExecutorDetails exec : executorsNotScheduled) {
             if (Thread.currentThread().isInterrupted()) {
