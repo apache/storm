@@ -219,11 +219,11 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             constraintConfig = new ConstraintConfig(topo);
         }
         Map<ExecutorDetails, String> execToComp = topo.getExecutorToComponent();
-        Map<String, HashMap<String, Integer>> nodeCompMap = new HashMap<>(); // this is the critical count
+        Map<String, Map<String, Integer>> nodeCompMap = new HashMap<>(); // this is the critical count
         Map<WorkerSlot, RasNode> workerToNodes = workerToNodes(cluster);
         boolean ret = true;
 
-        HashMap<String, Integer> spreadCompCnts = constraintConfig.maxCoLocationCnts;
+        Map<String, Integer> spreadCompCnts = constraintConfig.maxCoLocationCnts;
         for (Map.Entry<ExecutorDetails, WorkerSlot> entry : cluster.getAssignmentById(topo.getId()).getExecutorToSlot().entrySet()) {
             ExecutorDetails exec = entry.getKey();
             String comp = execToComp.get(exec);
@@ -233,7 +233,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
 
             if (spreadCompCnts.containsKey(comp)) {
                 int allowedColocationMaxCnt = spreadCompCnts.get(comp);
-                HashMap<String, Integer> oneNodeCompMap = nodeCompMap.computeIfAbsent(nodeId, (k) -> new HashMap<>());
+                Map<String, Integer> oneNodeCompMap = nodeCompMap.computeIfAbsent(nodeId, (k) -> new HashMap<>());
                 oneNodeCompMap.put(comp, oneNodeCompMap.getOrDefault(comp, 0) + 1);
                 if (allowedColocationMaxCnt < oneNodeCompMap.get(comp)) {
                     LOG.error("Incorrect Scheduling: MaxCoLocationCnt for Component: {} {} on node {} not satisfied, cnt {} > allowed {}",
