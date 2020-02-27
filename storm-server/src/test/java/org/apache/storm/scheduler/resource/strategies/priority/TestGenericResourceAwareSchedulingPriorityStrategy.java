@@ -53,7 +53,7 @@ import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareSched
 
 public class TestGenericResourceAwareSchedulingPriorityStrategy {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TestDefaultEvictionStrategy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareSchedulingPriorityStrategy.class);
     private static int currentTime = Time.currentTimeSecs();
     private static IScheduler scheduler = null;
 
@@ -68,8 +68,8 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
     /*
      * DefaultSchedulingPriorityStrategy will not evict topo as long as the resources request can be met
      *
-     *  Ethan asks for heavy cpu and memory while Rui asks for little cpu and memory but heave generic resource
-     *  Since Rui's all types of resources request can be met, no eviction will happend
+     *  Ethan asks for heavy cpu and memory while Rui asks for little cpu and memory but heavy generic resource
+     *  Since Rui's all types of resources request can be met, no eviction will happen.
     */
     @Test
     public void testDefaultSchedulingPriorityStrategyNotEvicting() {
@@ -100,7 +100,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         scheduler.schedule(withNewTopo, cluster);
 
         assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesNotBeenEvicted(cluster, (ResourceAwareScheduler) scheduler, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+        assertTopologiesNotBeenEvicted(cluster, ((ResourceAwareScheduler) scheduler).getEvictedTopologies(), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
         assertTopologiesFullyScheduled(cluster, "rui-topo-1");
     }
 
@@ -108,7 +108,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      * DefaultSchedulingPriorityStrategy does not take generic resources into account when calculating score
      * So even if a user is requesting a lot of generic resources other than CPU and memory, scheduler will still score it very low and kick out other topologies
      *
-     *  Ethan asks for medium cpu and memory while Rui asks for little cpu and memory but heave generic resource
+     *  Ethan asks for medium cpu and memory while Rui asks for little cpu and memory but heavy generic resource
      *  However, Rui's generic request can not be met and default scoring system is not taking generic resources into account,
      *  so the score of Rui's new topo will be much lower than all Ethan's topos'.
      *  Then all Ethan's topo will be evicted in trying to make rooms for Rui.
@@ -141,14 +141,14 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         scheduler.schedule(withNewTopo, cluster);
 
         assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesBeenEvicted(cluster, (ResourceAwareScheduler) scheduler, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+        assertTopologiesBeenEvicted(cluster, ((ResourceAwareScheduler) scheduler).getEvictedTopologies(), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
         assertTopologiesNotScheduled(cluster, "rui-topo-1");
     }
 
     /*
      * GenericResourceAwareSchedulingPriorityStrategy extend scoring formula to accommodate generic resources
      *
-     *   Same setting as the above test, but this time, new scoring system is taking generic resources into account,
+     *   Same setting as testDefaultSchedulingPriorityStrategyEvicting, but this time, new scoring system is taking generic resources into account,
      *   the score of rui's new topo will be higher than all Ethan's topos' due to its crazy generic request.
      *   At the end, all Ethan's topo will not be evicted as expected.
      */
@@ -181,7 +181,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         scheduler.schedule(withNewTopo, cluster);
 
         assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesNotBeenEvicted(cluster, (ResourceAwareScheduler) scheduler,"ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+        assertTopologiesNotBeenEvicted(cluster, ((ResourceAwareScheduler) scheduler).getEvictedTopologies(),"ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
         assertTopologiesNotScheduled(cluster, "rui-topo-1");
     }
 

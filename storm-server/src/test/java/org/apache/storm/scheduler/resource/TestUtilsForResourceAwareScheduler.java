@@ -70,11 +70,6 @@ public class TestUtilsForResourceAwareScheduler {
         private final String name;
         private final Map<String, Number> resources = new HashMap<>();
 
-        public TestUserResources(String name, Map<String, Double> resources) {
-            this.name = name;
-            this.resources.putAll(resources);
-        }
-
         public TestUserResources(String name, double cpu, double mem) {
             this.name = name;
             resources.put("cpu", cpu);
@@ -87,11 +82,7 @@ public class TestUtilsForResourceAwareScheduler {
             }
         }
     }
-
-    public static TestUserResources userRes(String name, Map<String, Double> resources) {
-        return new TestUserResources(name, resources);
-    }
-
+    
     public static TestUserResources userRes(String name, double cpu, double mem) {
         return new TestUserResources(name, cpu, mem);
     }
@@ -460,9 +451,8 @@ public class TestUtilsForResourceAwareScheduler {
         }
     }
 
-    public static void assertTopologiesBeenEvicted(Cluster cluster, ResourceAwareScheduler scheduler, String... topoNames) {
+    public static void assertTopologiesBeenEvicted(Cluster cluster, Set<String> evictedTopologies, String... topoNames) {
         Topologies topologies = cluster.getTopologies();
-        Set<String> evictedTopologies = scheduler.getEvictedTopologies();
         LOG.info("Evicted topos: {}", evictedTopologies);
         assert (evictedTopologies != null);
         for (String topoName : topoNames) {
@@ -473,9 +463,8 @@ public class TestUtilsForResourceAwareScheduler {
         }
     }
 
-    public static void assertTopologiesNotBeenEvicted(Cluster cluster, ResourceAwareScheduler scheduler, String... topoNames) {
+    public static void assertTopologiesNotBeenEvicted(Cluster cluster, Set<String> evictedTopologies, String... topoNames) {
         Topologies topologies = cluster.getTopologies();
-        Set<String> evictedTopologies = scheduler.getEvictedTopologies();
         LOG.info("Evicted topos: {}", evictedTopologies);
         assert (evictedTopologies != null);
         for (String topoName : topoNames) {

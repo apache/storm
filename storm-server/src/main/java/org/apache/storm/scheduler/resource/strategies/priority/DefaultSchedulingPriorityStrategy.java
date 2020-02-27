@@ -140,7 +140,7 @@ public class DefaultSchedulingPriorityStrategy implements ISchedulingPriorityStr
      * Comparator that sorts topologies by priority and then by submission time.
      * First sort by Topology Priority, if there is a tie for topology priority, topology uptime is used to sort.
      */
-    protected static class TopologyByPriorityAndSubmissionTimeComparator implements Comparator<TopologyDetails> {
+    private static class TopologyByPriorityAndSubmissionTimeComparator implements Comparator<TopologyDetails> {
 
         @Override
         public int compare(TopologyDetails topo1, TopologyDetails topo2) {

@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GenericResourceAwareSchedulingPriorityStrategy extends DefaultSchedulingPriorityStrategy {
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultSchedulingPriorityStrategy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GenericResourceAwareSchedulingPriorityStrategy.class);
 
     @Override
     protected GrasSimulatedUser getSimulatedUserFor(User u, ISchedulingState cluster) {
@@ -80,8 +80,6 @@ public class GenericResourceAwareSchedulingPriorityStrategy extends DefaultSched
         return allUserTopologies;
     }
 
-
-
     protected static class GrasSimulatedUser extends SimulatedUser {
 
         // Extend support for Generic Resources in addition to CPU and Memory
@@ -103,9 +101,7 @@ public class GenericResourceAwareSchedulingPriorityStrategy extends DefaultSched
 
         @Override
         public TopologyDetails simScheduleNextHighest() {
-            TopologyDetails td = tds.pop();
-            assignedCpu += td.getTotalRequestedCpu();
-            assignedMemory += td.getTotalRequestedMemOffHeap() + td.getTotalRequestedMemOnHeap();
+            TopologyDetails td = super.simScheduleNextHighest();
             Map<String, Double> tdRequestedGenericResource = td.getTotalRequestedGenericResources();
             for (Map.Entry<String, Double> entry : tdRequestedGenericResource.entrySet()) {
                 String resource = entry.getKey();
@@ -118,7 +114,7 @@ public class GenericResourceAwareSchedulingPriorityStrategy extends DefaultSched
         /**
          * Get a score for the simulated user.  This is used to sort the users, by their highest priority topology.
          * Only give user guarantees that will not exceed cluster capacity.
-         * Score of each resource type is calculated as: (Requested + Assigned - Guaranteed)/Available
+         * Score of each resource type is calculated as: (Requested + Assigned - Guaranteed)/clusterAvailable
          * The final score is a max over all resource types.
          * Topology score will fall into the following intervals if:
          *      User is under quota (guarantee):                    [(-guarantee)/available : 0]
