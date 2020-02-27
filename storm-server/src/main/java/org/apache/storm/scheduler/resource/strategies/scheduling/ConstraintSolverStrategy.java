@@ -57,7 +57,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
      */
     private static final class ConstraintConfig {
         private Map<String, Set<String>> incompatibleComponents = new HashMap<>();
-        private HashMap<String, Integer> maxCoLocationCnts = new HashMap<>(); // maximum node CoLocationCnt for restricted components
+        private Map<String, Integer> maxCoLocationCnts = new HashMap<>(); // maximum node CoLocationCnt for restricted components
 
         ConstraintConfig(TopologyDetails topo) {
             this(topo.getConf(), topo.getComponents().keySet());
