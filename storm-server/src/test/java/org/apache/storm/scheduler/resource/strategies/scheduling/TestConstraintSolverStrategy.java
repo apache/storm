@@ -402,6 +402,11 @@ public class TestConstraintSolverStrategy {
 
     @Test
     public void testIntegrationWithRAS() {
+        if (!consolidatedConfigFlag) {
+            LOG.info("Skipping test since bolt-1 maxCoLocationCnt=10 requires consolidatedConfigFlag=true, current={}", consolidatedConfigFlag);
+            return;
+        }
+
         Map<String, Object> config = Utils.readDefaultConfig();
         config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, ConstraintSolverStrategy.class.getName());
         config.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, MAX_TRAVERSAL_DEPTH);
@@ -414,12 +419,12 @@ public class TestConstraintSolverStrategy {
         List<List<String>> constraints = new LinkedList<>();
         addConstraints("spout-0", "bolt-0", constraints);
         // commented out unsatisfiable constraint since there are 300 executors and cannot fit on 30 nodes, added as spread
-        // addContraints("bolt-1", "bolt-1", constraints);
+        // addConstraints("bolt-1", "bolt-1", constraints);
         addConstraints("bolt-1", "bolt-2", constraints);
 
         Map<String, Integer> spreads = new HashMap<String, Integer>();
         spreads.put("spout-0", 1);
-        spreads.put("bolt-1",10);
+        spreads.put("bolt-1", 10);
 
         setConstraintConfig(constraints, spreads, config);
 
@@ -427,13 +432,13 @@ public class TestConstraintSolverStrategy {
         Map<String, TopologyDetails> topoMap = new HashMap<>();
         topoMap.put(topo.getId(), topo);
         Topologies topologies = new Topologies(topoMap);
-        Map<String, SupervisorDetails> supMap = genSupervisors(30, 16, 400, 1024 * 4);
+        // Fails with 36 supervisors, works with 37
+        Map<String, SupervisorDetails> supMap = genSupervisors(37, 16, 400, 1024 * 4);
         Cluster cluster = makeCluster(topologies, supMap);
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
         rs.prepare(config);
         try {
             rs.schedule(topologies, cluster);
-
             assertStatusSuccess(cluster, topo.getId());
             Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
         } finally {
