@@ -58,7 +58,9 @@ public class ResourceAwareScheduler implements IScheduler {
     private int maxSchedulingAttempts;
     private int schedulingTimeoutSeconds;
     private ExecutorService backgroundScheduling;
+
     // record evicted topologies on each scheduling round, only used in test purpose now
+    private boolean forTest = false;
     private Set<String> evictedTopologies = new HashSet<>();
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
@@ -210,7 +212,9 @@ public class ResourceAwareScheduler implements IScheduler {
                             if (evictAssignemnt != null && !evictAssignemnt.getSlots().isEmpty()) {
                                 Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
                                 topologySchedulingResources.adjustResourcesForEvictedTopology(toSchedule, topologyEvict);
-                                evictedTopologies.add(topologyEvict.getId());
+                                if (forTest) {
+                                    evictedTopologies.add(topologyEvict.getId());
+                                }
                                 LOG.debug("Evicting Topology {} with workers: {} from user {}", topologyEvict.getName(), workersToEvict,
                                     topologyEvict.getTopologySubmitter());
                                 evictedSomething = true;
@@ -248,8 +252,17 @@ public class ResourceAwareScheduler implements IScheduler {
     }
 
     @VisibleForTesting
-    public Set<String> getEvictedTopologies() {
-        return this.evictedTopologies;
+    public Set<String> getEvictedTopologies() throws Exception {
+        if (forTest) {
+            return this.evictedTopologies;
+        } else {
+            throw new Exception("Topology eviction check is only provided for test purposes");
+        }
+    }
+
+    @VisibleForTesting
+    public void setForTest(boolean isTest) {
+        this.forTest = isTest;
     }
 
     /*
