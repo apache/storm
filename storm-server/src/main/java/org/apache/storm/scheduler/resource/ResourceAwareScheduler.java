@@ -252,7 +252,7 @@ public class ResourceAwareScheduler implements IScheduler {
     }
 
     @VisibleForTesting
-    public Set<String> getEvictedTopologies() throws Exception {
+    public Set<String> getEvictedTopologies() {
         if (forTest) {
             return this.evictedTopologies;
         } else {

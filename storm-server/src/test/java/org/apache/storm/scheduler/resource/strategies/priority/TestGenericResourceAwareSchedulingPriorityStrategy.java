@@ -71,7 +71,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      *  Since Rui's all types of resources request can be met, no eviction will happen.
     */
     @Test
-    public void testDefaultSchedulingPriorityStrategyNotEvicting() throws Exception {
+    public void testDefaultSchedulingPriorityStrategyNotEvicting() {
         Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
         requestedgenericResourcesMap.put("generic.resource.1", 40.0);
         // Use full memory and cpu of the cluster capacity
@@ -115,7 +115,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      *  Then all Ethan's topo will be evicted in trying to make rooms for Rui.
      */
     @Test
-    public void testDefaultSchedulingPriorityStrategyEvicting() throws Exception {
+    public void testDefaultSchedulingPriorityStrategyEvicting() {
         Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
         requestedgenericResourcesMap.put("generic.resource.1", 40.0);
         Config ruiConf = createGrasClusterConfig(10, 10, 10, null, requestedgenericResourcesMap);
@@ -155,7 +155,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      *   At the end, all Ethan's topo will not be evicted as expected.
      */
     @Test
-    public void testGenericSchedulingPriorityStrategyEvicting() throws Exception {
+    public void testGenericSchedulingPriorityStrategyEvicting() {
         Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
         requestedgenericResourcesMap.put("generic.resource.1", 40.0);
         Config ruiConf = createGrasClusterConfig(10, 10, 10, null, requestedgenericResourcesMap);
