@@ -256,7 +256,8 @@ public class ResourceAwareScheduler implements IScheduler {
         if (forTest) {
             return this.evictedTopologies;
         } else {
-            throw new Exception("Topology eviction check is only provided for test purposes");
+            throw new UnsupportedOperationException(
+                "Topology eviction check is only provided for test purposes");
         }
     }
 

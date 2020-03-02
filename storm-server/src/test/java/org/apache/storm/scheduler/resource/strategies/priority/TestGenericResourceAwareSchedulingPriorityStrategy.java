@@ -29,7 +29,6 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
-import org.apache.storm.scheduler.resource.strategies.eviction.TestDefaultEvictionStrategy;
 import org.apache.storm.utils.Time;
 import org.junit.After;
 import org.junit.Test;
@@ -72,7 +71,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      *  Since Rui's all types of resources request can be met, no eviction will happen.
     */
     @Test
-    public void testDefaultSchedulingPriorityStrategyNotEvicting() {
+    public void testDefaultSchedulingPriorityStrategyNotEvicting() throws Exception {
         Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
         requestedgenericResourcesMap.put("generic.resource.1", 40.0);
         // Use full memory and cpu of the cluster capacity
@@ -116,7 +115,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      *  Then all Ethan's topo will be evicted in trying to make rooms for Rui.
      */
     @Test
-    public void testDefaultSchedulingPriorityStrategyEvicting() {
+    public void testDefaultSchedulingPriorityStrategyEvicting() throws Exception {
         Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
         requestedgenericResourcesMap.put("generic.resource.1", 40.0);
         Config ruiConf = createGrasClusterConfig(10, 10, 10, null, requestedgenericResourcesMap);
@@ -156,7 +155,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      *   At the end, all Ethan's topo will not be evicted as expected.
      */
     @Test
-    public void testGenericSchedulingPriorityStrategyEvicting() {
+    public void testGenericSchedulingPriorityStrategyEvicting() throws Exception {
         Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
         requestedgenericResourcesMap.put("generic.resource.1", 40.0);
         Config ruiConf = createGrasClusterConfig(10, 10, 10, null, requestedgenericResourcesMap);
