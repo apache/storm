@@ -166,7 +166,7 @@ public class ResourceAwareScheduler implements IScheduler {
                     Future<SchedulingResult> schedulingFuture = backgroundScheduling.submit(
                         () -> finalRasStrategy.schedule(toSchedule, td));
                     try {
-                        result = schedulingFuture.get(schedulingTimeoutSeconds + 1, TimeUnit.SECONDS);
+                        result = schedulingFuture.get(schedulingTimeoutSeconds, TimeUnit.SECONDS);
                     } catch (TimeoutException te) {
                         markFailedTopology(topologySubmitter, cluster, td, "Scheduling took too long for "
                                 + td.getId() + " using strategy " + rasStrategy.getClass().getName() + " timeout after "
