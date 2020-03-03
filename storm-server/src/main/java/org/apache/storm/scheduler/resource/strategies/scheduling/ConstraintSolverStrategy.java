@@ -13,6 +13,7 @@
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,24 +39,32 @@ import org.apache.storm.scheduler.resource.SchedulingStatus;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
+import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
-    //hard coded max number of states to search
     private static final Logger LOG = LoggerFactory.getLogger(ConstraintSolverStrategy.class);
+
+    public static final String CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT = "maxNodeCoLocationCnt";
+    public static final String CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS = "incompatibleComponents";
 
     /**
      * Component constraint as derived from configuration.
      * This is backward compatible and can parse old style Config.TOPOLOGY_RAS_CONSTRAINTS and Config.TOPOLOGY_SPREAD_COMPONENTS.
      * New style Config.TOPOLOGY_RAS_CONSTRAINTS is map where each component has a list of other incompatible components
      * and an optional number that specifies the maximum co-location count for the component on a node.
-     *      { "comp-1": [ 2, "comp-2", "comp-3" ], # comp-1 cannot exist on same node as comp-2 or comp-3, and at most 2 comp-1 same node
-     *        "comp-2": [ "comp-4" ]   # comp-2 and comp-4 cannot be on same node (missing comp-1 is implied from comp-1 constraint)
-     *      }
      *
+     * <p>comp-1 cannot exist on same worker as comp-2 or comp-3, and at most "2" comp-1 on same node</p>
+     * <p>comp-2 and comp-4 cannot be on same node (missing comp-1 is implied from comp-1 constraint)</p>
+     *
+     *  <p>
+     *      { "comp-1": { "maxNodeCoLocationCnt": 2, "incompatibleComponents": ["comp-2", "comp-3" ] },
+     *        "comp-2": { "incompatibleComponents": [ "comp-4" ] }
+     *      }
+     *  </p>
      */
-    private static final class ConstraintConfig {
+    public static final class ConstraintConfig {
         private Map<String, Set<String>> incompatibleComponents = new HashMap<>();
         private Map<String, Integer> maxCoLocationCnts = new HashMap<>(); // maximum node CoLocationCnt for restricted components
 
@@ -89,34 +98,57 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                     }
                 }
             } else {
-                Map<String, List<?>> constraintMap = (Map<String, List<?>>) rasConstraints;
+                Map<String, Map<String,?>> constraintMap = (Map<String, Map<String,?>>) rasConstraints;
                 constraintMap.forEach((comp1, v) -> {
                     if (comps.contains(comp1)) {
                         // v is a list of other components and an optional number which is a maxCoLocationCnt
-                        v.forEach(item -> {
-                            String comp2 = "" + item;
-                            try {
-                                int numValue = Integer.parseInt(comp2);
-                                if (numValue < 1) {
-                                    LOG.warn("MaxCoLocationCnt {} declared for Comp {} is not valid, expected >= 1", numValue, comp1);
-                                } else {
-                                    maxCoLocationCnts.put(comp1, numValue);
-                                }
-                            } catch (Exception ex) {
-                                if (comps.contains(comp2)) {
-                                    if (comp1.equals(comp2)) {
-                                        if (!maxCoLocationCnts.containsKey(comp1)) {
-                                            maxCoLocationCnts.put(comp1, 1);
+                        v.forEach((ctype, constraint) -> {
+                            switch (ctype) {
+                                case CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT:
+                                    try {
+                                        int numValue = Integer.parseInt("" + constraint);
+                                        if (numValue < 1) {
+                                            LOG.warn("{} {} declared for Comp {} is not valid, expected >= 1", ctype, numValue, comp1);
+                                        } else {
+                                            maxCoLocationCnts.put(comp1, numValue);
                                         }
-                                    } else {
-                                        incompatibleComponents.get(comp1).add(comp2);
-                                        incompatibleComponents.get(comp2).add(comp1);
+                                    } catch (Exception ex) {
+                                        LOG.warn("{} {} declared for Comp {} is not valid, expected >= 1", ctype, constraint, comp1);
                                     }
-                                }
+                                    break;
+
+                                case CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS:
+                                    if (!(constraint instanceof List || constraint instanceof String)) {
+                                        LOG.warn("{} {} declared for Comp {} is not valid, expecting a list of components or 1 component",
+                                                ctype, constraint, comp1);
+                                        break;
+                                    }
+                                    List<String> list;
+                                    list = (constraint instanceof String) ? Arrays.asList((String)constraint) : (List<String>)constraint;
+                                    for (String comp2: list) {
+                                        if (!comps.contains(comp2)) {
+                                            LOG.warn("{} {} declared for Comp {} is not a valid component", ctype, comp2, comp1);
+                                            continue;
+                                        }
+                                        if (comp1.equals(comp2)) {
+                                            if (!maxCoLocationCnts.containsKey(comp1)) {
+                                                maxCoLocationCnts.put(comp1, 1);
+                                            }
+                                        } else {
+                                            incompatibleComponents.get(comp1).add(comp2);
+                                            incompatibleComponents.get(comp2).add(comp1);
+                                        }
+                                    }
+                                    break;
+
+                                default:
+                                    LOG.warn("ConstraintType={} invalid for component={}, valid values are {} and {}, ignoring value={}",
+                                            ctype, comp1, CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                                            CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, constraint);
+                                    break;
                             }
                         });
                     }
-                    ;
                 });
             }
 
@@ -145,6 +177,14 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                     }
                 }
             }
+        }
+
+        public Map<String, Set<String>> getIncompatibleComponents() {
+            return incompatibleComponents;
+        }
+
+        public Map<String, Integer> getMaxCoLocationCnts() {
+            return maxCoLocationCnts;
         }
     }
 
