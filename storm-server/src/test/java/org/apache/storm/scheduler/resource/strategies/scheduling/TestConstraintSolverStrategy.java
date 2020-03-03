@@ -37,6 +37,8 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -144,17 +146,19 @@ public class TestConstraintSolverStrategy {
     private void setConstraintConfig(List<List<String>> constraints, Map<String, Integer> spreads, Map<String, Object> config) {
         if (consolidatedConfigFlag) {
             // single configuration for each component
-            Map<String, List<String>> modifiedConstraints = new HashMap<>();
+            Map<String, Map<String,Object>> modifiedConstraints = new HashMap<>();
             for (List<String> constraint: constraints) {
                 if (constraint.size() < 2) {
                     continue;
                 }
                 String comp = constraint.get(0);
                 List<String> others = constraint.subList(1, constraint.size());
-                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).addAll(others);
+                List<Object> incompatibleComponents = (List<Object>)modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<String,Object>())
+                        .computeIfAbsent(ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, k -> new ArrayList<Object>());
+                incompatibleComponents.addAll(others);
             }
             for (String comp: spreads.keySet()) {
-                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).add(""+spreads.get(comp));
+                modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<String,Object>()).put(ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, ""+spreads.get(comp));
             }
             config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
         } else {
@@ -264,6 +268,42 @@ public class TestConstraintSolverStrategy {
         Assert.assertTrue("Assert scheduling topology success " + result, result.isSuccess());
         Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
         Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo, null));
+    }
+
+    @Test
+    public void testNewConstraintFormat() {
+        String s = String.format(
+                "{ \"comp-1\": "
+                        + "                  { \"%s\": 2, "
+                        + "                    \"%s\": [\"comp-2\", \"comp-3\" ] }, "
+                        + "     \"comp-2\": "
+                        + "                  { \"%s\": [ \"comp-4\" ] }, "
+                        + "     \"comp-3\": "
+                        + "                  { \"%s\": \"comp-5\" } "
+                        + "}",
+                ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
+                ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
+                ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS
+        );
+        Object jsonValue = JSONValue.parse(s);
+        Map<String, Object> config = Utils.readDefaultConfig();
+        config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
+        Set<String> allComps = new HashSet<>();
+        allComps.addAll(Arrays.asList("comp-1", "comp-2", "comp-3", "comp-4", "comp-5"));
+        ConstraintSolverStrategy.ConstraintConfig constraintConfig = new ConstraintSolverStrategy.ConstraintConfig(config, allComps);
+
+        Set<String> expectedSetComp1 = new HashSet<>();
+        expectedSetComp1.addAll(Arrays.asList("comp-2", "comp-3"));
+        Set<String> expectedSetComp2 = new HashSet<>();
+        expectedSetComp2.addAll(Arrays.asList("comp-1", "comp-4"));
+        Set<String> expectedSetComp3 = new HashSet<>();
+        expectedSetComp3.addAll(Arrays.asList("comp-1", "comp-5"));
+        Assert.assertEquals("comp-1 incompatible components", expectedSetComp1, constraintConfig.getIncompatibleComponents().get("comp-1"));
+        Assert.assertEquals("comp-2 incompatible components", expectedSetComp2, constraintConfig.getIncompatibleComponents().get("comp-2"));
+        Assert.assertEquals("comp-3 incompatible components", expectedSetComp3, constraintConfig.getIncompatibleComponents().get("comp-3"));
+        Assert.assertEquals("comp-1 maxNodeCoLocationCnt", (int)2, (int)constraintConfig.getMaxCoLocationCnts().getOrDefault("comp-1", -1));
+        Assert.assertNull("comp-2 maxNodeCoLocationCnt", constraintConfig.getMaxCoLocationCnts().get("comp-2"));
     }
 
     @Test
