@@ -29,6 +29,7 @@ import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
+import org.apache.storm.utils.ShellLogHandler;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.EventLoggerRegistryValidator;
@@ -36,9 +37,11 @@ import org.apache.storm.validation.ConfigValidation.ListOfListOfStringValidator;
 import org.apache.storm.validation.ConfigValidation.MapOfStringToMapOfStringToObjectValidator;
 import org.apache.storm.validation.ConfigValidation.MetricRegistryValidator;
 import org.apache.storm.validation.ConfigValidation.MetricReportersValidator;
+import org.apache.storm.validation.ConfigValidation.RasConstraintsTypeValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations;
 import org.apache.storm.validation.ConfigValidationAnnotations.CustomValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsBoolean;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsExactlyOneOf;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsImplementationOfClass;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsInteger;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsKryoReg;
@@ -304,11 +307,13 @@ public class Config extends HashMap<String, Object> {
     // an error will be thrown by nimbus on topology submission and not by the client prior to submitting
     // the topology.
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
+
     /**
-     * Declare scheduling constraints for a topology used by the constraint solver strategy. A List of pairs (also a list) of components
-     * that cannot coexist in the same worker.
+     * Declare scheduling constraints for a topology used by the constraint solver strategy. The format can be either
+     * old style (validated by ListOfListOfStringValidator.class or the newer style, which is a list of specific type of
+     * Maps (validated by RasConstraintsTypeValidator.class). The value must be in one or the other format.
      */
-    @CustomValidator(validatorClass = ListOfListOfStringValidator.class)
+    @IsExactlyOneOf(valueValidatorClasses = { ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class })
     public static final String TOPOLOGY_RAS_CONSTRAINTS = "topology.ras.constraints";
     /**
      * Array of components that scheduler should try to place on separate hosts when using the constraint solver strategy or the
