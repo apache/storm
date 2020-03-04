@@ -27,6 +27,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.esotericsoftware.minlog.Log;
+import com.google.common.collect.Sets;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
@@ -71,7 +72,8 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         private Map<String, Integer> maxCoLocationCnts = new HashMap<>(); // maximum node CoLocationCnt for restricted components
 
         ConstraintConfig(TopologyDetails topo) {
-            this(topo.getConf(), topo.getComponents().keySet());
+            // getExecutorToComponent().values() also contains system components
+            this(topo.getConf(), Sets.union(topo.getComponents().keySet(), new HashSet(topo.getExecutorToComponent().values())));
         }
 
         ConstraintConfig(Map<String, Object> conf, Set<String> comps) {
@@ -170,7 +172,8 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                     }
                 }
             } else {
-                Log.warn("Ignoring invalid {} config={}", Config.TOPOLOGY_SPREAD_COMPONENTS, obj);
+                String msg = String.format("Ignoring invalid %s config=%s", Config.TOPOLOGY_SPREAD_COMPONENTS, "" + obj);
+                Log.warn(msg);
             }
         }
 
