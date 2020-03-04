@@ -200,7 +200,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         }
         return checkSpreadSchedulingValid(cluster, td, constraintConfig)
                && checkConstraintsSatisfied(cluster, td, constraintConfig)
-               && checkResourcesCorrect(cluster, td, constraintConfig);
+               && checkResourcesCorrect(cluster, td);
     }
 
     /**
@@ -286,12 +286,9 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     /**
      * Check if resource constraints satisfied.
      */
-    private static boolean checkResourcesCorrect(Cluster cluster, TopologyDetails topo, ConstraintConfig constraintConfig) {
+    private static boolean checkResourcesCorrect(Cluster cluster, TopologyDetails topo) {
         LOG.info("Checking Resources...");
         assert (cluster.getAssignmentById(topo.getId()) != null);
-        if (constraintConfig == null) {
-            constraintConfig = new ConstraintConfig(topo);
-        }
         Map<ExecutorDetails, WorkerSlot> result = cluster.getAssignmentById(topo.getId()).getExecutorToSlot();
         Map<RasNode, Collection<ExecutorDetails>> nodeToExecs = new HashMap<>();
         Map<ExecutorDetails, WorkerSlot> mergedExecToWorker = new HashMap<>();
