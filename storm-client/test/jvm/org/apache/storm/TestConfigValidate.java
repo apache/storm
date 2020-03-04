@@ -548,8 +548,7 @@ public class TestConfigValidate {
     }
 
     @Test
-    public void testExactlyOneOfCustomAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
-            InstantiationException, IllegalAccessException {
+    public void testExactlyOneOfCustomAnnotation() {
         TestConfig config = new TestConfig();
         Collection<Object> passCases = new LinkedList<Object>();
         Collection<Object> failCases = new LinkedList<Object>();
