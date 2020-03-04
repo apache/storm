@@ -12,6 +12,8 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import com.google.common.collect.Sets;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,8 +28,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import com.esotericsoftware.minlog.Log;
-import com.google.common.collect.Sets;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
@@ -172,8 +172,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                     }
                 }
             } else {
-                String msg = String.format("Ignoring invalid %s config=%s", Config.TOPOLOGY_SPREAD_COMPONENTS, "" + obj);
-                Log.warn(msg);
+                LOG.warn("Ignoring invalid {} config={}", Config.TOPOLOGY_SPREAD_COMPONENTS, obj);
             }
         }
 
@@ -762,7 +761,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
             StringBuffer sb = new StringBuffer();
             int cntAllNodes = 0;
             int cntFilledNodes = 0;
-            for (RasNode node: new TreeSet<RasNode>(nodeCompAssignmentCnts.keySet())) {
+            for (RasNode node: new TreeSet<>(nodeCompAssignmentCnts.keySet())) {
                 cntAllNodes++;
                 Map<String, Integer> oneMap = nodeCompAssignmentCnts.get(node);
                 if (oneMap.isEmpty()) {
