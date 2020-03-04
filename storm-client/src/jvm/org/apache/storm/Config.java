@@ -313,12 +313,16 @@ public class Config extends HashMap<String, Object> {
      * old style (validated by ListOfListOfStringValidator.class or the newer style, which is a list of specific type of
      * Maps (validated by RasConstraintsTypeValidator.class). The value must be in one or the other format.
      *
+     * <p>
      * Old style Config.TOPOLOGY_RAS_CONSTRAINTS (ListOfListOfString) specified a list of components that cannot
      * co-exist on the same Worker.
+     * </p>
      *
+     * <p>
      * New style Config.TOPOLOGY_RAS_CONSTRAINTS is map where each component has a list of other incompatible components
      * (which serves the same function as the old style configuration) and optional number that specifies
      * the maximum co-location count for the component on a node.
+     * </p>
      *
      * <p>comp-1 cannot exist on same worker as comp-2 or comp-3, and at most "2" comp-1 on same node</p>
      * <p>comp-2 and comp-4 cannot be on same node (missing comp-1 is implied from comp-1 constraint)</p>
