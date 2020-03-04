@@ -563,13 +563,13 @@ public class TestConfigValidate {
         Map<Object, Object> passCaseMapOfMap = new HashMap<>();
         passCaseMapOfMap.put("comp1",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, (Integer)10 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
                         { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp2", "comp3")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         passCaseMapOfMap.put("comp2",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, (Integer)2 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
                         { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
@@ -583,7 +583,7 @@ public class TestConfigValidate {
         );
         passCaseMapOfMap.put("comp2",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, (Integer)2 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
                         { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
@@ -597,7 +597,7 @@ public class TestConfigValidate {
         );
         passCaseMapOfMap.put("comp2",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, (Integer)2 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
                         { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, "comp4"},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
@@ -616,13 +616,13 @@ public class TestConfigValidate {
         Map<String, Object> failCaseMapOfMap = new HashMap<>();
         failCaseMapOfMap.put("comp1",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, (Integer)10 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
                         { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList(1, 2, 3)},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         failCaseMapOfMap.put("comp2",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, (Integer)2 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
                         { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
