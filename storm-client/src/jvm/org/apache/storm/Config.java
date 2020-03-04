@@ -312,12 +312,29 @@ public class Config extends HashMap<String, Object> {
      * Declare scheduling constraints for a topology used by the constraint solver strategy. The format can be either
      * old style (validated by ListOfListOfStringValidator.class or the newer style, which is a list of specific type of
      * Maps (validated by RasConstraintsTypeValidator.class). The value must be in one or the other format.
+     *
+     * Old style Config.TOPOLOGY_RAS_CONSTRAINTS (ListOfListOfString) specified a list of components that cannot
+     * co-exist on the same Worker.
+     *
+     * New style Config.TOPOLOGY_RAS_CONSTRAINTS is map where each component has a list of other incompatible components
+     * (which serves the same function as the old style configuration) and optional number that specifies
+     * the maximum co-location count for the component on a node.
+     *
+     * <p>comp-1 cannot exist on same worker as comp-2 or comp-3, and at most "2" comp-1 on same node</p>
+     * <p>comp-2 and comp-4 cannot be on same node (missing comp-1 is implied from comp-1 constraint)</p>
+     *
+     *  <p>
+     *      { "comp-1": { "maxNodeCoLocationCnt": 2, "incompatibleComponents": ["comp-2", "comp-3" ] },
+     *        "comp-2": { "incompatibleComponents": [ "comp-4" ] }
+     *      }
+     *  </p>
      */
     @IsExactlyOneOf(valueValidatorClasses = { ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class })
     public static final String TOPOLOGY_RAS_CONSTRAINTS = "topology.ras.constraints";
     /**
      * Array of components that scheduler should try to place on separate hosts when using the constraint solver strategy or the
-     * multi-tenant scheduler.
+     * multi-tenant scheduler. Note that this configuration can be specified in TOPOLOGY_RAS_CONSTRAINTS using the
+     * "maxNodeCoLocationCnt" map entry with value of 1.
      */
     @IsStringList
     public static final String TOPOLOGY_SPREAD_COMPONENTS = "topology.spread.components";
