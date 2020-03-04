@@ -588,8 +588,8 @@ public class ConfigValidation {
                         ((Validator) v).validateField(name + " list entry", entry);
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in ListEntryCustomValidator.  Individual entry validators must a instance of "
-                                    + "Validator class",
+                            "validator: {} cannot be used in ListEntryCustomValidator. "
+                                    + "Individual entry validators must be an instance of Validator class",
                             validator.getName());
                     }
                 }
@@ -658,8 +658,8 @@ public class ConfigValidation {
                         ((Validator) keyValidator).validateField(name + " Map key", entry.getKey());
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in MapEntryCustomValidator to validate keys.  Individual entry validators must "
-                                    + "a instance of Validator class",
+                            "validator: {} cannot be used in MapEntryCustomValidator to validate keys. "
+                                    + "Individual entry validators must be an instance of Validator class",
                             kv.getName());
                     }
                 }
@@ -669,8 +669,8 @@ public class ConfigValidation {
                         ((Validator) valueValidator).validateField(name + " Map value", entry.getValue());
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in MapEntryCustomValidator to validate values.  Individual entry validators "
-                                    + "must a instance of Validator class",
+                            "validator: {} cannot be used in MapEntryCustomValidator to validate values. "
+                                    + "Individual entry validators must be an instance of Validator class",
                             vv.getName());
                     }
                 }
