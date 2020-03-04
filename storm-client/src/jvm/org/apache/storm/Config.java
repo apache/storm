@@ -340,6 +340,7 @@ public class Config extends HashMap<String, Object> {
      * multi-tenant scheduler. Note that this configuration can be specified in TOPOLOGY_RAS_CONSTRAINTS using the
      * "maxNodeCoLocationCnt" map entry with value of 1.
      */
+    @Deprecated
     @IsStringList
     public static final String TOPOLOGY_SPREAD_COMPONENTS = "topology.spread.components";
     /**

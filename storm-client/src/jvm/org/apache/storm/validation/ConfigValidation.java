@@ -864,7 +864,7 @@ public class ConfigValidation {
         @Override
         public void validateField(String name, Object o) {
             if (o == null) {
-                throw new IllegalArgumentException("Field " + name + " must be set.");
+                return;
             }
 
             HashMap<String, Exception> validatorExceptions = new HashMap<>();
@@ -918,7 +918,7 @@ public class ConfigValidation {
         @Override
         public void validateField(String name, Object o) {
             if (o == null) {
-                throw new IllegalArgumentException("Field " + name + " must be set.");
+                return;
             }
             if (!(o instanceof Map)) {
                 throw new IllegalArgumentException(
