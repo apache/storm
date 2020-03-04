@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import com.esotericsoftware.minlog.Log;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
@@ -124,20 +126,14 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                                         break;
                                     }
                                     List<String> list;
-                                    list = (constraint instanceof String) ? Arrays.asList((String)constraint) : (List<String>)constraint;
+                                    list = (constraint instanceof String) ? Arrays.asList((String) constraint) : (List<String>) constraint;
                                     for (String comp2: list) {
                                         if (!comps.contains(comp2)) {
                                             LOG.warn("{} {} declared for Comp {} is not a valid component", ctype, comp2, comp1);
                                             continue;
                                         }
-                                        if (comp1.equals(comp2)) {
-                                            if (!maxCoLocationCnts.containsKey(comp1)) {
-                                                maxCoLocationCnts.put(comp1, 1);
-                                            }
-                                        } else {
-                                            incompatibleComponents.get(comp1).add(comp2);
-                                            incompatibleComponents.get(comp2).add(comp1);
-                                        }
+                                        incompatibleComponents.get(comp1).add(comp2);
+                                        incompatibleComponents.get(comp2).add(comp1);
                                     }
                                     break;
 
@@ -148,34 +144,33 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                                     break;
                             }
                         });
+                    } else {
+                        LOG.warn("Component {} is not a valid component", comp1);
                     }
                 });
             }
 
             // process Config.TOPOLOGY_SPREAD_COMPONENTS - old style
+            // override only if not defined already using Config.TOPOLOGY_RAS_COMPONENTS above
             Object obj = conf.get(Config.TOPOLOGY_SPREAD_COMPONENTS);
             if (obj instanceof List) {
                 List<String> spread = (List<String>) obj;
                 if (spread != null) {
                     for (String comp : spread) {
-                        if (comps.contains(comp)) {
-                            maxCoLocationCnts.put(comp, 1);
-                        } else {
+                        if (!comps.contains(comp)) {
                             LOG.warn("Comp {} declared for spread not valid", comp);
+                            continue;
                         }
+                        if (maxCoLocationCnts.containsKey(comp)) {
+                            LOG.warn("Comp {} maxNodeCoLocationCnt={} already defined in {}, ignoring spread config in {}", comp,
+                                    maxCoLocationCnts.get(comp), Config.TOPOLOGY_RAS_CONSTRAINTS, Config.TOPOLOGY_SPREAD_COMPONENTS);
+                            continue;
+                        }
+                        maxCoLocationCnts.put(comp, 1);
                     }
                 }
-            } else if (obj instanceof Map) {
-                Map<String, Integer> spread = (Map<String, Integer>) obj;
-                if (spread != null) {
-                    for (String comp : spread.keySet()) {
-                        if (comps.contains(comp)) {
-                            maxCoLocationCnts.put(comp, spread.get(comp));
-                        } else {
-                            LOG.warn("Comp {} declared for spread not valid", comp);
-                        }
-                    }
-                }
+            } else {
+                Log.warn("Ignoring invalid {} config={}", Config.TOPOLOGY_SPREAD_COMPONENTS, obj);
             }
         }
 
