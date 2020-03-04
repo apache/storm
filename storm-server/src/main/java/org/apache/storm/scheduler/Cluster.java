@@ -80,6 +80,10 @@ public class Cluster implements ISchedulingState {
     private final Map<String, Map<String, Double>> nodeToScheduledOffHeapNodeMemoryCache;   // node -> topologyId -> double
     private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache;
     private final Map<String, NormalizedResourceRequest> totalResourcesPerNodeCache = new HashMap<>();
+    /**
+     * A set of types of generic resources provided by this cluster
+     */
+    private final Set<String> genericResourceTypes;
     private final ResourceMetrics resourceMetrics;
     private SchedulerAssignmentImpl assignment;
     private Set<String> blackListedHosts = new HashSet<>();
@@ -171,6 +175,7 @@ public class Cluster implements ISchedulingState {
         this.conf = conf;
         this.topologies = topologies;
         this.minWorkerCpu = ObjectReader.getDouble(conf.get(DaemonConfig.STORM_WORKER_MIN_CPU_PCORE_PERCENT), 0.0);
+        this.genericResourceTypes = computeClusterGenericResourceTypes();
 
         ArrayList<String> supervisorHostNames = new ArrayList<>();
         for (SupervisorDetails s : supervisors.values()) {
@@ -890,17 +895,23 @@ public class Cluster implements ISchedulingState {
     }
 
     @Override
-    public Map<String, Double> getClusterTotalGenericResource() {
-        Map<String, Double> ret = new HashMap<>();
-        for (SupervisorDetails sup : supervisors.values()) {
-            Map<String, Double> supGenericResources = sup.getTotalGenericResources();
-            for (Map.Entry<String, Double> entry : supGenericResources.entrySet()) {
-                String resourceName = entry.getKey();
-                Double amount = entry.getValue();
-                ret.put(resourceName, ret.getOrDefault(resourceName, 0.0) + amount);
-            }
-        }
-        return ret;
+    public Map<String, Double> getClusterTotalGenericResources() {
+        return supervisors.values().stream()
+            .map(sup -> sup.getTotalGenericResources().entrySet())
+            .flatMap(Set::stream)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Double::sum));
+    }
+
+    @Override
+    public Set<String> getClusterGenericResourceTypes() {
+        return this.genericResourceTypes;
+    }
+
+    private Set<String> computeClusterGenericResourceTypes() {
+        return supervisors.values().parallelStream()
+            .map(sup -> sup.getTotalGenericResources().keySet())
+            .flatMap(Set::stream)
+            .collect(Collectors.toSet());
     }
 
     @Override

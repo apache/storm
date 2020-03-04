@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.storm.scheduler.ISchedulingState;
 import org.apache.storm.scheduler.TopologyDetails;
@@ -44,7 +45,7 @@ public class GenericResourceAwareSchedulingPriorityStrategy extends DefaultSched
     public List<TopologyDetails> getOrderedTopologies(ISchedulingState cluster, Map<String, User> userMap) {
         double cpuAvail = cluster.getClusterTotalCpuResource();
         double memAvail = cluster.getClusterTotalMemoryResource();
-        Map<String, Double> genericAvail = cluster.getClusterTotalGenericResource();
+        Map<String, Double> genericAvail = cluster.getClusterTotalGenericResources();
 
         List<TopologyDetails> allUserTopologies = new ArrayList<>();
         List<GrasSimulatedUser> users = new ArrayList<>();
@@ -90,11 +91,10 @@ public class GenericResourceAwareSchedulingPriorityStrategy extends DefaultSched
             super(other, cluster);
 
             Map<String, Double> guaranteedGenericResources = new HashMap<>();
-            Map<String, Double> availGenericResources = cluster.getClusterTotalGenericResource();   // generic resources that are offered
-            for (Map.Entry<String, Double> entry : availGenericResources.entrySet()) {
-                String resource = entry.getKey();
-                Double guaranteedAmount = other.getGenericGuaranteed().getOrDefault(resource, 0.0);
-                guaranteedGenericResources.put(resource, guaranteedAmount);
+            Set<String> availGenericResourceTypes = cluster.getClusterGenericResourceTypes();   // generic resource types that are offered
+            for (String resourceType : availGenericResourceTypes) {
+                Double guaranteedAmount = other.getGenericGuaranteed().getOrDefault(resourceType, 0.0);
+                guaranteedGenericResources.put(resourceType, guaranteedAmount);
             }
             this.guaranteedGenericResources = guaranteedGenericResources;
         }

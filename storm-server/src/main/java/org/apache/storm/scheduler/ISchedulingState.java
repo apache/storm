@@ -276,8 +276,15 @@ public interface ISchedulingState {
     /**
      * Get the total amount of generic resources (excluding CPU and memory) in cluster.
      */
-    default Map<String, Double> getClusterTotalGenericResource() {
+    default Map<String, Double> getClusterTotalGenericResources() {
         return Collections.emptyMap();
+    }
+
+    /**
+     * Get the collections of all types of generic resources (excluding CPU and memory) in cluster.
+     */
+    default Set<String> getClusterGenericResourceTypes() {
+        return Collections.emptySet();
     }
 
     /**
