@@ -81,9 +81,12 @@ public class Cluster implements ISchedulingState {
     private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache;
     private final Map<String, NormalizedResourceRequest> totalResourcesPerNodeCache = new HashMap<>();
     /**
-     * A set of types of generic resources provided by this cluster
+     * Snapshot of cluster total resources (cpu, memory, generic).
      */
-    private final Set<String> genericResourceTypes;
+    private final double totalCpuResource;
+    private final double totalMemoryResource;
+    private final Map<String, Double> totalGenericResources;
+
     private final ResourceMetrics resourceMetrics;
     private SchedulerAssignmentImpl assignment;
     private Set<String> blackListedHosts = new HashSet<>();
@@ -175,7 +178,10 @@ public class Cluster implements ISchedulingState {
         this.conf = conf;
         this.topologies = topologies;
         this.minWorkerCpu = ObjectReader.getDouble(conf.get(DaemonConfig.STORM_WORKER_MIN_CPU_PCORE_PERCENT), 0.0);
-        this.genericResourceTypes = computeClusterGenericResourceTypes();
+
+        this.totalCpuResource = computeClusterCpuResource();
+        this.totalMemoryResource = computeClusterMemoryResource();
+        this.totalGenericResources = computeClusterGenericResources();
 
         ArrayList<String> supervisorHostNames = new ArrayList<>();
         for (SupervisorDetails s : supervisors.values()) {
@@ -878,40 +884,38 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public double getClusterTotalCpuResource() {
-        double sum = 0.0;
-        for (SupervisorDetails sup : supervisors.values()) {
-            sum += sup.getTotalCpu();
-        }
-        return sum;
+        return this.totalCpuResource;
+    }
+
+    private double computeClusterCpuResource() {
+        return supervisors.values().stream()
+            .mapToDouble(SupervisorDetails::getTotalCpu)
+            .sum();
+
     }
 
     @Override
     public double getClusterTotalMemoryResource() {
-        double sum = 0.0;
-        for (SupervisorDetails sup : supervisors.values()) {
-            sum += sup.getTotalMemory();
-        }
-        return sum;
+        return this.totalMemoryResource;
+    }
+
+
+    private double computeClusterMemoryResource() {
+        return supervisors.values().stream()
+            .mapToDouble(SupervisorDetails::getTotalMemory)
+            .sum();
     }
 
     @Override
     public Map<String, Double> getClusterTotalGenericResources() {
+        return this.totalGenericResources;
+    }
+
+    private Map<String, Double> computeClusterGenericResources() {
         return supervisors.values().stream()
             .map(sup -> sup.getTotalGenericResources().entrySet())
             .flatMap(Set::stream)
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Double::sum));
-    }
-
-    @Override
-    public Set<String> getClusterGenericResourceTypes() {
-        return this.genericResourceTypes;
-    }
-
-    private Set<String> computeClusterGenericResourceTypes() {
-        return supervisors.values().parallelStream()
-            .map(sup -> sup.getTotalGenericResources().keySet())
-            .flatMap(Set::stream)
-            .collect(Collectors.toSet());
     }
 
     @Override

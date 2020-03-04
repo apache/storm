@@ -281,13 +281,6 @@ public interface ISchedulingState {
     }
 
     /**
-     * Get the collections of all types of generic resources (excluding CPU and memory) in cluster.
-     */
-    default Set<String> getClusterGenericResourceTypes() {
-        return Collections.emptySet();
-    }
-
-    /**
      * Get the network topography (rackId -> nodes in the rack).
      */
     Map<String, List<String>> getNetworkTopography();

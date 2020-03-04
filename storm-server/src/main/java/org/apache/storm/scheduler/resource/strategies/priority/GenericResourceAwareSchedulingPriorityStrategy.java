@@ -91,7 +91,8 @@ public class GenericResourceAwareSchedulingPriorityStrategy extends DefaultSched
             super(other, cluster);
 
             Map<String, Double> guaranteedGenericResources = new HashMap<>();
-            Set<String> availGenericResourceTypes = cluster.getClusterGenericResourceTypes();   // generic resource types that are offered
+            // generic resource types that are offered
+            Set<String> availGenericResourceTypes = cluster.getClusterTotalGenericResources().keySet();
             for (String resourceType : availGenericResourceTypes) {
                 Double guaranteedAmount = other.getGenericGuaranteed().getOrDefault(resourceType, 0.0);
                 guaranteedGenericResources.put(resourceType, guaranteedAmount);
