@@ -1355,7 +1355,7 @@ public class TestResourceAwareScheduler {
     @PerformanceTest
     @Test
     public void testLargeTopologiesOnLargeClustersGras() {
-        Assertions.assertTimeoutPreemptively(Duration.ofSeconds(75),
+        Assertions.assertTimeoutPreemptively(Duration.ofSeconds(750),
             () -> testLargeTopologiesCommon(GenericResourceAwareStrategy.class.getName(), true, 1));
     }
 

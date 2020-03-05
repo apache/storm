@@ -9,6 +9,10 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+arch:
+  - arm64
+  - amd64
+
 addons:
   hosts:
     - node1
@@ -39,6 +43,7 @@ matrix:
       jdk: openjdk11
       
 before_install:
+  - if [ "$(uname -m)" == aarch64 ]; then sudo apt-get -y install openjdk-8-jdk && export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-arm64; fi
   - rvm reload
   - rvm use 2.4.2 --install
   - nvm install 8.9.3
