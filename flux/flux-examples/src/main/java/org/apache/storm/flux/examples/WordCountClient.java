@@ -56,7 +56,7 @@ public class WordCountClient {
             System.out.println("HBase configuration:");
             for (Object key : props.keySet()) {
                 System.out.println(key + "=" + props.get(key));
-                config.set((String)key, props.getProperty((String)key));
+                config.set((String) key, props.getProperty((String) key));
             }
         } else {
             System.out.println("Usage: WordCountClient <hbase_config.properties>");

@@ -55,7 +55,7 @@ public class KafkaOffsetMetric<K, V> implements IMetric {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaOffsetMetric.class);
     private final Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier;
-    private final Supplier<Consumer<K,V>> consumerSupplier;
+    private final Supplier<Consumer<K, V>> consumerSupplier;
 
     public KafkaOffsetMetric(Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier,
         Supplier<Consumer<K, V>> consumerSupplier) {
@@ -74,7 +74,7 @@ public class KafkaOffsetMetric<K, V> implements IMetric {
             return null;
         }
 
-        Map<String,TopicMetrics> topicMetricsMap = new HashMap<>();
+        Map<String, TopicMetrics> topicMetricsMap = new HashMap<>();
         Set<TopicPartition> topicPartitions = offsetManagers.keySet();
 
         Map<TopicPartition, Long> beginningOffsets;

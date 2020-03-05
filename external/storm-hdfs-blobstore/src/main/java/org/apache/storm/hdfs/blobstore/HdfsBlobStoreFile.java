@@ -137,18 +137,18 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
         OutputStream out = null;
         FsPermission fileperms = new FsPermission(BLOBSTORE_FILE_PERMISSION);
         try {
-            out = fileSystem.create(path, (short)this.getMetadata().get_replication_factor());
+            out = fileSystem.create(path, (short) this.getMetadata().get_replication_factor());
             fileSystem.setPermission(path, fileperms);
-            fileSystem.setReplication(path, (short)this.getMetadata().get_replication_factor());
+            fileSystem.setReplication(path, (short) this.getMetadata().get_replication_factor());
         } catch (IOException e) {
             //Try to create the parent directory, may not work
             FsPermission dirperms = new FsPermission(HdfsBlobStoreImpl.BLOBSTORE_DIR_PERMISSION);
             if (!fileSystem.mkdirs(path.getParent(), dirperms)) {
                 LOG.warn("error creating parent dir: " + path.getParent());
             }
-            out = fileSystem.create(path, (short)this.getMetadata().get_replication_factor());
+            out = fileSystem.create(path, (short) this.getMetadata().get_replication_factor());
             fileSystem.setPermission(path, dirperms);
-            fileSystem.setReplication(path, (short)this.getMetadata().get_replication_factor());
+            fileSystem.setReplication(path, (short) this.getMetadata().get_replication_factor());
         }
         if (out == null) {
             throw new IOException("Error in creating: " + path);

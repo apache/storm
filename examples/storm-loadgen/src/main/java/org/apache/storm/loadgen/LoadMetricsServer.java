@@ -238,7 +238,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         }
 
         public double getCompletedPerSec() {
-            return getCompleted() / (double)timeWindow;
+            return getCompleted() / (double) timeWindow;
         }
 
         public long getAcked() {
@@ -246,7 +246,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         }
 
         public double getAckedPerSec() {
-            return acked / (double)timeWindow;
+            return acked / (double) timeWindow;
         }
 
         public long getFailed() {
@@ -422,8 +422,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     static {
         //Perhaps there is a better way to do this???
         LinkedHashMap<String, MetricExtractor> tmp = new LinkedHashMap<>();
-        tmp.put("start_time",  new MetricExtractor((m, unit) -> m.startTime(),"s"));
-        tmp.put("end_time",  new MetricExtractor((m, unit) -> m.endTime(), "s"));
+        tmp.put("start_time",  new MetricExtractor((m, unit) -> m.startTime(), "s"));
+        tmp.put("end_time",  new MetricExtractor((m, unit) -> m.endTime(),  "s"));
         tmp.put("rate",  new MetricExtractor((m, unit) -> m.getCompletedPerSec(), "tuple/s"));
         tmp.put("mean", new MetricExtractor((m, unit) -> m.getMeanLatency(unit)));
         tmp.put("99%ile", new MetricExtractor((m, unit) -> m.getLatencyAtPercentile(99.0, unit)));
@@ -454,7 +454,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         String buildVersion = VersionInfo.getBuildVersion();
         tmp.put("storm_version", new MetricExtractor((m, unit) -> buildVersion, ""));
         tmp.put("java_version", new MetricExtractor((m, unit) -> System.getProperty("java.vendor")
-            + " " + System.getProperty("java.version"),""));
+            + " " + System.getProperty("java.version"), ""));
         tmp.put("os_arch", new MetricExtractor((m, unit) -> System.getProperty("os.arch"), ""));
         tmp.put("os_name", new MetricExtractor((m, unit) -> System.getProperty("os.name"), ""));
         tmp.put("os_version", new MetricExtractor((m, unit) -> System.getProperty("os.version"), ""));
@@ -593,7 +593,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         FixedWidthReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
             super(path, query, extractorsMap, "3");
-            int columnWidth = Integer.parseInt(query.getOrDefault("columnWidth", "15")) - 1;//Always have a space in between
+            int columnWidth = Integer.parseInt(query.getOrDefault("columnWidth", "15")) - 1; //Always have a space in between
             doubleFormat = "%," + columnWidth + "." + precision + "f";
             longFormat = "%," + columnWidth + "d";
             stringFormat = "%" + columnWidth + "s";
@@ -1004,30 +1004,30 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         for (IMetricsConsumer.DataPoint dp: dataPoints) {
             if (dp.name.startsWith("comp-lat-histo") && dp.value instanceof Histogram) {
                 synchronized (histo) {
-                    histo.add((Histogram)dp.value);
+                    histo.add((Histogram) dp.value);
                 }
             } else if ("CPU".equals(dp.name) && dp.value instanceof Map) {
-                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Map<Object, Object> m = (Map<Object, Object>) dp.value;
                 Object sys = m.get("sys-ms");
                 if (sys instanceof Number) {
-                    systemCpu.getAndAdd(((Number)sys).longValue());
+                    systemCpu.getAndAdd(((Number) sys).longValue());
                 }
                 Object user = m.get("user-ms");
                 if (user instanceof Number) {
-                    userCpu.getAndAdd(((Number)user).longValue());
+                    userCpu.getAndAdd(((Number) user).longValue());
                 }
             } else if (dp.name.startsWith("GC/") && dp.value instanceof Map) {
-                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Map<Object, Object> m = (Map<Object, Object>) dp.value;
                 Object count = m.get("count");
                 if (count instanceof Number) {
-                    gcCount.getAndAdd(((Number)count).longValue());
+                    gcCount.getAndAdd(((Number) count).longValue());
                 }
                 Object time = m.get("timeMs");
                 if (time instanceof Number) {
-                    gcMs.getAndAdd(((Number)time).longValue());
+                    gcMs.getAndAdd(((Number) time).longValue());
                 }
             } else if (dp.name.startsWith("memory/") && dp.value instanceof Map) {
-                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Map<Object, Object> m = (Map<Object, Object>) dp.value;
                 Object val = m.get("usedBytes");
                 if (val instanceof Number) {
                     MemMeasure mm = memoryBytes.get(worker);
@@ -1036,10 +1036,10 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                         MemMeasure tmp = memoryBytes.putIfAbsent(worker, mm);
                         mm = tmp == null ? mm : tmp;
                     }
-                    mm.update(((Number)val).longValue());
+                    mm.update(((Number) val).longValue());
                 }
             } else if (dp.name.equals("__receive")) {
-                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Map<Object, Object> m = (Map<Object, Object>) dp.value;
                 Object pop = m.get("population");
                 Object cap = m.get("capacity");
                 if (pop instanceof Number && cap instanceof Number) {
@@ -1057,7 +1057,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                     if (full >= 0.8) {
                         congested.get().put(
                             topologyId + ":" + taskInfo.srcComponentId + ":" + taskInfo.srcTaskId,
-                            "max.spout.pending " + (int)(full * 100) + "%");
+                            "max.spout.pending " + (int) (full * 100) + "%");
                     }
                 }
             }

@@ -98,7 +98,7 @@ public class LocalizedResource extends LocallyCachedBlob {
         Path base = getLocalUserFileCacheDir(localBaseDir, user);
         this.baseDir = shouldUncompress ? getCacheDirForArchives(base) : getCacheDirForFiles(base);
         this.conf = conf;
-        this.symLinksDisabled = (boolean)conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
+        this.symLinksDisabled = (boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
         this.user = user;
         this.fsOps = fsOps;
         versionFilePath = constructVersionFileName(baseDir, key);

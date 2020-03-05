@@ -605,8 +605,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         this.groupMapper = groupMapper;
         this.principalToLocal = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
-        this.supervisorClasspaths = Collections.unmodifiableNavigableMap(
-            Utils.getConfiguredClasspathVersions(conf, EMPTY_STRING_LIST));// We don't use the classpath part of this, so just an empty list
+        // We don't use the classpath part of this, so just an empty list
+        this.supervisorClasspaths = Collections.unmodifiableNavigableMap(Utils.getConfiguredClasspathVersions(conf, EMPTY_STRING_LIST));
         clusterMetricSet = new ClusterSummaryMetricSet(metricsRegistry);
     }
 

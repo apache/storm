@@ -54,8 +54,8 @@ public final class HdfsSecurityUtil {
     public static void login(Map<String, Object> conf, Configuration hdfsConfig) throws IOException {
         //If AutoHDFS is specified, do not attempt to login using keytabs, only kept for backward compatibility.
         if (conf.get(TOPOLOGY_AUTO_CREDENTIALS) == null
-                || (!(((List)conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHDFS.class.getName()))
-                        && !(((List)conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoTGT.class.getName())))) {
+                || (!(((List) conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHDFS.class.getName()))
+                        && !(((List) conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoTGT.class.getName())))) {
             if (UserGroupInformation.isSecurityEnabled()) {
                 // compareAndSet added because of https://issues.apache.org/jira/browse/STORM-1535
                 if (isLoggedIn.compareAndSet(false, true)) {

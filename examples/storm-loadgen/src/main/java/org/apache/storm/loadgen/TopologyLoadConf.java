@@ -88,7 +88,7 @@ public class TopologyLoadConf {
      */
     public static TopologyLoadConf fromConf(File file) throws IOException {
         Yaml yaml = new Yaml(new SafeConstructor());
-        Map<String, Object> yamlConf = (Map<String, Object>)yaml.load(new FileReader(file));
+        Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(new FileReader(file));
         return TopologyLoadConf.fromConf(yamlConf);
     }
 
@@ -100,7 +100,7 @@ public class TopologyLoadConf {
     public static TopologyLoadConf fromConf(Map<String, Object> conf) {
         Map<String, Object> topoConf = null;
         if (conf.containsKey("config")) {
-            topoConf = new HashMap<>((Map<String, Object>)conf.get("config"));
+            topoConf = new HashMap<>((Map<String, Object>) conf.get("config"));
         }
 
         List<LoadCompConf> spouts = new ArrayList<>();
@@ -124,7 +124,7 @@ public class TopologyLoadConf {
             }
         }
 
-        return new TopologyLoadConf((String)conf.get("name"), topoConf, spouts, bolts, streams);
+        return new TopologyLoadConf((String) conf.get("name"), topoConf, spouts, bolts, streams);
     }
 
     /**
@@ -219,7 +219,7 @@ public class TopologyLoadConf {
         if (div > 0) {
             ret = asCharString(div);
         }
-        ret += (char)((int)'a' + remainder);
+        ret += (char) ((int) 'a' + remainder);
         return ret;
     }
 
@@ -383,7 +383,7 @@ public class TopologyLoadConf {
         return new TopologyLoadConf(getUniqueTopoName(), anonymizeTopoConf(topoConf), remappedSpouts, remappedBolts, remappedInputStreams);
     }
 
-    private static Map<String,Object> anonymizeTopoConf(Map<String, Object> topoConf) {
+    private static Map<String, Object> anonymizeTopoConf(Map<String, Object> topoConf) {
         //Only keep important conf keys
         Map<String, Object> ret = new HashMap<>();
         for (Map.Entry<String, Object> entry: topoConf.entrySet()) {
@@ -412,8 +412,8 @@ public class TopologyLoadConf {
             return ret.toString();
         } else {
             List<String> ret = new ArrayList<>();
-            for (String subValue: (Collection<String>)value) {
-                ret.add((String)cleanupChildOpts(subValue));
+            for (String subValue: (Collection<String>) value) {
+                ret.add((String) cleanupChildOpts(subValue));
             }
             return ret.stream().filter((item) -> item != null && !item.isEmpty()).collect(Collectors.toList());
         }

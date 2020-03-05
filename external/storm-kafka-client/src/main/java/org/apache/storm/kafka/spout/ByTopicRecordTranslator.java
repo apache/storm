@@ -33,8 +33,8 @@ import org.apache.storm.tuple.Fields;
  */
 public class ByTopicRecordTranslator<K, V> implements RecordTranslator<K, V> {
     private static final long serialVersionUID = -121699733778988688L;
-    private final RecordTranslator<K,V> defaultTranslator;
-    private final Map<String, RecordTranslator<K,V>> topicToTranslator = new HashMap<>();
+    private final RecordTranslator<K, V> defaultTranslator;
+    private final Map<String, RecordTranslator<K, V>> topicToTranslator = new HashMap<>();
     private final Map<String, Fields> streamToFields = new HashMap<>();
     
     /**
@@ -65,7 +65,7 @@ public class ByTopicRecordTranslator<K, V> implements RecordTranslator<K, V> {
      * @param defaultTranslator a translator that will be used for all topics not explicitly set
      *     with one of the variants of {@link #forTopic(java.lang.String, org.apache.storm.kafka.spout.RecordTranslator) }.
      */
-    public ByTopicRecordTranslator(RecordTranslator<K,V> defaultTranslator) {
+    public ByTopicRecordTranslator(RecordTranslator<K, V> defaultTranslator) {
         this.defaultTranslator = defaultTranslator;
         //This shouldn't throw on a Check, because nothing is configured yet
         cacheNCheckFields(defaultTranslator);
@@ -110,7 +110,7 @@ public class ByTopicRecordTranslator<K, V> implements RecordTranslator<K, V> {
      * @throws IllegalArgumentException if the Fields for the stream this emits to do not match
      *     any already configured Fields for the same stream
      */
-    public ByTopicRecordTranslator<K, V> forTopic(String topic, RecordTranslator<K,V> translator) {
+    public ByTopicRecordTranslator<K, V> forTopic(String topic, RecordTranslator<K, V> translator) {
         if (topicToTranslator.containsKey(topic)) {
             throw new IllegalStateException("Topic " + topic + " is already registered");
         }

@@ -53,7 +53,7 @@ public class HttpForwardingMetricsConsumer implements IMetricsConsumer {
     @Override
     public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) { 
         try {
-            url = new URL((String)registrationArgument);
+            url = new URL((String) registrationArgument);
             this.errorReporter = errorReporter;
             serializer = new KryoValuesSerializer(topoConf);
             topologyId = context.getStormId();

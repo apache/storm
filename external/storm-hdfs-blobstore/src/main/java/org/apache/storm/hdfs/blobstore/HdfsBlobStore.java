@@ -130,7 +130,7 @@ public class HdfsBlobStore extends BlobStore {
     protected void prepareInternal(Map<String, Object> conf, String overrideBase, Configuration hadoopConf) {
         this.conf = conf;
         if (overrideBase == null) {
-            overrideBase = (String)conf.get(Config.BLOBSTORE_DIR);
+            overrideBase = (String) conf.get(Config.BLOBSTORE_DIR);
         }
         if (overrideBase == null) {
             throw new RuntimeException("You must specify a blobstore directory for HDFS to use!");
@@ -183,7 +183,7 @@ public class HdfsBlobStore extends BlobStore {
     public AtomicOutputStream createBlob(String key, SettableBlobMeta meta, Subject who)
             throws AuthorizationException, KeyAlreadyExistsException {
         if (meta.get_replication_factor() <= 0) {
-            meta.set_replication_factor((int)conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
+            meta.set_replication_factor((int) conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
         }
         who = checkAndGetSubject(who);
         validateKey(key);
@@ -296,7 +296,7 @@ public class HdfsBlobStore extends BlobStore {
     public void setBlobMeta(String key, SettableBlobMeta meta, Subject who)
             throws AuthorizationException, KeyNotFoundException {
         if (meta.get_replication_factor() <= 0) {
-            meta.set_replication_factor((int)conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
+            meta.set_replication_factor((int) conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
         }
         who = checkAndGetSubject(who);
         validateKey(key);

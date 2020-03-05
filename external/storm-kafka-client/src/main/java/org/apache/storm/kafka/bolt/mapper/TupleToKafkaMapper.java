@@ -26,7 +26,7 @@ import org.apache.storm.tuple.Tuple;
  * @param <K> type of key.
  * @param <V> type of value.
  */
-public interface TupleToKafkaMapper<K,V> extends Serializable {
+public interface TupleToKafkaMapper<K, V> extends Serializable {
     
     K getKeyFromTuple(Tuple tuple);
     
