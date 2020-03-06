@@ -28,7 +28,9 @@ public class LogReporter implements IReporter {
 
     @Override
     public void reportBlacklist(String supervisor, List<Map<String, Set<Integer>>> toleranceBuffer) {
-        LOG.warn("add supervisor {}  to blacklist. The bad slot history of supervisors is : {}",
-                 supervisor, toleranceBuffer);
+        LOG.warn("Added supervisor {} to blacklist.", supervisor);
+        if (toleranceBuffer != null) {
+            LOG.info("The bad slot history of supervisor {} is : {}", supervisor, toleranceBuffer);
+        }
     }
 }

@@ -13,10 +13,12 @@
 package org.apache.storm.utils;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Expires keys that have not been updated in the configured number of seconds. The algorithm used will take between expirationSecs and
@@ -82,6 +84,37 @@ public class RotatingMap<K, V> {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns the value to which the specified key is mapped, or
+     * {@code defaultValue} if this map contains no mapping for the key.
+     *
+     * @param key the key whose associated value is to be returned
+     * @param defaultValue the default mapping of the key
+     * @return the value to which the specified key is mapped, or
+     * {@code defaultValue} if this map contains no mapping for the key
+     */
+    public V getOrDefault(K key, V defaultValue) {
+        for (HashMap<K, V> bucket : buckets) {
+            if (bucket.containsKey(key)) {
+                return bucket.get(key);
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Returns a {@link Set} view of the keys contained in this map.
+     *
+     * @return a set view of the keys contained in this map
+     */
+    public Set<K> keyset() {
+        Set<K> keys = new HashSet<>();
+        for (HashMap<K, V> bucket : buckets) {
+            keys.addAll(bucket.keySet());
+        }
+        return keys;
     }
 
     public void put(K key, V value) {

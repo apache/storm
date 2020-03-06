@@ -27,6 +27,7 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.generated.SupervisorAssignments;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.SupervisorClient;
@@ -94,9 +95,9 @@ public class AssignmentDistributionService implements Closeable {
      * @param conf config.
      * @return an instance of {@link AssignmentDistributionService}
      */
-    public static AssignmentDistributionService getInstance(Map conf) {
+    public static AssignmentDistributionService getInstance(Map conf, IScheduler scheduler) {
         AssignmentDistributionService service = new AssignmentDistributionService();
-        service.prepare(conf);
+        service.prepare(conf, scheduler);
         return service;
     }
 
@@ -105,7 +106,7 @@ public class AssignmentDistributionService implements Closeable {
      *
      * @param conf config
      */
-    public void prepare(Map conf) {
+    public void prepare(Map conf, IScheduler scheduler) {
         this.conf = conf;
         this.random = new Random(47);
 
@@ -121,7 +122,7 @@ public class AssignmentDistributionService implements Closeable {
         this.active = true;
         //start the threads
         for (int i = 0; i < threadsNum; i++) {
-            this.service.submit(new DistributeTask(this, i));
+            this.service.submit(new DistributeTask(this, i, scheduler));
         }
         // for local cluster
         localSupervisors = new HashMap<>();
@@ -260,10 +261,12 @@ public class AssignmentDistributionService implements Closeable {
     static class DistributeTask implements Runnable {
         private AssignmentDistributionService service;
         private Integer queueIndex;
+        private final IScheduler scheduler;
 
-        DistributeTask(AssignmentDistributionService service, Integer index) {
+        DistributeTask(AssignmentDistributionService service, Integer index, IScheduler scheduler) {
             this.service = service;
             this.queueIndex = index;
+            this.scheduler = scheduler;
         }
 
         @Override
@@ -299,9 +302,11 @@ public class AssignmentDistributionService implements Closeable {
                                                                                     assignments.getHost(), assignments.getServerPort())) {
                     try {
                         client.getIface().sendSupervisorAssignments(assignments.getAssignments());
+                        this.scheduler.nodeAssignmentSent(assignments.getNode(), true);
                     } catch (Exception e) {
                         assignments.getMetricsRegistry().getMeter(Constants.NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS).mark();
                         LOG.error("Exception when trying to send assignments to node {}: {}", assignments.getNode(), e.getMessage());
+                        this.scheduler.nodeAssignmentSent(assignments.getNode(), false);
                     }
                 } catch (Throwable e) {
                     //just ignore any error/exception.

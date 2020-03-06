@@ -44,4 +44,14 @@ public interface IScheduler {
      */
     default void cleanup() {
     }
+
+    /**
+     * Provide feedback to the scheduler if assignments were sent successfully or not to a given node.  This
+     * information can be used for blacklisting.
+     *
+     *@param node the node that assignments were sent to.
+     *@param successful indicate if the assignment was sent successfully.
+     */
+    default void nodeAssignmentSent(String node, boolean successful) {
+    }
 }

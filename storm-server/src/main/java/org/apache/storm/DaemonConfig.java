@@ -115,6 +115,14 @@ public class DaemonConfig implements Validated {
     public static final String BLACKLIST_SCHEDULER_TOLERANCE_COUNT = "blacklist.scheduler.tolerance.count";
 
     /**
+     * The number of hit count that will trigger blacklist for send assignment failures to a supervisor.  0 indicates
+     * no blacklisting for this is enabled.
+     */
+    @IsInteger
+    public static final String BLACKLIST_SCHEDULER_ASSIGNMENT_FAILURE_TOLERANCE_COUNT =
+            "blacklist.scheduler.assignment.failure.tolerance.count";
+
+    /**
      * The number of seconds that the blacklisted slots or supervisor will be resumed.
      */
     @IsPositiveNumber

@@ -33,6 +33,8 @@ import org.apache.storm.shade.com.google.common.collect.EvictingQueue;
 import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.RotatingMap;
+import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +43,9 @@ public class BlacklistScheduler implements IScheduler {
     public static final int DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME = 1800;
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT = 3;
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME = 300;
+    public static final int DEFAULT_BLACKLIST_SCHEDULER_ASSIGNMENT_FAILURE_TOLERANCE_COUNT = 0;
     private static final Logger LOG = LoggerFactory.getLogger(BlacklistScheduler.class);
+    private static final int ASSIGNMENT_ROTATION_INTERVAL_SECONDS = 3600;
     private final IScheduler underlyingScheduler;
     private final StormMetricsRegistry metricsRegistry;
     protected int toleranceTime;
@@ -57,10 +61,14 @@ public class BlacklistScheduler implements IScheduler {
     protected volatile Set<String> blacklistedSupervisorIds;     // supervisor ids
     private boolean blacklistOnBadSlots;
     private Map<String, Object> conf;
+    private RotatingMap<String, Integer> failedAssignmentNodeCounts;  // tracks repeated counts for failed assignment calls for nodes
+    private long lastAssignmentRotationSecs = Time.currentTimeSecs();
+    private int failedAssignmentToleranceCount;
 
     public BlacklistScheduler(IScheduler underlyingScheduler, StormMetricsRegistry metricsRegistry) {
         this.underlyingScheduler = underlyingScheduler;
         this.metricsRegistry = metricsRegistry;
+        this.failedAssignmentNodeCounts = new RotatingMap<>(null);
     }
 
     @Override
@@ -73,6 +81,9 @@ public class BlacklistScheduler implements IScheduler {
                                             DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME);
         toleranceCount = ObjectReader.getInt(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT),
                                              DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
+        failedAssignmentToleranceCount = ObjectReader.getInt(this.conf.get(
+                DaemonConfig.BLACKLIST_SCHEDULER_ASSIGNMENT_FAILURE_TOLERANCE_COUNT),
+                DEFAULT_BLACKLIST_SCHEDULER_ASSIGNMENT_FAILURE_TOLERANCE_COUNT);
         resumeTime = ObjectReader.getInt(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME),
                                          DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
 
@@ -112,11 +123,13 @@ public class BlacklistScheduler implements IScheduler {
         LOG.debug("AvailableSlots: {}", cluster.getAvailableSlots());
         LOG.debug("UsedSlots: {}", cluster.getUsedSlots());
 
-        Map<String, SupervisorDetails> supervisors = cluster.getSupervisors();
         blacklistStrategy.resumeFromBlacklist();
-        badSupervisors(supervisors);
+
+        Map<String, SupervisorDetails> supervisors = cluster.getSupervisors();
+        determineBadSupervisorsFromHeartbeating(supervisors);
+        Map<String, Integer> nodeAssignmentFailures = getNodeAssignmentFailures();
         // this step also frees up some bad supervisors to greylist due to resource shortage
-        blacklistedSupervisorIds = refreshBlacklistedSupervisorIds(cluster, topologies);
+        blacklistedSupervisorIds = refreshBlacklistedSupervisorIds(cluster, nodeAssignmentFailures);
         Set<String> blacklistHosts = getBlacklistHosts(cluster, blacklistedSupervisorIds);
         cluster.setBlacklistedHosts(blacklistHosts);
         removeLongTimeDisappearFromCache();
@@ -129,7 +142,34 @@ public class BlacklistScheduler implements IScheduler {
         return underlyingScheduler.config();
     }
 
-    private void badSupervisors(Map<String, SupervisorDetails> supervisors) {
+    private Map<String, Integer> getNodeAssignmentFailures() {
+        Map<String, Integer> nodeFailures = new HashMap<>();
+        if (failedAssignmentToleranceCount <= 0) {
+            return nodeFailures;
+        }
+
+        synchronized (failedAssignmentNodeCounts) {
+            // rotate out old assignment failures periodically to prevent tracking supervisors that are
+            // no longer in rotation or could have been fixed and added back in rotation.
+            if (Time.currentTimeSecs() > lastAssignmentRotationSecs + ASSIGNMENT_ROTATION_INTERVAL_SECONDS) {
+                failedAssignmentNodeCounts.rotate();
+                lastAssignmentRotationSecs = Time.currentTimeSecs();
+            }
+            Set<String> keys = failedAssignmentNodeCounts.keyset();
+            for (String node : keys) {
+                int failures = failedAssignmentNodeCounts.getOrDefault(node, 0);
+                nodeFailures.put(node, failures);
+                if (failures >= failedAssignmentToleranceCount) {
+                    // if we're past the tolerance for this node, we're going to blacklist it.  Clear out the failures so
+                    // we don't re-add it to the blacklist immediately once the node comes back into rotation.
+                    failedAssignmentNodeCounts.remove(node);
+                }
+            }
+        }
+        return nodeFailures;
+    }
+
+    private void determineBadSupervisorsFromHeartbeating(Map<String, SupervisorDetails> supervisors) {
         Set<String> cachedSupervisorsKeySet = cachedSupervisors.keySet();
         Set<String> supervisorsKeySet = supervisors.keySet();
 
@@ -170,9 +210,9 @@ public class BlacklistScheduler implements IScheduler {
         return badSlots;
     }
 
-    private Set<String> refreshBlacklistedSupervisorIds(Cluster cluster, Topologies topologies) {
+    private Set<String> refreshBlacklistedSupervisorIds(Cluster cluster, Map<String, Integer> nodeAssignmentFailures) {
         Set<String> blacklistedSupervisors = blacklistStrategy.getBlacklist(new ArrayList<>(badSupervisorsToleranceSlidingWindow),
-                cluster, topologies);
+                cluster, nodeAssignmentFailures);
         LOG.info("Supervisors {} are blacklisted.", blacklistedSupervisors);
         return blacklistedSupervisors;
     }
@@ -265,5 +305,22 @@ public class BlacklistScheduler implements IScheduler {
 
     public Set<String> getBlacklistSupervisorIds() {
         return Collections.unmodifiableSet(blacklistedSupervisorIds);
+    }
+
+    @Override
+    public void nodeAssignmentSent(String node, boolean successful) {
+        if (failedAssignmentToleranceCount <= 0) {
+            // no need to track (and cause synchronization) if we're not blacklisting for this
+            return;
+        }
+
+        synchronized (failedAssignmentNodeCounts) {
+            if (successful) {
+                failedAssignmentNodeCounts.remove(node);
+            } else {
+                int failureCount = failedAssignmentNodeCounts.getOrDefault(node, 0) + 1;
+                failedAssignmentNodeCounts.put(node, failureCount);
+            }
+        }
     }
 }

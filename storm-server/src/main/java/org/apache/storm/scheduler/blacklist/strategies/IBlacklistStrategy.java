@@ -30,12 +30,11 @@ public interface IBlacklistStrategy {
      *       need to develop a new scheduling logic. e.g. supervisors information, available slots, current
      *       assignments for all the topologies etc. User can set the new assignment for topologies using
      *       cluster.setAssignmentById()`
-     * @param topologies all the topologies in the cluster, some of them need schedule. Topologies object here
-     *       only contain static information about topologies. Information like assignments, slots are all in
-     *       the `cluster` object.
+     * @param nodeAssignmentFailures count for supervisor nodes for repeated failures to get assignments
      * @return blacklisted supervisors' id set
      */
-    Set<String> getBlacklist(List<Map<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow, Cluster cluster, Topologies topologies);
+    Set<String> getBlacklist(List<Map<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow, Cluster cluster,
+                             Map<String, Integer> nodeAssignmentFailures);
 
     /**
      * resume supervisors form blacklist. Blacklist is just a temporary list for supervisors,

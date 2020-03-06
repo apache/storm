@@ -24,6 +24,7 @@ import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.blacklist.BlacklistScheduler;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.reporters.LogReporter;
 import org.apache.storm.utils.ObjectReader;
@@ -34,13 +35,11 @@ import org.slf4j.LoggerFactory;
  * The default strategy used for blacklisting hosts.
  */
 public class DefaultBlacklistStrategy implements IBlacklistStrategy {
-
-    public static final int DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME = 1800;
-    public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT = 3;
     private static final Logger LOG = LoggerFactory.getLogger(DefaultBlacklistStrategy.class);
     private IReporter reporter;
 
     private int toleranceCount;
+    private int failedAssignmentToleranceCount;
     private int resumeTime;
     private int nimbusMonitorFreqSecs;
 
@@ -49,8 +48,12 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
     @Override
     public void prepare(Map<String, Object> conf) {
         toleranceCount = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT),
-                                             DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
-        resumeTime = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME), DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
+                BlacklistScheduler.DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
+        failedAssignmentToleranceCount = ObjectReader.getInt(conf.get(
+                DaemonConfig.BLACKLIST_SCHEDULER_ASSIGNMENT_FAILURE_TOLERANCE_COUNT),
+                BlacklistScheduler.DEFAULT_BLACKLIST_SCHEDULER_ASSIGNMENT_FAILURE_TOLERANCE_COUNT);
+        resumeTime = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME),
+                BlacklistScheduler.DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
 
         String reporterClassName = ObjectReader.getString(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_REPORTER),
                                                           LogReporter.class.getName());
@@ -61,7 +64,25 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
     }
 
     @Override
-    public Set<String> getBlacklist(List<Map<String, Set<Integer>>> supervisorsWithFailures, Cluster cluster, Topologies topologies) {
+    public Set<String> getBlacklist(List<Map<String, Set<Integer>>> supervisorsWithFailures, Cluster cluster,
+                                    Map<String, Integer> nodeAssignmentFailures) {
+        blacklistHeartbeatFailures(supervisorsWithFailures);
+        blacklistAssignmentFailures(nodeAssignmentFailures);
+
+        Set<String> toRelease = releaseBlacklistWhenNeeded(cluster, new ArrayList<>(blacklist.keySet()));
+        // After having computed the final blacklist,
+        // the nodes which are released due to resource shortage will be put to the "greylist".
+        if (toRelease != null) {
+            LOG.debug("Releasing {} nodes because of low resources", toRelease.size());
+            cluster.setGreyListedSupervisors(toRelease);
+            for (String key : toRelease) {
+                blacklist.remove(key);
+            }
+        }
+        return blacklist.keySet();
+    }
+
+    private void blacklistHeartbeatFailures(List<Map<String, Set<Integer>>> supervisorsWithFailures) {
         Map<String, Integer> countMap = new HashMap<>();
 
         for (Map<String, Set<Integer>> item : supervisorsWithFailures) {
@@ -76,25 +97,30 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
             String supervisor = entry.getKey();
             int count = entry.getValue();
             if (count >= toleranceCount) {
-                if (!blacklist.containsKey(supervisor)) { // if not in blacklist then add it and set the resume time according to config
-                    LOG.debug("Added supervisor {} to blacklist", supervisor);
-                    LOG.debug("supervisorsWithFailures : {}", supervisorsWithFailures);
-                    reporter.reportBlacklist(supervisor, supervisorsWithFailures);
-                    blacklist.put(supervisor, resumeTime / nimbusMonitorFreqSecs);
-                }
+                addNodeToBlacklist(supervisor, supervisorsWithFailures);
             }
         }
-        Set<String> toRelease = releaseBlacklistWhenNeeded(cluster, new ArrayList<>(blacklist.keySet()));
-        // After having computed the final blacklist,
-        // the nodes which are released due to resource shortage will be put to the "greylist".
-        if (toRelease != null) {
-            LOG.debug("Releasing {} nodes because of low resources", toRelease.size());
-            cluster.setGreyListedSupervisors(toRelease);
-            for (String key : toRelease) {
-                blacklist.remove(key);
+    }
+
+    private void blacklistAssignmentFailures(Map<String, Integer> nodeAssignmentFailures) {
+        if (failedAssignmentToleranceCount <= 0) {
+            return;
+        }
+        for (String node : nodeAssignmentFailures.keySet()) {
+            int failureCount = nodeAssignmentFailures.getOrDefault(node, 0);
+            if (failureCount >= failedAssignmentToleranceCount) {
+                addNodeToBlacklist(node, null);
             }
         }
-        return blacklist.keySet();
+    }
+
+    private void addNodeToBlacklist(String node, List<Map<String, Set<Integer>>> supervisorsWithFailures) {
+        if (!blacklist.containsKey(node)) { // if not in blacklist then add it and set the resume time according to config
+            LOG.debug("Added supervisor {} to blacklist", node);
+            LOG.debug("supervisorsWithFailures : {}", supervisorsWithFailures);
+            reporter.reportBlacklist(node, supervisorsWithFailures);
+            blacklist.put(node, resumeTime / nimbusMonitorFreqSecs);
+        }
     }
 
     @Override
