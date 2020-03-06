@@ -113,7 +113,7 @@ public class LoadCompConf {
      * @return a copy of this with the parallelism adjusted.
      */
     public LoadCompConf scaleParallel(double v) {
-        return setParallel(Math.max(1, (int)Math.ceil(parallelism * v)));
+        return setParallel(Math.max(1, (int) Math.ceil(parallelism * v)));
     }
 
     /**
@@ -123,7 +123,7 @@ public class LoadCompConf {
      */
     public LoadCompConf setParallel(int newParallelism) {
         //We need to adjust the throughput accordingly (so that it stays the same in aggregate)
-        double throughputAdjustment = ((double)parallelism) / newParallelism;
+        double throughputAdjustment = ((double) parallelism) / newParallelism;
         return new LoadCompConf(id, newParallelism, streams, cpuLoad, memoryLoad, slp).scaleThroughput(throughputAdjustment);
     }
 

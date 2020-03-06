@@ -81,8 +81,8 @@ public class UploadCredentials {
                     LOG.info("Using topology conf from {} as basis for getting new creds", topologyId);
 
                     Map<String, Object> commandLine = Utils.readCommandLineOpts();
-                    List<String> clCreds = (List<String>)commandLine.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
-                    List<String> topoCreds = (List<String>)topologyConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+                    List<String> clCreds = (List<String>) commandLine.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+                    List<String> topoCreds = (List<String>) topologyConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
                     
                     if (clCreds != null) {
                         Set<String> extra = new HashSet<>(clCreds);

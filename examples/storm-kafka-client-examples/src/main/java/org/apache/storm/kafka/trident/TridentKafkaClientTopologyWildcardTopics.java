@@ -33,7 +33,7 @@ public class TridentKafkaClientTopologyWildcardTopics extends TridentKafkaClient
     private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("test-trident(-1)?");
 
     @Override
-    protected KafkaTridentSpoutConfig<String,String> newKafkaSpoutConfig(String bootstrapServers) {
+    protected KafkaTridentSpoutConfig<String, String> newKafkaSpoutConfig(String bootstrapServers) {
         return KafkaTridentSpoutConfig.builder(bootstrapServers, TOPIC_WILDCARD_PATTERN)
                 .setProp(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 200)
                 .setRecordTranslator((r) -> new Values(r.value()), new Fields("str"))

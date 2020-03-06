@@ -51,7 +51,7 @@ public final class RocketMqUtils {
         Scheme scheme;
         try {
             Class clazz = Class.forName(schemeString);
-            scheme = (Scheme)clazz.newInstance();
+            scheme = (Scheme) clazz.newInstance();
         } catch (Exception e) {
             throw new IllegalArgumentException("Cannot create Scheme for " + schemeString
                     + " due to " + e.getMessage());
@@ -71,7 +71,7 @@ public final class RocketMqUtils {
         ByteBuffer body = ByteBuffer.wrap(msg.getBody());
         if (rawKey != null && scheme instanceof KeyValueScheme) {
             ByteBuffer key = ByteBuffer.wrap(rawKey.getBytes(StandardCharsets.UTF_8));
-            tup = ((KeyValueScheme)scheme).deserializeKeyAndValue(key, body);
+            tup = ((KeyValueScheme) scheme).deserializeKeyAndValue(key, body);
         } else {
             tup = scheme.deserialize(body);
         }

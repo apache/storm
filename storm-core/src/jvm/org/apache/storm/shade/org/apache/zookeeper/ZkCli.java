@@ -37,7 +37,7 @@ public class ZkCli implements AdminCommands.AdminCommand {
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         int port = ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_PORT));
         String root = (String) conf.get(Config.STORM_ZOOKEEPER_ROOT);
-        Map<String, Object> cl = CLI.opt("s","server", null, CLI.AS_STRING, CLI.LAST_WINS)
+        Map<String, Object> cl = CLI.opt("s", "server", null, CLI.AS_STRING, CLI.LAST_WINS)
             .opt("t", "time-out", ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
                 CLI.AS_INT, CLI.LAST_WINS)
             .boolOpt("w", "write")
@@ -46,12 +46,12 @@ public class ZkCli implements AdminCommands.AdminCommand {
             .boolOpt("h", "help")
             .parse(args);
 
-        if ((Boolean)cl.get("h")) {
+        if ((Boolean) cl.get("h")) {
             printCliHelp(command, System.out);
             return;
         }
 
-        String jaas = (String)cl.get("j");
+        String jaas = (String) cl.get("j");
         if (jaas != null && !jaas.isEmpty()) {
             System.setProperty("java.security.auth.login.config", jaas);
         }
@@ -67,14 +67,14 @@ public class ZkCli implements AdminCommands.AdminCommand {
                 isFirst = false;
                 sb.append(zkServer).append(':').append(port);
             }
-            if (!(Boolean)cl.get("n")) {
+            if (!(Boolean) cl.get("n")) {
                 sb.append(root);
             }
             connectionString = sb.toString();
         }
 
-        boolean readOnly = !(Boolean)cl.get("w");
-        int timeout = (Integer)cl.get("t");
+        boolean readOnly = !(Boolean) cl.get("w");
+        int timeout = (Integer) cl.get("t");
         ZooKeeper zk;
         if (readOnly) {
             zk = new ReadOnlyZookeeper(connectionString, timeout, watchedEvent -> { });

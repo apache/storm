@@ -67,7 +67,7 @@ public class ReqContextFilter implements Filter {
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        handle((HttpServletRequest)request, (HttpServletResponse)response, chain);
+        handle((HttpServletRequest) request, (HttpServletResponse) response, chain);
     }
 
     /**

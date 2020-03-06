@@ -1086,7 +1086,7 @@ public class UIHelpers {
      * @return getSupervisorPageInfo
      */
     public static Map<String, Object> getSupervisorPageInfo(
-            SupervisorPageInfo supervisorPageInfo, Map<String,Object> config) {
+            SupervisorPageInfo supervisorPageInfo, Map<String, Object> config) {
         Map<String, Object> result = new HashMap<>();
         result.put("workers", getWorkerSummaries(supervisorPageInfo, config));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
@@ -1103,7 +1103,7 @@ public class UIHelpers {
      * @return getAllTopologiesSummary
      */
     public static Map<String, Object> getAllTopologiesSummary(
-            List<TopologySummary> topologies, Map<String,Object> config) {
+            List<TopologySummary> topologies, Map<String, Object> config) {
         Map<String, Object> result = new HashMap();
         result.put("topologies", getTopologiesMap(null, topologies));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
@@ -1169,7 +1169,7 @@ public class UIHelpers {
      * @param windowToTransferred windowToTransferred
      * @return getStatDisplayMapLong
      */
-    private static Map<String, Long> getStatDisplayMapLong(Map<String,Long> windowToTransferred) {
+    private static Map<String, Long> getStatDisplayMapLong(Map<String, Long> windowToTransferred) {
         Map<String, Long> result = new HashMap();
         for (Map.Entry<String, Long> entry : windowToTransferred.entrySet()) {
             result.put(entry.getKey(), entry.getValue());
@@ -1557,7 +1557,7 @@ public class UIHelpers {
      * @param config config
      * @return unpackTopologyInfo
      */
-    private static Map<String,Object> unpackTopologyInfo(TopologyPageInfo topologyPageInfo, String window, Map<String,Object> config) {
+    private static Map<String, Object> unpackTopologyInfo(TopologyPageInfo topologyPageInfo, String window, Map<String, Object> config) {
         Map<String, Object> result = new HashMap();
         result.put("id", topologyPageInfo.get_id());
         result.put("encodedId", Utils.urlEncodeUtf8(topologyPageInfo.get_id()));
@@ -1665,8 +1665,8 @@ public class UIHelpers {
      * @param config config
      * @return getTopologyLag.
      */
-    public static Map<String, Map<String, Object>> getTopologyLag(StormTopology userTopology, Map<String,Object> config) {
-        Boolean disableLagMonitoring = (Boolean)(config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING));
+    public static Map<String, Map<String, Object>> getTopologyLag(StormTopology userTopology, Map<String, Object> config) {
+        Boolean disableLagMonitoring = (Boolean) (config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING));
         return disableLagMonitoring ? Collections.EMPTY_MAP : TopologySpoutLag.lag(userTopology, config);
     }
 
@@ -1731,11 +1731,11 @@ public class UIHelpers {
      * @param stats stats
      * @return sanitizeTransferredStats
      */
-    public static  Map<String, Map<String,Long>> sanitizeTransferredStats(Map<String, Map<String,Long>> stats) {
-        Map<String, Map<String,Long>> result = new HashMap();
-        for (Map.Entry<String, Map<String,Long>> entry : stats.entrySet()) {
-            Map<String,Long> temp = new HashMap();
-            for (Map.Entry<String,Long> innerEntry : entry.getValue().entrySet()) {
+    public static  Map<String, Map<String, Long>> sanitizeTransferredStats(Map<String, Map<String, Long>> stats) {
+        Map<String, Map<String, Long>> result = new HashMap();
+        for (Map.Entry<String, Map<String, Long>> entry : stats.entrySet()) {
+            Map<String, Long> temp = new HashMap();
+            for (Map.Entry<String, Long> innerEntry : entry.getValue().entrySet()) {
                 temp.put(sanitizeStreamName(innerEntry.getKey()), innerEntry.getValue());
             }
             result.put(entry.getKey(), temp);
@@ -1767,7 +1767,7 @@ public class UIHelpers {
      * @param entryInput entryInput
      * @return getInputMap
      */
-    public static Map<String, Object> getInputMap(Map.Entry<GlobalStreamId,Grouping> entryInput) {
+    public static Map<String, Object> getInputMap(Map.Entry<GlobalStreamId, Grouping> entryInput) {
         Map<String, Object> result = new HashMap();
         result.put(":component", entryInput.getKey().get_componentId());
         result.put(":stream", entryInput.getKey().get_streamId());
@@ -2308,7 +2308,7 @@ public class UIHelpers {
      * @throws TException TException
      */
     public static Map<String, Object> getTopologyProfilingDump(Nimbus.Iface client, String id, String hostPort,
-                                                               Map<String,Object> config) throws TException {
+                                                               Map<String, Object> config) throws TException {
         setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(),
                 config, ProfileAction.JPROFILE_DUMP
@@ -2342,7 +2342,7 @@ public class UIHelpers {
      */
     public static Map<String, Object> getTopologyProfilingRestartWorker(Nimbus.Iface client,
                                                                         String id, String hostPort,
-                                                                        Map<String,Object> config) throws TException {
+                                                                        Map<String, Object> config) throws TException {
         setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JVM_RESTART
         );
@@ -2362,7 +2362,7 @@ public class UIHelpers {
      * @throws TException TException
      */
     public static Map<String, Object> getTopologyProfilingDumpHeap(Nimbus.Iface client, String id, String hostPort,
-                                                                   Map<String,Object> config) throws TException {
+                                                                   Map<String, Object> config) throws TException {
         setTopologyProfilingAction(client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JMAP_DUMP);
         Map<String, Object> result = new HashMap();
         result.put("status", "ok");
@@ -2407,7 +2407,7 @@ public class UIHelpers {
      * @param config config
      * @return getNimbusSummary
      */
-    public static Map<String, Object> getNimbusSummary(ClusterSummary clusterInfo, Map<String,Object> config) {
+    public static Map<String, Object> getNimbusSummary(ClusterSummary clusterInfo, Map<String, Object> config) {
         List<NimbusSummary> nimbusSummaries = clusterInfo.get_nimbuses();
         List<String> nimbusSeeds = new ArrayList();
         for (String nimbusHost : (List<String>) config.get(Config.NIMBUS_SEEDS)) {

@@ -25,7 +25,7 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import org.apache.storm.tuple.Fields;
 
-public class KafkaTridentSpoutTransactional<K,V> implements IPartitionedTridentSpout<List<Map<String, Object>>,
+public class KafkaTridentSpoutTransactional<K, V> implements IPartitionedTridentSpout<List<Map<String, Object>>,
         KafkaTridentSpoutTopicPartition, Map<String, Object>>,
         Serializable {
     private static final long serialVersionUID = 1L;

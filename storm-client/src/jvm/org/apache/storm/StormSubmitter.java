@@ -78,7 +78,7 @@ public class StormSubmitter {
         // Is the topology ZooKeeper authentication configuration unset?
         if (!conf.containsKey(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD)
                 || conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) == null
-                || !validateZKDigestPayload((String)conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
+                || !validateZKDigestPayload((String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
             secretPayload = generateZookeeperDigestSecretPayload();
             LOG.info("Generated ZooKeeper secret payload for MD5-digest: " + secretPayload);
         }
@@ -110,7 +110,7 @@ public class StormSubmitter {
      * @throws NotAliveException        if the topology is not alive
      * @throws InvalidTopologyException if any other error happens
      */
-    public static void pushCredentials(String name, Map<String,Object> topoConf, Map<String,String> credentials)
+    public static void pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials)
         throws AuthorizationException, NotAliveException, InvalidTopologyException {
         pushCredentials(name, topoConf, credentials, null);
     }

@@ -72,7 +72,7 @@ public class HeartbeatCache {
             isTimedOut = Time.deltaSecs(getNimbusTimeSecs()) >= timeout;
         }
 
-        public synchronized void updateFromHb(Integer timeout, Map<String,Object> newBeat) {
+        public synchronized void updateFromHb(Integer timeout, Map<String, Object> newBeat) {
             if (newBeat != null) {
                 Integer newReportedTime = (Integer) newBeat.getOrDefault(ClientStatsUtil.TIME_SECS, 0);
                 if (!newReportedTime.equals(executorReportedTimeSecs)) {
@@ -148,7 +148,7 @@ public class HeartbeatCache {
      * @param allExecutors the executors.
      * @param timeout the timeout.
      */
-    public void updateFromZkHeartbeat(String topoId, Map<List<Integer>, Map<String,Object>> executorBeats,
+    public void updateFromZkHeartbeat(String topoId, Map<List<Integer>, Map<String, Object>> executorBeats,
                                       Set<List<Integer>> allExecutors, Integer timeout) {
         Map<List<Integer>, ExecutorCache> topoCache = cache.computeIfAbsent(topoId, MAKE_MAP);
         if (executorBeats == null) {

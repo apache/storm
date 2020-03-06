@@ -49,9 +49,9 @@ public class DirectoryCleaner {
     // used to recognize the pattern of active log files, we may remove the "current" from this list
     private static final Pattern ACTIVE_LOG_PATTERN = Pattern.compile(".*\\.(log|err|out|current|yaml|pid|metrics)$");
     // used to recognize the pattern of some meta files in a worker log directory
-    private static final Pattern META_LOG_PATTERN = Pattern.compile(".*\\.(yaml|pid)$");// max number of files to delete for every round
+    private static final Pattern META_LOG_PATTERN = Pattern.compile(".*\\.(yaml|pid)$");
 
-    private static final int PQ_SIZE = 1024;
+    private static final int PQ_SIZE = 1024; // max number of files to delete for every round
     private static final int MAX_ROUNDS = 512; // max rounds of scanning the dirs
     public static final int MAX_NUMBER_OF_FILES_FOR_DIR = 1024;
 

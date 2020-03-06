@@ -56,8 +56,8 @@ public class SpringJmsProvider implements JmsProvider {
      */
     public SpringJmsProvider(String appContextClasspathResource, String connectionFactoryBean, String destinationBean) {
         ApplicationContext context = new ClassPathXmlApplicationContext(appContextClasspathResource);
-        this.connectionFactory = (ConnectionFactory)context.getBean(connectionFactoryBean);
-        this.destination = (Destination)context.getBean(destinationBean);
+        this.connectionFactory = (ConnectionFactory) context.getBean(connectionFactoryBean);
+        this.destination = (Destination) context.getBean(destinationBean);
     }
 
     @Override

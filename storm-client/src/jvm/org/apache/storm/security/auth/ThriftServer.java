@@ -52,7 +52,7 @@ public class ThriftServer {
     public void stop() {
         server.stop();
         if (transportPlugin instanceof SaslTransportPlugin) {
-            ((SaslTransportPlugin)transportPlugin).close();
+            ((SaslTransportPlugin) transportPlugin).close();
         }
     }
 
