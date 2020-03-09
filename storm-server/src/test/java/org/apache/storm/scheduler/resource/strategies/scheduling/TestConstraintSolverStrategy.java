@@ -164,41 +164,15 @@ public class TestConstraintSolverStrategy {
         } else {
             // constraint and MaxCoLocationCnts are separate - no maxCoLocationCnt implied as 1
             config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
-            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spreads.entrySet().stream().map(e -> Arrays.asList()));
-        }
-    }
-
-    /**
-     * Set Config.TOPOLOGY_RAS_CONSTRAINTS (when consolidated is true) or both
-     * Config.TOPOLOGY_RAS_CONSTRAINTS/Config.TOPOLOGY_SPREAD_COMPONENTS (when consolidated is false).
-     *
-     * When consolidatedConfigFlag when true, use the new more consolidated format to set Config.TOPOLOGY_RAS_CONSTRAINTS.
-     * When false, use the old configuration format for Config.TOPOLOGY_RAS_CONSTRAINTS/TOPOLOGY_SPREAD_COMPONENTS.
-     *
-     * @param constraints List of components, where the first one cannot co-exist with the others in the list
-     * @param spreads List of components that can have only one Executor on a node (i.e. their maxCoLocationCnt = 1)
-     * @param config Configuration to be updated
-     */
-    private void setConstraintConfig(List<List<String>> constraints, List<String> spreads, Map<String, Object> config) {
-        if (consolidatedConfigFlag) {
-            // single configuration for each component
-            Map<String, List<String>> modifiedConstraints = new HashMap<>();
-            for (List<String> constraint: constraints) {
-                if (constraint.size() < 2) {
-                    continue;
+            for (Map.Entry<String, Integer> e: spreads.entrySet()) {
+                if (e.getValue() > 1) {
+                    Assert.fail(String.format("Invalid %s=%d for component=%s, expecting 1 for old-style configuration",
+                            ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                            e.getValue(),
+                            e.getKey()));
                 }
-                String comp = constraint.get(0);
-                List<String> others = constraint.subList(1, constraint.size());
-                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).addAll(others);
             }
-            for (String comp: spreads) {
-                modifiedConstraints.computeIfAbsent(comp, k -> new ArrayList<>()).add("1");
-            }
-            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
-        } else {
-            // constraint and MaxCoLocationCnts are separate - maxCoLocationCnt implied as 1
-            config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
-            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, spreads);
+            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, new ArrayList(spreads.keySet()));
         }
     }
 
@@ -235,7 +209,7 @@ public class TestConstraintSolverStrategy {
         LOG.info("Done scheduling {}...", result);
 
         Assert.assertTrue("Assert scheduling topology success " + result, result.isSuccess());
-        Assert.assertEquals("topo all executors scheduled? " + cluster.getUnassignedExecutors(topo),
+        Assert.assertEquals("Assert no unassigned executors, found unassigned: " + cluster.getUnassignedExecutors(topo),
             0, cluster.getUnassignedExecutors(topo).size());
         Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo, null));
         LOG.info("Slots Used {}", cluster.getAssignmentById(topo.getId()).getSlots());
@@ -302,27 +276,23 @@ public class TestConstraintSolverStrategy {
         Assert.assertEquals("comp-1 incompatible components", expectedSetComp1, constraintConfig.getIncompatibleComponents().get("comp-1"));
         Assert.assertEquals("comp-2 incompatible components", expectedSetComp2, constraintConfig.getIncompatibleComponents().get("comp-2"));
         Assert.assertEquals("comp-3 incompatible components", expectedSetComp3, constraintConfig.getIncompatibleComponents().get("comp-3"));
-        Assert.assertEquals("comp-1 maxNodeCoLocationCnt", (int)2, (int)constraintConfig.getMaxCoLocationCnts().getOrDefault("comp-1", -1));
+        Assert.assertEquals("comp-1 maxNodeCoLocationCnt", 2, (int) constraintConfig.getMaxCoLocationCnts().getOrDefault("comp-1", -1));
         Assert.assertNull("comp-2 maxNodeCoLocationCnt", constraintConfig.getMaxCoLocationCnts().get("comp-2"));
-    }
-
-    @Test
-    public void testConstraintSolverForceBacktrack() {
-        //The best way to force backtracking is to change the heuristic so the components are reversed, so it is hard
-        // to find an answer.
-        ConstraintSolverStrategy cs = new ConstraintSolverStrategy() {
-            @Override
-            public <K extends Comparable<K>, V extends Comparable<V>> NavigableMap<K, V> sortByValues(final Map<K, V> map) {
-                return super.sortByValues(map).descendingMap();
-            }
-        };
-        basicUnitTestWithKillAndRecover(cs, BACKTRACK_BOLT_PARALLEL, 2);
     }
 
     @Test
     public void testConstraintSolverForceBacktrackWithSpreadCoLocation() {
         //The best way to force backtracking is to change the heuristic so the components are reversed, so it is hard
         // to find an answer.
+        if (CO_LOCATION_CNT > 1 && !consolidatedConfigFlag) {
+            LOG.info("INFO: Skipping Test {} with {}={} (required 1), and consolidatedConfigFlag={} (required false)",
+                    "testConstraintSolverForceBacktrackWithSpreadCoLocation",
+                    ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                    CO_LOCATION_CNT,
+                    consolidatedConfigFlag);
+            return;
+        }
+
         ConstraintSolverStrategy cs = new ConstraintSolverStrategy() {
             @Override
             public <K extends Comparable<K>, V extends Comparable<V>> NavigableMap<K, V> sortByValues(final Map<K, V> map) {
@@ -339,6 +309,15 @@ public class TestConstraintSolverStrategy {
 
     @Test
     public void testConstraintSolverWithSpreadCoLocation() {
+        if (CO_LOCATION_CNT > 1 && !consolidatedConfigFlag) {
+            LOG.info("INFO: Skipping Test {} with {}={} (required 1), and consolidatedConfigFlag={} (required false)",
+                    "testConstraintSolverWithSpreadCoLocation",
+                    ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                    CO_LOCATION_CNT,
+                    consolidatedConfigFlag);
+            return;
+        }
+
         basicUnitTestWithKillAndRecover(new ConstraintSolverStrategy(), NORMAL_BOLT_PARALLEL, CO_LOCATION_CNT);
     }
 
@@ -458,8 +437,7 @@ public class TestConstraintSolverStrategy {
 
         List<List<String>> constraints = new LinkedList<>();
         addConstraints("spout-0", "bolt-0", constraints);
-        // commented out unsatisfiable constraint since there are 300 executors and cannot fit on 30 nodes, added as spread
-        // addConstraints("bolt-1", "bolt-1", constraints);
+        addConstraints("bolt-1", "bolt-1", constraints);
         addConstraints("bolt-1", "bolt-2", constraints);
 
         Map<String, Integer> spreads = new HashMap<String, Integer>();
