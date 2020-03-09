@@ -908,13 +908,6 @@ public class ConfigValidation {
         public static final String CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT = "maxNodeCoLocationCnt";
         public static final String CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS = "incompatibleComponents";
 
-        public static class RasConstraint {
-            int maxNodeCoLocationCnt = -1;
-            Set<String> incompatibleComponents = new HashSet<>();
-        }
-
-        public Map<String, RasConstraint> rasConstraints = new HashMap<>(); // parsedConstraints
-
         @Override
         public void validateField(String name, Object o) {
             if (o == null) {
@@ -928,8 +921,6 @@ public class ConfigValidation {
             for (Map.Entry<String, Object> entry1: map1.entrySet()) {
                 String comp1 = entry1.getKey();
                 Object o2 = entry1.getValue();
-                RasConstraint rasConstraint = new RasConstraint();
-                rasConstraints.put(comp1, rasConstraint);
                 if (!(o2 instanceof Map)) {
                     String err = String.format("Field %s, component %s, expecting constraints Map with keys [\"%s\", \"%s\"], in \"%s\"",
                             name, comp1, CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, o);
@@ -942,8 +933,7 @@ public class ConfigValidation {
                     switch (constraintType) {
                         case CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT:
                             try {
-                                int intVal = Integer.parseInt("" + o3);
-                                rasConstraint.maxNodeCoLocationCnt = intVal;
+                                Integer.parseInt("" + o3);
                             } catch (Exception ex) {
                                 String err = String.format("Field %s, component %s, constraint %s should be a number, not \"%s\"",
                                         name, comp1, constraintType, o3);
@@ -953,10 +943,17 @@ public class ConfigValidation {
 
                         case CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS:
                             if (o3 instanceof String) {
-                                rasConstraint.incompatibleComponents.add((String) o3);
+                                break;
                             } else if (o3 instanceof List) {
-                                for (String otherComp : (List<String>) o3) {
-                                    rasConstraint.incompatibleComponents.add(otherComp);
+                                for (Object otherComp : (List) o3) {
+                                    if (otherComp instanceof String) {
+                                        continue;
+                                    }
+                                    String err = String.format(
+                                            "Field %s, component %s, constraintType \"%s\", expecting incompatible component-name, "
+                                                    + "found instance of class \"%s\" value \"%s\"",
+                                            name, comp1, constraintType, o3.getClass().getName(), otherComp);
+                                    throw new IllegalArgumentException(err);
                                 }
                             }
                             break;

@@ -628,6 +628,15 @@ public class TestConfigValidate {
         failCases.add(failCaseMapOfMap);
 
         failCaseMapOfMap = new HashMap<>();
+        failCaseMapOfMap.put("comp1",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp1", 3)},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        failCases.add(failCaseMapOfMap);
+
+        failCaseMapOfMap = new HashMap<>();
         failCaseMapOfMap.put("comp1", Arrays.asList("comp2", "comp3"));
         failCaseMapOfMap.put("comp2", Arrays.asList("comp4", "comp5"));
         failCases.add(failCaseMapOfMap);
