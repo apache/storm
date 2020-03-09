@@ -94,12 +94,8 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                         LOG.warn("Comp: {} declared in constraints is not valid!", comp2);
                         continue;
                     }
-                    if (comp1.equals(comp2)) {
-                        maxCoLocationCnts.put(comp1, 1);
-                    } else {
-                        incompatibleComponents.get(comp1).add(comp2);
-                        incompatibleComponents.get(comp2).add(comp1);
-                    }
+                    incompatibleComponents.get(comp1).add(comp2);
+                    incompatibleComponents.get(comp2).add(comp1);
                 }
             } else {
                 Map<String, Map<String,?>> constraintMap = (Map<String, Map<String,?>>) rasConstraints;
