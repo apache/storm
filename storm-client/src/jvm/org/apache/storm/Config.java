@@ -325,7 +325,7 @@ public class Config extends HashMap<String, Object> {
      * </p>
      *
      * <p>comp-1 cannot exist on same worker as comp-2 or comp-3, and at most "2" comp-1 on same node</p>
-     * <p>comp-2 and comp-4 cannot be on same node (missing comp-1 is implied from comp-1 constraint)</p>
+     * <p>comp-2 and comp-4 cannot be on same worker (missing comp-1 is implied from comp-1 constraint)</p>
      *
      *  <p>
      *      { "comp-1": { "maxNodeCoLocationCnt": 2, "incompatibleComponents": ["comp-2", "comp-3" ] },
