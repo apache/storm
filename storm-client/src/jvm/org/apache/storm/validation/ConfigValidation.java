@@ -917,7 +917,7 @@ public class ConfigValidation {
                 throw new IllegalArgumentException(
                         "Field " + name + " must be an Iterable containing only Map of Maps");
             }
-            Map<String, Object> map1 = (Map<String, Object>)o;
+            Map<String, Object> map1 = (Map<String, Object>) o;
             for (Map.Entry<String, Object> entry1: map1.entrySet()) {
                 String comp1 = entry1.getKey();
                 Object o2 = entry1.getValue();
@@ -926,7 +926,7 @@ public class ConfigValidation {
                             name, comp1, CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, o);
                     throw new IllegalArgumentException(err);
                 }
-                Map<String, Object> map2 = (Map<String, Object>)o2;
+                Map<String, Object> map2 = (Map<String, Object>) o2;
                 for (Map.Entry<String, Object> entry2: map2.entrySet()) {
                     String constraintType = entry2.getKey();
                     Object o3 = entry2.getValue();
