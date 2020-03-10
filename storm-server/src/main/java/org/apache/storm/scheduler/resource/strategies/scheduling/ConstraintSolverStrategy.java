@@ -98,7 +98,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                     incompatibleComponents.get(comp2).add(comp1);
                 }
             } else {
-                Map<String, Map<String,?>> constraintMap = (Map<String, Map<String,?>>) rasConstraints;
+                Map<String, Map<String, ?>> constraintMap = (Map<String, Map<String, ?>>) rasConstraints;
                 constraintMap.forEach((comp1, v) -> {
                     if (comps.contains(comp1)) {
                         // v is a list of other components and an optional number which is a maxCoLocationCnt
@@ -341,7 +341,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         LOG.debug("Scheduling {}", td.getId());
         nodes = RasNodes.getAllNodesFrom(cluster);
         Map<WorkerSlot, Map<String, Integer>> workerCompAssignment = new HashMap<>();
-        Map<RasNode, Map<String,Integer>> nodeCompAssignment = new HashMap<>();
+        Map<RasNode, Map<String, Integer>> nodeCompAssignment = new HashMap<>();
 
         int confMaxStateSearch = ObjectReader.getInt(td.getConf().get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH));
         int daemonMaxStateSearch = ObjectReader.getInt(cluster.getConf().get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH));
