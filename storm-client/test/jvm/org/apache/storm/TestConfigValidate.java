@@ -26,7 +26,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.security.auth.Subject;
+
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.generated.AuthorizationException;
@@ -41,13 +44,15 @@ import org.apache.storm.validation.ConfigValidation.ImpersonationAclUserEntryVal
 import org.apache.storm.validation.ConfigValidation.IntegerValidator;
 import org.apache.storm.validation.ConfigValidation.KryoRegValidator;
 import org.apache.storm.validation.ConfigValidation.ListEntryTypeValidator;
+import org.apache.storm.validation.ConfigValidation.ListOfListOfStringValidator;
 import org.apache.storm.validation.ConfigValidation.NoDuplicateInListValidator;
 import org.apache.storm.validation.ConfigValidation.NotNullValidator;
 import org.apache.storm.validation.ConfigValidation.PositiveNumberValidator;
 import org.apache.storm.validation.ConfigValidation.PowerOf2Validator;
+import org.apache.storm.validation.ConfigValidation.RasConstraintsTypeValidator;
 import org.apache.storm.validation.ConfigValidation.StringValidator;
 import org.apache.storm.validation.ConfigValidation.UserResourcePoolEntryValidator;
-import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsExactlyOneOf;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsImplementationOfClass;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsListEntryCustom;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsListEntryType;
@@ -55,6 +60,8 @@ import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryCustom;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryType;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsNoDuplicateInList;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsString;
+import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -177,7 +184,6 @@ public class TestConfigValidate {
         conf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, Double.MAX_VALUE);
         ConfigValidation.validateFields(conf);
     }
-
 
     @Test
     public void testWorkerChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
@@ -542,6 +548,135 @@ public class TestConfigValidate {
     }
 
     @Test
+    public void testExactlyOneOfCustomAnnotation() {
+        TestConfig config = new TestConfig();
+        Collection<Object> passCases = new LinkedList<Object>();
+        Collection<Object> failCases = new LinkedList<Object>();
+
+        List<Object> passCaseListOfList = new ArrayList<>();
+        passCaseListOfList.add(Arrays.asList("comp1", "comp2"));
+        passCaseListOfList.add(Arrays.asList("comp1", "comp3"));
+        passCaseListOfList.add(Arrays.asList("comp2", "comp4"));
+        passCaseListOfList.add(Arrays.asList("comp2", "comp5"));
+
+        Map<Object, Object> passCaseMapOfMap = new HashMap<>();
+        passCaseMapOfMap.put("comp1",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp2", "comp3")},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        passCaseMapOfMap.put("comp2",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        passCases.add(passCaseMapOfMap);
+
+        passCaseMapOfMap = new HashMap<>();
+        passCaseMapOfMap.put("comp1",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp2", "comp3")},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        passCaseMapOfMap.put("comp2",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        passCases.add(passCaseMapOfMap);
+
+        passCaseMapOfMap = new HashMap<>();
+        passCaseMapOfMap.put("comp1",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, "comp2"},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        passCaseMapOfMap.put("comp2",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, "comp4"},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        passCases.add(passCaseMapOfMap);
+
+        for (Object value : passCases) {
+            config.put(TestConfig.TEST_MAP_CONFIG_9, value);
+            ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
+        }
+
+        List<Object> failCaseList = new ArrayList<>();
+        failCaseList.add(Arrays.asList("comp1", Arrays.asList("comp2", "comp3")));
+        failCaseList.add(Arrays.asList("comp3", Arrays.asList("comp4", "comp5")));
+        failCases.add(failCaseList);
+
+        Map<String, Object> failCaseMapOfMap = new HashMap<>();
+        failCaseMapOfMap.put("comp1",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList(1, 2, 3)},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        failCaseMapOfMap.put("comp2",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        failCases.add(failCaseMapOfMap);
+
+        failCaseMapOfMap = new HashMap<>();
+        failCaseMapOfMap.put("comp1",
+                Stream.of(new Object[][] {
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
+                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp1", 3)},
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+        );
+        failCases.add(failCaseMapOfMap);
+
+        failCaseMapOfMap = new HashMap<>();
+        failCaseMapOfMap.put("comp1", Arrays.asList("comp2", "comp3"));
+        failCaseMapOfMap.put("comp2", Arrays.asList("comp4", "comp5"));
+        failCases.add(failCaseMapOfMap);
+
+        failCaseMapOfMap = new HashMap<>();
+        failCaseMapOfMap.put("aaa", "str");
+        failCaseMapOfMap.put("bbb", 6);
+        failCaseMapOfMap.put("ccc", 7);
+        failCases.add(failCaseMapOfMap);
+
+        failCaseMapOfMap = new HashMap<>();
+        failCaseMapOfMap.put("aaa", -1);
+        failCaseMapOfMap.put("bbb", 6);
+        failCaseMapOfMap.put("ccc", 7);
+        failCases.add(failCaseMapOfMap);
+
+        failCaseMapOfMap = new HashMap<>();
+        failCaseMapOfMap.put("aaa", 1);
+        failCaseMapOfMap.put("bbb", 6);
+        failCaseMapOfMap.put("ccc", 7.4);
+        failCases.add(failCaseMapOfMap);
+
+        failCaseMapOfMap = new HashMap<>();
+        failCaseMapOfMap.put("comp1", "comp2");
+        failCaseMapOfMap.put("comp2", "comp4");
+        failCases.add(failCaseMapOfMap);
+
+        failCases.add(null);
+
+        for (Object value : failCases) {
+            try {
+                config.put(TestConfig.TEST_MAP_CONFIG_9, value);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
+                Assert.fail("Expected Exception not Thrown for value: " + value);
+            } catch (IllegalArgumentException Ex) {
+            }
+        }
+    }
+
+    @Test
     public void testListEntryTypeAnnotation() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
         InstantiationException, IllegalAccessException {
         TestConfig config = new TestConfig();
@@ -796,5 +931,9 @@ public class TestConfigValidate {
         @IsImplementationOfClass(implementsClass = org.apache.storm.networktopography.DNSToSwitchMapping.class)
         @NotNull
         public static final String TEST_MAP_CONFIG_8 = "test.map.config.8";
+
+        @IsExactlyOneOf(valueValidatorClasses = {ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class})
+        @NotNull
+        public static final String TEST_MAP_CONFIG_9 = "test.map.config.9";
     }
 }

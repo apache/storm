@@ -197,6 +197,18 @@ public class ConfigValidationAnnotations {
         Class<?> validatorClass();
     }
 
+    /**
+     * Custom validator where exactly one of the validations must be successful.
+     * Used for overloaded configuration, where value must match one (and exactly one)
+     * format of supplied values.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface IsExactlyOneOf {
+        Class<?> validatorClass() default ConfigValidation.CustomIsExactlyOneOfValidators.class;
+        Class<?>[] valueValidatorClasses();
+    }
+
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface Password {
