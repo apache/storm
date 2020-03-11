@@ -77,7 +77,6 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         }
 
         ConstraintConfig(Map<String, Object> conf, Set<String> comps) {
-            // spread constraints, old style may come from Config.TOPOLOGY_RAS_CONSTRAINTS where the target
             Object rasConstraints = conf.get(Config.TOPOLOGY_RAS_CONSTRAINTS);
             comps.forEach(k -> incompatibleComponents.computeIfAbsent(k, x -> new HashSet<>()));
             if (rasConstraints instanceof List) {
@@ -101,7 +100,6 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
                 Map<String, Map<String, ?>> constraintMap = (Map<String, Map<String, ?>>) rasConstraints;
                 constraintMap.forEach((comp1, v) -> {
                     if (comps.contains(comp1)) {
-                        // v is a list of other components and an optional number which is a maxCoLocationCnt
                         v.forEach((ctype, constraint) -> {
                             switch (ctype) {
                                 case CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT:
