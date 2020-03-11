@@ -61,6 +61,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     protected Map<String, Object> config;
     protected Cluster cluster;
     protected boolean sortNodesForEachExecutor;
+    protected ObjectResourceSortType objectResourceSortType = ObjectResourceSortType.GENERIC;
 
     protected RasNodes nodes;
 
@@ -102,8 +103,9 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     }
 
     @Override
-    public void initForSchedule(boolean sortNodesForEachExecutor) {
+    public void initForSchedule(boolean sortNodesForEachExecutor, ObjectResourceSortType objectResourceSortType) {
         this.sortNodesForEachExecutor = sortNodesForEachExecutor;
+        this.objectResourceSortType = objectResourceSortType;
     }
 
     @Override
@@ -233,6 +235,31 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     }
 
     /**
+     * Scheduling uses {@link #sortAllNodes(TopologyDetails, ExecutorDetails, List, List)} which eventually
+     * calls {@link #sortObjectResources(AllResources, ExecutorDetails, TopologyDetails, ExistingScheduleFunc)}
+     * whose beahvior can altered by setting
+     * {@link #objectResourceSortType} using {@link #initForSchedule(boolean, ObjectResourceSortType)}.
+     *
+     * @param allResources         contains all individual ObjectResources as well as cumulative stats
+     * @param exec                 executor for which the sorting is done
+     * @param topologyDetails      topologyDetails for the above executor
+     * @param existingScheduleFunc a function to get existing executors already scheduled on this object
+     * @return a sorted list of ObjectResources
+     */
+    public TreeSet<ObjectResources> sortObjectResources(
+            final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
+            final ExistingScheduleFunc existingScheduleFunc) {
+        switch (objectResourceSortType) {
+            case DEFAULT:
+                return sortObjectResourcesDefault(allResources, existingScheduleFunc);
+            case GENERIC:
+                return sortObjectResourcesGeneric(allResources, exec, topologyDetails, existingScheduleFunc);
+            default:
+                return null;
+        }
+    }
+
+    /**
      * Sort objects by the following two criteria. 1) the number executors of the topology that needs to be scheduled is already on the
      * object (node or rack) in descending order. The reasoning to sort based on criterion 1 is so we schedule the rest of a topology on the
      * same object (node or rack) as the existing executors of the topology. 2) the subordinate/subservient resource availability percentage
@@ -250,8 +277,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @param existingScheduleFunc a function to get existing executors already scheduled on this object
      * @return a sorted list of ObjectResources
      */
-    @Override
-    public TreeSet<ObjectResources> sortObjectResources(
+    private TreeSet<ObjectResources> sortObjectResourcesGeneric(
             final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
             final ExistingScheduleFunc existingScheduleFunc) {
         AllResources affinityBasedAllResources = new AllResources(allResources);
@@ -283,6 +309,66 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                     }
                 });
         sortedObjectResources.addAll(affinityBasedAllResources.objectResources);
+        LOG.debug("Sorted Object Resources: {}", sortedObjectResources);
+        return sortedObjectResources;
+    }
+
+    /**
+     * Sort objects by the following two criteria. 1) the number executors of the topology that needs to be scheduled is already on the
+     * object (node or rack) in descending order. The reasoning to sort based on criterion 1 is so we schedule the rest of a topology on the
+     * same object (node or rack) as the existing executors of the topology. 2) the subordinate/subservient resource availability percentage
+     * of a rack in descending order We calculate the resource availability percentage by dividing the resource availability of the object
+     * (node or rack) by the resource availability of the entire rack or cluster depending on if object references a node or a rack. By
+     * doing this calculation, objects (node or rack) that have exhausted or little of one of the resources mentioned above will be ranked
+     * after racks that have more balanced resource availability. So we will be less likely to pick a rack that have a lot of one resource
+     * but a low amount of another.
+     *
+     * @param allResources         contains all individual ObjectResources as well as cumulative stats
+     * @param existingScheduleFunc a function to get existing executors already scheduled on this object
+     * @return a sorted list of ObjectResources
+     */
+    private TreeSet<ObjectResources> sortObjectResourcesDefault(
+            final AllResources allResources,
+            final ExistingScheduleFunc existingScheduleFunc) {
+
+        for (ObjectResources objectResources : allResources.objectResources) {
+            objectResources.effectiveResources =
+                    allResources.availableResourcesOverall.calculateMinPercentageUsedBy(objectResources.availableResources);
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Effective resources for {} is {}, and numExistingSchedule is {}",
+                        objectResources.id, objectResources.effectiveResources,
+                        existingScheduleFunc.getNumExistingSchedule(objectResources.id));
+            }
+        }
+
+        TreeSet<ObjectResources> sortedObjectResources =
+                new TreeSet<>((o1, o2) -> {
+                    int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
+                    int execsScheduled2 = existingScheduleFunc.getNumExistingSchedule(o2.id);
+                    if (execsScheduled1 > execsScheduled2) {
+                        return -1;
+                    } else if (execsScheduled1 < execsScheduled2) {
+                        return 1;
+                    } else {
+                        if (o1.effectiveResources > o2.effectiveResources) {
+                            return -1;
+                        } else if (o1.effectiveResources < o2.effectiveResources) {
+                            return 1;
+                        } else {
+                            double o1Avg = allResources.availableResourcesOverall.calculateAveragePercentageUsedBy(o1.availableResources);
+                            double o2Avg = allResources.availableResourcesOverall.calculateAveragePercentageUsedBy(o2.availableResources);
+
+                            if (o1Avg > o2Avg) {
+                                return -1;
+                            } else if (o1Avg < o2Avg) {
+                                return 1;
+                            } else {
+                                return o1.id.compareTo(o2.id);
+                            }
+                        }
+                    }
+                });
+        sortedObjectResources.addAll(allResources.objectResources);
         LOG.debug("Sorted Object Resources: {}", sortedObjectResources);
         return sortedObjectResources;
     }
@@ -787,79 +873,79 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         return ret;
     }
 
-    ///**
-    // * interface for calculating the number of existing executors scheduled on a object (rack or node).
-    // */
-    //protected interface ExistingScheduleFunc {
-    //    int getNumExistingSchedule(String objectId);
-    //}
-    //
-    ///**
-    // * a class to contain individual object resources as well as cumulative stats.
-    // */
-    //protected static class AllResources {
-    //    List<ObjectResources> objectResources = new LinkedList<>();
-    //    final NormalizedResourceOffer availableResourcesOverall;
-    //    final NormalizedResourceOffer totalResourcesOverall;
-    //    String identifier;
-    //
-    //    public AllResources(String identifier) {
-    //        this.identifier = identifier;
-    //        this.availableResourcesOverall = new NormalizedResourceOffer();
-    //        this.totalResourcesOverall = new NormalizedResourceOffer();
-    //    }
-    //
-    //    public AllResources(AllResources other) {
-    //        this(null,
-    //             new NormalizedResourceOffer(other.availableResourcesOverall),
-    //             new NormalizedResourceOffer(other.totalResourcesOverall),
-    //             other.identifier);
-    //        List<ObjectResources> objectResourcesList = new ArrayList<>();
-    //        for (ObjectResources objectResource : other.objectResources) {
-    //            objectResourcesList.add(new ObjectResources(objectResource));
-    //        }
-    //        this.objectResources = objectResourcesList;
-    //    }
-    //
-    //    public AllResources(List<ObjectResources> objectResources, NormalizedResourceOffer availableResourcesOverall,
-    //                        NormalizedResourceOffer totalResourcesOverall, String identifier) {
-    //        this.objectResources = objectResources;
-    //        this.availableResourcesOverall = availableResourcesOverall;
-    //        this.totalResourcesOverall = totalResourcesOverall;
-    //        this.identifier = identifier;
-    //    }
-    //}
-    //
-    ///**
-    // * class to keep track of resources on a rack or node.
-    // */
-    //protected static class ObjectResources {
-    //    public final String id;
-    //    public NormalizedResourceOffer availableResources;
-    //    public NormalizedResourceOffer totalResources;
-    //    public double effectiveResources = 0.0;
-    //
-    //    public ObjectResources(String id) {
-    //        this.id = id;
-    //        this.availableResources = new NormalizedResourceOffer();
-    //        this.totalResources = new NormalizedResourceOffer();
-    //    }
-    //
-    //    public ObjectResources(ObjectResources other) {
-    //        this(other.id, other.availableResources, other.totalResources, other.effectiveResources);
-    //    }
-    //
-    //    public ObjectResources(String id, NormalizedResourceOffer availableResources, NormalizedResourceOffer totalResources,
-    //                           double effectiveResources) {
-    //        this.id = id;
-    //        this.availableResources = availableResources;
-    //        this.totalResources = totalResources;
-    //        this.effectiveResources = effectiveResources;
-    //    }
-    //
-    //    @Override
-    //    public String toString() {
-    //        return this.id;
-    //    }
-    //}
+    /**
+     * interface for calculating the number of existing executors scheduled on a object (rack or node).
+     */
+    protected interface ExistingScheduleFunc {
+        int getNumExistingSchedule(String objectId);
+    }
+
+    /**
+     * a class to contain individual object resources as well as cumulative stats.
+     */
+    protected static class AllResources {
+        List<ObjectResources> objectResources = new LinkedList<>();
+        final NormalizedResourceOffer availableResourcesOverall;
+        final NormalizedResourceOffer totalResourcesOverall;
+        String identifier;
+
+        public AllResources(String identifier) {
+            this.identifier = identifier;
+            this.availableResourcesOverall = new NormalizedResourceOffer();
+            this.totalResourcesOverall = new NormalizedResourceOffer();
+        }
+
+        public AllResources(AllResources other) {
+            this(null,
+                 new NormalizedResourceOffer(other.availableResourcesOverall),
+                 new NormalizedResourceOffer(other.totalResourcesOverall),
+                 other.identifier);
+            List<ObjectResources> objectResourcesList = new ArrayList<>();
+            for (ObjectResources objectResource : other.objectResources) {
+                objectResourcesList.add(new ObjectResources(objectResource));
+            }
+            this.objectResources = objectResourcesList;
+        }
+
+        public AllResources(List<ObjectResources> objectResources, NormalizedResourceOffer availableResourcesOverall,
+                            NormalizedResourceOffer totalResourcesOverall, String identifier) {
+            this.objectResources = objectResources;
+            this.availableResourcesOverall = availableResourcesOverall;
+            this.totalResourcesOverall = totalResourcesOverall;
+            this.identifier = identifier;
+        }
+    }
+
+    /**
+     * class to keep track of resources on a rack or node.
+     */
+    protected static class ObjectResources {
+        public final String id;
+        public NormalizedResourceOffer availableResources;
+        public NormalizedResourceOffer totalResources;
+        public double effectiveResources = 0.0;
+
+        public ObjectResources(String id) {
+            this.id = id;
+            this.availableResources = new NormalizedResourceOffer();
+            this.totalResources = new NormalizedResourceOffer();
+        }
+
+        public ObjectResources(ObjectResources other) {
+            this(other.id, other.availableResources, other.totalResources, other.effectiveResources);
+        }
+
+        public ObjectResources(String id, NormalizedResourceOffer availableResources, NormalizedResourceOffer totalResources,
+                               double effectiveResources) {
+            this.id = id;
+            this.availableResources = availableResources;
+            this.totalResources = totalResources;
+            this.effectiveResources = effectiveResources;
+        }
+
+        @Override
+        public String toString() {
+            return this.id;
+        }
+    }
 }
