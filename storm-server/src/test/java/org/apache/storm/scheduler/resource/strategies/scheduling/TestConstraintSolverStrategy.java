@@ -77,7 +77,7 @@ public class TestConstraintSolverStrategy {
 
     public TestConstraintSolverStrategy(boolean consolidatedConfigFlag) {
         this.consolidatedConfigFlag = consolidatedConfigFlag;
-        LOG.info("Running tests with consolidatedConfigFlag={}", ""+consolidatedConfigFlag);
+        LOG.info("Running tests with consolidatedConfigFlag={}", consolidatedConfigFlag);
     }
 
     /**
@@ -136,7 +136,7 @@ public class TestConstraintSolverStrategy {
      * Set Config.TOPOLOGY_RAS_CONSTRAINTS (when consolidatedConfigFlag is true) or both
      * Config.TOPOLOGY_RAS_CONSTRAINTS/Config.TOPOLOGY_SPREAD_COMPONENTS (when consolidatedConfigFlag is false).
      *
-     * When consolidatedConfigFlag when true, use the new more consolidated format to set Config.TOPOLOGY_RAS_CONSTRAINTS.
+     * When consolidatedConfigFlag is true, use the new more consolidated format to set Config.TOPOLOGY_RAS_CONSTRAINTS.
      * When false, use the old configuration format for Config.TOPOLOGY_RAS_CONSTRAINTS/TOPOLOGY_SPREAD_COMPONENTS.
      *
      * @param constraints List of components, where the first one cannot co-exist with the others in the list
@@ -153,12 +153,12 @@ public class TestConstraintSolverStrategy {
                 }
                 String comp = constraint.get(0);
                 List<String> others = constraint.subList(1, constraint.size());
-                List<Object> incompatibleComponents = (List<Object>)modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<String,Object>())
-                        .computeIfAbsent(ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, k -> new ArrayList<Object>());
+                List<Object> incompatibleComponents = (List<Object>) modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<>())
+                        .computeIfAbsent(ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, k -> new ArrayList<>());
                 incompatibleComponents.addAll(others);
             }
             for (String comp: spreads.keySet()) {
-                modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<String,Object>()).put(ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, ""+spreads.get(comp));
+                modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<>()).put(ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, "" + spreads.get(comp));
             }
             config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
         } else {
