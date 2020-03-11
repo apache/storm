@@ -18,24 +18,7 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.TreeSet;
-import org.apache.storm.Config;
-import org.apache.storm.scheduler.Cluster;
-import org.apache.storm.scheduler.Component;
-import org.apache.storm.scheduler.ExecutorDetails;
-import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.resource.SchedulingResult;
-import org.apache.storm.scheduler.resource.SchedulingStatus;
-import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy implements IStrategy {
-    private static final Logger LOG = LoggerFactory.getLogger(GenericResourceAwareStrategy.class);
 
     public GenericResourceAwareStrategy() {
         initForSchedule(true, ObjectResourceSortType.GENERIC);

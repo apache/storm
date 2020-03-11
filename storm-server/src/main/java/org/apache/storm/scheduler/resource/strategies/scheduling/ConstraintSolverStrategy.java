@@ -242,6 +242,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
 
     @Override
     public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
+        initForSchedule(true, ObjectResourceSortType.GENERIC);
         prepare(cluster);
         LOG.debug("Scheduling {}", td.getId());
         nodes = RasNodes.getAllNodesFrom(cluster);
