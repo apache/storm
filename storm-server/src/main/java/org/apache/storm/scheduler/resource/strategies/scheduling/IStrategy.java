@@ -12,17 +12,11 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
 import org.apache.storm.scheduler.Cluster;
-import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.SchedulingResult;
-import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 
 /**
  * An interface to for implementing different scheduling strategies for the resource aware scheduling.
@@ -49,9 +43,10 @@ public interface IStrategy {
     /**
      * This method is invoked to calculate a scheduling for topology td.  Cluster will reject any changes that are
      * not for the given topology.  Any changes made to the cluster will be committed if the scheduling is successful.
-     * <P></P>
-     * NOTE: scheduling occurs as a runnable in an interruptible thread.  Scheduling should consider being interrupted if
+     * <p>
+     * NOTE: scheduling occurs as a runnable in an interruptable thread.  Scheduling should consider being interrupted if
      * long running.
+     * </p>
      *
      * @param schedulingState the current state of the cluster
      * @param td the topology to schedule for
@@ -59,5 +54,4 @@ public interface IStrategy {
      *     successful.
      */
     SchedulingResult schedule(Cluster schedulingState, TopologyDetails td);
-
 }
