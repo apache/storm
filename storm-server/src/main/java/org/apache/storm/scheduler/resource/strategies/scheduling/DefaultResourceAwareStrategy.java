@@ -38,6 +38,6 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
     private static final Logger LOG = LoggerFactory.getLogger(DefaultResourceAwareStrategy.class);
 
     public DefaultResourceAwareStrategy() {
-        initForSchedule(false, ObjectResourceSortType.GENERIC);
+        initForSchedule(false, ObjectResourceSortType.DEFAULT);
     }
 }

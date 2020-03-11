@@ -246,7 +246,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @param existingScheduleFunc a function to get existing executors already scheduled on this object
      * @return a sorted list of ObjectResources
      */
-    public TreeSet<ObjectResources> sortObjectResources(
+    protected TreeSet<ObjectResources> sortObjectResources(
             final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
             final ExistingScheduleFunc existingScheduleFunc) {
         switch (objectResourceSortType) {
@@ -548,16 +548,14 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         private final TreeSet<ObjectResources> sortedRacks;
         private final Map<String, TreeSet<ObjectResources>> cachedNodes = new HashMap<>();
         private final ExecutorDetails exec;
-        private final Cluster cluster;
         private final TopologyDetails td;
         private final List<String> favoredNodeIds;
         private final List<String> unFavoredNodeIds;
         private final List<String> greyListedSupervisorIds;
         private final Set<String> skippedNodeIds = new HashSet<>();
 
-        LazyNodeSorting(Cluster cluster, TopologyDetails td, ExecutorDetails exec,
+        LazyNodeSorting(TopologyDetails td, ExecutorDetails exec,
                                List<String> favoredNodeIds, List<String> unFavoredNodeIds) {
-            this.cluster = cluster;
             this.favoredNodeIds = favoredNodeIds;
             this.unFavoredNodeIds = unFavoredNodeIds;
             this.greyListedSupervisorIds = cluster.getGreyListedSupervisors();
@@ -596,7 +594,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
     protected Iterable<String> sortAllNodes(TopologyDetails td, ExecutorDetails exec,
                                             List<String> favoredNodeIds, List<String> unFavoredNodeIds) {
-        return new LazyNodeSorting(cluster, td, exec, favoredNodeIds, unFavoredNodeIds);
+        return new LazyNodeSorting(td, exec, favoredNodeIds, unFavoredNodeIds);
     }
 
     private AllResources createClusterAllResources() {
