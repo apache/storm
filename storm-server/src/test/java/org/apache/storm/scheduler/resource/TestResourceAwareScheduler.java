@@ -1366,7 +1366,7 @@ public class TestResourceAwareScheduler {
         }
 
         @Override
-        protected TreeSet<ObjectResources> sortObjectResources(
+        public TreeSet<ObjectResources> sortObjectResources(
                 BaseResourceAwareStrategy.AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails, ExistingScheduleFunc existingScheduleFunc) {
             // NO-OP
             return null;

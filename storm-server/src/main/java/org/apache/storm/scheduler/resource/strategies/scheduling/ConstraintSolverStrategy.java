@@ -271,9 +271,8 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         //get a sorted list of unassigned executors based on number of constraints
         Set<ExecutorDetails> unassignedExecutors = new HashSet<>(cluster.getUnassignedExecutors(td));
         List<ExecutorDetails> sortedExecs = getSortedExecs(spreadComps, constraintMatrix, compToExecs).stream()
-                                                                                                      .filter(unassignedExecutors::contains)
-                                                                                                      .collect(Collectors.toList());
-
+                .filter(unassignedExecutors::contains)
+                .collect(Collectors.toList());
         //populate with existing assignments
         SchedulerAssignment existingAssignment = cluster.getAssignmentById(td.getId());
         if (existingAssignment != null) {
@@ -313,12 +312,12 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         return true;
     }
 
-    @Override
-    protected TreeSet<ObjectResources> sortObjectResources(
-        final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
-        final ExistingScheduleFunc existingScheduleFunc) {
-        return GenericResourceAwareStrategy.sortObjectResourcesImpl(allResources, exec, topologyDetails, existingScheduleFunc);
-    }
+    //@Override
+    //protected TreeSet<ObjectResources> sortObjectResources(
+    //    final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
+    //    final ExistingScheduleFunc existingScheduleFunc) {
+    //    return GenericResourceAwareStrategy.sortObjectResourcesImpl(allResources, exec, topologyDetails, existingScheduleFunc);
+    //}
 
     /**
      * Try to schedule till successful or till limits (backtrack count or time) have been exceeded.

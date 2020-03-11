@@ -37,77 +37,81 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultResourceAwareStrategy.class);
 
-    @Override
-    public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
-        prepare(cluster);
-        if (nodes.getNodes().size() <= 0) {
-            LOG.warn("No available nodes to schedule tasks on!");
-            return SchedulingResult.failure(
-                SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES, "No available nodes to schedule tasks on!");
-        }
-        Collection<ExecutorDetails> unassignedExecutors =
-            new HashSet<>(this.cluster.getUnassignedExecutors(td));
-        LOG.debug("{} ExecutorsNeedScheduling: {}", td.getId(), unassignedExecutors);
-        Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
-        List<Component> spouts = this.getSpouts(td);
-
-        if (spouts.size() == 0) {
-            LOG.error("Cannot find a Spout!");
-            return SchedulingResult.failure(
-                SchedulingStatus.FAIL_INVALID_TOPOLOGY, "Cannot find a Spout!");
-        }
-
-        //order executors to be scheduled
-        List<ExecutorDetails> orderedExecutors = this.orderExecutors(td, unassignedExecutors);
-        Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
-        List<String> favoredNodesIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES));
-        List<String> unFavoredNodesIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES));
-        final Iterable<String> sortedNodes = sortAllNodes(td, null, favoredNodesIds, unFavoredNodesIds);
-
-        for (ExecutorDetails exec : orderedExecutors) {
-            if (Thread.currentThread().isInterrupted()) {
-                return null;
-            }
-            LOG.debug(
-                "Attempting to schedule: {} of component {}[ REQ {} ]",
-                exec,
-                td.getExecutorToComponent().get(exec),
-                td.getTaskResourceReqList(exec));
-            if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
-                return mkNotEnoughResources(td);
-            }
-        }
-
-        executorsNotScheduled.removeAll(scheduledTasks);
-        LOG.debug("Scheduling left over tasks {} (most likely sys tasks) from topology {}",
-                executorsNotScheduled, td.getId());
-        // schedule left over system tasks
-        for (ExecutorDetails exec : executorsNotScheduled) {
-            if (Thread.currentThread().isInterrupted()) {
-                return null;
-            }
-            if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
-                return mkNotEnoughResources(td);
-            }
-        }
-
-        SchedulingResult result;
-        executorsNotScheduled.removeAll(scheduledTasks);
-        if (executorsNotScheduled.size() > 0) {
-            LOG.error("Not all executors successfully scheduled: {}", executorsNotScheduled);
-            result =
-                SchedulingResult.failure(
-                    SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES,
-                    (td.getExecutors().size() - unassignedExecutors.size())
-                    + "/"
-                    + td.getExecutors().size()
-                    + " executors scheduled");
-        } else {
-            LOG.debug("All resources successfully scheduled!");
-            result = SchedulingResult.success("Fully Scheduled by " + this.getClass().getSimpleName());
-        }
-        return result;
+    public DefaultResourceAwareStrategy() {
+        initForSchedule(false);
     }
+
+    //@Override
+    //public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
+    //    prepare(cluster);
+    //    if (nodes.getNodes().size() <= 0) {
+    //        LOG.warn("No available nodes to schedule tasks on!");
+    //        return SchedulingResult.failure(
+    //            SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES, "No available nodes to schedule tasks on!");
+    //    }
+    //    Collection<ExecutorDetails> unassignedExecutors =
+    //        new HashSet<>(this.cluster.getUnassignedExecutors(td));
+    //    LOG.debug("{} Num ExecutorsNeedScheduling: {}", td.getId(), unassignedExecutors.size());
+    //    Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
+    //    List<Component> spouts = this.getSpouts(td);
+    //
+    //    if (spouts.size() == 0) {
+    //        LOG.error("Cannot find a Spout!");
+    //        return SchedulingResult.failure(
+    //            SchedulingStatus.FAIL_INVALID_TOPOLOGY, "Cannot find a Spout!");
+    //    }
+    //
+    //    //order executors to be scheduled
+    //    List<ExecutorDetails> orderedExecutors = orderExecutors(td, unassignedExecutors);
+    //    Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
+    //    List<String> favoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES));
+    //    List<String> unFavoredNodeIds = makeHostToNodeIds((List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES));
+    //    final Iterable<String> sortedNodes = sortAllNodes(td, null, favoredNodeIds, unFavoredNodeIds);
+    //
+    //    for (ExecutorDetails exec : orderedExecutors) {
+    //        if (Thread.currentThread().isInterrupted()) {
+    //            return null;
+    //        }
+    //        LOG.debug(
+    //            "Attempting to schedule: {} of component {}[ REQ {} ]",
+    //            exec,
+    //            td.getExecutorToComponent().get(exec),
+    //            td.getTaskResourceReqList(exec));
+    //        if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+    //            return mkNotEnoughResources(td);
+    //        }
+    //    }
+    //
+    //    executorsNotScheduled.removeAll(scheduledTasks);
+    //    LOG.debug("Scheduling left over tasks {} (most likely sys tasks) from topology {}",
+    //            executorsNotScheduled, td.getId());
+    //    // schedule left over system tasks
+    //    for (ExecutorDetails exec : executorsNotScheduled) {
+    //        if (Thread.currentThread().isInterrupted()) {
+    //            return null;
+    //        }
+    //        if (!scheduleExecutor(exec, td, scheduledTasks, sortedNodes)) {
+    //            return mkNotEnoughResources(td);
+    //        }
+    //    }
+    //
+    //    SchedulingResult result;
+    //    executorsNotScheduled.removeAll(scheduledTasks);
+    //    if (executorsNotScheduled.size() > 0) {
+    //        LOG.error("Not all executors successfully scheduled: {}", executorsNotScheduled);
+    //        result =
+    //            SchedulingResult.failure(
+    //                SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES,
+    //                (td.getExecutors().size() - unassignedExecutors.size())
+    //                + "/"
+    //                + td.getExecutors().size()
+    //                + " executors scheduled");
+    //    } else {
+    //        LOG.debug("All resources successfully scheduled!");
+    //        result = SchedulingResult.success("Fully Scheduled by " + this.getClass().getSimpleName());
+    //    }
+    //    return result;
+    //}
 
     /**
      * Sort objects by the following two criteria. 1) the number executors of the topology that needs to be scheduled is already on the
@@ -124,7 +128,7 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
      * @return a sorted list of ObjectResources
      */
     @Override
-    protected TreeSet<ObjectResources> sortObjectResources(
+    public TreeSet<ObjectResources> sortObjectResources(
         final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
         final ExistingScheduleFunc existingScheduleFunc) {
 
