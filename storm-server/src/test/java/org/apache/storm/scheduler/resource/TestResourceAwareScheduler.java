@@ -1359,7 +1359,7 @@ public class TestResourceAwareScheduler {
             () -> testLargeTopologiesCommon(GenericResourceAwareStrategy.class.getName(), true, 1));
     }
 
-    public static class NeverEndingSchedulingStrategy extends BaseResourceAwareStrategy implements IStrategy {
+    public static class NeverEndingSchedulingStrategy extends BaseResourceAwareStrategy {
 
         @Override
         public void prepare(Map<String, Object> config) {
