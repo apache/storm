@@ -13,13 +13,20 @@
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import java.util.Map;
-
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 
 /**
  * An interface to for implementing different scheduling strategies for the resource aware scheduling.
+ * Scheduler should call {@link #prepare(Map)} followed by {@link #schedule(Cluster, TopologyDetails)}.
+ * <p>
+ *     A fully functioning implementation is in the abstract class {@link BaseResourceAwareStrategy}.
+ *     Extending classes should call {@link #initForSchedule(boolean, ObjectResourceSortType)} preferably in their
+ *     constructors (as in {@link GenericResourceAwareStrategy} and {@link DefaultResourceAwareStrategy}) or 
+ *     at the top of their own overriding {@link #schedule(Cluster, TopologyDetails)} 
+ *     method as in {@link ConstraintSolverStrategy#schedule(Cluster, TopologyDetails)}.
+ * </p>
  */
 public interface IStrategy {
 
@@ -37,6 +44,7 @@ public interface IStrategy {
      * Initialize for the default implementation of schedule().
      *
      * @param sortNodesForEachExecutor Sort nodes before scheduling each executor.
+     * @param resSortType type of sorting to be applied to object resource collection {@link ObjectResourceSortType}.
      */
     void initForSchedule(boolean sortNodesForEachExecutor, ObjectResourceSortType resSortType);
 
