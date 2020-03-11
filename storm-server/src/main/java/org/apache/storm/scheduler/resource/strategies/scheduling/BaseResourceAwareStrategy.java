@@ -62,13 +62,11 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     protected Cluster cluster;
     protected boolean sortNodesForEachExecutor;
     protected ObjectResourceSortType objectResourceSortType = ObjectResourceSortType.GENERIC;
-
     protected RasNodes nodes;
 
     // Rack id to list of host names in that rack
     private Map<String, List<String>> networkTopography;
     private final Map<String, String> superIdToRack = new HashMap<>();
-    //private final Map<String, String> superIdToHostname = new HashMap<>();
     private final Map<String, List<RasNode>> hostnameToNodes = new HashMap<>();
     private final Map<String, List<RasNode>> rackIdToNodes = new HashMap<>();
 
@@ -89,7 +87,6 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             String superId = node.getId();
             String hostName = node.getHostname();
             String rackId = hostToRack.getOrDefault(hostName, DNSToSwitchMapping.DEFAULT_RACK);
-            //superIdToHostname.put(superId, hostName);
             superIdToRack.put(superId, rackId);
             hostnameToNodes.computeIfAbsent(hostName, (hn) -> new ArrayList<>()).add(node);
             rackIdToNodes.computeIfAbsent(rackId, (hn) -> new ArrayList<>()).add(node);
