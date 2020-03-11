@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -42,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
-    //hard coded max number of states to search
     private static final Logger LOG = LoggerFactory.getLogger(ConstraintSolverStrategy.class);
 
     //constraints and spreads
@@ -312,13 +310,6 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
         }
         return true;
     }
-
-    //@Override
-    //protected TreeSet<ObjectResources> sortObjectResources(
-    //    final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
-    //    final ExistingScheduleFunc existingScheduleFunc) {
-    //    return GenericResourceAwareStrategy.sortObjectResourcesImpl(allResources, exec, topologyDetails, existingScheduleFunc);
-    //}
 
     /**
      * Try to schedule till successful or till limits (backtrack count or time) have been exceeded.
