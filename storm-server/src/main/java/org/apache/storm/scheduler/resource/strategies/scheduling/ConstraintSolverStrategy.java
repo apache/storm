@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.storm.Config;
@@ -41,7 +42,6 @@ import org.apache.storm.scheduler.resource.SchedulingStatus;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
-import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
