@@ -21,6 +21,7 @@ package org.apache.storm.localizer;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -77,6 +78,7 @@ public class AsyncLocalizer implements AutoCloseable {
     private final Timer blobCacheUpdateDuration;
     private final Timer blobLocalizationDuration;
     private final Meter numBlobUpdateVersionChanged;
+    private final Meter localResourceFileNotFound;
 
     // track resources - user to resourceSet
     //ConcurrentHashMap is explicitly used everywhere in this class because it uses locks to guarantee atomicity for compute and
@@ -109,6 +111,7 @@ public class AsyncLocalizer implements AutoCloseable {
         this.blobCacheUpdateDuration = metricsRegistry.registerTimer("supervisor:blob-cache-update-duration");
         this.blobLocalizationDuration = metricsRegistry.registerTimer("supervisor:blob-localization-duration");
         this.numBlobUpdateVersionChanged = metricsRegistry.registerMeter("supervisor:num-blob-update-version-changed");
+        this.localResourceFileNotFound = metricsRegistry.registerMeter("supervisor:local-resource-file-not-found");
         this.metricsRegistry = metricsRegistry;
         isLocalMode = ConfigUtils.isLocalMode(conf);
         fsOps = ops;
@@ -456,7 +459,28 @@ public class AsyncLocalizer implements AutoCloseable {
             topoConfBlob.removeReference(pna);
         }
 
-        for (LocalResource lr : getLocalResources(pna)) {
+
+        // ALERT: A possible race condition could be resolved by separating the thread pools into downloadExecService and taskExecService
+        // https://git.ouroath.com/storm/storm/commit/ebd52b37c7448d381d31451e46e8f19c6e51352d#diff-74535cb89e9e926ad424a8d1e2fa9586
+        // Will need further investigation if the race condition happens again
+        List<LocalResource> localResources;
+        try {
+            // Precondition1: Base blob stormconf.ser and stormcode.ser have been localized
+            // Precondition2: Both these two blob files are fully downloaded and proper permission been set
+            localResources = getLocalResources(pna);
+        } catch (FileNotFoundException fnfException) {
+            localResourceFileNotFound.mark();
+            LOG.warn("Local base blobs have not been downloaded yet. "
+                        + "DownloadExecService is too busy", fnfException);
+            LOG.info("Port and assignment info: {}", pna);
+            return;
+        } catch (IOException ioException) {
+            LOG.error("Unable to read local conf file. ", ioException);
+            LOG.info("Port and assignment info: {}", pna);
+            throw ioException;
+        }
+
+        for (LocalResource lr : localResources) {
             try {
                 removeBlobReference(lr.getBlobName(), pna, lr.shouldUncompress());
             } catch (Exception e) {
