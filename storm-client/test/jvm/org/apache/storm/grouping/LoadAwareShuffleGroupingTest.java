@@ -506,39 +506,39 @@ public class LoadAwareShuffleGroupingTest {
         WorkerTopologyContext context = createLoadSwitchingContext();
         grouping.prepare(context, new GlobalStreamId("a", "default"), Arrays.asList(1, 2, 3));
         // startup should default to worker local
-        assertEquals(LoadAwareShuffleGrouping.LocalityScope.WORKER_LOCAL, grouping.currentScope);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.WORKER_LOCAL, grouping.getCurrentScope());
 
         // with high load, switch to host local
         LoadMapping lm = createLoadMapping(1.0, 1.0, 1.0);
         grouping.refreshLoad(lm);
-        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.currentScope);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.getCurrentScope());
 
         // load remains high, switch to rack local
         grouping.refreshLoad(lm);
-        assertEquals(LoadAwareShuffleGrouping.LocalityScope.RACK_LOCAL, grouping.currentScope);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.RACK_LOCAL, grouping.getCurrentScope());
 
         // load remains high. switch to everything
         grouping.refreshLoad(lm);
-        assertEquals(LoadAwareShuffleGrouping.LocalityScope.EVERYTHING, grouping.currentScope);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.EVERYTHING, grouping.getCurrentScope());
 
         // lower load below low water threshold, but worker local load remains too high
         // should switch to rack local
         lm = createLoadMapping(0.2, 0.1, 0.1);
         grouping.refreshLoad(lm);
-        assertEquals(LoadAwareShuffleGrouping.LocalityScope.RACK_LOCAL, grouping.currentScope);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.RACK_LOCAL, grouping.getCurrentScope());
 
         // lower load continues, switch to host local
         grouping.refreshLoad(lm);
-        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.currentScope);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.getCurrentScope());
 
         // lower load continues, should NOT be able to switch to worker local yet
         grouping.refreshLoad(lm);
-        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.currentScope);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.getCurrentScope());
 
         // reduce load on local worker task, should switch to worker local
         lm = createLoadMapping(0.1, 0.1, 0.1);
         grouping.refreshLoad(lm);
-        assertEquals(LoadAwareShuffleGrouping.LocalityScope.WORKER_LOCAL, grouping.currentScope);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.WORKER_LOCAL, grouping.getCurrentScope());
     }
 
     private LoadMapping createLoadMapping(double load1, double load2, double load3) {

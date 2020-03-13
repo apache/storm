@@ -47,8 +47,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     private Random random;
     private volatile int[] prepareChoices;
     private AtomicInteger current;
-    @VisibleForTesting
-    LocalityScope currentScope;
+    private LocalityScope currentScope;
     private NodeInfo sourceNodeInfo;
     private List<Integer> targetTasks;
     private AtomicReference<Map<Integer, NodeInfo>> taskToNodePort;
@@ -131,7 +130,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         if (null != targetInScope) {
             rets.addAll(targetInScope);
         }
-        LocalityScope downgradeScope = LocalityScope.downgradeTowardWorker(scope);
+        LocalityScope downgradeScope = LocalityScope.downgrade(scope);
         if (downgradeScope != scope) {
             rets.addAll(getTargetsInScope(downgradeScope));
         }
@@ -141,7 +140,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     private LocalityScope transition(LoadMapping load) {
         List<Integer> targetInScope = getTargetsInScope(currentScope);
         if (targetInScope.isEmpty()) {
-            LocalityScope upScope = LocalityScope.upgradeFromWorker(currentScope);
+            LocalityScope upScope = LocalityScope.upgrade(currentScope);
             if (upScope == currentScope) {
                 throw new RuntimeException("The current scope " + currentScope + " has no target tasks.");
             }
@@ -157,9 +156,9 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
         LocalityScope nextScope = currentScope;
         if (avg > higherBound) {
-            nextScope = LocalityScope.upgradeFromWorker(currentScope);
+            nextScope = LocalityScope.upgrade(currentScope);
         } else {
-            LocalityScope lowerScope = LocalityScope.downgradeTowardWorker(currentScope);
+            LocalityScope lowerScope = LocalityScope.downgrade(currentScope);
             List<Integer> lowerTargets = getTargetsInScope(lowerScope);
             if (!lowerTargets.isEmpty()) {
                 double lowerAvg = lowerTargets.stream().mapToDouble((key) -> load.get(key)).average().getAsDouble();
@@ -293,10 +292,15 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         return capacity;
     }
 
+    @VisibleForTesting
+    public LocalityScope getCurrentScope() {
+        return currentScope;
+    }
+
     enum LocalityScope {
         WORKER_LOCAL, HOST_LOCAL, RACK_LOCAL, EVERYTHING;
 
-        public static LocalityScope downgradeTowardWorker(LocalityScope current) {
+        public static LocalityScope downgrade(LocalityScope current) {
             switch (current) {
                 case EVERYTHING:
                     return RACK_LOCAL;
@@ -309,7 +313,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
             }
         }
 
-        public static LocalityScope upgradeFromWorker(LocalityScope current) {
+        public static LocalityScope upgrade(LocalityScope current) {
             switch (current) {
                 case WORKER_LOCAL:
                     return HOST_LOCAL;
