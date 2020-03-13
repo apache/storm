@@ -225,8 +225,7 @@ public class ResourceAwareScheduler implements IScheduler {
                         }
                         //Only place we fall though to do the loop over again...
                     } else { //Any other failure result
-                        //The assumption is that the strategy set the status...
-                        topologySubmitter.markTopoUnsuccess(td, cluster);
+                        topologySubmitter.markTopoUnsuccess(td, cluster, result.toString());
                         return;
                     }
                 }
