@@ -178,7 +178,7 @@ Metrics associated with the supervisor, which launches the workers for a topolog
 | supervisor:blob-localization-duration | timer | Approximately how long it takes to get the blob we want after it is requested. |
 | supervisor:current-reserved-memory-mb | gauge | total amount of memory reserved for workers on the supervisor (MB) |
 | supervisor:current-used-memory-mb | gauge | memory currently used as measured by the supervisor (this typically requires cgroups) (MB) |
-| supervisor:local-resource-file-not-found | meter | number of times file-not-found exception happens when reading local blobs |
+| supervisor:local-resource-file-not-found-when-releasing-slot | meter | number of times file-not-found exception happens when reading local blobs upon releasing slots |
 | supervisor:num-blob-update-version-changed | meter | number of times a version of a blob changes. |
 | supervisor:num-cleanup-exceptions | meter | exceptions thrown during container cleanup. |
 | supervisor:num-force-kill-exceptions | meter | exceptions thrown during force kill. |

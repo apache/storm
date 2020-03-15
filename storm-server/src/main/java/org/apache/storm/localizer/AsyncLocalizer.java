@@ -78,7 +78,7 @@ public class AsyncLocalizer implements AutoCloseable {
     private final Timer blobCacheUpdateDuration;
     private final Timer blobLocalizationDuration;
     private final Meter numBlobUpdateVersionChanged;
-    private final Meter localResourceFileNotFound;
+    private final Meter localResourceFileNotFoundWhenReleasingSlot;
 
     // track resources - user to resourceSet
     //ConcurrentHashMap is explicitly used everywhere in this class because it uses locks to guarantee atomicity for compute and
@@ -111,7 +111,8 @@ public class AsyncLocalizer implements AutoCloseable {
         this.blobCacheUpdateDuration = metricsRegistry.registerTimer("supervisor:blob-cache-update-duration");
         this.blobLocalizationDuration = metricsRegistry.registerTimer("supervisor:blob-localization-duration");
         this.numBlobUpdateVersionChanged = metricsRegistry.registerMeter("supervisor:num-blob-update-version-changed");
-        this.localResourceFileNotFound = metricsRegistry.registerMeter("supervisor:local-resource-file-not-found");
+        this.localResourceFileNotFoundWhenReleasingSlot
+                = metricsRegistry.registerMeter("supervisor:local-resource-file-not-found-when-releasing-slot");
         this.metricsRegistry = metricsRegistry;
         isLocalMode = ConfigUtils.isLocalMode(conf);
         fsOps = ops;
@@ -460,32 +461,29 @@ public class AsyncLocalizer implements AutoCloseable {
         }
 
 
-        // ALERT: A possible race condition could be resolved by separating the thread pools into downloadExecService and taskExecService
-        // https://git.ouroath.com/storm/storm/commit/ebd52b37c7448d381d31451e46e8f19c6e51352d#diff-74535cb89e9e926ad424a8d1e2fa9586
+        // ALERT: A possible race condition should have been resolved
+        // by separating the thread pools into downloadExecService and taskExecService
+        // https://github.com/apache/storm/pull/3153
         // Will need further investigation if the race condition happens again
         List<LocalResource> localResources;
         try {
             // Precondition1: Base blob stormconf.ser and stormcode.ser have been localized
             // Precondition2: Both these two blob files are fully downloaded and proper permission been set
             localResources = getLocalResources(pna);
-        } catch (FileNotFoundException fnfException) {
-            localResourceFileNotFound.mark();
-            LOG.warn("Local base blobs have not been downloaded yet. "
-                        + "DownloadExecService is too busy", fnfException);
+        } catch (IOException e) {
             LOG.info("Port and assignment info: {}", pna);
-            return;
-        } catch (IOException ioException) {
-            LOG.error("Unable to read local conf file. ", ioException);
-            LOG.info("Port and assignment info: {}", pna);
-            throw ioException;
+            if (e instanceof FileNotFoundException) {
+                localResourceFileNotFoundWhenReleasingSlot.mark();
+                LOG.warn("Local base blobs have not been downloaded yet. ", e);
+                return;
+            } else {
+                LOG.error("Unable to read local file. ", e);
+                throw e;
+            }
         }
 
         for (LocalResource lr : localResources) {
-            try {
-                removeBlobReference(lr.getBlobName(), pna, lr.shouldUncompress());
-            } catch (Exception e) {
-                throw new IOException(e);
-            }
+            removeBlobReference(lr.getBlobName(), pna, lr.shouldUncompress());
         }
     }
 
@@ -533,8 +531,7 @@ public class AsyncLocalizer implements AutoCloseable {
     }
 
     // ignores invalid user/topo/key
-    void removeBlobReference(String key, PortAndAssignment pna,
-                             boolean uncompress) throws AuthorizationException, KeyNotFoundException {
+    void removeBlobReference(String key, PortAndAssignment pna, boolean uncompress) {
         String user = pna.getOwner();
         String topo = pna.getToplogyId();
         ConcurrentMap<String, LocalizedResource> lrsrcSet = uncompress ? userArchives.get(user) : userFiles.get(user);
