@@ -109,7 +109,8 @@ public class Cluster implements ISchedulingState {
         Map<String, ? extends SchedulerAssignment> map,
         Topologies topologies,
         Map<String, Object> conf) {
-        this(nimbus, resourceMetrics, supervisors, map, topologies, conf, null, null, null, null);
+        this(nimbus, resourceMetrics, supervisors, map, topologies, conf, null, null, null, null,
+            Double.NaN, Double.NaN, null);
     }
 
     /**
@@ -126,7 +127,10 @@ public class Cluster implements ISchedulingState {
             src.status,
             src.blackListedHosts,
             src.greyListedSupervisors,
-            src.networkTopography);
+            src.networkTopography,
+            src.totalCpuResource,
+            src.totalMemoryResource,
+            src.totalGenericResources);
     }
 
     /**
@@ -147,7 +151,10 @@ public class Cluster implements ISchedulingState {
             src.status,
             src.blackListedHosts,
             src.greyListedSupervisors,
-            src.networkTopography);
+            src.networkTopography,
+            src.totalCpuResource,
+            src.totalMemoryResource,
+            src.totalGenericResources);
     }
 
     private Cluster(
@@ -160,7 +167,10 @@ public class Cluster implements ISchedulingState {
         Map<String, String> status,
         Set<String> blackListedHosts,
         List<String> greyListedSupervisors,
-        Map<String, List<String>> networkTopography) {
+        Map<String, List<String>> networkTopography,
+        double totalCpuResource,
+        double totalMemoryResource,
+        Map<String, Double> totalGenericResources) {
         this.inimbus = nimbus;
         this.resourceMetrics = resourceMetrics;
         this.supervisors.putAll(supervisors);
@@ -179,9 +189,12 @@ public class Cluster implements ISchedulingState {
         this.topologies = topologies;
         this.minWorkerCpu = ObjectReader.getDouble(conf.get(DaemonConfig.STORM_WORKER_MIN_CPU_PCORE_PERCENT), 0.0);
 
-        this.totalCpuResource = computeClusterCpuResource();
-        this.totalMemoryResource = computeClusterMemoryResource();
-        this.totalGenericResources = computeClusterGenericResources();
+        this.totalCpuResource = Double.isNaN(totalCpuResource) ? computeClusterCpuResource() :
+                                                           totalCpuResource;
+        this.totalMemoryResource = Double.isNaN(totalMemoryResource) ? computeClusterMemoryResource() :
+                                                                 totalMemoryResource;
+        this.totalGenericResources = totalGenericResources == null ? computeClusterGenericResources() :
+                                                                     totalGenericResources;
 
         ArrayList<String> supervisorHostNames = new ArrayList<>();
         for (SupervisorDetails s : supervisors.values()) {
