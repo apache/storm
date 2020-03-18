@@ -119,14 +119,17 @@ public class HealthChecker {
             curThread.interrupted();
 
             if (process.exitValue() != 0) {
-                String str;
+                StringBuilder stringBuilder = new StringBuilder();
                 InputStream stdin = process.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(stdin));
+                String str;
                 while ((str = reader.readLine()) != null) {
-                    if (str.startsWith("ERROR")) {
-                        LOG.warn("The healthcheck process {} exited with code {}", script, process.exitValue());
-                        return FAILED;
-                    }
+                    stringBuilder.append(str).append("\n");
+                }
+                String message = stringBuilder.toString().trim();
+                LOG.warn("The healthcheck process {} exited with code {} and message {}", script, process.exitValue(), message);
+                if (message.startsWith("ERROR")) {
+                    return FAILED;
                 }
                 return FAILED_WITH_EXIT_CODE;
             }
