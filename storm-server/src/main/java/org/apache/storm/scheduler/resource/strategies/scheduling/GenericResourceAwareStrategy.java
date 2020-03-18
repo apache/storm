@@ -21,6 +21,6 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy {
 
     public GenericResourceAwareStrategy() {
-        initForSchedule(true, ObjectResourceSortType.GENERIC);
+        super(true, ObjectResourceSortType.GENERIC);
     }
 }

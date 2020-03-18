@@ -51,6 +51,10 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     public static final String CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT = "maxNodeCoLocationCnt";
     public static final String CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS = "incompatibleComponents";
 
+    public ConstraintSolverStrategy() {
+        super(true, ObjectResourceSortType.GENERIC);
+    }
+
     /**
      * Component constraint as derived from configuration.
      * This is backward compatible and can parse old style Config.TOPOLOGY_RAS_CONSTRAINTS and Config.TOPOLOGY_SPREAD_COMPONENTS.
@@ -334,7 +338,6 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
 
     @Override
     public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
-        initForSchedule(true, ObjectResourceSortType.GENERIC);
         prepare(cluster);
         LOG.debug("Scheduling {}", td.getId());
         nodes = RasNodes.getAllNodesFrom(cluster);

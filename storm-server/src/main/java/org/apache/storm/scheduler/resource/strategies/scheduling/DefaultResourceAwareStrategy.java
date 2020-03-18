@@ -21,6 +21,6 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy {
 
     public DefaultResourceAwareStrategy() {
-        initForSchedule(false, ObjectResourceSortType.DEFAULT);
+        super(false, ObjectResourceSortType.DEFAULT);
     }
 }

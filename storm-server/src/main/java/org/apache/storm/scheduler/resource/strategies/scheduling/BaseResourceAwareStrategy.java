@@ -58,17 +58,32 @@ import org.slf4j.LoggerFactory;
 public abstract class BaseResourceAwareStrategy implements IStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(BaseResourceAwareStrategy.class);
 
+    protected final boolean sortNodesForEachExecutor;
+    protected final ObjectResourceSortType objectResourceSortType;
+
     protected Map<String, Object> config;
     protected Cluster cluster;
-    protected boolean sortNodesForEachExecutor;
-    protected ObjectResourceSortType objectResourceSortType = ObjectResourceSortType.GENERIC;
     protected RasNodes nodes;
 
-    // Rack id to list of host names in that rack
     private Map<String, List<String>> networkTopography;
     private final Map<String, String> superIdToRack = new HashMap<>();
     private final Map<String, List<RasNode>> hostnameToNodes = new HashMap<>();
     private final Map<String, List<RasNode>> rackIdToNodes = new HashMap<>();
+
+    public BaseResourceAwareStrategy() {
+        this(false, ObjectResourceSortType.GENERIC);
+    }
+
+    /**
+     * Initialize for the default implementation of schedule().
+     *
+     * @param sortNodesForEachExecutor Sort nodes before scheduling each executor.
+     * @param objectResourceSortType type of sorting to be applied to object resource collection {@link ObjectResourceSortType}.
+     */
+    public BaseResourceAwareStrategy(boolean sortNodesForEachExecutor, ObjectResourceSortType objectResourceSortType) {
+        this.sortNodesForEachExecutor = sortNodesForEachExecutor;
+        this.objectResourceSortType = objectResourceSortType;
+    }
 
     @VisibleForTesting
     void prepare(Cluster cluster) {
@@ -97,12 +112,6 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     @Override
     public void prepare(Map<String, Object> config) {
         this.config = config;
-    }
-
-    @Override
-    public void initForSchedule(boolean sortNodesForEachExecutor, ObjectResourceSortType objectResourceSortType) {
-        this.sortNodesForEachExecutor = sortNodesForEachExecutor;
-        this.objectResourceSortType = objectResourceSortType;
     }
 
     @Override
@@ -233,9 +242,8 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
     /**
      * Scheduling uses {@link #sortAllNodes(TopologyDetails, ExecutorDetails, List, List)} which eventually
-     * calls {@link #sortObjectResources(AllResources, ExecutorDetails, TopologyDetails, ExistingScheduleFunc)}
-     * whose beahvior can altered by setting
-     * {@link #objectResourceSortType} using {@link #initForSchedule(boolean, ObjectResourceSortType)}.
+     * calls {@link #sortObjectResources(AllResources, ExecutorDetails, TopologyDetails, ExistingScheduleFunc)}.
+     * whose behavior can altered by setting {@link #objectResourceSortType}.
      *
      * @param allResources         contains all individual ObjectResources as well as cumulative stats
      * @param exec                 executor for which the sorting is done

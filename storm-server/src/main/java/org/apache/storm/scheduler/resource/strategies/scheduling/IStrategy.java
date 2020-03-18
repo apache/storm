@@ -41,14 +41,6 @@ public interface IStrategy {
     void prepare(Map<String, Object> config);
 
     /**
-     * Initialize for the default implementation of schedule().
-     *
-     * @param sortNodesForEachExecutor Sort nodes before scheduling each executor.
-     * @param resSortType type of sorting to be applied to object resource collection {@link ObjectResourceSortType}.
-     */
-    void initForSchedule(boolean sortNodesForEachExecutor, ObjectResourceSortType resSortType);
-
-    /**
      * This method is invoked to calculate a scheduling for topology td.  Cluster will reject any changes that are
      * not for the given topology.  Any changes made to the cluster will be committed if the scheduling is successful.
      * <p>
