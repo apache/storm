@@ -22,10 +22,8 @@ import org.apache.storm.scheduler.resource.SchedulingResult;
  * Scheduler should call {@link #prepare(Map)} followed by {@link #schedule(Cluster, TopologyDetails)}.
  * <p>
  *     A fully functioning implementation is in the abstract class {@link BaseResourceAwareStrategy}.
- *     Extending classes should call {@link #initForSchedule(boolean, ObjectResourceSortType)} preferably in their
- *     constructors (as in {@link GenericResourceAwareStrategy} and {@link DefaultResourceAwareStrategy}) or 
- *     at the top of their own overriding {@link #schedule(Cluster, TopologyDetails)} 
- *     method as in {@link ConstraintSolverStrategy#schedule(Cluster, TopologyDetails)}.
+ *     Subclasses classes should extend {@link BaseResourceAwareStrategy#BaseResourceAwareStrategy(boolean, ObjectResourceSortType)}
+ *     in their constructors (as in {@link GenericResourceAwareStrategy} and {@link DefaultResourceAwareStrategy}).
  * </p>
  */
 public interface IStrategy {
@@ -34,7 +32,6 @@ public interface IStrategy {
 
     /**
      * Prepare the Strategy for scheduling.
-     * TODO: rename this method to initInstance()
      *
      * @param config the cluster configuration
      */
