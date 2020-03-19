@@ -41,7 +41,6 @@ import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriori
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
 import org.apache.storm.scheduler.utils.IConfigLoader;
-import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
 import org.apache.storm.utils.DisallowedStrategyException;
 import org.apache.storm.utils.ObjectReader;
@@ -58,9 +57,6 @@ public class ResourceAwareScheduler implements IScheduler {
     private int maxSchedulingAttempts;
     private int schedulingTimeoutSeconds;
     private ExecutorService backgroundScheduling;
-
-    // record evicted topologies on each scheduling round, only used in test purpose now
-    private boolean forTest = false;
     private Set<String> evictedTopologies = new HashSet<>();
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
@@ -119,6 +115,9 @@ public class ResourceAwareScheduler implements IScheduler {
             } else {
                 User submitter = userMap.get(td.getTopologySubmitter());
                 scheduleTopology(td, cluster, submitter, orderedTopologies);
+                if (!evictedTopologies.isEmpty()) {
+                    LOG.warn("Evicted Topologies {} when scheduling topology: {}", evictedTopologies, td.getId());
+                }
             }
         }
     }
@@ -202,7 +201,7 @@ public class ResourceAwareScheduler implements IScheduler {
                         LOG.debug("Not enough resources to schedule {}", td.getName());
                         List<TopologyDetails> reversedList = ImmutableList.copyOf(orderedTopologies).reverse();
                         boolean evictedSomething = false;
-                        LOG.debug("attempting to make space for topo {} from user {}", td.getName(), td.getTopologySubmitter());
+                        LOG.debug("Attempting to make space for topo {} from user {}", td.getName(), td.getTopologySubmitter());
                         int tdIndex = reversedList.indexOf(td);
                         topologySchedulingResources.setRemainingRequiredResources(toSchedule, td);
 
@@ -210,14 +209,10 @@ public class ResourceAwareScheduler implements IScheduler {
                             TopologyDetails topologyEvict = reversedList.get(index);
                             SchedulerAssignment evictAssignemnt = workingState.getAssignmentById(topologyEvict.getId());
                             if (evictAssignemnt != null && !evictAssignemnt.getSlots().isEmpty()) {
-                                Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
                                 topologySchedulingResources.adjustResourcesForEvictedTopology(toSchedule, topologyEvict);
-                                if (forTest) {
-                                    evictedTopologies.add(topologyEvict.getId());
-                                }
-                                LOG.debug("Evicting Topology {} with workers: {} from user {}", topologyEvict.getName(), workersToEvict,
-                                    topologyEvict.getTopologySubmitter());
+                                evictedTopologies.add(topologyEvict.getId());
                                 evictedSomething = true;
+                                Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
                                 nodes.freeSlots(workersToEvict);
                                 if (topologySchedulingResources.canSchedule()) {
                                     //We evicted enough topologies to have a hope of scheduling, so try it now, and don't evict more
@@ -251,20 +246,10 @@ public class ResourceAwareScheduler implements IScheduler {
         markFailedTopology(topologySubmitter, cluster, td, "Failed to schedule within " + maxSchedulingAttempts + " attempts");
     }
 
-    @VisibleForTesting
     public Set<String> getEvictedTopologies() {
-        if (forTest) {
-            return this.evictedTopologies;
-        } else {
-            throw new UnsupportedOperationException(
-                "Topology eviction check is only provided for test purposes");
-        }
+        return this.evictedTopologies;
     }
 
-    @VisibleForTesting
-    public void setForTest(boolean isTest) {
-        this.forTest = isTest;
-    }
 
     /*
      * Class for tracking resources for scheduling a topology.
