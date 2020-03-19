@@ -934,11 +934,11 @@ public class Utils {
         return rtn;
     }
 
-    public static GlobalStreamId getGlobalStreamId(String streamId, String componentId) {
-        if (componentId == null) {
-            return new GlobalStreamId(streamId, DEFAULT_STREAM_ID);
+    public static GlobalStreamId getGlobalStreamId(String componentId, String streamId) {
+        if (streamId == null) {
+            return new GlobalStreamId(componentId, DEFAULT_STREAM_ID);
         }
-        return new GlobalStreamId(streamId, componentId);
+        return new GlobalStreamId(componentId, streamId);
     }
 
     public static Object getSetComponentObject(ComponentObject obj) {
