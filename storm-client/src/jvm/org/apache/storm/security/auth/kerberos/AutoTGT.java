@@ -205,8 +205,18 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
                          + "in your jar");
                 return;
             }
+
+            LOG.info("Invoking Hadoop UserGroupInformation.loginUserFromSubject.");
             Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
             login.invoke(null, subject);
+
+            //Refer to STORM-3606 for details
+            LOG.warn("UserGroupInformation.loginUserFromSubject will spawn a TGT renewal thread (\"TGT Renewer for <username>\") "
+                + "to execute \"kinit -R\" command some time before the current TGT expires. "
+                + "It will fail because TGT is not in the local TGT cache and the thread will eventually abort. "
+                + "Exceptions from this TGT renewal thread can be ignored. Note: TGT for the Worker is kept in memory. "
+                + "Please refer to STORM-3606 for detailed explanations");
+
         } catch (Exception e) {
             LOG.warn("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop "
                      + "may not be compatible.", e);
