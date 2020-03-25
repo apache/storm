@@ -37,6 +37,7 @@ import java.util.NavigableMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.ServerConstants;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileAction;
@@ -615,7 +616,7 @@ public class BasicContainer extends Container {
      * @throws IOException on any error.
      */
     private List<String> mkLaunchCommand(final int memOnheap, final String stormRoot,
-                                         final String jlp) throws IOException {
+                                         final String jlp, final String numaId) throws IOException {
         final String javaCmd = javaCmd("java");
         final String stormOptions = ConfigUtils.concatIfNotNull(System.getProperty("storm.options"));
         final String topoConfFile = ConfigUtils.concatIfNotNull(System.getProperty("storm.conf.file"));
@@ -665,8 +666,11 @@ public class BasicContainer extends Container {
         commandList.addAll(classPathParams);
         commandList.add(getWorkerMain(topoVersion));
         commandList.add(topologyId);
+        String supervisorId = this.supervisorId;
+        if (numaId != null) {
+            supervisorId += ServerConstants.NUMA_ID_SEPARATOR + numaId;
+        }
         commandList.add(supervisorId);
-
         // supervisor port should be only presented to worker which supports RPC heartbeat
         // unknown version should be treated as "current version", which supports RPC heartbeat
         if ((topoVersion.getMajor() == -1 && topoVersion.getMinor() == -1)
@@ -817,8 +821,14 @@ public class BasicContainer extends Container {
     @Override
     public void launch() throws IOException {
         type.assertFull();
-        LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}", assignment,
-                supervisorId, port, workerId);
+        String numaId = SupervisorUtils.getNumaIdForPort(port, conf);
+        if (numaId == null) {
+            LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}",
+                    assignment, supervisorId, port, workerId);
+        } else {
+            LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}  bound to numa zone {}",
+                    assignment, supervisorId, port, workerId, numaId);
+        }
         exitedEarly = false;
 
         final WorkerResources resources = assignment.get_resources();
@@ -844,10 +854,10 @@ public class BasicContainer extends Container {
         if (resourceIsolationManager != null) {
             final int cpu = (int) Math.ceil(resources.get_cpu());
             //Save the memory limit so we can enforce it less strictly
-            resourceIsolationManager.reserveResourcesForWorker(workerId, (int) memoryLimitMb, cpu);
+            resourceIsolationManager.reserveResourcesForWorker(workerId, (int) memoryLimitMb, cpu, numaId);
         }
 
-        List<String> commandList = mkLaunchCommand(memOnHeap, stormRoot, jlp);
+        List<String> commandList = mkLaunchCommand(memOnHeap, stormRoot, jlp, numaId);
 
         LOG.info("Launching worker with command: {}. ", ServerUtils.shellCmd(commandList));
 

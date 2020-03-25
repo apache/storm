@@ -54,7 +54,7 @@ public class TestCgroups {
         manager.prepare(config);
 
         String workerId = UUID.randomUUID().toString();
-        manager.reserveResourcesForWorker(workerId, 1024, 200);
+        manager.reserveResourcesForWorker(workerId, 1024, 200, null);
 
         List<String> commandList = manager.getLaunchCommand(workerId, new ArrayList<String>());
         StringBuilder command = new StringBuilder();
