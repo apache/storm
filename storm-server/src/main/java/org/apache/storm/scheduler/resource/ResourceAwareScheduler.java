@@ -12,6 +12,7 @@
 
 package org.apache.storm.scheduler.resource;
 
+import com.codahale.metrics.Meter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SchedulerAssignment;
@@ -55,6 +57,7 @@ public class ResourceAwareScheduler implements IScheduler {
     private int maxSchedulingAttempts;
     private int schedulingTimeoutSeconds;
     private ExecutorService backgroundScheduling;
+    private Meter schedulingTimeoutMeter;
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
         markFailedTopology(u, c, td, message, null);
@@ -72,8 +75,9 @@ public class ResourceAwareScheduler implements IScheduler {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf) {
+    public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         this.conf = conf;
+        schedulingTimeoutMeter = metricsRegistry.registerMeter("nimbus:num-scheduling-timeouts");
         schedulingPriorityStrategy = ReflectionUtils.newInstance(
             (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY));
         configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
@@ -172,6 +176,7 @@ public class ResourceAwareScheduler implements IScheduler {
                                 + td.getId() + " using strategy " + rasStrategy.getClass().getName() + " timeout after "
                                 + schedulingTimeoutSeconds + " seconds using config "
                                 + DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY + ".");
+                        schedulingTimeoutMeter.mark();
                         schedulingFuture.cancel(true);
                         return;
                     }

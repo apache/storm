@@ -645,8 +645,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private static IScheduler wrapAsBlacklistScheduler(Map<String, Object> conf, IScheduler scheduler,
         StormMetricsRegistry metricsRegistry) {
-        BlacklistScheduler blacklistWrappedScheduler = new BlacklistScheduler(scheduler, metricsRegistry);
-        blacklistWrappedScheduler.prepare(conf);
+        BlacklistScheduler blacklistWrappedScheduler = new BlacklistScheduler(scheduler);
+        blacklistWrappedScheduler.prepare(conf, metricsRegistry);
         return blacklistWrappedScheduler;
     }
 

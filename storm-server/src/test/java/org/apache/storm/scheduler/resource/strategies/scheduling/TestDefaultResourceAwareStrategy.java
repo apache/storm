@@ -161,7 +161,7 @@ public class TestDefaultResourceAwareStrategy {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(conf);
+        scheduler.prepare(conf, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         TopologyResources topologyResources = cluster.getTopologyResourcesMap().get(topo.getId());
@@ -257,7 +257,7 @@ public class TestDefaultResourceAwareStrategy {
 
         // schedule 1st topology
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(conf);
+        scheduler.prepare(conf, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         assertTopologiesFullyScheduled(cluster, topo[0].getName());
 
@@ -324,7 +324,7 @@ public class TestDefaultResourceAwareStrategy {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
 
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(conf);
+        scheduler.prepare(conf, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         // [3,3] [7,7], [0,0] [2,2] [6,6] [1,1] [5,5] [4,4] sorted executor ordering
@@ -452,7 +452,7 @@ public class TestDefaultResourceAwareStrategy {
 
         scheduler = new ResourceAwareScheduler();
 
-        scheduler.prepare(conf);
+        scheduler.prepare(conf, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
