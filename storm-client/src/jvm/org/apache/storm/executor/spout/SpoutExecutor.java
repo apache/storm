@@ -30,6 +30,7 @@ import org.apache.storm.daemon.metrics.SpoutThrottlingMetrics;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.executor.TupleInfo;
+import org.apache.storm.generated.Credentials;
 import org.apache.storm.hooks.info.SpoutAckInfo;
 import org.apache.storm.hooks.info.SpoutFailInfo;
 import org.apache.storm.policy.IWaitStrategy;
@@ -300,7 +301,8 @@ public class SpoutExecutor extends Executor {
         } else if (streamId.equals(Constants.CREDENTIALS_CHANGED_STREAM_ID)) {
             Object spoutObj = idToTask.get(taskId - idToTaskBase).getTaskObject();
             if (spoutObj instanceof ICredentialsListener) {
-                ((ICredentialsListener) spoutObj).setCredentials((Map<String, String>) tuple.getValue(0));
+                Credentials creds = (Credentials) tuple.getValue(0);
+                ((ICredentialsListener) spoutObj).setCredentials(creds == null ? null : creds.get_creds());
             }
         } else if (streamId.equals(Acker.ACKER_RESET_TIMEOUT_STREAM_ID)) {
             Long id = (Long) tuple.getValue(0);
