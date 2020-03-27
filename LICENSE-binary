@@ -896,7 +896,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * ORC Core (org.apache.orc:orc-core:1.3.3 - http://orc.apache.org/orc-core)
         * oro (oro:oro:2.0.8 - no url defined)
         * Slider Core (org.apache.slider:slider-core:0.90.2-incubating - http://slider.incubator.apache.org/slider-core/)
-        * SnakeYAML (org.yaml:snakeyaml:1.11 - http://www.snakeyaml.org)
+        * SnakeYAML (org.yaml:snakeyaml:1.26 - http://www.snakeyaml.org)
         * Snappy for Java (org.xerial.snappy:snappy-java:1.0.5 - http://github.com/xerial/snappy-java/)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.2.6 - https://github.com/xerial/snappy-java)
         * StAX API (stax:stax-api:1.0.1 - http://stax.codehaus.org/)

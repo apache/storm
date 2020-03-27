@@ -284,7 +284,7 @@
         <jetty.version>9.4.14.v20181114</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.5.0</carbonite.version>
-        <snakeyaml.version>1.11</snakeyaml.version>
+        <snakeyaml.version>1.26</snakeyaml.version>
         <httpclient.version>4.5.6</httpclient.version>
         <jctools.version>2.0.1</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
