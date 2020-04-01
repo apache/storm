@@ -12,15 +12,14 @@
 
 package org.apache.storm.metric;
 
-import java.lang.management.GarbageCollectorMXBean;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.jvm.CachedThreadStatesGaugeSet;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
-import java.lang.management.ThreadMXBean;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.task.IBolt;
@@ -46,14 +45,29 @@ public class SystemBolt implements IBolt {
 
         int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 
+        context.registerMetricSet("GC", new GarbageCollectorMetricSet());
+        context.registerMetricSet("threads", new CachedThreadStatesGaugeSet(bucketSize, TimeUnit.SECONDS));
+        context.registerMetricSet("memory", new MemoryUsageGaugeSet());
+
         final RuntimeMXBean jvmRt = ManagementFactory.getRuntimeMXBean();
-        context.registerMetric("uptimeSecs", () -> jvmRt.getUptime() / 1000.0, bucketSize);
-        context.registerMetric("startTimeSecs", () -> jvmRt.getStartTime() / 1000.0, bucketSize);
 
-        final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        context.registerMetric("threadCount", threadBean::getThreadCount, bucketSize);
+        context.registerGauge("uptimeSecs", new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return jvmRt.getUptime() / 1000L;
+            }
+        });
 
-        context.registerMetric("newWorkerEvent", new IMetric() {
+        context.registerGauge("startTimeSecs", new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return jvmRt.getStartTime() / 1000L;
+            }
+        });
+
+        // newWorkerEvent: 1 when a worker is first started and 0 all other times.
+        // This can be used to tell when a worker has crashed and is restarted.
+        final IMetric newWorkerEvent = new IMetric() {
             boolean doEvent = true;
 
             @Override
@@ -65,17 +79,13 @@ public class SystemBolt implements IBolt {
                     return 0;
                 }
             }
-        }, bucketSize);
-
-        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-        final MemoryMXBean jvmMemRT = ManagementFactory.getMemoryMXBean();
-
-        context.registerMetric("memory/heap", new MemoryUsageMetric(jvmMemRT::getHeapMemoryUsage), bucketSize);
-        context.registerMetric("memory/nonHeap", new MemoryUsageMetric(jvmMemRT::getNonHeapMemoryUsage), bucketSize);
-
-        for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
-            context.registerMetric("GC/" + b.getName().replaceAll("\\W", ""), new GarbageCollectorMetric(b), bucketSize);
-        }
+        };
+        context.registerGauge("newWorkerEvent", new Gauge<Integer>() {
+            @Override
+            public Integer getValue() {
+                return (Integer) newWorkerEvent.getValueAndReset();
+            }
+        });
 
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.WORKER_METRICS), bucketSize, topoConf);
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize, topoConf);
@@ -101,55 +111,5 @@ public class SystemBolt implements IBolt {
 
     @Override
     public void cleanup() {
-    }
-
-    private static class MemoryUsageMetric implements IMetric {
-        Supplier<MemoryUsage> getUsage;
-
-        MemoryUsageMetric(Supplier<MemoryUsage> getUsage) {
-            this.getUsage = getUsage;
-        }
-
-        @Override
-        public Object getValueAndReset() {
-            MemoryUsage memUsage = getUsage.get();
-            HashMap<String, Object> m = new HashMap<>();
-            m.put("maxBytes", memUsage.getMax());
-            m.put("committedBytes", memUsage.getCommitted());
-            m.put("initBytes", memUsage.getInit());
-            m.put("usedBytes", memUsage.getUsed());
-            m.put("virtualFreeBytes", memUsage.getMax() - memUsage.getUsed());
-            m.put("unusedBytes", memUsage.getCommitted() - memUsage.getUsed());
-            return m;
-        }
-    }
-
-    // canonically the metrics data exported is time bucketed when doing counts.
-    // convert the absolute values here into time buckets.
-    private static class GarbageCollectorMetric implements IMetric {
-        GarbageCollectorMXBean gcBean;
-        Long collectionCount;
-        Long collectionTime;
-
-        GarbageCollectorMetric(GarbageCollectorMXBean gcBean) {
-            this.gcBean = gcBean;
-        }
-
-        @Override
-        public Object getValueAndReset() {
-            Long collectionCountP = gcBean.getCollectionCount();
-            Long collectionTimeP = gcBean.getCollectionTime();
-
-            Map<String, Object> ret = null;
-            if (collectionCount != null && collectionTime != null) {
-                ret = new HashMap<>();
-                ret.put("count", collectionCountP - collectionCount);
-                ret.put("timeMs", collectionTimeP - collectionTime);
-            }
-
-            collectionCount = collectionCountP;
-            collectionTime = collectionTimeP;
-            return ret;
-        }
     }
 }
