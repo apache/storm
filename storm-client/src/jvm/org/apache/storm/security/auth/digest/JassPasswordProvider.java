@@ -36,10 +36,12 @@ public class JassPasswordProvider implements PasswordProvider {
     /**
      * Constructor.
      *
-     * @param configuration the jaas configuration to get the credentials out of.
+     * @param topoConf the configuration containing the jaas conf to use.
      * @throws IOException if we could not read the Server section in the jaas conf.
      */
-    public JassPasswordProvider(Configuration configuration) throws IOException {
+    public JassPasswordProvider(Map<String, Object> topoConf) throws IOException {
+
+        Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
         if (configuration == null) {
             return;
         }

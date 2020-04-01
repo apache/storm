@@ -214,7 +214,7 @@ public class StormApiResource {
     }
 
     /**
-     * /api/v1/supervisor/summary -> topo history.
+     * /api/v1/supervisor/summary -> supervisor summary.
      */
     @GET
     @Path("/supervisor/summary")
@@ -402,6 +402,9 @@ public class StormApiResource {
                     UIHelpers.getVisualizationData(nimbusClient.getClient(), window, id, sys),
                     callback
             );
+        } catch (RuntimeException e) {
+            LOG.error("Failure getting topology visualization", e);
+            throw e;
         }
     }
 

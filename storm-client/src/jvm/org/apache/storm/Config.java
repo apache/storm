@@ -29,6 +29,7 @@ import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
+import org.apache.storm.utils.ShellLogHandler;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.EventLoggerRegistryValidator;
@@ -36,9 +37,11 @@ import org.apache.storm.validation.ConfigValidation.ListOfListOfStringValidator;
 import org.apache.storm.validation.ConfigValidation.MapOfStringToMapOfStringToObjectValidator;
 import org.apache.storm.validation.ConfigValidation.MetricRegistryValidator;
 import org.apache.storm.validation.ConfigValidation.MetricReportersValidator;
+import org.apache.storm.validation.ConfigValidation.RasConstraintsTypeValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations;
 import org.apache.storm.validation.ConfigValidationAnnotations.CustomValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsBoolean;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsExactlyOneOf;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsImplementationOfClass;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsInteger;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsKryoReg;
@@ -55,6 +58,8 @@ import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
 import org.apache.storm.validation.ConfigValidationAnnotations.Password;
 import org.apache.storm.windowing.EvictionPolicy;
 import org.apache.storm.windowing.TriggerPolicy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Topology configs are specified as a plain old map. This class provides a convenient way to create a topology config map by providing
@@ -68,6 +73,8 @@ import org.apache.storm.windowing.TriggerPolicy;
  * are free to make use of them by reading them in the prepare method of Bolts or the open method of Spouts.
  */
 public class Config extends HashMap<String, Object> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Config.class);
 
     /**
      * The serializer class for ListDelegate (tuple payload). The default serializer will be ListDelegateSerializer
@@ -265,6 +272,13 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_CPU_PCORE_PERCENT = "topology.metrics.consumer.cpu.pcore.percent";
+
+    /**
+     * This config allows a topology to report metrics data points from the V2 metrics API through the metrics tick.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_ENABLE_V2_METRICS_TICK = "topology.enable.v2.metrics.tick";
+
     /**
      * The class name of the {@link org.apache.storm.state.StateProvider} implementation. If not specified defaults to {@link
      * org.apache.storm.state.InMemoryKeyValueStateProvider}. This can be overridden at the component level.
@@ -299,16 +313,40 @@ public class Config extends HashMap<String, Object> {
     // an error will be thrown by nimbus on topology submission and not by the client prior to submitting
     // the topology.
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
+
     /**
-     * Declare scheduling constraints for a topology used by the constraint solver strategy. A List of pairs (also a list) of components
-     * that cannot coexist in the same worker.
+     * Declare scheduling constraints for a topology used by the constraint solver strategy. The format can be either
+     * old style (validated by ListOfListOfStringValidator.class or the newer style, which is a list of specific type of
+     * Maps (validated by RasConstraintsTypeValidator.class). The value must be in one or the other format.
+     *
+     * <p>
+     * Old style Config.TOPOLOGY_RAS_CONSTRAINTS (ListOfListOfString) specified a list of components that cannot
+     * co-exist on the same Worker.
+     * </p>
+     *
+     * <p>
+     * New style Config.TOPOLOGY_RAS_CONSTRAINTS is map where each component has a list of other incompatible components
+     * (which serves the same function as the old style configuration) and optional number that specifies
+     * the maximum co-location count for the component on a node.
+     * </p>
+     *
+     * <p>comp-1 cannot exist on same worker as comp-2 or comp-3, and at most "2" comp-1 on same node</p>
+     * <p>comp-2 and comp-4 cannot be on same worker (missing comp-1 is implied from comp-1 constraint)</p>
+     *
+     *  <p>
+     *      { "comp-1": { "maxNodeCoLocationCnt": 2, "incompatibleComponents": ["comp-2", "comp-3" ] },
+     *        "comp-2": { "incompatibleComponents": [ "comp-4" ] }
+     *      }
+     *  </p>
      */
-    @CustomValidator(validatorClass = ListOfListOfStringValidator.class)
+    @IsExactlyOneOf(valueValidatorClasses = { ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class })
     public static final String TOPOLOGY_RAS_CONSTRAINTS = "topology.ras.constraints";
     /**
      * Array of components that scheduler should try to place on separate hosts when using the constraint solver strategy or the
-     * multi-tenant scheduler.
+     * multi-tenant scheduler. Note that this configuration can be specified in TOPOLOGY_RAS_CONSTRAINTS using the
+     * "maxNodeCoLocationCnt" map entry with value of 1.
      */
+    @Deprecated
     @IsStringList
     public static final String TOPOLOGY_SPREAD_COMPONENTS = "topology.spread.components";
     /**
@@ -1144,14 +1182,18 @@ public class Config extends HashMap<String, Object> {
      * principal for nimbus/supervisor to use to access secure hdfs for the blobstore.
      * The format is generally "primary/instance@REALM", where "instance" field is optional.
      * If the instance field of the principal is the string "_HOST", it will
-     * be replaced with the host name of the server the daemon is running on (by calling
-     * {@link #getBlobstoreHDFSPrincipal(Map conf)} method).
+     * be replaced with the host name of the server the daemon is running on
+     * (by calling {@link #getBlobstoreHDFSPrincipal(Map conf)} method).
+     * @Deprecated Use {@link Config#STORM_HDFS_LOGIN_PRINCIPAL} instead.
      */
+    @Deprecated
     @IsString
     public static final String BLOBSTORE_HDFS_PRINCIPAL = "blobstore.hdfs.principal";
     /**
      * keytab for nimbus/supervisor to use to access secure hdfs for the blobstore.
+     * @Deprecated Use {@link Config#STORM_HDFS_LOGIN_KEYTAB} instead.
      */
+    @Deprecated
     @IsString
     public static final String BLOBSTORE_HDFS_KEYTAB = "blobstore.hdfs.keytab";
     /**
@@ -1160,6 +1202,21 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber
     @IsInteger
     public static final String STORM_BLOBSTORE_REPLICATION_FACTOR = "storm.blobstore.replication.factor";
+    /**
+     * The principal for nimbus/supervisor to use to access secure hdfs.
+     * The format is generally "primary/instance@REALM", where "instance" field is optional.
+     * If the instance field of the principal is the string "_HOST", it will
+     * be replaced with the host name of the server the daemon is running on
+     * (by calling {@link #getHdfsPrincipal} method).
+     */
+    @IsString
+    public static final String STORM_HDFS_LOGIN_PRINCIPAL = "storm.hdfs.login.principal";
+
+    /**
+     * The keytab for nimbus/supervisor to use to access secure hdfs.
+     */
+    @IsString
+    public static final String STORM_HDFS_LOGIN_KEYTAB = "storm.hdfs.login.keytab";
     /**
      * The hostname the supervisors/workers should report to nimbus. If unset, Storm will get the hostname to report by calling
      * <code>InetAddress.getLocalHost().getCanonicalHostName()</code>.
@@ -1979,9 +2036,7 @@ public class Config extends HashMap<String, Object> {
 
     private static final String HOSTNAME_PATTERN = "_HOST";
 
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static String getBlobstoreHDFSPrincipal(Map conf) throws UnknownHostException {
-        String principal = (String) conf.get(Config.BLOBSTORE_HDFS_PRINCIPAL);
+    private static String substituteHostnameInPrincipal(String principal) throws UnknownHostException {
         if (principal != null) {
             String[] components = principal.split("[/@]");
             if (components.length == 3 && components[1].equals(HOSTNAME_PATTERN)) {
@@ -1990,4 +2045,66 @@ public class Config extends HashMap<String, Object> {
         }
         return principal;
     }
+
+    @Deprecated
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+    public static String getBlobstoreHDFSPrincipal(Map conf) throws UnknownHostException {
+        return getHdfsPrincipal(conf);
+    }
+
+    /**
+     * Get the hostname substituted hdfs principal.
+     * @param conf the storm Configuration
+     * @return the principal
+     * @throws UnknownHostException on UnknowHostException
+     */
+    public static String getHdfsPrincipal(Map<String, Object> conf) throws UnknownHostException {
+        String ret;
+
+        String blobstorePrincipal = (String) conf.get(Config.BLOBSTORE_HDFS_PRINCIPAL);
+        String hdfsPrincipal = (String) conf.get(Config.STORM_HDFS_LOGIN_PRINCIPAL);
+        if (blobstorePrincipal == null && hdfsPrincipal == null) {
+            return null;
+        } else if (blobstorePrincipal == null) {
+            ret = hdfsPrincipal;
+        } else if (hdfsPrincipal == null) {
+            LOG.warn("{} is used as the hdfs principal. Please use {} instead",
+                Config.BLOBSTORE_HDFS_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL);
+            ret = blobstorePrincipal;
+        } else {
+            //both not null;
+            LOG.warn("Both {} and {} are set. Use {} only.",
+                Config.BLOBSTORE_HDFS_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL);
+            ret = hdfsPrincipal;
+        }
+        return substituteHostnameInPrincipal(ret);
+    }
+
+    /**
+     * Get the hdfs keytab.
+     * @param conf the storm Configuration
+     * @return the keytab
+     */
+    public static String getHdfsKeytab(Map<String, Object> conf) {
+        String ret;
+
+        String blobstoreKeyTab = (String) conf.get(Config.BLOBSTORE_HDFS_KEYTAB);
+        String hdfsKeyTab = (String) conf.get(Config.STORM_HDFS_LOGIN_KEYTAB);
+        if (blobstoreKeyTab == null && hdfsKeyTab == null) {
+            return null;
+        } else if (blobstoreKeyTab == null) {
+            ret = hdfsKeyTab;
+        } else if (hdfsKeyTab == null) {
+            LOG.warn("{} is used as the hdfs keytab. Please use {} instead",
+                Config.BLOBSTORE_HDFS_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB);
+            ret = blobstoreKeyTab;
+        } else {
+            //both not null;
+            LOG.warn("Both {} and {} are set. Use {} only.",
+                Config.BLOBSTORE_HDFS_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB);
+            ret = hdfsKeyTab;
+        }
+        return ret;
+    }
+
 }

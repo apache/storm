@@ -576,7 +576,7 @@ public class AuthTest {
     public void getTransportPluginThrowsRunimeTest() {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
         conf.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, "null.invalid");
-        ClientAuthUtils.getTransportPlugin(ThriftConnectionType.NIMBUS, conf, null);
+        ClientAuthUtils.getTransportPlugin(ThriftConnectionType.NIMBUS, conf);
     }
 
     @Test

@@ -26,7 +26,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SchedulerAssignment;
@@ -36,7 +35,6 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
-import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
@@ -219,7 +217,7 @@ public class ResourceAwareScheduler implements IScheduler {
 
                         if (!evictedSomething) {
                             StringBuilder message = new StringBuilder();
-                            message.append("Not enough resources to schedule ");
+                            message.append("Not enough resources to schedule after evicting lower priority topologies. ");
                             message.append(topologySchedulingResources.getRemainingRequiredResourcesMessage());
                             message.append(result.getErrorMessage());
                             markFailedTopology(topologySubmitter, cluster, td, message.toString());
@@ -227,8 +225,7 @@ public class ResourceAwareScheduler implements IScheduler {
                         }
                         //Only place we fall though to do the loop over again...
                     } else { //Any other failure result
-                        //The assumption is that the strategy set the status...
-                        topologySubmitter.markTopoUnsuccess(td, cluster);
+                        topologySubmitter.markTopoUnsuccess(td, cluster, result.toString());
                         return;
                     }
                 }
@@ -238,7 +235,12 @@ public class ResourceAwareScheduler implements IScheduler {
                 return;
             }
         }
-        markFailedTopology(topologySubmitter, cluster, td, "Failed to schedule within " + maxSchedulingAttempts + " attempts");
+        // We can only reach here when we failed to free enough space by evicting current topologies after {maxSchedulingAttempts}
+        // while that scheduler did evict something at each attempt.
+        markFailedTopology(topologySubmitter, cluster, td,
+            "Failed to make enough resources for " + td.getId()
+                    + " by evicting lower priority topologies within " + maxSchedulingAttempts + " attempts. "
+                    + topologySchedulingResources.getRemainingRequiredResourcesMessage());
     }
 
     /*
@@ -374,22 +376,28 @@ public class ResourceAwareScheduler implements IScheduler {
         }
 
         String getRemainingRequiredResourcesMessage() {
+            StringBuilder message = new StringBuilder();
+
+            NormalizedResourceOffer clusterRemainingAvailableResources = new NormalizedResourceOffer();
+            clusterRemainingAvailableResources.add(clusterAvailableResources);
+            clusterRemainingAvailableResources.remove(topologyScheduledResources);
+
             double memoryNeeded = remainingRequiredTopologyMemory;
             double cpuNeeded = remainingRequiredTopologyResources.getTotalCpu();
-            StringBuilder message = new StringBuilder();
-            if (memoryNeeded > 0 || cpuNeeded > 0) {
-                if (memoryNeeded > 0) {
-                    message.append(memoryNeeded).append(" MB ");
-                }
-                if (cpuNeeded > 0) {
-                    message.append(cpuNeeded).append("% CPU ");
-                }
-                if (remainingRequiredTopologyResources.getNormalizedResources().anyNonCpuOverZero()) {
-                    message.append(" ");
-                    message.append(remainingRequiredTopologyResources.getNormalizedResources().toString());
-                    message.append(" ");
-                }
-                message.append("needed even after evicting lower priority topologies. ");
+            if (memoryNeeded > 0) {
+                message.append("Additional Memory Required: ").append(memoryNeeded).append(" MB ");
+                message.append("(Available: ").append(clusterRemainingAvailableResources.getTotalMemoryMb()).append(" MB). ");
+            }
+            if (cpuNeeded > 0) {
+                message.append("Additional CPU Required: ").append(cpuNeeded).append("% CPU ");
+                message.append("(Available: ").append(clusterRemainingAvailableResources.getTotalCpu()).append(" % CPU).");
+            }
+            if (remainingRequiredTopologyResources.getNormalizedResources().anyNonCpuOverZero()) {
+                message.append(" Additional Topology Required Resources: ");
+                message.append(remainingRequiredTopologyResources.getNormalizedResources().toString());
+                message.append(" Cluster Available Resources: ");
+                message.append(clusterRemainingAvailableResources.getNormalizedResources().toString());
+                message.append(".  ");
             }
             return message.toString();
         }

@@ -830,6 +830,9 @@ public class StatsUtil {
         Map<String, Map<K, Double>> ret = new HashMap<>();
 
         Map<String, Map<K, List>> expands = expandAveragesSeq(avgSeq, countSeq);
+        if (expands == null) {
+            return ret;
+        }
         for (Map.Entry<String, Map<K, List>> entry : expands.entrySet()) {
             String k = entry.getKey();
 
@@ -1816,7 +1819,7 @@ public class StatsUtil {
     }
 
     /**
-     * this method merges 2 two-level-deep maps, which is different from mergeWithSum, and we expect the two maps have the same keys.
+     * this method merges 2 two-level-deep maps.
      */
     private static <K> Map<String, Map<K, List>> mergeWithAddPair(Map<String, Map<K, List>> m1,
                                                                   Map<String, Map<K, List>> m2) {
@@ -1844,15 +1847,23 @@ public class StatsUtil {
                 for (K kk : mm1.keySet()) {
                     List seq1 = mm1.get(kk);
                     List seq2 = mm2.get(kk);
-                    List sums = new ArrayList();
-                    for (int i = 0; i < seq1.size(); i++) {
-                        if (seq1.get(i) instanceof Long) {
-                            sums.add(((Number) seq1.get(i)).longValue() + ((Number) seq2.get(i)).longValue());
-                        } else {
-                            sums.add(((Number) seq1.get(i)).doubleValue() + ((Number) seq2.get(i)).doubleValue());
+                    if (seq1 == null && seq2 == null) {
+                        continue;
+                    } else if (seq1 == null) {
+                        tmp.put(kk, seq2);
+                    } else if (seq2 == null) {
+                        tmp.put(kk, seq1);
+                    } else {
+                        List sums = new ArrayList();
+                        for (int i = 0; i < seq1.size(); i++) {
+                            if (seq1.get(i) instanceof Long) {
+                                sums.add(((Number) seq1.get(i)).longValue() + ((Number) seq2.get(i)).longValue());
+                            } else {
+                                sums.add(((Number) seq1.get(i)).doubleValue() + ((Number) seq2.get(i)).doubleValue());
+                            }
                         }
+                        tmp.put(kk, sums);
                     }
-                    tmp.put(kk, sums);
                 }
                 ret.put(k, tmp);
             }
@@ -2304,6 +2315,9 @@ public class StatsUtil {
             } else {
                 initVal = mergeWithAddPair(initVal, expandAverages(avg, count));
             }
+        }
+        if (initVal == null) {
+            initVal = new HashMap<>();
         }
         return initVal;
     }

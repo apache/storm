@@ -121,11 +121,10 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         //Log the user in and get the TGT
         try {
             Configuration loginConf = ClientAuthUtils.getConfiguration(conf);
-            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(loginConf);
+            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(conf);
 
             //login our user
-            Configuration.setConfiguration(loginConf);
-            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, clientCallbackHandler);
+            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, null, clientCallbackHandler, loginConf);
             try {
                 lc.login();
                 final Subject subject = lc.getSubject();
@@ -173,6 +172,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private void populateSubjectWithTGT(Subject subject, Map<String, String> credentials) {
+        LOG.info("Populating TGT from credentials");
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {
             clearCredentials(subject, tgt);
@@ -205,8 +205,18 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
                          + "in your jar");
                 return;
             }
+
+            LOG.info("Invoking Hadoop UserGroupInformation.loginUserFromSubject.");
             Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
             login.invoke(null, subject);
+
+            //Refer to STORM-3606 for details
+            LOG.warn("UserGroupInformation.loginUserFromSubject will spawn a TGT renewal thread (\"TGT Renewer for <username>\") "
+                + "to execute \"kinit -R\" command some time before the current TGT expires. "
+                + "It will fail because TGT is not in the local TGT cache and the thread will eventually abort. "
+                + "Exceptions from this TGT renewal thread can be ignored. Note: TGT for the Worker is kept in memory. "
+                + "Please refer to STORM-3606 for detailed explanations");
+
         } catch (Exception e) {
             LOG.warn("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop "
                      + "may not be compatible.", e);

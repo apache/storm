@@ -36,6 +36,7 @@ public class PacemakerClientHandler extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
         LOG.info("Connection established from {} to {}",
                  channel.localAddress(), channel.remoteAddress());
+        client.channelReady(channel);
     }
 
     @Override
@@ -57,7 +58,7 @@ public class PacemakerClientHandler extends ChannelInboundHandlerAdapter {
         if (cause instanceof ConnectException) {
             LOG.warn("Connection to pacemaker failed. Trying to reconnect {}", cause.getMessage());
         } else {
-            LOG.error("Exception occurred in Pacemaker.", cause);
+            LOG.error("Exception occurred in Pacemaker: " + cause);
         }
         client.reconnect();
     }

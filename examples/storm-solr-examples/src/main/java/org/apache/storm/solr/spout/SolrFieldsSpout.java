@@ -67,7 +67,7 @@ public class SolrFieldsSpout extends BaseRichSpout {
     }
 
     public Fields getOutputFields() {
-        return new Fields("id","date","dc_title","author","dynamic_field_txt","non_matching_field");
+        return new Fields("id", "date", "dc_title", "author", "dynamic_field_txt", "non_matching_field");
     }
 
     @Override

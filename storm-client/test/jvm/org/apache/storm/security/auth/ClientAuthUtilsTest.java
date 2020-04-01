@@ -95,8 +95,9 @@ public class ClientAuthUtilsTest {
 
     @Test
     public void objGettersReturnNullWithNullConfigTest() throws IOException {
-        Assert.assertNull(ClientAuthUtils.pullConfig(null, "foo"));
-        Assert.assertNull(ClientAuthUtils.get(null, "foo", "bar"));
+        Map<String, Object> topoConf = new HashMap<>();
+        Assert.assertNull(ClientAuthUtils.pullConfig(topoConf, "foo"));
+        Assert.assertNull(ClientAuthUtils.get(topoConf, "foo", "bar"));
 
         Assert.assertNull(ClientAuthUtils.getConfiguration(Collections.emptyMap()));
     }
@@ -139,39 +140,6 @@ public class ClientAuthUtilsTest {
         Collection<IAutoCredentials> autos = Arrays.asList(new IAutoCredentials[]{ autoCred });
         ClientAuthUtils.populateSubject(subject, autos, cred);
         Mockito.verify(autoCred, Mockito.times(1)).populateSubject(subject, cred);
-    }
-
-    @Test
-    public void makeDigestPayloadTest() throws NoSuchAlgorithmException {
-        String section = "user-pass-section";
-        Map<String, String> optionMap = new HashMap<String, String>();
-        String user = "user";
-        String pass = "pass";
-        optionMap.put("username", user);
-        optionMap.put("password", pass);
-        AppConfigurationEntry entry = Mockito.mock(AppConfigurationEntry.class);
-
-        Mockito.<Map<String, ?>>when(entry.getOptions()).thenReturn(optionMap);
-        Configuration mockConfig = Mockito.mock(Configuration.class);
-        Mockito.when(mockConfig.getAppConfigurationEntry(section))
-               .thenReturn(new AppConfigurationEntry[]{ entry });
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-512");
-        byte[] output = digest.digest((user + ":" + pass).getBytes());
-        String sha = Hex.encodeHexString(output);
-
-        // previous code used this method to generate the string, ensure the two match
-        StringBuilder builder = new StringBuilder();
-        for (byte b : output) {
-            builder.append(String.format("%02x", b));
-        }
-        String stringFormatMethod = builder.toString();
-
-        Assert.assertEquals(
-            ClientAuthUtils.makeDigestPayload(mockConfig, "user-pass-section"),
-            sha);
-
-        Assert.assertEquals(sha, stringFormatMethod);
     }
 
     @Test(expected = RuntimeException.class)

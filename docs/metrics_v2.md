@@ -145,3 +145,5 @@ public interface StormMetricsFilter extends MetricFilter {
 }
 ```
 
+V2 metrics can also be reported to the Metrics Consumers registered with topology.metrics.consumer.register by enabling the topology.enable.v2.metrics.tick configuration.
+

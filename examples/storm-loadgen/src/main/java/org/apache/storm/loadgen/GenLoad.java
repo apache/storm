@@ -266,7 +266,7 @@ public class GenLoad {
         //For some reason on the new code if ackers is null we get 0???
         Object ackers = conf.get(Config.TOPOLOGY_ACKER_EXECUTORS);
         Object workers = conf.get(Config.TOPOLOGY_WORKERS);
-        if (ackers == null || ((Number)ackers).intValue() <= 0) {
+        if (ackers == null || ((Number) ackers).intValue() <= 0) {
             if (workers == null) {
                 workers = 1;
             }

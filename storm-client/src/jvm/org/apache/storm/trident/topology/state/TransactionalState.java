@@ -138,7 +138,7 @@ public class TransactionalState {
         try {
             curator.delete().forPath(path);
         } catch (KeeperException.NoNodeException nne) {
-            LOG.warn("Path {} already deleted.");
+            LOG.warn("Path {} already deleted.", path);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

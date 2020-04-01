@@ -72,7 +72,7 @@ public class ThriftNettyClientCodec extends ChannelInitializer<Channel> {
                 throw new RuntimeException(e);
             }
         } else {
-            client.channelReady(ch);
+            // no work for AuthMethod.NONE
         }
 
         pipeline.addLast("PacemakerClientHandler", new PacemakerClientHandler(client));

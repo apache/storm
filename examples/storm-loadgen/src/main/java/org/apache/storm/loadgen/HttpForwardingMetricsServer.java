@@ -58,7 +58,7 @@ public abstract class HttpForwardingMetricsServer {
         protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
             Input in = new Input(request.getInputStream());
             List<Object> metrics = des.get().deserializeFrom(in);
-            handle((TaskInfo)metrics.get(0), (Collection<DataPoint>)metrics.get(1), (String)metrics.get(2));
+            handle((TaskInfo) metrics.get(0), (Collection<DataPoint>) metrics.get(1), (String) metrics.get(2));
             response.setStatus(HttpServletResponse.SC_OK);
         }
     }
@@ -100,7 +100,7 @@ public abstract class HttpForwardingMetricsServer {
             context.setContextPath("/");
             server.setHandler(context);
  
-            context.addServlet(new ServletHolder(new MetricsCollectionServlet()),"/*");
+            context.addServlet(new ServletHolder(new MetricsCollectionServlet()), "/*");
 
             server.start();
         } catch (RuntimeException e) {

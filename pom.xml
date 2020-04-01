@@ -236,6 +236,15 @@
             </roles>
             <timezone>-6</timezone>
         </developer>
+        <developer>
+            <id>agresch</id>
+            <name>Aaron Gresch</name>
+            <email>agresch@gmail.com</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
 
     </developers>
 
@@ -275,7 +284,7 @@
         <jetty.version>9.4.14.v20181114</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.5.0</carbonite.version>
-        <snakeyaml.version>1.11</snakeyaml.version>
+        <snakeyaml.version>1.26</snakeyaml.version>
         <httpclient.version>4.5.6</httpclient.version>
         <jctools.version>2.0.1</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
@@ -296,7 +305,7 @@
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>
-        <thrift.version>0.12.0</thrift.version>
+        <thrift.version>0.13.0</thrift.version>
         <junit.jupiter.version>5.5.1</junit.jupiter.version>
         <surefire.version>2.22.1</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
@@ -334,7 +343,7 @@
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jaxb-version>2.3.0</jaxb-version>
         <activation-version>1.1.1</activation-version>
-        <rocksdb-version>5.18.3</rocksdb-version>
+        <rocksdb-version>5.18.4</rocksdb-version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>

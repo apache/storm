@@ -40,7 +40,7 @@ public interface RecordTranslator<K, V> extends Serializable, Func<ConsumerRecor
      *     if {@link Builder#setEmitNullTuples(boolean)} is set to {@code false}.
      */
     @Override
-    List<Object> apply(ConsumerRecord<K,V> record);
+    List<Object> apply(ConsumerRecord<K, V> record);
     
     /**
      * Get the fields associated with a stream.  The streams passed in are

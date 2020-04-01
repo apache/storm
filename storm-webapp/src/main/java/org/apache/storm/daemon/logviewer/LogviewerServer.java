@@ -105,7 +105,7 @@ public class LogviewerServer implements AutoCloseable {
 
             ServletHolder holderPwd = new ServletHolder("default", DefaultServlet.class);
             holderPwd.setInitOrder(1);
-            context.addServlet(holderPwd,"/");
+            context.addServlet(holderPwd, "/");
 
             ServletHolder jerseyServlet = context.addServlet(ServletContainer.class, "/api/v1/*");
             jerseyServlet.setInitOrder(2);

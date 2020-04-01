@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -84,6 +83,7 @@ public class Cluster implements ISchedulingState {
     private final ResourceMetrics resourceMetrics;
     private SchedulerAssignmentImpl assignment;
     private Set<String> blackListedHosts = new HashSet<>();
+    private List<String> greyListedSupervisors = new ArrayList<>();
     private INimbus inimbus;
     private double minWorkerCpu = 0.0;
 
@@ -102,7 +102,7 @@ public class Cluster implements ISchedulingState {
         Map<String, ? extends SchedulerAssignment> map,
         Topologies topologies,
         Map<String, Object> conf) {
-        this(nimbus, resourceMetrics, supervisors, map, topologies, conf, null, null, null);
+        this(nimbus, resourceMetrics, supervisors, map, topologies, conf, null, null, null, null);
     }
 
     /**
@@ -118,6 +118,7 @@ public class Cluster implements ISchedulingState {
             new HashMap<>(src.conf),
             src.status,
             src.blackListedHosts,
+            src.greyListedSupervisors,
             src.networkTopography);
     }
 
@@ -138,6 +139,7 @@ public class Cluster implements ISchedulingState {
             new HashMap<>(src.conf),
             src.status,
             src.blackListedHosts,
+            src.greyListedSupervisors,
             src.networkTopography);
     }
 
@@ -150,6 +152,7 @@ public class Cluster implements ISchedulingState {
         Map<String, Object> conf,
         Map<String, String> status,
         Set<String> blackListedHosts,
+        List<String> greyListedSupervisors,
         Map<String, List<String>> networkTopography) {
         this.inimbus = nimbus;
         this.resourceMetrics = resourceMetrics;
@@ -200,6 +203,10 @@ public class Cluster implements ISchedulingState {
 
         if (blackListedHosts != null) {
             this.blackListedHosts.addAll(blackListedHosts);
+        }
+
+        if (greyListedSupervisors != null) {
+            this.greyListedSupervisors.addAll(greyListedSupervisors);
         }
         setAssignments(assignments, true);
     }
@@ -955,7 +962,8 @@ public class Cluster implements ISchedulingState {
     public Map<String, SupervisorResources> getSupervisorsResourcesMap() {
         Map<String, SupervisorResources> ret = new HashMap<>();
         for (SupervisorDetails sd : supervisors.values()) {
-            ret.put(sd.getId(), new SupervisorResources(sd.getTotalMemory(), sd.getTotalCpu(), 0, 0));
+            ret.put(sd.getId(), new SupervisorResources(sd.getTotalMemory(), sd.getTotalCpu(), sd.getTotalGenericResources(),
+                0, 0, new HashMap<>()));
         }
         for (SchedulerAssignmentImpl assignment : assignments.values()) {
             for (Entry<WorkerSlot, WorkerResources> entry :
@@ -963,7 +971,9 @@ public class Cluster implements ISchedulingState {
                 String id = entry.getKey().getNodeId();
                 SupervisorResources sr = ret.get(id);
                 if (sr == null) {
-                    sr = new SupervisorResources(0, 0, 0, 0);
+                    sr = new SupervisorResources(0, 0, new HashMap<>(),
+                        0, 0, new HashMap<>());
+
                 }
                 sr = sr.add(entry.getValue());
                 ret.put(id, sr);
@@ -974,7 +984,8 @@ public class Cluster implements ISchedulingState {
                     String id = entry.getKey();
                     SupervisorResources sr = ret.get(id);
                     if (sr == null) {
-                        sr = new SupervisorResources(0, 0, 0, 0);
+                        sr = new SupervisorResources(0, 0, new HashMap<>(),
+                            0, 0, new HashMap<>());
                     }
                     sr = sr.addMem(entry.getValue());
                     ret.put(id, sr);
@@ -1084,5 +1095,14 @@ public class Cluster implements ISchedulingState {
 
     public double getMinWorkerCpu() {
         return minWorkerCpu;
+    }
+
+    public List<String> getGreyListedSupervisors() {
+        return greyListedSupervisors;
+    }
+
+    public void setGreyListedSupervisors(Set<String> greyListedSupervisors) {
+        this.greyListedSupervisors.clear();
+        this.greyListedSupervisors.addAll(greyListedSupervisors);
     }
 }

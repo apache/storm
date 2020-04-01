@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,6 +86,7 @@ import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.IVersionInfo;
@@ -632,7 +634,30 @@ public class UIHelpers {
                 ? StatsUtil.floatStr((supervisorUsedCpu * 100.0) / supervisorTotalCpu) : "0.0");
         result.put("bugtracker-url", conf.get(DaemonConfig.UI_PROJECT_BUGTRACKER_URL));
         result.put("central-log-url", conf.get(DaemonConfig.UI_CENTRAL_LOGGING_URL));
+
+        Map<String, Double> usedGenericResources = new HashMap<>();
+        Map<String, Double> totalGenericResources = new HashMap<>();
+        for (SupervisorSummary ss : supervisorSummaries) {
+            usedGenericResources = NormalizedResourceRequest.addResourceMap(usedGenericResources, ss.get_used_generic_resources());
+            totalGenericResources = NormalizedResourceRequest.addResourceMap(totalGenericResources, ss.get_total_resources());
+        }
+        Map<String, Double> availGenericResources = NormalizedResourceRequest
+                .subtractResourceMap(totalGenericResources, usedGenericResources);
+        result.put("availGenerics", prettifyGenericResources(availGenericResources));
+        result.put("totalGenerics", prettifyGenericResources(totalGenericResources));
         return result;
+    }
+
+    private static String prettifyGenericResources(Map<String, Double> resourceMap) {
+        if (resourceMap == null) {
+            return null;
+        }
+        TreeMap<String, Double> treeGenericResources = new TreeMap<>(); // use TreeMap for deterministic ordering
+        treeGenericResources.putAll(resourceMap);
+        NormalizedResourceRequest.removeNonGenericResources(treeGenericResources);
+        return treeGenericResources.toString()
+                .replaceAll("[{}]", "")
+                .replace(",", "");
     }
 
     /**
@@ -745,12 +770,14 @@ public class UIHelpers {
                 topologySummary.get_requested_memoffheap()
                         + topologySummary.get_assigned_memonheap());
         result.put("requestedCpu", topologySummary.get_requested_cpu());
+        result.put("requestedGenericResources", prettifyGenericResources(topologySummary.get_requested_generic_resources()));
         result.put("assignedMemOnHeap", topologySummary.get_assigned_memonheap());
         result.put("assignedMemOffHeap", topologySummary.get_assigned_memoffheap());
         result.put("assignedTotalMem",
                 topologySummary.get_assigned_memoffheap()
                         + topologySummary.get_assigned_memonheap());
         result.put("assignedCpu", topologySummary.get_assigned_cpu());
+        result.put("assignedGenericResources", prettifyGenericResources(topologySummary.get_assigned_generic_resources()));
         result.put("topologyVersion", topologySummary.get_topology_version());
         result.put("stormVersion", topologySummary.get_storm_version());
         return result;
@@ -909,6 +936,15 @@ public class UIHelpers {
         result.put("availMem", totalMemory - supervisorSummary.get_used_mem());
         result.put("availCpu", totalCpu - supervisorSummary.get_used_cpu());
         result.put("version", supervisorSummary.get_version());
+
+        Map<String, Double> totalGenericResources = new HashMap<>(totalResources);
+        result.put("totalGenericResources", prettifyGenericResources(totalGenericResources));
+        Map<String, Double> usedGenericResources = supervisorSummary.get_used_generic_resources();
+        result.put("usedGenericResources", prettifyGenericResources(usedGenericResources));
+        Map<String, Double> availGenericResources = NormalizedResourceRequest
+                .subtractResourceMap(totalGenericResources, usedGenericResources);
+        result.put("availGenericResources", prettifyGenericResources(availGenericResources));
+
         return result;
     }
 
@@ -1050,7 +1086,7 @@ public class UIHelpers {
      * @return getSupervisorPageInfo
      */
     public static Map<String, Object> getSupervisorPageInfo(
-            SupervisorPageInfo supervisorPageInfo, Map<String,Object> config) {
+            SupervisorPageInfo supervisorPageInfo, Map<String, Object> config) {
         Map<String, Object> result = new HashMap<>();
         result.put("workers", getWorkerSummaries(supervisorPageInfo, config));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
@@ -1067,7 +1103,7 @@ public class UIHelpers {
      * @return getAllTopologiesSummary
      */
     public static Map<String, Object> getAllTopologiesSummary(
-            List<TopologySummary> topologies, Map<String,Object> config) {
+            List<TopologySummary> topologies, Map<String, Object> config) {
         Map<String, Object> result = new HashMap();
         result.put("topologies", getTopologiesMap(null, topologies));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
@@ -1133,7 +1169,7 @@ public class UIHelpers {
      * @param windowToTransferred windowToTransferred
      * @return getStatDisplayMapLong
      */
-    private static Map<String, Long> getStatDisplayMapLong(Map<String,Long> windowToTransferred) {
+    private static Map<String, Long> getStatDisplayMapLong(Map<String, Long> windowToTransferred) {
         Map<String, Long> result = new HashMap();
         for (Map.Entry<String, Long> entry : windowToTransferred.entrySet()) {
             result.put(entry.getKey(), entry.getValue());
@@ -1165,6 +1201,9 @@ public class UIHelpers {
             result.put(
                     "requestedCpu",
                     commonAggregateStats.get_resources_map().get(Constants.COMMON_CPU_RESOURCE_NAME));
+            result.put(
+                    "requestedGenericResourcesComp",
+                    prettifyGenericResources(commonAggregateStats.get_resources_map()));
         }
         return result;
     }
@@ -1518,7 +1557,7 @@ public class UIHelpers {
      * @param config config
      * @return unpackTopologyInfo
      */
-    private static Map<String,Object> unpackTopologyInfo(TopologyPageInfo topologyPageInfo, String window, Map<String,Object> config) {
+    private static Map<String, Object> unpackTopologyInfo(TopologyPageInfo topologyPageInfo, String window, Map<String, Object> config) {
         Map<String, Object> result = new HashMap();
         result.put("id", topologyPageInfo.get_id());
         result.put("encodedId", Utils.urlEncodeUtf8(topologyPageInfo.get_id()));
@@ -1546,10 +1585,12 @@ public class UIHelpers {
         result.put("requestedSharedOnHeapMem", topologyPageInfo.get_requested_shared_on_heap_memory());
         result.put("requestedRegularOffHeapMem", topologyPageInfo.get_requested_regular_off_heap_memory());
         result.put("requestedSharedOffHeapMem", topologyPageInfo.get_requested_shared_off_heap_memory());
+        result.put("requestedGenericResources", prettifyGenericResources(topologyPageInfo.get_requested_generic_resources()));
         result.put("assignedRegularOnHeapMem", topologyPageInfo.get_assigned_regular_on_heap_memory());
         result.put("assignedSharedOnHeapMem", topologyPageInfo.get_assigned_shared_on_heap_memory());
         result.put("assignedRegularOffHeapMem", topologyPageInfo.get_assigned_regular_off_heap_memory());
         result.put("assignedSharedOffHeapMem", topologyPageInfo.get_assigned_shared_off_heap_memory());
+        result.put("assignedGenericResources", prettifyGenericResources(topologyPageInfo.get_assigned_generic_resources()));
         result.put("topologyStats", getTopologyStatsMap(topologyPageInfo.get_topology_stats()));
         List<Map> workerSummaries = new ArrayList();
         if (topologyPageInfo.is_set_workers()) {
@@ -1624,8 +1665,8 @@ public class UIHelpers {
      * @param config config
      * @return getTopologyLag.
      */
-    public static Map<String, Map<String, Object>> getTopologyLag(StormTopology userTopology, Map<String,Object> config) {
-        Boolean disableLagMonitoring = (Boolean)(config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING));
+    public static Map<String, Map<String, Object>> getTopologyLag(StormTopology userTopology, Map<String, Object> config) {
+        Boolean disableLagMonitoring = (Boolean) (config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING));
         return disableLagMonitoring ? Collections.EMPTY_MAP : TopologySpoutLag.lag(userTopology, config);
     }
 
@@ -1690,11 +1731,11 @@ public class UIHelpers {
      * @param stats stats
      * @return sanitizeTransferredStats
      */
-    public static  Map<String, Map<String,Long>> sanitizeTransferredStats(Map<String, Map<String,Long>> stats) {
-        Map<String, Map<String,Long>> result = new HashMap();
-        for (Map.Entry<String, Map<String,Long>> entry : stats.entrySet()) {
-            Map<String,Long> temp = new HashMap();
-            for (Map.Entry<String,Long> innerEntry : entry.getValue().entrySet()) {
+    public static  Map<String, Map<String, Long>> sanitizeTransferredStats(Map<String, Map<String, Long>> stats) {
+        Map<String, Map<String, Long>> result = new HashMap();
+        for (Map.Entry<String, Map<String, Long>> entry : stats.entrySet()) {
+            Map<String, Long> temp = new HashMap();
+            for (Map.Entry<String, Long> innerEntry : entry.getValue().entrySet()) {
                 temp.put(sanitizeStreamName(innerEntry.getKey()), innerEntry.getValue());
             }
             result.put(entry.getKey(), temp);
@@ -1726,7 +1767,7 @@ public class UIHelpers {
      * @param entryInput entryInput
      * @return getInputMap
      */
-    public static Map<String, Object> getInputMap(Map.Entry<GlobalStreamId,Grouping> entryInput) {
+    public static Map<String, Object> getInputMap(Map.Entry<GlobalStreamId, Grouping> entryInput) {
         Map<String, Object> result = new HashMap();
         result.put(":component", entryInput.getKey().get_componentId());
         result.put(":stream", entryInput.getKey().get_streamId());
@@ -2025,6 +2066,8 @@ public class UIHelpers {
                 componentPageInfo.get_resources_map().get(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME));
         result.put("requestedCpu",
                 componentPageInfo.get_resources_map().get(Constants.COMMON_CPU_RESOURCE_NAME));
+        result.put("requestedGenericResources",
+                prettifyGenericResources(componentPageInfo.get_resources_map()));
 
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
         result.put("topologyId", id);
@@ -2265,7 +2308,7 @@ public class UIHelpers {
      * @throws TException TException
      */
     public static Map<String, Object> getTopologyProfilingDump(Nimbus.Iface client, String id, String hostPort,
-                                                               Map<String,Object> config) throws TException {
+                                                               Map<String, Object> config) throws TException {
         setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(),
                 config, ProfileAction.JPROFILE_DUMP
@@ -2299,7 +2342,7 @@ public class UIHelpers {
      */
     public static Map<String, Object> getTopologyProfilingRestartWorker(Nimbus.Iface client,
                                                                         String id, String hostPort,
-                                                                        Map<String,Object> config) throws TException {
+                                                                        Map<String, Object> config) throws TException {
         setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JVM_RESTART
         );
@@ -2319,7 +2362,7 @@ public class UIHelpers {
      * @throws TException TException
      */
     public static Map<String, Object> getTopologyProfilingDumpHeap(Nimbus.Iface client, String id, String hostPort,
-                                                                   Map<String,Object> config) throws TException {
+                                                                   Map<String, Object> config) throws TException {
         setTopologyProfilingAction(client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JMAP_DUMP);
         Map<String, Object> result = new HashMap();
         result.put("status", "ok");
@@ -2364,7 +2407,7 @@ public class UIHelpers {
      * @param config config
      * @return getNimbusSummary
      */
-    public static Map<String, Object> getNimbusSummary(ClusterSummary clusterInfo, Map<String,Object> config) {
+    public static Map<String, Object> getNimbusSummary(ClusterSummary clusterInfo, Map<String, Object> config) {
         List<NimbusSummary> nimbusSummaries = clusterInfo.get_nimbuses();
         List<String> nimbusSeeds = new ArrayList();
         for (String nimbusHost : (List<String>) config.get(Config.NIMBUS_SEEDS)) {

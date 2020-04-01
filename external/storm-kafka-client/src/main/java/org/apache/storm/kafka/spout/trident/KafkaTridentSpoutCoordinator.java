@@ -35,7 +35,7 @@ import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KafkaTridentSpoutCoordinator<K,V> implements 
+public class KafkaTridentSpoutCoordinator<K, V> implements
     IOpaquePartitionedTridentSpout.Coordinator<List<Map<String, Object>>>,
     IPartitionedTridentSpout.Coordinator<List<Map<String, Object>>>,
         Serializable {

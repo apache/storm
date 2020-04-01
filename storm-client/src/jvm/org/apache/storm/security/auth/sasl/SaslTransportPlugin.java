@@ -49,14 +49,12 @@ import org.apache.storm.utils.ExtendedThreadPoolExecutor;
 public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable {
     protected ThriftConnectionType type;
     protected Map<String, Object> conf;
-    protected Configuration loginConf;
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map<String, Object> conf, Configuration loginConf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> conf) {
         this.type = type;
         this.conf = conf;
-        this.loginConf = loginConf;
     }
 
     @Override
@@ -126,7 +124,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
         }
 
         @Override
-        public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
+        public void process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context
             ReqContext reqContext = ReqContext.context();
 
@@ -135,7 +133,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
             TSaslServerTransport saslTrans = (TSaslServerTransport) trans;
 
             if (trans instanceof NoOpTTrasport) {
-                return false;
+                return;
             }
 
             //remote address
@@ -151,7 +149,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
             reqContext.setSubject(remoteUser);
 
             //invoke service handler
-            return wrapped.process(inProt, outProt);
+            wrapped.process(inProt, outProt);
         }
     }
 

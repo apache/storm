@@ -12,8 +12,10 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,13 +38,13 @@ import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
+import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.localizer.AsyncLocalizer;
 import org.apache.storm.localizer.BlobChangingCallback;
 import org.apache.storm.localizer.GoodToGo;
 import org.apache.storm.localizer.LocallyCachedBlob;
 import org.apache.storm.metricstore.WorkerMetricsProcessor;
 import org.apache.storm.scheduler.ISupervisor;
-import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.EnumUtil;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
@@ -174,9 +176,80 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
     }
 
     /**
-     * Decide the equivalence of two local assignments, ignoring the order of executors
-     * This is different from #equal method.
-     * @param first Local assignment A
+     * This method compares WorkerResources while considering any resources are NULL to be 0.0
+     *
+     * @param first  WorkerResources A
+     * @param second WorkerResources B
+     * @return True if A and B are equivalent, treating the absent resources as 0.0
+     */
+    @VisibleForTesting
+    static boolean customWorkerResourcesEquality(WorkerResources first, WorkerResources second) {
+        if (first == null) {
+            return false;
+        }
+        if (first == second) {
+            return true;
+        }
+        if (first.equals(second)) {
+            return true;
+        }
+
+        if (first.get_cpu() != second.get_cpu()) {
+            return false;
+        }
+        if (first.get_mem_on_heap() != second.get_mem_on_heap()) {
+            return false;
+        }
+        if (first.get_mem_off_heap() != second.get_mem_off_heap()) {
+            return false;
+        }
+        if (first.get_shared_mem_off_heap() != second.get_shared_mem_off_heap()) {
+            return false;
+        }
+        if (first.get_shared_mem_on_heap() != second.get_shared_mem_on_heap()) {
+            return false;
+        }
+        if (!customResourceMapEquality(first.get_resources(), second.get_resources())) {
+            return false;
+        }
+        if (!customResourceMapEquality(first.get_shared_resources(), second.get_shared_resources())) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * This method compares Resource Maps while considering any resources are NULL to be 0.0
+     *
+     * @param firstMap  Resource Map A
+     * @param secondMap Resource Map B
+     * @return True if A and B are equivalent, treating the absent resources as 0.0
+     */
+    private static boolean customResourceMapEquality(Map<String, Double> firstMap, Map<String, Double> secondMap) {
+        if (firstMap == null && secondMap == null) {
+            return true;
+        }
+        if (firstMap == null) {
+            firstMap = new HashMap<>();
+        }
+        if (secondMap == null) {
+            secondMap = new HashMap<>();
+        }
+
+        Set<String> keys = new HashSet<>(firstMap.keySet());
+        keys.addAll(secondMap.keySet());
+        for (String key : keys) {
+            if (firstMap.getOrDefault(key, 0.0).doubleValue() != secondMap.getOrDefault(key, 0.0).doubleValue()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Decide the equivalence of two local assignments, ignoring the order of executors This is different from #equal method.
+     *
+     * @param first  Local assignment A
      * @param second Local assignment B
      * @return True if A and B are equivalent, ignoring the order of the executors
      */
@@ -196,9 +269,9 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                         return true;
                     }
                     if (firstHasResources && secondHasResources) {
-                        if (first.get_resources().equals(second.get_resources())) {
-                            return true;
-                        }
+                        WorkerResources firstResources = first.get_resources();
+                        WorkerResources secondResources = second.get_resources();
+                        return customWorkerResourcesEquality(firstResources, secondResources);
                     }
                 }
             }
@@ -684,6 +757,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         long timeDiffms = (Time.currentTimeMillis() - dynamicState.startTime);
         long hbFirstTimeoutMs = getFirstHbTimeoutMs(staticState, dynamicState);
         if (timeDiffms > hbFirstTimeoutMs) {
+            staticState.slotMetrics.numWorkerStartTimedOut.mark();
             LOG.warn("SLOT {}: Container {} failed to launch in {} ms.", staticState.port, dynamicState.container,
                     hbFirstTimeoutMs);
             return killContainerFor(KillReason.HB_TIMEOUT, dynamicState, staticState);
@@ -729,18 +803,21 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         }
 
         if (dynamicState.container.didMainProcessExit()) {
-            LOG.warn("SLOT {}: main process has exited", staticState.port);
+            LOG.warn("SLOT {}: main process has exited for topology: {}",
+                    staticState.port, dynamicState.currentAssignment.get_topology_id());
             return killContainerFor(KillReason.PROCESS_EXIT, dynamicState, staticState);
         }
 
         if (dynamicState.container.isMemoryLimitViolated(dynamicState.currentAssignment)) {
-            LOG.warn("SLOT {}: violated memory limits", staticState.port);
+            LOG.warn("SLOT {}: violated memory limits for topology: {}",
+                    staticState.port, dynamicState.currentAssignment.get_topology_id());
             return killContainerFor(KillReason.MEMORY_VIOLATION, dynamicState, staticState);
         }
 
         LSWorkerHeartbeat hb = dynamicState.container.readHeartbeat();
         if (hb == null) {
-            LOG.warn("SLOT {}: HB returned as null", staticState.port);
+            LOG.warn("SLOT {}: HB returned as null for topology: {}",
+                    staticState.port, dynamicState.currentAssignment.get_topology_id());
             //This can happen if the supervisor crashed after launching a
             // worker that never came up.
             return killContainerFor(KillReason.HB_NULL, dynamicState, staticState);
@@ -749,7 +826,8 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         long timeDiffMs = (Time.currentTimeSecs() - hb.get_time_secs()) * 1000;
         long hbTimeoutMs = getHbTimeoutMs(staticState, dynamicState);
         if (timeDiffMs > hbTimeoutMs) {
-            LOG.warn("SLOT {}: HB is too old {} > {}", staticState.port, timeDiffMs, hbTimeoutMs);
+            LOG.warn("SLOT {}: HB is too old {} > {} for topology: {}",
+                    staticState.port, timeDiffMs, hbTimeoutMs, dynamicState.currentAssignment.get_topology_id());
             return killContainerFor(KillReason.HB_TIMEOUT, dynamicState, staticState);
         }
 

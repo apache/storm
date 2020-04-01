@@ -43,14 +43,14 @@ public final class AutoHDFSCommand {
     public static void main(String[] args) throws Exception {
         Map<String, Object> conf = new HashMap<>();
         conf.put(STORM_USER_NAME_KEY, args[1]); //with realm e.g. hdfs@WITZEND.COM
-        conf.put(STORM_KEYTAB_FILE_KEY, args[2]);// /etc/security/keytabs/storm.keytab
+        conf.put(STORM_KEYTAB_FILE_KEY, args[2]); // /etc/security/keytabs/storm.keytab
 
         AutoHDFS autoHdfs = new AutoHDFS();
         autoHdfs.prepare(conf);
         AutoHDFSNimbus autoHdfsNimbus = new AutoHDFSNimbus();
         autoHdfsNimbus.prepare(conf);
 
-        Map<String,String> creds  = new HashMap<>();
+        Map<String, String> creds  = new HashMap<>();
         autoHdfsNimbus.populateCredentials(creds, conf, args[0]);
         LOG.info("Got HDFS credentials", autoHdfs.getCredentials(creds));
 

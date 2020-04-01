@@ -27,10 +27,14 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.storm.generated.ComponentType;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.Cluster;
@@ -126,7 +130,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         } else {
             String comp = td.getExecutorToComponent().get(exec);
             NormalizedResourceRequest requestedResources = td.getTotalResources(exec);
-            LOG.error("Not Enough Resources to schedule Task {} - {} {}", exec, comp, requestedResources);
+            LOG.warn("Not Enough Resources to schedule Task {} - {} {}", exec, comp, requestedResources);
             return false;
         }
     }
@@ -242,7 +246,9 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             this.parent = parent;
             rackIterator = sortedRacks.iterator();
             pre = parent.favoredNodeIds.iterator();
-            post = parent.unFavoredNodeIds.iterator();
+            post = Stream.concat(parent.unFavoredNodeIds.stream(), parent.greyListedSupervisorIds.stream())
+                            .collect(Collectors.toList())
+                            .iterator();
             skip = parent.skippedNodeIds;
         }
 
@@ -266,14 +272,18 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             if (pre.hasNext()) {
                 return true;
             }
+            if (nextValueFromNode != null) {
+                return true;
+            }
             while (true) {
                 //For the node we don't know if we have another one unless we look at the contents
                 Iterator<ObjectResources> nodeIterator = getNodeIterator();
                 if (nodeIterator == null || !nodeIterator.hasNext()) {
                     break;
                 }
-                nextValueFromNode = nodeIterator.next().id;
-                if (!skip.contains(nextValueFromNode)) {
+                String tmp = nodeIterator.next().id;
+                if (!skip.contains(tmp)) {
+                    nextValueFromNode = tmp;
                     return true;
                 }
             }
@@ -285,6 +295,9 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
         @Override
         public String next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
             if (pre.hasNext()) {
                 return pre.next();
             }
@@ -305,15 +318,20 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         private final TopologyDetails td;
         private final List<String> favoredNodeIds;
         private final List<String> unFavoredNodeIds;
+        private final List<String> greyListedSupervisorIds;
         private final Set<String> skippedNodeIds = new HashSet<>();
 
         LazyNodeSorting(TopologyDetails td, ExecutorDetails exec,
                                List<String> favoredNodeIds, List<String> unFavoredNodeIds) {
             this.favoredNodeIds = favoredNodeIds;
             this.unFavoredNodeIds = unFavoredNodeIds;
+            this.greyListedSupervisorIds = cluster.getGreyListedSupervisors();
             this.unFavoredNodeIds.removeAll(favoredNodeIds);
+            this.favoredNodeIds.removeAll(greyListedSupervisorIds);
+            this.unFavoredNodeIds.removeAll(greyListedSupervisorIds);
             skippedNodeIds.addAll(favoredNodeIds);
             skippedNodeIds.addAll(unFavoredNodeIds);
+            skippedNodeIds.addAll(greyListedSupervisorIds);
 
             this.td = td;
             this.exec = exec;
@@ -500,7 +518,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * this component and then from each neighboring component in sorted order. Do this until there is nothing left to schedule.
      *
      * @param td                  The topology the executors belong to
-     * @param unassignedExecutors a collection of unassigned executors that need to be unassigned. Should only try to assign executors from
+     * @param unassignedExecutors a collection of unassigned executors that need to be assigned. Should only try to assign executors from
      *                            this list
      * @return a list of executors in sorted order
      */
@@ -511,7 +529,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
         Map<String, Queue<ExecutorDetails>> compToExecsToSchedule = new HashMap<>();
         for (Component component : componentMap.values()) {
-            compToExecsToSchedule.put(component.getId(), new LinkedList<ExecutorDetails>());
+            compToExecsToSchedule.put(component.getId(), new LinkedList<>());
             for (ExecutorDetails exec : component.getExecs()) {
                 if (unassignedExecutors.contains(exec)) {
                     compToExecsToSchedule.get(component.getId()).add(exec);
@@ -523,7 +541,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         sortedComponents.addAll(componentMap.values());
 
         for (Component currComp : sortedComponents) {
-            Map<String, Component> neighbors = new HashMap<String, Component>();
+            Map<String, Component> neighbors = new HashMap<>();
             for (String compId : Sets.union(currComp.getChildren(), currComp.getParents())) {
                 neighbors.put(compId, componentMap.get(compId));
             }

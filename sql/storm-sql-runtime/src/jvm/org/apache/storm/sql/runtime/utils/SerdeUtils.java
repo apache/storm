@@ -115,16 +115,16 @@ public final class SerdeUtils {
         if (value instanceof Utf8) {
             ret = value.toString();
         } else if (value instanceof Map<?, ?>) {
-            ret = convertAvroUtf8Map((Map<Object,Object>)value);
+            ret = convertAvroUtf8Map((Map<Object, Object>) value);
         } else if (value instanceof GenericData.Array) {
-            ret = convertAvroUtf8Array((GenericData.Array)value);
+            ret = convertAvroUtf8Array((GenericData.Array) value);
         } else {
             ret = value;
         }
         return ret;
     }
 
-    private static Object convertAvroUtf8Map(Map<Object,Object> value) {
+    private static Object convertAvroUtf8Map(Map<Object, Object> value) {
         Map<Object, Object> map = new HashMap<>(value.size());
         for (Map.Entry<Object, Object> entry : value.entrySet()) {
             Object k = convertAvroUtf8(entry.getKey());

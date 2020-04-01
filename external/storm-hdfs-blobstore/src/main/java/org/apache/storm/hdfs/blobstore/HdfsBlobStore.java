@@ -26,15 +26,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import javax.security.auth.Subject;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStore;
@@ -48,6 +44,7 @@ import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.HadoopLoginUtil;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyAlreadyExistsException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
@@ -74,36 +71,14 @@ import org.slf4j.LoggerFactory;
  * subject. The blobstore gets the hadoop user and validates permissions for the supervisor.
  */
 public class HdfsBlobStore extends BlobStore {
-    public static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStore.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStore.class);
     private static final String DATA_PREFIX = "data_";
     private static final String META_PREFIX = "meta_";
-    private static final HashMap<String, Subject> alreadyLoggedInUsers = new HashMap<>();
 
     private BlobStoreAclHandler aclHandler;
     private HdfsBlobStoreImpl hbs;
     private Subject localSubject;
     private Map<String, Object> conf;
-
-    /**
-     * Get the subject from Hadoop so we can use it to validate the acls. There is no direct
-     * interface from UserGroupInformation to get the subject, so do a doAs and get the context.
-     * We could probably run everything in the doAs but for now just grab the subject.
-     */
-    private Subject getHadoopUser() {
-        Subject subj;
-        try {
-            subj = UserGroupInformation.getCurrentUser().doAs(
-                    new PrivilegedAction<Subject>() {
-                        @Override
-                        public Subject run() {
-                            return Subject.getSubject(AccessController.getContext());
-                        }
-                    });
-        } catch (IOException e) {
-            throw new RuntimeException("Error creating subject and logging user in!", e);
-        }
-        return subj;
-    }
 
     /**
      * If who is null then we want to use the user hadoop says we are.
@@ -130,42 +105,16 @@ public class HdfsBlobStore extends BlobStore {
     protected void prepareInternal(Map<String, Object> conf, String overrideBase, Configuration hadoopConf) {
         this.conf = conf;
         if (overrideBase == null) {
-            overrideBase = (String)conf.get(Config.BLOBSTORE_DIR);
+            overrideBase = (String) conf.get(Config.BLOBSTORE_DIR);
         }
         if (overrideBase == null) {
             throw new RuntimeException("You must specify a blobstore directory for HDFS to use!");
         }
         LOG.debug("directory is: {}", overrideBase);
-        try {
-            // if a HDFS keytab/principal have been supplied login, otherwise assume they are
-            // logged in already or running insecure HDFS.
-            String principal = Config.getBlobstoreHDFSPrincipal(conf);
-            String keyTab = (String) conf.get(Config.BLOBSTORE_HDFS_KEYTAB);
 
-            if (principal != null && keyTab != null) {
-                String combinedKey = principal + " from " + keyTab;
-                synchronized (alreadyLoggedInUsers) {
-                    localSubject = alreadyLoggedInUsers.get(combinedKey);
-                    if (localSubject == null) {
-                        UserGroupInformation.loginUserFromKeytab(principal, keyTab);
-                        localSubject = getHadoopUser();
-                        alreadyLoggedInUsers.put(combinedKey, localSubject);
-                    }
-                }
-            } else {
-                if (principal == null && keyTab != null) {
-                    throw new RuntimeException("You must specify an HDFS principal to go with the keytab!");
+        //Login to hdfs
+        localSubject = HadoopLoginUtil.loginHadoop(conf);
 
-                } else {
-                    if (principal != null && keyTab == null) {
-                        throw new RuntimeException("You must specify HDFS keytab go with the principal!");
-                    }
-                }
-                localSubject = getHadoopUser();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error logging in from keytab: " + e.getMessage(), e);
-        }
         aclHandler = new BlobStoreAclHandler(conf);
         Path baseDir = new Path(overrideBase, BASE_BLOBS_DIR_NAME);
         try {
@@ -183,7 +132,7 @@ public class HdfsBlobStore extends BlobStore {
     public AtomicOutputStream createBlob(String key, SettableBlobMeta meta, Subject who)
             throws AuthorizationException, KeyAlreadyExistsException {
         if (meta.get_replication_factor() <= 0) {
-            meta.set_replication_factor((int)conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
+            meta.set_replication_factor((int) conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
         }
         who = checkAndGetSubject(who);
         validateKey(key);
@@ -296,7 +245,7 @@ public class HdfsBlobStore extends BlobStore {
     public void setBlobMeta(String key, SettableBlobMeta meta, Subject who)
             throws AuthorizationException, KeyNotFoundException {
         if (meta.get_replication_factor() <= 0) {
-            meta.set_replication_factor((int)conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
+            meta.set_replication_factor((int) conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
         }
         who = checkAndGetSubject(who);
         validateKey(key);

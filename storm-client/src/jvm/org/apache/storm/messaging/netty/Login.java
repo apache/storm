@@ -19,6 +19,9 @@ package org.apache.storm.messaging.netty;
  * does not die.
  */
 
+import java.io.File;
+import java.net.URI;
+import java.security.URIParameter;
 import java.util.Date;
 import java.util.Random;
 import java.util.Set;
@@ -57,12 +60,9 @@ public class Login {
     private Thread thread = null;
     private boolean isKrbTicket = false;
     private boolean isUsingTicketCache = false;
-    private boolean isUsingKeytab = false;
     private LoginContext login = null;
     private String loginContextName = null;
-    private String keytabFile = null;
     private String principal = null;
-
     private long lastLogin = 0;
 
     /**
@@ -77,14 +77,14 @@ public class Login {
      * @throws javax.security.auth.login.LoginException
      *               Thrown if authentication fails.
      */
-    public Login(final String loginContextName, CallbackHandler callbackHandler)
+    public Login(final String loginContextName, CallbackHandler callbackHandler, String jaasConfFile)
         throws LoginException {
         this.callbackHandler = callbackHandler;
-        login = login(loginContextName);
+        login = login(loginContextName, jaasConfFile);
         this.loginContextName = loginContextName;
         subject = login.getSubject();
         isKrbTicket = !subject.getPrivateCredentials(KerberosTicket.class).isEmpty();
-        AppConfigurationEntry[] entries = Configuration.getConfiguration().getAppConfigurationEntry(loginContextName);
+        AppConfigurationEntry[] entries = this.getConfiguration(jaasConfFile).getAppConfigurationEntry(loginContextName);
         for (AppConfigurationEntry entry : entries) {
             // there will only be a single entry, so this for() loop will only be iterated through once.
             if (entry.getOptions().get("useTicketCache") != null) {
@@ -92,10 +92,6 @@ public class Login {
                 if (val.equals("true")) {
                     isUsingTicketCache = true;
                 }
-            }
-            if (entry.getOptions().get("keyTab") != null) {
-                keytabFile = (String) entry.getOptions().get("keyTab");
-                isUsingKeytab = true;
             }
             if (entry.getOptions().get("principal") != null) {
                 principal = (String) entry.getOptions().get("principal");
@@ -251,6 +247,19 @@ public class Login {
         thread.setDaemon(true);
     }
 
+    private Configuration getConfiguration(String jaasConfFile) {
+        File configFile = new File(jaasConfFile);
+        if (!configFile.canRead()) {
+            throw new RuntimeException("File " + jaasConfFile + " cannot be read.");
+        }
+        try {
+            URI configUri = configFile.toURI();
+            return Configuration.getInstance("JavaLoginConfig", new URIParameter(configUri));
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get configuration for " + jaasConfFile, ex);
+        }
+    }
+
     public void startThreadIfNeeded() {
         // thread object 'thread' will be null if a refresh thread is not needed.
         if (thread != null) {
@@ -277,7 +286,7 @@ public class Login {
         return loginContextName;
     }
 
-    private synchronized LoginContext login(final String loginContextName) throws LoginException {
+    private synchronized LoginContext login(final String loginContextName, String jaasConfFile) throws LoginException {
         if (loginContextName == null) {
             throw new LoginException("loginContext name (JAAS file section header) was null. "
                     + "Please check your java.security.login.auth.config (="
@@ -285,9 +294,16 @@ public class Login {
                     + ") and your " + ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY + "(="
                     + System.getProperty(ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY, "Client") + ")");
         }
-        LoginContext loginContext = new LoginContext(loginContextName, callbackHandler);
-        loginContext.login();
-        LOG.info("successfully logged in.");
+        Configuration configuration = this.getConfiguration(jaasConfFile);
+        LoginContext loginContext;
+        try {
+            loginContext = new LoginContext(loginContextName, null, callbackHandler, configuration);
+            loginContext.login();
+        } catch (LoginException e) {
+            LOG.error("Login using jaas conf " + jaasConfFile + " failed");
+            throw e;
+        }
+        LOG.info("Successfully logged in to context " + loginContextName + " using " + jaasConfFile);
         return loginContext;
     }
 
