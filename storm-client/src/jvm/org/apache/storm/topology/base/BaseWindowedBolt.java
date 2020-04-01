@@ -242,7 +242,7 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
-     * Specify the Trigger Policy
+     * Specify the Trigger Policy.
      *
      * @param evictionPolicy the policy to be applied while evicting tuples from the window
      * */
