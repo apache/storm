@@ -117,6 +117,7 @@ public class StormSubmitter {
 
     /**
      * Push a new set of credentials to the running topology.
+     * Return false if push Creds map is empty, true otherwise.
      *
      * @param name        the name of the topology to push credentials to.
      * @param topoConf    the topology-specific configuration, if desired. See {@link Config}.
@@ -126,7 +127,7 @@ public class StormSubmitter {
      * @throws NotAliveException        if the topology is not alive
      * @throws InvalidTopologyException if any other error happens
      */
-    public static void pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials, String expectedUser)
+    public static boolean pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials, String expectedUser)
         throws AuthorizationException, NotAliveException, InvalidTopologyException {
         topoConf = new HashMap(topoConf);
         topoConf.putAll(Utils.readCommandLineOpts());
@@ -135,7 +136,7 @@ public class StormSubmitter {
         Map<String, String> fullCreds = populateCredentials(conf, credentials);
         if (fullCreds.isEmpty()) {
             LOG.warn("No credentials were found to push to " + name);
-            return;
+            return false;
         }
         try {
             try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
@@ -150,6 +151,7 @@ public class StormSubmitter {
         } catch (TException e) {
             throw new RuntimeException(e);
         }
+        return true;
     }
 
 
