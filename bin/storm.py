@@ -544,7 +544,7 @@ def initialize_upload_credentials_subcommand(subparsers):
     # If set, this flag will become true meaning that user expects non-empty creds to be uploaded.
     # Command exits with non-zero code if uploaded creds collection is empty.
     sub_parser.add_argument(
-        "-e", "--exception", action='store_true',
+        "-e", "--exception-when-empty", action='store_true',
         help="""whether to throw exception if there are no credentials uploaded, default to be false"""
     )
 

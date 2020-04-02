@@ -106,13 +106,14 @@ public class StormSubmitter {
      * @param name        the name of the topology to push credentials to.
      * @param topoConf    the topology-specific configuration, if desired. See {@link Config}.
      * @param credentials the credentials to push.
+     * @return whether the pushed credential collection fullCreds is non-empty. Return false if empty.
      * @throws AuthorizationException   if you are not authorized ot push credentials.
      * @throws NotAliveException        if the topology is not alive
      * @throws InvalidTopologyException if any other error happens
      */
-    public static void pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials)
+    public static boolean pushCredentials(String name, Map<String, Object> topoConf, Map<String, String> credentials)
         throws AuthorizationException, NotAliveException, InvalidTopologyException {
-        pushCredentials(name, topoConf, credentials, null);
+        return pushCredentials(name, topoConf, credentials, null);
     }
 
     /**
@@ -123,6 +124,7 @@ public class StormSubmitter {
      * @param topoConf    the topology-specific configuration, if desired. See {@link Config}.
      * @param credentials the credentials to push.
      * @param expectedUser the user you expect the topology to be owned by.
+     * @return whether the pushed credential collection fullCreds is non-empty. Return false if empty.
      * @throws AuthorizationException   if you are not authorized ot push credentials.
      * @throws NotAliveException        if the topology is not alive
      * @throws InvalidTopologyException if any other error happens

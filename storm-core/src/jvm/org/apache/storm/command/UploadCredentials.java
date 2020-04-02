@@ -42,7 +42,7 @@ public class UploadCredentials {
     public static void main(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("f", "file", null)
                                     .opt("u", "user", null)
-                                    .boolOpt("e", "exception")
+                                    .boolOpt("e", "exception-when-empty")
                                     .arg("topologyName", CLI.FIRST_WINS)
                                     .optionalArg("rawCredentials", CLI.INTO_LIST)
                                     .parse(args);
@@ -112,7 +112,7 @@ public class UploadCredentials {
         // use the local setting for the login config rather than the topology's
         topologyConf.remove("java.security.auth.login.config");
 
-        boolean throwExceptionForEmptyCreds = (boolean) cl.getOrDefault("e", false);
+        boolean throwExceptionForEmptyCreds = (boolean) cl.get("e");
         boolean hasCreds = StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap, (String) cl.get("u"));
         if (!hasCreds && throwExceptionForEmptyCreds) {
             String message = "No credentials were uploaded for " + topologyName;

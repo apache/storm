@@ -320,7 +320,7 @@ eg: `storm shell resources/ python topology.py arg1 arg2`
 Syntax: `storm upload_credentials topology-name [credkey credvalue]*`
 
 Uploads a new set of credentials to a running topology  
-   * `-e --exception`: optioanl flag. If set, command will fail and throw exception if no credentials were uploaded.
+   * `-e --exception`: optional flag. If set, command will fail and throw exception if no credentials were uploaded.
    
 
 ### version
