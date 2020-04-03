@@ -51,14 +51,17 @@ public class LoadAwareShuffleGroupingTest {
     public static final double ACCEPTABLE_MARGIN = 0.015;
     private static final Logger LOG = LoggerFactory.getLogger(LoadAwareShuffleGroupingTest.class);
 
-    private WorkerTopologyContext mockContext(List<Integer> availableTaskIds) {
+    private Map<String, Object> createConf() {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN, "org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping");
         conf.put(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND, 0.8);
         conf.put(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND, 0.2);
+        return conf;
+    }
 
+    private WorkerTopologyContext mockContext(List<Integer> availableTaskIds) {
         WorkerTopologyContext context = mock(WorkerTopologyContext.class);
-        when(context.getConf()).thenReturn(conf);
+        when(context.getConf()).thenReturn(createConf());
         Map<Integer, NodeInfo> taskNodeToPort = new HashMap<>();
         NodeInfo nodeInfo = new NodeInfo("node-id", Sets.newHashSet(6700L));
         availableTaskIds.forEach(e -> taskNodeToPort.put(e, nodeInfo));
@@ -495,5 +498,76 @@ public class LoadAwareShuffleGroupingTest {
         LOG.info("Max duration among threads is : {} ms", maxDurationMillis);
 
         refreshService.shutdownNow();
+    }
+
+    @Test
+    public void testLoadSwitching() throws Exception {
+        LoadAwareShuffleGrouping grouping = new LoadAwareShuffleGrouping();
+        WorkerTopologyContext context = createLoadSwitchingContext();
+        grouping.prepare(context, new GlobalStreamId("a", "default"), Arrays.asList(1, 2, 3));
+        // startup should default to worker local
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.WORKER_LOCAL, grouping.getCurrentScope());
+
+        // with high load, switch to host local
+        LoadMapping lm = createLoadMapping(1.0, 1.0, 1.0);
+        grouping.refreshLoad(lm);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.getCurrentScope());
+
+        // load remains high, switch to rack local
+        grouping.refreshLoad(lm);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.RACK_LOCAL, grouping.getCurrentScope());
+
+        // load remains high. switch to everything
+        grouping.refreshLoad(lm);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.EVERYTHING, grouping.getCurrentScope());
+
+        // lower load below low water threshold, but worker local load remains too high
+        // should switch to rack local
+        lm = createLoadMapping(0.2, 0.1, 0.1);
+        grouping.refreshLoad(lm);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.RACK_LOCAL, grouping.getCurrentScope());
+
+        // lower load continues, switch to host local
+        grouping.refreshLoad(lm);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.getCurrentScope());
+
+        // lower load continues, should NOT be able to switch to worker local yet
+        grouping.refreshLoad(lm);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.HOST_LOCAL, grouping.getCurrentScope());
+
+        // reduce load on local worker task, should switch to worker local
+        lm = createLoadMapping(0.1, 0.1, 0.1);
+        grouping.refreshLoad(lm);
+        assertEquals(LoadAwareShuffleGrouping.LocalityScope.WORKER_LOCAL, grouping.getCurrentScope());
+    }
+
+    private LoadMapping createLoadMapping(double load1, double load2, double load3) {
+        Map<Integer, Double> localLoad = new HashMap<>();
+        localLoad.put(1, load1);
+        localLoad.put(2, load2);
+        localLoad.put(3, load3);
+        LoadMapping lm = new LoadMapping();
+        lm.setLocal(localLoad);
+        return lm;
+    }
+
+    // creates a WorkerTopologyContext with 3 tasks, one worker local, one host local,
+    // and one rack local
+    private WorkerTopologyContext createLoadSwitchingContext() {
+        WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+        when(context.getConf()).thenReturn(createConf());
+        Map<Integer, NodeInfo> taskNodeToPort = new HashMap<>();
+
+        // worker local task
+        taskNodeToPort.put(1, new NodeInfo("node-id", Sets.newHashSet(6701L)));
+        // node local task
+        taskNodeToPort.put(2, new NodeInfo("node-id", Sets.newHashSet(6702L)));
+        // rack local task
+        taskNodeToPort.put(3, new NodeInfo("node-id2", Sets.newHashSet(6703L)));
+
+        when(context.getTaskToNodePort()).thenReturn(new AtomicReference<>(taskNodeToPort));
+        when(context.getThisWorkerHost()).thenReturn("node-id");
+        when(context.getThisWorkerPort()).thenReturn(6701);
+        return context;
     }
 }

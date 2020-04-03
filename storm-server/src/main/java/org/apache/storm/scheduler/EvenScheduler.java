@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.utils.ServerUtils;
@@ -161,7 +162,7 @@ public class EvenScheduler implements IScheduler {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf) {
+    public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         //noop
     }
 

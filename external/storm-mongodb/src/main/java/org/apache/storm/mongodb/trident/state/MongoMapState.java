@@ -182,7 +182,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
                 Bson filter = options.queryCreator.createFilterByKeys(keys);
                 Document doc = mongoClient.find(filter);
                 if (doc != null) {
-                    retval.add(this.serializer.deserialize((byte[])doc.get(options.serDocumentField)));
+                    retval.add(this.serializer.deserialize((byte[]) doc.get(options.serDocumentField)));
                 } else {
                     retval.add(null);
                 }

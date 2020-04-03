@@ -12,6 +12,7 @@
 
 package org.apache.storm.scheduler.resource;
 
+import com.codahale.metrics.Meter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SchedulerAssignment;
@@ -58,6 +60,7 @@ public class ResourceAwareScheduler implements IScheduler {
     private int schedulingTimeoutSeconds;
     private ExecutorService backgroundScheduling;
     private Set<String> evictedTopologies = new HashSet<>();
+    private Meter schedulingTimeoutMeter;
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
         markFailedTopology(u, c, td, message, null);
@@ -75,8 +78,9 @@ public class ResourceAwareScheduler implements IScheduler {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf) {
+    public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         this.conf = conf;
+        schedulingTimeoutMeter = metricsRegistry.registerMeter("nimbus:num-scheduling-timeouts");
         schedulingPriorityStrategy = ReflectionUtils.newInstance(
             (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY));
         configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
@@ -181,6 +185,7 @@ public class ResourceAwareScheduler implements IScheduler {
                                 + td.getId() + " using strategy " + rasStrategy.getClass().getName() + " timeout after "
                                 + schedulingTimeoutSeconds + " seconds using config "
                                 + DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY + ".");
+                        schedulingTimeoutMeter.mark();
                         schedulingFuture.cancel(true);
                         return;
                     }
@@ -224,7 +229,7 @@ public class ResourceAwareScheduler implements IScheduler {
 
                         if (!evictedSomething) {
                             StringBuilder message = new StringBuilder();
-                            message.append("Not enough resources to schedule ");
+                            message.append("Not enough resources to schedule after evicting lower priority topologies. ");
                             message.append(topologySchedulingResources.getRemainingRequiredResourcesMessage());
                             message.append(result.getErrorMessage());
                             markFailedTopology(topologySubmitter, cluster, td, message.toString());
@@ -232,8 +237,7 @@ public class ResourceAwareScheduler implements IScheduler {
                         }
                         //Only place we fall though to do the loop over again...
                     } else { //Any other failure result
-                        //The assumption is that the strategy set the status...
-                        topologySubmitter.markTopoUnsuccess(td, cluster);
+                        topologySubmitter.markTopoUnsuccess(td, cluster, result.toString());
                         return;
                     }
                 }
@@ -243,7 +247,12 @@ public class ResourceAwareScheduler implements IScheduler {
                 return;
             }
         }
-        markFailedTopology(topologySubmitter, cluster, td, "Failed to schedule within " + maxSchedulingAttempts + " attempts");
+        // We can only reach here when we failed to free enough space by evicting current topologies after {maxSchedulingAttempts}
+        // while that scheduler did evict something at each attempt.
+        markFailedTopology(topologySubmitter, cluster, td,
+            "Failed to make enough resources for " + td.getId()
+                    + " by evicting lower priority topologies within " + maxSchedulingAttempts + " attempts. "
+                    + topologySchedulingResources.getRemainingRequiredResourcesMessage());
     }
 
     public Set<String> getEvictedTopologies() {
@@ -385,7 +394,6 @@ public class ResourceAwareScheduler implements IScheduler {
 
         String getRemainingRequiredResourcesMessage() {
             StringBuilder message = new StringBuilder();
-            message.append("After evicting lower priority topologies: ");
 
             NormalizedResourceOffer clusterRemainingAvailableResources = new NormalizedResourceOffer();
             clusterRemainingAvailableResources.add(clusterAvailableResources);

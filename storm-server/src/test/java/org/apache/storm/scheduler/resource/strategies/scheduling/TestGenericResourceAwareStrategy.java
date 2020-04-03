@@ -118,7 +118,7 @@ public class TestGenericResourceAwareStrategy {
 
         scheduler = new ResourceAwareScheduler();
 
-        scheduler.prepare(conf);
+        scheduler.prepare(conf, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         
         for (Entry<String, SupervisorResources> entry: cluster.getSupervisorsResourcesMap().entrySet()) {
@@ -206,7 +206,7 @@ public class TestGenericResourceAwareStrategy {
 
         scheduler = new ResourceAwareScheduler();
 
-        scheduler.prepare(conf);
+        scheduler.prepare(conf, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         //We need to have 3 slots on 3 separate hosts. The topology needs 6 GPUs 3500 MB memory and 350% CPU
@@ -285,7 +285,7 @@ public class TestGenericResourceAwareStrategy {
 
         // should schedule gpu1 and noGpu successfully
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(conf);
+        scheduler.prepare(conf, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         assertTopologiesFullyScheduled(cluster, gpu1);
         assertTopologiesFullyScheduled(cluster, noGpu);
@@ -300,8 +300,7 @@ public class TestGenericResourceAwareStrategy {
         assertTopologiesFullyScheduled(cluster, noGpu);
         assertTopologiesFullyScheduled(cluster, gpu2);
     }
-
-
+    
     @Test
     public void testAntiAffinityWithMultipleTopologies() {
         INimbus iNimbus = new INimbusTest();
@@ -314,7 +313,7 @@ public class TestGenericResourceAwareStrategy {
         config.putAll(createGrasClusterConfig(88, 775, 25, null, null));
 
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
 
         TopologyDetails tdSimple = genTopology("topology-simple", config, 1,
             5, 100, 300, 0, 0, "user", 8192);

@@ -45,8 +45,8 @@ public class HiveTopologyPartitioned {
         String metaStoreUri = args[0];
         String dbName = args[1];
         String tblName = args[2];
-        String[] partNames = {"city","state"};
-        String[] colNames = {"id","name","phone","street"};
+        String[] partNames = {"city", "state"};
+        String[] colNames = {"id", "name", "phone", "street"};
         Config config = new Config();
         config.setNumWorkers(1);
         UserDataSpout spout = new UserDataSpout();
@@ -55,14 +55,14 @@ public class HiveTopologyPartitioned {
             .withPartitionFields(new Fields(partNames));
         HiveOptions hiveOptions;
         if (args.length == 6) {
-            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri, dbName, tblName, mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(1000)
                 .withIdleTimeout(10)
                 .withKerberosKeytab(args[4])
                 .withKerberosPrincipal(args[5]);
         } else {
-            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri, dbName, tblName, mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(1000)
                 .withIdleTimeout(10);
@@ -104,7 +104,7 @@ public class HiveTopologyPartitioned {
 
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("id","name","phone","street","city","state"));
+            declarer.declare(new Fields("id", "name", "phone", "street", "city", "state"));
         }
 
         @Override
@@ -117,7 +117,7 @@ public class HiveTopologyPartitioned {
         @Override
         public void nextTuple() {
             String[] user = sentences[index].split(",");
-            Values values = new Values(Integer.parseInt(user[0]),user[1],user[2],user[3],user[4],user[5]);
+            Values values = new Values(Integer.parseInt(user[0]), user[1], user[2], user[3], user[4], user[5]);
             UUID msgId = UUID.randomUUID();
             this.pending.put(msgId, values);
             this.collector.emit(values, msgId);

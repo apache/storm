@@ -103,7 +103,7 @@ public class PacemakerClient implements ISaslClient {
         ThreadFactory workerFactory = new NettyRenameThreadFactory(this.host + "-pm");
         // 0 means DEFAULT_EVENT_LOOP_THREADS
         // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
-        int maxWorkers = (int)config.get(Config.PACEMAKER_CLIENT_MAX_THREADS);
+        int maxWorkers = (int) config.get(Config.PACEMAKER_CLIENT_MAX_THREADS);
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
         int thriftMessageMaxSize = (Integer) config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
         bootstrap = new Bootstrap()

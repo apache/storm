@@ -125,7 +125,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setProp(String key, Object value) {
             kafkaProps.put(key, value);
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -133,7 +133,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setProp(Map<String, Object> props) {
             kafkaProps.putAll(props);
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -147,7 +147,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
                     throw new IllegalArgumentException("Kafka Consumer property keys must be Strings");
                 }
             });
-            return (T)this;
+            return (T) this;
         }
 
         //Spout Settings
@@ -158,7 +158,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setPollTimeoutMs(long pollTimeoutMs) {
             this.pollTimeoutMs = pollTimeoutMs;
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -169,12 +169,12 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setFirstPollOffsetStrategy(FirstPollOffsetStrategy firstPollOffsetStrategy) {
             this.firstPollOffsetStrategy = firstPollOffsetStrategy;
-            return (T)this;
+            return (T) this;
         }
 
         public T setRecordTranslator(RecordTranslator<K, V> translator) {
             this.translator = translator;
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -209,7 +209,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setPartitionRefreshPeriodMs(long partitionRefreshPeriodMs) {
             this.partitionRefreshPeriodMs = partitionRefreshPeriodMs;
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -218,7 +218,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setStartTimeStamp(long startTimeStamp) {
             this.startTimeStamp = startTimeStamp;
-            return (T)this;
+            return (T) this;
         }
         
         protected Map<String, Object> getKafkaProps() {

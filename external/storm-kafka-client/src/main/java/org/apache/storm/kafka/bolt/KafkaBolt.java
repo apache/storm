@@ -61,7 +61,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
     private Producer<K, V> producer;
     private OutputCollector collector;
-    private TupleToKafkaMapper<K,V> mapper;
+    private TupleToKafkaMapper<K, V> mapper;
     private KafkaTopicSelector topicSelector;
     private PreparableCallback providedCallback;
     private Properties boltSpecifiedProperties = new Properties();
@@ -76,7 +76,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
     public KafkaBolt() {}
 
-    public KafkaBolt<K,V> withTupleToKafkaMapper(TupleToKafkaMapper<K,V> mapper) {
+    public KafkaBolt<K, V> withTupleToKafkaMapper(TupleToKafkaMapper<K, V> mapper) {
         this.mapper = mapper;
         return this;
     }
@@ -90,12 +90,12 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
         return withTopicSelector(new DefaultTopicSelector(topic));
     }
     
-    public KafkaBolt<K,V> withTopicSelector(KafkaTopicSelector selector) {
+    public KafkaBolt<K, V> withTopicSelector(KafkaTopicSelector selector) {
         this.topicSelector = selector;
         return this;
     }
 
-    public KafkaBolt<K,V> withProducerProperties(Properties producerProperties) {
+    public KafkaBolt<K, V> withProducerProperties(Properties producerProperties) {
         this.boltSpecifiedProperties = producerProperties;
         return this;
     }
@@ -116,7 +116,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
         //for backward compatibility.
         if (mapper == null) {
             LOG.info("Mapper not specified. Setting default mapper to {}", FieldNameBasedTupleToKafkaMapper.class.getSimpleName());
-            this.mapper = new FieldNameBasedTupleToKafkaMapper<K,V>();
+            this.mapper = new FieldNameBasedTupleToKafkaMapper<K, V>();
         }
 
         //for backward compatibility.

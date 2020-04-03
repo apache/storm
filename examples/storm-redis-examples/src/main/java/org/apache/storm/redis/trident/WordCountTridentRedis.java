@@ -65,8 +65,8 @@ public class WordCountTridentRedis {
         TridentState state = topology.newStaticState(factory);
         stream = stream.stateQuery(state, new Fields("word"),
                                 new RedisStateQuerier(lookupMapper),
-                                new Fields("columnName","columnValue"));
-        stream.each(new Fields("word","columnValue"), new PrintFunction(), new Fields());
+                                new Fields("columnName", "columnValue"));
+        stream.each(new Fields("word", "columnValue"), new PrintFunction(), new Fields());
         return topology.build();
     }
 

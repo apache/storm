@@ -32,7 +32,7 @@ public class ShellSubmission {
             LOG.error("Arguments should be of the form: <path_to_jar> [argument...]");
             System.exit(-1);
         }
-        Map<String,Object> conf = ConfigUtils.readStormConfig();
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
         try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
             NimbusSummary ns = client.getClient().getLeader();
             String host = ns.get_host();

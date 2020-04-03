@@ -82,12 +82,12 @@ public abstract class AbstractUserTopology {
             System.exit(-1);
         }
         Map<String, Object> map = Maps.newHashMap();
-        map.put("dataSourceClassName", args[0]);//com.mysql.jdbc.jdbc2.optional.MysqlDataSource
-        map.put("dataSource.url", args[1]);//jdbc:mysql://localhost/test
-        map.put("dataSource.user", args[2]);//root
+        map.put("dataSourceClassName", args[0]); //com.mysql.jdbc.jdbc2.optional.MysqlDataSource
+        map.put("dataSource.url", args[1]); //jdbc:mysql://localhost/test
+        map.put("dataSource.user", args[2]); //root
 
         if (args.length == 4) {
-            map.put("dataSource.password", args[3]);//password
+            map.put("dataSource.password", args[3]); //password
         }
 
         Config config = new Config();

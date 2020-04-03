@@ -118,7 +118,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final Boolean hasEventLoggers;
     protected final boolean ackingEnabled;
     protected final ErrorReportingMetrics errorReportingMetrics;
-    protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits = new MpscChunkedArrayQueue<>(1024, (int)Math.pow(2, 30));
+    protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits = new MpscChunkedArrayQueue<>(1024, (int) Math.pow(2, 30));
     private final AddressedTuple flushTuple;
     protected ExecutorTransfer executorTransfer;
     protected ArrayList<Task> idToTask;

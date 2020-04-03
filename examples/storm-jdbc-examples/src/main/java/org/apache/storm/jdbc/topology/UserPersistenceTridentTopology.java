@@ -58,11 +58,11 @@ public class UserPersistenceTridentTopology extends AbstractUserTopology {
         Stream stream = topology.newStream("userSpout", new UserSpout());
         TridentState state = topology.newStaticState(jdbcStateFactory);
         stream = stream.stateQuery(state,
-                new Fields("user_id","user_name","create_date"),
+                new Fields("user_id", "user_name", "create_date"),
                 new JdbcQuery(),
                 new Fields("dept_name"));
         stream.partitionPersist(jdbcStateFactory,
-                new Fields("user_id","user_name","dept_name","create_date"),
+                new Fields("user_id", "user_name", "dept_name", "create_date"),
                 new JdbcUpdater(),
                 new Fields());
         return topology.build();

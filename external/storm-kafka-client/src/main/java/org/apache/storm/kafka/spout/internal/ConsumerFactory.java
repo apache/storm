@@ -24,5 +24,5 @@ import org.apache.kafka.clients.consumer.Consumer;
  * This is here to enable testing.
  */
 public interface ConsumerFactory<K, V> extends Serializable {
-    Consumer<K,V> createConsumer(Map<String, Object> consumerProps);
+    Consumer<K, V> createConsumer(Map<String, Object> consumerProps);
 }

@@ -43,7 +43,7 @@ public class BlacklistScheduler implements IScheduler {
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME = 300;
     private static final Logger LOG = LoggerFactory.getLogger(BlacklistScheduler.class);
     private final IScheduler underlyingScheduler;
-    private final StormMetricsRegistry metricsRegistry;
+    private StormMetricsRegistry metricsRegistry;
     protected int toleranceTime;
     protected int toleranceCount;
     protected int resumeTime;
@@ -58,16 +58,16 @@ public class BlacklistScheduler implements IScheduler {
     private boolean blacklistOnBadSlots;
     private Map<String, Object> conf;
 
-    public BlacklistScheduler(IScheduler underlyingScheduler, StormMetricsRegistry metricsRegistry) {
+    public BlacklistScheduler(IScheduler underlyingScheduler) {
         this.underlyingScheduler = underlyingScheduler;
-        this.metricsRegistry = metricsRegistry;
     }
 
     @Override
-    public void prepare(Map<String, Object> conf) {
+    public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         LOG.info("Preparing black list scheduler");
-        underlyingScheduler.prepare(conf);
+        underlyingScheduler.prepare(conf, metricsRegistry);
         this.conf = conf;
+        this.metricsRegistry = metricsRegistry;
 
         toleranceTime = ObjectReader.getInt(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_TIME),
                                             DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME);

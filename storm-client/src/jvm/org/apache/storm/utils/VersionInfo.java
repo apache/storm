@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
@@ -144,7 +145,7 @@ public final class VersionInfo {
                         ret = new VersionInfoImpl(info);
                         break;
                     } catch (IOException e) {
-                        LOG.error("Skipping {} get an error while trying to parse the file.", part, e);
+                        LOG.error("Skipping {}; got an error while trying to parse the file.", part, e);
                     }
                 }
             } else if (part.toLowerCase().endsWith(".jar")
@@ -164,10 +165,27 @@ public final class VersionInfo {
                         }
                     }
                 } catch (IOException e) {
-                    LOG.error("Skipping {} get an error while trying to parse the jar file.", part, e);
+                    LOG.error("Skipping {}; got an error while trying to parse the jar file.", part, e);
+                }
+            } else if (p.endsWith("*")) {
+                //for a path like /<parent-path>/*
+                try {
+                    Path parent = p.getParent();
+                    List<String> children = new ArrayList<>();
+                    Files.list(parent)
+                        //avoid infinite recursion
+                        .filter(path -> !path.endsWith("*"))
+                        .forEach(path -> children.add(path.toString()));
+                    IVersionInfo resFromChildren = getFromClasspath(children, propFileName);
+                    if (resFromChildren != null) {
+                        ret = resFromChildren;
+                        break;
+                    }
+                } catch (NullPointerException | IOException e) {
+                    LOG.error("Skipping {}; got an error while trying to parse it", part, e);
                 }
             } else {
-                LOG.warn("Skipping {} don't know what to do with it.", part);
+                LOG.warn("Skipping {}; don't know what to do with it.", part);
             }
         }
         return ret;
