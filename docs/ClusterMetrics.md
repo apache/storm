@@ -92,6 +92,7 @@ These are metrics that are specific to a nimbus instance.  In many instances onl
 | nimbus:num-net-slots-increase-per-scheduling | histogram | added slots minus removed slots after a scheduling run |
 | nimbus:num-rebalance-calls | meter | calls to rebalance thrift method. |
 | nimbus:num-removed-executors-per-scheduling | histogram | number of executors removed after a scheduling run |
+| nimbus:num-scheduling-timeouts | meter | number of timeouts during scheduling |
 | nimbus:num-removed-slots-per-scheduling | histogram | number of slots removed after a scheduling run |
 | nimbus:num-setLogConfig-calls | meter | calls to setLogConfig thrift method. |
 | nimbus:num-setWorkerProfiler-calls | meter | calls to setWorkerProfiler thrift method. |

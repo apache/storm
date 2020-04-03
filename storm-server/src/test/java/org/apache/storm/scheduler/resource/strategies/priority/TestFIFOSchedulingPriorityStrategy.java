@@ -59,7 +59,7 @@ public class TestFIFOSchedulingPriorityStrategy {
             Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
             ResourceAwareScheduler rs = new ResourceAwareScheduler();
-            rs.prepare(config);
+            rs.prepare(config, new StormMetricsRegistry());
             try {
                 rs.schedule(topologies, cluster);
 

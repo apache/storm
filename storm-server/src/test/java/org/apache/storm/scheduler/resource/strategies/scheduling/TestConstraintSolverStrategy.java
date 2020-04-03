@@ -410,7 +410,7 @@ public class TestConstraintSolverStrategy {
         Cluster cluster = makeCluster(topologies, supMap);
 
         ResourceAwareScheduler scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         boolean scheduleSuccess = isStatusSuccess(cluster.getStatus(topo.getId()));
@@ -454,7 +454,7 @@ public class TestConstraintSolverStrategy {
         Map<String, SupervisorDetails> supMap = genSupervisors(37, 16, 400, 1024 * 4);
         Cluster cluster = makeCluster(topologies, supMap);
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
-        rs.prepare(config);
+        rs.prepare(config, new StormMetricsRegistry());
         try {
             rs.schedule(topologies, cluster);
             assertStatusSuccess(cluster, topo.getId());
@@ -476,7 +476,7 @@ public class TestConstraintSolverStrategy {
         newAssignments.put(topo.getId(), new SchedulerAssignmentImpl(topo.getId(), newExecToSlot, null, null));
         cluster.setAssignments(newAssignments, false);
 
-        rs.prepare(config);
+        rs.prepare(config, new StormMetricsRegistry());
         try {
             rs.schedule(topologies, cluster);
             assertStatusSuccess(cluster, topo.getId());
