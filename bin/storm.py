@@ -545,7 +545,8 @@ def initialize_upload_credentials_subcommand(subparsers):
     # Command exits with non-zero code if uploaded creds collection is empty.
     sub_parser.add_argument(
         "-e", "--exception-when-empty", action='store_true',
-        help="""whether to throw exception if there are no credentials uploaded, default to be false"""
+        help="""If specified, throw exception if there are no credentials uploaded. 
+                Otherwise, it is default to be false"""
     )
 
     sub_parser.add_argument(
