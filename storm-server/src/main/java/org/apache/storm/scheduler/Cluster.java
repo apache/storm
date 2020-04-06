@@ -33,6 +33,7 @@ import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.SharedMemory;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping;
@@ -86,6 +87,7 @@ public class Cluster implements ISchedulingState {
     private List<String> greyListedSupervisors = new ArrayList<>();
     private INimbus inimbus;
     private double minWorkerCpu = 0.0;
+    private final Map<String, Boolean> topoSharedOffHeapMemoryNodeFlag = new HashMap<>();
 
     private static <K, V> Map<K, V> makeMap(String key) {
         return new HashMap<>();
@@ -710,6 +712,30 @@ public class Cluster implements ISchedulingState {
     }
 
     /**
+     * Initialize the flag to true if specified topology uses SharedOffHeapNodeMemory, false otherwise.
+     *
+     * @param td TopologyDetails to examine
+     */
+    private void initializeTopoSharedOffHeapNodeMemoryFlag(TopologyDetails td) {
+        String topoId = td.getId();
+        topoSharedOffHeapMemoryNodeFlag.put(topoId, false);
+        StormTopology topology = td.getTopology();
+        if (topology.is_set_component_to_shared_memory()) {
+            for (Set<String> sharedNames : topology.get_component_to_shared_memory().values()) {
+                if (sharedNames != null) {
+                    for (String name : sharedNames) {
+                        double val = topology.get_shared_memory().get(name).get_off_heap_node();
+                        if (val > 0.0) {
+                            topoSharedOffHeapMemoryNodeFlag.put(topoId, true);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Calculate the amount of shared off heap node memory on a given node with the given assignment.
      *
      * @param nodeId     the id of the node
@@ -723,6 +749,15 @@ public class Cluster implements ISchedulingState {
 
     private double calculateSharedOffHeapNodeMemory(
         String nodeId, SchedulerAssignmentImpl assignment, TopologyDetails td, ExecutorDetails extra) {
+        // short-circuit calculation if topology does not use SharedOffHeapMemory
+        String topoId = td.getId();
+        if (!topoSharedOffHeapMemoryNodeFlag.containsKey(topoId)) {
+            initializeTopoSharedOffHeapNodeMemoryFlag(td);
+        }
+        if (!topoSharedOffHeapMemoryNodeFlag.get(topoId)) {
+            return 0.0;
+        }
+
         Set<ExecutorDetails> executorsOnNode = new HashSet<>();
         if (assignment != null) {
             for (Entry<WorkerSlot, Collection<ExecutorDetails>> entry : assignment.getSlotToExecutors().entrySet()) {
