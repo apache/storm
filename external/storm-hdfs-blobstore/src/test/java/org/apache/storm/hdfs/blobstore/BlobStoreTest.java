@@ -19,7 +19,6 @@
 package org.apache.storm.hdfs.blobstore;
 
 import org.apache.storm.hdfs.testing.MiniDFSClusterExtension;
-import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStore;
@@ -36,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -47,7 +45,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -153,8 +150,7 @@ public class BlobStoreTest {
         assertEquals(value, readInt(store, who, key));
     }
 
-    private AutoCloseableBlobStoreContainer initHdfs(String dirName)
-        throws Exception {
+    private AutoCloseableBlobStoreContainer initHdfs(String dirName) {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.BLOBSTORE_DIR, dirName);
         conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "org.apache.storm.security.auth.DefaultPrincipalToLocal");

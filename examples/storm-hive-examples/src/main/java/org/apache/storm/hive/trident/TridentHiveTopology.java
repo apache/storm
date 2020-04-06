@@ -49,24 +49,24 @@ public class TridentHiveTopology {
         FixedBatchSpout spout = new FixedBatchSpout(batchSize);
         spout.setCycle(true);
         TridentTopology topology = new TridentTopology();
-        Stream stream = topology.newStream("hiveTridentspout1",spout);
-        String[] partNames = {"city","state"};
-        String[] colNames = {"id","name","phone","street"};
-        Fields hiveFields = new Fields("id","name","phone","street","city","state");
+        Stream stream = topology.newStream("hiveTridentspout1", spout);
+        String[] partNames = {"city", "state"};
+        String[] colNames = {"id", "name", "phone", "street"};
+        Fields hiveFields = new Fields("id", "name", "phone", "street", "city", "state");
         DelimitedRecordHiveMapper mapper = new DelimitedRecordHiveMapper()
             .withColumnFields(new Fields(colNames))
             .withPartitionFields(new Fields(partNames));
         HiveOptions hiveOptions;
         if (keytab != null && principal != null) {
-            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri, dbName, tblName, mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(batchSize)
                 .withIdleTimeout(10)
                 .withCallTimeout(30000)
-                .withKerberosKeytab((String)keytab)
-                .withKerberosPrincipal((String)principal);
+                .withKerberosKeytab((String) keytab)
+                .withKerberosPrincipal((String) principal);
         } else  {
-            hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
+            hiveOptions = new HiveOptions(metaStoreUri, dbName, tblName, mapper)
                 .withTxnsPerBatch(10)
                 .withBatchSize(batchSize)
                 .withCallTimeout(30000)
@@ -107,7 +107,7 @@ public class TridentHiveTopology {
         }
         
         try {
-            StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreUri, dbName, tblName,null,null));
+            StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreUri, dbName, tblName, null, null));
         } catch (SubmitterHookException e) {
             LOG.warn("Topology is submitted but invoking ISubmitterHook failed", e);
         } catch (Exception e) {
@@ -119,10 +119,10 @@ public class TridentHiveTopology {
         int maxBatchSize;
         HashMap<Long, List<List<Object>>> batches = new HashMap<Long, List<List<Object>>>();
         private Values[] outputs = {
-            new Values("1","user1","123456","street1","sunnyvale","ca"),
-            new Values("2","user2","123456","street2","sunnyvale","ca"),
-            new Values("3","user3","123456","street3","san jose","ca"),
-            new Values("4","user4","123456","street4","san jose","ca"),
+            new Values("1", "user1", "123456", "street1", "sunnyvale", "ca"),
+            new Values("2", "user2", "123456", "street2", "sunnyvale", "ca"),
+            new Values("3", "user3", "123456", "street3", "san jose", "ca"),
+            new Values("4", "user4", "123456", "street4", "san jose", "ca"),
         };
         private int index = 0;
         boolean cycle = false;
@@ -137,7 +137,7 @@ public class TridentHiveTopology {
 
         @Override
         public Fields getOutputFields() {
-            return new Fields("id","name","phone","street","city","state");
+            return new Fields("id", "name", "phone", "street", "city", "state");
         }
 
         @Override

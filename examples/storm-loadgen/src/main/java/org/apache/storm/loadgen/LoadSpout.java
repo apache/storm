@@ -134,11 +134,11 @@ public class LoadSpout  extends BaseRichSpout {
 
     @Override
     public void ack(Object id) {
-        ((SentWithTime)id).done();
+        ((SentWithTime) id).done();
     }
 
     @Override
     public void fail(Object id) {
-        replays.add((SentWithTime)id);
+        replays.add((SentWithTime) id);
     }
 }

@@ -129,7 +129,7 @@ public class AdminCommands {
 
     private static void prettyPrint(TBase value, int depth, StringBuilder out) {
         if (value == null) {
-            println(out, depth,"null");
+            println(out, depth, "null");
             return;
         }
         println(out, depth, "{");
@@ -165,7 +165,7 @@ public class AdminCommands {
         //Special cases for storm...
         if ("json_conf".equals(key) && o instanceof String) {
             try {
-                o = Utils.parseJson((String)o);
+                o = Utils.parseJson((String) o);
             } catch (Exception e) {
                 LOG.error("Could not parse json_conf as JSON", e);
             }
@@ -182,7 +182,7 @@ public class AdminCommands {
             println(out, depth, "}");
         } else if (o instanceof Collection) {
             println(out, depth, keyStr(key) + "[");
-            for (Object sub: (Collection)o) {
+            for (Object sub: (Collection) o) {
                 prettyPrintKeyValue(null, sub, depth + 1, out);
             }
             println(out, depth, "]");

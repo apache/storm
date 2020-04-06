@@ -674,7 +674,7 @@
        scheduler (MultitenantScheduler.)]
     (.assign (.get node-map "super0") "topology1" (list (ed 1)) cluster)
     (.assign (.get node-map "super1") "topology2" (list (ed 5)) cluster)
-    (.prepare scheduler conf)
+    (.prepare scheduler conf (StormMetricsRegistry.))
     (try
     (.schedule scheduler topologies cluster)
     (let [assignment (.getAssignmentById cluster "topology1")
@@ -713,7 +713,7 @@
         conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 5 "userB" 5}}
         scheduler (MultitenantScheduler.)]
     (.assign (.get node-map "super0") "topology1" (list (ed 1)) cluster)
-    (.prepare scheduler conf)
+    (.prepare scheduler conf (StormMetricsRegistry.))
     (try
     (.schedule scheduler topologies cluster)
     (let [assignment (.getAssignmentById cluster "topology1")
@@ -755,7 +755,7 @@
           cluster (Cluster. (Nimbus$StandaloneINimbus.) (ResourceMetrics. (StormMetricsRegistry.)) supers existing-assignments topologies {})
           conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2 "userB" 1}}
           scheduler (MultitenantScheduler.)]
-      (.prepare scheduler conf)
+      (.prepare scheduler conf (StormMetricsRegistry.))
       (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
@@ -784,7 +784,7 @@
           cluster (Cluster. (Nimbus$StandaloneINimbus.) (ResourceMetrics. (StormMetricsRegistry.)) supers existing-assignments topologies {})
           conf {}
           scheduler (MultitenantScheduler.)]
-      (.prepare scheduler conf)
+      (.prepare scheduler conf (StormMetricsRegistry.))
       (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
@@ -824,7 +824,7 @@
           cluster (Cluster. (Nimbus$StandaloneINimbus.) (ResourceMetrics. (StormMetricsRegistry.)) supers existing-assignments topologies {})
           conf {}
           scheduler (MultitenantScheduler.)]
-      (.prepare scheduler conf)
+      (.prepare scheduler conf (StormMetricsRegistry.))
       (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
@@ -864,7 +864,7 @@
         cluster (Cluster. (Nimbus$StandaloneINimbus.) (ResourceMetrics. (StormMetricsRegistry.)) supers existing-assignments topologies {})
         conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2}}
         scheduler (MultitenantScheduler.)]
-    (.prepare scheduler conf)
+    (.prepare scheduler conf (StormMetricsRegistry.))
     (try
     (.schedule scheduler topologies cluster)
     (finally (.cleanup scheduler)))

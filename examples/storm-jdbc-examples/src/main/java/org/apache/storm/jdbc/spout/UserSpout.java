@@ -35,9 +35,9 @@ public class UserSpout implements IRichSpout {
     boolean isDistributed;
     SpoutOutputCollector collector;
     public static final List<Values> rows = Lists.newArrayList(
-            new Values(1,"peter",System.currentTimeMillis()),
-            new Values(2,"bob",System.currentTimeMillis()),
-            new Values(3,"alice",System.currentTimeMillis()));
+            new Values(1, "peter", System.currentTimeMillis()),
+            new Values(2, "bob", System.currentTimeMillis()),
+            new Values(3, "alice", System.currentTimeMillis()));
 
     public UserSpout() {
         this(true);
@@ -81,7 +81,7 @@ public class UserSpout implements IRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("user_id","user_name","create_date"));
+        declarer.declare(new Fields("user_id", "user_name", "create_date"));
     }
 
     @Override

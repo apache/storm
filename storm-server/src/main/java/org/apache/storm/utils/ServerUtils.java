@@ -137,7 +137,7 @@ public class ServerUtils {
             String baseDir,
             NimbusInfo nimbusInfo,
             ILeaderElector leaderElector) {
-        String type = (String)conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
+        String type = (String) conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
         if (type == null) {
             type = LocalFsBlobStore.class.getName();
         }

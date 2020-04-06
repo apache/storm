@@ -192,8 +192,8 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
      * return a map that is the sum of resources1 + resources2
      */
     public static Map<String, Double> addResourceMap(Map<String, Double> resources1, Map<String, Double> resources2) {
-        Map<String,Double> sum = new HashMap<>(resources1);
-        for (Map.Entry<String,Double> me : resources2.entrySet()) {
+        Map<String, Double> sum = new HashMap<>(resources1);
+        for (Map.Entry<String, Double> me : resources2.entrySet()) {
             Double cur = sum.getOrDefault(me.getKey(), 0.0) + me.getValue();
             sum.put(me.getKey(), cur);
         }
@@ -208,7 +208,7 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
             return new HashMap<>();
         }
         Map<String, Double> difference = new HashMap<>(resource1);
-        for (Map.Entry<String,Double> me : resource2.entrySet()) {
+        for (Map.Entry<String, Double> me : resource2.entrySet()) {
             Double sub = difference.getOrDefault(me.getKey(), 0.0) - me.getValue();
             difference.put(me.getKey(), sub);
         }

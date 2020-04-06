@@ -57,7 +57,7 @@ public class ObjectDef {
         List<Object> newVal = new ArrayList<Object>();
         for (Object obj : constructorArgs) {
             if (obj instanceof LinkedHashMap) {
-                Map<String, Object> map = (Map<String, Object>)obj;
+                Map<String, Object> map = (Map<String, Object>) obj;
                 if (map.containsKey("ref") && map.size() == 1) {
                     newVal.add(new BeanReference((String) map.get("ref")));
                     this.hasReferences = true;
@@ -126,7 +126,7 @@ public class ObjectDef {
         List<Object> newVal = new ArrayList<Object>();
         for (Object obj : factoryArgs) {
             if (obj instanceof LinkedHashMap) {
-                Map map = (Map)obj;
+                Map map = (Map) obj;
                 if (map.containsKey("ref") && map.size() == 1) {
                     newVal.add(new BeanReference((String) map.get("ref")));
                     this.hasReferences = true;

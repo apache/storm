@@ -29,7 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class OutputStreamEngine {
     private static final double NANO_PER_SEC = 1_000_000_000.0;
-    private static final long UPDATE_RATE_PERIOD_NS = ((long)NANO_PER_SEC * 2);
+    private static final long UPDATE_RATE_PERIOD_NS = ((long) NANO_PER_SEC * 2);
     private static final String[] KEYS = new String[2048];
 
     static {
@@ -67,11 +67,11 @@ public class OutputStreamEngine {
     private void selectNewRate() {
         double ratePerSecond = stats.rate.nextRandom(rand);
         if (ratePerSecond > 0) {
-            periodNano = Math.max(1, (long)(NANO_PER_SEC / ratePerSecond));
-            emitAmount = Math.max(1, (long)((ratePerSecond / NANO_PER_SEC) * periodNano));
+            periodNano = Math.max(1, (long) (NANO_PER_SEC / ratePerSecond));
+            emitAmount = Math.max(1, (long) ((ratePerSecond / NANO_PER_SEC) * periodNano));
         } else {
             //if it is is 0 or less it really is 1 per 10 seconds.
-            periodNano = (long)NANO_PER_SEC * 10;
+            periodNano = (long) NANO_PER_SEC * 10;
             emitAmount = 1;
         }
     }
@@ -109,7 +109,7 @@ public class OutputStreamEngine {
         if (stats.areKeysSkewed) {
             //We set the stddev of the skewed keys to be 1/5 of the length, but then we use the absolute value
             // of that so everything is skewed towards 0
-            keyIndex = Math.min(KEYS.length - 1 , Math.abs((int)(rand.nextGaussian() * KEYS.length / 5)));
+            keyIndex = Math.min(KEYS.length - 1 , Math.abs((int) (rand.nextGaussian() * KEYS.length / 5)));
         } else {
             keyIndex = rand.nextInt(KEYS.length);
         }

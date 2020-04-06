@@ -28,6 +28,7 @@ import org.apache.storm.daemon.metrics.BuiltinMetrics;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
+import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
 import org.apache.storm.messaging.IConnection;
@@ -218,7 +219,8 @@ public class BoltExecutor extends Executor {
         } else if (Constants.CREDENTIALS_CHANGED_STREAM_ID.equals(streamId)) {
             Object taskObject = idToTask.get(taskId - idToTaskBase).getTaskObject();
             if (taskObject instanceof ICredentialsListener) {
-                ((ICredentialsListener) taskObject).setCredentials((Map<String, String>) tuple.getValue(0));
+                Credentials creds = (Credentials) tuple.getValue(0);
+                ((ICredentialsListener) taskObject).setCredentials(creds == null ? null : creds.get_creds());
             }
         } else {
             IBolt boltObject = (IBolt) idToTask.get(taskId - idToTaskBase).getTaskObject();

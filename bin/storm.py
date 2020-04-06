@@ -283,7 +283,8 @@ def run_client_jar(klass, args, daemon=False, client=True, extrajvmopts=[]):
         jvmtype="-client",
         extrajars=extra_jars,
         main_class_args=args.main_args,
-        daemon=False,
+        daemon=daemon,
+        client=client,
         jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
                 ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
                 ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)],

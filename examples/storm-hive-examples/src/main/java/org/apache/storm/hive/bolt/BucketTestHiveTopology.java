@@ -74,7 +74,7 @@ public class BucketTestHiveTopology {
         DelimitedRecordHiveMapper mapper = new DelimitedRecordHiveMapper()
                 .withColumnFields(new Fields(colNames)).withTimeAsPartitionField("yyyy/MM/dd");
         HiveOptions hiveOptions;
-        hiveOptions = new HiveOptions(metaStoreUri,dbName,tblName,mapper)
+        hiveOptions = new HiveOptions(metaStoreUri, dbName, tblName, mapper)
             .withTxnsPerBatch(10)
             .withBatchSize(hiveBatchSize);
         // doing below because its affecting storm metrics most likely

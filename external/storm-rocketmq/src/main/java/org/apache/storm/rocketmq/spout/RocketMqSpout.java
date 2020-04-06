@@ -65,7 +65,7 @@ public class RocketMqSpout implements IRichSpout {
     private DefaultMQPushConsumer consumer;
     private SpoutOutputCollector collector;
     private BlockingQueue<ConsumerBatchMessage<List<Object>>> queue;
-    private Map<String,ConsumerBatchMessage<List<Object>>> cache;
+    private Map<String, ConsumerBatchMessage<List<Object>>> cache;
 
     private Properties properties;
     private Scheme scheme;
@@ -121,7 +121,7 @@ public class RocketMqSpout implements IRichSpout {
             throw new RuntimeException(e);
         }
 
-        long defaultBatchProcessTimeout = (long)conf.getOrDefault(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 30) * 1000 + 10000;
+        long defaultBatchProcessTimeout = (long) conf.getOrDefault(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 30) * 1000 + 10000;
         batchProcessTimeout = getLong(properties, RocketMqConfig.CONSUMER_BATCH_PROCESS_TIMEOUT, defaultBatchProcessTimeout);
 
         queue = new LinkedBlockingQueue<>();

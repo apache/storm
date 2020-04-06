@@ -40,7 +40,7 @@ public class StormMetricRegistry {
     public <T> SimpleGauge<T> gauge(
         T initialValue, String name, String topologyId, String componentId, Integer taskId, Integer port) {
         String metricName = metricName(name, topologyId, componentId, taskId, port);
-        return (SimpleGauge<T>)registry.gauge(metricName, () -> new SimpleGauge<>(initialValue));
+        return (SimpleGauge<T>) registry.gauge(metricName, () -> new SimpleGauge<>(initialValue));
     }
 
     public JcMetrics jcMetrics(String name, String topologyId, String componentId, Integer taskId, Integer port) {

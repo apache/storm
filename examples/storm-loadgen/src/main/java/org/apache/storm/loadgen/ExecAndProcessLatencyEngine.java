@@ -35,7 +35,7 @@ public class ExecAndProcessLatencyEngine implements Serializable {
     private final SlowExecutorPattern skewedPattern;
 
     public static long toNano(double ms) {
-        return (long)(ms * NANO_IN_MS);
+        return (long) (ms * NANO_IN_MS);
     }
 
     private final AtomicLong parkOffset = new AtomicLong(0);

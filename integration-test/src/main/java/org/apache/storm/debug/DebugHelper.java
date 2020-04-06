@@ -34,6 +34,6 @@ public class DebugHelper {
 
     public static URL[] getClassPaths() {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
-        return ((URLClassLoader)cl).getURLs();
+        return ((URLClassLoader) cl).getURLs();
     }
 }

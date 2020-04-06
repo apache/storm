@@ -161,16 +161,16 @@ public class UIServer {
             }
         }
 
-        holderHome.setInitParameter("dirAllowed","true");
-        holderHome.setInitParameter("pathInfoOnly","true");
+        holderHome.setInitParameter("dirAllowed", "true");
+        holderHome.setInitParameter("pathInfoOnly", "true");
         context.addFilter(new FilterHolder(new HeaderResponseServletFilter(metricsRegistry)), "/*", EnumSet.allOf(DispatcherType.class));
-        context.addServlet(holderHome,"/*");
+        context.addServlet(holderHome, "/*");
 
 
         // Lastly, the default servlet for root content (always needed, to satisfy servlet spec)
         ServletHolder holderPwd = new ServletHolder("default", DefaultServlet.class);
-        holderPwd.setInitParameter("dirAllowed","true");
-        context.addServlet(holderPwd,"/");
+        holderPwd.setInitParameter("dirAllowed", "true");
+        context.addServlet(holderPwd, "/");
 
         metricsRegistry.startMetricsReporters(conf);
         Utils.addShutdownHookWithForceKillIn1Sec(metricsRegistry::stopMetricsReporters);

@@ -21,7 +21,7 @@ package org.apache.storm.kafka.trident.mapper;
 import java.io.Serializable;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-public interface TridentTupleToKafkaMapper<K,V>  extends Serializable {
+public interface TridentTupleToKafkaMapper<K, V>  extends Serializable {
     
     K getKeyFromTuple(TridentTuple tuple);
     

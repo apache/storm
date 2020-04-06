@@ -79,15 +79,18 @@ public class User {
         return ret;
     }
 
-    public void markTopoUnsuccess(TopologyDetails topo, Cluster cluster) {
+    public void markTopoUnsuccess(TopologyDetails topo, Cluster cluster, String msg) {
         unsuccess.add(topo);
         if (cluster != null) {
-            cluster.setStatus(topo.getId(), "Scheduling Attempted but topology is invalid");
+            if (msg == null) {
+                msg = "Scheduling Attempted but topology is invalid";
+            }
+            cluster.setStatus(topo.getId(), msg);
         }
     }
 
     public void markTopoUnsuccess(TopologyDetails topo) {
-        this.markTopoUnsuccess(topo, null);
+        this.markTopoUnsuccess(topo, null, null);
     }
 
     public double getResourcePoolAverageUtilization(ISchedulingState cluster) {
