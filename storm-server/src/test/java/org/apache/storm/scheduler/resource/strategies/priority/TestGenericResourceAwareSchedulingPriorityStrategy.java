@@ -89,7 +89,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         Config config = mkClusterConfig(DefaultSchedulingPriorityStrategy.class.getName());
         Cluster cluster = mkTestCluster(topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
 
         scheduler.schedule(topologies, cluster);
 
@@ -130,7 +130,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         Config config = mkClusterConfig(DefaultSchedulingPriorityStrategy.class.getName());
         Cluster cluster = mkTestCluster(topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
@@ -169,7 +169,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         Config config = mkClusterConfig(GenericResourceAwareSchedulingPriorityStrategy.class.getName());
         Cluster cluster = mkTestCluster(topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
