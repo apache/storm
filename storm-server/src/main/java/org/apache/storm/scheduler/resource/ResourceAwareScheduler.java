@@ -106,12 +106,11 @@ public class ResourceAwareScheduler implements IScheduler {
     public void schedule(Topologies topologies, Cluster cluster) {
         Map<String, User> userMap = getUsers(cluster);
         List<TopologyDetails> orderedTopologies = new ArrayList<>(schedulingPriorityStrategy.getOrderedTopologies(cluster, userMap));
-
-        // clear evictedTopologies at the beginning of each round of scheduling
-        evictedTopologies.clear();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Ordered list of topologies is: {}", orderedTopologies.stream().map((t) -> t.getId()).collect(Collectors.toList()));
         }
+        // clear evictedTopologies at the beginning of each round of scheduling
+        evictedTopologies.clear();
         for (TopologyDetails td : orderedTopologies) {
             if (!cluster.needsSchedulingRas(td)) {
                 //cluster forgets about its previous status, so if it is scheduled just leave it.
@@ -119,9 +118,6 @@ public class ResourceAwareScheduler implements IScheduler {
             } else {
                 User submitter = userMap.get(td.getTopologySubmitter());
                 scheduleTopology(td, cluster, submitter, orderedTopologies);
-                if (!evictedTopologies.isEmpty()) {
-                    LOG.warn("Evicted Topologies {} when scheduling topology: {}", evictedTopologies, td.getId());
-                }
             }
         }
     }
@@ -205,18 +201,17 @@ public class ResourceAwareScheduler implements IScheduler {
                     } else if (result.getStatus() == SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES) {
                         LOG.debug("Not enough resources to schedule {}", td.getName());
                         List<TopologyDetails> reversedList = ImmutableList.copyOf(orderedTopologies).reverse();
-                        boolean evictedSomething = false;
                         LOG.debug("Attempting to make space for topo {} from user {}", td.getName(), td.getTopologySubmitter());
                         int tdIndex = reversedList.indexOf(td);
                         topologySchedulingResources.setRemainingRequiredResources(toSchedule, td);
 
+                        Set<String> tmpEvictedTopos = new HashSet<>();
                         for (int index = 0; index < tdIndex; index++) {
                             TopologyDetails topologyEvict = reversedList.get(index);
                             SchedulerAssignment evictAssignemnt = workingState.getAssignmentById(topologyEvict.getId());
                             if (evictAssignemnt != null && !evictAssignemnt.getSlots().isEmpty()) {
                                 topologySchedulingResources.adjustResourcesForEvictedTopology(toSchedule, topologyEvict);
-                                evictedTopologies.add(topologyEvict.getId());
-                                evictedSomething = true;
+                                tmpEvictedTopos.add(topologyEvict.getId());
                                 Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
                                 nodes.freeSlots(workersToEvict);
                                 if (topologySchedulingResources.canSchedule()) {
@@ -226,8 +221,12 @@ public class ResourceAwareScheduler implements IScheduler {
                                 }
                             }
                         }
+                        if (!tmpEvictedTopos.isEmpty()) {
+                            LOG.warn("Evicted Topologies {} when scheduling topology: {}", tmpEvictedTopos, td.getId());
+                        }
+                        evictedTopologies.addAll(tmpEvictedTopos);
 
-                        if (!evictedSomething) {
+                        if (!tmpEvictedTopos.isEmpty()) {
                             StringBuilder message = new StringBuilder();
                             message.append("Not enough resources to schedule after evicting lower priority topologies. ");
                             message.append(topologySchedulingResources.getRemainingRequiredResourcesMessage());
