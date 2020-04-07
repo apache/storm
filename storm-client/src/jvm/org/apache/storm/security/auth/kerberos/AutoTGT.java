@@ -13,6 +13,7 @@
 package org.apache.storm.security.auth.kerberos;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -101,10 +102,10 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
     public static void main(String[] args) throws Exception {
         AutoTGT at = new AutoTGT();
-        Map<String, Object> conf = new java.util.HashMap();
+        Map<String, Object> conf = new HashMap();
         conf.put("java.security.auth.login.config", args[0]);
         at.prepare(conf);
-        Map<String, String> creds = new java.util.HashMap<String, String>();
+        Map<String, String> creds = new HashMap<>();
         at.populateCredentials(creds);
         Subject s = new Subject();
         at.populateSubject(s, creds);

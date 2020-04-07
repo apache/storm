@@ -542,6 +542,14 @@ def initialize_upload_credentials_subcommand(subparsers):
         help="""name of the owner of the topology (security precaution)"""
     )
 
+    # If set, this flag will become true meaning that user expects non-empty creds to be uploaded.
+    # Command exits with non-zero code if uploaded creds collection is empty.
+    sub_parser.add_argument(
+        "-e", "--exception-when-empty", action='store_true',
+        help="""If specified, throw exception if there are no credentials uploaded. 
+                Otherwise, it is default to be false"""
+    )
+
     sub_parser.add_argument(
         "cred_list", nargs='*', help="List of credkeys and their values [credkey credvalue]*"
     )
