@@ -299,29 +299,28 @@ The value is a map where the key is a NodeInfo class for the downstream worker i
 
 ##### JVM Memory
 
-JVM memory usage is reported through `memory/nonHeap` for off heap memory and `memory/heap` for on heap memory.  These values come from the [MemoryUsage](https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/management/MemoryUsage.html) mxbean.  Each of the metrics are reported as a map with the following keys, and values returned by the corresponding java code.
+JVM memory usage is reported through `memory.non-heap` for off heap memory, `memory.heap` for on heap memory and `memory.total` for combined values.  These values come from the [MemoryUsage](https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/management/MemoryUsage.html) mxbean.  Each of the metrics are reported as a map with the following keys, and values returned by the corresponding java code.
 
 | Key | Corresponding Code |
 |--------|--------------------|
-| `maxBytes` | `memUsage.getMax()` |
-| `committedBytes` | `memUsage.getCommitted()` |
-| `initBytes` | `memUsage.getInit()` |
-| `usedBytes` | `memUsage.getUsed()` |
-| `virtualFreeBytes` | `memUsage.getMax() - memUsage.getUsed()` |
-| `unusedBytes` | `memUsage.getCommitted() - memUsage.getUsed()` |
+| `max` | `memUsage.getMax()` |
+| `committed` | `memUsage.getCommitted()` |
+| `init` | `memUsage.getInit()` |
+| `used` | `memUsage.getUsed()` |
+| `usage` | `Ratio.of(memUsage.getUsed(), memUsage.getMax())` |
 
 ##### JVM Garbage Collection
 
-The exact GC metric name depends on the garbage collector that your worker uses.  The data is all collected from `ManagementFactory.getGarbageCollectorMXBeans()` and the name of the metrics is `"GC/"` followed by the name of the returned bean with white space removed.  The reported metrics are just
+The exact GC metric name depends on the garbage collector that your worker uses.  The data is all collected from `ManagementFactory.getGarbageCollectorMXBeans()` and the name of the metrics is `"GC"` followed by the name of the returned bean with white space removed.  The reported metrics are just
 
 * `count` the number of gc events that happened and
-* `timeMs` the total number of milliseconds that were spent doing gc.  
+* `time` the total number of milliseconds that were spent doing gc.  
 
 Please refer to the [JVM documentation](https://docs.oracle.com/javase/8/docs/api/java/lang/management/ManagementFactory.html#getGarbageCollectorMXBeans--) for more details.
 
 ##### JVM Misc
 
-* `threadCount` is the number of threads currently in the JVM.
+* There are metrics prefixed with `threads` providing the number of threads, daemon threads, blocked and deadlocked threads.
 
 ##### Uptime
 

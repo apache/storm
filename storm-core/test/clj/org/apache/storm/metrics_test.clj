@@ -376,26 +376,5 @@
       (assert-metric-running-sum! "mybolt" "__ack-count/myspout:default" 2 4 cluster)
       (assert-metric-running-sum! "mybolt" "__execute-count/myspout:default" 3 4 cluster))))
 
-(deftest test-system-bolt
-  (with-open [cluster (.build (doto (LocalCluster$Builder.)
-                                (.withSimulatedTime)
-                                (.withDaemonConf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                           [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
-                           TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 60})))]
-    (let [feeder (FeederSpout. ["field1"])
-          topology (Thrift/buildTopology
-                    {"1" (Thrift/prepareSpoutDetails feeder)}
-                    {})]      
-      (.submitTopology cluster "metrics-tester" {} topology)
-
-      (.feed feeder ["a"] 1)
-      (.advanceClusterTime cluster 70)
-      (assert-metric-running-sum! "__system" "newWorkerEvent" 1 1 cluster)
-      (assert-metric-data-exists! "__system" "uptimeSecs")
-      (assert-metric-data-exists! "__system" "startTimeSecs")
-
-      (.advanceClusterTime cluster 180)
-      (assert-metric-running-sum! "__system" "newWorkerEvent" 1 4 cluster)
-      )))
 
 
