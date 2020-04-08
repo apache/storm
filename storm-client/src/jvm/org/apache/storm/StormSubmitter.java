@@ -220,6 +220,10 @@ public class StormSubmitter {
     public static void submitTopologyAs(String name, Map<String, Object> topoConf, StormTopology topology, SubmitOptions opts,
                                         ProgressListener progressListener, String asUser)
         throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, IllegalArgumentException {
+
+        //validate topology name first; nothing else should be done if it's invalid.
+        Utils.validateTopologyName(name);
+
         if (!Utils.isValidConf(topoConf)) {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }
@@ -248,11 +252,8 @@ public class StormSubmitter {
         try {
             String serConf = JSONValue.toJSONString(topoConf);
             try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
-                if (topologyNameExists(name, client)) {
-                    throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
-                }
-                if (!Utils.isValidKey(name)) {
-                    throw new IllegalArgumentException(name + " does not appear to be a valid topology name.");
+                if (isTopologyNameAllowed(name, client)) {
+                    throw new RuntimeException("Topology with name `" + name + "` is either not allowed or it already exists on cluster");
                 }
 
                 // Dependency uploading only makes sense for distributed mode
@@ -435,7 +436,7 @@ public class StormSubmitter {
         });
     }
 
-    private static boolean topologyNameExists(String name, NimbusClient client) {
+    private static boolean isTopologyNameAllowed(String name, NimbusClient client) {
         try {
             return !client.getClient().isTopologyNameAllowed(name);
         } catch (Exception e) {
