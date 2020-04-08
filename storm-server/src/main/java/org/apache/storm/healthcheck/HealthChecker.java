@@ -149,10 +149,11 @@ public class HealthChecker {
 
     private static String readFromStream(InputStream is) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        String str;
-        while ((str = reader.readLine()) != null) {
-            stringBuilder.append(str).append("\n");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+            String str;
+            while ((str = reader.readLine()) != null) {
+                stringBuilder.append(str).append("\n");
+            }
         }
         return stringBuilder.toString().trim();
     }
