@@ -720,6 +720,9 @@ public class Cluster implements ISchedulingState {
         String topoId = td.getId();
         topoSharedOffHeapMemoryNodeFlag.put(topoId, false);
         StormTopology topology = td.getTopology();
+        if (topology == null) {
+            return; // accomodate multitenant_scheduler_test.clj
+        }
         if (topology.is_set_component_to_shared_memory()) {
             for (Set<String> sharedNames : topology.get_component_to_shared_memory().values()) {
                 if (sharedNames != null) {
