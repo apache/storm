@@ -22,6 +22,7 @@ import com.codahale.metrics.Meter;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.channels.ClosedByInterruptException;
@@ -119,14 +120,16 @@ public class HealthChecker {
             curThread.interrupted();
 
             if (process.exitValue() != 0) {
-                String str;
-                InputStream stdin = process.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(stdin));
-                while ((str = reader.readLine()) != null) {
-                    if (str.startsWith("ERROR")) {
-                        LOG.warn("The healthcheck process {} exited with code {}", script, process.exitValue());
-                        return FAILED;
-                    }
+                String outMessage = readFromStream(process.getInputStream());
+                String errMessage = readFromStream(process.getErrorStream());
+
+                LOG.warn("The healthcheck process {} exited with code: {}; output: {}; err: {}.",
+                    script, process.exitValue(), outMessage, errMessage);
+
+                //Keep this for backwards compatibility.
+                //It relies on "ERROR" at the beginning of stdout to determine FAILED status
+                if (outMessage.startsWith("ERROR")) {
+                    return FAILED;
                 }
                 return FAILED_WITH_EXIT_CODE;
             }
@@ -144,4 +147,14 @@ public class HealthChecker {
         }
     }
 
+    private static String readFromStream(InputStream is) throws IOException {
+        StringBuilder stringBuilder = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+            String str;
+            while ((str = reader.readLine()) != null) {
+                stringBuilder.append(str).append("\n");
+            }
+        }
+        return stringBuilder.toString().trim();
+    }
 }
