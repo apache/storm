@@ -122,7 +122,9 @@ public class Utils {
     // tests by subclassing.
     private static Utils _instance = new Utils();
     private static String memoizedLocalHostnameString = null;
-    public static final Pattern TOPOLOGY_KEY_PATTERN = Pattern.compile("^[\\w \\t\\._-]+$", Pattern.UNICODE_CHARACTER_CLASS);
+    public static final Pattern BLOB_KEY_PATTERN =
+            Pattern.compile("^[\\w \\t\\._-]+$", Pattern.UNICODE_CHARACTER_CLASS);
+    private static final Pattern TOPOLOGY_NAME_REGEX = Pattern.compile("^[^/.:\\\\]+$");
 
     static {
         localConf = readStormConfig();
@@ -1755,17 +1757,29 @@ public class Utils {
     }
 
     /**
-     * Validates topology name / blob key.
+     * Validates blob key.
      *
-     * @param key topology name / Key for the blob.
+     * @param key Key for the blob.
      */
     public static boolean isValidKey(String key) {
-        if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !TOPOLOGY_KEY_PATTERN.matcher(key).matches()) {
+        if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !BLOB_KEY_PATTERN.matcher(key).matches()) {
             LOG.error("'{}' does not appear to be valid. It must match {}. And it can't be \".\", \"..\", null or empty string.", key,
-                    TOPOLOGY_KEY_PATTERN);
+                BLOB_KEY_PATTERN);
             return false;
         }
         return true;
+    }
+
+    /**
+     * Validates topology name.
+     * @param name the topology name
+     * @throws IllegalArgumentException if the topology name is not valid
+     */
+    public static void validateTopologyName(String name) throws IllegalArgumentException {
+        if (name == null || !TOPOLOGY_NAME_REGEX.matcher(name).matches()) {
+            String message = "Topology name '" + name + "' is not valid. It can't be null and it must match " + TOPOLOGY_NAME_REGEX;
+            throw new IllegalArgumentException(message);
+        }
     }
 
     /**

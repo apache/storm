@@ -398,7 +398,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             .build();
     private static final List<String> EMPTY_STRING_LIST = Collections.unmodifiableList(Collections.emptyList());
     private static final Set<String> EMPTY_STRING_SET = Collections.unmodifiableSet(Collections.emptySet());
-    private static final Pattern TOPOLOGY_NAME_REGEX = Pattern.compile("^[^/.:\\\\]+$");
     private static final RotatingMap<String, Long> topologyCleanupDetected = new RotatingMap<>(2);
     private static long topologyCleanupRotationTime = 0L;
 
@@ -1185,9 +1184,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private static void validateTopologyName(String name) throws InvalidTopologyException {
-        Matcher m = TOPOLOGY_NAME_REGEX.matcher(name);
-        if (!m.matches()) {
-            throw new WrappedInvalidTopologyException("Topology name must match " + TOPOLOGY_NAME_REGEX);
+        try {
+            Utils.validateTopologyName(name);
+        } catch (IllegalArgumentException e) {
+            throw new WrappedInvalidTopologyException(e.getMessage());
         }
     }
 
