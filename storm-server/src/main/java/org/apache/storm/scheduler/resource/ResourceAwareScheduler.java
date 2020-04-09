@@ -58,6 +58,7 @@ public class ResourceAwareScheduler implements IScheduler {
     private int schedulingTimeoutSeconds;
     private ExecutorService backgroundScheduling;
     private Meter schedulingTimeoutMeter;
+    private Meter internalErrorMeter;
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
         markFailedTopology(u, c, td, message, null);
@@ -78,6 +79,7 @@ public class ResourceAwareScheduler implements IScheduler {
     public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         this.conf = conf;
         schedulingTimeoutMeter = metricsRegistry.registerMeter("nimbus:num-scheduling-timeouts");
+        internalErrorMeter = metricsRegistry.registerMeter("nimbus:scheduler-internal-errors");
         schedulingPriorityStrategy = ReflectionUtils.newInstance(
             (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY));
         configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
@@ -235,6 +237,7 @@ public class ResourceAwareScheduler implements IScheduler {
                     }
                 }
             } catch (Exception ex) {
+                internalErrorMeter.mark();
                 markFailedTopology(topologySubmitter, cluster, td,
                         "Internal Error - Exception thrown when scheduling. Please check logs for details", ex);
                 return;

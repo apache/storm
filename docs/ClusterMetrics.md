@@ -58,6 +58,7 @@ These are metrics that are specific to a nimbus instance.  In many instances onl
 |-------------|------|-------------|
 | nimbus:files-upload-duration-ms | timer | Time it takes to upload a file from start to finish (Not Blobs, but this may change) |
 | nimbus:longest-scheduling-time-ms | gauge | Longest time ever taken so far to schedule. This includes the current scheduling run, which is intended to detect if scheduling is stuck for some reason. |
+| nimbus:mkAssignments-Errors | meter | tracks exceptions from mkAssignments |
 | nimbus:num-activate-calls | meter | calls to the activate thrift method. |
 | nimbus:num-added-executors-per-scheduling | histogram | number of executors added after a scheduling run. |
 | nimbus:num-added-slots-per-scheduling | histogram |  number of slots added after a scheduling run. |
@@ -102,7 +103,7 @@ These are metrics that are specific to a nimbus instance.  In many instances onl
 | nimbus:num-uploadChunk-calls | meter | calls to uploadChunk thrift method. |
 | nimbus:num-uploadNewCredentials-calls | meter | calls to uploadNewCredentials thrift method. |
 | nimbus:process-worker-metric-calls | meter | calls to processWorkerMetrics thrift method. |
-| nimbus:mkAssignments-Errors | meter | tracks exceptions from mkAssignments |
+| nimbus:scheduler-internal-errors | meter | tracks internal scheduling errors |
 | nimbus:topology-scheduling-duration-ms | timer | time it takes to do a scheduling run. |
 | nimbus:total-available-memory-non-negative | gauge | available memory on the cluster MB |
 | nimbuses:uptime-secs | histogram | uptime of nimbuses |
