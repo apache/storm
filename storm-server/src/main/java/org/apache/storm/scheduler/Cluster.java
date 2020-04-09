@@ -772,14 +772,8 @@ public class Cluster implements ISchedulingState {
 
         Set<ExecutorDetails> executorsOnNode = new HashSet<>();
         topoIdToNodeIdToSlotIdToExecutors.computeIfAbsent(td.getId(), Cluster::makeMap).computeIfAbsent(nodeId, Cluster::makeMap)
-                .forEach((k,v) -> executorsOnNode.addAll(v));
-        //if (assignment != null) {
-        //    for (Entry<WorkerSlot, Collection<ExecutorDetails>> entry : assignment.getSlotToExecutors().entrySet()) {
-        //        if (nodeId.equals(entry.getKey().getNodeId())) {
-        //            executorsOnNode.addAll(entry.getValue());
-        //        }
-        //    }
-        //}
+                .forEach((k, v) -> executorsOnNode.addAll(v));
+
         if (extra != null) {
             executorsOnNode.add(extra);
         }
