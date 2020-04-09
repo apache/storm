@@ -88,6 +88,7 @@ public class Cluster implements ISchedulingState {
     private INimbus inimbus;
     private double minWorkerCpu = 0.0;
     private final Map<String, Boolean> topoSharedOffHeapMemoryNodeFlag = new HashMap<>();
+    private final Map<String, Map<String, Map<String, Collection<ExecutorDetails>>>> topoIdToNodeIdToSlotIdToExecutors = new HashMap<>();
 
     private static <K, V> Map<K, V> makeMap(String key) {
         return new HashMap<>();
@@ -653,6 +654,14 @@ public class Cluster implements ISchedulingState {
                 "slot: [" + slot.getNodeId() + ", " + slot.getPort() + "] is already occupied.");
         }
 
+        Collection<ExecutorDetails> executorDetails =
+                topoIdToNodeIdToSlotIdToExecutors
+                        .computeIfAbsent(topologyId, Cluster::makeMap)
+                        .computeIfAbsent(slot.getNodeId(), Cluster::makeMap)
+                        .computeIfAbsent(slot.getId(), Cluster::makeSet);
+        executorDetails.clear();
+        executorDetails.addAll(executors);
+
         TopologyDetails td = topologies.getById(topologyId);
         if (td == null) {
             throw new IllegalArgumentException(
@@ -762,13 +771,15 @@ public class Cluster implements ISchedulingState {
         }
 
         Set<ExecutorDetails> executorsOnNode = new HashSet<>();
-        if (assignment != null) {
-            for (Entry<WorkerSlot, Collection<ExecutorDetails>> entry : assignment.getSlotToExecutors().entrySet()) {
-                if (nodeId.equals(entry.getKey().getNodeId())) {
-                    executorsOnNode.addAll(entry.getValue());
-                }
-            }
-        }
+        topoIdToNodeIdToSlotIdToExecutors.computeIfAbsent(td.getId(), Cluster::makeMap).computeIfAbsent(nodeId, Cluster::makeMap)
+                .forEach((k,v) -> executorsOnNode.addAll(v));
+        //if (assignment != null) {
+        //    for (Entry<WorkerSlot, Collection<ExecutorDetails>> entry : assignment.getSlotToExecutors().entrySet()) {
+        //        if (nodeId.equals(entry.getKey().getNodeId())) {
+        //            executorsOnNode.addAll(entry.getValue());
+        //        }
+        //    }
+        //}
         if (extra != null) {
             executorsOnNode.add(extra);
         }
@@ -787,12 +798,16 @@ public class Cluster implements ISchedulingState {
      */
     public void freeSlot(WorkerSlot slot) {
         // remove the slot from the existing assignments
+        String nodeId = slot.getNodeId();
         for (SchedulerAssignmentImpl assignment : assignments.values()) {
             if (assignment.isSlotOccupied(slot)) {
-                assertValidTopologyForModification(assignment.getTopologyId());
+                String topologyId = assignment.getTopologyId();
+                assertValidTopologyForModification(topologyId);
                 assignment.unassignBySlot(slot);
-                String nodeId = slot.getNodeId();
-                TopologyDetails td = topologies.getById(assignment.getTopologyId());
+                topoIdToNodeIdToSlotIdToExecutors.computeIfAbsent(topologyId, Cluster::makeMap).computeIfAbsent(nodeId, Cluster::makeMap)
+                        .computeIfAbsent(slot.getId(), Cluster::makeSet)
+                        .clear();
+                TopologyDetails td = topologies.getById(topologyId);
                 assignment.setTotalSharedOffHeapNodeMemory(
                     nodeId, calculateSharedOffHeapNodeMemory(nodeId, assignment, td));
                 nodeToScheduledResourcesCache.computeIfAbsent(nodeId, Cluster::makeMap).put(slot, new NormalizedResourceRequest());
