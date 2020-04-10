@@ -37,7 +37,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.addTopologies;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesBeenEvicted;
@@ -97,9 +100,10 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
 
         cluster = new Cluster(cluster, withNewTopo);
         scheduler.schedule(withNewTopo, cluster);
+        Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
 
         assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesNotBeenEvicted(cluster, ((ResourceAwareScheduler) scheduler).getEvictedTopologies(), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+        assertTopologiesNotBeenEvicted(cluster, collectMapValues(evictedTopos), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
         assertTopologiesFullyScheduled(cluster, "rui-topo-1");
     }
 
@@ -137,9 +141,10 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
 
         cluster = new Cluster(cluster, withNewTopo);
         scheduler.schedule(withNewTopo, cluster);
+        Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
 
         assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesBeenEvicted(cluster, ((ResourceAwareScheduler) scheduler).getEvictedTopologies(), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+        assertTopologiesBeenEvicted(cluster, collectMapValues(evictedTopos), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
         assertTopologiesNotScheduled(cluster, "rui-topo-1");
     }
 
@@ -176,9 +181,10 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
 
         cluster = new Cluster(cluster, withNewTopo);
         scheduler.schedule(withNewTopo, cluster);
+        Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
 
         assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesNotBeenEvicted(cluster, ((ResourceAwareScheduler) scheduler).getEvictedTopologies(),"ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+        assertTopologiesNotBeenEvicted(cluster, collectMapValues(evictedTopos),"ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
         assertTopologiesNotScheduled(cluster, "rui-topo-1");
     }
 
@@ -209,5 +215,12 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 100, 1000, genericResourcesOfferedMap);
 
         return new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+    }
+
+    private Set<String> collectMapValues(Map<String, Set<String>> map) {
+        return map.values()
+                .stream()
+                .flatMap(set -> set.stream())
+                .collect(Collectors.toCollection(HashSet::new));
     }
 }
