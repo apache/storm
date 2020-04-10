@@ -730,18 +730,14 @@ public class Cluster implements ISchedulingState {
         topoSharedOffHeapMemoryNodeFlag.put(topoId, false);
         StormTopology topology = td.getTopology();
         if (topology == null) {
-            return; // accomodate multitenant_scheduler_test.clj
+            return; // accommodate multitenant_scheduler_test.clj
         }
-        if (topology.is_set_component_to_shared_memory()) {
-            for (Set<String> sharedNames : topology.get_component_to_shared_memory().values()) {
-                if (sharedNames != null) {
-                    for (String name : sharedNames) {
-                        double val = topology.get_shared_memory().get(name).get_off_heap_node();
-                        if (val > 0.0) {
-                            topoSharedOffHeapMemoryNodeFlag.put(topoId, true);
-                            return;
-                        }
-                    }
+        if (topology.is_set_shared_memory()) {
+            for (SharedMemory sharedMemory : topology.get_shared_memory().values()) {
+                double val = sharedMemory.get_off_heap_node();
+                if (val > 0.0) {
+                    topoSharedOffHeapMemoryNodeFlag.put(topoId, true);
+                    return;
                 }
             }
         }
@@ -792,10 +788,10 @@ public class Cluster implements ISchedulingState {
      */
     public void freeSlot(WorkerSlot slot) {
         // remove the slot from the existing assignments
-        String nodeId = slot.getNodeId();
+        final String nodeId = slot.getNodeId();
         for (SchedulerAssignmentImpl assignment : assignments.values()) {
             if (assignment.isSlotOccupied(slot)) {
-                String topologyId = assignment.getTopologyId();
+                final String topologyId = assignment.getTopologyId();
                 assertValidTopologyForModification(topologyId);
                 assignment.unassignBySlot(slot);
                 topoIdToNodeIdToSlotIdToExecutors.computeIfAbsent(topologyId, Cluster::makeMap).computeIfAbsent(nodeId, Cluster::makeMap)
@@ -809,7 +805,7 @@ public class Cluster implements ISchedulingState {
             }
         }
         //Invalidate the cache as something on the node changed
-        totalResourcesPerNodeCache.remove(slot.getNodeId());
+        totalResourcesPerNodeCache.remove(nodeId);
     }
 
     /**
