@@ -59,8 +59,7 @@ public class ResourceAwareScheduler implements IScheduler {
     private int maxSchedulingAttempts;
     private int schedulingTimeoutSeconds;
     private ExecutorService backgroundScheduling;
-    private Map<String, Set<String>> evictedTopologiesMap = new HashMap<>();   // topoId : topoEvicted
-    private Map<String, Set<String>> tmpEvictedTopologiesMap = new HashMap<>();
+    private Map<String, Set<String>> evictedTopologiesMap;   // topoId : toposEvicted
     private Meter schedulingTimeoutMeter;
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
@@ -90,6 +89,7 @@ public class ResourceAwareScheduler implements IScheduler {
         schedulingTimeoutSeconds = ObjectReader.getInt(
                 conf.get(DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY), 60);
         backgroundScheduling = Executors.newFixedThreadPool(1);
+        evictedTopologiesMap = new HashMap<>();
     }
 
     @Override
@@ -112,21 +112,21 @@ public class ResourceAwareScheduler implements IScheduler {
         }
         // clear tmpEvictedTopologiesMap at the beginning of each round of scheduling
         // move it to evictedTopologiesMap at the end of this round of scheduling
-        tmpEvictedTopologiesMap = new HashMap<>();
+        Map<String, Set<String>> tmpEvictedTopologiesMap = new HashMap<>();
         for (TopologyDetails td : orderedTopologies) {
             if (!cluster.needsSchedulingRas(td)) {
                 //cluster forgets about its previous status, so if it is scheduled just leave it.
                 cluster.setStatusIfAbsent(td.getId(), "Fully Scheduled");
             } else {
                 User submitter = userMap.get(td.getTopologySubmitter());
-                scheduleTopology(td, cluster, submitter, orderedTopologies);
+                scheduleTopology(td, cluster, submitter, orderedTopologies, tmpEvictedTopologiesMap);
             }
         }
         evictedTopologiesMap = tmpEvictedTopologiesMap;
     }
 
     private void scheduleTopology(TopologyDetails td, Cluster cluster, final User topologySubmitter,
-                                  List<TopologyDetails> orderedTopologies) {
+                                  List<TopologyDetails> orderedTopologies, Map<String, Set<String>> tmpEvictedTopologiesMap) {
         //A copy of cluster that we can modify, but does not get committed back to cluster unless scheduling succeeds
         Cluster workingState = new Cluster(cluster);
         RasNodes nodes = new RasNodes(workingState);
@@ -226,11 +226,7 @@ public class ResourceAwareScheduler implements IScheduler {
                         }
                         if (!tmpEvictedTopos.isEmpty()) {
                             LOG.warn("Evicted Topologies {} when scheduling topology: {}", tmpEvictedTopos, td.getId());
-                            String topoId = td.getId();
-                            if (!tmpEvictedTopologiesMap.containsKey(topoId)) {
-                                tmpEvictedTopologiesMap.put(topoId, new HashSet<>());
-                            }
-                            tmpEvictedTopologiesMap.get(topoId).addAll(tmpEvictedTopos);
+                            tmpEvictedTopologiesMap.computeIfAbsent(td.getId(), k -> new HashSet<>()).addAll(tmpEvictedTopos);
                         } else {
                             StringBuilder message = new StringBuilder();
                             message.append("Not enough resources to schedule after evicting lower priority topologies. ");
