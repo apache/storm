@@ -76,11 +76,6 @@ public class TestTopologyAnonymizerUtils {
         this.outputDirPath = DEFAULT_ANONYMIZED_RESOURCES_OUTDIR;
     }
 
-    //public TestTopologyAnonymizerUtils(String originalResourcePath, String outputDirPath) {
-    //    this.originalResourcePath = originalResourcePath;
-    //    this.outputDirPath = outputDirPath;
-    //}
-
     /**
      * Check if resource files are available in the resource path defined by originalResourcePath.
      *

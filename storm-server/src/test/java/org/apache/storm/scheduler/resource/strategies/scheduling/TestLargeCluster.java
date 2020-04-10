@@ -315,7 +315,7 @@ public class TestLargeCluster {
         if (uniformSupervisors) {
             int numRacks = 16;
             int numSupersPerRack = 82;
-            int numPorts = 50; // scheduling will fill up 2-6, leaving of 90% workerslots unused - does this cause slow scheduling?
+            int numPorts = 50; // note: scheduling is slower when components with large cpu/mem leave large percent of workerslots unused
             int rackStart = 0;
             int superInRackStart = 1;
             double cpu = 7200; // %percent
@@ -327,7 +327,7 @@ public class TestLargeCluster {
                     numRacks, numSupersPerRack, numPorts, rackStart, superInRackStart, cpu, mem, miscResources);
 
         } else {
-            // this non-uniform supervisor distribution closelt (but not exactly) mimics IridiumBlue cluster
+            // this non-uniform supervisor distribution closely (but not exactly) mimics a large cluster in use
             int numSupersPerRack = 82;
             int numPorts = 50;
 
@@ -385,7 +385,7 @@ public class TestLargeCluster {
 
         List<Class> classesToDebug = Arrays.asList(DefaultResourceAwareStrategy.class,
                 GenericResourceAwareStrategy.class, ResourceAwareScheduler.class,
-                Cluster.class // count calls to calculateSharedOffHeapNodeMemory()
+                Cluster.class
         );
         Level logLevel = Level.INFO ; // switch to Level.DEBUG for verbose otherwise Level.INFO
         classesToDebug.forEach(x -> Configurator.setLevel(x.getName(), logLevel));
@@ -400,11 +400,9 @@ public class TestLargeCluster {
         }
 
         // Remove topology and reschedule it
-        java.util.Random random = new java.util.Random();
         for (int i = 0 ; i < topoDetailsArray.length ; i++) {
             startTime = System.currentTimeMillis();
-            int iTopo = i; // random.nextInt(topoDetailsArray.length);
-            TopologyDetails topoDetails = topoDetailsArray[iTopo];
+            TopologyDetails topoDetails = topoDetailsArray[i];
             cluster.unassign(topoDetails.getId());
             LOG.info("({}) Removed topology {}", i, topoDetails.getName());
             IScheduler rescheduler = new ResourceAwareScheduler();
