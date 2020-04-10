@@ -112,7 +112,7 @@ public class ResourceAwareScheduler implements IScheduler {
         }
         // clear tmpEvictedTopologiesMap at the beginning of each round of scheduling
         // move it to evictedTopologiesMap at the end of this round of scheduling
-        tmpEvictedTopologiesMap.clear();
+        tmpEvictedTopologiesMap = new HashMap<>();
         for (TopologyDetails td : orderedTopologies) {
             if (!cluster.needsSchedulingRas(td)) {
                 //cluster forgets about its previous status, so if it is scheduled just leave it.
@@ -226,7 +226,11 @@ public class ResourceAwareScheduler implements IScheduler {
                         }
                         if (!tmpEvictedTopos.isEmpty()) {
                             LOG.warn("Evicted Topologies {} when scheduling topology: {}", tmpEvictedTopos, td.getId());
-                            tmpEvictedTopologiesMap.put(td.getId(), tmpEvictedTopos);
+                            String topoId = td.getId();
+                            if (!tmpEvictedTopologiesMap.containsKey(topoId)) {
+                                tmpEvictedTopologiesMap.put(topoId, new HashSet<>());
+                            }
+                            tmpEvictedTopologiesMap.get(topoId).addAll(tmpEvictedTopos);
                         } else {
                             StringBuilder message = new StringBuilder();
                             message.append("Not enough resources to schedule after evicting lower priority topologies. ");
@@ -255,6 +259,15 @@ public class ResourceAwareScheduler implements IScheduler {
                     + topologySchedulingResources.getRemainingRequiredResourcesMessage());
     }
 
+    /**
+     * Return eviction information as map scheduled topo : evicted topos
+     * NOTE this method returns the map of a completed scheduling round.
+     * If scheduling is going on, this method will return a map of last scheduling round
+     *
+     * TODO: This method is only used for testing . It's subject to change if we plan to use this info elsewhere.
+     *
+     * @return a MAP of scheduled (topo : evicted) topos of most recent completed scheduling round
+     */
     public Map<String, Set<String>> getEvictedTopologiesMap() {
         return Collections.unmodifiableMap(evictedTopologiesMap);
     }

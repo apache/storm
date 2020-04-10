@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.addTopologies;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesBeenEvicted;
@@ -218,9 +217,8 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
     }
 
     private Set<String> collectMapValues(Map<String, Set<String>> map) {
-        return map.values()
-                .stream()
-                .flatMap(set -> set.stream())
-                .collect(Collectors.toCollection(HashSet::new));
+        Set<String> set = new HashSet<>();
+        map.values().forEach((s) -> set.addAll(s));
+        return set;
     }
 }
