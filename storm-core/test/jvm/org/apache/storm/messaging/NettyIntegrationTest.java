@@ -18,6 +18,7 @@ package org.apache.storm.messaging;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.Builder;
 import org.apache.storm.Testing;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.testing.CompleteTopologyParam;
@@ -37,8 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 @IntegrationTest
 public class NettyIntegrationTest {
@@ -55,13 +55,18 @@ public class NettyIntegrationTest {
         daemonConf.put(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS, 1);
         daemonConf.put(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS, 1);
 
-        try (LocalCluster cluster = new LocalCluster.Builder().withSimulatedTime().withSupervisors(4)
-                .withSupervisorSlotPortMin(6710).withDaemonConf(daemonConf).build()) {
+        Builder builder = new Builder()
+                .withSimulatedTime()
+                .withSupervisors(4)
+                .withSupervisorSlotPortMin(6710)
+                .withDaemonConf(daemonConf);
 
-            TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout("1", new TestWordSpout(true), 4);
-            builder.setBolt("2", new TestGlobalCount(), 6).shuffleGrouping("1");
-            StormTopology topology = builder.createTopology();
+        try (LocalCluster cluster = builder.build()) {
+
+            TopologyBuilder topologyBuilder = new TopologyBuilder();
+            topologyBuilder.setSpout("1", new TestWordSpout(true), 4);
+            topologyBuilder.setBolt("2", new TestGlobalCount(), 6).shuffleGrouping("1");
+            StormTopology topology = topologyBuilder.createTopology();
 
             // important for test that tuples = multiple of 4 and 6
             List<FixedTuple> testTuples = Stream.of("a", "b",
@@ -87,7 +92,7 @@ public class NettyIntegrationTest {
 
             Map<String, List<FixedTuple>> results = Testing.completeTopology(cluster, topology, completeTopologyParams);
 
-            assertThat(Testing.readTuples(results, "2").size(), is(6 * 4));
+            assertEquals(6 * 4, Testing.readTuples(results, "2").size());
         }
     }
 }
