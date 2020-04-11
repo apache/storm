@@ -16,14 +16,14 @@
 
 package org.apache.storm;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class SubmitterTest {
 
@@ -36,8 +36,8 @@ public class SubmitterTest {
         Map<String, Object> result = StormSubmitter.prepareZookeeperAuthentication(conf);
         Object actualPayload = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         Object actualScheme = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME);
-        assertThat(actualPayload, is("foobar:12345"));
-        assertThat(actualScheme, is("digest"));
+        assertEquals("foobar:12345", actualPayload);
+        assertEquals("digest", actualScheme);
     }
 
     @Test
@@ -48,8 +48,8 @@ public class SubmitterTest {
         Map<String, Object> result = StormSubmitter.prepareZookeeperAuthentication(conf);
         Object actualPayload = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         Object actualScheme = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME);
-        assertThat(actualPayload, is("foobar:12345"));
-        assertThat(actualScheme, is("digest"));
+        assertEquals("foobar:12345", actualPayload);
+        assertEquals("digest", actualScheme);
     }
 
     @Test
@@ -60,8 +60,8 @@ public class SubmitterTest {
         Map<String, Object> result = StormSubmitter.prepareZookeeperAuthentication(conf);
         Object actualPayload = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         Object actualScheme = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME);
-        assertThat(Strings.isNullOrEmpty((String)actualPayload), is(false));
-        assertThat(actualScheme, is("digest"));
+        assertFalse(StringUtils.isBlank((String)actualPayload));
+        assertEquals("digest", actualScheme);
     }
 
     @Test
@@ -74,9 +74,9 @@ public class SubmitterTest {
         Map<String, Object> result = StormSubmitter.prepareZookeeperAuthentication(conf);
         Object actualPayload = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         Object actualScheme = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME);
-        assertThat(StormSubmitter.validateZKDigestPayload(bogusPayload), is(false));
-        assertThat(Strings.isNullOrEmpty((String)actualPayload), is(false));
-        assertThat(actualScheme, is("digest"));
+        assertFalse(StormSubmitter.validateZKDigestPayload(bogusPayload));
+        assertFalse(StringUtils.isBlank((String)actualPayload));
+        assertEquals("digest", actualScheme);
     }
 
     @Test
@@ -88,8 +88,8 @@ public class SubmitterTest {
         Map<String, Object> result = StormSubmitter.prepareZookeeperAuthentication(conf);
         Object actualPayload = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         Object actualScheme = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME);
-        assertThat(Strings.isNullOrEmpty((String)actualPayload), is(false));
-        assertThat(actualScheme, is("digest"));
+        assertFalse(StringUtils.isBlank((String)actualPayload));
+        assertEquals("digest", actualScheme);
     }
 
     @Test
@@ -101,7 +101,7 @@ public class SubmitterTest {
         Map<String, Object> result = StormSubmitter.prepareZookeeperAuthentication(conf);
         Object actualPayload = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         Object actualScheme = result.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME);
-        assertThat(Strings.isNullOrEmpty((String)actualPayload), is(false));
-        assertThat(actualScheme, is("digest"));
+        assertFalse(StringUtils.isBlank((String)actualPayload));
+        assertEquals("digest", actualScheme);
     }
 }
