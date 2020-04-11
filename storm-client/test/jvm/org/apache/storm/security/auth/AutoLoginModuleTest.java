@@ -33,8 +33,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class AutoLoginModuleTest {
 
@@ -43,9 +43,9 @@ public class AutoLoginModuleTest {
         // Behavior is correct when there is no Subject or TGT
         AutoTGTKrb5LoginModule loginModule = new AutoTGTKrb5LoginModule();
         Assertions.assertThrows(LoginException.class, loginModule::login);
-        assertThat(loginModule.commit(), is(false));
-        assertThat(loginModule.abort(), is(false));
-        assertThat(loginModule.logout(), is(true));
+        assertFalse(loginModule.commit());
+        assertFalse(loginModule.abort());
+        assertTrue(loginModule.logout());
     }
 
     @Test
@@ -54,8 +54,8 @@ public class AutoLoginModuleTest {
         Subject readonlySubject = new Subject(true, Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
         AutoTGTKrb5LoginModule loginModule = new AutoTGTKrb5LoginModule();
         loginModule.initialize(readonlySubject, null, null, null);
-        assertThat(loginModule.commit(), is(false));
-        assertThat(loginModule.logout(), is(true));
+        assertFalse(loginModule.commit());
+        assertTrue(loginModule.logout());
     }
 
     @Test
@@ -64,9 +64,9 @@ public class AutoLoginModuleTest {
         AutoTGTKrb5LoginModule loginModule = new AutoTGTKrb5LoginModule();
         loginModule.initialize(new Subject(), null, null, null);
         Assertions.assertThrows(LoginException.class, loginModule::login);
-        assertThat(loginModule.commit(), is(false));
-        assertThat(loginModule.abort(), is(false));
-        assertThat(loginModule.logout(), is(true));
+        assertFalse(loginModule.commit());
+        assertFalse(loginModule.abort());
+        assertTrue(loginModule.logout());
     }
 
     @Test
@@ -74,11 +74,11 @@ public class AutoLoginModuleTest {
         // Behavior is correct when there is no Subject and a TGT
         AutoTGTKrb5LoginModuleTest loginModule = new AutoTGTKrb5LoginModuleTest();
         loginModule.setKerbTicket(Mockito.mock(KerberosTicket.class));
-        assertThat(loginModule.login(), is(true));
+        assertTrue(loginModule.login());
         Assertions.assertThrows(LoginException.class, loginModule::commit);
         loginModule.setKerbTicket(Mockito.mock(KerberosTicket.class));
-        assertThat(loginModule.abort(), is(true));
-        assertThat(loginModule.logout(), is(true));
+        assertTrue(loginModule.abort());
+        assertTrue(loginModule.logout());
     }
 
     @Test
@@ -88,11 +88,11 @@ public class AutoLoginModuleTest {
         AutoTGTKrb5LoginModuleTest loginModule = new AutoTGTKrb5LoginModuleTest();
         loginModule.initialize(readonlySubject, null, null, null);
         loginModule.setKerbTicket(Mockito.mock(KerberosTicket.class));
-        assertThat(loginModule.login(), is(true));
+        assertTrue(loginModule.login());
         Assertions.assertThrows(LoginException.class, loginModule::commit);
         loginModule.setKerbTicket(Mockito.mock(KerberosTicket.class));
-        assertThat(loginModule.abort(), is(true));
-        assertThat(loginModule.logout(), is(true));
+        assertTrue(loginModule.abort());
+        assertTrue(loginModule.logout());
     }
 
     @Test
@@ -120,9 +120,9 @@ public class AutoLoginModuleTest {
         );
         loginModule.initialize(new Subject(), null, null, null);
         loginModule.setKerbTicket(ticket);
-        assertThat(loginModule.login(), is(true));
-        assertThat(loginModule.commit(), is(true));
-        assertThat(loginModule.abort(), is(true));
-        assertThat(loginModule.logout(), is(true));
+        assertTrue(loginModule.login());
+        assertTrue(loginModule.commit());
+        assertTrue(loginModule.abort());
+        assertTrue(loginModule.logout());
     }
 }
