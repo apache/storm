@@ -13,13 +13,12 @@
 package org.apache.storm.metric;
 
 import com.codahale.metrics.Gauge;
-import com.codahale.metrics.jvm.CachedThreadStatesGaugeSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.task.IBolt;
@@ -43,10 +42,8 @@ public class SystemBolt implements IBolt {
         }
         prepareWasCalled = true;
 
-        int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
-
         context.registerMetricSet("GC", new GarbageCollectorMetricSet());
-        context.registerMetricSet("threads", new CachedThreadStatesGaugeSet(bucketSize, TimeUnit.SECONDS));
+        context.registerMetricSet("threads", new ThreadStatesGaugeSet());
         context.registerMetricSet("memory", new MemoryUsageGaugeSet());
 
         final RuntimeMXBean jvmRt = ManagementFactory.getRuntimeMXBean();
@@ -87,6 +84,7 @@ public class SystemBolt implements IBolt {
             }
         });
 
+        int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.WORKER_METRICS), bucketSize, topoConf);
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize, topoConf);
     }
