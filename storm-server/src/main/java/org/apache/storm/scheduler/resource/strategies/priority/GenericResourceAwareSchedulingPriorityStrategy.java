@@ -154,8 +154,7 @@ public class GenericResourceAwareSchedulingPriorityStrategy extends DefaultSched
         }
 
         protected double getScore(double availableCpu, double availableMemory, Map<String, Double> availableGenericResources) {
-            TopologyDetails td = getNextHighest();
-            return getScore(availableCpu, availableMemory, availableGenericResources, td);
+            return getScore(availableCpu, availableMemory, availableGenericResources, getNextHighest());
         }
     }
 

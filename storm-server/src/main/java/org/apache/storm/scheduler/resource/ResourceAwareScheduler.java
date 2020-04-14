@@ -256,12 +256,12 @@ public class ResourceAwareScheduler implements IScheduler {
     }
 
     /**
-     * Return eviction information as map scheduled topo : evicted topos
+     * Return eviction information as map {scheduled topo : evicted topos}
      * NOTE this method returns the map of a completed scheduling round.
      * If scheduling is going on, this method will return a map of last scheduling round
-     *
+     * <p>
      * TODO: This method is only used for testing . It's subject to change if we plan to use this info elsewhere.
-     *
+     * </p>
      * @return a MAP of scheduled (topo : evicted) topos of most recent completed scheduling round
      */
     public Map<String, Set<String>> getEvictedTopologiesMap() {

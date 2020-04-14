@@ -276,9 +276,7 @@ public interface ISchedulingState {
     /**
      * Get the total amount of generic resources (excluding CPU and memory) in cluster.
      */
-    default Map<String, Double> getClusterTotalGenericResources() {
-        return Collections.emptyMap();
-    }
+    Map<String, Double> getClusterTotalGenericResources();
 
     /**
      * Get the network topography (rackId -> nodes in the rack).
