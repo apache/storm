@@ -43,6 +43,7 @@ import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriori
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
 import org.apache.storm.scheduler.utils.IConfigLoader;
+import org.apache.storm.scheduler.utils.SchedulerConfigRefresher;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
 import org.apache.storm.utils.DisallowedStrategyException;
 import org.apache.storm.utils.ObjectReader;
@@ -62,6 +63,7 @@ public class ResourceAwareScheduler implements IScheduler {
     private Map<String, Set<String>> evictedTopologiesMap;   // topoId : toposEvicted
     private Meter schedulingTimeoutMeter;
     private Meter internalErrorMeter;
+    private SchedulerConfigRefresher<Map<String, Map<String, Double>>> schedulerConfigRefresher;
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
         markFailedTopology(u, c, td, message, null);
@@ -92,17 +94,21 @@ public class ResourceAwareScheduler implements IScheduler {
                 conf.get(DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY), 60);
         backgroundScheduling = Executors.newFixedThreadPool(1);
         evictedTopologiesMap = new HashMap<>();
+
+        schedulerConfigRefresher = new SchedulerConfigRefresher<>(conf, this::loadConfig);
+        schedulerConfigRefresher.start();
     }
 
     @Override
     public void cleanup() {
         LOG.info("Cleanup ResourceAwareScheduler scheduler");
         backgroundScheduling.shutdown();
+        schedulerConfigRefresher.shutdown();
     }
 
     @Override
     public Map<String, Map<String, Double>> config() {
-        return (Map) getUserResourcePools();
+        return Collections.unmodifiableMap(schedulerConfigRefresher.getConfig());
     }
 
     @Override
@@ -439,7 +445,7 @@ public class ResourceAwareScheduler implements IScheduler {
      */
     private Map<String, User> getUsers(Cluster cluster) {
         Map<String, User> userMap = new HashMap<>();
-        Map<String, Map<String, Double>> userResourcePools = getUserResourcePools();
+        Map<String, Map<String, Double>> userResourcePools = config();
         LOG.debug("userResourcePools: {}", userResourcePools);
 
         for (TopologyDetails td : cluster.getTopologies()) {
@@ -479,7 +485,7 @@ public class ResourceAwareScheduler implements IScheduler {
      * @return a map that contains resource guarantees of every user of the following format
      *     {userid->{resourceType->amountGuaranteed}}
      */
-    private Map<String, Map<String, Double>> getUserResourcePools() {
+    private Map<String, Map<String, Double>> loadConfig() {
         Map<String, Map<String, Number>> raw;
 
         // Try the loader plugin, if configured

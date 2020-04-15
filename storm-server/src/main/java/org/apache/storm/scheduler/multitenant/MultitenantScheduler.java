@@ -12,6 +12,7 @@
 
 package org.apache.storm.scheduler.multitenant;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.DaemonConfig;
@@ -22,6 +23,7 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
 import org.apache.storm.scheduler.utils.IConfigLoader;
+import org.apache.storm.scheduler.utils.SchedulerConfigRefresher;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +32,14 @@ public class MultitenantScheduler implements IScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
     protected IConfigLoader configLoader;
     private Map<String, Object> conf;
+    private SchedulerConfigRefresher<Map<String, Number>> schedulerConfigRefresher;
 
     @Override
     public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         this.conf = conf;
         configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
-
+        schedulerConfigRefresher = new SchedulerConfigRefresher<>(conf, this::loadConfig);
+        schedulerConfigRefresher.start();
     }
 
     /**
@@ -43,7 +47,7 @@ public class MultitenantScheduler implements IScheduler {
      * if no config available from multitenant-scheduler.yaml, get configs from conf. Only one will be used.
      * @return User pool configs.
      */
-    private Map<String, Number> getUserConf() {
+    private Map<String, Number> loadConfig() {
         Map<String, Number> ret;
 
         // Try the loader plugin, if configured
@@ -69,15 +73,15 @@ public class MultitenantScheduler implements IScheduler {
         // If that fails, use config
         ret = (Map<String, Number>) conf.get(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         if (ret == null) {
-            return new HashMap<>();
+            return Collections.emptyMap();
         } else {
             return ret;
         }
     }
 
     @Override
-    public Map config() {
-        return getUserConf();
+    public Map<String, Number> config() {
+        return Collections.unmodifiableMap(schedulerConfigRefresher.getConfig());
     }
 
     @Override
@@ -85,7 +89,7 @@ public class MultitenantScheduler implements IScheduler {
         LOG.debug("Rerunning scheduling...");
         Map<String, Node> nodeIdToNode = Node.getAllNodesFrom(cluster);
 
-        Map<String, Number> userConf = getUserConf();
+        Map<String, Number> userConf = config();
 
         Map<String, IsolatedPool> userPools = new HashMap<>();
         for (Map.Entry<String, Number> entry : userConf.entrySet()) {
@@ -116,5 +120,11 @@ public class MultitenantScheduler implements IScheduler {
         }
         defaultPool.scheduleAsNeeded(freePool);
         LOG.debug("Scheduling done...");
+    }
+
+    @Override
+    public void cleanup() {
+        LOG.info("Cleanup Multitenant scheduler");
+        schedulerConfigRefresher.shutdown();
     }
 }

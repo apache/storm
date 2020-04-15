@@ -53,7 +53,7 @@ public class IsolationScheduler implements IScheduler {
 
     @Override
     public Map<String, Map<String, Double>> config() {
-        return new HashMap<>();
+        return Collections.emptyMap();
     }
 
     // get host -> all assignable worker slots for non-blacklisted machines (assigned or not assigned)

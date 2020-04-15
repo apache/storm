@@ -44,6 +44,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * A dynamic loader that can load scheduler configurations for user resource guarantees from Artifactory (an artifact repository manager).
+ * This is not thread-safe.
  */
 public class ArtifactoryConfigLoader implements IConfigLoader {
     protected static final String LOCAL_ARTIFACT_DIR = "scheduler_artifacts";
