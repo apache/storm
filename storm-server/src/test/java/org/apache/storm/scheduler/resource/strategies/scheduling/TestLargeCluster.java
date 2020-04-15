@@ -70,6 +70,8 @@ public class TestLargeCluster {
 
     public static final String TEST_CLUSTER_NAME = "largeCluster01";
     public static final String TEST_RESOURCE_PATH = "clusterconf/" + TEST_CLUSTER_NAME;
+    public static final String COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING = "code.ser";
+    public static final String COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING = "conf.ser";
 
     private static IScheduler scheduler = null;
 
@@ -100,7 +102,8 @@ public class TestLargeCluster {
             String resource;
 
             while ((resource = br.readLine()) != null) {
-                if (resource.endsWith("code.ser") || resource.endsWith("conf.ser")) {
+                if (resource.endsWith(COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING)
+                        || resource.endsWith(COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING)) {
                     fileNames.add(path + "/" + resource);
                 }
             }
@@ -162,10 +165,12 @@ public class TestLargeCluster {
             String resource = resources.get(i);
             int idxOfSlash = resource.lastIndexOf("/");
             int idxOfDash = resource.lastIndexOf("-");
-            String nm = idxOfDash > idxOfSlash ? resource.substring(idxOfSlash + 1, idxOfDash) : resource.substring(idxOfSlash + 1, resource.length() - 7);
-            if (resource.endsWith("code.ser")) {
+            String nm = idxOfDash > idxOfSlash
+                    ? resource.substring(idxOfSlash + 1, idxOfDash)
+                    : resource.substring(idxOfSlash + 1, resource.length() - COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING.length());
+            if (resource.endsWith(COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING)) {
                 codeResourceMap.put(nm, resource);
-            } else if (resource.endsWith("conf.ser")) {
+            } else if (resource.endsWith(COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING)) {
                 confResourceMap.put(nm, resource);
             } else {
                 LOG.info("Ignoring unsupported resource file " + resource);

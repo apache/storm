@@ -47,9 +47,10 @@ import java.util.Map;
  * Anonymize Serialized Topologies and Configs with the goal of taking internally developed topologies and configuration
  * and make them publicly available for testing.
  *
- * Assume that topologies and configurations exist in the specified resource directory with names ending in stormcode.ser
- * and stormconf.ser respectively as they exist in blobstore. Also, stormconf.ser file shares the same name prefix with
- * the topology serialized file.
+ * Assume that topologies and configurations exist in the specified resource directory with names ending in
+ * {@link #COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING} and {@link #COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING}
+ * respectively as they exist in blobstore. Also, when both these files exist for the same topology,
+ * they share the same file name prefix.
  *
  * <li> Rename topologies and its corresponding configuration (as identified by its resource name). Ensure that renamed
  * configuration file for a topology retains the proper linkage so that:
@@ -67,6 +68,8 @@ public class TestTopologyAnonymizerUtils {
 
     private static final String DEFAULT_ORIGINAL_RESOURCES_PATH = "clusterconf/iridiumblue";
     private static final String DEFAULT_ANONYMIZED_RESOURCES_OUTDIR = "src/test/resources/clusterconf/largeCluster01";
+    public static final String COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING = "stormcode.ser";
+    public static final String COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING = "stormconf.ser";
 
     private String originalResourcePath;
     private String outputDirPath;
@@ -100,28 +103,30 @@ public class TestTopologyAnonymizerUtils {
 
         List<String> resources = getResourceFiles(originalResourcePath);
         for (String resource : resources) {
-            if (resource.length() <= 13) {
+            if (resource.length() <= COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING.length()) {
                 String err = String.format("Resource %s name is too short", resource);
                 errs.add(err);
                 LOG.error(err);
                 continue;
             }
-            String resType = resource.substring(resource.length() - 13);
-            String entryName = getEntryName(resource.substring(0, resource.length() - 13), seenTopoNameIndex);
+            String resType = resource.substring(resource.length() - COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING.length());
+            String entryName = getEntryName(
+                    resource.substring(0, resource.length() - COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING.length()),
+                    seenTopoNameIndex);
             int entryNum = seenTopoNameIndex.get(entryName);
             String topoName = String.format("TopologyName%05d", entryNum);
             String topoId = String.format("TopologyId%05d", entryNum);
             String newResourceName = String.format("%s-%s", topoName, resType);
 
             switch (resType) {
-                case "stormcode.ser":
+                case COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING:
                     // anonymize StormTopology
                     LOG.info("Anonymizing Topology {} as {}, with topoId={}", resource, newResourceName, topoId);
                     StormTopology stormTopology = readAndAnonymizeTopology(resource, errs);
                     writeCompressedResource(newResourceName, new GzipThriftSerializationDelegate().serialize(stormTopology));
                     break;
 
-                case "stormconf.ser":
+                case COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING:
                     // anonymize config
                     LOG.info("Anonymizing Config {} as {}", resource, newResourceName);
                     Map<String, Object> conf = readAndAnonymizeConfig(resource, topoName, errs);
@@ -151,9 +156,9 @@ public class TestTopologyAnonymizerUtils {
     }
 
     /**
-     * Get the list of serialized topology (*stormcode.ser) and configuration (*stormconf.ser)
-     * resource files in the path. The resources are sorted so that paired topology and conf
-     * files are sequential. Unpaired files may be ignored by the caller.
+     * Get the list of serialized topology (ending with {@link #COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING}
+     * and configuration (ending with {@link #COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING})
+     * resource files in the path.
      *
      * @param path directory in which resources exist.
      * @return
@@ -169,7 +174,8 @@ public class TestTopologyAnonymizerUtils {
             String resource;
 
             while ((resource = br.readLine()) != null) {
-                if (resource.endsWith("stormcode.ser") || resource.endsWith("stormconf.ser")) {
+                if (resource.endsWith(COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING)
+                        || resource.endsWith(COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING)) {
                     fileNames.add(path + "/" + resource);
                 }
             }
@@ -309,7 +315,8 @@ public class TestTopologyAnonymizerUtils {
     /**
      * In order to create resources as part of a test run:
      *    <li>Download compressed topologies and configurations (from blobstore) into resource path
-     *    {@link #DEFAULT_ORIGINAL_RESOURCES_PATH}. The resource names must end with stormcode.ser and stormconf.ser</li>
+     *    {@link #DEFAULT_ORIGINAL_RESOURCES_PATH}. The resource names must end with either
+     *    {@link #COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING} or {@link #COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING}</li>
      *    <li>Change pathnames for {@link #DEFAULT_ORIGINAL_RESOURCES_PATH} and {@link #DEFAULT_ANONYMIZED_RESOURCES_OUTDIR}</li>
      *    <li>Uncomment annotation so that this method is executed as a test</li>
      *    <li>add files in {@link #DEFAULT_ANONYMIZED_RESOURCES_OUTDIR} to the resource path "clusterconf/new-cluster-name"</li>
@@ -326,6 +333,7 @@ public class TestTopologyAnonymizerUtils {
         instance.outputDirPath = args[1];
         instance.testResourceAvailability();
         instance.anonymizeDirectory();
+        LOG.info("Read resources in {} and wrote anonymized files to {}", instance.originalResourcePath, instance.outputDirPath);
     }
 
     public static void main(String[] args) {
