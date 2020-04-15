@@ -33,6 +33,7 @@ import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.SharedMemory;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping;
@@ -86,6 +87,8 @@ public class Cluster implements ISchedulingState {
     private List<String> greyListedSupervisors = new ArrayList<>();
     private INimbus inimbus;
     private double minWorkerCpu = 0.0;
+    private final Map<String, Boolean> topoSharedOffHeapMemoryNodeFlag = new HashMap<>();
+    private final Map<String, Map<String, Map<String, Collection<ExecutorDetails>>>> topoIdToNodeIdToSlotIdToExecutors = new HashMap<>();
 
     private static <K, V> Map<K, V> makeMap(String key) {
         return new HashMap<>();
@@ -651,6 +654,14 @@ public class Cluster implements ISchedulingState {
                 "slot: [" + slot.getNodeId() + ", " + slot.getPort() + "] is already occupied.");
         }
 
+        Collection<ExecutorDetails> executorDetails =
+                topoIdToNodeIdToSlotIdToExecutors
+                        .computeIfAbsent(topologyId, Cluster::makeMap)
+                        .computeIfAbsent(slot.getNodeId(), Cluster::makeMap)
+                        .computeIfAbsent(slot.getId(), Cluster::makeSet);
+        executorDetails.clear();
+        executorDetails.addAll(executors);
+
         TopologyDetails td = topologies.getById(topologyId);
         if (td == null) {
             throw new IllegalArgumentException(
@@ -710,6 +721,29 @@ public class Cluster implements ISchedulingState {
     }
 
     /**
+     * Initialize the flag to true if specified topology uses SharedOffHeapNodeMemory, false otherwise.
+     *
+     * @param td TopologyDetails to examine
+     */
+    private void initializeTopoSharedOffHeapNodeMemoryFlag(TopologyDetails td) {
+        String topoId = td.getId();
+        topoSharedOffHeapMemoryNodeFlag.put(topoId, false);
+        StormTopology topology = td.getTopology();
+        if (topology == null) {
+            return; // accommodate multitenant_scheduler_test.clj
+        }
+        if (topology.is_set_shared_memory()) {
+            for (SharedMemory sharedMemory : topology.get_shared_memory().values()) {
+                double val = sharedMemory.get_off_heap_node();
+                if (val > 0.0) {
+                    topoSharedOffHeapMemoryNodeFlag.put(topoId, true);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
      * Calculate the amount of shared off heap node memory on a given node with the given assignment.
      *
      * @param nodeId     the id of the node
@@ -723,14 +757,19 @@ public class Cluster implements ISchedulingState {
 
     private double calculateSharedOffHeapNodeMemory(
         String nodeId, SchedulerAssignmentImpl assignment, TopologyDetails td, ExecutorDetails extra) {
-        Set<ExecutorDetails> executorsOnNode = new HashSet<>();
-        if (assignment != null) {
-            for (Entry<WorkerSlot, Collection<ExecutorDetails>> entry : assignment.getSlotToExecutors().entrySet()) {
-                if (nodeId.equals(entry.getKey().getNodeId())) {
-                    executorsOnNode.addAll(entry.getValue());
-                }
-            }
+        // short-circuit calculation if topology does not use SharedOffHeapMemory
+        String topoId = td.getId();
+        if (!topoSharedOffHeapMemoryNodeFlag.containsKey(topoId)) {
+            initializeTopoSharedOffHeapNodeMemoryFlag(td);
         }
+        if (!topoSharedOffHeapMemoryNodeFlag.get(topoId)) {
+            return 0.0;
+        }
+
+        Set<ExecutorDetails> executorsOnNode = new HashSet<>();
+        topoIdToNodeIdToSlotIdToExecutors.computeIfAbsent(td.getId(), Cluster::makeMap).computeIfAbsent(nodeId, Cluster::makeMap)
+                .forEach((k, v) -> executorsOnNode.addAll(v));
+
         if (extra != null) {
             executorsOnNode.add(extra);
         }
@@ -749,12 +788,16 @@ public class Cluster implements ISchedulingState {
      */
     public void freeSlot(WorkerSlot slot) {
         // remove the slot from the existing assignments
+        final String nodeId = slot.getNodeId();
         for (SchedulerAssignmentImpl assignment : assignments.values()) {
             if (assignment.isSlotOccupied(slot)) {
-                assertValidTopologyForModification(assignment.getTopologyId());
+                final String topologyId = assignment.getTopologyId();
+                assertValidTopologyForModification(topologyId);
                 assignment.unassignBySlot(slot);
-                String nodeId = slot.getNodeId();
-                TopologyDetails td = topologies.getById(assignment.getTopologyId());
+                topoIdToNodeIdToSlotIdToExecutors.computeIfAbsent(topologyId, Cluster::makeMap).computeIfAbsent(nodeId, Cluster::makeMap)
+                        .computeIfAbsent(slot.getId(), Cluster::makeSet)
+                        .clear();
+                TopologyDetails td = topologies.getById(topologyId);
                 assignment.setTotalSharedOffHeapNodeMemory(
                     nodeId, calculateSharedOffHeapNodeMemory(nodeId, assignment, td));
                 nodeToScheduledResourcesCache.computeIfAbsent(nodeId, Cluster::makeMap).put(slot, new NormalizedResourceRequest());
@@ -762,7 +805,7 @@ public class Cluster implements ISchedulingState {
             }
         }
         //Invalidate the cache as something on the node changed
-        totalResourcesPerNodeCache.remove(slot.getNodeId());
+        totalResourcesPerNodeCache.remove(nodeId);
     }
 
     /**
