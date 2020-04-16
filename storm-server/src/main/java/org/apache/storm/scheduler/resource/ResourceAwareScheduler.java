@@ -43,7 +43,7 @@ import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriori
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
 import org.apache.storm.scheduler.utils.IConfigLoader;
-import org.apache.storm.scheduler.utils.SchedulerConfigRefresher;
+import org.apache.storm.scheduler.utils.SchedulerConfigCache;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
 import org.apache.storm.utils.DisallowedStrategyException;
 import org.apache.storm.utils.ObjectReader;
@@ -63,7 +63,7 @@ public class ResourceAwareScheduler implements IScheduler {
     private Map<String, Set<String>> evictedTopologiesMap;   // topoId : toposEvicted
     private Meter schedulingTimeoutMeter;
     private Meter internalErrorMeter;
-    private SchedulerConfigRefresher<Map<String, Map<String, Double>>> schedulerConfigRefresher;
+    private SchedulerConfigCache<Map<String, Map<String, Double>>> schedulerConfigCache;
 
     private static void markFailedTopology(User u, Cluster c, TopologyDetails td, String message) {
         markFailedTopology(u, c, td, message, null);
@@ -95,24 +95,26 @@ public class ResourceAwareScheduler implements IScheduler {
         backgroundScheduling = Executors.newFixedThreadPool(1);
         evictedTopologiesMap = new HashMap<>();
 
-        schedulerConfigRefresher = new SchedulerConfigRefresher<>(conf, this::loadConfig);
-        schedulerConfigRefresher.start();
+        schedulerConfigCache = new SchedulerConfigCache<>(conf, this::loadConfig);
+        schedulerConfigCache.prepare();
     }
 
     @Override
     public void cleanup() {
         LOG.info("Cleanup ResourceAwareScheduler scheduler");
         backgroundScheduling.shutdown();
-        schedulerConfigRefresher.shutdown();
     }
 
     @Override
     public Map<String, Map<String, Double>> config() {
-        return Collections.unmodifiableMap(schedulerConfigRefresher.getConfig());
+        return Collections.unmodifiableMap(schedulerConfigCache.get());
     }
 
     @Override
     public void schedule(Topologies topologies, Cluster cluster) {
+        //refresh the config every time before scheduling
+        schedulerConfigCache.refresh();
+
         Map<String, User> userMap = getUsers(cluster);
         List<TopologyDetails> orderedTopologies = new ArrayList<>(schedulingPriorityStrategy.getOrderedTopologies(cluster, userMap));
         if (LOG.isDebugEnabled()) {

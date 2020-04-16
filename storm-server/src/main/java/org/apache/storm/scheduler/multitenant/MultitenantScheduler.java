@@ -23,7 +23,7 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
 import org.apache.storm.scheduler.utils.IConfigLoader;
-import org.apache.storm.scheduler.utils.SchedulerConfigRefresher;
+import org.apache.storm.scheduler.utils.SchedulerConfigCache;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,14 +32,14 @@ public class MultitenantScheduler implements IScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
     protected IConfigLoader configLoader;
     private Map<String, Object> conf;
-    private SchedulerConfigRefresher<Map<String, Number>> schedulerConfigRefresher;
+    private SchedulerConfigCache<Map<String, Number>> schedulerConfigCache;
 
     @Override
     public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         this.conf = conf;
         configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
-        schedulerConfigRefresher = new SchedulerConfigRefresher<>(conf, this::loadConfig);
-        schedulerConfigRefresher.start();
+        schedulerConfigCache = new SchedulerConfigCache<>(conf, this::loadConfig);
+        schedulerConfigCache.prepare();
     }
 
     /**
@@ -81,12 +81,15 @@ public class MultitenantScheduler implements IScheduler {
 
     @Override
     public Map<String, Number> config() {
-        return Collections.unmodifiableMap(schedulerConfigRefresher.getConfig());
+        return Collections.unmodifiableMap(schedulerConfigCache.get());
     }
 
     @Override
     public void schedule(Topologies topologies, Cluster cluster) {
         LOG.debug("Rerunning scheduling...");
+        //refresh the config every time before scheduling
+        schedulerConfigCache.refresh();
+
         Map<String, Node> nodeIdToNode = Node.getAllNodesFrom(cluster);
 
         Map<String, Number> userConf = config();
@@ -120,11 +123,5 @@ public class MultitenantScheduler implements IScheduler {
         }
         defaultPool.scheduleAsNeeded(freePool);
         LOG.debug("Scheduling done...");
-    }
-
-    @Override
-    public void cleanup() {
-        LOG.info("Cleanup Multitenant scheduler");
-        schedulerConfigRefresher.shutdown();
     }
 }

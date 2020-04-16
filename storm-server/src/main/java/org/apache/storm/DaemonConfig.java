@@ -913,11 +913,11 @@ public class DaemonConfig implements Validated {
     public static final String ISOLATION_SCHEDULER_MACHINES = "isolation.scheduler.machines";
 
     /**
-     * How often a scheduler refreshes its config.
+     * How long before a scheduler considers its config cache expired.
      */
     @IsInteger
-    @IsPositiveNumber
-    public static final String SCHEDULER_CONFIG_REFRESH_INTERVAL_SECS = "scheduler.config.refresh.interval.secs";
+    @IsPositiveNumber(includeZero = true)
+    public static final String SCHEDULER_CONFIG_CACHE_EXPIRATION_SECS = "scheduler.config.cache.expiration.secs";
 
     /**
      * For ArtifactoryConfigLoader, this can either be a reference to an individual file in Artifactory or to a directory. If it is a
