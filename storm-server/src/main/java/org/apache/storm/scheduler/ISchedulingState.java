@@ -19,9 +19,11 @@
 package org.apache.storm.scheduler;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
@@ -270,6 +272,11 @@ public interface ISchedulingState {
      * Get the total amount of memory resources in cluster.
      */
     double getClusterTotalMemoryResource();
+
+    /**
+     * Get the total amount of generic resources (excluding CPU and memory) in cluster.
+     */
+    Map<String, Double> getClusterTotalGenericResources();
 
     /**
      * Get the network topography (rackId -> nodes in the rack).

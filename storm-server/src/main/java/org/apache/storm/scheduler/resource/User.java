@@ -18,11 +18,14 @@
 
 package org.apache.storm.scheduler.resource;
 
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ISchedulingState;
@@ -34,23 +37,26 @@ public class User {
     private final Set<TopologyDetails> unsuccess = new HashSet<>();
     private final double cpuGuarantee;
     private final double memoryGuarantee;
+    private final Map<String, Double> genericGuarantee;
     private String userId;
 
     public User(String userId) {
-        this(userId, 0, 0);
+        this(userId, 0, 0, Collections.emptyMap());
     }
 
     public User(String userId, Map<String, Double> resourcePool) {
         this(
             userId,
             resourcePool == null ? 0.0 : resourcePool.getOrDefault("cpu", 0.0),
-            resourcePool == null ? 0.0 : resourcePool.getOrDefault("memory", 0.0));
+            resourcePool == null ? 0.0 : resourcePool.getOrDefault("memory", 0.0),
+            resourcePool == null ? Collections.emptyMap() : extractGenericResourceEntries(resourcePool));
     }
 
-    private User(String userId, double cpuGuarantee, double memoryGuarantee) {
+    private User(String userId, double cpuGuarantee, double memoryGuarantee, Map<String, Double> genericGuarantee) {
         this.userId = userId;
         this.cpuGuarantee = cpuGuarantee;
         this.memoryGuarantee = memoryGuarantee;
+        this.genericGuarantee = genericGuarantee;
     }
 
     public String getId() {
@@ -167,6 +173,10 @@ public class User {
         return cpuGuarantee;
     }
 
+    public Map<String, Double> getGenericGuaranteed() {
+        return genericGuarantee;
+    }
+
     public TopologyDetails getNextTopologyToSchedule(ISchedulingState cluster) {
         for (TopologyDetails topo : getPendingTopologies(cluster)) {
             return topo;
@@ -184,6 +194,18 @@ public class User {
             return null;
         }
         return queue.last();
+    }
+
+    private static Map<String, Double> extractGenericResourceEntries(Map<String, Double> resourcePool) {
+        Map<String, Double> ret = new HashMap<>();
+        for (Map.Entry<String, Double> entry : resourcePool.entrySet()) {
+            String key = entry.getKey();
+            Double value = entry.getValue();
+            if (key != null && !key.equals("cpu") && !key.equals("memory")) {
+                ret.put(key, value);
+            }
+        }
+        return ret;
     }
 
     @Override

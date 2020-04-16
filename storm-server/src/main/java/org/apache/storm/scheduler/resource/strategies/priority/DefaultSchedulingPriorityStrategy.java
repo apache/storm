@@ -63,8 +63,8 @@ public class DefaultSchedulingPriorityStrategy implements ISchedulingPriorityStr
         public final double guaranteedCpu;
         public final double guaranteedMemory;
         protected final LinkedList<TopologyDetails> tds = new LinkedList<>();
-        private double assignedCpu = 0.0;
-        private double assignedMemory = 0.0;
+        protected double assignedCpu = 0.0;
+        protected double assignedMemory = 0.0;
 
         public SimulatedUser(User other, ISchedulingState cluster) {
             tds.addAll(cluster.getTopologies().getTopologiesOwnedBy(other.getId()));

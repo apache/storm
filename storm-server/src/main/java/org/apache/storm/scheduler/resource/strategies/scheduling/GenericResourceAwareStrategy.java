@@ -86,7 +86,9 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
         }
         Collection<ExecutorDetails> unassignedExecutors =
             new HashSet<>(this.cluster.getUnassignedExecutors(td));
-        LOG.debug("{} Num ExecutorsNeedScheduling: {}", td.getId(), unassignedExecutors.size());
+        LOG.debug("Topology: {} has {} executors which need scheduling.",
+                    td.getId(), unassignedExecutors.size());
+
         Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
         List<Component> spouts = this.getSpouts(td);
 

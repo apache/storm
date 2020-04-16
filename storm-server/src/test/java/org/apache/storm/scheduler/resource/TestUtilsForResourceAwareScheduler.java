@@ -82,7 +82,7 @@ public class TestUtilsForResourceAwareScheduler {
             }
         }
     }
-
+    
     public static TestUserResources userRes(String name, double cpu, double mem) {
         return new TestUserResources(name, cpu, mem);
     }
@@ -448,6 +448,30 @@ public class TestUtilsForResourceAwareScheduler {
             assertStatusSuccess(cluster, topoId);
             assert (cluster.getAssignmentById(topoId) != null) : topoName;
             assert (cluster.needsSchedulingRas(td) == false) : topoName;
+        }
+    }
+
+    public static void assertTopologiesBeenEvicted(Cluster cluster, Set<String> evictedTopologies, String... topoNames) {
+        Topologies topologies = cluster.getTopologies();
+        LOG.info("Evicted topos: {}", evictedTopologies);
+        assert (evictedTopologies != null);
+        for (String topoName : topoNames) {
+            TopologyDetails td = topologies.getByName(topoName);
+            assert (td != null) : topoName;
+            String topoId = td.getId();
+            assert (evictedTopologies.contains(topoId)) : topoName;
+        }
+    }
+
+    public static void assertTopologiesNotBeenEvicted(Cluster cluster, Set<String> evictedTopologies, String... topoNames) {
+        Topologies topologies = cluster.getTopologies();
+        LOG.info("Evicted topos: {}", evictedTopologies);
+        assert (evictedTopologies != null);
+        for (String topoName : topoNames) {
+            TopologyDetails td = topologies.getByName(topoName);
+            assert (td != null) : topoName;
+            String topoId = td.getId();
+            assert (!evictedTopologies.contains(topoId)) : topoName;
         }
     }
 
