@@ -54,7 +54,7 @@ public class SchedulerConfigCache<T> {
      */
     public void refresh() {
         long current = Time.currentTimeMillis();
-        if (current > lastUpdateTimestamp + configCacheExpirationMs) {
+        if (lastUpdateTimestamp <= 0 || current > lastUpdateTimestamp + configCacheExpirationMs) {
             LOG.debug("refreshing scheduler config since cache is expired");
             T updatedConfig = reloader.reload();
             schedulerConfigAtomicReference.set(updatedConfig);
