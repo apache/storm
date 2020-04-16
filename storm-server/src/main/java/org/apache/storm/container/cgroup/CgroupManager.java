@@ -26,8 +26,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang.SystemUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
@@ -50,6 +53,7 @@ public class CgroupManager implements ResourceIsolationInterface {
     private CgroupCommon rootCgroup;
     private String rootDir;
     private Map<String, Object> conf;
+    private Map<String, String> workerToNumaId;
 
     static long getMemInfoFreeMb() throws IOException {
         //MemFree:        14367072 kB
@@ -102,6 +106,7 @@ public class CgroupManager implements ResourceIsolationInterface {
             throw new RuntimeException("Cgroup error, please check /proc/cgroups");
         }
         this.prepareSubSystem(this.conf);
+        workerToNumaId = new ConcurrentHashMap();
     }
 
     /**
@@ -147,7 +152,7 @@ public class CgroupManager implements ResourceIsolationInterface {
     }
 
     @Override
-    public void reserveResourcesForWorker(String workerId, Integer totalMem, Integer cpuNum) throws SecurityException {
+    public void reserveResourcesForWorker(String workerId, Integer totalMem, Integer cpuNum, String numaId) throws SecurityException {
         LOG.info("Creating cgroup for worker {} with resources {} MB {} % CPU", workerId, totalMem, cpuNum);
         // The manually set STORM_WORKER_CGROUP_CPU_LIMIT config on supervisor will overwrite resources assigned by
         // RAS (Resource Aware Scheduler)
@@ -202,7 +207,7 @@ public class CgroupManager implements ResourceIsolationInterface {
                 }
             }
         }
-
+        
         if ((boolean) this.conf.get(DaemonConfig.STORM_CGROUP_INHERIT_CPUSET_CONFIGS)) {
             if (workerGroup.getParent().getCores().containsKey(SubSystemType.cpuset)) {
                 CpusetCore parentCpusetCore = (CpusetCore) workerGroup.getParent().getCores().get(SubSystemType.cpuset);
@@ -218,6 +223,10 @@ public class CgroupManager implements ResourceIsolationInterface {
                     throw new RuntimeException("Cannot set cpuset.mems! Exception: ", e);
                 }
             }
+        }
+
+        if (numaId != null) {
+            workerToNumaId.put(workerId, numaId);
         }
     }
 
@@ -236,9 +245,34 @@ public class CgroupManager implements ResourceIsolationInterface {
         }
     }
 
+    /**
+     * Extracting out to mock it for tests.
+     * @return true if on Linux.
+     */
+    protected static boolean isOnLinux() {
+        return SystemUtils.IS_OS_LINUX;
+    }
+
+    private void prefixNumaPinning(List<String> command, String numaId) {
+        if (isOnLinux()) {
+            command.add(0, "numactl");
+            command.add(1, "--cpunodebind=" + numaId);
+            command.add(2, "--membind=" + numaId);
+            return;
+        } else {
+            // TODO : Add support for pinning on Windows host
+            throw new RuntimeException("numactl pinning currently not supported on non-Linux hosts");
+        }
+    }
+
     @Override
     public List<String> getLaunchCommand(String workerId, List<String> existingCommand) {
         List<String> newCommand = getLaunchCommandPrefix(workerId);
+
+        if (workerToNumaId.containsKey(workerId)) {
+            prefixNumaPinning(newCommand, workerToNumaId.get(workerId));
+        }
+
         newCommand.addAll(existingCommand);
         return newCommand;
     }

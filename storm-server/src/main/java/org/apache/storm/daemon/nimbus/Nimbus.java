@@ -1553,22 +1553,44 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     /**
-     * Pick out assignments for specific node from all assignments.
-     *
+     * Pick out assignments for a specific host from all assignments.  This could include multiple NUMA
+     * supervisors on an individual host.
      * @param assignmentMap stormId -> assignment map
-     * @param nodeId        supervisor/node id
+     * @param hostname        hostname
      * @return stormId -> assignment map for the node
      */
-    private static Map<String, Assignment> assignmentsForNode(Map<String, Assignment> assignmentMap, String nodeId) {
+    private static Map<String, Assignment> assignmentsForHost(Map<String, Assignment> assignmentMap, String hostname) {
         Map<String, Assignment> ret = new HashMap<>();
-        assignmentMap.entrySet().stream().filter(assignmentEntry -> assignmentEntry.getValue().get_node_host().keySet()
-                                                                                   .contains(nodeId))
-                     .forEach(assignmentEntry -> {
-                         ret.put(assignmentEntry.getKey(), assignmentEntry.getValue());
-                     });
+
+        assignmentMap.entrySet().stream().filter(assignmentEntry -> assignmentEntry.getValue().get_node_host().values()
+                .contains(hostname))
+                .forEach(assignmentEntry -> {
+                    ret.put(assignmentEntry.getKey(), assignmentEntry.getValue());
+                });
 
         return ret;
     }
+
+    /**
+     * Pick out assignments for specific NodeId from all assignments.
+     *
+     * @param assignmentMap stormId -> assignment map
+     * @param nodeId        supervisor node id
+     * @return stormId -> assignment map for the node
+     */
+    private static Map<String, Assignment> assignmentsForNodeId(Map<String, Assignment> assignmentMap, String nodeId) {
+        Map<String, Assignment> ret = new HashMap<>();
+
+        assignmentMap.entrySet().stream().filter(assignmentEntry -> assignmentEntry.getValue().get_node_host().keySet()
+
+                .contains(nodeId))
+                .forEach(assignmentEntry -> {
+                    ret.put(assignmentEntry.getKey(), assignmentEntry.getValue());
+                });
+
+        return ret;
+    }
+
 
     /**
      * Notify supervisors/nodes assigned assignments.
@@ -1585,8 +1607,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         for (Map.Entry<String, String> nodeEntry : nodeHost.entrySet()) {
             try {
                 String nodeId = nodeEntry.getKey();
+                String hostname = nodeEntry.getValue();
                 SupervisorAssignments supervisorAssignments = new SupervisorAssignments();
-                supervisorAssignments.set_storm_assignment(assignmentsForNode(assignments, nodeEntry.getKey()));
+                supervisorAssignments.set_storm_assignment(assignmentsForHost(assignments, hostname));
                 SupervisorDetails details = supervisorDetails.get(nodeId);
                 Integer serverPort = details != null ? details.getServerPort() : null;
                 service.addAssignmentsForNode(nodeId, nodeEntry.getValue(), serverPort, supervisorAssignments, metricsRegistry);
@@ -4769,23 +4792,23 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public SupervisorAssignments getSupervisorAssignments(String node) throws AuthorizationException, TException {
+    public SupervisorAssignments getSupervisorAssignments(String nodeId) throws AuthorizationException, TException {
         checkAuthorization(null, null, "getSupervisorAssignments");
         try {
             if (isLeader() && isAssignmentsRecovered()) {
                 SupervisorAssignments supervisorAssignments = new SupervisorAssignments();
-                supervisorAssignments.set_storm_assignment(assignmentsForNode(stormClusterState.assignmentsInfo(), node));
+                supervisorAssignments.set_storm_assignment(assignmentsForNodeId(stormClusterState.assignmentsInfo(), nodeId));
                 return supervisorAssignments;
             }
         } catch (Exception e) {
-            LOG.debug("Exception when node {} fetching assignments", node);
+            LOG.debug("Exception when node {} fetching assignments", nodeId);
             if (e instanceof TException) {
                 throw (TException) e;
             }
             // When this master is not leader and get a sync request from node,
             // just return nil which will cause client/node to get an unknown error,
             // the node/supervisor will sync it as a timer task.
-            LOG.debug("Exception when node {} fetching assignments", node);
+            LOG.debug("Exception when node {} fetching assignments", nodeId);
         }
         return null;
     }

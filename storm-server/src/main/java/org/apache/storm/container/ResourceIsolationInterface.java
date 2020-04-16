@@ -36,8 +36,9 @@ public interface ResourceIsolationInterface {
      * @param workerId worker id of the worker to start
      * @param workerMemory the amount of memory for the worker or null if not enforced
      * @param workerCpu the amount of cpu for the worker or null if not enforced
+     * @param numaId NUMA zone if applicable the worker should be bound to
      */
-    void reserveResourcesForWorker(String workerId, Integer workerMemory, Integer workerCpu);
+    void reserveResourcesForWorker(String workerId, Integer workerMemory, Integer workerCpu, String numaId);
 
     /**
      * This function will be called when the worker needs to shutdown. This function should include logic to clean up

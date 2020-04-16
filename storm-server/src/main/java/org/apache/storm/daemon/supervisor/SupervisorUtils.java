@@ -18,13 +18,16 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import static org.apache.storm.ServerConstants.NUMA_PORTS;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.localizer.LocalResource;
 import org.apache.storm.utils.ConfigUtils;
@@ -34,6 +37,7 @@ import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 public class SupervisorUtils {
 
@@ -48,6 +52,24 @@ public class SupervisorUtils {
 
     public static void resetInstance() {
         _instance = INSTANCE;
+    }
+
+    /**
+     * getNumaIdForPort for a specific supervisor.
+     * @param port port
+     * @param supervisorConf supervisorConf
+     * @return getNumaIdForPort
+     */
+    public static String getNumaIdForPort(Integer port, Map<String, Object> supervisorConf) {
+        Map<String, Object> validatedNumaMap = getNumaMap(supervisorConf);
+        for (Map.Entry<String, Object> numaEntry : validatedNumaMap.entrySet()) {
+            Map<String, Object> numaMap  = (Map<String, Object>) numaEntry.getValue();
+            List<Integer> portList = (List<Integer>) numaMap.get(NUMA_PORTS);
+            if (portList.contains(port)) {
+                return numaEntry.getKey();
+            }
+        }
+        return null;
     }
 
     public static void rmrAsUser(Map<String, Object> conf, String id, String path) throws IOException {
@@ -115,6 +137,19 @@ public class SupervisorUtils {
      */
     private static LSWorkerHeartbeat readWorkerHeartbeat(Map<String, Object> conf, String workerId) {
         return _instance.readWorkerHeartbeatImpl(conf, workerId);
+    }
+
+    /**
+     * Return supervisor numa configuration.
+     * @param stormConf stormConf
+     * @return getNumaMap
+     */
+    public static Map<String, Object> getNumaMap(Map<String, Object> stormConf) {
+        Object numa = stormConf.get(DaemonConfig.SUPERVISOR_NUMA_META);
+        if (numa == null) {
+            return Collections.emptyMap();
+        }
+        return (Map<String, Object>) numa;
     }
 
     public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) {
