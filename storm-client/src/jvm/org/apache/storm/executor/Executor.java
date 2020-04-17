@@ -63,7 +63,6 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
-import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.org.jctools.queues.MpscChunkedArrayQueue;
@@ -317,7 +316,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                     }
                 }
             }
-            addV2Metrics(dataPoints);
+            addV2Metrics(taskId, dataPoints);
 
             if (!dataPoints.isEmpty()) {
                 IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
@@ -333,51 +332,66 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     // updates v1 metric dataPoints with v2 metric API data
-    private void addV2Metrics(List<IMetricsConsumer.DataPoint> dataPoints) {
+    private void addV2Metrics(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
         boolean enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
         if (!enableV2MetricsDataPoints) {
             return;
         }
-        StormMetricRegistry stormMetricRegistry = workerData.getMetricRegistry();
-        for (Map.Entry<String, Gauge> entry : stormMetricRegistry.registry().getGauges().entrySet()) {
-            String name = entry.getKey();
+        processGauges(taskId, dataPoints);
+        processCounters(taskId, dataPoints);
+        processHistograms(taskId, dataPoints);
+        processMeters(taskId, dataPoints);
+        processTimers(taskId, dataPoints);
+    }
+
+    private void processGauges(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
+        Map<String, Gauge> gauges = workerData.getMetricRegistry().getTaskGauges(taskId);
+        for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
             Object v = entry.getValue().getValue();
             if (v instanceof Number) {
-                IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(name, v);
+                IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), v);
                 dataPoints.add(dataPoint);
-            } else {
-                LOG.warn("Cannot report {}, its value is not a Number {}", name, v);
             }
         }
-        for (Map.Entry<String, Counter> entry : stormMetricRegistry.registry().getCounters().entrySet()) {
+    }
+
+    private void processCounters(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
+        Map<String, Counter> counters = workerData.getMetricRegistry().getTaskCounters(taskId);
+        for (Map.Entry<String, Counter> entry : counters.entrySet()) {
             Object value = entry.getValue().getCount();
             IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), value);
             dataPoints.add(dataPoint);
         }
-        for (Map.Entry<String, Histogram> entry: stormMetricRegistry.registry().getHistograms().entrySet()) {
-            String baseName = entry.getKey();
-            Histogram histogram = entry.getValue();
-            Snapshot snapshot =  histogram.getSnapshot();
-            addSnapshotDatapoints(baseName, snapshot, dataPoints);
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + ".count", histogram.getCount());
+    }
+
+    private void processHistograms(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
+        Map<String, Histogram> histograms = workerData.getMetricRegistry().getTaskHistograms(taskId);
+        for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
+            Snapshot snapshot =  entry.getValue().getSnapshot();
+            addSnapshotDatapoints(entry.getKey(), snapshot, dataPoints);
+            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
             dataPoints.add(dataPoint);
         }
-        for (Map.Entry<String, Meter> entry: stormMetricRegistry.registry().getMeters().entrySet()) {
-            String baseName = entry.getKey();
-            Meter meter = entry.getValue();
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + ".count", meter.getCount());
+    }
+
+    private void processMeters(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
+        Map<String, Meter> meters = workerData.getMetricRegistry().getTaskMeters(taskId);
+        for (Map.Entry<String, Meter> entry : meters.entrySet()) {
+            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
             dataPoints.add(dataPoint);
-            addConvertedMetric(baseName, ".m1_rate", meter.getOneMinuteRate(), dataPoints);
-            addConvertedMetric(baseName, ".m5_rate", meter.getFiveMinuteRate(), dataPoints);
-            addConvertedMetric(baseName, ".m15_rate", meter.getFifteenMinuteRate(), dataPoints);
-            addConvertedMetric(baseName, ".mean_rate", meter.getMeanRate(), dataPoints);
+            addConvertedMetric(entry.getKey(), ".m1_rate", entry.getValue().getOneMinuteRate(), dataPoints);
+            addConvertedMetric(entry.getKey(), ".m5_rate", entry.getValue().getFiveMinuteRate(), dataPoints);
+            addConvertedMetric(entry.getKey(), ".m15_rate", entry.getValue().getFifteenMinuteRate(), dataPoints);
+            addConvertedMetric(entry.getKey(), ".mean_rate", entry.getValue().getMeanRate(), dataPoints);
         }
-        for (Map.Entry<String, Timer> entry : stormMetricRegistry.registry().getTimers().entrySet()) {
-            String baseName = entry.getKey();
-            Timer timer = entry.getValue();
-            Snapshot snapshot =  timer.getSnapshot();
-            addSnapshotDatapoints(baseName, snapshot, dataPoints);
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + ".count", timer.getCount());
+    }
+
+    private void processTimers(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
+        Map<String, Timer> timers = workerData.getMetricRegistry().getTaskTimers(taskId);
+        for (Map.Entry<String, Timer> entry : timers.entrySet()) {
+            Snapshot snapshot =  entry.getValue().getSnapshot();
+            addSnapshotDatapoints(entry.getKey(), snapshot, dataPoints);
+            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
             dataPoints.add(dataPoint);
         }
     }
