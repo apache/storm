@@ -36,6 +36,7 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
+            <scope>${provided.scope}</scope>
         </dependency>
 
         <dependency>
