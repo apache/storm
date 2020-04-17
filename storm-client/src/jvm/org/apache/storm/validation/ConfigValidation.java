@@ -1017,7 +1017,7 @@ public class ConfigValidation {
                 //To support topologies of older version to run, we might have to loose the constraints so that
                 //the configs of older version can pass the validation.
                 if (className.startsWith("backtype.storm")) {
-                    LOG.error("ClassNotFoundException: {}", className);
+                    LOG.warn("ClassNotFoundException: {}", className);
                     LOG.warn("Replace backtype.storm with org.apache.storm and try to validate again");
                     LOG.warn("We loosen some constraints here to support topologies of older version running on the current version");
                     validateField(name, className.replace("backtype.storm", "org.apache.storm"));
