@@ -17,6 +17,7 @@ import java.util.Map;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,9 @@ public class KillTopology {
 
         @SuppressWarnings("unchecked")
         final List<String> names = (List<String>) cl.get("TOPO");
+        for (String name : names) {
+            Utils.validateTopologyName(name);
+        }
 
         // Wait this many seconds after deactivating topology before killing
         Integer wait = (Integer) cl.get("w");
