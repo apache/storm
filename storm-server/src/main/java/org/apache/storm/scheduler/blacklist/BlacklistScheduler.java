@@ -51,12 +51,15 @@ public class BlacklistScheduler implements IScheduler {
     protected IBlacklistStrategy blacklistStrategy;
     protected int nimbusMonitorFreqSecs;
     protected Map<String, Set<Integer>> cachedSupervisors;
-    //key is supervisor key ,value is supervisor ports
-    protected EvictingQueue<HashMap<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow;
+    // key is supervisor nodeId, value is supervisor ports
+    protected EvictingQueue<Map<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow;
+    protected EvictingQueue<Map<String, Integer>> sendAssignmentFailureCount;
+    private final Map<String, Integer> assignmentFailures = new HashMap<>();
     protected int windowSize;
     protected volatile Set<String> blacklistedSupervisorIds;     // supervisor ids
     private boolean blacklistOnBadSlots;
     private Map<String, Object> conf;
+    private boolean blacklistSendAssignentFailures;
 
     public BlacklistScheduler(IScheduler underlyingScheduler) {
         this.underlyingScheduler = underlyingScheduler;
@@ -75,6 +78,8 @@ public class BlacklistScheduler implements IScheduler {
                                              DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
         resumeTime = ObjectReader.getInt(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME),
                                          DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
+        blacklistSendAssignentFailures = ObjectReader.getBoolean(this.conf.get(
+                DaemonConfig.BLACKLIST_SCHEDULER_ENABLE_SEND_ASSIGNMENT_FAILURES), false);
 
         String reporterClassName = ObjectReader.getString(this.conf.get(DaemonConfig.BLACKLIST_SCHEDULER_REPORTER),
                                                           LogReporter.class.getName());
@@ -89,6 +94,7 @@ public class BlacklistScheduler implements IScheduler {
 
         windowSize = toleranceTime / nimbusMonitorFreqSecs;
         badSupervisorsToleranceSlidingWindow = EvictingQueue.create(windowSize);
+        sendAssignmentFailureCount = EvictingQueue.create(windowSize);
         cachedSupervisors = new HashMap<>();
         blacklistedSupervisorIds = new HashSet<>();
         blacklistOnBadSlots = ObjectReader.getBoolean(
@@ -114,7 +120,8 @@ public class BlacklistScheduler implements IScheduler {
 
         Map<String, SupervisorDetails> supervisors = cluster.getSupervisors();
         blacklistStrategy.resumeFromBlacklist();
-        badSupervisors(supervisors);
+        trackMissedHeartbeats(supervisors);
+        trackAssignmentFailures();
         // this step also frees up some bad supervisors to greylist due to resource shortage
         blacklistedSupervisorIds = refreshBlacklistedSupervisorIds(cluster, topologies);
         Set<String> blacklistHosts = getBlacklistHosts(cluster, blacklistedSupervisorIds);
@@ -129,7 +136,7 @@ public class BlacklistScheduler implements IScheduler {
         return underlyingScheduler.config();
     }
 
-    private void badSupervisors(Map<String, SupervisorDetails> supervisors) {
+    private void trackMissedHeartbeats(Map<String, SupervisorDetails> supervisors) {
         Set<String> cachedSupervisorsKeySet = cachedSupervisors.keySet();
         Set<String> supervisorsKeySet = supervisors.keySet();
 
@@ -155,6 +162,18 @@ public class BlacklistScheduler implements IScheduler {
         badSupervisorsToleranceSlidingWindow.add(badSupervisors);
     }
 
+    private void trackAssignmentFailures() {
+        if (!blacklistSendAssignentFailures) {
+            return;
+        }
+        Map<String, Integer> assignmentFailureWindow = new HashMap<>();
+        synchronized (assignmentFailures) {
+            assignmentFailureWindow.putAll(this.assignmentFailures);
+            this.assignmentFailures.clear();
+        }
+        this.sendAssignmentFailureCount.add(assignmentFailureWindow);
+    }
+
     private Set<Integer> badSlots(SupervisorDetails supervisor, String supervisorKey) {
         Set<Integer> cachedSupervisorPorts = cachedSupervisors.get(supervisorKey);
         Set<Integer> supervisorPorts = supervisor.getAllPorts();
@@ -171,7 +190,9 @@ public class BlacklistScheduler implements IScheduler {
     }
 
     private Set<String> refreshBlacklistedSupervisorIds(Cluster cluster, Topologies topologies) {
-        Set<String> blacklistedSupervisors = blacklistStrategy.getBlacklist(new ArrayList<>(badSupervisorsToleranceSlidingWindow),
+        Set<String> blacklistedSupervisors = blacklistStrategy.getBlacklist(
+                new ArrayList<>(badSupervisorsToleranceSlidingWindow),
+                new ArrayList<>(sendAssignmentFailureCount),
                 cluster, topologies);
         LOG.info("Supervisors {} are blacklisted.", blacklistedSupervisors);
         return blacklistedSupervisors;
@@ -265,5 +286,18 @@ public class BlacklistScheduler implements IScheduler {
 
     public Set<String> getBlacklistSupervisorIds() {
         return Collections.unmodifiableSet(blacklistedSupervisorIds);
+    }
+
+    @Override
+    public void nodeAssignmentSent(String node, boolean successful) {
+        if (!blacklistSendAssignentFailures) {
+            return;
+        }
+        if (!successful) {
+            synchronized (assignmentFailures) {
+                int failCount = assignmentFailures.getOrDefault(node, 0) + 1;
+                assignmentFailures.put(node, failCount);
+            }
+        }
     }
 }

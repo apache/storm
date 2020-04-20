@@ -122,6 +122,13 @@ public class DaemonConfig implements Validated {
     public static final String BLACKLIST_SCHEDULER_RESUME_TIME = "blacklist.scheduler.resume.time.secs";
 
     /**
+     * Enables blacklisting support for supervisors with failed send assignment calls.
+     */
+    @IsBoolean
+    public static final String BLACKLIST_SCHEDULER_ENABLE_SEND_ASSIGNMENT_FAILURES =
+            "blacklist.scheduler.enable.send.assignment.failures";
+
+    /**
      * The class that the blacklist scheduler will report the blacklist.
      */
     @NotNull

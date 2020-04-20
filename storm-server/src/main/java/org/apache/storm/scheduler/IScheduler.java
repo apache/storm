@@ -15,7 +15,7 @@ package org.apache.storm.scheduler;
 import java.util.Map;
 import org.apache.storm.metric.StormMetricsRegistry;
 
-public interface IScheduler {
+public interface IScheduler extends INodeAssignmentSentCallBack {
 
     void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry);
 

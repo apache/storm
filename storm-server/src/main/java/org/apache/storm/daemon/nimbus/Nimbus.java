@@ -588,7 +588,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.blobStore.setLeaderElector(this.leaderElector);
 
         this.topoCache = topoCache;
-        this.assignmentsDistributer = AssignmentDistributionService.getInstance(conf);
+        this.assignmentsDistributer = AssignmentDistributionService.getInstance(conf, this.scheduler);
         this.idToSchedStatus = new AtomicReference<>(new HashMap<>());
         this.nodeIdToResources = new AtomicReference<>(new HashMap<>());
         this.idToResources = new AtomicReference<>(new HashMap<>());
