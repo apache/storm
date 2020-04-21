@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
+import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.metrics2.reporters.StormReporter;
 import org.apache.storm.task.TopologyContext;
@@ -36,10 +37,21 @@ public class StormMetricRegistry {
     private final MetricRegistry registry = new MetricRegistry();
     private final List<StormReporter> reporters = new ArrayList<>();
     private String hostName = null;
+    private boolean useShortName = false;
+
+    public StormMetricRegistry(boolean useShortName) {
+        this.useShortName = useShortName;
+    }
+
+    public StormMetricRegistry() {
+        this.useShortName = false;
+        LOG.warn("Constructing StormMetricsRegistry: " + ClusterUtils.stringifyError(new Exception("Stack trace")));
+    }
 
     public <T> SimpleGauge<T> gauge(
         T initialValue, String name, String topologyId, String componentId, Integer taskId, Integer port) {
         String metricName = metricName(name, topologyId, componentId, taskId, port);
+        LOG.warn("Adding gauge: " + metricName);
         return (SimpleGauge<T>) registry.gauge(metricName, () -> new SimpleGauge<>(initialValue));
     }
 
@@ -52,16 +64,19 @@ public class StormMetricRegistry {
 
     public Meter meter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId) {
         String metricName = metricName(name, context.getStormId(), componentId, streamId, taskId, context.getThisWorkerPort());
+        LOG.warn("Adding meter: " + metricName);
         return registry.meter(metricName);
     }
 
     public Counter counter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId) {
         String metricName = metricName(name, context.getStormId(), componentId, streamId, taskId, context.getThisWorkerPort());
+        LOG.warn("Adding counter: " + metricName);
         return registry.counter(metricName);
     }
 
     public Counter counter(String name, String topologyId, String componentId, Integer taskId, Integer workerPort, String streamId) {
         String metricName = metricName(name, topologyId, componentId, streamId, taskId, workerPort);
+        LOG.warn("Adding counter: " + metricName);
         return registry.counter(metricName);
     }
     
@@ -111,6 +126,9 @@ public class StormMetricRegistry {
     }
 
     private String metricName(String name, String stormId, String componentId, String streamId, Integer taskId, Integer workerPort) {
+        if (this.useShortName) {
+            return "storm.worker." + name;
+        }
         StringBuilder sb = new StringBuilder("storm.worker.");
         sb.append(stormId);
         sb.append(".");
@@ -129,6 +147,9 @@ public class StormMetricRegistry {
     }
 
     private String metricName(String name, String stormId, String componentId, Integer taskId, Integer workerPort) {
+        if (this.useShortName) {
+            return "storm.worker." + name;
+        }
         StringBuilder sb = new StringBuilder("storm.worker.");
         sb.append(stormId);
         sb.append(".");
@@ -145,6 +166,9 @@ public class StormMetricRegistry {
     }
 
     public String metricName(String name, TopologyContext context) {
+        if (this.useShortName) {
+            return "storm.topology." + name;
+        }
         StringBuilder sb = new StringBuilder("storm.topology.");
         sb.append(context.getStormId());
         sb.append(".");

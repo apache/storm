@@ -277,6 +277,13 @@ public class Config extends HashMap<String, Object> {
     @IsBoolean
     public static final String TOPOLOGY_ENABLE_V2_METRICS_TICK = "topology.enable.v2.metrics.tick";
 
+
+    /**
+     * This config allows a topology report metrics data points from the V2 metrics API to use short metrics name without prefix.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_METRICS_USE_SHORTNAME = "topology.metrics.use.shortname";
+
     /**
      * The class name of the {@link org.apache.storm.state.StateProvider} implementation. If not specified defaults to {@link
      * org.apache.storm.state.InMemoryKeyValueStateProvider}. This can be overridden at the component level.

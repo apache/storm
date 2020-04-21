@@ -116,9 +116,9 @@ public class Worker implements Shutdownable, DaemonCommon {
         this.port = port;
         this.workerId = workerId;
         this.logConfigManager = new LogConfigManager();
-        this.metricRegistry = new StormMetricRegistry();
-
         this.topologyConf = ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
+        this.metricRegistry =
+            new StormMetricRegistry(ObjectReader.getBoolean(this.topologyConf.get(Config.TOPOLOGY_METRICS_USE_SHORTNAME), false));
 
         if (supervisorIfaceSupplier == null) {
             this.supervisorIfaceSupplier = () -> {
