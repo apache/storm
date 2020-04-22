@@ -252,8 +252,8 @@ public class StormSubmitter {
         try {
             String serConf = JSONValue.toJSONString(topoConf);
             try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
-                if (isTopologyNameAllowed(name, client)) {
-                    throw new RuntimeException("Topology with name `" + name + "` is either not allowed or it already exists on cluster");
+                if (!isTopologyNameAllowed(name, client)) {
+                    throw new RuntimeException("Topology name " + name + " is either not allowed or it already exists on the cluster");
                 }
 
                 // Dependency uploading only makes sense for distributed mode
@@ -438,7 +438,7 @@ public class StormSubmitter {
 
     private static boolean isTopologyNameAllowed(String name, NimbusClient client) {
         try {
-            return !client.getClient().isTopologyNameAllowed(name);
+            return client.getClient().isTopologyNameAllowed(name);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
