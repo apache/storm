@@ -12,6 +12,7 @@
 
 package org.apache.storm.command;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.generated.KillOptions;
@@ -32,8 +33,19 @@ public class KillTopology {
 
         @SuppressWarnings("unchecked")
         final List<String> names = (List<String>) cl.get("TOPO");
-        for (String name : names) {
-            Utils.validateTopologyName(name);
+        Iterator<String> iterator = names.iterator();
+        while (iterator.hasNext()) {
+            String name = iterator.next();
+            try {
+                Utils.validateTopologyName(name);
+            } catch (IllegalArgumentException e) {
+                names.remove(name);
+                LOG.error("Format of topology name {} is not valid ", name);
+            }
+        }
+
+        if (names.isEmpty()) {
+            throw new IllegalArgumentException("No valid topology name from your command.");
         }
 
         // Wait this many seconds after deactivating topology before killing
