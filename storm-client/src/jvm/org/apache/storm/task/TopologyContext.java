@@ -402,35 +402,31 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
 
     @Override
     public Timer registerTimer(String name) {
-        return metricRegistry.registry().timer(metricName(name));
+        return metricRegistry.timer(name, this);
     }
 
     @Override
     public Histogram registerHistogram(String name) {
-        return metricRegistry.registry().histogram(metricName(name));
+        return metricRegistry.histogram(name, this);
     }
 
     @Override
     public Meter registerMeter(String name) {
-        return metricRegistry.registry().meter(metricName(name));
+        return metricRegistry.meter(name, this);
     }
 
     @Override
     public Counter registerCounter(String name) {
-        return metricRegistry.registry().counter(metricName(name));
+        return metricRegistry.counter(name, this);
     }
 
     @Override
     public <T> Gauge<T> registerGauge(String name, Gauge<T> gauge) {
-        return metricRegistry.registry().register(metricName(name), gauge);
+        return metricRegistry.gauge(name, gauge, this);
     }
 
     @Override
-    public MetricSet registerMetricSet(String prefix, MetricSet set) {
-        return metricRegistry.registry().register(metricName(prefix), set);
-    }
-
-    private String metricName(String name) {
-        return metricRegistry.metricName(name, this);
+    public void registerMetricSet(String prefix, MetricSet set) {
+        metricRegistry.metricSet(prefix, set, this);
     }
 }

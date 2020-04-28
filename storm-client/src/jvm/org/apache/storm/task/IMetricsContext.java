@@ -57,5 +57,5 @@ public interface IMetricsContext {
 
     <T> Gauge<T> registerGauge(String name, Gauge<T> gauge);
 
-    MetricSet registerMetricSet(String prefix, MetricSet set);
+    void registerMetricSet(String prefix, MetricSet set);
 }

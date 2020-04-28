@@ -95,7 +95,7 @@ public class TridentOperationContext implements IMetricsContext {
     }
 
     @Override
-    public MetricSet registerMetricSet(String prefix, MetricSet set) {
-        return topoContext.registerMetricSet(prefix, set);
+    public void registerMetricSet(String prefix, MetricSet set) {
+        topoContext.registerMetricSet(prefix, set);
     }
 }
