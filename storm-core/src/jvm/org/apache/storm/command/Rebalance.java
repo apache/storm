@@ -39,6 +39,7 @@ public class Rebalance {
                                     .arg("topologyName", CLI.FIRST_WINS)
                                     .parse(args);
         final String name = (String) cl.get("topologyName");
+        Utils.validateTopologyName(name);
         final RebalanceOptions rebalanceOptions = new RebalanceOptions();
         Integer wait = (Integer) cl.get("w");
         if (null != wait) {

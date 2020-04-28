@@ -50,6 +50,7 @@ public class UploadCredentials {
         String credentialFile = (String) cl.get("f");
         List<String> rawCredentials = (List<String>) cl.get("rawCredentials");
         String topologyName = (String) cl.get("topologyName");
+        Utils.validateTopologyName(topologyName);
 
         if (null != rawCredentials && ((rawCredentials.size() % 2) != 0)) {
             throw new RuntimeException("Need an even number of arguments to make a map");

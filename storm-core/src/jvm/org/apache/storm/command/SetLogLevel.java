@@ -35,6 +35,8 @@ public class SetLogLevel {
                                     .arg("topologyName", CLI.FIRST_WINS)
                                     .parse(args);
         final String topologyName = (String) cl.get("topologyName");
+        Utils.validateTopologyName(topologyName);
+
         final LogConfig logConfig = new LogConfig();
         Map<String, LogLevel> logLevelMap = new HashMap<>();
         Map<String, LogLevel> updateLogLevel = (Map<String, LogLevel>) cl.get("l");
