@@ -84,25 +84,27 @@ public class ResourceAuthorizer {
             return false;
         }
         LogUserGroupWhitelist whitelist = getLogUserGroupWhitelist(fileName);
-        if (whitelist == null) {
-            return false;
-        } else {
-            List<String> logsUsers = new ArrayList<>();
-            logsUsers.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_USERS)));
-            logsUsers.addAll(ObjectReader.getStrings(stormConf.get(Config.NIMBUS_ADMINS)));
+
+        List<String> logsUsers = new ArrayList<>();
+        logsUsers.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_USERS)));
+        logsUsers.addAll(ObjectReader.getStrings(stormConf.get(Config.NIMBUS_ADMINS)));
+        if (whitelist != null) {
             logsUsers.addAll(whitelist.getUserWhitelist());
-
-            List<String> logsGroups = new ArrayList<>();
-            logsGroups.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_GROUPS)));
-            logsGroups.addAll(ObjectReader.getStrings(stormConf.get(Config.NIMBUS_ADMINS_GROUPS)));
-            logsGroups.addAll(whitelist.getGroupWhitelist());
-
-            String userName = principalToLocal.toLocal(user);
-            Set<String> groups = getUserGroups(userName);
-
-            return logsUsers.stream().anyMatch(u -> u.equals(userName))
-                    || Sets.intersection(groups, new HashSet<>(logsGroups)).size() > 0;
         }
+
+        List<String> logsGroups = new ArrayList<>();
+        logsGroups.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_GROUPS)));
+        logsGroups.addAll(ObjectReader.getStrings(stormConf.get(Config.NIMBUS_ADMINS_GROUPS)));
+        if (whitelist != null) {
+            logsGroups.addAll(whitelist.getGroupWhitelist());
+        }
+
+        String userName = principalToLocal.toLocal(user);
+        Set<String> groups = getUserGroups(userName);
+
+        return logsUsers.stream().anyMatch(u -> u.equals(userName))
+            || Sets.intersection(groups, new HashSet<>(logsGroups)).size() > 0;
+
     }
 
     /**
