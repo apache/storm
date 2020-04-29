@@ -802,8 +802,6 @@ public class AsyncLocalizerTest {
         conf.put(Config.STORM_LOCAL_DIR, "target");
         LocalFsBlobStore bs = new LocalFsBlobStore();
         LocalFsBlobStore spy = spy(bs);
-        Mockito.doReturn(true).when(spy).checkForBlobOrDownload(key1);
-        Mockito.doNothing().when(spy).checkForBlobUpdate(key1);
         spy.prepare(conf, null, null, null);
         spy.getBlob(key1, null);
     }

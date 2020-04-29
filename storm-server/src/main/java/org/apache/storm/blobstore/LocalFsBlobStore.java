@@ -282,9 +282,6 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public ReadableBlobMeta getBlobMeta(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
-        if (!checkForBlobOrDownload(key)) {
-            checkForBlobUpdate(key);
-        }
         SettableBlobMeta meta = getStoredBlobMeta(key);
         aclHandler.validateUserCanReadMeta(meta.get_acl(), who, key);
         ReadableBlobMeta rbm = new ReadableBlobMeta();
@@ -385,9 +382,6 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public InputStreamWithMeta getBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
-        if (!checkForBlobOrDownload(key)) {
-            checkForBlobUpdate(key);
-        }
         SettableBlobMeta meta = getStoredBlobMeta(key);
         aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
         try {
