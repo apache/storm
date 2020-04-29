@@ -27,6 +27,7 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.generated.SupervisorAssignments;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.scheduler.INodeAssignmentSentCallBack;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.SupervisorClient;
@@ -88,15 +89,17 @@ public class AssignmentDistributionService implements Closeable {
     private Map conf;
 
     private boolean isLocalMode = false; // boolean cache for local mode decision
+    private INodeAssignmentSentCallBack sendAssignmentCallback;
 
     /**
      * Factory method for initialize a instance.
      * @param conf config.
+     * @param callback callback for sendAssignment results
      * @return an instance of {@link AssignmentDistributionService}
      */
-    public static AssignmentDistributionService getInstance(Map conf) {
+    public static AssignmentDistributionService getInstance(Map conf, INodeAssignmentSentCallBack callback) {
         AssignmentDistributionService service = new AssignmentDistributionService();
-        service.prepare(conf);
+        service.prepare(conf, callback);
         return service;
     }
 
@@ -104,9 +107,11 @@ public class AssignmentDistributionService implements Closeable {
      * Function for initialization.
      *
      * @param conf config
+     * @param callback callback for sendAssignment results
      */
-    public void prepare(Map conf) {
+    public void prepare(Map conf, INodeAssignmentSentCallBack callBack) {
         this.conf = conf;
+        this.sendAssignmentCallback = callBack;
         this.random = new Random(47);
 
         this.threadsNum = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_ASSIGNMENTS_SERVICE_THREADS), 10);
@@ -289,8 +294,10 @@ public class AssignmentDistributionService implements Closeable {
                 Supervisor supervisor = this.service.localSupervisors.get(assignments.getNode());
                 if (supervisor != null) {
                     supervisor.sendSupervisorAssignments(assignments.getAssignments());
+                    service.sendAssignmentCallback.nodeAssignmentSent(assignments.getNode(), true);
                 } else {
                     LOG.error("Can not find node {} for assignments distribution", assignments.getNode());
+                    service.sendAssignmentCallback.nodeAssignmentSent(assignments.getNode(), false);
                     throw new RuntimeException("null for node " + assignments.getNode() + " supervisor instance.");
                 }
             } else {
@@ -299,9 +306,11 @@ public class AssignmentDistributionService implements Closeable {
                                                                                     assignments.getHost(), assignments.getServerPort())) {
                     try {
                         client.getIface().sendSupervisorAssignments(assignments.getAssignments());
+                        service.sendAssignmentCallback.nodeAssignmentSent(assignments.getNode(), true);
                     } catch (Exception e) {
                         assignments.getMetricsRegistry().getMeter(Constants.NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS).mark();
                         LOG.error("Exception when trying to send assignments to node {}: {}", assignments.getNode(), e.getMessage());
+                        service.sendAssignmentCallback.nodeAssignmentSent(assignments.getNode(), false);
                     }
                 } catch (Throwable e) {
                     //just ignore any error/exception.
