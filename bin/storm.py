@@ -1211,7 +1211,7 @@ def rebalance(args):
             if new_value < 0:
                 raise argparse.ArgumentTypeError("Executor count should be > 0")
         except:
-            raise argparse.ArgumentTypeError("Should be in the form component_name:new_executor_count")
+            raise argparse.ArgumentTypeError("Should be in the form component_name=new_executor_count")
     exec_storm_class(
         "org.apache.storm.command.Rebalance",
         main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
