@@ -482,6 +482,7 @@
 
                                 <exclude>**/docs/**</exclude>
                                 <exclude>**/.git/**</exclude>
+                                <exclude>**/.github/**</exclude>
                                 <exclude>**/derby.log</exclude>
                                 <exclude>**/src/dev/**</exclude>
 
