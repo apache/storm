@@ -386,7 +386,6 @@ public abstract class Container implements Killable {
      * @param user the user this is going to run as
      * @throws IOException on any error
      */
-    @SuppressWarnings("unchecked")
     protected void writeLogMetadata(String user) throws IOException {
         type.assertFull();
         Map<String, Object> data = new HashMap<>();
@@ -395,29 +394,23 @@ public abstract class Container implements Killable {
 
         Set<String> logsGroups = new HashSet<>();
         if (topoConf.get(DaemonConfig.LOGS_GROUPS) != null) {
-            List<String> groups = (List<String>) topoConf.get(DaemonConfig.LOGS_GROUPS);
-            for (String group : groups) {
-                logsGroups.add(group);
-            }
+            List<String> groups = ObjectReader.getStrings(topoConf.get(DaemonConfig.LOGS_GROUPS));
+            logsGroups.addAll(groups);
         }
         if (topoConf.get(Config.TOPOLOGY_GROUPS) != null) {
-            List<String> topGroups = (List<String>) topoConf.get(Config.TOPOLOGY_GROUPS);
+            List<String> topGroups = ObjectReader.getStrings(topoConf.get(Config.TOPOLOGY_GROUPS));
             logsGroups.addAll(topGroups);
         }
         data.put(DaemonConfig.LOGS_GROUPS, logsGroups.toArray());
 
         Set<String> logsUsers = new HashSet<>();
         if (topoConf.get(DaemonConfig.LOGS_USERS) != null) {
-            List<String> logUsers = (List<String>) topoConf.get(DaemonConfig.LOGS_USERS);
-            for (String logUser : logUsers) {
-                logsUsers.add(logUser);
-            }
+            List<String> logUsers = ObjectReader.getStrings(topoConf.get(DaemonConfig.LOGS_USERS));
+            logsUsers.addAll(logUsers);
         }
         if (topoConf.get(Config.TOPOLOGY_USERS) != null) {
-            List<String> topUsers = (List<String>) topoConf.get(Config.TOPOLOGY_USERS);
-            for (String logUser : topUsers) {
-                logsUsers.add(logUser);
-            }
+            List<String> topUsers = ObjectReader.getStrings(topoConf.get(Config.TOPOLOGY_USERS));
+            logsUsers.addAll(topUsers);
         }
         data.put(DaemonConfig.LOGS_USERS, logsUsers.toArray());
 

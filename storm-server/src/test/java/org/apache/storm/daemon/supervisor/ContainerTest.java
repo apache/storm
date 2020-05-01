@@ -30,6 +30,7 @@ import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
+import org.apache.storm.utils.ObjectReader;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -156,11 +157,11 @@ public class ContainerTest {
         assertEquals(user, result.get(Config.TOPOLOGY_SUBMITTER_USER));
         HashSet<String> allowedUsers = new HashSet<>(topoUsers);
         allowedUsers.addAll(logUsers);
-        assertEquals(allowedUsers, new HashSet<String>((List<String>) result.get(DaemonConfig.LOGS_USERS)));
+        assertEquals(allowedUsers, new HashSet<>(ObjectReader.getStrings(result.get(DaemonConfig.LOGS_USERS))));
 
         HashSet<String> allowedGroups = new HashSet<>(topoGroups);
         allowedGroups.addAll(logGroups);
-        assertEquals(allowedGroups, new HashSet<String>((List<String>) result.get(DaemonConfig.LOGS_GROUPS)));
+        assertEquals(allowedGroups, new HashSet<>(ObjectReader.getStrings(result.get(DaemonConfig.LOGS_GROUPS))));
 
         //Save the current user to help with recovery
         verify(ops).dump(workerUserFile, user);

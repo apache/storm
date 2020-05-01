@@ -141,25 +141,25 @@ public class Config extends HashMap<String, Object> {
      * A list of users that are allowed to interact with the topology.  To use this set nimbus.authorizer to
      * org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */
-    @IsStringList
+    @IsStringOrStringList
     public static final String TOPOLOGY_USERS = "topology.users";
     /**
      * A list of groups that are allowed to interact with the topology.  To use this set nimbus.authorizer to
      * org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */
-    @IsStringList
+    @IsStringOrStringList
     public static final String TOPOLOGY_GROUPS = "topology.groups";
     /**
      * A list of readonly users that are allowed to interact with the topology.  To use this set nimbus.authorizer to
      * org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */
-    @IsStringList
+    @IsStringOrStringList
     public static final String TOPOLOGY_READONLY_USERS = "topology.readonly.users";
     /**
      * A list of readonly groups that are allowed to interact with the topology.  To use this set nimbus.authorizer to
      * org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */
-    @IsStringList
+    @IsStringOrStringList
     public static final String TOPOLOGY_READONLY_GROUPS = "topology.readonly.groups";
     /**
      * True if Storm should timeout messages or not. Defaults to true. This is meant to be used in unit tests to prevent tuples from being

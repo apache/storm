@@ -24,9 +24,14 @@ import java.util.List;
 
 public class ObjectReader {
 
+    /**
+     * Convert the input into a list of string; ignore null members.
+     * @param o the input object
+     * @return a list of string
+     */
     public static List<String> getStrings(final Object o) {
         if (o == null) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         } else if (o instanceof String) {
             return new ArrayList<String>() {
                 {
@@ -34,9 +39,11 @@ public class ObjectReader {
                 }
             };
         } else if (o instanceof Collection) {
-            List<String> answer = new ArrayList<String>();
+            List<String> answer = new ArrayList<>();
             for (Object v : (Collection) o) {
-                answer.add(v.toString());
+                if (v != null) {
+                    answer.add(v.toString());
+                }
             }
             return answer;
         } else {
