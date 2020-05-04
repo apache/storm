@@ -3145,8 +3145,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             ReqContext req = ReqContext.context();
             Principal principal = req.principal();
             String submitterPrincipal = principal == null ? null : principal.toString();
-            @SuppressWarnings("unchecked")
-            Set<String> topoAcl = new HashSet<>((List<String>) topoConf.getOrDefault(Config.TOPOLOGY_USERS, Collections.emptyList()));
+            Set<String> topoAcl = new HashSet<>(ObjectReader.getStrings(topoConf.get(Config.TOPOLOGY_USERS)));
             topoAcl.add(submitterPrincipal);
             String submitterUser = principalToLocal.toLocal(principal);
             topoAcl.add(submitterUser);

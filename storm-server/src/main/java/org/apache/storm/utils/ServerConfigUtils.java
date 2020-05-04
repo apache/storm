@@ -87,47 +87,21 @@ public class ServerConfigUtils {
 
     /* TODO: make sure test these two functions in manual tests */
     public static List<String> getTopoLogsUsers(Map<String, Object> topologyConf) {
-        List<String> logsUsers = (List<String>) topologyConf.get(DaemonConfig.LOGS_USERS);
-        List<String> topologyUsers = (List<String>) topologyConf.get(Config.TOPOLOGY_USERS);
-        Set<String> mergedUsers = new HashSet<String>();
-        if (logsUsers != null) {
-            for (String user : logsUsers) {
-                if (user != null) {
-                    mergedUsers.add(user);
-                }
-            }
-        }
-        if (topologyUsers != null) {
-            for (String user : topologyUsers) {
-                if (user != null) {
-                    mergedUsers.add(user);
-                }
-            }
-        }
-        List<String> ret = new ArrayList<String>(mergedUsers);
+        List<String> logsUsers = ObjectReader.getStrings(topologyConf.get(DaemonConfig.LOGS_USERS));
+        List<String> topologyUsers = ObjectReader.getStrings(topologyConf.get(Config.TOPOLOGY_USERS));
+        Set<String> mergedUsers = new HashSet<>(logsUsers);
+        mergedUsers.addAll(topologyUsers);
+        List<String> ret = new ArrayList<>(mergedUsers);
         Collections.sort(ret);
         return ret;
     }
 
     public static List<String> getTopoLogsGroups(Map<String, Object> topologyConf) {
-        List<String> logsGroups = (List<String>) topologyConf.get(DaemonConfig.LOGS_GROUPS);
-        List<String> topologyGroups = (List<String>) topologyConf.get(Config.TOPOLOGY_GROUPS);
-        Set<String> mergedGroups = new HashSet<String>();
-        if (logsGroups != null) {
-            for (String group : logsGroups) {
-                if (group != null) {
-                    mergedGroups.add(group);
-                }
-            }
-        }
-        if (topologyGroups != null) {
-            for (String group : topologyGroups) {
-                if (group != null) {
-                    mergedGroups.add(group);
-                }
-            }
-        }
-        List<String> ret = new ArrayList<String>(mergedGroups);
+        List<String> logsGroups = ObjectReader.getStrings(topologyConf.get(DaemonConfig.LOGS_GROUPS));
+        List<String> topologyGroups = ObjectReader.getStrings(topologyConf.get(Config.TOPOLOGY_GROUPS));
+        Set<String> mergedGroups = new HashSet<>(logsGroups);
+        mergedGroups.addAll(topologyGroups);
+        List<String> ret = new ArrayList<>(mergedGroups);
         Collections.sort(ret);
         return ret;
     }

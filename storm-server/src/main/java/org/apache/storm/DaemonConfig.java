@@ -485,13 +485,13 @@ public class DaemonConfig implements Validated {
     /**
      * A list of users allowed to view logs via the Log Viewer.
      */
-    @IsStringList
+    @IsStringOrStringList
     public static final String LOGS_USERS = "logs.users";
 
     /**
      * A list of groups allowed to view logs via the Log Viewer.
      */
-    @IsStringList
+    @IsStringOrStringList
     public static final String LOGS_GROUPS = "logs.groups";
 
     /**
