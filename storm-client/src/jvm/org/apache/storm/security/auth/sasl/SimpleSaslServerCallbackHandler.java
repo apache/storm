@@ -168,7 +168,7 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
                 zid = tmp.getFirst();
                 allowImpersonation = allowImpersonation && tmp.getSecond();
             }
-            LOG.info("Successfully authenticated client: authenticationID = {} authorizationID = {}",
+            LOG.debug("Successfully authenticated client: authenticationID = {} authorizationID = {}",
                      nid, zid);
 
             //if authorizationId is not set, set it to authenticationId.
