@@ -332,7 +332,7 @@ public class TestGenericResourceAwareStrategy {
         conf.put(Config.TOPOLOGY_NAME, "testTopology");
         conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
         conf.put(Config.TOPOLOGY_SUBMITTER_USER, "user");
-        conf.put(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
+        conf.put(Config.TOPOLOGY_RAS_SCHEDULE_EXECUTORS_BY_PROXIMITY_NEEDS, true);
 
         TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
             genExecsAndComps(stormToplogy), currentTime, "user");

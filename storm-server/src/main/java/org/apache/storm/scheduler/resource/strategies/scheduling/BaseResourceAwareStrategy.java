@@ -517,11 +517,11 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     protected List<ExecutorDetails> orderExecutors(
         TopologyDetails td, Collection<ExecutorDetails> unassignedExecutors) {
         Boolean orderByProximity = (Boolean) td.getConf()
-            .getOrDefault(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, false);
+            .getOrDefault(Config.TOPOLOGY_RAS_SCHEDULE_EXECUTORS_BY_PROXIMITY_NEEDS, false);
         if (!orderByProximity) {
             return orderExecutorsDefault(td, unassignedExecutors);
         } else {
-            LOG.info("{} is set to true", Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS);
+            LOG.info("{} is set to true", Config.TOPOLOGY_RAS_SCHEDULE_EXECUTORS_BY_PROXIMITY_NEEDS);
             return orderExecutorsByProximityNeeds(td, unassignedExecutors);
         }
     }
