@@ -47,6 +47,7 @@ import javax.ws.rs.core.SecurityContext;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.daemon.common.ReloadableSslContextFactory;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.BoltAggregateStats;
 import org.apache.storm.generated.ClusterSummary;
@@ -230,8 +231,8 @@ public class UIHelpers {
                                                   String keyPassword, String tsPath,
                                                   String tsPassword, String tsType,
                                                   Boolean needClientAuth, Boolean wantClientAuth,
-                                                  Integer headerBufferSize) {
-        SslContextFactory factory = new SslContextFactory();
+                                                  Integer headerBufferSize, boolean enableSslReload) {
+        SslContextFactory factory = new ReloadableSslContextFactory(enableSslReload);
         factory.setExcludeCipherSuites("SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA");
         factory.setExcludeProtocols("SSLv3");
         factory.setRenegotiationAllowed(false);
@@ -270,9 +271,9 @@ public class UIHelpers {
                                  String ksPassword, String ksType,
                                  String keyPassword, String tsPath,
                                  String tsPassword, String tsType,
-                                 Boolean needClientAuth, Boolean wantClientAuth) {
+                                 Boolean needClientAuth, Boolean wantClientAuth, boolean enableSslReload) {
         configSsl(server, port, ksPath, ksPassword, ksType, keyPassword,
-                  tsPath, tsPassword, tsType, needClientAuth, wantClientAuth, null);
+                  tsPath, tsPassword, tsType, needClientAuth, wantClientAuth, null, enableSslReload);
     }
 
     /**
@@ -289,19 +290,21 @@ public class UIHelpers {
      * @param needClientAuth needClientAuth
      * @param wantClientAuth wantClientAuth
      * @param headerBufferSize headerBufferSize
+     * @param enableSslReload enable ssl reload
      */
     public static void configSsl(Server server, Integer port, String ksPath,
                                  String ksPassword, String ksType,
                                  String keyPassword, String tsPath,
                                  String tsPassword, String tsType,
                                  Boolean needClientAuth,
-                                 Boolean wantClientAuth, Integer headerBufferSize) {
+                                 Boolean wantClientAuth, Integer headerBufferSize,
+                                 boolean enableSslReload) {
         if (port > 0) {
             server.addConnector(
                     mkSslConnector(
                             server, port, ksPath, ksPassword, ksType, keyPassword,
                             tsPath, tsPassword, tsType,
-                            needClientAuth, wantClientAuth, headerBufferSize
+                            needClientAuth, wantClientAuth, headerBufferSize, enableSslReload
                     )
             );
         }

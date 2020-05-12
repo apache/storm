@@ -104,13 +104,14 @@ public class DRPCServer implements AutoCloseable {
             final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.DRPC_HTTPS_WANT_CLIENT_AUTH));
             final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.DRPC_HTTPS_NEED_CLIENT_AUTH));
             final Boolean disableHttpBinding = (Boolean) (conf.get(DaemonConfig.DRPC_DISABLE_HTTP_BINDING));
+            final boolean enableSslReload = ObjectReader.getBoolean(conf.get(DaemonConfig.DRPC_HTTPS_ENABLE_SSL_RELOAD), false);
 
             //TODO a better way to do this would be great.
             DRPCApplication.setup(drpc, metricsRegistry);
             ret = UIHelpers.jettyCreateServer(drpcHttpPort, null, httpsPort, disableHttpBinding);
             
             UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
-                    httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
+                    httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth, enableSslReload);
             
             ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
             context.setContextPath("/");
