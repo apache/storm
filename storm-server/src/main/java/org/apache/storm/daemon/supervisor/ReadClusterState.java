@@ -113,6 +113,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                 }
             }
             if (!detachedRunningWorkers.isEmpty()) {
+                LOG.info("Killing detached workers {}", detachedRunningWorkers);
                 supervisor.killWorkers(detachedRunningWorkers, launcher);
             }
         } catch (Exception e) {
