@@ -54,7 +54,7 @@ public class FileWatcher implements Runnable {
     }
 
     public void start() {
-        Thread t = new Thread(this);
+        Thread t = new Thread(this, "FileWatcher-" + watchedFile.getFileName());
         t.setDaemon(true);
         LOG.info("Starting FileWatcher on {}", watchedFile);
         t.start();
