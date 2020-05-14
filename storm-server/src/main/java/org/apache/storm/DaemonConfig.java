@@ -483,6 +483,12 @@ public class DaemonConfig implements Validated {
     public static final String LOGVIEWER_HTTPS_NEED_CLIENT_AUTH = "logviewer.https.need.client.auth";
 
     /**
+     * If set to true, keystore and truststore for Logviewer will be automatically reloaded when modified.
+     */
+    @IsBoolean
+    public static final String LOGVIEWER_HTTPS_ENABLE_SSL_RELOAD = "logviewer.https.enable.ssl.reload";
+
+    /**
      * A list of users allowed to view logs via the Log Viewer.
      */
     @IsStringOrStringList
@@ -603,6 +609,12 @@ public class DaemonConfig implements Validated {
     public static final String UI_HTTPS_NEED_CLIENT_AUTH = "ui.https.need.client.auth";
 
     /**
+     * If set to true, keystore and truststore for UI will be automatically reloaded when modified.
+     */
+    @IsBoolean
+    public static final String UI_HTTPS_ENABLE_SSL_RELOAD = "ui.https.enable.ssl.reload";
+
+    /**
      * The maximum number of threads that should be used by the Pacemaker. When Pacemaker gets loaded it will spawn new threads, up to this
      * many total, to handle the load.
      */
@@ -686,6 +698,12 @@ public class DaemonConfig implements Validated {
 
     @IsBoolean
     public static final String DRPC_HTTPS_NEED_CLIENT_AUTH = "drpc.https.need.client.auth";
+
+    /**
+     * If set to true, keystore and truststore for DRPC Server will be automatically reloaded when modified.
+     */
+    @IsBoolean
+    public static final String DRPC_HTTPS_ENABLE_SSL_RELOAD = "drpc.https.enable.ssl.reload";
 
     /**
      * Class name for authorization plugin for DRPC client.
