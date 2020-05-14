@@ -67,6 +67,7 @@ import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.UrlBuilder;
@@ -259,8 +260,7 @@ public class LogviewerLogSearchHandler {
                 int port = Integer.parseInt(portStr);
                 // check just the one port
                 @SuppressWarnings("unchecked")
-                List<Integer> slotsPorts = (List<Integer>) stormConf.getOrDefault(DaemonConfig.SUPERVISOR_SLOTS_PORTS,
-                    new ArrayList<>());
+                List<Integer> slotsPorts = SupervisorUtils.getSlotsPorts(stormConf);
                 boolean containsPort = slotsPorts.stream()
                     .anyMatch(slotPort -> slotPort != null && (slotPort == port));
                 if (!containsPort) {

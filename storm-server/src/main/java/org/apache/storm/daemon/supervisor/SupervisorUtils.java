@@ -25,8 +25,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.localizer.LocalResource;
@@ -70,6 +73,33 @@ public class SupervisorUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * gets the set of all configured numa ports for a specific supervisor.
+     * @param supervisorConf supervisorConf
+     * @return set of all numa ports
+     */
+    public static Set<Integer> getNumaPorts(Map<String, Object> supervisorConf) {
+        Set<Integer> numaPorts = new HashSet<>();
+        Map<String, Object> validatedNumaMap = getNumaMap(supervisorConf);
+        for (Map.Entry<String, Object> numaEntry : validatedNumaMap.entrySet()) {
+            Map<String, Object> numaMap  = (Map<String, Object>) numaEntry.getValue();
+            List<Integer> portList = (List<Integer>) numaMap.get(NUMA_PORTS);
+            numaPorts.addAll(portList);
+        }
+        return numaPorts;
+    }
+
+    public static List<Integer> getSlotsPorts(Map<String, Object> supervisorConf) {
+        List<Integer> slotsPorts = (List<Integer>) supervisorConf.getOrDefault(DaemonConfig.SUPERVISOR_SLOTS_PORTS,
+                new ArrayList<>());
+        // It's possible we have numaPorts specified that weren't configured in SUPERVISOR_SLOTS_PORTS.  Make
+        // sure we handle these ports as well.
+        Set<Integer> numaPorts = SupervisorUtils.getNumaPorts(supervisorConf);
+        numaPorts.removeAll(slotsPorts);
+        slotsPorts.addAll(numaPorts);
+        return slotsPorts;
     }
 
     public static void rmrAsUser(Map<String, Object> conf, String id, String path) throws IOException {

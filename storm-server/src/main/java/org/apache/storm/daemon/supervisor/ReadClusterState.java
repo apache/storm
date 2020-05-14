@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-import org.apache.storm.DaemonConfig;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.supervisor.Slot.MachineState;
 import org.apache.storm.daemon.supervisor.Slot.TopoProfileAction;
@@ -98,9 +97,9 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         }
 
         @SuppressWarnings("unchecked")
-        List<Number> ports = (List<Number>) superConf.get(DaemonConfig.SUPERVISOR_SLOTS_PORTS);
-        for (Number port : ports) {
-            slots.put(port.intValue(), mkSlot(port.intValue()));
+        List<Integer> ports = SupervisorUtils.getSlotsPorts(superConf);
+        for (Integer port : ports) {
+            slots.put(port, mkSlot(port));
         }
 
         try {
