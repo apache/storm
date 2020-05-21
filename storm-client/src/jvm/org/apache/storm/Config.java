@@ -314,10 +314,10 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * When DefaultResourceAwareStrategy or GenericResourceAwareStrategy is used,
-     * it will arrange unassigned executors based a particular order.
-     * If this config is set to true, the arrangement will be made by network proximity needs.
+     * scheduler will sort unassigned executors based on a particular order.
+     * If this config is set to true, unassigned executors will be sorted by topological order with network proximity needs.
      */
-    public static final String TOPOLOGY_RAS_SCHEDULE_EXECUTORS_BY_PROXIMITY_NEEDS = "topology.ras.schedule.executors.by.proximity.needs";
+    public static final String TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS = "topology.ras.order.executors.by.proximity.needs";
 
     /**
      * Declare scheduling constraints for a topology used by the constraint solver strategy. The format can be either

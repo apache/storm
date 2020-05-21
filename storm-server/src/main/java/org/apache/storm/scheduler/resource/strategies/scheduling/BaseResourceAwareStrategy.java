@@ -54,6 +54,7 @@ import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Sets;
+import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -516,12 +517,12 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
     protected List<ExecutorDetails> orderExecutors(
         TopologyDetails td, Collection<ExecutorDetails> unassignedExecutors) {
-        Boolean orderByProximity = (Boolean) td.getConf()
-            .getOrDefault(Config.TOPOLOGY_RAS_SCHEDULE_EXECUTORS_BY_PROXIMITY_NEEDS, false);
+        Boolean orderByProximity = ObjectReader.getBoolean(
+            td.getConf().get(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS), false);
         if (!orderByProximity) {
             return orderExecutorsDefault(td, unassignedExecutors);
         } else {
-            LOG.info("{} is set to true", Config.TOPOLOGY_RAS_SCHEDULE_EXECUTORS_BY_PROXIMITY_NEEDS);
+            LOG.info("{} is set to true", Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS);
             return orderExecutorsByProximityNeeds(td, unassignedExecutors);
         }
     }

@@ -340,7 +340,7 @@ topology.ras.constraint.max.state.search: 10_000     # The maximum number of sta
 resource.aware.scheduler.constraint.max.state.search: 100_000 # Daemon limit on maximum number of states that will be searched looking for a solution in the constraint solver strategy
 topology.ras.one.executor.per.worker: false
 topology.ras.one.component.per.worker: false
-topology.ras.schedule.executors.by.proximity.needs: false
+topology.ras.order.executors.by.proximity.needs: false
 
 blacklist.scheduler.tolerance.time.secs: 300
 blacklist.scheduler.tolerance.count: 3
