@@ -13,17 +13,26 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.google.common.base.Joiner;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.logging.log4j.core.util.Assert;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
@@ -31,6 +40,7 @@ import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerUtils;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -270,5 +280,89 @@ public class ContainerTest {
             fail("THIS IS NOT UNDER TEST");
             return false;
         }
+    }
+
+    private Collection<Long> getRunningProcessIds() throws IOException {
+        // get list of few running processes
+        Collection<Long> pids = new ArrayList<>();
+        Process p = Runtime.getRuntime().exec(ServerUtils.IS_ON_WINDOWS ? "tasklist" : "ps -e");
+        try (BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = input.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                try {
+                    pids.add(Long.parseLong(line.split("\\s")[0]));
+                } catch (Exception ex) {
+                    continue;
+                }
+            }
+        }
+        return pids;
+    }
+
+    @Test
+    public void testIsProcessAlive() throws Exception {
+        // specific selected process should be alive for a randomly generated user
+        String randomUser = RandomStringUtils.randomAlphanumeric(12);
+
+        // get list of few running processes
+        Collection<Long> pids = getRunningProcessIds();
+        Assert.isNonEmpty(pids);
+        for (long pid: pids) {
+            boolean status = Container.isProcessAlive(pid, randomUser);
+            org.junit.Assert.assertFalse("Random user " + randomUser + " is not expected to own any process", status);
+        }
+
+        boolean status = false;
+        String currentUser = System.getProperty("user.name");
+        for (long pid: pids) {
+            // at least one pid will be owned by the current user (doing the testing)
+            if (Container.isProcessAlive(pid, currentUser)) {
+                status = true;
+                break;
+            }
+        }
+        org.junit.Assert.assertTrue("Expecting user " + currentUser + " to own at least one process", status);
+    }
+
+    @Test
+    public void testIsAnyProcessAlive() throws Exception {
+        // no process should be alive for a randomly generated user
+        String randomUser = RandomStringUtils.randomAlphanumeric(12);
+        Collection<Long> pids = getRunningProcessIds();
+
+        Assert.isNonEmpty(pids);
+        boolean status = Container.isAnyProcessAlive(pids, randomUser);
+        org.junit.Assert.assertFalse("Random user " + randomUser + " is not expected to own any process", status);
+
+        // at least one pid will be owned by the current user (doing the testing)
+        String currentUser = System.getProperty("user.name");
+        status = Container.isAnyProcessAlive(pids, currentUser);
+        org.junit.Assert.assertTrue("Expecting user " + currentUser + " to own at least one process", status);
+
+        if (!ServerUtils.IS_ON_WINDOWS) {
+            // userid test is valid only on Posix platforms
+            int inValidUserId = -1;
+            status = Container.isAnyProcessAlive(pids, inValidUserId);
+            org.junit.Assert.assertFalse("Invalid userId " + randomUser + " is not expected to own any process", status);
+
+            int currentUid = Container.getUserId(null);
+            status = Container.isAnyProcessAlive(pids, currentUid);
+            org.junit.Assert.assertTrue("Expecting uid " + currentUid + " to own at least one process", status);
+        }
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testGetUserId() throws Exception {
+        if (ServerUtils.IS_ON_WINDOWS) {
+            return; // trivially succeed on Windows, since this test is not for Windows platform
+        }
+        int uid1 = Container.getUserId(null);
+        Path p = Files.createTempFile("testGetUser", ".txt");
+        int uid2 = Container.getPathOwnerUId(p.toString());
+        org.junit.Assert.assertEquals("User UID " + uid1 + " is not same as file " + p.toString() + " owner UID of " + uid2, uid1, uid2);
     }
 }

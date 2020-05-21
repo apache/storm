@@ -29,12 +29,17 @@ import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -62,12 +67,14 @@ import org.yaml.snakeyaml.Yaml;
  * Represents a container that a worker will run in.
  */
 public abstract class Container implements Killable {
+    public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
 
     private static final Logger LOG = LoggerFactory.getLogger(Container.class);
     private static final String MEMORY_USED_METRIC = "UsedMemory";
     private static final String SYSTEM_COMPONENT_ID = "System";
     private static final String INVALID_EXECUTOR_ID = "-1";
     private static final String INVALID_STREAM_ID = "None";
+    private static final Map<String, Integer> cachedUserToUidMap = new ConcurrentHashMap<>();
 
     private final Meter numCleanupExceptions;
     private final Meter numKillExceptions;
@@ -252,28 +259,32 @@ public abstract class Container implements Killable {
      *
      * @throws IOException on any error
      */
-    protected boolean isProcessAlive(long pid, String user) throws IOException {
+    public static boolean isProcessAlive(long pid, String user) throws IOException {
         if (ServerUtils.IS_ON_WINDOWS) {
             return isWindowsProcessAlive(pid, user);
         }
         return isPosixProcessAlive(pid, user);
     }
 
-    private boolean isWindowsProcessAlive(long pid, String user) throws IOException {
+    private static boolean isWindowsProcessAlive(long pid, String user) throws IOException {
         boolean ret = false;
+        LOG.debug("CMD: tasklist /fo list /fi \"pid eq {}\" /v", pid);
         ProcessBuilder pb = new ProcessBuilder("tasklist", "/fo", "list", "/fi", "pid eq " + pid, "/v");
-        pb.redirectError(Redirect.INHERIT);
-        Process p = pb.start();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String read;
-            while ((read = in.readLine()) != null) {
-                if (read.contains("User Name:")) { //Check for : in case someone called their user "User Name"
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD=LINE#{}: {}", lineNo, line);
+                if (line.contains("User Name:")) { //Check for : in case someone called their user "User Name"
                     //This line contains the user name for the pid we're looking up
                     //Example line: "User Name:    exampleDomain\exampleUser"
-                    List<String> userNameLineSplitOnWhitespace = Arrays.asList(read.split(":"));
+                    List<String> userNameLineSplitOnWhitespace = Arrays.asList(line.split(":"));
                     if (userNameLineSplitOnWhitespace.size() == 2) {
                         List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
                         String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
+                        processUser = processUser.trim();
                         if (user.equals(processUser)) {
                             ret = true;
                         } else {
@@ -281,7 +292,7 @@ public abstract class Container implements Killable {
                         }
                     } else {
                         LOG.error("Received unexpected output from tasklist command. Expected one colon in user name line. Line was {}",
-                            read);
+                                line);
                     }
                     break;
                 }
@@ -290,49 +301,368 @@ public abstract class Container implements Killable {
         return ret;
     }
 
-    private boolean isPosixProcessAlive(long pid, String user) throws IOException {
-        boolean ret = false;
+    private static boolean isPosixProcessAlive(long pid, String user) throws IOException {
+        LOG.debug("CMD: ps -o user -p {}", pid);
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", String.valueOf(pid));
-        pb.redirectError(Redirect.INHERIT);
-        Process p = pb.start();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String first = in.readLine();
-            assert ("USER".equals(first));
-            String processUser;
-            while ((processUser = in.readLine()) != null) {
-                if (user.equals(processUser)) {
-                    ret = true;
-                    break;
-                } else {
-                    LOG.info("Found {} running as {}, but expected it to be {}", pid, processUser, user);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 1;
+            String line = in.readLine();
+            LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+            if (!"USER".equals(line.trim())) {
+                LOG.error("Expecting first line to contain USER, found \"{}\"", line);
+                return false;
+            }
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                line = line.trim();
+                if (user.equals(line)) {
+                    return true;
+                }
+                LOG.info("Found {} running as {}, but expected it to be {}", pid, line, user);
+            }
+        } catch (IOException ex) {
+            String err = String.format("Cannot read output of command \"ps -o user -p %d\"", pid);
+            throw new IOException(err, ex);
+        }
+        return false;
+    }
+
+    /**
+     * Are any of the processes alive and running for the specified user. If collection is empty or null
+     * then the return value is trivially false.
+     *
+     * @param pids the PIDs of the running processes
+     * @param user the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    public static boolean isAnyProcessAlive(Collection<Long> pids, String user) throws IOException {
+        if (pids == null || pids.isEmpty()) {
+            return false;
+        }
+
+        if (ServerUtils.IS_ON_WINDOWS) {
+            return isAnyWindowsProcessAlive(pids, user);
+        }
+        return isAnyPosixProcessAlive(pids, user);
+    }
+
+    /**
+     * Are any of the processes alive and running for the specified userId. If collection is empty or null
+     * then the return value is trivially false.
+     *
+     * @param pids the PIDs of the running processes
+     * @param uid the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    public static boolean isAnyProcessAlive(Collection<Long> pids, int uid) throws IOException {
+        if (pids == null || pids.isEmpty()) {
+            return false;
+        }
+        if (ServerUtils.IS_ON_WINDOWS) {
+            return isAnyWindowsProcessAlive(pids, uid);
+        }
+        return isAnyPosixProcessAlive(pids, uid);
+    }
+
+    /**
+     * Find if any of the Windows processes are alive and owned by the specified user.
+     * Command reference https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/tasklist.
+     *
+     * @param pids the PIDs of the running processes
+     * @param user the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    private static boolean isAnyWindowsProcessAlive(Collection<Long> pids, String user) throws IOException {
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.add("tasklist");
+        cmdArgs.add("/fo");
+        cmdArgs.add("list");
+        pids.forEach(pid -> {
+            cmdArgs.add("/fi");
+            cmdArgs.add("pid eq " + pid);
+        });
+        cmdArgs.add("/v");
+        LOG.debug("CMD: {}", String.join(" ", cmdArgs));
+        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        List<String> unexpectedUsers = new ArrayList<>();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                if (line.contains("User Name:")) { //Check for : in case someone called their user "User Name"
+                    //This line contains the user name for the pid we're looking up
+                    //Example line: "User Name:    exampleDomain\exampleUser"
+                    List<String> userNameLineSplitOnWhitespace = Arrays.asList(line.split(":"));
+                    if (userNameLineSplitOnWhitespace.size() == 2) {
+                        List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
+                        String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
+                        processUser = processUser.trim();
+                        if (user.equals(processUser)) {
+                            return true;
+                        }
+                        unexpectedUsers.add(processUser);
+                    } else {
+                        LOG.error("Received unexpected output from tasklist command. Expected one colon in user name line. Line was {}",
+                                line);
+                    }
                 }
             }
+        } catch (IOException ex) {
+            String err = String.format("Cannot read output of command \"%s\"", String.join(" ", cmdArgs));
+            throw new IOException(err, ex);
         }
-        return ret;
+        String pidsAsStr = pids.stream().map(String::valueOf).collect(Collectors.joining(","));
+        if (unexpectedUsers.isEmpty()) {
+            LOG.info("None of the processes {} are alive", pidsAsStr);
+        } else {
+            LOG.info("{} of the Processes {} are running as user(s) {}: but expected user is {}",
+                    unexpectedUsers.size(), pidsAsStr, String.join(",", new TreeSet<>(unexpectedUsers)), user);
+        }
+        return false;
     }
-    
+
+    /**
+     * Find if any of the Windows processes are alive and owned by the specified userId.
+     * This overridden method is provided for symmetry, but is not implemented.
+     *
+     * @param pids the PIDs of the running processes
+     * @param uid the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    private static boolean isAnyWindowsProcessAlive(Collection<Long> pids, int uid) throws IOException {
+        throw new IllegalArgumentException("UID is not supported on Windows");
+    }
+
+    /**
+     * Are any of the processes alive and running for the specified user.
+     *
+     * @param pids the PIDs of the running processes
+     * @param user the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    private static boolean isAnyPosixProcessAlive(Collection<Long> pids, String user) throws IOException {
+        String pidParams = pids.stream().map(String::valueOf).collect(Collectors.joining(","));
+        LOG.debug("CMD: ps -o user -p {}", pidParams);
+        ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", pidParams);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        List<String> unexpectedUsers = new ArrayList<>();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 1;
+            String line = in.readLine();
+            LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+            if (!"USER".equals(line.trim())) {
+                LOG.error("Expecting first line to contain USER, found \"{}\"", line);
+                return false;
+            }
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                line = line.trim();
+                if (user.equals(line)) {
+                    return true;
+                }
+                unexpectedUsers.add(line);
+            }
+        } catch (IOException ex) {
+            String err = String.format("Cannot read output of command \"ps -o user -p %s\"", pidParams);
+            throw new IOException(err, ex);
+        }
+        if (unexpectedUsers.isEmpty()) {
+            LOG.info("None of the processes {} are alive", pidParams);
+        } else {
+            LOG.info("{} of {} Processes {} are running as user(s) {}: but expected user is {}",
+                    unexpectedUsers.size(), pids.size(), pidParams, String.join(",", new TreeSet<>(unexpectedUsers)), user);
+        }
+        return false;
+    }
+
+    /**
+     * Are any of the processes alive and running for the specified UID.
+     *
+     * @param pids the PIDs of the running processes
+     * @param uid the userId that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    private static boolean isAnyPosixProcessAlive(Collection<Long> pids, int uid) throws IOException {
+        String pidParams = pids.stream().map(String::valueOf).collect(Collectors.joining(","));
+        LOG.debug("CMD: ps -o uid -p {}", pidParams);
+        ProcessBuilder pb = new ProcessBuilder("ps", "-o", "uid", "-p", pidParams);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        List<String> unexpectedUsers = new ArrayList<>();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 1;
+            String line = in.readLine();
+            LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+            if (!"UID".equals(line.trim())) {
+                LOG.error("Expecting first line to contain UID, found \"{}\"", line);
+                return false;
+            }
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                line = line.trim();
+                try {
+                    if (uid == Integer.parseInt(line)) {
+                        return true;
+                    }
+                } catch (Exception ex) {
+                    LOG.warn("Expecting UID integer but got {} in output of ps command", line);
+                }
+                unexpectedUsers.add(line);
+            }
+        } catch (IOException ex) {
+            String err = String.format("Cannot read output of command \"ps -o uid -p %s\"", pidParams);
+            throw new IOException(err, ex);
+        }
+        if (unexpectedUsers.isEmpty()) {
+            LOG.info("None of the processes {} are alive", pidParams);
+        } else {
+            LOG.info("{} of {} Processes {} are running as UIDs {}: but expected userId is {}",
+                    unexpectedUsers.size(), pids.size(), pidParams, String.join(",", new TreeSet<>(unexpectedUsers)), uid);
+        }
+        return false;
+    }
+
+    /**
+     * Get the userId for a user name. This works on Posix systems by using "id -u" command.
+     * Throw IllegalArgumentException on Windows.
+     *
+     * @param user username to be converted to UID. This is optional, in which case current user is returned.
+     * @return UID for the specified user (if supplied), else UID of current user, -1 upon Exception.
+     */
+    public static int getUserId(String user) {
+        if (IS_ON_WINDOWS) {
+            throw new IllegalArgumentException("Not supported in Windows platform");
+        }
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.add("id");
+        cmdArgs.add("-u");
+        if (user != null && !user.isEmpty()) {
+            cmdArgs.add(user);
+        }
+        LOG.debug("CMD: {}", String.join(" ", cmdArgs));
+        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            String line = in.readLine();
+            LOG.debug("CMD-LINE#1: {}", line);
+            try {
+                return Integer.parseInt(line.trim());
+            } catch (NumberFormatException ex) {
+                LOG.error("Expecting UID integer but got {} in output of \"id -u {}\" command", line, user);
+                return -1;
+            }
+        } catch (IOException ex) {
+            LOG.error(String.format("Cannot read output of command \"%s\"", String.join(" ", cmdArgs)), ex);
+            return -1;
+        }
+    }
+
+    /**
+     * Get the userId of the onwer of the path by running "ls -n path" command.
+     * This command works on Posix systems only.
+     *
+     * @param fpath full path to the file.
+     * @return UID for the specified if successful, -1 upon failure.
+     */
+    public static int getPathOwnerUId(String fpath) {
+        if (IS_ON_WINDOWS) {
+            throw new IllegalArgumentException("Not supported in Windows platform");
+        }
+        File f = new File(fpath);
+        if (!f.exists()) {
+            LOG.error("Cannot determine owner of non-existent file {}", fpath);
+            return -1;
+        }
+        LOG.debug("CMD: ls -n {}", fpath);
+        ProcessBuilder pb = new ProcessBuilder("ls", "-n", fpath);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            String line = in.readLine();
+            LOG.debug("CMD-OUTLINE: {}", line);
+            line = line.trim();
+            String[] parts = line.split("\\s+");
+            if (parts.length < 3) {
+                LOG.error("Expecting at least 3 space separated fields in \"ls -n {}\" output, got {}", fpath, line);
+                return -1;
+            }
+            try {
+                return Integer.parseInt(parts[2]);
+            } catch (NumberFormatException ex) {
+                LOG.error("Expecting at third field {} to be numeric UID \"ls -n {}\" output, got {}", parts[2], fpath, line);
+                return -1;
+            }
+        } catch (IOException ex) {
+            LOG.error(String.format("Cannot read output of command \"ls -n %s\"", fpath), ex);
+            return -1;
+        }
+    }
+
+    /**
+     * Get UID of the owner to the workerId PIDs Root directory.
+     *
+     * @return User ID (UID) of owner of the PID file, -1 if file is missing.
+     */
+    private int getPidPathOwnerUid(String workerId, long pid) {
+        return getPathOwnerUId(ConfigUtils.workerPidPath(conf, workerId, pid));
+    }
+
+    /**
+     * Find if all processed for the user on workId are dead.
+     * This method attempts to optimize the calls by:
+     * <p>
+     *     <li>creating a collection of ProcessIds and checking all of them at once</li>
+     *     <li>using userId one Posix systems instead of user</li>
+     * </p>
+     *
+     * @return true if all processes for the user are dead on the worker
+     * @throws IOException if external commands have exception.
+     */
     @Override
     public boolean areAllProcessesDead() throws IOException {
         Set<Long> pids = getAllPids();
         String user = getRunWorkerAsUser();
 
         boolean allDead = true;
-        for (Long pid : pids) {
-            LOG.debug("Checking if pid {} owner {} is alive", pid, user);
-            if (!isProcessAlive(pid, user)) {
-                LOG.debug("{}: PID {} is dead", workerId, pid);
+        try {
+            if (pids.isEmpty()) {
+                return true;
+            }
+            if (ServerUtils.IS_ON_WINDOWS) {
+                return allDead = !isAnyProcessAlive(pids, user);
+            }
+            // optimized for Posix - try to use uid
+            if (!cachedUserToUidMap.containsKey(user)) {
+                int uid = getPidPathOwnerUid(workerId, pids.iterator().next());
+                if (uid < 0) {
+                    uid = getUserId(user);
+                }
+                if (uid >= 0) {
+                    cachedUserToUidMap.put(user, uid);
+                }
+            }
+            if (cachedUserToUidMap.containsKey(user)) {
+                return allDead = !isAnyProcessAlive(pids, cachedUserToUidMap.get(user));
             } else {
-                allDead = false;
-                break;
+                return allDead = !isAnyProcessAlive(pids, user);
+            }
+        } finally {
+            if (allDead && shutdownTimer != null) {
+                shutdownTimer.stop();
+                shutdownTimer = null;
             }
         }
-        
-        if (allDead && shutdownTimer != null) {
-            shutdownTimer.stop();
-            shutdownTimer = null;
-        }
-
-        return allDead;
     }
 
     @Override
