@@ -556,8 +556,12 @@ public class TopologyDetails {
         this.topologyPriority =
             ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRIORITY), null);
 
-        assert this.topologyWorkerMaxHeapSize != null;
-        assert this.topologyPriority != null;
+        if (this.topologyWorkerMaxHeapSize == null) {
+            throw new AssertionError("topologyWorkerMaxHeapSize is null");
+        }
+        if (this.topologyPriority == null) {
+            throw new AssertionError("topologyPriority is null");
+        }
     }
 
     /**

@@ -193,14 +193,18 @@ public class AsyncLocalizer implements AutoCloseable {
     }
 
     private LocalizedResource getUserArchive(String user, String key) {
-        assert user != null : "All user archives require a user present";
+        if (user == null) {
+            throw new AssertionError("All user archives require a user present");
+        }
         ConcurrentMap<String, LocalizedResource> keyToResource = userArchives.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
         return keyToResource.computeIfAbsent(key, 
             (k) -> new LocalizedResource(key, localBaseDir, true, fsOps, conf, user, metricsRegistry));
     }
 
     private LocalizedResource getUserFile(String user, String key) {
-        assert user != null : "All user archives require a user present";
+        if (user == null) {
+            throw new AssertionError("All user archives require a user present");
+        }
         ConcurrentMap<String, LocalizedResource> keyToResource = userFiles.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
         return keyToResource.computeIfAbsent(key, 
             (k) -> new LocalizedResource(key, localBaseDir, false, fsOps, conf, user, metricsRegistry));

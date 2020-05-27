@@ -761,8 +761,9 @@ public class TestResourceAwareScheduler {
             rs.schedule(topologies, cluster);
             assertTrue(cluster.needsSchedulingRas(topology2));
             String status = cluster.getStatusMap().get(topology2.getId());
-            assert status.startsWith("Not enough resources to schedule") : status;
-            //assert status.endsWith("5 executors not scheduled") : status;
+            String expectedStatusPrefix = "Not enough resources to schedule";
+            assertTrue("Expected status to start with \"" + expectedStatusPrefix + "\" but status is: " + status,
+                    status.startsWith(expectedStatusPrefix));
             assertEquals(5, cluster.getUnassignedExecutors(topology2).size());
         } finally {
             rs.cleanup();
@@ -1136,7 +1137,7 @@ public class TestResourceAwareScheduler {
 
     private long getMedianValue(List<Long> values) {
         final int numValues = values.size();
-        assert(numValues % 2 == 1);     // number of values must be odd to compute median as below
+        assertTrue("Expecting odd number of values to compute median, got " + numValues, (numValues % 2) == 1);
         List<Long> sortedValues = new ArrayList<>();
         sortedValues.addAll(values);
         Collections.sort(sortedValues);

@@ -127,8 +127,12 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
      */
     @VisibleForTesting
     public static boolean validateSolution(Cluster cluster, TopologyDetails topo) {
-        assert (cluster.getAssignmentById(topo.getId()) != null);
         LOG.debug("Checking for a valid scheduling for topology {}...", topo.getName());
+        if (cluster.getAssignmentById(topo.getId()) == null) {
+            String err = "cluster.getAssignmentById(\"" + topo.getId() + "\") returned null";
+            LOG.error(err);
+            throw new AssertionError("No assignments for topologyId " + topo.getId());
+        }
 
         ConstraintSolverConfig constraintSolverConfig = new ConstraintSolverConfig(topo);
 
