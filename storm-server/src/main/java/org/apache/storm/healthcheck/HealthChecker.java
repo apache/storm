@@ -98,8 +98,9 @@ public class HealthChecker {
 
     public static String processScript(Map<String, Object> conf, String script) {
         Thread interruptThread = null;
+        Process process = null;
         try {
-            Process process = Runtime.getRuntime().exec(script);
+            process = Runtime.getRuntime().exec(script);
             final long timeout = ObjectReader.getLong(conf.get(DaemonConfig.STORM_HEALTH_CHECK_TIMEOUT_MS), 5000L);
             final Thread curThread = Thread.currentThread();
             // kill process when timeout
@@ -136,6 +137,9 @@ public class HealthChecker {
             return SUCCESS;
         } catch (InterruptedException | ClosedByInterruptException e) {
             LOG.warn("Script:  {} timed out.", script);
+            if (process != null) {
+                process.destroyForcibly();
+            }
             return TIMEOUT;
         } catch (Exception e) {
             LOG.warn("Script failed with exception: ", e);
