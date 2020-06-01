@@ -12,6 +12,7 @@
 
 package org.apache.storm.security.auth.kerberos;
 
+import com.codahale.metrics.Gauge;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.Principal;
@@ -28,7 +29,6 @@ import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.xml.bind.DatatypeConverter;
-import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetricsRegistrant;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
@@ -114,6 +114,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         LOG.info("Got a Subject " + s);
     }
 
+    @Override
     public void prepare(Map<String, Object> conf) {
         this.conf = conf;
     }
@@ -280,7 +281,11 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
     @Override
     public void registerMetrics(TopologyContext topoContext, Map<String, Object> topoConf) {
-        int bucketSize = ((Number) topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)).intValue();
-        topoContext.registerMetric("TGT-TimeToExpiryMsecs", () -> getMsecsUntilExpiration(), bucketSize);
+        topoContext.registerGauge("TGT-TimeToExpiryMsecs", new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return getMsecsUntilExpiration();
+            }
+        });
     }
 }
