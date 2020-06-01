@@ -240,11 +240,6 @@ public class WorkerState {
         this.receiver = this.mqContext.bind(topologyId, port, cb, newConnectionResponse);
     }
 
-    private static double getQueueLoad(JCQueue queue) {
-        JCQueue.QueueMetrics queueMetrics = queue.getMetrics();
-        return ((double) queueMetrics.population()) / queueMetrics.capacity();
-    }
-
     public static boolean isConnectionReady(IConnection connection) {
         return !(connection instanceof ConnectionWithStatus)
                || ((ConnectionWithStatus) connection).status() == ConnectionWithStatus.Status.Ready;
@@ -475,7 +470,7 @@ public class WorkerState {
         Set<Integer> remoteTasks = Sets.difference(new HashSet<>(outboundTasks), new HashSet<>(localTaskIds));
         Map<Integer, Double> localLoad = new HashMap<>();
         for (IRunningExecutor exec : execs) {
-            double receiveLoad = getQueueLoad(exec.getReceiveQueue());
+            double receiveLoad = exec.getReceiveQueue().getQueueLoad();
             localLoad.put(exec.getExecutorId().get(0).intValue(), receiveLoad);
         }
 
@@ -683,10 +678,10 @@ public class WorkerState {
         IWaitStrategy backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         Map<List<Long>, JCQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
-            int port = this.getPort();
+            List<Integer> taskIds = StormCommon.executorIdToTasks(executor);
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
                                                       recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
-                this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, this.getPort(), metricRegistry));
+                this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, taskIds, this.getPort(), metricRegistry));
 
         }
         return receiveQueueMap;

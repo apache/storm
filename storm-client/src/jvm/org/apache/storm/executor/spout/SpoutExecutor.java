@@ -140,8 +140,6 @@ public class SpoutExecutor extends Executor {
             this.outputCollectors.add(outputCollector);
 
             builtInMetrics.registerAll(topoConf, taskData.getUserContext());
-            Map<String, JCQueue> map = ImmutableMap.of("receive", receiveQueue);
-            BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, taskData.getUserContext());
 
             if (spoutObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) spoutObject).setCredentials(credentials);
