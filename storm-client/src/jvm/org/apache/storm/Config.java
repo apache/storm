@@ -313,6 +313,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
 
     /**
+     * When DefaultResourceAwareStrategy or GenericResourceAwareStrategy is used,
+     * scheduler will sort unassigned executors based on a particular order.
+     * If this config is set to true, unassigned executors will be sorted by topological order with network proximity needs.
+     */
+    public static final String TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS = "topology.ras.order.executors.by.proximity.needs";
+
+    /**
      * Declare scheduling constraints for a topology used by the constraint solver strategy. The format can be either
      * old style (validated by ListOfListOfStringValidator.class or the newer style, which is a list of specific type of
      * Maps (validated by RasConstraintsTypeValidator.class). The value must be in one or the other format.
