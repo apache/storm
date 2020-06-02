@@ -828,14 +828,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
+    /**
+     * Check new assignments with existing assignments and determine difference is any.
+     *
+     * @param existingAssignments non-null map of topology-id to existing assignments.
+     * @param newAssignments non-null map of topology-id to new assignments.
+     * @return true if there is a change in assignments, false otherwise.
+     */
     private boolean auditAssignmentChanges(Map<String, Assignment> existingAssignments,
                                            Map<String, Assignment> newAssignments) {
-        if (existingAssignments == null) {
-            throw new AssertionError("existingAssignments is null");
-        }
-        if (newAssignments == null) {
-            throw new AssertionError("newAssignments is null");
-        }
         boolean anyChanged = existingAssignments.isEmpty() ^ newAssignments.isEmpty();
         long numRemovedExec = 0;
         long numRemovedSlot = 0;
