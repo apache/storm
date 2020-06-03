@@ -67,10 +67,11 @@ public class StormMetricRegistry {
         return gauge;
     }
 
-    public JcMetrics jcMetrics(String name, String topologyId, String componentId, Integer taskId, Integer port) {
-        SimpleGauge<Long> capacityGauge = gauge(0L, name + "-capacity", topologyId, componentId, taskId, port);
-        SimpleGauge<Long> populationGauge = gauge(0L, name + "-population", topologyId, componentId, taskId, port);
-        return new JcMetrics(capacityGauge, populationGauge);
+    public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String topologyId, String componentId, Integer taskId, Integer port) {
+        MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
+        gauge = registry.register(metricNames.getLongName(), gauge);
+        saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
+        return gauge;
     }
 
     public Meter meter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId) {

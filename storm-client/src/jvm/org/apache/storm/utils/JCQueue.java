@@ -20,17 +20,9 @@ package org.apache.storm.utils;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import org.apache.storm.metric.api.IStatefulObject;
-import org.apache.storm.metric.internal.RateTracker;
-import org.apache.storm.metrics2.JcMetrics;
+import java.util.List;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
-import org.apache.storm.shade.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.storm.shade.org.jctools.queues.MessagePassingQueue;
 import org.apache.storm.shade.org.jctools.queues.MpscArrayQueue;
 import org.apache.storm.shade.org.jctools.queues.MpscUnboundedArrayQueue;
@@ -38,17 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-public class JCQueue implements IStatefulObject, Closeable {
+public class JCQueue implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(JCQueue.class);
-    private static final String PREFIX = "jc-";
-    private static final ScheduledThreadPoolExecutor METRICS_REPORTER_EXECUTOR =
-        new ScheduledThreadPoolExecutor(1,
-            new ThreadFactoryBuilder()
-                .setDaemon(true)
-                .setNameFormat(PREFIX + "metrics-reporter")
-                .build());
     private final ExitCondition continueRunning = () -> true;
-    private final JcMetrics jcMetrics;
+    private final List<JCQueueMetrics> jcqMetrics = new ArrayList<>();
     private final MpscArrayQueue<Object> recvQueue;
     // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
     private final MpscUnboundedArrayQueue<Object> overflowQ;
@@ -56,32 +41,24 @@ public class JCQueue implements IStatefulObject, Closeable {
     private final int producerBatchSz;
     private final DirectInserter directInserter = new DirectInserter(this);
     private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
-    private final JCQueue.QueueMetrics metrics;
     private final IWaitStrategy backPressureWaitStrategy;
     private final String queueName;
 
     public JCQueue(String queueName, int size, int overflowLimit, int producerBatchSz, IWaitStrategy backPressureWaitStrategy,
-                   String topologyId, String componentId, Integer taskId, int port, StormMetricRegistry metricRegistry) {
+                   String topologyId, String componentId, List<Integer> taskIds, int port, StormMetricRegistry metricRegistry) {
         this.queueName = queueName;
         this.overflowLimit = overflowLimit;
         this.recvQueue = new MpscArrayQueue<>(size);
         this.overflowQ = new MpscUnboundedArrayQueue<>(size);
 
-        this.metrics = new JCQueue.QueueMetrics();
-        this.jcMetrics = metricRegistry.jcMetrics(queueName, topologyId, componentId, taskId, port);
+        for (Integer taskId : taskIds) {
+            this.jcqMetrics.add(new JCQueueMetrics(queueName, topologyId, componentId, taskId, port,
+                    metricRegistry, recvQueue, overflowQ));
+        }
 
         //The batch size can be no larger than half the full recvQueue size, to avoid contention issues.
         this.producerBatchSz = Math.max(1, Math.min(producerBatchSz, size / 2));
         this.backPressureWaitStrategy = backPressureWaitStrategy;
-
-        if (!METRICS_REPORTER_EXECUTOR.isShutdown()) {
-            METRICS_REPORTER_EXECUTOR.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    jcMetrics.set(metrics);
-                }
-            }, 15, 15, TimeUnit.SECONDS);
-        }
     }
 
     public String getName() {
@@ -90,9 +67,9 @@ public class JCQueue implements IStatefulObject, Closeable {
 
     @Override
     public void close() {
-        //No need to block, the task run by the executor is safe to run even after metrics are closed
-        METRICS_REPORTER_EXECUTOR.shutdown();
-        metrics.close();
+        for (JCQueueMetrics jcQueueMetric : jcqMetrics) {
+            jcQueueMetric.close();
+        }
     }
 
     /**
@@ -116,6 +93,10 @@ public class JCQueue implements IStatefulObject, Closeable {
 
     public int size() {
         return recvQueue.size() + overflowQ.size();
+    }
+
+    public double getQueueLoad() {
+        return ((double) recvQueue.size()) / recvQueue.capacity();
     }
 
     /**
@@ -149,7 +130,9 @@ public class JCQueue implements IStatefulObject, Closeable {
     // Non Blocking. returns true/false indicating success/failure. Fails if full.
     private boolean tryPublishInternal(Object obj) {
         if (recvQueue.offer(obj)) {
-            metrics.notifyArrivals(1);
+            for (JCQueueMetrics jcQueueMetric : jcqMetrics) {
+                jcQueueMetric.notifyArrivals(1);
+            }
             return true;
         }
         return false;
@@ -167,7 +150,9 @@ public class JCQueue implements IStatefulObject, Closeable {
                 }
             };
         int count = recvQueue.fill(supplier, objs.size());
-        metrics.notifyArrivals(count);
+        for (JCQueueMetrics jcQueueMetric : jcqMetrics) {
+            jcQueueMetric.notifyArrivals(count);
+        }
         return count;
     }
 
@@ -221,7 +206,9 @@ public class JCQueue implements IStatefulObject, Closeable {
     }
 
     public void recordMsgDrop() {
-        getMetrics().notifyDroppedMsg();
+        for (JCQueueMetrics jcQueueMetric : jcqMetrics) {
+            jcQueueMetric.notifyDroppedMsg();
+        }
     }
 
     public boolean isEmptyOverflow() {
@@ -252,16 +239,6 @@ public class JCQueue implements IStatefulObject, Closeable {
     public boolean tryFlush() {
         Inserter inserter = getInserter();
         return inserter.tryFlush();
-    }
-
-    @Override
-    public Object getState() {
-        return metrics.getState();
-    }
-
-    //This method enables the metrics to be accessed from outside of the JCQueue class
-    public JCQueue.QueueMetrics getMetrics() {
-        return metrics;
     }
 
     private interface Inserter {
@@ -301,7 +278,9 @@ public class JCQueue implements IStatefulObject, Closeable {
             boolean inserted = queue.tryPublishInternal(obj);
             int idleCount = 0;
             while (!inserted) {
-                queue.metrics.notifyInsertFailure();
+                for (JCQueueMetrics jcQueueMetric : queue.jcqMetrics) {
+                    jcQueueMetric.notifyInsertFailure();
+                }
                 if (idleCount == 0) { // check avoids multiple log msgs when in a idle loop
                     LOG.debug("Experiencing Back Pressure on recvQueue: '{}'. Entering BackPressure Wait", queue.getName());
                 }
@@ -322,7 +301,9 @@ public class JCQueue implements IStatefulObject, Closeable {
         public boolean tryPublish(Object obj) {
             boolean inserted = queue.tryPublishInternal(obj);
             if (!inserted) {
-                queue.metrics.notifyInsertFailure();
+                for (JCQueueMetrics jcQueueMetric : queue.jcqMetrics) {
+                    jcQueueMetric.notifyInsertFailure();
+                }
                 return false;
             }
             return true;
@@ -387,7 +368,9 @@ public class JCQueue implements IStatefulObject, Closeable {
             int publishCount = queue.tryPublishInternal(currentBatch);
             int retryCount = 0;
             while (publishCount == 0) { // retry till at least 1 element is drained
-                queue.metrics.notifyInsertFailure();
+                for (JCQueueMetrics jcQueueMetric : queue.jcqMetrics) {
+                    jcQueueMetric.notifyInsertFailure();
+                }
                 if (retryCount == 0) { // check avoids multiple log msgs when in a idle loop
                     LOG.debug("Experiencing Back Pressure when flushing batch to Q: {}. Entering BackPressure Wait.", queue.getName());
                 }
@@ -411,7 +394,9 @@ public class JCQueue implements IStatefulObject, Closeable {
             }
             int publishCount = queue.tryPublishInternal(currentBatch);
             if (publishCount == 0) {
-                queue.metrics.notifyInsertFailure();
+                for (JCQueueMetrics jcQueueMetric : queue.jcqMetrics) {
+                    jcQueueMetric.notifyInsertFailure();
+                }
                 return false;
             } else {
                 currentBatch.subList(0, publishCount).clear();
@@ -419,67 +404,4 @@ public class JCQueue implements IStatefulObject, Closeable {
             }
         }
     } // class BatchInserter
-
-    /**
-     * This inner class provides methods to access the metrics of the JCQueue.
-     */
-    public class QueueMetrics implements Closeable {
-        private final RateTracker arrivalsTracker = new RateTracker(10000, 10);
-        private final RateTracker insertFailuresTracker = new RateTracker(10000, 10);
-        private final AtomicLong droppedMessages = new AtomicLong(0);
-
-        public long population() {
-            return recvQueue.size();
-        }
-
-        public long capacity() {
-            return recvQueue.capacity();
-        }
-
-        public Object getState() {
-            Map<String, Object> state = new HashMap<>();
-
-            final double arrivalRateInSecs = arrivalsTracker.reportRate();
-
-            long tuplePop = population();
-
-            // Assume the recvQueue is stable, in which the arrival rate is equal to the consumption rate.
-            // If this assumption does not hold, the calculation of sojourn time should also consider
-            // departure rate according to Queuing Theory.
-            final double sojournTime = tuplePop / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
-
-            long cap = capacity();
-            float pctFull = (1.0F * tuplePop / cap);
-
-            state.put("capacity", cap);
-            state.put("pct_full", pctFull);
-            state.put("population", tuplePop);
-
-            state.put("arrival_rate_secs", arrivalRateInSecs);
-            state.put("sojourn_time_ms", sojournTime); //element sojourn time in milliseconds
-            state.put("insert_failures", insertFailuresTracker.reportRate());
-            state.put("dropped_messages", droppedMessages);
-            state.put("overflow", overflowQ.size());
-            return state;
-        }
-
-        public void notifyArrivals(long counts) {
-            arrivalsTracker.notify(counts);
-        }
-
-        public void notifyInsertFailure() {
-            insertFailuresTracker.notify(1);
-        }
-
-        public void notifyDroppedMsg() {
-            droppedMessages.incrementAndGet();
-        }
-
-        @Override
-        public void close() {
-            arrivalsTracker.close();
-            insertFailuresTracker.close();
-        }
-
-    }
 }

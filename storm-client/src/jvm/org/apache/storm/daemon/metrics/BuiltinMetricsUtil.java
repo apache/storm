@@ -49,14 +49,6 @@ public class BuiltinMetricsUtil {
         registerMetric("__send-iconnection", metric, topoConf, context);
     }
 
-    public static void registerQueueMetrics(Map<String, JCQueue> queues, Map<String, Object> topoConf, TopologyContext context) {
-        for (Map.Entry<String, JCQueue> entry : queues.entrySet()) {
-            String name = "__" + entry.getKey();
-            IMetric metric = new StateMetric(entry.getValue());
-            registerMetric(name, metric, topoConf, context);
-        }
-    }
-
     public static void registerMetric(String name, IMetric metric, Map<String, Object> topoConf, TopologyContext context) {
         int bucketSize = ((Number) topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)).intValue();
         context.registerMetric(name, metric, bucketSize);

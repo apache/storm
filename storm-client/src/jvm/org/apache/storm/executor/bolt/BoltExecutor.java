@@ -122,9 +122,6 @@ public class BoltExecutor extends Executor {
                 ((ICredentialsListener) boltObject).setCredentials(credentials);
             }
             if (Constants.SYSTEM_COMPONENT_ID.equals(componentId)) {
-                Map<String, JCQueue> map = ImmutableMap.of("receive", receiveQueue, "transfer", workerData.getTransferQueue());
-                BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, userContext);
-
                 Map<NodeInfo, IConnection> cachedNodePortToSocket = workerData.getCachedNodeToPortSocket().get();
                 BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, topoConf, userContext);
                 BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), topoConf, userContext);
@@ -138,9 +135,6 @@ public class BoltExecutor extends Executor {
                         }
                     }
                 }
-            } else {
-                Map<String, JCQueue> map = ImmutableMap.of("receive", receiveQueue);
-                BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, userContext);
             }
 
             this.outputCollector = new BoltOutputCollectorImpl(this, taskData, rand, hasEventLoggers, ackingEnabled, isDebug);

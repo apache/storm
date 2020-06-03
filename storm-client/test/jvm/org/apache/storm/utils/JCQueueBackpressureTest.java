@@ -12,17 +12,17 @@
 
 package org.apache.storm.utils;
 
+import java.util.Collections;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue.Consumer;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public class JCQueueBackpressureTest {
     
     private static JCQueue createQueue(String name, int queueSize) {
-        return new JCQueue(name, queueSize, 0, 1, new WaitStrategyPark(0), "test", "test", 1000, 1000, new StormMetricRegistry());
+        return new JCQueue(name, queueSize, 0, 1, new WaitStrategyPark(0), "test", "test", Collections.singletonList(1000), 1000, new StormMetricRegistry());
     }
 
     @Test

@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.worker;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,7 +67,7 @@ class WorkerTransfer implements JCQueue.Consumer {
         }
 
         this.transferQueue = new JCQueue("worker-transfer-queue", xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy,
-            workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, workerState.getPort(),
+            workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, Collections.singletonList(-1), workerState.getPort(),
             workerState.getMetricRegistry());
     }
 
