@@ -182,7 +182,7 @@ public class PacemakerClient implements ISaslClient {
                     if (retry <= 0) {
                         throw e;
                     }
-                    LOG.error("error attempting to write to a channel {}.", e.getMessage());
+                    LOG.error("Error attempting to write to a channel to host {} - {}", host, e.getMessage());
                 }
                 if (retry <= 0) {
                     throw new PacemakerConnectionException("couldn't get response after " + maxRetries + " attempts.");
