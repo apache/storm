@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
-import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +37,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
@@ -67,8 +65,6 @@ import org.yaml.snakeyaml.Yaml;
  * Represents a container that a worker will run in.
  */
 public abstract class Container implements Killable {
-    public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
-
     private static final Logger LOG = LoggerFactory.getLogger(Container.class);
     private static final String MEMORY_USED_METRIC = "UsedMemory";
     private static final String SYSTEM_COMPONENT_ID = "System";
@@ -419,7 +415,7 @@ public abstract class Container implements Killable {
             String err = String.format("Cannot read output of command \"%s\"", String.join(" ", cmdArgs));
             throw new IOException(err, ex);
         }
-        String pidsAsStr = pids.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String pidsAsStr = StringUtils.join(pids, ",");
         if (unexpectedUsers.isEmpty()) {
             LOG.info("None of the processes {} are alive", pidsAsStr);
         } else {
@@ -451,7 +447,7 @@ public abstract class Container implements Killable {
      * @throws IOException on I/O exception
      */
     private static boolean isAnyPosixProcessAlive(Collection<Long> pids, String user) throws IOException {
-        String pidParams = pids.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String pidParams = StringUtils.join(pids, ",");
         LOG.debug("CMD: ps -o user -p {}", pidParams);
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", pidParams);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -495,7 +491,7 @@ public abstract class Container implements Killable {
      * @throws IOException on I/O exception
      */
     private static boolean isAnyPosixProcessAlive(Collection<Long> pids, int uid) throws IOException {
-        String pidParams = pids.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String pidParams = StringUtils.join(pids, ",");
         LOG.debug("CMD: ps -o uid -p {}", pidParams);
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "uid", "-p", pidParams);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -542,7 +538,7 @@ public abstract class Container implements Killable {
      * @return UID for the specified user (if supplied), else UID of current user, -1 upon Exception.
      */
     public static int getUserId(String user) {
-        if (IS_ON_WINDOWS) {
+        if (ServerUtils.IS_ON_WINDOWS) {
             throw new IllegalArgumentException("Not supported in Windows platform");
         }
         List<String> cmdArgs = new ArrayList<>();
@@ -570,14 +566,14 @@ public abstract class Container implements Killable {
     }
 
     /**
-     * Get the userId of the onwer of the path by running "ls -n path" command.
+     * Get the userId of the onwer of the path by running "ls -dn path" command.
      * This command works on Posix systems only.
      *
-     * @param fpath full path to the file.
+     * @param fpath full path to the file or directory.
      * @return UID for the specified if successful, -1 upon failure.
      */
-    public static int getPathOwnerUId(String fpath) {
-        if (IS_ON_WINDOWS) {
+    public static int getPathOwnerUid(String fpath) {
+        if (ServerUtils.IS_ON_WINDOWS) {
             throw new IllegalArgumentException("Not supported in Windows platform");
         }
         File f = new File(fpath);
@@ -585,8 +581,8 @@ public abstract class Container implements Killable {
             LOG.error("Cannot determine owner of non-existent file {}", fpath);
             return -1;
         }
-        LOG.debug("CMD: ls -n {}", fpath);
-        ProcessBuilder pb = new ProcessBuilder("ls", "-n", fpath);
+        LOG.debug("CMD: ls -dn {}", fpath);
+        ProcessBuilder pb = new ProcessBuilder("ls", "-dn", fpath);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
             String line = in.readLine();
@@ -594,32 +590,32 @@ public abstract class Container implements Killable {
             line = line.trim();
             String[] parts = line.split("\\s+");
             if (parts.length < 3) {
-                LOG.error("Expecting at least 3 space separated fields in \"ls -n {}\" output, got {}", fpath, line);
+                LOG.error("Expecting at least 3 space separated fields in \"ls -dn {}\" output, got {}", fpath, line);
                 return -1;
             }
             try {
                 return Integer.parseInt(parts[2]);
             } catch (NumberFormatException ex) {
-                LOG.error("Expecting at third field {} to be numeric UID \"ls -n {}\" output, got {}", parts[2], fpath, line);
+                LOG.error("Expecting at third field {} to be numeric UID \"ls -dn {}\" output, got {}", parts[2], fpath, line);
                 return -1;
             }
         } catch (IOException ex) {
-            LOG.error(String.format("Cannot read output of command \"ls -n %s\"", fpath), ex);
+            LOG.error(String.format("Cannot read output of command \"ls -dn %s\"", fpath), ex);
             return -1;
         }
     }
 
     /**
-     * Get UID of the owner to the workerId PIDs Root directory.
+     * Get UID of the owner to the workerId Root directory.
      *
-     * @return User ID (UID) of owner of the PID file, -1 if file is missing.
+     * @return User ID (UID) of owner of the workerId root directory, -1 if directory is missing.
      */
-    private int getPidPathOwnerUid(String workerId, long pid) {
-        return getPathOwnerUId(ConfigUtils.workerPidPath(conf, workerId, pid));
+    private int getWorkerPathOwnerUid(String workerId) {
+        return getPathOwnerUid(ConfigUtils.workerRoot(conf, workerId));
     }
 
     /**
-     * Find if all processed for the user on workId are dead.
+     * Find if all processes for the user on workId are dead.
      * This method attempts to optimize the calls by:
      * <p>
      *     <li>creating a collection of ProcessIds and checking all of them at once</li>
@@ -644,7 +640,7 @@ public abstract class Container implements Killable {
             }
             // optimized for Posix - try to use uid
             if (!cachedUserToUidMap.containsKey(user)) {
-                int uid = getPidPathOwnerUid(workerId, pids.iterator().next());
+                int uid = getWorkerPathOwnerUid(workerId);
                 if (uid < 0) {
                     uid = getUserId(user);
                 }
