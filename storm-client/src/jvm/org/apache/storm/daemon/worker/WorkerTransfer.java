@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // Transfers messages destined to other workers
-class WorkerTransfer implements JCQueue.Consumer {
+public class WorkerTransfer implements JCQueue.Consumer {
     static final Logger LOG = LoggerFactory.getLogger(WorkerTransfer.class);
 
     private final TransferDrainer drainer;
@@ -50,7 +50,7 @@ class WorkerTransfer implements JCQueue.Consumer {
 
     private final AtomicBoolean[] remoteBackPressureStatus; // [[remoteTaskId] -> true/false : indicates if remote task is under BP.
 
-    WorkerTransfer(WorkerState workerState, Map<String, Object> topologyConf, int maxTaskIdInTopo) {
+    public WorkerTransfer(WorkerState workerState, Map<String, Object> topologyConf, int maxTaskIdInTopo) {
         this.workerState = workerState;
         this.backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         this.drainer = new TransferDrainer();
