@@ -57,6 +57,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
     private final String owner;
     private volatile long version = NOT_DOWNLOADED_VERSION;
     private volatile long size = 0;
+    private final Map<String, Object> conf;
 
     /**
      * Create a new LocallyCachedBlob.
@@ -73,6 +74,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
         this.isLocalMode = isLocalMode;
         this.fsOps = fsOps;
         this.owner = owner;
+        this.conf = conf;
         topologyBasicBlobsRootDir = Paths.get(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
         readVersion();
         updateSizeOnDisk();
@@ -239,7 +241,7 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
             // any races between multiple versions running at the same time.  Ideally this would be on a per topology
             // basis, but that is a lot harder and the changes run fairly quickly so it should not be a big deal.
             fsOps.setupStormCodeDir(owner, topologyBasicBlobsRootDir.toFile());
-            File sharedMemoryDirFinalLocation = new File(topologyBasicBlobsRootDir.toFile(), "shared_by_topology");
+            File sharedMemoryDirFinalLocation = new File(ConfigUtils.sharedByTopologyDir(conf, topologyId));
             sharedMemoryDirFinalLocation.mkdirs();
             fsOps.setupWorkerArtifactsDir(owner, sharedMemoryDirFinalLocation);
         }
