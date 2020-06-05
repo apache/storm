@@ -81,6 +81,13 @@ public class StormMetricRegistry {
         return meter;
     }
 
+    public Meter meter(String name, WorkerTopologyContext context, String componentId, Integer taskId) {
+        MetricNames metricNames = workerMetricName(name, context.getStormId(), componentId, taskId, context.getThisWorkerPort());
+        Meter meter = registry.meter(metricNames.getLongName());
+        saveMetricTaskIdMapping(taskId, metricNames, meter, taskIdMeters);
+        return meter;
+    }
+
     public Meter meter(String name, TopologyContext context) {
         MetricNames metricNames = topologyMetricName(name, context);
         Meter meter = registry.meter(metricNames.getLongName());
