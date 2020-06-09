@@ -77,7 +77,7 @@ public class BasicContainer extends Container {
     protected final long mediumMemoryGracePeriodMs;
     protected volatile boolean exitedEarly = false;
     protected volatile long memoryLimitMb;
-    protected volatile long memoryLimitExceededStart;
+    protected volatile long memoryLimitExceededStart = -1;
 
     /**
      * Create a new BasicContainer.
