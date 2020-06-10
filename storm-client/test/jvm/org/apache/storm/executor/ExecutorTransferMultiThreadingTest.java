@@ -126,7 +126,7 @@ public class ExecutorTransferMultiThreadingTest {
         }
 
         //give producers enough time to insert messages into the queue
-        executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
+        executorService.awaitTermination(1000, TimeUnit.MILLISECONDS);
 
         //consume all the tuples in the queue and deserialize them one by one
         //this mimics a remote worker.
@@ -134,6 +134,7 @@ public class ExecutorTransferMultiThreadingTest {
         SingleThreadedConsumer consumer = new SingleThreadedConsumer(deserializer, producerTaskNum);
         transferQueue.consume(consumer);
         consumer.finalCheck();
+        executorService.shutdown();
     }
 
     private Runnable createProducerTask(ExecutorTransfer executorTransfer) {
