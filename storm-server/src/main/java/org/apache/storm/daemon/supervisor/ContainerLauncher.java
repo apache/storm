@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -14,8 +14,8 @@ package org.apache.storm.daemon.supervisor;
 
 import java.io.IOException;
 import java.util.Map;
-import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.container.DefaultResourceIsolationManager;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.messaging.IContext;
@@ -59,18 +59,19 @@ public abstract class ContainerLauncher {
                 localSupervisor);
         }
 
-        ResourceIsolationInterface resourceIsolationManager = null;
+        ResourceIsolationInterface resourceIsolationManager;
         if (ObjectReader.getBoolean(conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN_ENABLE), false)) {
             resourceIsolationManager = ReflectionUtils.newInstance((String) conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN));
-            resourceIsolationManager.prepare(conf);
-            LOG.info("Using resource isolation plugin {} {}", conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN),
-                     resourceIsolationManager);
+            LOG.info("Using resource isolation plugin {}: {}", conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN),
+                resourceIsolationManager);
+        } else {
+            resourceIsolationManager = new DefaultResourceIsolationManager();
+            LOG.info("{} is false. Using default resource isolation plugin: {}", DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN_ENABLE,
+                resourceIsolationManager);
         }
 
-        if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
-            return new RunAsUserContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager, metricsRegistry, 
-                containerMemoryTracker);
-        }
+        resourceIsolationManager.prepare(conf);
+
         return new BasicContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager, metricsRegistry, 
             containerMemoryTracker);
     }

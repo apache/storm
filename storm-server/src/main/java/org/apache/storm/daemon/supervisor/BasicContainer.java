@@ -133,11 +133,11 @@ public class BasicContainer extends Container {
         this.localState = localState;
 
         if (type.isRecovery() && !type.isOnlyKillable()) {
-            synchronized (localState) {
+            synchronized (this.localState) {
                 String wid = null;
-                Map<String, Integer> workerToPort = localState.getApprovedWorkers();
+                Map<String, Integer> workerToPort = this.localState.getApprovedWorkers();
                 for (Map.Entry<String, Integer> entry : workerToPort.entrySet()) {
-                    if (port == entry.getValue().intValue()) {
+                    if (port == entry.getValue()) {
                         wid = entry.getKey();
                     }
                 }
@@ -176,7 +176,7 @@ public class BasicContainer extends Container {
     private static void removeWorkersOn(Map<String, Integer> workerToPort, int port) {
         for (Iterator<Entry<String, Integer>> i = workerToPort.entrySet().iterator(); i.hasNext(); ) {
             Entry<String, Integer> found = i.next();
-            if (port == found.getValue().intValue()) {
+            if (port == found.getValue()) {
                 LOG.warn("Deleting worker {} from state", found.getKey());
                 i.remove();
             }
@@ -245,26 +245,6 @@ public class BasicContainer extends Container {
         return exitedEarly;
     }
 
-    /**
-     * Run the given command for profiling.
-     *
-     * @param command   the command to run
-     * @param env       the environment to run the command
-     * @param logPrefix the prefix to include in the logs
-     * @param targetDir the working directory to run the command in
-     * @return true if it ran successfully, else false
-     *
-     * @throws IOException          on any error
-     * @throws InterruptedException if interrupted wile waiting for the process to exit.
-     */
-    protected boolean runProfilingCommand(List<String> command, Map<String, String> env, String logPrefix,
-                                          File targetDir) throws IOException, InterruptedException {
-        type.assertFull();
-        Process p = ClientSupervisorUtils.launchProcess(command, env, logPrefix, null, targetDir);
-        int ret = p.waitFor();
-        return ret == 0;
-    }
-
     @Override
     public boolean runProfiling(ProfileRequest request, boolean stop) throws IOException, InterruptedException {
         type.assertFull();
@@ -288,7 +268,7 @@ public class BasicContainer extends Container {
 
         File targetFile = new File(targetDir);
         if (command.size() > 0) {
-            return runProfilingCommand(command, env, logPrefix, targetFile);
+            return resourceIsolationManager.runProfilingCommand(getWorkerUser(), workerId, command, env, logPrefix, targetFile);
         }
         LOG.warn("PROFILING REQUEST NOT SUPPORTED {} IGNORED...", request);
         return true;
@@ -493,26 +473,6 @@ public class BasicContainer extends Container {
         return rets;
     }
 
-    /**
-     * Launch the worker process (non-blocking).
-     *
-     * @param command             the command to run
-     * @param env                 the environment to run the command
-     * @param processExitCallback a callback for when the process exits
-     * @param logPrefix           the prefix to include in the logs
-     * @param targetDir           the working directory to run the command in
-     * @return true if it ran successfully, else false
-     *
-     * @throws IOException on any error
-     */
-    protected void launchWorkerProcess(List<String> command, Map<String, String> env, String logPrefix,
-                                       ExitCodeCallback processExitCallback, File targetDir) throws IOException {
-        if (resourceIsolationManager != null) {
-            command = resourceIsolationManager.getLaunchCommand(workerId, command);
-        }
-        ClientSupervisorUtils.launchProcess(command, env, logPrefix, processExitCallback, targetDir);
-    }
-
     private String getWorkerLoggingConfigFile() {
         String log4jConfigurationDir = (String) (conf.get(DaemonConfig.STORM_LOG4J2_CONF_DIR));
 
@@ -702,7 +662,7 @@ public class BasicContainer extends Container {
         if (super.isMemoryLimitViolated(withUpdatedLimits)) {
             return true;
         }
-        if (resourceIsolationManager != null) {
+        if (resourceIsolationManager.isResourceManaged()) {
             // In the short term the goal is to not shoot anyone unless we really need to.
             // The on heap should limit the memory usage in most cases to a reasonable amount
             // If someone is using way more than they requested this is a bug and we should
@@ -798,8 +758,8 @@ public class BasicContainer extends Container {
     public long getMemoryUsageMb() {
         try {
             long ret = 0;
-            if (resourceIsolationManager != null) {
-                long usageBytes = resourceIsolationManager.getMemoryUsage(workerId);
+            if (resourceIsolationManager.isResourceManaged()) {
+                long usageBytes = resourceIsolationManager.getMemoryUsage(getWorkerUser(), workerId, port);
                 if (usageBytes >= 0) {
                     ret = usageBytes / 1024 / 1024;
                 }
@@ -818,7 +778,7 @@ public class BasicContainer extends Container {
 
     private long calculateMemoryLimit(final WorkerResources resources, final int memOnHeap) {
         long ret = memOnHeap;
-        if (resourceIsolationManager != null) {
+        if (resourceIsolationManager.isResourceManaged()) {
             final int memoffheap = (int) Math.ceil(resources.get_mem_off_heap());
             final int extraMem =
                 (int)
@@ -865,7 +825,7 @@ public class BasicContainer extends Container {
 
         topEnvironment.put("LD_LIBRARY_PATH", jlp);
 
-        if (resourceIsolationManager != null) {
+        if (resourceIsolationManager.isResourceManaged()) {
             final int cpu = (int) Math.ceil(resources.get_cpu());
             //Save the memory limit so we can enforce it less strictly
             resourceIsolationManager.reserveResourcesForWorker(workerId, (int) memoryLimitMb, cpu, numaId);
@@ -879,7 +839,8 @@ public class BasicContainer extends Container {
 
         String logPrefix = "Worker Process " + workerId;
         ProcessExitCallback processExitCallback = new ProcessExitCallback(logPrefix);
-        launchWorkerProcess(commandList, topEnvironment, logPrefix, processExitCallback, new File(workerDir));
+        resourceIsolationManager.launchWorkerProcess(getWorkerUser(), topologyId, topoConf, port, workerId,
+            commandList, topEnvironment, logPrefix, processExitCallback, new File(workerDir));
     }
 
     private static class TopologyMetaData {

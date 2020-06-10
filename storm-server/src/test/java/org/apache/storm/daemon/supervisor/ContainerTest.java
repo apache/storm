@@ -14,38 +14,29 @@ package org.apache.storm.daemon.supervisor;
 
 import com.google.common.base.Joiner;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.daemon.supervisor.BasicContainerTest.CommandRun;
 import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.ServerUtils;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
@@ -84,26 +75,23 @@ public class ContainerTest {
         when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
+        MockResourceIsolationManager iso = new MockResourceIsolationManager();
+        String workerId = "worker-id";
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
-                                             "SUPERVISOR", 6628, 8080, la, null, "worker", new HashMap<>(), ops, new StormMetricsRegistry());
-        mc.kill();
-        assertEquals(Collections.EMPTY_LIST, mc.killedPids);
-        assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
-        mc.forceKill();
-        assertEquals(Collections.EMPTY_LIST, mc.killedPids);
-        assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
+            "SUPERVISOR", 6628, 8080, la, iso, workerId, new HashMap<>(), ops, new StormMetricsRegistry());
+        iso.allWorkerIds.add(workerId);
 
-        long pid = 987654321;
-        mc.allPids.add(pid);
+        assertEquals(Collections.EMPTY_LIST, iso.killedWorkerIds);
+        assertEquals(Collections.EMPTY_LIST, iso.forceKilledWorkerIds);
 
         mc.kill();
-        assertEquals(mc.allPids, new HashSet<>(mc.killedPids));
-        assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
-        mc.killedPids.clear();
+        assertEquals(iso.allWorkerIds, iso.killedWorkerIds);
+        assertEquals(Collections.EMPTY_LIST, iso.forceKilledWorkerIds);
+        iso.killedWorkerIds.clear();
 
         mc.forceKill();
-        assertEquals(Collections.EMPTY_LIST, mc.killedPids);
-        assertEquals(mc.allPids, new HashSet<>(mc.forceKilledPids));
+        assertEquals(Collections.EMPTY_LIST, iso.killedWorkerIds);
+        assertEquals(iso.allWorkerIds, iso.forceKilledWorkerIds);
     }
 
     @SuppressWarnings("unchecked")
@@ -147,8 +135,9 @@ public class ContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
         la.set_owner(user);
+        ResourceIsolationInterface iso = mock(ResourceIsolationInterface.class);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
-                                             "SUPERVISOR", 6628, 8080, la, null, workerId, topoConf, ops, new StormMetricsRegistry());
+                                             "SUPERVISOR", 6628, 8080, la, iso, workerId, topoConf, ops, new StormMetricsRegistry());
 
         mc.setup();
 
@@ -163,7 +152,7 @@ public class ContainerTest {
 
         String yamlResult = yamlDump.toString();
         Yaml yaml = new Yaml();
-        Map<String, Object> result = (Map<String, Object>) yaml.load(yamlResult);
+        Map<String, Object> result = yaml.load(yamlResult);
         assertEquals(workerId, result.get("worker-id"));
         assertEquals(user, result.get(Config.TOPOLOGY_SUBMITTER_USER));
         HashSet<String> allowedUsers = new HashSet<>(topoUsers);
@@ -188,7 +177,6 @@ public class ContainerTest {
     public void testCleanup() throws Exception {
         final int supervisorPort = 6628;
         final int port = 8080;
-        final long pid = 100;
         final String topoId = "test_topology";
         final String workerId = "worker_id";
         final String user = "me";
@@ -197,7 +185,6 @@ public class ContainerTest {
         final File logMetadataFile = new File(workerArtifacts, "worker.yaml");
         final File workerUserFile = asAbsFile(stormLocal, "workers-users", workerId);
         final File workerRoot = asAbsFile(stormLocal, "workers", workerId);
-        final File workerPidsRoot = new File(workerRoot, "pids");
 
         final Map<String, Object> topoConf = new HashMap<>();
 
@@ -214,16 +201,15 @@ public class ContainerTest {
         when(ops.getWriter(logMetadataFile)).thenReturn(yamlDump);
 
         ResourceIsolationInterface iso = mock(ResourceIsolationInterface.class);
+        when(iso.isResourceManaged()).thenReturn(true);
 
         LocalAssignment la = new LocalAssignment();
         la.set_owner(user);
         la.set_topology_id(topoId);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
                                              "SUPERVISOR", supervisorPort, port, la, iso, workerId, topoConf, ops, new StormMetricsRegistry());
-        mc.allPids.add(pid);
 
         mc.cleanUp();
-        verify(ops).deleteIfExists(eq(new File(workerPidsRoot, String.valueOf(pid))), eq(user), any(String.class));
         verify(iso).releaseResourcesForWorker(workerId);
 
         verify(ops).deleteIfExists(eq(new File(workerRoot, "pids")), eq(user), any(String.class));
@@ -235,29 +221,11 @@ public class ContainerTest {
 
     public static class MockContainer extends Container {
 
-        public final List<Long> killedPids = new ArrayList<>();
-        public final List<Long> forceKilledPids = new ArrayList<>();
-        public final Set<Long> allPids = new HashSet<>();
         protected MockContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
                                 int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
                                 String workerId, Map<String, Object> topoConf, AdvancedFSOps ops, StormMetricsRegistry metricsRegistry) throws IOException {
             super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, workerId,
                   topoConf, ops, metricsRegistry, new ContainerMemoryTracker(new StormMetricsRegistry()));
-        }
-
-        @Override
-        protected void kill(long pid) {
-            killedPids.add(pid);
-        }
-
-        @Override
-        protected void forceKill(long pid) {
-            forceKilledPids.add(pid);
-        }
-
-        @Override
-        protected Set<Long> getAllPids() throws IOException {
-            return allPids;
         }
 
         @Override
@@ -283,87 +251,78 @@ public class ContainerTest {
         }
     }
 
-    private Collection<Long> getRunningProcessIds() throws IOException {
-        // get list of few running processes
-        Collection<Long> pids = new ArrayList<>();
-        Process p = Runtime.getRuntime().exec(ServerUtils.IS_ON_WINDOWS ? "tasklist" : "ps -e");
-        try (BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String line;
-            while ((line = input.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty()) {
-                    continue;
-                }
-                try {
-                    pids.add(Long.parseLong(line.split("\\s")[0]));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-        return pids;
-    }
+    public static class MockResourceIsolationManager implements ResourceIsolationInterface {
+        public final List<String> killedWorkerIds = new ArrayList<>();
+        public final List<String> forceKilledWorkerIds = new ArrayList<>();
+        public final List<String> allWorkerIds = new ArrayList<>();
 
-    @Test
-    public void testIsProcessAlive() throws Exception {
-        // specific selected process should not be alive for a randomly generated user
-        String randomUser = RandomStringUtils.randomAlphanumeric(12);
+        public final List<CommandRun> profileCmds = new ArrayList<>();
+        public final List<CommandRun> workerCmds = new ArrayList<>();
 
-        // get list of few running processes
-        Collection<Long> pids = getRunningProcessIds();
-        assertFalse(pids.isEmpty());
-        for (long pid: pids) {
-            boolean status = Container.isProcessAlive(pid, randomUser);
-            assertFalse("Random user " + randomUser + " is not expected to own any process", status);
+        @Override
+        public void prepare(Map<String, Object> conf) throws IOException {
+            fail("THIS IS NOT UNDER TEST");
         }
 
-        boolean status = false;
-        String currentUser = System.getProperty("user.name");
-        for (long pid: pids) {
-            // at least one pid will be owned by the current user (doing the testing)
-            if (Container.isProcessAlive(pid, currentUser)) {
-                status = true;
-                break;
-            }
+        @Override
+        public void reserveResourcesForWorker(String workerId, Integer workerMemory, Integer workerCpu, String numaId) {
+            fail("THIS IS NOT UNDER TEST");
         }
-        assertTrue("Expecting user " + currentUser + " to own at least one process", status);
-    }
 
-    @Test
-    public void testIsAnyProcessAlive() throws Exception {
-        // no process should be alive for a randomly generated user
-        String randomUser = RandomStringUtils.randomAlphanumeric(12);
-        Collection<Long> pids = getRunningProcessIds();
-
-        assertFalse(pids.isEmpty());
-        boolean status = Container.isAnyProcessAlive(pids, randomUser);
-        assertFalse("Random user " + randomUser + " is not expected to own any process", status);
-
-        // at least one pid will be owned by the current user (doing the testing)
-        String currentUser = System.getProperty("user.name");
-        status = Container.isAnyProcessAlive(pids, currentUser);
-        assertTrue("Expecting user " + currentUser + " to own at least one process", status);
-
-        if (!ServerUtils.IS_ON_WINDOWS) {
-            // userid test is valid only on Posix platforms
-            int inValidUserId = -1;
-            status = Container.isAnyProcessAlive(pids, inValidUserId);
-            assertFalse("Invalid userId " + randomUser + " is not expected to own any process", status);
-
-            int currentUid = Container.getUserId(null);
-            status = Container.isAnyProcessAlive(pids, currentUid);
-            assertTrue("Expecting uid " + currentUid + " to own at least one process", status);
+        @Override
+        public void releaseResourcesForWorker(String workerId) {
         }
-    }
 
-    @Test
-    public void testGetUserId() throws Exception {
-        if (ServerUtils.IS_ON_WINDOWS) {
-            return; // trivially succeed on Windows, since this test is not for Windows platform
+        @Override
+        public void launchWorkerProcess(String user, String topologyId, Map<String, Object> topoConf,
+                                        int port, String workerId, List<String> command,
+                                        Map<String, String> env, String logPrefix,
+                                        ExitCodeCallback processExitCallback, File targetDir) throws IOException {
+            workerCmds.add(new CommandRun(command, env, targetDir));
         }
-        int uid1 = Container.getUserId(null);
-        Path p = Files.createTempFile("testGetUser", ".txt");
-        int uid2 = Container.getPathOwnerUid(p.toString());
-        assertEquals("User UID " + uid1 + " is not same as file " + p.toString() + " owner UID of " + uid2, uid1, uid2);
+
+        @Override
+        public long getMemoryUsage(String user, String workerId, int port) throws IOException {
+            fail("THIS IS NOT UNDER TEST");
+            return 0;
+        }
+
+        @Override
+        public long getSystemFreeMemoryMb() throws IOException {
+            fail("THIS IS NOT UNDER TEST");
+            return 0;
+        }
+
+        @Override
+        public void kill(String user, String workerId) throws IOException {
+            killedWorkerIds.add(workerId);
+        }
+
+        @Override
+        public void forceKill(String user, String workerId) throws IOException {
+            forceKilledWorkerIds.add(workerId);
+        }
+
+        @Override
+        public boolean areAllProcessesDead(String user, String workerId) throws IOException {
+            fail("THIS IS NOT UNDER TEST");
+            return false;
+        }
+
+        @Override
+        public boolean runProfilingCommand(String user, String workerId, List<String> command, Map<String, String> env, String logPrefix, File targetDir) throws IOException, InterruptedException {
+            profileCmds.add(new CommandRun(command, env, targetDir));
+            return true;
+        }
+
+        @Override
+        public void cleanup(String user, String workerId, int port) {
+            //NO OP
+        }
+
+        @Override
+        public boolean isResourceManaged() {
+            return false;
+        }
     }
 }

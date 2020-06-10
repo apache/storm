@@ -20,12 +20,21 @@
 package org.apache.storm.utils;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.zip.ZipFile;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.storm.testing.TmpPath;
 import org.junit.jupiter.api.Test;
 
@@ -70,5 +79,89 @@ public class ServerUtilsTest {
             assertThat(Files.exists(extractionDest.resolve("evil.txt")), is(false));
             assertThat(Files.exists(destParent.resolve("evil.txt")), is(false));
         }
+    }
+
+    private Collection<Long> getRunningProcessIds() throws IOException {
+        // get list of few running processes
+        Collection<Long> pids = new ArrayList<>();
+        Process p = Runtime.getRuntime().exec(ServerUtils.IS_ON_WINDOWS ? "tasklist" : "ps -e");
+        try (BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = input.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                try {
+                    pids.add(Long.parseLong(line.split("\\s")[0]));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+        return pids;
+    }
+
+    @Test
+    public void testIsProcessAlive() throws Exception {
+        // specific selected process should not be alive for a randomly generated user
+        String randomUser = RandomStringUtils.randomAlphanumeric(12);
+
+        // get list of few running processes
+        Collection<Long> pids = getRunningProcessIds();
+        assertFalse(pids.isEmpty());
+        for (long pid: pids) {
+            boolean status = ServerUtils.isProcessAlive(pid, randomUser);
+            assertFalse("Random user " + randomUser + " is not expected to own any process", status);
+        }
+
+        boolean status = false;
+        String currentUser = System.getProperty("user.name");
+        for (long pid: pids) {
+            // at least one pid will be owned by the current user (doing the testing)
+            if (ServerUtils.isProcessAlive(pid, currentUser)) {
+                status = true;
+                break;
+            }
+        }
+        assertTrue("Expecting user " + currentUser + " to own at least one process", status);
+    }
+
+    @Test
+    public void testIsAnyProcessAlive() throws Exception {
+        // no process should be alive for a randomly generated user
+        String randomUser = RandomStringUtils.randomAlphanumeric(12);
+        Collection<Long> pids = getRunningProcessIds();
+
+        assertFalse(pids.isEmpty());
+        boolean status = ServerUtils.isAnyProcessAlive(pids, randomUser);
+        assertFalse("Random user " + randomUser + " is not expected to own any process", status);
+
+        // at least one pid will be owned by the current user (doing the testing)
+        String currentUser = System.getProperty("user.name");
+        status = ServerUtils.isAnyProcessAlive(pids, currentUser);
+        assertTrue("Expecting user " + currentUser + " to own at least one process", status);
+
+        if (!ServerUtils.IS_ON_WINDOWS) {
+            // userid test is valid only on Posix platforms
+            int inValidUserId = -1;
+            status = ServerUtils.isAnyProcessAlive(pids, inValidUserId);
+            assertFalse("Invalid userId " + randomUser + " is not expected to own any process", status);
+
+            int currentUid = ServerUtils.getUserId(null);
+            status = ServerUtils.isAnyProcessAlive(pids, currentUid);
+            assertTrue("Expecting uid " + currentUid + " to own at least one process", status);
+        }
+    }
+
+    @Test
+    public void testGetUserId() throws Exception {
+        if (ServerUtils.IS_ON_WINDOWS) {
+            return; // trivially succeed on Windows, since this test is not for Windows platform
+        }
+        int uid1 = ServerUtils.getUserId(null);
+        Path p = Files.createTempFile("testGetUser", ".txt");
+        int uid2 = ServerUtils.getPathOwnerUid(p.toString());
+        assertEquals("User UID " + uid1 + " is not same as file " + p.toString() + " owner UID of " + uid2, uid1, uid2);
     }
 }

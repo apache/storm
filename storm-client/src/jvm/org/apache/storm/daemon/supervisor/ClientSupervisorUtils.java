@@ -77,7 +77,7 @@ public class ClientSupervisorUtils {
         return ret;
     }
 
-    static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args,
+    public static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args,
                                    Map<String, String> environment, final String logPreFix,
                                    final ExitCodeCallback exitCodeCallback, File dir) throws IOException {
         if (StringUtils.isBlank(user)) {
