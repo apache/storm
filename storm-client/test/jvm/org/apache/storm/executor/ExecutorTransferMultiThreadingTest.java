@@ -96,7 +96,7 @@ public class ExecutorTransferMultiThreadingTest {
         //But there is already one worker transfer queue initialized by WorkerTransfer class (taskId=-1).
         //However the taskId is only used for metrics and it is not important here. Making it -100 to avoid collision.
         transferQueue = new JCQueue("worker-transfer-queue", 1024, 0, 1, new WaitStrategyPark(100),
-            workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, Collections.singletonList(-100), workerState.getPort(),
+            workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -100, workerState.getPort(),
             workerState.getMetricRegistry());
 
         //Replace the transferQueue inside WorkerTransfer (inside WorkerState) with the customized transferQueue to be used in this test
