@@ -1717,6 +1717,17 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber
     public static final String NUM_STAT_BUCKETS = "num.stat.buckets";
     /**
+     * The root of cgroup for oci to use. On RHEL7, it should be "/sys/fs/cgroup".
+     */
+    @IsString
+    @NotNull
+    public static String STORM_OCI_CGROUP_ROOT = "storm.oci.cgroup.root";
+    /**
+     * Specify the oci image to use.
+     */
+    @IsString
+    public static String TOPOLOGY_OCI_IMAGE = "topology.oci.image";
+    /**
      * Interval to check for the worker to check for updated blobs and refresh worker state accordingly. The default is 10 seconds
      */
     @IsInteger

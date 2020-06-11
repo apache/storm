@@ -298,7 +298,7 @@ int main(int argc, char **argv) {
   log_dirs = (char *) malloc (sizeof(char) * ARRAY_SIZE);
   strcpy(log_dirs, NM_LOG_DIRS);
 
-  create_nm_roots(extract_values(local_dirs));
+  create_nm_roots(extract_values_delim(local_dirs, ","));
 
   if (getuid() == 0 && argc == 2) {
     username = argv[1];

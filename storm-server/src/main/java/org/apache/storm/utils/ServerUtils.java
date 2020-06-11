@@ -290,10 +290,24 @@ public class ServerUtils {
      * @param dir         the directory under which the script is to be written
      * @param command     the command the script is to execute
      * @param environment optional environment variables to set before running the script's command. May be  null.
+     * @param umask umask to be set. It can be null.
      * @return the path to the script that has been written
      */
     public static String writeScript(String dir, List<String> command,
                                      Map<String, String> environment) throws IOException {
+        return writeScript(dir, command, environment, null);
+    }
+
+    /**
+     * Writes a posix shell script file to be executed in its own process.
+     *
+     * @param dir         the directory under which the script is to be written
+     * @param command     the command the script is to execute
+     * @param environment optional environment variables to set before running the script's command. May be  null.
+     * @return the path to the script that has been written
+     */
+    public static String writeScript(String dir, List<String> command,
+                                     Map<String, String> environment, String umask) throws IOException {
         String path = scriptFilePath(dir);
         try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
             out.write("#!/bin/bash");
@@ -312,6 +326,10 @@ public class ServerUtils {
                 }
             }
             out.newLine();
+            if (umask != null) {
+                out.write("umask " + umask);
+                out.newLine();
+            }
             out.write("exec " + shellCmd(command) + ";");
         }
         return path;
