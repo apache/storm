@@ -938,6 +938,13 @@ public class DaemonConfig implements Validated {
     public static final String ISOLATION_SCHEDULER_MACHINES = "isolation.scheduler.machines";
 
     /**
+     * How long before a scheduler considers its config cache expired.
+     */
+    @IsInteger
+    @IsPositiveNumber(includeZero = true)
+    public static final String SCHEDULER_CONFIG_CACHE_EXPIRATION_SECS = "scheduler.config.cache.expiration.secs";
+
+    /**
      * For ArtifactoryConfigLoader, this can either be a reference to an individual file in Artifactory or to a directory. If it is a
      * directory, the file with the largest lexographic name will be returned. Users need to add "artifactory+" to the beginning of the real
      * URI to use ArtifactoryConfigLoader. For FileConfigLoader, this is the URI pointing to a file.

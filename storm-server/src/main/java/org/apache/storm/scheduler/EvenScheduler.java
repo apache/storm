@@ -173,7 +173,7 @@ public class EvenScheduler implements IScheduler {
 
     @Override
     public Map<String, Map<String, Double>> config() {
-        return new HashMap<>();
+        return Collections.emptyMap();
     }
 
 }
