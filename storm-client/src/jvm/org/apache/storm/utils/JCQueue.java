@@ -43,10 +43,12 @@ public class JCQueue implements Closeable {
     private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
     private final IWaitStrategy backPressureWaitStrategy;
     private final String queueName;
+    private final String owner; // worker or executor id
 
-    public JCQueue(String queueName, int size, int overflowLimit, int producerBatchSz, IWaitStrategy backPressureWaitStrategy,
+    public JCQueue(String queueName, String owner, int size, int overflowLimit, int producerBatchSz, IWaitStrategy backPressureWaitStrategy,
                    String topologyId, String componentId, List<Integer> taskIds, int port, StormMetricRegistry metricRegistry) {
         this.queueName = queueName;
+        this.owner = owner;
         this.overflowLimit = overflowLimit;
         this.recvQueue = new MpscArrayQueue<>(size);
         this.overflowQ = new MpscUnboundedArrayQueue<>(size);
@@ -61,8 +63,12 @@ public class JCQueue implements Closeable {
         this.backPressureWaitStrategy = backPressureWaitStrategy;
     }
 
-    public String getName() {
+    public String getQueueName() {
         return queueName;
+    }
+
+    public String getOwner() {
+        return owner;
     }
 
     @Override
@@ -282,7 +288,8 @@ public class JCQueue implements Closeable {
                     jcQueueMetric.notifyInsertFailure();
                 }
                 if (idleCount == 0) { // check avoids multiple log msgs when in a idle loop
-                    LOG.debug("Experiencing Back Pressure on recvQueue: '{}'. Entering BackPressure Wait", queue.getName());
+                    LOG.debug("Experiencing Back Pressure on recvQueue: '{}' of '{}'. Entering BackPressure Wait",
+                        queue.getQueueName(), queue.getOwner());
                 }
 
                 idleCount = queue.backPressureWaitStrategy.idle(idleCount);
@@ -372,7 +379,8 @@ public class JCQueue implements Closeable {
                     jcQueueMetric.notifyInsertFailure();
                 }
                 if (retryCount == 0) { // check avoids multiple log msgs when in a idle loop
-                    LOG.debug("Experiencing Back Pressure when flushing batch to Q: {}. Entering BackPressure Wait.", queue.getName());
+                    LOG.debug("Experiencing Back Pressure when flushing batch to Q: '{}' of '{}'. Entering BackPressure Wait.",
+                        queue.getQueueName(), queue.getOwner());
                 }
                 retryCount = queue.backPressureWaitStrategy.idle(retryCount);
                 if (Thread.interrupted()) {
