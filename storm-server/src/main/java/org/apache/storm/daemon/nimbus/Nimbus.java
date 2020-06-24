@@ -57,8 +57,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 
@@ -3164,6 +3162,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (!(Boolean) conf.getOrDefault(DaemonConfig.STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED, false)) {
                 topoConf.remove(Config.TOPOLOGY_CLASSPATH_BEGINNING);
             }
+
+            // storm.messaging.netty.authentication is about inter-worker communication
+            // enforce netty authentication when either topo or daemon set it to true
+            boolean enforceNettyAuth = (Boolean) topoConf.getOrDefault(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false)
+                                    || (Boolean) conf.getOrDefault(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false);
+            LOG.debug("For netty authentication, topo conf is: {}, cluster conf is: {}, Enforce netty auth: {}",
+                topoConf.getOrDefault(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false),
+                conf.getOrDefault(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false),
+                enforceNettyAuth);
+            topoConf.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, enforceNettyAuth);
 
             String topoVersionString = topology.get_storm_version();
             if (topoVersionString == null) {
