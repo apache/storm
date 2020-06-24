@@ -385,12 +385,22 @@ public class Config extends HashMap<String, Object> {
     /**
      * A list of host names that this topology would prefer to be scheduled on (no guarantee is given though). This is intended for
      * debugging only.
+     *
+     * <p>Favored nodes are moved to the front of the node selection list.
+     * If the same node is also present in {@link #TOPOLOGY_SCHEDULER_UNFAVORED_NODES}
+     * then the node is considered only as a favored node and is removed from the unfavored list.
+     * </p>
      */
     @IsStringList
     public static final String TOPOLOGY_SCHEDULER_FAVORED_NODES = "topology.scheduler.favored.nodes";
     /**
      * A list of host names that this topology would prefer to NOT be scheduled on (no guarantee is given though). This is intended for
      * debugging only.
+     *
+     * <p>Unfavored nodes are moved to the end of the node selection list.
+     * If the same node is also present in {@link #TOPOLOGY_SCHEDULER_FAVORED_NODES}
+     * then the node is considered only as a favored node and is removed from the unfavored list.
+     * </p>
      */
     @IsStringList
     public static final String TOPOLOGY_SCHEDULER_UNFAVORED_NODES = "topology.scheduler.unfavored.nodes";
