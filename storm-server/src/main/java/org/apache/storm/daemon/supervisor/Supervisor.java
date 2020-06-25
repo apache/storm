@@ -181,11 +181,11 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             throw Utils.wrapInRuntime(e);
         }
 
-        this.heartbeatTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
+        this.heartbeatTimer = new StormTimer("HBTimer", new DefaultUncaughtExceptionHandler());
 
-        this.workerHeartbeatTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
+        this.workerHeartbeatTimer = new StormTimer("WorkerHBTimer", new DefaultUncaughtExceptionHandler());
 
-        this.eventTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
+        this.eventTimer = new StormTimer("EventTimer", new DefaultUncaughtExceptionHandler());
         
         this.supervisorThriftInterface = createSupervisorIface();
     }
