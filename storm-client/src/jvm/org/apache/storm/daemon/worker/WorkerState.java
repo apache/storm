@@ -45,6 +45,7 @@ import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.daemon.worker.BackPressureTracker.BackpressureState;
 import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.generated.Assignment;
+import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.DebugOptions;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.InvalidTopologyException;
@@ -152,6 +153,7 @@ public class WorkerState {
     private final AtomicLong nextLoadUpdate = new AtomicLong(0);
     private final boolean trySerializeLocal;
     private final Collection<IAutoCredentials> autoCredentials;
+    AtomicReference<Credentials> credentialsAtom;
     private final StormMetricRegistry metricRegistry;
 
     public WorkerState(Map<String, Object> conf,
@@ -165,10 +167,12 @@ public class WorkerState {
             IStateStorage stateStorage,
             IStormClusterState stormClusterState,
             Collection<IAutoCredentials> autoCredentials,
-            StormMetricRegistry metricRegistry) throws IOException,
+            StormMetricRegistry metricRegistry,
+            Credentials initialCredentials) throws IOException,
             InvalidTopologyException {
         this.metricRegistry = metricRegistry;
         this.autoCredentials = autoCredentials;
+        this.credentialsAtom = new AtomicReference(initialCredentials);
         this.conf = conf;
         this.supervisorIfaceSupplier = supervisorIfaceSupplier;
         this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
@@ -632,6 +636,10 @@ public class WorkerState {
 
     public Collection<IAutoCredentials> getAutoCredentials() {
         return this.autoCredentials;
+    }
+
+    public Credentials getCredentials() {
+        return credentialsAtom.get();
     }
 
     private List<List<Long>> readWorkerExecutors(IStormClusterState stormClusterState, String topologyId, String assignmentId,

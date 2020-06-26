@@ -88,7 +88,6 @@ public class Worker implements Shutdownable, DaemonCommon {
     private AtomicReference<List<IRunningExecutor>> executorsAtom;
     private Thread transferThread;
 
-    private AtomicReference<Credentials> credentialsAtom;
     private Subject subject;
     private Collection<IAutoCredentials> autoCreds;
     private final Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier;
@@ -194,8 +193,10 @@ public class Worker implements Shutdownable, DaemonCommon {
     private Object loadWorker(IStateStorage stateStorage, IStormClusterState stormClusterState,
                               Map<String, String> initCreds, Credentials initialCredentials)
         throws Exception {
-        workerState = new WorkerState(conf, context, topologyId, assignmentId, supervisorIfaceSupplier, port, workerId,
-                                      topologyConf, stateStorage, stormClusterState, autoCreds, metricRegistry);
+        workerState =
+            new WorkerState(conf, context, topologyId, assignmentId, supervisorIfaceSupplier, port, workerId,
+                            topologyConf, stateStorage, stormClusterState,
+                            autoCreds, metricRegistry, initialCredentials);
 
         // Heartbeat here so that worker process dies if this fails
         // it's important that worker heartbeat to supervisor ASAP so that supervisor knows
@@ -256,8 +257,6 @@ public class Worker implements Shutdownable, DaemonCommon {
             transferThread = workerState.makeTransferThread();
             transferThread.setName("Worker-Transfer");
         }
-
-        credentialsAtom = new AtomicReference<Credentials>(initialCredentials);
 
         establishLogSettingCallback();
 
@@ -415,13 +414,13 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     public void checkCredentialsChanged() {
         Credentials newCreds = workerState.stormClusterState.credentials(topologyId, null);
-        if (!ObjectUtils.equals(newCreds, credentialsAtom.get())) {
+        if (!ObjectUtils.equals(newCreds, this.workerState.credentialsAtom.get())) {
             // This does not have to be atomic, worst case we update when one is not needed
             ClientAuthUtils.updateSubject(subject, autoCreds, (null == newCreds) ? null : newCreds.get_creds());
             for (IRunningExecutor executor : executorsAtom.get()) {
                 executor.credentialsChanged(newCreds);
             }
-            credentialsAtom.set(newCreds);
+            this.workerState.credentialsAtom.set(newCreds);
         }
     }
 

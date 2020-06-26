@@ -210,12 +210,6 @@ public class BoltExecutor extends Executor {
             outputCollector.flush();
         } else if (Constants.METRICS_TICK_STREAM_ID.equals(streamId)) {
             metricsTick(idToTask.get(taskId - idToTaskBase), tuple);
-        } else if (Constants.CREDENTIALS_CHANGED_STREAM_ID.equals(streamId)) {
-            Object taskObject = idToTask.get(taskId - idToTaskBase).getTaskObject();
-            if (taskObject instanceof ICredentialsListener) {
-                Credentials creds = (Credentials) tuple.getValue(0);
-                ((ICredentialsListener) taskObject).setCredentials(creds == null ? null : creds.get_creds());
-            }
         } else {
             IBolt boltObject = (IBolt) idToTask.get(taskId - idToTaskBase).getTaskObject();
             boolean isSampled = sampler.getAsBoolean();
