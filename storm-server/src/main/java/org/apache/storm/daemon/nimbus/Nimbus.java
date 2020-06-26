@@ -1121,6 +1121,21 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         ret.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, mergedConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS));
         ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, mergedConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM));
 
+        // storm.messaging.netty.authentication is about inter-worker communication
+        // enforce netty authentication when either topo or daemon set it to true
+        boolean enforceNettyAuth = false;
+        if (!topoConf.containsKey(Config.STORM_MESSAGING_NETTY_AUTHENTICATION)) {
+            enforceNettyAuth = (Boolean) conf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+        } else {
+            enforceNettyAuth = (Boolean) topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION)
+                                || (Boolean) conf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+        }
+        LOG.debug("For netty authentication, topo conf is: {}, cluster conf is: {}, Enforce netty auth: {}",
+            topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION),
+            conf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION),
+            enforceNettyAuth);
+        ret.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, enforceNettyAuth);
+
         // Don't allow topoConf to override various cluster-specific properties.
         // Specifically adding the cluster settings to the topoConf here will make sure these settings
         // also override the subsequently generated conf picked up locally on the classpath.
@@ -3162,16 +3177,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (!(Boolean) conf.getOrDefault(DaemonConfig.STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED, false)) {
                 topoConf.remove(Config.TOPOLOGY_CLASSPATH_BEGINNING);
             }
-
-            // storm.messaging.netty.authentication is about inter-worker communication
-            // enforce netty authentication when either topo or daemon set it to true
-            boolean enforceNettyAuth = (Boolean) topoConf.getOrDefault(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false)
-                                    || (Boolean) conf.getOrDefault(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false);
-            LOG.debug("For netty authentication, topo conf is: {}, cluster conf is: {}, Enforce netty auth: {}",
-                topoConf.getOrDefault(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false),
-                conf.getOrDefault(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false),
-                enforceNettyAuth);
-            topoConf.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, enforceNettyAuth);
 
             String topoVersionString = topology.get_storm_version();
             if (topoVersionString == null) {
