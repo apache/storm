@@ -260,7 +260,15 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     @Override
     public void received(Object message, String remote, Channel channel) throws InterruptedException {
-        List<TaskMessage> msgs = (List<TaskMessage>) message;
+        List<TaskMessage> msgs;
+
+        try {
+            msgs = (List<TaskMessage>) message;
+        } catch (ClassCastException e) {
+            LOG.error("Worker netty server receive message other than the expected class List<TaskMessage>", e);
+            return;
+        }
+
         enqueue(msgs, remote);
     }
 
