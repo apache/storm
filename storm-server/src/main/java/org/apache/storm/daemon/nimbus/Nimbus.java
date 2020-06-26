@@ -2301,6 +2301,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private boolean supportRpcHeartbeat(TopologyDetails topo) {
+        if (stormClusterState.isPacemakerStateStore()) {
+            // While using PacemakerStateStorage, ignore RPC heartbeat.
+            return false;
+        }
+
         if (!topo.getTopology().is_set_storm_version()) {
             // current version supports RPC heartbeat
             return true;

@@ -229,6 +229,14 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
+    public boolean isPacemakerStateStore() {
+        if (stateStorage == null) {
+            return false;
+        }
+        return stateStorage instanceof PaceMakerStateStorage;
+    }
+
+    @Override
     public void setAssignmentsBackendSynchronized() {
         this.assignmentsBackend.setSynchronized();
     }

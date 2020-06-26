@@ -75,6 +75,13 @@ public interface IStormClusterState {
     boolean isAssignmentsBackendSynchronized();
 
     /**
+     * Flag to indicate if the Pacameker is backup store.
+     *
+     * @return true if Pacemaker is being used as StateStore
+     */
+    boolean isPacemakerStateStore();
+
+    /**
      * Mark the assignments as synced successfully, see {@link #isAssignmentsBackendSynchronized()}.
      */
     void setAssignmentsBackendSynchronized();
