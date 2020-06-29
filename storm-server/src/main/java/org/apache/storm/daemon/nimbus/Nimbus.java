@@ -57,8 +57,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 
@@ -1122,6 +1120,21 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         ret.put(Config.TOPOLOGY_ACKER_EXECUTORS, mergedConf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
         ret.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, mergedConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS));
         ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, mergedConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM));
+
+        // storm.messaging.netty.authentication is about inter-worker communication
+        // enforce netty authentication when either topo or daemon set it to true
+        boolean enforceNettyAuth = false;
+        if (!topoConf.containsKey(Config.STORM_MESSAGING_NETTY_AUTHENTICATION)) {
+            enforceNettyAuth = (Boolean) conf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+        } else {
+            enforceNettyAuth = (Boolean) topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION)
+                                || (Boolean) conf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+        }
+        LOG.debug("For netty authentication, topo conf is: {}, cluster conf is: {}, Enforce netty auth: {}",
+            topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION),
+            conf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION),
+            enforceNettyAuth);
+        ret.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, enforceNettyAuth);
 
         // Don't allow topoConf to override various cluster-specific properties.
         // Specifically adding the cluster settings to the topoConf here will make sure these settings
