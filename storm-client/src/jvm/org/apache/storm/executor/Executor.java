@@ -275,7 +275,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
         TupleImpl tuple = (TupleImpl) addressedTuple.getTuple();
         if (isDebug) {
-            LOG.info("Processing received message FOR {} TUPLE: {}", taskId, tuple);
+            LOG.info("Processing received TUPLE: {} for TASK: {} ", tuple, taskId);
         }
 
         try {
