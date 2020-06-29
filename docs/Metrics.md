@@ -327,3 +327,8 @@ Please refer to the [JVM documentation](https://docs.oracle.com/javase/8/docs/ap
 * `uptimeSecs` reports the number of seconds the worker has been up for
 * `newWorkerEvent` is 1 when a worker is first started and 0 all other times.  This can be used to tell when a worker has crashed and is restarted.
 * `startTimeSecs` is when the worker started in seconds since the epoch
+
+##### doHeartbeat-calls
+
+* `doHeartbeat-calls` is a meter that indicates the rate the worker is performing heartbeats.
+
