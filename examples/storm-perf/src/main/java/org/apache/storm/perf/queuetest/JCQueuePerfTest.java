@@ -72,7 +72,7 @@ public class JCQueuePerfTest {
 
 
     private static void oneProducer1Consumer(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", null, 50_000, 0, prodBatchSz, new WaitStrategyPark(100), "test", "test",
+        JCQueue q1 = new JCQueue("q1", "q1", 50_000, 0, prodBatchSz, new WaitStrategyPark(100), "test", "test",
                 Collections.singletonList(1000), 1000, new StormMetricRegistry());
 
         final Producer prod1 = new Producer(q1);
