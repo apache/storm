@@ -369,7 +369,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         state.cleanup(60); // this is just in case supervisor is down so that disk doesn't fill up.
         // it shouldn't take supervisor 120 seconds between listing dir and reading it
         if (!workerState.stormClusterState.isPacemakerStateStore()) {
-            LOG.debug("If pacemaker is not used, send supervisor");
+            LOG.debug("The pacemaker is not used, send heartbeat to master.");
             heartbeatToMasterIfLocalbeatFail(lsWorkerHeartbeat);
         }
         this.heatbeatMeter.mark();
