@@ -152,10 +152,14 @@ public class Worker implements Shutdownable, DaemonCommon {
         StormCommon.validateDistributedMode(conf);
         int supervisorPortInt = Integer.parseInt(supervisorPort);
         Worker worker = new Worker(conf, null, stormId, assignmentId, supervisorPortInt, Integer.parseInt(portStr), workerId);
-        worker.start();
+
+        //Add shutdown hooks before starting any other threads to avoid possible race condition
+        //between invoking shutdown hooks and registering shutdown hooks. See STORM-3658.
         int workerShutdownSleepSecs = ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS));
         LOG.info("Adding shutdown hook with kill in {} secs", workerShutdownSleepSecs);
         Utils.addShutdownHookWithDelayedForceKill(worker::shutdown, workerShutdownSleepSecs);
+
+        worker.start();
     }
 
     public void start() throws Exception {
@@ -470,20 +474,31 @@ public class Worker implements Shutdownable, DaemonCommon {
         try {
             LOG.info("Shutting down worker {} {} {}", topologyId, assignmentId, port);
 
-            for (IConnection socket : workerState.cachedNodeToPortSocket.get().values()) {
-                //this will do best effort flushing since the linger period
-                // was set on creation
-                socket.close();
+            if (workerState != null) {
+                for (IConnection socket : workerState.cachedNodeToPortSocket.get().values()) {
+                    //this will do best effort flushing since the linger period
+                    // was set on creation
+                    socket.close();
+                }
             }
-            LOG.info("Terminating messaging context");
-            LOG.info("Shutting down executors");
-            for (IRunningExecutor executor : executorsAtom.get()) {
-                ((ExecutorShutdown) executor).shutdown();
-            }
-            LOG.info("Shut down executors");
 
-            LOG.info("Shutting down transfer thread");
-            workerState.haltWorkerTransfer();
+            LOG.info("Terminating messaging context");
+
+            if (executorsAtom != null) {
+                List<IRunningExecutor> executors = executorsAtom.get();
+                if (executors != null) {
+                    LOG.info("Shutting down executors");
+                    for (IRunningExecutor executor : executors) {
+                        ((ExecutorShutdown) executor).shutdown();
+                    }
+                    LOG.info("Shut down executors");
+                }
+            }
+
+            if (workerState != null) {
+                LOG.info("Shutting down transfer thread");
+                workerState.haltWorkerTransfer();
+            }
 
             if (transferThread != null) {
                 transferThread.interrupt();
@@ -491,33 +506,38 @@ public class Worker implements Shutdownable, DaemonCommon {
                 LOG.info("Shut down transfer thread");
             }
 
-            workerState.heartbeatTimer.close();
-            workerState.refreshConnectionsTimer.close();
-            workerState.refreshCredentialsTimer.close();
-            workerState.checkForUpdatedBlobsTimer.close();
-            workerState.refreshActiveTimer.close();
-            workerState.executorHeartbeatTimer.close();
-            workerState.userTimer.close();
-            workerState.refreshLoadTimer.close();
-            workerState.resetLogLevelsTimer.close();
-            workerState.flushTupleTimer.close();
-            workerState.backPressureCheckTimer.close();
-            
-            // this is fine because the only time this is shared is when it's a local context,
-            // in which case it's a noop
-            workerState.mqContext.term();
-            
-            workerState.closeResources();
+            if (workerState != null) {
+                workerState.heartbeatTimer.close();
+                workerState.refreshConnectionsTimer.close();
+                workerState.refreshCredentialsTimer.close();
+                workerState.checkForUpdatedBlobsTimer.close();
+                workerState.refreshActiveTimer.close();
+                workerState.executorHeartbeatTimer.close();
+                workerState.userTimer.close();
+                workerState.refreshLoadTimer.close();
+                workerState.resetLogLevelsTimer.close();
+                workerState.flushTupleTimer.close();
+                workerState.backPressureCheckTimer.close();
+
+                // this is fine because the only time this is shared is when it's a local context,
+                // in which case it's a noop
+                workerState.mqContext.term();
+
+                workerState.closeResources();
+            }
 
             metricRegistry.stop();
 
-            LOG.info("Trigger any worker shutdown hooks");
-            workerState.runWorkerShutdownHooks();
+            if (workerState != null) {
+                LOG.info("Trigger any worker shutdown hooks");
+                workerState.runWorkerShutdownHooks();
 
-            workerState.stormClusterState.removeWorkerHeartbeat(topologyId, assignmentId, (long) port);
-            LOG.info("Disconnecting from storm cluster state context");
-            workerState.stormClusterState.disconnect();
-            workerState.stateStorage.close();
+                workerState.stormClusterState.removeWorkerHeartbeat(topologyId, assignmentId, (long) port);
+                LOG.info("Disconnecting from storm cluster state context");
+                workerState.stormClusterState.disconnect();
+                workerState.stateStorage.close();
+            }
+
             LOG.info("Shut down worker {} {} {}", topologyId, assignmentId, port);
         } catch (Exception ex) {
             throw Utils.wrapInRuntime(ex);
