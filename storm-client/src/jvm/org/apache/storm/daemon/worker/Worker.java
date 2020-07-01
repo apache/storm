@@ -480,33 +480,22 @@ public class Worker implements Shutdownable, DaemonCommon {
                     // was set on creation
                     socket.close();
                 }
-            }
-
-            LOG.info("Terminating messaging context");
-
-            if (executorsAtom != null) {
-                List<IRunningExecutor> executors = executorsAtom.get();
-                if (executors != null) {
-                    LOG.info("Shutting down executors");
-                    for (IRunningExecutor executor : executors) {
-                        ((ExecutorShutdown) executor).shutdown();
-                    }
-                    LOG.info("Shut down executors");
+                LOG.info("Terminating messaging context");
+                LOG.info("Shutting down executors");
+                for (IRunningExecutor executor : executorsAtom.get()) {
+                    ((ExecutorShutdown) executor).shutdown();
                 }
-            }
+                LOG.info("Shut down executors");
 
-            if (workerState != null) {
                 LOG.info("Shutting down transfer thread");
                 workerState.haltWorkerTransfer();
-            }
 
-            if (transferThread != null) {
-                transferThread.interrupt();
-                transferThread.join();
-                LOG.info("Shut down transfer thread");
-            }
+                if (transferThread != null) {
+                    transferThread.interrupt();
+                    transferThread.join();
+                    LOG.info("Shut down transfer thread");
+                }
 
-            if (workerState != null) {
                 workerState.heartbeatTimer.close();
                 workerState.refreshConnectionsTimer.close();
                 workerState.refreshCredentialsTimer.close();
@@ -524,11 +513,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState.mqContext.term();
 
                 workerState.closeResources();
-            }
 
-            metricRegistry.stop();
-
-            if (workerState != null) {
                 LOG.info("Trigger any worker shutdown hooks");
                 workerState.runWorkerShutdownHooks();
 
@@ -536,7 +521,11 @@ public class Worker implements Shutdownable, DaemonCommon {
                 LOG.info("Disconnecting from storm cluster state context");
                 workerState.stormClusterState.disconnect();
                 workerState.stateStorage.close();
+            } else {
+                LOG.warn("workerState is null");
             }
+
+            metricRegistry.stop();
 
             LOG.info("Shut down worker {} {} {}", topologyId, assignmentId, port);
         } catch (Exception ex) {
