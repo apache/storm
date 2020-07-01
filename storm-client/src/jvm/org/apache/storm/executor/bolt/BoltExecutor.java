@@ -157,6 +157,7 @@ public class BoltExecutor extends Executor {
 
             @Override
             public Long call() throws Exception {
+                updateExecCredsIfRequired();
                 boolean pendingEmitsIsEmpty = tryFlushPendingEmits();
                 if (pendingEmitsIsEmpty) {
                     if (bpIdleCount != 0) {

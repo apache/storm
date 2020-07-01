@@ -126,7 +126,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected int idToTaskBase;
     protected String hostname;
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
-    protected boolean needToRefreshCreds = true;
+    private boolean needToRefreshCreds = true;
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -273,15 +273,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     @Override
     public void accept(Object event) {
-        if (this.needToRefreshCreds) {
-            this.needToRefreshCreds = false;
-            LOG.info("The credentials are being updated {}.", executorId);
-            Credentials creds = this.workerData.getCredentials();
-            idToTask.stream().map(Task::getTaskObject).filter(taskObject -> taskObject instanceof ICredentialsListener)
-                    .forEach(taskObject -> {
-                        ((ICredentialsListener) taskObject).setCredentials(creds == null ? null : creds.get_creds());
-                    });
-        }
         AddressedTuple addressedTuple = (AddressedTuple) event;
         int taskId = addressedTuple.getDest();
 
@@ -300,6 +291,18 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    protected void updateExecCredsIfRequired() {
+        if (this.needToRefreshCreds) {
+            this.needToRefreshCreds = false;
+            LOG.info("The credentials are being updated {}.", executorId);
+            Credentials creds = this.workerData.getCredentials();
+            idToTask.stream().map(Task::getTaskObject).filter(taskObject -> taskObject instanceof ICredentialsListener)
+                    .forEach(taskObject -> {
+                        ((ICredentialsListener) taskObject).setCredentials(creds == null ? null : creds.get_creds());
+                    });
         }
     }
 

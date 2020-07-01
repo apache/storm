@@ -414,13 +414,13 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     public void checkCredentialsChanged() {
         Credentials newCreds = workerState.stormClusterState.credentials(topologyId, null);
-        if (!ObjectUtils.equals(newCreds, this.workerState.credentialsAtom.get())) {
+        if (!ObjectUtils.equals(newCreds, this.workerState.getCredentials())) {
             // This does not have to be atomic, worst case we update when one is not needed
             ClientAuthUtils.updateSubject(subject, autoCreds, (null == newCreds) ? null : newCreds.get_creds());
+            this.workerState.setCredentials(newCreds);
             for (IRunningExecutor executor : executorsAtom.get()) {
                 executor.credentialsChanged(newCreds);
             }
-            this.workerState.credentialsAtom.set(newCreds);
         }
     }
 

@@ -153,7 +153,7 @@ public class WorkerState {
     private final AtomicLong nextLoadUpdate = new AtomicLong(0);
     private final boolean trySerializeLocal;
     private final Collection<IAutoCredentials> autoCredentials;
-    AtomicReference<Credentials> credentialsAtom;
+    private final AtomicReference<Credentials> credentialsAtom;
     private final StormMetricRegistry metricRegistry;
 
     public WorkerState(Map<String, Object> conf,
@@ -640,6 +640,10 @@ public class WorkerState {
 
     public Credentials getCredentials() {
         return credentialsAtom.get();
+    }
+
+    public void setCredentials(Credentials credentials) {
+        this.credentialsAtom.set(credentials);
     }
 
     private List<List<Long>> readWorkerExecutors(IStormClusterState stormClusterState, String topologyId, String assignmentId,

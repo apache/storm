@@ -164,6 +164,7 @@ public class SpoutExecutor extends Executor {
 
             @Override
             public Long call() throws Exception {
+                updateExecCredsIfRequired();
                 int receiveCount = 0;
                 if (recvqCheckSkips++ == recvqCheckSkipCountMax) {
                     receiveCount = receiveQueue.consume(SpoutExecutor.this);
