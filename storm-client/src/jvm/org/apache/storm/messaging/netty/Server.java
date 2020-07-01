@@ -265,7 +265,8 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         try {
             msgs = (List<TaskMessage>) message;
         } catch (ClassCastException e) {
-            LOG.error("Worker netty server receive message other than the expected class List<TaskMessage> from remote: {}. Ignored.", remote, e);
+            LOG.error("Worker netty server received message other than the expected class List<TaskMessage> from remote: {}. Ignored.",
+                remote, e);
             return;
         }
 
