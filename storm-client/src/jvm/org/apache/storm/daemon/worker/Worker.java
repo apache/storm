@@ -522,7 +522,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState.stormClusterState.disconnect();
                 workerState.stateStorage.close();
             } else {
-                LOG.warn("workerState is null");
+                LOG.error("workerState is null");
             }
 
             metricRegistry.stop();
