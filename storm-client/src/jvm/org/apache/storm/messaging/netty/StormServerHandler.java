@@ -63,7 +63,7 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
             // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException will handle it
         }
         try {
-            Utils.handleUncaughtException(cause, ALLOWED_EXCEPTIONS);
+            Utils.handleUncaughtException(cause, ALLOWED_EXCEPTIONS, false);
             ctx.close();
         } catch (Error error) {
             LOG.info("Received error in netty thread.. terminating server...");

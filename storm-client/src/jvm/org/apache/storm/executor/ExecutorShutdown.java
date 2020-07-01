@@ -60,7 +60,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
 
     @Override
     public void credentialsChanged(Credentials credentials) {
-        executor.needToRefreshCreds = true;
+        executor.setNeedToRefreshCreds();
     }
 
     @Override

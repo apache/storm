@@ -32,7 +32,7 @@ public class JCQueueMetrics implements Closeable {
     private final RateTracker insertFailuresTracker = new RateTracker(10000, 10);
     private final AtomicLong droppedMessages = new AtomicLong(0);
 
-    public JCQueueMetrics(String queueName, String topologyId, String componentId, int taskId, int port,
+    public JCQueueMetrics(String metricNamePrefix, String topologyId, String componentId, int taskId, int port,
                           StormMetricRegistry metricRegistry, MpscArrayQueue<Object> receiveQ,
                           MpscUnboundedArrayQueue<Object> overflowQ) {
 
@@ -95,14 +95,14 @@ public class JCQueueMetrics implements Closeable {
             }
         };
 
-        metricRegistry.gauge(queueName + "-capacity", cap, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(queueName + "-pct_full", pctFull, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(queueName + "-population", pop, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(queueName + "-arrival_rate_secs", arrivalRate, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(queueName + "-sojourn_time_ms", sojourn, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(queueName + "-insert_failures", insertFailures, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(queueName + "-dropped_messages", dropped, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(queueName + "-overflow", overflow, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-capacity", cap, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-pct_full", pctFull, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-population", pop, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-arrival_rate_secs", arrivalRate, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-sojourn_time_ms", sojourn, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-insert_failures", insertFailures, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-dropped_messages", dropped, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-overflow", overflow, topologyId, componentId, taskId, port);
     }
 
     public void notifyArrivals(long counts) {

@@ -12,6 +12,7 @@
 
 package org.apache.storm.daemon.worker;
 
+import com.codahale.metrics.Meter;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -83,6 +84,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     private final String workerId;
     private final LogConfigManager logConfigManager;
     private final StormMetricRegistry metricRegistry;
+    private Meter heatbeatMeter;
 
     private WorkerState workerState;
     private AtomicReference<List<IRunningExecutor>> executorsAtom;
@@ -145,7 +147,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         String portStr = args[3];
         String workerId = args[4];
         Map<String, Object> conf = ConfigUtils.readStormConfig();
-        Utils.setupDefaultUncaughtExceptionHandler();
+        Utils.setupWorkerUncaughtExceptionHandler();
         StormCommon.validateDistributedMode(conf);
         int supervisorPortInt = Integer.parseInt(supervisorPort);
         Worker worker = new Worker(conf, null, stormId, assignmentId, supervisorPortInt, Integer.parseInt(portStr), workerId);
@@ -197,6 +199,8 @@ public class Worker implements Shutdownable, DaemonCommon {
             new WorkerState(conf, context, topologyId, assignmentId, supervisorIfaceSupplier, port, workerId,
                             topologyConf, stateStorage, stormClusterState,
                             autoCreds, metricRegistry, initialCredentials);
+        this.heatbeatMeter = metricRegistry.meter("doHeartbeat-calls", workerState.getWorkerTopologyContext(),
+                Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
 
         // Heartbeat here so that worker process dies if this fails
         // it's important that worker heartbeat to supervisor ASAP so that supervisor knows
@@ -361,6 +365,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         state.cleanup(60); // this is just in case supervisor is down so that disk doesn't fill up.
         // it shouldn't take supervisor 120 seconds between listing dir and reading it
         heartbeatToMasterIfLocalbeatFail(lsWorkerHeartbeat);
+        this.heatbeatMeter.mark();
     }
 
     public void doExecutorHeartbeats() {
