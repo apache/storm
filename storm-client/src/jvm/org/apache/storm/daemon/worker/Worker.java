@@ -219,8 +219,11 @@ public class Worker implements Shutdownable, DaemonCommon {
                 }
             });
 
+        Integer execHeartBeatFreqSecs = workerState.stormClusterState.isPacemakerStateStore()
+            ? (Integer) conf.get(Config.TASK_HEARTBEAT_FREQUENCY_SECS)
+            : (Integer) conf.get(Config.EXECUTOR_METRICS_FREQUENCY_SECS);
         workerState.executorHeartbeatTimer
-            .scheduleRecurring(0, (Integer) conf.get(Config.EXECUTOR_METRICS_FREQUENCY_SECS),
+            .scheduleRecurring(0, execHeartBeatFreqSecs,
                                Worker.this::doExecutorHeartbeats);
 
         workerState.refreshConnections();
@@ -365,7 +368,10 @@ public class Worker implements Shutdownable, DaemonCommon {
         state.setWorkerHeartBeat(lsWorkerHeartbeat);
         state.cleanup(60); // this is just in case supervisor is down so that disk doesn't fill up.
         // it shouldn't take supervisor 120 seconds between listing dir and reading it
-        heartbeatToMasterIfLocalbeatFail(lsWorkerHeartbeat);
+        if (!workerState.stormClusterState.isPacemakerStateStore()) {
+            LOG.debug("The pacemaker is not used, send heartbeat to master.");
+            heartbeatToMasterIfLocalbeatFail(lsWorkerHeartbeat);
+        }
         this.heatbeatMeter.mark();
     }
 
@@ -447,6 +453,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         if (ConfigUtils.isLocalMode(this.conf)) {
             return;
         }
+
         //In distributed mode, send heartbeat directly to master if local supervisor goes down.
         SupervisorWorkerHeartbeat workerHeartbeat = new SupervisorWorkerHeartbeat(lsWorkerHeartbeat.get_topology_id(),
                                                                                   lsWorkerHeartbeat.get_executors(),

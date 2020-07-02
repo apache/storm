@@ -87,6 +87,10 @@ public class ReportWorkerHeartbeats implements Runnable {
             // error/exception thrown, just skip
             return;
         }
+        if (supervisor.getStormClusterState().isPacemakerStateStore()) {
+            LOG.debug("Worker are using pacemaker to send worker heartbeats so skip reporting by supervisor.");
+            return;
+        }
         // if it is local mode, just get the local nimbus instance and set the heartbeats
         if (ConfigUtils.isLocalMode(conf)) {
             try {
