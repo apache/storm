@@ -348,13 +348,13 @@ public class Utils {
             } catch (Exception e) {
                 LOG.warn("Exception in the ShutDownHook", e);
             }
-        });
+        }, "ShutdownHook-sleepKill-" + numSecs + "s");
         sleepKill.setDaemon(true);
-        Thread wrappedFunc = new Thread(() -> {
+        Thread shutdownFunc = new Thread(() -> {
             func.run();
             sleepKill.interrupt();
-        });
-        Runtime.getRuntime().addShutdownHook(wrappedFunc);
+        }, "ShutdownHook-shutdownFunc");
+        Runtime.getRuntime().addShutdownHook(shutdownFunc);
         Runtime.getRuntime().addShutdownHook(sleepKill);
     }
 
