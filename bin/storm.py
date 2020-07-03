@@ -782,7 +782,7 @@ def initialize_rebalance_subcommand(subparsers):
 
     sub_parser.add_argument(
         "-e", "--executors", action="append", default=[],
-        help="change the number of executors for a given component e.g component_name:5"
+        help="change the number of executors for a given component e.g. --executors component_name=6"
     )
 
     sub_parser.add_argument(
