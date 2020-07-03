@@ -2676,6 +2676,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return tryReadTopoConf(topoId, topoCache);
     }
 
+    private StormTopology tryReadTopologyFromName(final String topoName) throws NotAliveException,
+            AuthorizationException, IOException {
+        IStormClusterState state = stormClusterState;
+        String topoId = state.getTopoId(topoName)
+                .orElseThrow(() -> new WrappedNotAliveException(topoName + " is not alive"));
+        return tryReadTopology(topoId, topoCache);
+    }
+
     @VisibleForTesting
     public void checkAuthorization(String topoName, Map<String, Object> topoConf, String operation)
         throws AuthorizationException {
@@ -3370,8 +3378,18 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             checkAuthorization(topoName, topoConf, operation);
             // Set principal in RebalanceOptions to nil because users are not suppose to set this
             options.set_principal(null);
+            // check if executor counts are correctly specified
+            StormTopology stormTopology = tryReadTopologyFromName(topoName);
+            Set<String> comps = new HashSet<>();
+            comps.addAll(stormTopology.get_spouts().keySet());
+            comps.addAll(stormTopology.get_bolts().keySet());
             Map<String, Integer> execOverrides = options.is_set_num_executors() ? options.get_num_executors() : Collections.emptyMap();
-            for (Integer value : execOverrides.values()) {
+            for (Map.Entry<String, Integer> e: execOverrides.entrySet()) {
+                String comp = e.getKey();
+                Integer value = e.getValue();
+                if (!comps.contains(comp)) {
+                    throw new WrappedInvalidTopologyException(String.format("Component %s does not exist in topology %s", comp, topoName));
+                }
                 if (value == null || value <= 0) {
                     throw new WrappedInvalidTopologyException("Number of executors must be greater than 0");
                 }
