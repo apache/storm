@@ -38,15 +38,4 @@ public class DockerPsCommand extends DockerCommand {
         super.addCommandArguments("--filter=name=" + containerName);
         return this;
     }
-
-    /**
-     * Get the full command.
-     * @return the full command.
-     */
-    @Override
-    public String getCommandWithArguments() {
-        List<String> argList = new ArrayList<>();
-        argList.add(super.getCommandWithArguments());
-        return StringUtils.join(argList, " ");
-    }
 }
