@@ -38,23 +38,23 @@ run --name=8198e1f0-f323-4b9d-8625-e4fd640cd058 \
 --read-only \
 -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
 -v /usr/share/apache-storm-2.3.0:/usr/share/apache-storm-2.3.0:ro \
--v /<storm-local>/supervisor:/<storm-local>/supervisor:ro \
--v /<storm-local>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058:/<storm-local>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058 \
--v /<storm-local>/workers-artifacts/word-count-1-1591895933/6703:/<storm-local>/workers-artifacts/word-count-1-1591895933/6703 \
--v /<storm-local>/workers-users/8198e1f0-f323-4b9d-8625-e4fd640cd058:/<storm-local>/workers-users/8198e1f0-f323-4b9d-8625-e4fd640cd058 \
+-v /<storm-local-dir>/supervisor:/<storm-local-dir>/supervisor:ro \
+-v /<storm-local-dir>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058:/<storm-local-dir>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058 \
+-v /<workers-artifacts-dir>/workers-artifacts/word-count-1-1591895933/6703:/<workers-artifacts-dir>/workers-artifacts/word-count-1-1591895933/6703 \
+-v /<storm-local-dir>/workers-users/8198e1f0-f323-4b9d-8625-e4fd640cd058:/<storm-local-dir>/workers-users/8198e1f0-f323-4b9d-8625-e4fd640cd058 \
 -v /var/run/nscd:/var/run/nscd \
--v /<storm-local>/supervisor/stormdist/word-count-1-1591895933/shared_by_topology:/<storm-local>/supervisor/stormdist/word-count-1-1591895933/shared_by_topology \
--v /<storm-local>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058/tmp:/tmp \
--v /etc/krb5.conf:/etc/krb5.conf:ro \
+-v /<storm-local-dir>/supervisor/stormdist/word-count-1-1591895933/shared_by_topology:/<storm-local-dir>/supervisor/stormdist/word-count-1-1591895933/shared_by_topology \
+-v /<storm-local-dir>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058/tmp:/tmp \
+-v /etc/storm:/etc/storm:ro \
 --cgroup-parent=/storm \
 --group-add <gid> \
---workdir=/<storm-local>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058 \
---cidfile=/<storm-local>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058/container.cid \
+--workdir=/<storm-local-dir>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058 \
+--cidfile=/<storm-local-dir>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058/container.cid \
 --cap-drop=ALL \
 --security-opt no-new-privileges \
---security-opt seccomp=/user/share/conf/storm/seccomp.json \
+--security-opt seccomp=/usr/share/apache-storm-2.3.0/conf/seccomp.json \
 --cpus=2.6 xxx.xxx.com:8080/storm/storm/rhel7:latest \
-bash /<storm-local>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058/storm-worker-script.sh
+bash /<storm-local-dir>/workers/8198e1f0-f323-4b9d-8625-e4fd640cd058/storm-worker-script.sh
 ```
 
 
@@ -93,7 +93,7 @@ storm.oci.image: "xxx.xxx.com:8080/storm/storm/rhel7:latest"
 storm.oci.cgroup.root: "/storm"
 storm.oci.cgroup.parent: "/sys/fs/cgroup"
 storm.oci.readonly.bindmounts:
-    - "/etc/krb5.conf"
+    - "/etc/storm"
 storm.oci.nscd.dir: "/var/run/nscd"
 supervisor.worker.launcher: "/usr/share/apache-storm-2.3.0/bin/worker-launcher"
 ```
@@ -102,7 +102,7 @@ supervisor.worker.launcher: "/usr/share/apache-storm-2.3.0/bin/worker-launcher"
 
 The `worker-launcher` executable is a special program that is used to launch docker containers, run `docker` and `nsenter` commands.
 For this to work, `worker-launcher` needs to be owned by root, but with the group set to be a group that only the supervisor headless user is a part of. 
-`worker-launcher` also needs to have `6550 octal permissions. There is also a `worker-launcher`.cfg file, usually located under `/etc/`, that should look something like the following:
+`worker-launcher` also needs to have `6550` octal permissions. There is also a `worker-launcher.cfg` file, usually located under `/etc/storm`, that should look something like the following:
 ```
 storm.worker-launcher.group=$(worker_launcher_group)
 min.user.id=$(min_user_id)
