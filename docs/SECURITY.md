@@ -433,7 +433,7 @@ There are several files that go along with this that are needed to be configured
 
 The worker-launcher executable is a special program that allows the supervisor to launch workers as different users.  For this to work it needs to be owned by root, but with the group set to be a group that only the supervisor headless user is a part of.
 It also needs to have 6550 permissions.
-There is also a worker-launcher.cfg file, usually located under /etc/ that should look something like the following
+There is also a worker-launcher.cfg file, usually located under `/etc/storm` that should look something like the following
 
 ```
 storm.worker-launcher.group=$(worker_launcher_group)
