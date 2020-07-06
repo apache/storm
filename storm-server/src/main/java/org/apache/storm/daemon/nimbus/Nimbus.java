@@ -1642,12 +1642,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     @VisibleForTesting
     static void validateTopologyWorkerMaxHeapSizeConfigs(
-        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMb) {
+        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMb) throws InvalidTopologyException {
         double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
         double topologyWorkerMaxHeapSize =
             ObjectReader.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeapSizeMb);
         if (topologyWorkerMaxHeapSize < largestMemReq) {
-            throw new IllegalArgumentException(
+            throw new InvalidTopologyException(
                 "Topology will not be able to be successfully scheduled: Config "
                 + "TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB="
                 + topologyWorkerMaxHeapSize
