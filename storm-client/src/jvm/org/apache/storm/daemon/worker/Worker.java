@@ -272,8 +272,6 @@ public class Worker implements Shutdownable, DaemonCommon {
 
         establishLogSettingCallback();
 
-        workerState.stormClusterState.credentials(topologyId, Worker.this::checkCredentialsChanged);
-
         workerState.refreshCredentialsTimer.scheduleRecurring(0,
                                                               (Integer) conf.get(Config.TASK_CREDENTIALS_POLL_SECS), () -> {
                 checkCredentialsChanged();
