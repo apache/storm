@@ -290,7 +290,6 @@ public class ServerUtils {
      * @param dir         the directory under which the script is to be written
      * @param command     the command the script is to execute
      * @param environment optional environment variables to set before running the script's command. May be  null.
-     * @param umask umask to be set. It can be null.
      * @return the path to the script that has been written
      */
     public static String writeScript(String dir, List<String> command,
@@ -304,6 +303,7 @@ public class ServerUtils {
      * @param dir         the directory under which the script is to be written
      * @param command     the command the script is to execute
      * @param environment optional environment variables to set before running the script's command. May be  null.
+     * @param umask umask to be set. It can be null.
      * @return the path to the script that has been written
      */
     public static String writeScript(String dir, List<String> command,

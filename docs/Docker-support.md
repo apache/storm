@@ -8,16 +8,16 @@ documentation: true
 
 This page describes how storm supervisor launches the worker in a docker container. 
 
-Note: This is only tested on RHEL7.
+Note: This has only been tested on RHEL7.
 
 ## Motivation
 
-This is mostly about security and portability. With workers running inside of docker containers, we isolate running user code from each other and from the hosted machine so that the whole system is less vulnerable to attack. 
+This feature is mostly about security and portability. With workers running inside of docker containers, we isolate running user code from each other and from the hosted machine so that the whole system is less vulnerable to attack. 
 It also allows users to run their topologies on different os versions using different docker images.
 
 ## Implementation
 
-The implementation is pretty easy to understand. Essentially, `DockerManager` composes a docker-run command and uses `worker-launcher` executable to execute the command 
+Essentially, `DockerManager` composes a docker-run command and uses `worker-launcher` executable to execute the command 
 to launch a container. The `storm-worker-script.sh` script is the actual command to launch the worker process and logviewer in the container.
 One container ID is mapped to one worker ID conceptually. When the worker process dies, the container exits. 
 
