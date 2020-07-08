@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -3380,16 +3381,21 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             options.set_principal(null);
             // check if executor counts are correctly specified
             StormTopology stormTopology = tryReadTopologyFromName(topoName);
-            Set<String> comps = new HashSet<>();
+            Set<String> comps = new TreeSet<>();
             comps.addAll(stormTopology.get_spouts().keySet());
             comps.addAll(stormTopology.get_bolts().keySet());
             Map<String, Integer> execOverrides = options.is_set_num_executors() ? options.get_num_executors() : Collections.emptyMap();
             for (Map.Entry<String, Integer> e: execOverrides.entrySet()) {
                 String comp = e.getKey();
-                Integer value = e.getValue();
-                if (!comps.contains(comp)) {
-                    throw new WrappedInvalidTopologyException(String.format("Component %s does not exist in topology %s", comp, topoName));
+                // validate non-system component ids
+                if (!Utils.isSystemId(comp) && !comps.contains(comp)) {
+                    throw new WrappedInvalidTopologyException(
+                            String.format("Invalid component %s for topology %s, valid values are %s",
+                                    comp, topoName, String.join(",", comps))
+                    );
                 }
+                // validate executor count for component
+                Integer value = e.getValue();
                 if (value == null || value <= 0) {
                     throw new WrappedInvalidTopologyException("Number of executors must be greater than 0");
                 }
