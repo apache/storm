@@ -50,7 +50,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
 
     @Override
     public ExecutorStats renderStats() {
-        return executor.getStats().renderStats();
+        return executor.getExecutorMetrics().renderStats();
     }
 
     @Override
@@ -97,7 +97,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
                     LOG.warn("Thread {} is still alive ({} ms after interruption). Stop waiting for it.", t.getName(), waitMs);
                 }
             }
-            executor.getStats().cleanupStats();
+            executor.getExecutorMetrics().cleanup();
             for (Task task : taskDatas) {
                 if (task == null) {
                     continue;

@@ -38,10 +38,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.hooks.info.EmitInfo;
-import org.apache.storm.metrics2.StormMetricRegistry;
-import org.apache.storm.metrics2.TaskMetrics;
 import org.apache.storm.spout.ShellSpout;
-import org.apache.storm.stats.CommonStats;
 import org.apache.storm.task.ShellBolt;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -57,7 +54,6 @@ import org.slf4j.LoggerFactory;
 public class Task {
 
     private static final Logger LOG = LoggerFactory.getLogger(Task.class);
-    private final TaskMetrics taskMetrics;
     private final Executor executor;
     private final WorkerState workerData;
     private final TopologyContext systemTopologyContext;
@@ -68,7 +64,6 @@ public class Task {
     private final Object taskObject; // Spout/Bolt object
     private final Map<String, Object> topoConf;
     private final BooleanSupplier emitSampler;
-    private final CommonStats executorStats;
     private final Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamComponentToGrouper;
     private final HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> streamToGroupers;
     private final boolean debug;
@@ -81,7 +76,6 @@ public class Task {
         this.componentId = executor.getComponentId();
         this.streamComponentToGrouper = executor.getStreamToComponentToGrouper();
         this.streamToGroupers = getGroupersPerStream(streamComponentToGrouper);
-        this.executorStats = executor.getStats();
         this.workerTopologyContext = executor.getWorkerTopologyContext();
         this.emitSampler = ConfigUtils.mkStatsSampler(topoConf);
         this.systemTopologyContext = mkTopologyContext(workerData.getSystemTopology());
@@ -89,7 +83,6 @@ public class Task {
         this.taskObject = mkTaskObject();
         this.debug = topoConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) topoConf.get(Config.TOPOLOGY_DEBUG);
         this.addTaskHooks();
-        this.taskMetrics = new TaskMetrics(this.workerTopologyContext, this.componentId, this.taskId, workerData.getMetricRegistry());
     }
 
     private static HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> getGroupersPerStream(
@@ -129,9 +122,9 @@ public class Task {
 
         try {
             if (emitSampler.getAsBoolean()) {
-                executorStats.emittedTuple(stream, this.taskMetrics.getEmitted(stream));
+                executor.getExecutorMetrics().emittedTuple(this.getComponentId(), stream, this.getTaskId());
                 if (null != outTaskId) {
-                    executorStats.transferredTuples(stream, 1, this.taskMetrics.getTransferred(stream));
+                    executor.getExecutorMetrics().transferredTuples(this.getComponentId(), stream, this.getTaskId(), 1);
                 }
             }
         } catch (Exception e) {
@@ -169,8 +162,8 @@ public class Task {
         }
         try {
             if (emitSampler.getAsBoolean()) {
-                executorStats.emittedTuple(stream, this.taskMetrics.getEmitted(stream));
-                executorStats.transferredTuples(stream, outTasks.size(), this.taskMetrics.getTransferred(stream));
+                executor.getExecutorMetrics().emittedTuple(this.getComponentId(), stream, this.getTaskId());
+                executor.getExecutorMetrics().transferredTuples(this.getComponentId(), stream, this.getTaskId(), outTasks.size());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -196,10 +189,6 @@ public class Task {
 
     public Object getTaskObject() {
         return taskObject;
-    }
-
-    public TaskMetrics getTaskMetrics() {
-        return taskMetrics;
     }
 
     // Non Blocking call. If cannot emit to destination immediately, such tuples will be added to `pendingEmits` argument

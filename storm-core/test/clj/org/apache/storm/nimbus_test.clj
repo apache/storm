@@ -22,9 +22,10 @@
            [org.apache.storm.blobstore BlobStore]
            [org.apache.storm.nimbus InMemoryTopologyActionNotifier]
            [org.apache.storm.daemon.nimbus TopoCache Nimbus Nimbus$StandaloneINimbus]
-           [org.apache.storm.generated GlobalStreamId TopologyStatus SupervisorInfo StormTopology StormBase]
+           [org.apache.storm.generated GlobalStreamId TopologyStatus SupervisorInfo StormTopology StormBase ExecutorStats BoltStats ExecutorSpecificStats]
            [org.apache.storm LocalCluster LocalCluster$Builder Thrift MockAutoCred Testing Testing$Condition]
-           [org.apache.storm.stats BoltExecutorStats StatsUtil ClientStatsUtil]
+           [org.apache.storm.stats StatsUtil ClientStatsUtil]
+           [org.apache.storm.metrics2 BoltExecutorMetrics StormMetricRegistry]
            [org.apache.storm.security.auth IGroupMappingServiceProvider IAuthorizer])
   (:import [org.apache.storm.testing.staticmocking MockedZookeeper])
   (:import [org.apache.storm.testing TmpPath])
@@ -154,6 +155,22 @@
         assignment (.assignmentInfo state storm-id nil)]
     (clojurify-structure (.get_executor_start_time_secs assignment))))
 
+(defn bolt-stats []
+  (new BoltStats (ClientStatsUtil/windowSetConverter (new java.util.HashMap) ClientStatsUtil/TO_GSID ClientStatsUtil/IDENTITY)
+    (ClientStatsUtil/windowSetConverter (new java.util.HashMap) ClientStatsUtil/TO_GSID ClientStatsUtil/IDENTITY)
+    (ClientStatsUtil/windowSetConverter (new java.util.HashMap) ClientStatsUtil/TO_GSID ClientStatsUtil/IDENTITY)
+    (ClientStatsUtil/windowSetConverter (new java.util.HashMap) ClientStatsUtil/TO_GSID ClientStatsUtil/IDENTITY)
+    (ClientStatsUtil/windowSetConverter (new java.util.HashMap) ClientStatsUtil/TO_GSID ClientStatsUtil/IDENTITY))
+  )
+
+(defn new-stats []
+  (doto (new ExecutorStats) (.set_emitted (new java.util.HashMap))
+        (.set_transferred (new java.util.HashMap))
+        (.set_rate 20)
+        (.set_specific (ExecutorSpecificStats/bolt (bolt-stats)))
+        )
+  )
+
 (defn do-executor-heartbeat [cluster storm-id executor]
   (let [state (.getClusterState cluster)
         executor->node+port (.get_executor_node_port (.assignmentInfo state storm-id nil))
@@ -166,7 +183,7 @@
                 (HashMap.))]
     (log-warn "curr-beat:" (prn-str curr-beat) ",stats:" (prn-str stats))
     (log-warn "stats type:" (type stats))
-    (.put stats (ClientStatsUtil/convertExecutor executor) (.renderStats (BoltExecutorStats. 20 (*STORM-CONF* NUM-STAT-BUCKETS))))
+    (.put stats (ClientStatsUtil/convertExecutor executor) (new-stats))
     (log-warn "merged:" stats)
 
     (.workerHeartbeat state storm-id node port

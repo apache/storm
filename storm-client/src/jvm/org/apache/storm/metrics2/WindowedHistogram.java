@@ -1,38 +1,31 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
+ * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
 
-package org.apache.storm.metric.internal;
+package org.apache.storm.metrics2;
 
+import com.codahale.metrics.Histogram;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimerTask;
-import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metric.internal.MetricStatTimer;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 
 /**
- * Acts as a Latency Metric, but also keeps track of approximate latency for the last 10 mins, 3 hours, 1 day, and all time.
+ * Acts as a Histogram, but keeps track of approximate counts for the last 10 mins, 3 hours, 1 day, and all time.
  */
-public class LatencyStatAndMetric implements IMetric {
-    //The current lat and count buckets are protected by a different lock
-    // from the other buckets.  This is to reduce the lock contention
-    // When doing complex calculations.  Never grab the instance object lock
-    // while holding currentLock to avoid deadlocks
-    private final Object currentLock = new byte[0];
+public class WindowedHistogram {
+    private Histogram histogram;
+
     //10 min values
     private final int tmSize;
     private final long[] tmLatBuckets;
@@ -54,9 +47,7 @@ public class LatencyStatAndMetric implements IMetric {
     // All internal state except for the current buckets are
     // protected using the Object Lock
     private long bucketStart;
-    //exact variable time, that is added to the current bucket
-    private long exactExtraLat;
-    private long exactExtraCount;
+
     //all time
     private long allTimeLat;
     private long allTimeCount;
@@ -66,17 +57,10 @@ public class LatencyStatAndMetric implements IMetric {
      *
      * @param numBuckets the number of buckets to divide the time periods into.
      */
-    public LatencyStatAndMetric(int numBuckets) {
-        this(numBuckets, -1);
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param numBuckets the number of buckets to divide the time periods into.
-     * @param startTime  if positive the simulated time to start the from.
-     */
-    LatencyStatAndMetric(int numBuckets, long startTime) {
+    WindowedHistogram(String name, StormMetricRegistry metricRegistry, String topologyId,
+                      String componentId, String streamId, int taskId, int port,
+                      int numBuckets) {
+        this.histogram = metricRegistry.histogram(name, topologyId, componentId, taskId, port, streamId);
         numBuckets = Math.max(numBuckets, 2);
         //We want to capture the full time range, so the target size is as
         // if we had one bucket less, then we do
@@ -97,18 +81,12 @@ public class LatencyStatAndMetric implements IMetric {
         odTime = new long[numBuckets];
         allTimeLat = 0;
         allTimeCount = 0;
-        exactExtraLat = 0;
-        exactExtraCount = 0;
 
-        bucketStart = startTime >= 0 ? startTime : System.currentTimeMillis();
+        bucketStart = Time.currentTimeMillis();
         currentLatBucket = 0;
         currentCountBucket = 0;
-        if (startTime < 0) {
-            task = new Fresher();
-            MetricStatTimer.timer.scheduleAtFixedRate(task, tmSize, tmSize);
-        } else {
-            task = null;
-        }
+        task = new Fresher();
+        MetricStatTimer.scheduleMetricTask(task, tmSize, tmSize);
     }
 
     /**
@@ -117,58 +95,31 @@ public class LatencyStatAndMetric implements IMetric {
      * @param latency what we are recording
      */
     public void record(long latency) {
-        synchronized (currentLock) {
+        this.histogram.update(latency);
+
+        synchronized (this) {
             currentLatBucket += latency;
             currentCountBucket++;
         }
     }
 
-    @Override
-    public synchronized Object getValueAndReset() {
-        return getValueAndReset(System.currentTimeMillis());
-    }
-
-    synchronized Object getValueAndReset(long now) {
+    private void rotateSched() {
         long lat;
         long count;
-        synchronized (currentLock) {
+        long now = Time.currentTimeMillis();
+        synchronized (this) {
             lat = currentLatBucket;
             count = currentCountBucket;
             currentLatBucket = 0;
             currentCountBucket = 0;
-        }
 
-        @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
-        long timeSpent = now - bucketStart;
-        long exactExtraCountSum = count + exactExtraCount;
-        @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
-        double ret = Utils.zeroIfNaNOrInf(
-            ((double) (lat + exactExtraLat)) / exactExtraCountSum);
-        bucketStart = now;
-        exactExtraLat = 0;
-        exactExtraCount = 0;
-        rotateBuckets(lat, count, timeSpent);
-        return ret;
+            long timeSpent = now - bucketStart;
+            bucketStart = now;
+            rotateBuckets(lat, count, timeSpent);
+        }
     }
 
-    synchronized void rotateSched(long now) {
-        long lat;
-        long count;
-        synchronized (currentLock) {
-            lat = currentLatBucket;
-            count = currentCountBucket;
-            currentLatBucket = 0;
-            currentCountBucket = 0;
-        }
-
-        exactExtraLat += lat;
-        exactExtraCount += count;
-        long timeSpent = now - bucketStart;
-        bucketStart = now;
-        rotateBuckets(lat, count, timeSpent);
-    }
-
-    synchronized void rotateBuckets(long lat, long count, long timeSpent) {
+    private void rotateBuckets(long lat, long count, long timeSpent) {
         rotate(lat, count, timeSpent, tmSize, tmTime, tmLatBuckets, tmCountBuckets);
         rotate(lat, count, timeSpent, thSize, thTime, thLatBuckets, thCountBuckets);
         rotate(lat, count, timeSpent, odSize, odTime, odLatBuckets, odCountBuckets);
@@ -176,8 +127,8 @@ public class LatencyStatAndMetric implements IMetric {
         allTimeCount += count;
     }
 
-    private synchronized void rotate(long lat, long count, long timeSpent, long targetSize,
-                                     long[] times, long[] latBuckets, long[] countBuckets) {
+    private void rotate(long lat, long count, long timeSpent, long targetSize,
+                        long[] times, long[] latBuckets, long[] countBuckets) {
         times[0] += timeSpent;
         latBuckets[0] += lat;
         countBuckets[0] += count;
@@ -207,29 +158,26 @@ public class LatencyStatAndMetric implements IMetric {
      * @return a map of time window to average latency. Keys are "600" for last 10 mins "10800" for the last 3 hours "86400" for the last
      *     day ":all-time" for all time
      */
-    public synchronized Map<String, Double> getTimeLatAvg() {
-        return getTimeLatAvg(System.currentTimeMillis());
-    }
-
-    synchronized Map<String, Double> getTimeLatAvg(long now) {
+    public Map<String, Double> getTimeLatAvg() {
         Map<String, Double> ret = new HashMap<>();
         long lat;
         long count;
-        synchronized (currentLock) {
+        long now = Time.currentTimeMillis();
+        synchronized (this) {
             lat = currentLatBucket;
             count = currentCountBucket;
+            long timeSpent = now - bucketStart;
+            ret.put("600", readApproximateLatAvg(lat, count, timeSpent, tmTime, tmLatBuckets, tmCountBuckets, 600 * 1000));
+            ret.put("10800", readApproximateLatAvg(lat, count, timeSpent, thTime, thLatBuckets, thCountBuckets, 10800 * 1000));
+            ret.put("86400", readApproximateLatAvg(lat, count, timeSpent, odTime, odLatBuckets, odCountBuckets, 86400 * 1000));
+            long allTimeCountSum = count + allTimeCount;
+            ret.put(":all-time", Utils.zeroIfNaNOrInf(
+                    (double) lat + allTimeLat) / allTimeCountSum);
         }
-        long timeSpent = now - bucketStart;
-        ret.put("600", readApproximateLatAvg(lat, count, timeSpent, tmTime, tmLatBuckets, tmCountBuckets, 600 * 1000));
-        ret.put("10800", readApproximateLatAvg(lat, count, timeSpent, thTime, thLatBuckets, thCountBuckets, 10800 * 1000));
-        ret.put("86400", readApproximateLatAvg(lat, count, timeSpent, odTime, odLatBuckets, odCountBuckets, 86400 * 1000));
-        long allTimeCountSum = count + allTimeCount;
-        ret.put(":all-time", Utils.zeroIfNaNOrInf(
-            (double) lat + allTimeLat) / allTimeCountSum);
         return ret;
     }
 
-    double readApproximateLatAvg(long lat, long count, long timeSpent, long[] bucketTime,
+    private double readApproximateLatAvg(long lat, long count, long timeSpent, long[] bucketTime,
                                  long[] latBuckets, long[] countBuckets, long desiredTime) {
         long timeNeeded = desiredTime - timeSpent;
         long totalLat = lat;
@@ -252,7 +200,7 @@ public class LatencyStatAndMetric implements IMetric {
     private class Fresher extends TimerTask {
         @Override
         public void run() {
-            rotateSched(System.currentTimeMillis());
+            rotateSched();
         }
     }
 }

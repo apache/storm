@@ -175,7 +175,7 @@ public class ClientStatsUtil {
     /**
      * Provides a way to transform one key into another.
      */
-    interface KeyTransformer<T> {
+    public interface KeyTransformer<T> {
         T transform(Object key);
     }
 

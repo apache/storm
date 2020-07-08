@@ -65,13 +65,13 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.metrics2.ExecutorMetrics;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.org.jctools.queues.MpscChunkedArrayQueue;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.shade.org.json.simple.parser.ParseException;
 import org.apache.storm.stats.ClientStatsUtil;
-import org.apache.storm.stats.CommonStats;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
@@ -614,7 +614,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         return stormId;
     }
 
-    public abstract CommonStats getStats();
+    public abstract ExecutorMetrics getExecutorMetrics();
 
     public String getType() {
         return type;

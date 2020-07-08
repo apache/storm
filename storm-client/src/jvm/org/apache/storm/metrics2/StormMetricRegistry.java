@@ -74,6 +74,13 @@ public class StormMetricRegistry {
         return gauge;
     }
 
+    public Meter meter(String name, String topologyId, String componentId, Integer taskId, Integer workerPort, String streamId) {
+        MetricNames metricNames = workerMetricName(name, topologyId, componentId, streamId, taskId, workerPort);
+        Meter meter = registry.meter(metricNames.getLongName());
+        saveMetricTaskIdMapping(taskId, metricNames, meter, taskIdMeters);
+        return meter;
+    }
+
     public Meter meter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId) {
         MetricNames metricNames = workerMetricName(name, context.getStormId(), componentId, streamId, taskId, context.getThisWorkerPort());
         Meter meter = registry.meter(metricNames.getLongName());
@@ -153,9 +160,20 @@ public class StormMetricRegistry {
         return histogram;
     }
 
+    public Histogram histogram(String name, String topologyId, String componentId, Integer taskId, Integer workerPort, String streamId) {
+        MetricNames metricNames = workerMetricName(name, topologyId, componentId, streamId, taskId, workerPort);
+        Histogram histogram = registry.histogram(metricNames.getLongName());
+        saveMetricTaskIdMapping(taskId, metricNames, histogram, taskIdHistograms);
+        return histogram;
+    }
+
     private static <T extends Metric> void saveMetricTaskIdMapping(Integer taskId, MetricNames names, T metric, Map<Integer,
             Map<String, T>> taskIdMetrics) {
         Map<String, T> metrics = taskIdMetrics.computeIfAbsent(taskId, (tid) -> new HashMap<>());
+        if (metrics.get(names.getV2TickName()) != null) {
+            LOG.warn("Adding duplicate short metric for " + names.getV2TickName()
+                + " with long name " + names.longName);
+        }
         metrics.put(names.getV2TickName(), metric);
     }
 

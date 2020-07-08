@@ -13,10 +13,15 @@
 package org.apache.storm.metric.internal;
 
 import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Just holds a singleton metric/stat timer for use by metric/stat calculations.
  */
-class MetricStatTimer {
+public class MetricStatTimer {
     static Timer timer = new Timer("metric/stat timer", true);
+
+    public static void scheduleMetricTask(TimerTask task, long delay, long period) {
+        timer.scheduleAtFixedRate(task, delay, period);
+    }
 }

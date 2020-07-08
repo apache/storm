@@ -23,9 +23,6 @@ import org.apache.storm.ICredentialsListener;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
-import org.apache.storm.daemon.metrics.BuiltinMetrics;
-import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
-import org.apache.storm.daemon.metrics.BuiltinSpoutMetrics;
 import org.apache.storm.daemon.metrics.SpoutThrottlingMetrics;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
@@ -33,17 +30,14 @@ import org.apache.storm.executor.TupleInfo;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.hooks.info.SpoutAckInfo;
 import org.apache.storm.hooks.info.SpoutFailInfo;
+import org.apache.storm.metrics2.SpoutExecutorMetrics;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.IWaitStrategy.WaitSituation;
-import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.spout.ISpout;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.stats.ClientStatsUtil;
-import org.apache.storm.stats.SpoutExecutorStats;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.TupleImpl;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.MutableLong;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
@@ -64,14 +58,13 @@ public class SpoutExecutor extends Executor {
     private final MutableLong emptyEmitStreak;
     private final SpoutThrottlingMetrics spoutThrottlingMetrics;
     private final boolean hasAckers;
-    private final SpoutExecutorStats stats;
-    private final BuiltinMetrics builtInMetrics;
     SpoutOutputCollectorImpl spoutOutputCollector;
     private Integer maxSpoutPending;
     private List<ISpout> spouts;
     private List<SpoutOutputCollector> outputCollectors;
     private RotatingMap<Long, TupleInfo> pending;
     private long threadId = 0;
+    private SpoutExecutorMetrics executorMetrics;
 
     public SpoutExecutor(final WorkerState workerData, final List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials, ClientStatsUtil.SPOUT);
@@ -85,14 +78,12 @@ public class SpoutExecutor extends Executor {
         this.emittedCount = new MutableLong(0);
         this.emptyEmitStreak = new MutableLong(0);
         this.spoutThrottlingMetrics = new SpoutThrottlingMetrics();
-        this.stats = new SpoutExecutorStats(
-            ConfigUtils.samplingRate(this.getTopoConf()), ObjectReader.getInt(this.getTopoConf().get(Config.NUM_STAT_BUCKETS)));
-        this.builtInMetrics = new BuiltinSpoutMetrics(stats);
+        this.executorMetrics = new SpoutExecutorMetrics(workerTopologyContext, workerData.getMetricRegistry(), topoConf);
     }
 
     @Override
-    public SpoutExecutorStats getStats() {
-        return stats;
+    public SpoutExecutorMetrics getExecutorMetrics() {
+        return executorMetrics;
     }
 
     public void init(final ArrayList<Task> idToTask, int idToTaskBase) throws InterruptedException {
@@ -138,8 +129,6 @@ public class SpoutExecutor extends Executor {
                 hasAckers, rand, hasEventLoggers, isDebug, pending);
             SpoutOutputCollector outputCollector = new SpoutOutputCollector(spoutOutputCollector);
             this.outputCollectors.add(outputCollector);
-
-            builtInMetrics.registerAll(topoConf, taskData.getUserContext());
 
             if (spoutObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) spoutObject).setCredentials(credentials);
@@ -339,8 +328,7 @@ public class SpoutExecutor extends Executor {
                 new SpoutAckInfo(tupleInfo.getMessageId(), taskId, timeDelta).applyOn(taskData.getUserContext());
             }
             if (hasAckers && timeDelta != null) {
-                executor.getStats().spoutAckedTuple(tupleInfo.getStream(), timeDelta,
-                                                    taskData.getTaskMetrics().getAcked(tupleInfo.getStream()));
+                executorMetrics.spoutAckedTuple(taskData.getComponentId(), tupleInfo.getStream(), taskData.getTaskId(), timeDelta);
             }
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
@@ -357,8 +345,7 @@ public class SpoutExecutor extends Executor {
             spout.fail(tupleInfo.getMessageId());
             new SpoutFailInfo(tupleInfo.getMessageId(), taskId, timeDelta).applyOn(taskData.getUserContext());
             if (timeDelta != null) {
-                executor.getStats().spoutFailedTuple(tupleInfo.getStream(), timeDelta,
-                                                     taskData.getTaskMetrics().getFailed(tupleInfo.getStream()));
+                executor.getExecutorMetrics().spoutFailedTuple(taskData.getComponentId(), tupleInfo.getStream(), taskData.getTaskId());
             }
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
