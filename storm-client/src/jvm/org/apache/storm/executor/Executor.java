@@ -126,7 +126,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected int idToTaskBase;
     protected String hostname;
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
-    private boolean needToRefreshCreds = true;
+    private AtomicBoolean needToRefreshCreds = new AtomicBoolean(true);
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -295,12 +295,12 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     public void setNeedToRefreshCreds() {
-        this.needToRefreshCreds = true;
+        this.needToRefreshCreds.set(true);
     }
 
     protected void updateExecCredsIfRequired() {
-        if (this.needToRefreshCreds) {
-            this.needToRefreshCreds = false;
+        if (this.needToRefreshCreds.get()) {
+            this.needToRefreshCreds.set(false);
             LOG.info("The credentials are being updated {}.", executorId);
             Credentials creds = this.workerData.getCredentials();
             idToTask.stream().map(Task::getTaskObject).filter(taskObject -> taskObject instanceof ICredentialsListener)
