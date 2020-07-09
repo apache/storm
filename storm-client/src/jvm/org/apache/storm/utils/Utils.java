@@ -1200,8 +1200,7 @@ public class Utils {
 
     public static String getTopologyId(String name, Nimbus.Iface client) {
         try {
-            ClusterSummary summary = client.getClusterInfo();
-            for (TopologySummary s : summary.get_topologies()) {
+            for (TopologySummary s : client.getTopologySummaries()) {
                 if (s.get_name().equals(name)) {
                     return s.get_id();
                 }

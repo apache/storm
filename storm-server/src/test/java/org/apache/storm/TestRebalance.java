@@ -14,6 +14,7 @@ package org.apache.storm;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
@@ -43,11 +44,10 @@ public class TestRebalance {
     private static final Logger LOG = LoggerFactory.getLogger(TestRebalance.class);
 
     public static String topoNameToId(String topoName, ILocalCluster cluster) throws TException {
-        for (TopologySummary topoSum : cluster.getClusterInfo().get_topologies()) {
+        TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
             if (topoSum.get_name().equals(topoName)) {
                 return topoSum.get_id();
             }
-        }
         return null;
     }
 
@@ -151,15 +151,11 @@ public class TestRebalance {
 
     public boolean checkTopologyScheduled(String topoName, ILocalCluster cluster) throws TException {
         if (checkTopologyUp(topoName, cluster)) {
-            ClusterSummary sum = cluster.getClusterInfo();
-            for (TopologySummary topoSum : sum.get_topologies()) {
-                if (topoSum.get_name().equals(topoName)) {
-                    String status = topoSum.get_status();
-                    String sched_status = topoSum.get_sched_status();
-                    if (status.equals("ACTIVE") && (sched_status != null && !sched_status.equals(""))) {
-                        return true;
-                    }
-                }
+            TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
+            String status = topoSum.get_status();
+            String sched_status = topoSum.get_sched_status();
+            if (status.equals("ACTIVE") && (sched_status != null && !sched_status.equals(""))) {
+                return true;
             }
         }
         return false;
@@ -167,12 +163,10 @@ public class TestRebalance {
 
     public boolean checkTopologyUp(String topoName, ILocalCluster cluster) throws TException {
         ClusterSummary sum = cluster.getClusterInfo();
-
-        for (TopologySummary topoSum : sum.get_topologies()) {
-            if (topoSum.get_name().equals(topoName)) {
+        TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
+            if (topoSum != null) {
                 return true;
             }
-        }
         return false;
     }
 }

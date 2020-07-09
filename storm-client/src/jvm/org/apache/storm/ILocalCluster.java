@@ -14,6 +14,7 @@ package org.apache.storm;
 
 import java.util.Map;
 import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.KillOptions;
@@ -21,6 +22,7 @@ import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.thrift.TException;
 
 /**
@@ -134,6 +136,12 @@ public interface ILocalCluster extends AutoCloseable {
      * @throws TException on any error from nimbus
      */
     ClusterSummary getClusterInfo() throws TException;
+
+    java.util.List<TopologySummary> getTopologySummaries() throws AuthorizationException, TException;
+
+    TopologySummary getTopologySummaryByName(java.lang.String name) throws AuthorizationException, TException;
+
+    TopologySummary getTopologySummaryById(java.lang.String id) throws AuthorizationException, TException;
 
     /**
      * Get the state of a topology.

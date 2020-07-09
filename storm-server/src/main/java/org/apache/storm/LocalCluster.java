@@ -82,6 +82,7 @@ import org.apache.storm.generated.SupervisorWorkerHeartbeats;
 import org.apache.storm.generated.TopologyHistoryInfo;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyPageInfo;
+import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
@@ -570,6 +571,21 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     @Override
     public ClusterSummary getClusterInfo() throws TException {
         return getNimbus().getClusterInfo();
+    }
+
+    @Override
+    public List<TopologySummary> getTopologySummaries() throws AuthorizationException, TException {
+        return getNimbus().getTopologySummaries();
+    }
+
+    @Override
+    public TopologySummary getTopologySummaryByName(String name) throws AuthorizationException, TException {
+        return getNimbus().getTopologySummaryByName(name);
+    }
+
+    @Override
+    public TopologySummary getTopologySummaryById(String id) throws AuthorizationException, TException {
+        return getNimbus().getTopologySummaryById(id);
     }
 
     @Override

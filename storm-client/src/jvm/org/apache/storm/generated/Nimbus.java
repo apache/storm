@@ -107,6 +107,12 @@ public class Nimbus {
 
     public ClusterSummary getClusterInfo() throws AuthorizationException, org.apache.storm.thrift.TException;
 
+    public java.util.List<TopologySummary> getTopologySummaries() throws AuthorizationException, org.apache.storm.thrift.TException;
+
+    public TopologySummary getTopologySummaryByName(java.lang.String name) throws AuthorizationException, org.apache.storm.thrift.TException;
+
+    public TopologySummary getTopologySummaryById(java.lang.String id) throws AuthorizationException, org.apache.storm.thrift.TException;
+
     public NimbusSummary getLeader() throws AuthorizationException, org.apache.storm.thrift.TException;
 
     public boolean isTopologyNameAllowed(java.lang.String name) throws AuthorizationException, org.apache.storm.thrift.TException;
@@ -240,6 +246,12 @@ public class Nimbus {
     public void getNimbusConf(org.apache.storm.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.storm.thrift.TException;
 
     public void getClusterInfo(org.apache.storm.thrift.async.AsyncMethodCallback<ClusterSummary> resultHandler) throws org.apache.storm.thrift.TException;
+
+    public void getTopologySummaries(org.apache.storm.thrift.async.AsyncMethodCallback<java.util.List<TopologySummary>> resultHandler) throws org.apache.storm.thrift.TException;
+
+    public void getTopologySummaryByName(java.lang.String name, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException;
+
+    public void getTopologySummaryById(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException;
 
     public void getLeader(org.apache.storm.thrift.async.AsyncMethodCallback<NimbusSummary> resultHandler) throws org.apache.storm.thrift.TException;
 
@@ -1163,6 +1175,83 @@ public class Nimbus {
         throw result.aze;
       }
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getClusterInfo failed: unknown result");
+    }
+
+    public java.util.List<TopologySummary> getTopologySummaries() throws AuthorizationException, org.apache.storm.thrift.TException
+    {
+      send_getTopologySummaries();
+      return recv_getTopologySummaries();
+    }
+
+    public void send_getTopologySummaries() throws org.apache.storm.thrift.TException
+    {
+      getTopologySummaries_args args = new getTopologySummaries_args();
+      sendBase("getTopologySummaries", args);
+    }
+
+    public java.util.List<TopologySummary> recv_getTopologySummaries() throws AuthorizationException, org.apache.storm.thrift.TException
+    {
+      getTopologySummaries_result result = new getTopologySummaries_result();
+      receiveBase(result, "getTopologySummaries");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.aze != null) {
+        throw result.aze;
+      }
+      throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologySummaries failed: unknown result");
+    }
+
+    public TopologySummary getTopologySummaryByName(java.lang.String name) throws AuthorizationException, org.apache.storm.thrift.TException
+    {
+      send_getTopologySummaryByName(name);
+      return recv_getTopologySummaryByName();
+    }
+
+    public void send_getTopologySummaryByName(java.lang.String name) throws org.apache.storm.thrift.TException
+    {
+      getTopologySummaryByName_args args = new getTopologySummaryByName_args();
+      args.set_name(name);
+      sendBase("getTopologySummaryByName", args);
+    }
+
+    public TopologySummary recv_getTopologySummaryByName() throws AuthorizationException, org.apache.storm.thrift.TException
+    {
+      getTopologySummaryByName_result result = new getTopologySummaryByName_result();
+      receiveBase(result, "getTopologySummaryByName");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.aze != null) {
+        throw result.aze;
+      }
+      throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologySummaryByName failed: unknown result");
+    }
+
+    public TopologySummary getTopologySummaryById(java.lang.String id) throws AuthorizationException, org.apache.storm.thrift.TException
+    {
+      send_getTopologySummaryById(id);
+      return recv_getTopologySummaryById();
+    }
+
+    public void send_getTopologySummaryById(java.lang.String id) throws org.apache.storm.thrift.TException
+    {
+      getTopologySummaryById_args args = new getTopologySummaryById_args();
+      args.set_id(id);
+      sendBase("getTopologySummaryById", args);
+    }
+
+    public TopologySummary recv_getTopologySummaryById() throws AuthorizationException, org.apache.storm.thrift.TException
+    {
+      getTopologySummaryById_result result = new getTopologySummaryById_result();
+      receiveBase(result, "getTopologySummaryById");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.aze != null) {
+        throw result.aze;
+      }
+      throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologySummaryById failed: unknown result");
     }
 
     public NimbusSummary getLeader() throws AuthorizationException, org.apache.storm.thrift.TException
@@ -2760,6 +2849,99 @@ public class Nimbus {
       }
     }
 
+    public void getTopologySummaries(org.apache.storm.thrift.async.AsyncMethodCallback<java.util.List<TopologySummary>> resultHandler) throws org.apache.storm.thrift.TException {
+      checkReady();
+      getTopologySummaries_call method_call = new getTopologySummaries_call(resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class getTopologySummaries_call extends org.apache.storm.thrift.async.TAsyncMethodCall<java.util.List<TopologySummary>> {
+      public getTopologySummaries_call(org.apache.storm.thrift.async.AsyncMethodCallback<java.util.List<TopologySummary>> resultHandler, org.apache.storm.thrift.async.TAsyncClient client, org.apache.storm.thrift.protocol.TProtocolFactory protocolFactory, org.apache.storm.thrift.transport.TNonblockingTransport transport) throws org.apache.storm.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+      }
+
+      public void write_args(org.apache.storm.thrift.protocol.TProtocol prot) throws org.apache.storm.thrift.TException {
+        prot.writeMessageBegin(new org.apache.storm.thrift.protocol.TMessage("getTopologySummaries", org.apache.storm.thrift.protocol.TMessageType.CALL, 0));
+        getTopologySummaries_args args = new getTopologySummaries_args();
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public java.util.List<TopologySummary> getResult() throws AuthorizationException, org.apache.storm.thrift.TException {
+        if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new java.lang.IllegalStateException("Method call not finished!");
+        }
+        org.apache.storm.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.storm.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.storm.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_getTopologySummaries();
+      }
+    }
+
+    public void getTopologySummaryByName(java.lang.String name, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException {
+      checkReady();
+      getTopologySummaryByName_call method_call = new getTopologySummaryByName_call(name, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class getTopologySummaryByName_call extends org.apache.storm.thrift.async.TAsyncMethodCall<TopologySummary> {
+      private java.lang.String name;
+      public getTopologySummaryByName_call(java.lang.String name, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler, org.apache.storm.thrift.async.TAsyncClient client, org.apache.storm.thrift.protocol.TProtocolFactory protocolFactory, org.apache.storm.thrift.transport.TNonblockingTransport transport) throws org.apache.storm.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.name = name;
+      }
+
+      public void write_args(org.apache.storm.thrift.protocol.TProtocol prot) throws org.apache.storm.thrift.TException {
+        prot.writeMessageBegin(new org.apache.storm.thrift.protocol.TMessage("getTopologySummaryByName", org.apache.storm.thrift.protocol.TMessageType.CALL, 0));
+        getTopologySummaryByName_args args = new getTopologySummaryByName_args();
+        args.set_name(name);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public TopologySummary getResult() throws AuthorizationException, org.apache.storm.thrift.TException {
+        if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new java.lang.IllegalStateException("Method call not finished!");
+        }
+        org.apache.storm.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.storm.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.storm.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_getTopologySummaryByName();
+      }
+    }
+
+    public void getTopologySummaryById(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException {
+      checkReady();
+      getTopologySummaryById_call method_call = new getTopologySummaryById_call(id, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class getTopologySummaryById_call extends org.apache.storm.thrift.async.TAsyncMethodCall<TopologySummary> {
+      private java.lang.String id;
+      public getTopologySummaryById_call(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler, org.apache.storm.thrift.async.TAsyncClient client, org.apache.storm.thrift.protocol.TProtocolFactory protocolFactory, org.apache.storm.thrift.transport.TNonblockingTransport transport) throws org.apache.storm.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.id = id;
+      }
+
+      public void write_args(org.apache.storm.thrift.protocol.TProtocol prot) throws org.apache.storm.thrift.TException {
+        prot.writeMessageBegin(new org.apache.storm.thrift.protocol.TMessage("getTopologySummaryById", org.apache.storm.thrift.protocol.TMessageType.CALL, 0));
+        getTopologySummaryById_args args = new getTopologySummaryById_args();
+        args.set_id(id);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public TopologySummary getResult() throws AuthorizationException, org.apache.storm.thrift.TException {
+        if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new java.lang.IllegalStateException("Method call not finished!");
+        }
+        org.apache.storm.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.storm.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.storm.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_getTopologySummaryById();
+      }
+    }
+
     public void getLeader(org.apache.storm.thrift.async.AsyncMethodCallback<NimbusSummary> resultHandler) throws org.apache.storm.thrift.TException {
       checkReady();
       getLeader_call method_call = new getLeader_call(resultHandler, this, ___protocolFactory, ___transport);
@@ -3371,6 +3553,9 @@ public class Nimbus {
       processMap.put("downloadChunk", new downloadChunk());
       processMap.put("getNimbusConf", new getNimbusConf());
       processMap.put("getClusterInfo", new getClusterInfo());
+      processMap.put("getTopologySummaries", new getTopologySummaries());
+      processMap.put("getTopologySummaryByName", new getTopologySummaryByName());
+      processMap.put("getTopologySummaryById", new getTopologySummaryById());
       processMap.put("getLeader", new getLeader());
       processMap.put("isTopologyNameAllowed", new isTopologyNameAllowed());
       processMap.put("getTopologyInfo", new getTopologyInfo());
@@ -4370,6 +4555,93 @@ public class Nimbus {
       }
     }
 
+    public static class getTopologySummaries<I extends Iface> extends org.apache.storm.thrift.ProcessFunction<I, getTopologySummaries_args> {
+      public getTopologySummaries() {
+        super("getTopologySummaries");
+      }
+
+      public getTopologySummaries_args getEmptyArgsInstance() {
+        return new getTopologySummaries_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      @Override
+      protected boolean rethrowUnhandledExceptions() {
+        return false;
+      }
+
+      public getTopologySummaries_result getResult(I iface, getTopologySummaries_args args) throws org.apache.storm.thrift.TException {
+        getTopologySummaries_result result = new getTopologySummaries_result();
+        try {
+          result.success = iface.getTopologySummaries();
+        } catch (AuthorizationException aze) {
+          result.aze = aze;
+        }
+        return result;
+      }
+    }
+
+    public static class getTopologySummaryByName<I extends Iface> extends org.apache.storm.thrift.ProcessFunction<I, getTopologySummaryByName_args> {
+      public getTopologySummaryByName() {
+        super("getTopologySummaryByName");
+      }
+
+      public getTopologySummaryByName_args getEmptyArgsInstance() {
+        return new getTopologySummaryByName_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      @Override
+      protected boolean rethrowUnhandledExceptions() {
+        return false;
+      }
+
+      public getTopologySummaryByName_result getResult(I iface, getTopologySummaryByName_args args) throws org.apache.storm.thrift.TException {
+        getTopologySummaryByName_result result = new getTopologySummaryByName_result();
+        try {
+          result.success = iface.getTopologySummaryByName(args.name);
+        } catch (AuthorizationException aze) {
+          result.aze = aze;
+        }
+        return result;
+      }
+    }
+
+    public static class getTopologySummaryById<I extends Iface> extends org.apache.storm.thrift.ProcessFunction<I, getTopologySummaryById_args> {
+      public getTopologySummaryById() {
+        super("getTopologySummaryById");
+      }
+
+      public getTopologySummaryById_args getEmptyArgsInstance() {
+        return new getTopologySummaryById_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      @Override
+      protected boolean rethrowUnhandledExceptions() {
+        return false;
+      }
+
+      public getTopologySummaryById_result getResult(I iface, getTopologySummaryById_args args) throws org.apache.storm.thrift.TException {
+        getTopologySummaryById_result result = new getTopologySummaryById_result();
+        try {
+          result.success = iface.getTopologySummaryById(args.id);
+        } catch (AuthorizationException aze) {
+          result.aze = aze;
+        }
+        return result;
+      }
+    }
+
     public static class getLeader<I extends Iface> extends org.apache.storm.thrift.ProcessFunction<I, getLeader_args> {
       public getLeader() {
         super("getLeader");
@@ -4925,6 +5197,9 @@ public class Nimbus {
       processMap.put("downloadChunk", new downloadChunk());
       processMap.put("getNimbusConf", new getNimbusConf());
       processMap.put("getClusterInfo", new getClusterInfo());
+      processMap.put("getTopologySummaries", new getTopologySummaries());
+      processMap.put("getTopologySummaryByName", new getTopologySummaryByName());
+      processMap.put("getTopologySummaryById", new getTopologySummaryById());
       processMap.put("getLeader", new getLeader());
       processMap.put("isTopologyNameAllowed", new isTopologyNameAllowed());
       processMap.put("getTopologyInfo", new getTopologyInfo());
@@ -7134,6 +7409,201 @@ public class Nimbus {
 
       public void start(I iface, getClusterInfo_args args, org.apache.storm.thrift.async.AsyncMethodCallback<ClusterSummary> resultHandler) throws org.apache.storm.thrift.TException {
         iface.getClusterInfo(resultHandler);
+      }
+    }
+
+    public static class getTopologySummaries<I extends AsyncIface> extends org.apache.storm.thrift.AsyncProcessFunction<I, getTopologySummaries_args, java.util.List<TopologySummary>> {
+      public getTopologySummaries() {
+        super("getTopologySummaries");
+      }
+
+      public getTopologySummaries_args getEmptyArgsInstance() {
+        return new getTopologySummaries_args();
+      }
+
+      public org.apache.storm.thrift.async.AsyncMethodCallback<java.util.List<TopologySummary>> getResultHandler(final org.apache.storm.thrift.server.AbstractNonblockingServer.AsyncFrameBuffer fb, final int seqid) {
+        final org.apache.storm.thrift.AsyncProcessFunction fcall = this;
+        return new org.apache.storm.thrift.async.AsyncMethodCallback<java.util.List<TopologySummary>>() { 
+          public void onComplete(java.util.List<TopologySummary> o) {
+            getTopologySummaries_result result = new getTopologySummaries_result();
+            result.success = o;
+            try {
+              fcall.sendResponse(fb, result, org.apache.storm.thrift.protocol.TMessageType.REPLY,seqid);
+            } catch (org.apache.storm.thrift.transport.TTransportException e) {
+              _LOGGER.error("TTransportException writing to internal frame buffer", e);
+              fb.close();
+            } catch (java.lang.Exception e) {
+              _LOGGER.error("Exception writing to internal frame buffer", e);
+              onError(e);
+            }
+          }
+          public void onError(java.lang.Exception e) {
+            byte msgType = org.apache.storm.thrift.protocol.TMessageType.REPLY;
+            org.apache.storm.thrift.TSerializable msg;
+            getTopologySummaries_result result = new getTopologySummaries_result();
+            if (e instanceof AuthorizationException) {
+              result.aze = (AuthorizationException) e;
+              result.set_aze_isSet(true);
+              msg = result;
+            } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
+              _LOGGER.error("TTransportException inside handler", e);
+              fb.close();
+              return;
+            } else if (e instanceof org.apache.storm.thrift.TApplicationException) {
+              _LOGGER.error("TApplicationException inside handler", e);
+              msgType = org.apache.storm.thrift.protocol.TMessageType.EXCEPTION;
+              msg = (org.apache.storm.thrift.TApplicationException)e;
+            } else {
+              _LOGGER.error("Exception inside handler", e);
+              msgType = org.apache.storm.thrift.protocol.TMessageType.EXCEPTION;
+              msg = new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.INTERNAL_ERROR, e.getMessage());
+            }
+            try {
+              fcall.sendResponse(fb,msg,msgType,seqid);
+            } catch (java.lang.Exception ex) {
+              _LOGGER.error("Exception writing to internal frame buffer", ex);
+              fb.close();
+            }
+          }
+        };
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public void start(I iface, getTopologySummaries_args args, org.apache.storm.thrift.async.AsyncMethodCallback<java.util.List<TopologySummary>> resultHandler) throws org.apache.storm.thrift.TException {
+        iface.getTopologySummaries(resultHandler);
+      }
+    }
+
+    public static class getTopologySummaryByName<I extends AsyncIface> extends org.apache.storm.thrift.AsyncProcessFunction<I, getTopologySummaryByName_args, TopologySummary> {
+      public getTopologySummaryByName() {
+        super("getTopologySummaryByName");
+      }
+
+      public getTopologySummaryByName_args getEmptyArgsInstance() {
+        return new getTopologySummaryByName_args();
+      }
+
+      public org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> getResultHandler(final org.apache.storm.thrift.server.AbstractNonblockingServer.AsyncFrameBuffer fb, final int seqid) {
+        final org.apache.storm.thrift.AsyncProcessFunction fcall = this;
+        return new org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary>() { 
+          public void onComplete(TopologySummary o) {
+            getTopologySummaryByName_result result = new getTopologySummaryByName_result();
+            result.success = o;
+            try {
+              fcall.sendResponse(fb, result, org.apache.storm.thrift.protocol.TMessageType.REPLY,seqid);
+            } catch (org.apache.storm.thrift.transport.TTransportException e) {
+              _LOGGER.error("TTransportException writing to internal frame buffer", e);
+              fb.close();
+            } catch (java.lang.Exception e) {
+              _LOGGER.error("Exception writing to internal frame buffer", e);
+              onError(e);
+            }
+          }
+          public void onError(java.lang.Exception e) {
+            byte msgType = org.apache.storm.thrift.protocol.TMessageType.REPLY;
+            org.apache.storm.thrift.TSerializable msg;
+            getTopologySummaryByName_result result = new getTopologySummaryByName_result();
+            if (e instanceof AuthorizationException) {
+              result.aze = (AuthorizationException) e;
+              result.set_aze_isSet(true);
+              msg = result;
+            } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
+              _LOGGER.error("TTransportException inside handler", e);
+              fb.close();
+              return;
+            } else if (e instanceof org.apache.storm.thrift.TApplicationException) {
+              _LOGGER.error("TApplicationException inside handler", e);
+              msgType = org.apache.storm.thrift.protocol.TMessageType.EXCEPTION;
+              msg = (org.apache.storm.thrift.TApplicationException)e;
+            } else {
+              _LOGGER.error("Exception inside handler", e);
+              msgType = org.apache.storm.thrift.protocol.TMessageType.EXCEPTION;
+              msg = new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.INTERNAL_ERROR, e.getMessage());
+            }
+            try {
+              fcall.sendResponse(fb,msg,msgType,seqid);
+            } catch (java.lang.Exception ex) {
+              _LOGGER.error("Exception writing to internal frame buffer", ex);
+              fb.close();
+            }
+          }
+        };
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public void start(I iface, getTopologySummaryByName_args args, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException {
+        iface.getTopologySummaryByName(args.name,resultHandler);
+      }
+    }
+
+    public static class getTopologySummaryById<I extends AsyncIface> extends org.apache.storm.thrift.AsyncProcessFunction<I, getTopologySummaryById_args, TopologySummary> {
+      public getTopologySummaryById() {
+        super("getTopologySummaryById");
+      }
+
+      public getTopologySummaryById_args getEmptyArgsInstance() {
+        return new getTopologySummaryById_args();
+      }
+
+      public org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> getResultHandler(final org.apache.storm.thrift.server.AbstractNonblockingServer.AsyncFrameBuffer fb, final int seqid) {
+        final org.apache.storm.thrift.AsyncProcessFunction fcall = this;
+        return new org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary>() { 
+          public void onComplete(TopologySummary o) {
+            getTopologySummaryById_result result = new getTopologySummaryById_result();
+            result.success = o;
+            try {
+              fcall.sendResponse(fb, result, org.apache.storm.thrift.protocol.TMessageType.REPLY,seqid);
+            } catch (org.apache.storm.thrift.transport.TTransportException e) {
+              _LOGGER.error("TTransportException writing to internal frame buffer", e);
+              fb.close();
+            } catch (java.lang.Exception e) {
+              _LOGGER.error("Exception writing to internal frame buffer", e);
+              onError(e);
+            }
+          }
+          public void onError(java.lang.Exception e) {
+            byte msgType = org.apache.storm.thrift.protocol.TMessageType.REPLY;
+            org.apache.storm.thrift.TSerializable msg;
+            getTopologySummaryById_result result = new getTopologySummaryById_result();
+            if (e instanceof AuthorizationException) {
+              result.aze = (AuthorizationException) e;
+              result.set_aze_isSet(true);
+              msg = result;
+            } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
+              _LOGGER.error("TTransportException inside handler", e);
+              fb.close();
+              return;
+            } else if (e instanceof org.apache.storm.thrift.TApplicationException) {
+              _LOGGER.error("TApplicationException inside handler", e);
+              msgType = org.apache.storm.thrift.protocol.TMessageType.EXCEPTION;
+              msg = (org.apache.storm.thrift.TApplicationException)e;
+            } else {
+              _LOGGER.error("Exception inside handler", e);
+              msgType = org.apache.storm.thrift.protocol.TMessageType.EXCEPTION;
+              msg = new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.INTERNAL_ERROR, e.getMessage());
+            }
+            try {
+              fcall.sendResponse(fb,msg,msgType,seqid);
+            } catch (java.lang.Exception ex) {
+              _LOGGER.error("Exception writing to internal frame buffer", ex);
+              fb.close();
+            }
+          }
+        };
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public void start(I iface, getTopologySummaryById_args args, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException {
+        iface.getTopologySummaryById(args.id,resultHandler);
       }
     }
 
@@ -37610,6 +38080,2461 @@ public class Nimbus {
     }
   }
 
+  public static class getTopologySummaries_args implements org.apache.storm.thrift.TBase<getTopologySummaries_args, getTopologySummaries_args._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummaries_args>   {
+    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaries_args");
+
+
+    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaries_argsStandardSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaries_argsTupleSchemeFactory();
+
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
+;
+
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByName(java.lang.String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+
+      _Fields(short thriftId, java.lang.String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public java.lang.String getFieldName() {
+        return _fieldName;
+      }
+    }
+    public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaries_args.class, metaDataMap);
+    }
+
+    public getTopologySummaries_args() {
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getTopologySummaries_args(getTopologySummaries_args other) {
+    }
+
+    public getTopologySummaries_args deepCopy() {
+      return new getTopologySummaries_args(this);
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
+      switch (field) {
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) {
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new java.lang.IllegalArgumentException();
+      }
+
+      switch (field) {
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getTopologySummaries_args)
+        return this.equals((getTopologySummaries_args)that);
+      return false;
+    }
+
+    public boolean equals(getTopologySummaries_args that) {
+      if (that == null)
+        return false;
+      if (this == that)
+        return true;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = 1;
+
+      return hashCode;
+    }
+
+    @Override
+    public int compareTo(getTopologySummaries_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      return 0;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.storm.thrift.protocol.TProtocol iprot) throws org.apache.storm.thrift.TException {
+      scheme(iprot).read(iprot, this);
+    }
+
+    public void write(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
+      scheme(oprot).write(oprot, this);
+    }
+
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummaries_args(");
+      boolean first = true;
+
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.storm.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
+      try {
+        read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getTopologySummaries_argsStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaries_argsStandardScheme getScheme() {
+        return new getTopologySummaries_argsStandardScheme();
+      }
+    }
+
+    private static class getTopologySummaries_argsStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummaries_args> {
+
+      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummaries_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.storm.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            default:
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummaries_args struct) throws org.apache.storm.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getTopologySummaries_argsTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaries_argsTupleScheme getScheme() {
+        return new getTopologySummaries_argsTupleScheme();
+      }
+    }
+
+    private static class getTopologySummaries_argsTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummaries_args> {
+
+      @Override
+      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaries_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+      }
+
+      @Override
+      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaries_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+      }
+    }
+
+    private static <S extends org.apache.storm.thrift.scheme.IScheme> S scheme(org.apache.storm.thrift.protocol.TProtocol proto) {
+      return (org.apache.storm.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  public static class getTopologySummaries_result implements org.apache.storm.thrift.TBase<getTopologySummaries_result, getTopologySummaries_result._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummaries_result>   {
+    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaries_result");
+
+    private static final org.apache.storm.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("success", org.apache.storm.thrift.protocol.TType.LIST, (short)0);
+    private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaries_resultStandardSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaries_resultTupleSchemeFactory();
+
+    private @org.apache.storm.thrift.annotation.Nullable java.util.List<TopologySummary> success; // required
+    private @org.apache.storm.thrift.annotation.Nullable AuthorizationException aze; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      AZE((short)1, "aze");
+
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // AZE
+            return AZE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByName(java.lang.String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+
+      _Fields(short thriftId, java.lang.String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public java.lang.String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.storm.thrift.meta_data.FieldMetaData("success", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.ListMetaData(org.apache.storm.thrift.protocol.TType.LIST, 
+              new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologySummary.class))));
+      tmpMap.put(_Fields.AZE, new org.apache.storm.thrift.meta_data.FieldMetaData("aze", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaries_result.class, metaDataMap);
+    }
+
+    public getTopologySummaries_result() {
+    }
+
+    public getTopologySummaries_result(
+      java.util.List<TopologySummary> success,
+      AuthorizationException aze)
+    {
+      this();
+      this.success = success;
+      this.aze = aze;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getTopologySummaries_result(getTopologySummaries_result other) {
+      if (other.is_set_success()) {
+        java.util.List<TopologySummary> __this__success = new java.util.ArrayList<TopologySummary>(other.success.size());
+        for (TopologySummary other_element : other.success) {
+          __this__success.add(new TopologySummary(other_element));
+        }
+        this.success = __this__success;
+      }
+      if (other.is_set_aze()) {
+        this.aze = new AuthorizationException(other.aze);
+      }
+    }
+
+    public getTopologySummaries_result deepCopy() {
+      return new getTopologySummaries_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+      this.aze = null;
+    }
+
+    public int get_success_size() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.util.Iterator<TopologySummary> get_success_iterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void add_to_success(TopologySummary elem) {
+      if (this.success == null) {
+        this.success = new java.util.ArrayList<TopologySummary>();
+      }
+      this.success.add(elem);
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.util.List<TopologySummary> get_success() {
+      return this.success;
+    }
+
+    public void set_success(@org.apache.storm.thrift.annotation.Nullable java.util.List<TopologySummary> success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public AuthorizationException get_aze() {
+      return this.aze;
+    }
+
+    public void set_aze(@org.apache.storm.thrift.annotation.Nullable AuthorizationException aze) {
+      this.aze = aze;
+    }
+
+    public void unset_aze() {
+      this.aze = null;
+    }
+
+    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
+    public boolean is_set_aze() {
+      return this.aze != null;
+    }
+
+    public void set_aze_isSet(boolean value) {
+      if (!value) {
+        this.aze = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((java.util.List<TopologySummary>)value);
+        }
+        break;
+
+      case AZE:
+        if (value == null) {
+          unset_aze();
+        } else {
+          set_aze((AuthorizationException)value);
+        }
+        break;
+
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case AZE:
+        return get_aze();
+
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new java.lang.IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case AZE:
+        return is_set_aze();
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getTopologySummaries_result)
+        return this.equals((getTopologySummaries_result)that);
+      return false;
+    }
+
+    public boolean equals(getTopologySummaries_result that) {
+      if (that == null)
+        return false;
+      if (this == that)
+        return true;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_aze = true && this.is_set_aze();
+      boolean that_present_aze = true && that.is_set_aze();
+      if (this_present_aze || that_present_aze) {
+        if (!(this_present_aze && that_present_aze))
+          return false;
+        if (!this.aze.equals(that.aze))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = 1;
+
+      hashCode = hashCode * 8191 + ((is_set_success()) ? 131071 : 524287);
+      if (is_set_success())
+        hashCode = hashCode * 8191 + success.hashCode();
+
+      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
+      if (is_set_aze())
+        hashCode = hashCode * 8191 + aze.hashCode();
+
+      return hashCode;
+    }
+
+    @Override
+    public int compareTo(getTopologySummaries_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = java.lang.Boolean.valueOf(is_set_success()).compareTo(other.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.success, other.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_aze()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.aze, other.aze);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.storm.thrift.protocol.TProtocol iprot) throws org.apache.storm.thrift.TException {
+      scheme(iprot).read(iprot, this);
+    }
+
+    public void write(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
+      scheme(oprot).write(oprot, this);
+      }
+
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummaries_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("aze:");
+      if (this.aze == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.aze);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.storm.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
+      try {
+        read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getTopologySummaries_resultStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaries_resultStandardScheme getScheme() {
+        return new getTopologySummaries_resultStandardScheme();
+      }
+    }
+
+    private static class getTopologySummaries_resultStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummaries_result> {
+
+      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummaries_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.storm.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
+                {
+                  org.apache.storm.thrift.protocol.TList _list978 = iprot.readListBegin();
+                  struct.success = new java.util.ArrayList<TopologySummary>(_list978.size);
+                  @org.apache.storm.thrift.annotation.Nullable TopologySummary _elem979;
+                  for (int _i980 = 0; _i980 < _list978.size; ++_i980)
+                  {
+                    _elem979 = new TopologySummary();
+                    _elem979.read(iprot);
+                    struct.success.add(_elem979);
+                  }
+                  iprot.readListEnd();
+                }
+                struct.set_success_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            case 1: // AZE
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
+                struct.aze = new AuthorizationException();
+                struct.aze.read(iprot);
+                struct.set_aze_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummaries_result struct) throws org.apache.storm.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          {
+            oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.success.size()));
+            for (TopologySummary _iter981 : struct.success)
+            {
+              _iter981.write(oprot);
+            }
+            oprot.writeListEnd();
+          }
+          oprot.writeFieldEnd();
+        }
+        if (struct.aze != null) {
+          oprot.writeFieldBegin(AZE_FIELD_DESC);
+          struct.aze.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getTopologySummaries_resultTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaries_resultTupleScheme getScheme() {
+        return new getTopologySummaries_resultTupleScheme();
+      }
+    }
+
+    private static class getTopologySummaries_resultTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummaries_result> {
+
+      @Override
+      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaries_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet optionals = new java.util.BitSet();
+        if (struct.is_set_success()) {
+          optionals.set(0);
+        }
+        if (struct.is_set_aze()) {
+          optionals.set(1);
+        }
+        oprot.writeBitSet(optionals, 2);
+        if (struct.is_set_success()) {
+          {
+            oprot.writeI32(struct.success.size());
+            for (TopologySummary _iter982 : struct.success)
+            {
+              _iter982.write(oprot);
+            }
+          }
+        }
+        if (struct.is_set_aze()) {
+          struct.aze.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaries_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet incoming = iprot.readBitSet(2);
+        if (incoming.get(0)) {
+          {
+            org.apache.storm.thrift.protocol.TList _list983 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+            struct.success = new java.util.ArrayList<TopologySummary>(_list983.size);
+            @org.apache.storm.thrift.annotation.Nullable TopologySummary _elem984;
+            for (int _i985 = 0; _i985 < _list983.size; ++_i985)
+            {
+              _elem984 = new TopologySummary();
+              _elem984.read(iprot);
+              struct.success.add(_elem984);
+            }
+          }
+          struct.set_success_isSet(true);
+        }
+        if (incoming.get(1)) {
+          struct.aze = new AuthorizationException();
+          struct.aze.read(iprot);
+          struct.set_aze_isSet(true);
+        }
+      }
+    }
+
+    private static <S extends org.apache.storm.thrift.scheme.IScheme> S scheme(org.apache.storm.thrift.protocol.TProtocol proto) {
+      return (org.apache.storm.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  public static class getTopologySummaryByName_args implements org.apache.storm.thrift.TBase<getTopologySummaryByName_args, getTopologySummaryByName_args._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummaryByName_args>   {
+    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaryByName_args");
+
+    private static final org.apache.storm.thrift.protocol.TField NAME_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("name", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
+
+    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaryByName_argsStandardSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaryByName_argsTupleSchemeFactory();
+
+    private @org.apache.storm.thrift.annotation.Nullable java.lang.String name; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
+      NAME((short)1, "name");
+
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // NAME
+            return NAME;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByName(java.lang.String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+
+      _Fields(short thriftId, java.lang.String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public java.lang.String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.NAME, new org.apache.storm.thrift.meta_data.FieldMetaData("name", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING)));
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaryByName_args.class, metaDataMap);
+    }
+
+    public getTopologySummaryByName_args() {
+    }
+
+    public getTopologySummaryByName_args(
+      java.lang.String name)
+    {
+      this();
+      this.name = name;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getTopologySummaryByName_args(getTopologySummaryByName_args other) {
+      if (other.is_set_name()) {
+        this.name = other.name;
+      }
+    }
+
+    public getTopologySummaryByName_args deepCopy() {
+      return new getTopologySummaryByName_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.name = null;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.lang.String get_name() {
+      return this.name;
+    }
+
+    public void set_name(@org.apache.storm.thrift.annotation.Nullable java.lang.String name) {
+      this.name = name;
+    }
+
+    public void unset_name() {
+      this.name = null;
+    }
+
+    /** Returns true if field name is set (has been assigned a value) and false otherwise */
+    public boolean is_set_name() {
+      return this.name != null;
+    }
+
+    public void set_name_isSet(boolean value) {
+      if (!value) {
+        this.name = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
+      switch (field) {
+      case NAME:
+        if (value == null) {
+          unset_name();
+        } else {
+          set_name((java.lang.String)value);
+        }
+        break;
+
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) {
+      case NAME:
+        return get_name();
+
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new java.lang.IllegalArgumentException();
+      }
+
+      switch (field) {
+      case NAME:
+        return is_set_name();
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getTopologySummaryByName_args)
+        return this.equals((getTopologySummaryByName_args)that);
+      return false;
+    }
+
+    public boolean equals(getTopologySummaryByName_args that) {
+      if (that == null)
+        return false;
+      if (this == that)
+        return true;
+
+      boolean this_present_name = true && this.is_set_name();
+      boolean that_present_name = true && that.is_set_name();
+      if (this_present_name || that_present_name) {
+        if (!(this_present_name && that_present_name))
+          return false;
+        if (!this.name.equals(that.name))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = 1;
+
+      hashCode = hashCode * 8191 + ((is_set_name()) ? 131071 : 524287);
+      if (is_set_name())
+        hashCode = hashCode * 8191 + name.hashCode();
+
+      return hashCode;
+    }
+
+    @Override
+    public int compareTo(getTopologySummaryByName_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = java.lang.Boolean.valueOf(is_set_name()).compareTo(other.is_set_name());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_name()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.name, other.name);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.storm.thrift.protocol.TProtocol iprot) throws org.apache.storm.thrift.TException {
+      scheme(iprot).read(iprot, this);
+    }
+
+    public void write(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
+      scheme(oprot).write(oprot, this);
+    }
+
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummaryByName_args(");
+      boolean first = true;
+
+      sb.append("name:");
+      if (this.name == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.name);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.storm.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
+      try {
+        read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getTopologySummaryByName_argsStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaryByName_argsStandardScheme getScheme() {
+        return new getTopologySummaryByName_argsStandardScheme();
+      }
+    }
+
+    private static class getTopologySummaryByName_argsStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummaryByName_args> {
+
+      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummaryByName_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.storm.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // NAME
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRING) {
+                struct.name = iprot.readString();
+                struct.set_name_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummaryByName_args struct) throws org.apache.storm.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.name != null) {
+          oprot.writeFieldBegin(NAME_FIELD_DESC);
+          oprot.writeString(struct.name);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getTopologySummaryByName_argsTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaryByName_argsTupleScheme getScheme() {
+        return new getTopologySummaryByName_argsTupleScheme();
+      }
+    }
+
+    private static class getTopologySummaryByName_argsTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummaryByName_args> {
+
+      @Override
+      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryByName_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet optionals = new java.util.BitSet();
+        if (struct.is_set_name()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.is_set_name()) {
+          oprot.writeString(struct.name);
+        }
+      }
+
+      @Override
+      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryByName_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.name = iprot.readString();
+          struct.set_name_isSet(true);
+        }
+      }
+    }
+
+    private static <S extends org.apache.storm.thrift.scheme.IScheme> S scheme(org.apache.storm.thrift.protocol.TProtocol proto) {
+      return (org.apache.storm.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  public static class getTopologySummaryByName_result implements org.apache.storm.thrift.TBase<getTopologySummaryByName_result, getTopologySummaryByName_result._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummaryByName_result>   {
+    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaryByName_result");
+
+    private static final org.apache.storm.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("success", org.apache.storm.thrift.protocol.TType.STRUCT, (short)0);
+    private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaryByName_resultStandardSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaryByName_resultTupleSchemeFactory();
+
+    private @org.apache.storm.thrift.annotation.Nullable TopologySummary success; // required
+    private @org.apache.storm.thrift.annotation.Nullable AuthorizationException aze; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      AZE((short)1, "aze");
+
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // AZE
+            return AZE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByName(java.lang.String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+
+      _Fields(short thriftId, java.lang.String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public java.lang.String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.storm.thrift.meta_data.FieldMetaData("success", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologySummary.class)));
+      tmpMap.put(_Fields.AZE, new org.apache.storm.thrift.meta_data.FieldMetaData("aze", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaryByName_result.class, metaDataMap);
+    }
+
+    public getTopologySummaryByName_result() {
+    }
+
+    public getTopologySummaryByName_result(
+      TopologySummary success,
+      AuthorizationException aze)
+    {
+      this();
+      this.success = success;
+      this.aze = aze;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getTopologySummaryByName_result(getTopologySummaryByName_result other) {
+      if (other.is_set_success()) {
+        this.success = new TopologySummary(other.success);
+      }
+      if (other.is_set_aze()) {
+        this.aze = new AuthorizationException(other.aze);
+      }
+    }
+
+    public getTopologySummaryByName_result deepCopy() {
+      return new getTopologySummaryByName_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+      this.aze = null;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public TopologySummary get_success() {
+      return this.success;
+    }
+
+    public void set_success(@org.apache.storm.thrift.annotation.Nullable TopologySummary success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public AuthorizationException get_aze() {
+      return this.aze;
+    }
+
+    public void set_aze(@org.apache.storm.thrift.annotation.Nullable AuthorizationException aze) {
+      this.aze = aze;
+    }
+
+    public void unset_aze() {
+      this.aze = null;
+    }
+
+    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
+    public boolean is_set_aze() {
+      return this.aze != null;
+    }
+
+    public void set_aze_isSet(boolean value) {
+      if (!value) {
+        this.aze = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((TopologySummary)value);
+        }
+        break;
+
+      case AZE:
+        if (value == null) {
+          unset_aze();
+        } else {
+          set_aze((AuthorizationException)value);
+        }
+        break;
+
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case AZE:
+        return get_aze();
+
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new java.lang.IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case AZE:
+        return is_set_aze();
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getTopologySummaryByName_result)
+        return this.equals((getTopologySummaryByName_result)that);
+      return false;
+    }
+
+    public boolean equals(getTopologySummaryByName_result that) {
+      if (that == null)
+        return false;
+      if (this == that)
+        return true;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_aze = true && this.is_set_aze();
+      boolean that_present_aze = true && that.is_set_aze();
+      if (this_present_aze || that_present_aze) {
+        if (!(this_present_aze && that_present_aze))
+          return false;
+        if (!this.aze.equals(that.aze))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = 1;
+
+      hashCode = hashCode * 8191 + ((is_set_success()) ? 131071 : 524287);
+      if (is_set_success())
+        hashCode = hashCode * 8191 + success.hashCode();
+
+      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
+      if (is_set_aze())
+        hashCode = hashCode * 8191 + aze.hashCode();
+
+      return hashCode;
+    }
+
+    @Override
+    public int compareTo(getTopologySummaryByName_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = java.lang.Boolean.valueOf(is_set_success()).compareTo(other.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.success, other.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_aze()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.aze, other.aze);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.storm.thrift.protocol.TProtocol iprot) throws org.apache.storm.thrift.TException {
+      scheme(iprot).read(iprot, this);
+    }
+
+    public void write(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
+      scheme(oprot).write(oprot, this);
+      }
+
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummaryByName_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("aze:");
+      if (this.aze == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.aze);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.storm.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+      if (success != null) {
+        success.validate();
+      }
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
+      try {
+        read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getTopologySummaryByName_resultStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaryByName_resultStandardScheme getScheme() {
+        return new getTopologySummaryByName_resultStandardScheme();
+      }
+    }
+
+    private static class getTopologySummaryByName_resultStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummaryByName_result> {
+
+      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummaryByName_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.storm.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
+                struct.success = new TopologySummary();
+                struct.success.read(iprot);
+                struct.set_success_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            case 1: // AZE
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
+                struct.aze = new AuthorizationException();
+                struct.aze.read(iprot);
+                struct.set_aze_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummaryByName_result struct) throws org.apache.storm.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          struct.success.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        if (struct.aze != null) {
+          oprot.writeFieldBegin(AZE_FIELD_DESC);
+          struct.aze.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getTopologySummaryByName_resultTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaryByName_resultTupleScheme getScheme() {
+        return new getTopologySummaryByName_resultTupleScheme();
+      }
+    }
+
+    private static class getTopologySummaryByName_resultTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummaryByName_result> {
+
+      @Override
+      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryByName_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet optionals = new java.util.BitSet();
+        if (struct.is_set_success()) {
+          optionals.set(0);
+        }
+        if (struct.is_set_aze()) {
+          optionals.set(1);
+        }
+        oprot.writeBitSet(optionals, 2);
+        if (struct.is_set_success()) {
+          struct.success.write(oprot);
+        }
+        if (struct.is_set_aze()) {
+          struct.aze.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryByName_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet incoming = iprot.readBitSet(2);
+        if (incoming.get(0)) {
+          struct.success = new TopologySummary();
+          struct.success.read(iprot);
+          struct.set_success_isSet(true);
+        }
+        if (incoming.get(1)) {
+          struct.aze = new AuthorizationException();
+          struct.aze.read(iprot);
+          struct.set_aze_isSet(true);
+        }
+      }
+    }
+
+    private static <S extends org.apache.storm.thrift.scheme.IScheme> S scheme(org.apache.storm.thrift.protocol.TProtocol proto) {
+      return (org.apache.storm.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  public static class getTopologySummaryById_args implements org.apache.storm.thrift.TBase<getTopologySummaryById_args, getTopologySummaryById_args._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummaryById_args>   {
+    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaryById_args");
+
+    private static final org.apache.storm.thrift.protocol.TField ID_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("id", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
+
+    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaryById_argsStandardSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaryById_argsTupleSchemeFactory();
+
+    private @org.apache.storm.thrift.annotation.Nullable java.lang.String id; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
+      ID((short)1, "id");
+
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // ID
+            return ID;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByName(java.lang.String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+
+      _Fields(short thriftId, java.lang.String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public java.lang.String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.ID, new org.apache.storm.thrift.meta_data.FieldMetaData("id", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING)));
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaryById_args.class, metaDataMap);
+    }
+
+    public getTopologySummaryById_args() {
+    }
+
+    public getTopologySummaryById_args(
+      java.lang.String id)
+    {
+      this();
+      this.id = id;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getTopologySummaryById_args(getTopologySummaryById_args other) {
+      if (other.is_set_id()) {
+        this.id = other.id;
+      }
+    }
+
+    public getTopologySummaryById_args deepCopy() {
+      return new getTopologySummaryById_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.id = null;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.lang.String get_id() {
+      return this.id;
+    }
+
+    public void set_id(@org.apache.storm.thrift.annotation.Nullable java.lang.String id) {
+      this.id = id;
+    }
+
+    public void unset_id() {
+      this.id = null;
+    }
+
+    /** Returns true if field id is set (has been assigned a value) and false otherwise */
+    public boolean is_set_id() {
+      return this.id != null;
+    }
+
+    public void set_id_isSet(boolean value) {
+      if (!value) {
+        this.id = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
+      switch (field) {
+      case ID:
+        if (value == null) {
+          unset_id();
+        } else {
+          set_id((java.lang.String)value);
+        }
+        break;
+
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) {
+      case ID:
+        return get_id();
+
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new java.lang.IllegalArgumentException();
+      }
+
+      switch (field) {
+      case ID:
+        return is_set_id();
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getTopologySummaryById_args)
+        return this.equals((getTopologySummaryById_args)that);
+      return false;
+    }
+
+    public boolean equals(getTopologySummaryById_args that) {
+      if (that == null)
+        return false;
+      if (this == that)
+        return true;
+
+      boolean this_present_id = true && this.is_set_id();
+      boolean that_present_id = true && that.is_set_id();
+      if (this_present_id || that_present_id) {
+        if (!(this_present_id && that_present_id))
+          return false;
+        if (!this.id.equals(that.id))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = 1;
+
+      hashCode = hashCode * 8191 + ((is_set_id()) ? 131071 : 524287);
+      if (is_set_id())
+        hashCode = hashCode * 8191 + id.hashCode();
+
+      return hashCode;
+    }
+
+    @Override
+    public int compareTo(getTopologySummaryById_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = java.lang.Boolean.valueOf(is_set_id()).compareTo(other.is_set_id());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_id()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.id, other.id);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.storm.thrift.protocol.TProtocol iprot) throws org.apache.storm.thrift.TException {
+      scheme(iprot).read(iprot, this);
+    }
+
+    public void write(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
+      scheme(oprot).write(oprot, this);
+    }
+
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummaryById_args(");
+      boolean first = true;
+
+      sb.append("id:");
+      if (this.id == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.id);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.storm.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
+      try {
+        read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getTopologySummaryById_argsStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaryById_argsStandardScheme getScheme() {
+        return new getTopologySummaryById_argsStandardScheme();
+      }
+    }
+
+    private static class getTopologySummaryById_argsStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummaryById_args> {
+
+      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummaryById_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.storm.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // ID
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRING) {
+                struct.id = iprot.readString();
+                struct.set_id_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummaryById_args struct) throws org.apache.storm.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.id != null) {
+          oprot.writeFieldBegin(ID_FIELD_DESC);
+          oprot.writeString(struct.id);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getTopologySummaryById_argsTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaryById_argsTupleScheme getScheme() {
+        return new getTopologySummaryById_argsTupleScheme();
+      }
+    }
+
+    private static class getTopologySummaryById_argsTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummaryById_args> {
+
+      @Override
+      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryById_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet optionals = new java.util.BitSet();
+        if (struct.is_set_id()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.is_set_id()) {
+          oprot.writeString(struct.id);
+        }
+      }
+
+      @Override
+      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryById_args struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.id = iprot.readString();
+          struct.set_id_isSet(true);
+        }
+      }
+    }
+
+    private static <S extends org.apache.storm.thrift.scheme.IScheme> S scheme(org.apache.storm.thrift.protocol.TProtocol proto) {
+      return (org.apache.storm.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  public static class getTopologySummaryById_result implements org.apache.storm.thrift.TBase<getTopologySummaryById_result, getTopologySummaryById_result._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummaryById_result>   {
+    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaryById_result");
+
+    private static final org.apache.storm.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("success", org.apache.storm.thrift.protocol.TType.STRUCT, (short)0);
+    private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaryById_resultStandardSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaryById_resultTupleSchemeFactory();
+
+    private @org.apache.storm.thrift.annotation.Nullable TopologySummary success; // required
+    private @org.apache.storm.thrift.annotation.Nullable AuthorizationException aze; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      AZE((short)1, "aze");
+
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // AZE
+            return AZE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      @org.apache.storm.thrift.annotation.Nullable
+      public static _Fields findByName(java.lang.String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+
+      _Fields(short thriftId, java.lang.String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public java.lang.String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.storm.thrift.meta_data.FieldMetaData("success", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologySummary.class)));
+      tmpMap.put(_Fields.AZE, new org.apache.storm.thrift.meta_data.FieldMetaData("aze", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaryById_result.class, metaDataMap);
+    }
+
+    public getTopologySummaryById_result() {
+    }
+
+    public getTopologySummaryById_result(
+      TopologySummary success,
+      AuthorizationException aze)
+    {
+      this();
+      this.success = success;
+      this.aze = aze;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getTopologySummaryById_result(getTopologySummaryById_result other) {
+      if (other.is_set_success()) {
+        this.success = new TopologySummary(other.success);
+      }
+      if (other.is_set_aze()) {
+        this.aze = new AuthorizationException(other.aze);
+      }
+    }
+
+    public getTopologySummaryById_result deepCopy() {
+      return new getTopologySummaryById_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+      this.aze = null;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public TopologySummary get_success() {
+      return this.success;
+    }
+
+    public void set_success(@org.apache.storm.thrift.annotation.Nullable TopologySummary success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public AuthorizationException get_aze() {
+      return this.aze;
+    }
+
+    public void set_aze(@org.apache.storm.thrift.annotation.Nullable AuthorizationException aze) {
+      this.aze = aze;
+    }
+
+    public void unset_aze() {
+      this.aze = null;
+    }
+
+    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
+    public boolean is_set_aze() {
+      return this.aze != null;
+    }
+
+    public void set_aze_isSet(boolean value) {
+      if (!value) {
+        this.aze = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((TopologySummary)value);
+        }
+        break;
+
+      case AZE:
+        if (value == null) {
+          unset_aze();
+        } else {
+          set_aze((AuthorizationException)value);
+        }
+        break;
+
+      }
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case AZE:
+        return get_aze();
+
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new java.lang.IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case AZE:
+        return is_set_aze();
+      }
+      throw new java.lang.IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getTopologySummaryById_result)
+        return this.equals((getTopologySummaryById_result)that);
+      return false;
+    }
+
+    public boolean equals(getTopologySummaryById_result that) {
+      if (that == null)
+        return false;
+      if (this == that)
+        return true;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_aze = true && this.is_set_aze();
+      boolean that_present_aze = true && that.is_set_aze();
+      if (this_present_aze || that_present_aze) {
+        if (!(this_present_aze && that_present_aze))
+          return false;
+        if (!this.aze.equals(that.aze))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = 1;
+
+      hashCode = hashCode * 8191 + ((is_set_success()) ? 131071 : 524287);
+      if (is_set_success())
+        hashCode = hashCode * 8191 + success.hashCode();
+
+      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
+      if (is_set_aze())
+        hashCode = hashCode * 8191 + aze.hashCode();
+
+      return hashCode;
+    }
+
+    @Override
+    public int compareTo(getTopologySummaryById_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = java.lang.Boolean.valueOf(is_set_success()).compareTo(other.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.success, other.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_aze()) {
+        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.aze, other.aze);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    @org.apache.storm.thrift.annotation.Nullable
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.storm.thrift.protocol.TProtocol iprot) throws org.apache.storm.thrift.TException {
+      scheme(iprot).read(iprot, this);
+    }
+
+    public void write(org.apache.storm.thrift.protocol.TProtocol oprot) throws org.apache.storm.thrift.TException {
+      scheme(oprot).write(oprot, this);
+      }
+
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummaryById_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("aze:");
+      if (this.aze == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.aze);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.storm.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+      if (success != null) {
+        success.validate();
+      }
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
+      try {
+        read(new org.apache.storm.thrift.protocol.TCompactProtocol(new org.apache.storm.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.storm.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getTopologySummaryById_resultStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaryById_resultStandardScheme getScheme() {
+        return new getTopologySummaryById_resultStandardScheme();
+      }
+    }
+
+    private static class getTopologySummaryById_resultStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummaryById_result> {
+
+      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummaryById_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.storm.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
+                struct.success = new TopologySummary();
+                struct.success.read(iprot);
+                struct.set_success_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            case 1: // AZE
+              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
+                struct.aze = new AuthorizationException();
+                struct.aze.read(iprot);
+                struct.set_aze_isSet(true);
+              } else { 
+                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummaryById_result struct) throws org.apache.storm.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          struct.success.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        if (struct.aze != null) {
+          oprot.writeFieldBegin(AZE_FIELD_DESC);
+          struct.aze.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getTopologySummaryById_resultTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummaryById_resultTupleScheme getScheme() {
+        return new getTopologySummaryById_resultTupleScheme();
+      }
+    }
+
+    private static class getTopologySummaryById_resultTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummaryById_result> {
+
+      @Override
+      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryById_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet optionals = new java.util.BitSet();
+        if (struct.is_set_success()) {
+          optionals.set(0);
+        }
+        if (struct.is_set_aze()) {
+          optionals.set(1);
+        }
+        oprot.writeBitSet(optionals, 2);
+        if (struct.is_set_success()) {
+          struct.success.write(oprot);
+        }
+        if (struct.is_set_aze()) {
+          struct.aze.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryById_result struct) throws org.apache.storm.thrift.TException {
+        org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet incoming = iprot.readBitSet(2);
+        if (incoming.get(0)) {
+          struct.success = new TopologySummary();
+          struct.success.read(iprot);
+          struct.set_success_isSet(true);
+        }
+        if (incoming.get(1)) {
+          struct.aze = new AuthorizationException();
+          struct.aze.read(iprot);
+          struct.set_aze_isSet(true);
+        }
+      }
+    }
+
+    private static <S extends org.apache.storm.thrift.scheme.IScheme> S scheme(org.apache.storm.thrift.protocol.TProtocol proto) {
+      return (org.apache.storm.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
   public static class getLeader_args implements org.apache.storm.thrift.TBase<getLeader_args, getLeader_args._Fields>, java.io.Serializable, Cloneable, Comparable<getLeader_args>   {
     private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getLeader_args");
 
@@ -49148,14 +52073,14 @@ public class Nimbus {
             case 0: // SUCCESS
               if (schemeField.type == org.apache.storm.thrift.protocol.TType.LIST) {
                 {
-                  org.apache.storm.thrift.protocol.TList _list978 = iprot.readListBegin();
-                  struct.success = new java.util.ArrayList<OwnerResourceSummary>(_list978.size);
-                  @org.apache.storm.thrift.annotation.Nullable OwnerResourceSummary _elem979;
-                  for (int _i980 = 0; _i980 < _list978.size; ++_i980)
+                  org.apache.storm.thrift.protocol.TList _list986 = iprot.readListBegin();
+                  struct.success = new java.util.ArrayList<OwnerResourceSummary>(_list986.size);
+                  @org.apache.storm.thrift.annotation.Nullable OwnerResourceSummary _elem987;
+                  for (int _i988 = 0; _i988 < _list986.size; ++_i988)
                   {
-                    _elem979 = new OwnerResourceSummary();
-                    _elem979.read(iprot);
-                    struct.success.add(_elem979);
+                    _elem987 = new OwnerResourceSummary();
+                    _elem987.read(iprot);
+                    struct.success.add(_elem987);
                   }
                   iprot.readListEnd();
                 }
@@ -49190,9 +52115,9 @@ public class Nimbus {
           oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, struct.success.size()));
-            for (OwnerResourceSummary _iter981 : struct.success)
+            for (OwnerResourceSummary _iter989 : struct.success)
             {
-              _iter981.write(oprot);
+              _iter989.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -49231,9 +52156,9 @@ public class Nimbus {
         if (struct.is_set_success()) {
           {
             oprot.writeI32(struct.success.size());
-            for (OwnerResourceSummary _iter982 : struct.success)
+            for (OwnerResourceSummary _iter990 : struct.success)
             {
-              _iter982.write(oprot);
+              _iter990.write(oprot);
             }
           }
         }
@@ -49248,14 +52173,14 @@ public class Nimbus {
         java.util.BitSet incoming = iprot.readBitSet(2);
         if (incoming.get(0)) {
           {
-            org.apache.storm.thrift.protocol.TList _list983 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
-            struct.success = new java.util.ArrayList<OwnerResourceSummary>(_list983.size);
-            @org.apache.storm.thrift.annotation.Nullable OwnerResourceSummary _elem984;
-            for (int _i985 = 0; _i985 < _list983.size; ++_i985)
+            org.apache.storm.thrift.protocol.TList _list991 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
+            struct.success = new java.util.ArrayList<OwnerResourceSummary>(_list991.size);
+            @org.apache.storm.thrift.annotation.Nullable OwnerResourceSummary _elem992;
+            for (int _i993 = 0; _i993 < _list991.size; ++_i993)
             {
-              _elem984 = new OwnerResourceSummary();
-              _elem984.read(iprot);
-              struct.success.add(_elem984);
+              _elem992 = new OwnerResourceSummary();
+              _elem992.read(iprot);
+              struct.success.add(_elem992);
             }
           }
           struct.set_success_isSet(true);

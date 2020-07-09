@@ -40,6 +40,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         "fileUpload",
         "getNimbusConf",
         "getClusterInfo",
+        "getTopologySummaries",
         "getSupervisorPageInfo",
         "getOwnerResourceSummaries"));
     protected Set<String> supervisorCommands = new HashSet<>(Arrays.asList(
