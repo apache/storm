@@ -2938,7 +2938,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                       (int) info.get_uptime_secs(), numPorts, numUsedPorts, supervisorId);
         ret.set_total_resources(info.get_resources_map());
         SupervisorResources resources = nodeIdToResources.get().get(supervisorId);
-        if (resources != null) {
+        if (resources != null && underlyingScheduler instanceof ResourceAwareScheduler) {
             ret.set_used_mem(resources.getUsedMem());
             ret.set_used_cpu(resources.getUsedCpu());
             ret.set_used_generic_resources(resources.getUsedGenericResources());
@@ -3037,7 +3037,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 summary.set_sched_status(status);
             }
             TopologyResources resources = getResourcesForTopology(topoId, base);
-            if (resources != null) {
+            if (resources != null  && underlyingScheduler instanceof ResourceAwareScheduler) {
                 summary.set_requested_memonheap(resources.getRequestedMemOnHeap());
                 summary.set_requested_memoffheap(resources.getRequestedMemOffHeap());
                 summary.set_requested_cpu(resources.getRequestedCpu());
@@ -4128,7 +4128,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoInfo.set_sched_status(schedStatus);
             }
             TopologyResources resources = getResourcesForTopology(topoId, common.base);
-            if (resources != null) {
+            if (resources != null && underlyingScheduler instanceof ResourceAwareScheduler) {
                 topoInfo.set_requested_memonheap(resources.getRequestedMemOnHeap());
                 topoInfo.set_requested_memoffheap(resources.getRequestedMemOffHeap());
                 topoInfo.set_requested_cpu(resources.getRequestedCpu());
@@ -4228,7 +4228,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoPageInfo.set_sched_status(schedStatus);
             }
             TopologyResources resources = getResourcesForTopology(topoId, base);
-            if (resources != null) {
+            if (resources != null && underlyingScheduler instanceof ResourceAwareScheduler) {
                 topoPageInfo.set_requested_memonheap(resources.getRequestedMemOnHeap());
                 topoPageInfo.set_requested_memoffheap(resources.getRequestedMemOffHeap());
                 topoPageInfo.set_requested_cpu(resources.getRequestedCpu());
