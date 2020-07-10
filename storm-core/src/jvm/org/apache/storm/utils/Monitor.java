@@ -35,17 +35,11 @@ public class Monitor {
 
     private HashSet<String> getComponents(Nimbus.Iface client, String topology) throws Exception {
         HashSet<String> components = new HashSet<>();
-        TopologySummary topologySummary = client.getTopologySummaryByName(topology);
-        if (topologySummary == null) {
-            throw new IllegalArgumentException("topology: " + topology + " not found");
-        } else {
-            String id = topologySummary.get_id();
-            GetInfoOptions getInfoOpts = new GetInfoOptions();
-            getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
-            TopologyInfo info = client.getTopologyInfoWithOpts(id, getInfoOpts);
-            for (ExecutorSummary es : info.get_executors()) {
-                components.add(es.get_component_id());
-            }
+        GetInfoOptions getInfoOpts = new GetInfoOptions();
+        getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
+        TopologyInfo info = client.getTopologyInfoByNameWithOpts(topology, getInfoOpts);
+        for (ExecutorSummary es : info.get_executors()) {
+            components.add(es.get_component_id());
         }
         return components;
     }
@@ -98,39 +92,24 @@ public class Monitor {
 
     public void metrics(Nimbus.Iface client, long now, MetricsState state) throws Exception {
         long totalStatted = 0;
-
         int componentParallelism = 0;
         boolean streamFound = false;
-        ClusterSummary clusterSummary = client.getClusterInfo();
-        TopologySummary topologySummary = null;
-        for (TopologySummary ts : clusterSummary.get_topologies()) {
-            if (topology.equals(ts.get_name())) {
-                topologySummary = ts;
-                break;
-            }
-        }
-        if (topologySummary == null) {
-            throw new IllegalArgumentException("topology: " + topology + " not found");
-        } else {
-            String id = topologySummary.get_id();
-            GetInfoOptions getInfoOpts = new GetInfoOptions();
-            getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
-            TopologyInfo info = client.getTopologyInfoWithOpts(id, getInfoOpts);
-            for (ExecutorSummary es : info.get_executors()) {
-                if (component.equals(es.get_component_id())) {
-                    componentParallelism++;
-                    ExecutorStats stats = es.get_stats();
-                    if (stats != null) {
-                        Map<String, Map<String, Long>> statted =
-                            WATCH_EMITTED.equals(watch) ? stats.get_emitted() : stats.get_transferred();
-                        if (statted != null) {
-                            Map<String, Long> e2 = statted.get(":all-time");
-                            if (e2 != null) {
-                                Long stream = e2.get(this.stream);
-                                if (stream != null) {
-                                    streamFound = true;
-                                    totalStatted += stream;
-                                }
+        GetInfoOptions getInfoOpts = new GetInfoOptions();
+        getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
+        TopologyInfo info = client.getTopologyInfoByNameWithOpts(topology, getInfoOpts);
+        for (ExecutorSummary es : info.get_executors()) {
+            if (component.equals(es.get_component_id())) {
+                componentParallelism++;
+                ExecutorStats stats = es.get_stats();
+                if (stats != null) {
+                    Map<String, Map<String, Long>> statted = WATCH_EMITTED.equals(watch) ? stats.get_emitted() : stats.get_transferred();
+                    if (statted != null) {
+                        Map<String, Long> e2 = statted.get(":all-time");
+                        if (e2 != null) {
+                            Long stream = e2.get(this.stream);
+                            if (stream != null) {
+                                streamFound = true;
+                                totalStatted += stream;
                             }
                         }
                     }

@@ -782,7 +782,9 @@ service Nimbus {
   TopologySummary getTopologySummaryById(1: string id) throws (1: AuthorizationException aze);
   NimbusSummary getLeader() throws (1: AuthorizationException aze);
   bool isTopologyNameAllowed(1: string name) throws (1: AuthorizationException aze);
+  TopologyInfo getTopologyInfoByName(1: string name) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  TopologyInfo getTopologyInfoByNameWithOpts(1: string name, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfoWithOpts(1: string id, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyPageInfo getTopologyPageInfo(1: string id, 2: string window, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   SupervisorPageInfo getSupervisorPageInfo(1: string id, 2: string host, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);

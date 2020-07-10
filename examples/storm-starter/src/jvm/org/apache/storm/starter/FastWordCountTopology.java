@@ -45,12 +45,7 @@ import org.apache.storm.utils.Utils;
 public class FastWordCountTopology {
 
     public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
-        TopologySummary topologySummary = client.getTopologySummaryByName(name);
-        if (topologySummary == null) {
-            throw new Exception("Could not find a topology named " + name);
-        }
-        String id = topologySummary.get_id();
-        TopologyInfo info = client.getTopologyInfo(id);
+        TopologyInfo info = client.getTopologyInfoByName(name);
         int uptime = info.get_uptime_secs();
         long acked = 0;
         long failed = 0;

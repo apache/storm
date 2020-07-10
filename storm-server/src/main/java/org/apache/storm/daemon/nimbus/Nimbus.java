@@ -262,6 +262,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Meter isTopologyNameAllowedCalls;
     private final Meter getTopologyInfoWithOptsCalls;
     private final Meter getTopologyInfoCalls;
+    private final Meter getTopologyInfoByNameCalls;
+    private final Meter getTopologyInfoByNameWithOptsCalls;
     private final Meter getTopologyPageInfoCalls;
     private final Meter getSupervisorPageInfoCalls;
     private final Meter getComponentPageInfoCalls;
@@ -513,6 +515,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.getTopologyInfoWithOptsCalls = metricsRegistry.registerMeter(
             "nimbus:num-getTopologyInfoWithOpts-calls");
         this.getTopologyInfoCalls = metricsRegistry.registerMeter("nimbus:num-getTopologyInfo-calls");
+        this.getTopologyInfoByNameCalls = metricsRegistry.registerMeter("nimbus:num-getTopologyInfoByName-calls");
+        this.getTopologyInfoByNameWithOptsCalls = metricsRegistry.registerMeter("nimbus:num-getTopologyInfoByNameWithOpts-calls");
         this.getTopologyPageInfoCalls = metricsRegistry.registerMeter("nimbus:num-getTopologyPageInfo-calls");
         this.getSupervisorPageInfoCalls = metricsRegistry.registerMeter("nimbus:num-getSupervisorPageInfo-calls");
         this.getComponentPageInfoCalls = metricsRegistry.registerMeter("nimbus:num-getComponentPageInfo-calls");
@@ -4074,6 +4078,45 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
+    public TopologyInfo getTopologyInfoByName(String name) throws NotAliveException, AuthorizationException, TException {
+        try {
+            getTopologyInfoByNameCalls.mark();
+            GetInfoOptions options = new GetInfoOptions();
+            options.set_num_err_choice(NumErrorsChoice.ALL);
+
+            return getTopologyInfoByNameImpl(name, options);
+        } catch (Exception e) {
+            LOG.warn("get topology info exception. (topology name={})", name, e);
+            if (e instanceof TException) {
+                throw (TException) e;
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
+    private TopologyInfo getTopologyInfoByNameImpl(String name, GetInfoOptions options) throws
+        NotAliveException, AuthorizationException, TException {
+        IStormClusterState state = stormClusterState;
+        String id = state.getTopoId(name).orElseThrow(() -> new WrappedNotAliveException(name + " is not alive"));
+        return getTopologyInfoWithOpts(id, options);
+    }
+
+    @Override
+    public TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws
+        NotAliveException, AuthorizationException, TException {
+        try {
+            getTopologyInfoByNameWithOptsCalls.mark();
+            return getTopologyInfoByNameImpl(name, options);
+        } catch (Exception e) {
+            LOG.warn("get topology info withOpts by name exception. (topology name={})", name, e);
+            if (e instanceof TException) {
+                throw (TException) e;
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public TopologyInfo getTopologyInfoWithOpts(String topoId, GetInfoOptions options)
         throws NotAliveException, AuthorizationException, TException {
         try {
@@ -4692,18 +4735,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             getTopologySummaryByNameCalls.mark();
             checkAuthorization(null, null, "getTopologySummaries");
             IStormClusterState state = stormClusterState;
-            if (name == null) {
-                LOG.warn("The topology name can not be null!");
-                throw new IllegalArgumentException("The topology name cannot be null!");
-            }
-            for (Entry<String, StormBase> entry : state.topologyBases().entrySet()) {
-                StormBase base = entry.getValue();
-                if (base.get_name().equals(name)) {
-                    checkAuthorization(name, null, "getTopology");
-                    return getTopologySummary(entry.getKey(), base);
-                }
-            }
-            throw new IllegalArgumentException("The topology name " + name + " not be found!");
+            String topoId = state.getTopoId(name).orElseThrow(() -> new WrappedNotAliveException(name + " is not alive"));
+            return getTopologySummary(topoId, state.topologyBases().get(topoId));
         } catch (Exception e) {
             LOG.warn("Get TopologySummaryByName info exception.", e);
             if (e instanceof TException) {

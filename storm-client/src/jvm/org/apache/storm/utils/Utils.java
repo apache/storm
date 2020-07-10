@@ -1188,11 +1188,7 @@ public class Utils {
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
         try (NimbusClient client = NimbusClient.getConfiguredClientAs(topoConf, asUser)) {
-            String topologyId = getTopologyId(name, client.getClient());
-            if (null != topologyId) {
-                return client.getClient().getTopologyInfo(topologyId);
-            }
-            return null;
+            return client.getClient().getTopologyInfoByName(name);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1200,15 +1196,10 @@ public class Utils {
 
     public static String getTopologyId(String name, Nimbus.Iface client) {
         try {
-            for (TopologySummary s : client.getTopologySummaries()) {
-                if (s.get_name().equals(name)) {
-                    return s.get_id();
-                }
-            }
+            return client.getTopologySummaryByName(name).get_id();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return null;
     }
 
     /**

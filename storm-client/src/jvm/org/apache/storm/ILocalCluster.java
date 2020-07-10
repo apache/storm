@@ -17,6 +17,7 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.Credentials;
+import org.apache.storm.generated.GetInfoOptions;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
@@ -151,6 +152,35 @@ public interface ILocalCluster extends AutoCloseable {
      * @throws TException on any error from nimbus
      */
     TopologyInfo getTopologyInfo(String id) throws TException;
+
+    /**
+     * Get the state of a topology.
+     *
+     * @param name the name of the topology (not the id)
+     * @return the state of a topology
+     * @throws TException on any error from nimbus
+     */
+    TopologyInfo getTopologyInfoByName(String name) throws TException;
+
+    /**
+     * Get the state of a topology.
+     *
+     * @param id the id of the topology (not the name)
+     * @param options This is GetInfoOptions to choose Error(s) in on TopologyInfo.
+     * @return the state of a topology
+     * @throws TException on any error from nimbus
+     */
+    TopologyInfo getTopologyInfoWithOpts(String id, GetInfoOptions options) throws TException;
+
+    /**
+     * Get the state of a topology.
+     *
+     * @param name the name of the topology (not the id)
+     * @param options This is GetInfoOptions to choose Error(s) in on TopologyInfo.
+     * @return the state of a topology
+     * @throws TException on any error from nimbus
+     */
+    TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws TException;
 
     /**
      * This is intended for internal testing only.

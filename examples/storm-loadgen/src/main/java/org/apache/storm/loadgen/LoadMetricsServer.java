@@ -915,14 +915,6 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
     private void outputMetrics(Nimbus.Iface client, Collection<String> names) throws Exception {
         Set<String> ids = new HashSet<>();
-        for (TopologySummary ts: client.getTopologySummaryInfo()) {
-            if (names.contains(ts.get_name())) {
-                ids.add(ts.get_id());
-            }
-        }
-        if (ids.size() != names.size()) {
-            throw new Exception("Could not find all topologies: " + names);
-        }
         HashSet<String> workers = new HashSet<>();
         HashSet<String> hosts = new HashSet<>();
         int executors = 0;
@@ -931,10 +923,11 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         long failed = 0;
         double totalLatMs = 0;
         long totalLatCount = 0;
-        for (String id: ids) {
-            TopologyInfo info = client.getTopologyInfo(id);
+        for (String name: names) {
+            TopologyInfo info = client.getTopologyInfoByName(name);
+            ids.add(info.get_id());
             @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
-            TopologyPageInfo tpi = client.getTopologyPageInfo(id, ":all-time", false);
+            TopologyPageInfo tpi = client.getTopologyPageInfo(info.get_id(), ":all-time", false);
             uptime = Math.max(uptime, info.get_uptime_secs());
             for (ExecutorSummary exec : info.get_executors()) {
                 hosts.add(exec.get_host());

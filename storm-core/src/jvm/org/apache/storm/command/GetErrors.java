@@ -42,15 +42,10 @@ public class GetErrors {
             public void run(Nimbus.Iface client) throws Exception {
                 GetInfoOptions opts = new GetInfoOptions();
                 opts.set_num_err_choice(NumErrorsChoice.ONE);
-                String topologyId = Utils.getTopologyId(name, client);
-
-                TopologyInfo topologyInfo = null;
-                if (topologyId != null) {
-                    topologyInfo = client.getTopologyInfoWithOpts(topologyId, opts);
-                }
+                TopologyInfo topologyInfo = client.getTopologyInfoByNameWithOpts(name, opts);
 
                 Map<String, Object> outputMap = new HashMap<>();
-                if (topologyId == null || topologyInfo == null) {
+                if (topologyInfo == null) {
                     outputMap.put("Failure", "No topologies running with name " + name);
                 } else {
                     String topologyName = topologyInfo.get_name();
