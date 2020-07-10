@@ -35,14 +35,7 @@ public class Monitor {
 
     private HashSet<String> getComponents(Nimbus.Iface client, String topology) throws Exception {
         HashSet<String> components = new HashSet<>();
-        ClusterSummary clusterSummary = client.getClusterInfo();
-        TopologySummary topologySummary = null;
-        for (TopologySummary ts : clusterSummary.get_topologies()) {
-            if (topology.equals(ts.get_name())) {
-                topologySummary = ts;
-                break;
-            }
-        }
+        TopologySummary topologySummary = client.getTopologySummaryByName(topology);
         if (topologySummary == null) {
             throw new IllegalArgumentException("topology: " + topology + " not found");
         } else {

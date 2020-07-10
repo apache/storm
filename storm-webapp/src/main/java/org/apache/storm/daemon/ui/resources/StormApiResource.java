@@ -270,7 +270,7 @@ public class StormApiResource {
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getAllTopologiesSummary(
-                            nimbusClient.getClient().getClusterInfo().get_topologies(),
+                            nimbusClient.getClient().getTopologySummaries(),
                             config
                     ),
                     callback

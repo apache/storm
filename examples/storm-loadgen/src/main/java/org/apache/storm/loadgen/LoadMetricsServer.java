@@ -914,9 +914,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     }
 
     private void outputMetrics(Nimbus.Iface client, Collection<String> names) throws Exception {
-        ClusterSummary summary = client.getClusterInfo();
         Set<String> ids = new HashSet<>();
-        for (TopologySummary ts: summary.get_topologies()) {
+        for (TopologySummary ts: client.getTopologySummaryInfo()) {
             if (names.contains(ts.get_name())) {
                 ids.add(ts.get_id());
             }

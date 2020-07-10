@@ -350,8 +350,7 @@ public class CaptureLoad {
             Nimbus.Iface client = nc.getClient();
             List<String> topologyNames = cmd.getArgList();
 
-            ClusterSummary clusterSummary = client.getClusterInfo();
-            for (TopologySummary topologySummary: clusterSummary.get_topologies()) {
+            for (TopologySummary topologySummary: client.getTopologySummaries()) {
                 if (topologyNames.isEmpty() || topologyNames.contains(topologySummary.get_name())) {
                     TopologyLoadConf capturedConf = captureTopology(client, topologySummary);
                     if (cmd.hasOption('a')) {

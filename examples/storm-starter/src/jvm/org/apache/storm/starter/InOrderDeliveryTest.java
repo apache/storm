@@ -40,16 +40,11 @@ import org.apache.storm.utils.Utils;
 public class InOrderDeliveryTest {
 
     public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
-        ClusterSummary summary = client.getClusterInfo();
-        String id = null;
-        for (TopologySummary ts : summary.get_topologies()) {
-            if (name.equals(ts.get_name())) {
-                id = ts.get_id();
-            }
-        }
-        if (id == null) {
+        TopologySummary ts = client.getTopologySummaryByName(name);
+        if (ts == null) {
             throw new Exception("Could not find a topology named " + name);
         }
+        String id = ts.get_id();
         TopologyInfo info = client.getTopologyInfo(id);
         int uptime = info.get_uptime_secs();
         long acked = 0;
