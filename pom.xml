@@ -461,7 +461,7 @@
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/dataTables.bootstrap.css</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jsonFormatter.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jsonFormatter.min.css</exclude>
-                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery-1.11.1.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery-3.5.1.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.cookies.2.2.0.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/moment.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.blockUI.min.js</exclude>
