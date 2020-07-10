@@ -126,7 +126,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected int idToTaskBase;
     protected String hostname;
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
-    private AtomicBoolean needToRefreshCreds = new AtomicBoolean(true);
+    private AtomicBoolean needToRefreshCreds = new AtomicBoolean(false);
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
