@@ -164,6 +164,7 @@ public class SpoutExecutor extends Executor {
 
             @Override
             public Long call() throws Exception {
+                updateExecCredsIfRequired();
                 int receiveCount = 0;
                 if (recvqCheckSkips++ == recvqCheckSkipCountMax) {
                     receiveCount = receiveQueue.consume(SpoutExecutor.this);
@@ -296,12 +297,6 @@ public class SpoutExecutor extends Executor {
             pending.rotate();
         } else if (streamId.equals(Constants.METRICS_TICK_STREAM_ID)) {
             metricsTick(idToTask.get(taskId - idToTaskBase), tuple);
-        } else if (streamId.equals(Constants.CREDENTIALS_CHANGED_STREAM_ID)) {
-            Object spoutObj = idToTask.get(taskId - idToTaskBase).getTaskObject();
-            if (spoutObj instanceof ICredentialsListener) {
-                Credentials creds = (Credentials) tuple.getValue(0);
-                ((ICredentialsListener) spoutObj).setCredentials(creds == null ? null : creds.get_creds());
-            }
         } else if (streamId.equals(Acker.ACKER_RESET_TIMEOUT_STREAM_ID)) {
             Long id = (Long) tuple.getValue(0);
             TupleInfo pendingForId = pending.get(id);

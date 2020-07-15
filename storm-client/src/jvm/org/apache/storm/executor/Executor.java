@@ -38,6 +38,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
+import org.apache.storm.ICredentialsListener;
 import org.apache.storm.StormTimer;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
@@ -55,6 +56,7 @@ import org.apache.storm.executor.error.ReportError;
 import org.apache.storm.executor.error.ReportErrorAndDie;
 import org.apache.storm.executor.spout.SpoutExecutor;
 import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.DebugOptions;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.SpoutSpec;
@@ -124,6 +126,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected int idToTaskBase;
     protected String hostname;
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
+    private AtomicBoolean needToRefreshCreds = new AtomicBoolean(false);
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -288,6 +291,22 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void setNeedToRefreshCreds() {
+        this.needToRefreshCreds.set(true);
+    }
+
+    protected void updateExecCredsIfRequired() {
+        if (this.needToRefreshCreds.get()) {
+            this.needToRefreshCreds.set(false);
+            LOG.info("The credentials are being updated {}.", executorId);
+            Credentials creds = this.workerData.getCredentials();
+            idToTask.stream().map(Task::getTaskObject).filter(taskObject -> taskObject instanceof ICredentialsListener)
+                    .forEach(taskObject -> {
+                        ((ICredentialsListener) taskObject).setCredentials(creds == null ? null : creds.get_creds());
+                    });
         }
     }
 

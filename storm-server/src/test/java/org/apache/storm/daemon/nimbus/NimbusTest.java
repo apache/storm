@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
@@ -58,7 +59,7 @@ public class NimbusTest {
         try {
             Nimbus.validateTopologyWorkerMaxHeapSizeConfigs(config1, stormTopology1, 768.0);
             fail("Expected exception not thrown");
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidTopologyException e) {
             //Expected...
         }
     }
