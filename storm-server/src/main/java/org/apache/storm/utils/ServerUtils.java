@@ -1239,9 +1239,10 @@ public class ServerUtils {
             // check if existing process is owned by the specified user, if not, the process is dead
             try {
                 String pidUser = Files.getOwner(pidDir.toPath()).getName();
-                LOG.info("Process directory {} owner is {}", pidDir, pidUser);
+                LOG.debug("Process directory {} owner is {}", pidDir, pidUser);
                 if (!user.equals(pidUser)) {
-                    LOG.debug("Process is dead, since directory {} owner {} is not same as expected user {}", pidDir, pidUser, user);
+                    LOG.info("Prior process is dead, since directory {} owner {} is not same as expected user {}, "
+                            + "likely pid {} was reused for a new process for user {}", pidDir, pidUser, user, pid, pidUser);
                     continue;
                 }
             } catch (NoSuchFileException ex) {
