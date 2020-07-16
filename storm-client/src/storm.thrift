@@ -779,7 +779,7 @@ service Nimbus {
   ClusterSummary getClusterInfo() throws (1: AuthorizationException aze);
   list<TopologySummary> getTopologySummaries() throws (1: AuthorizationException aze);
   TopologySummary getTopologySummaryByName(1: string name) throws (1: AuthorizationException aze);
-  TopologySummary getTopologySummaryById(1: string id) throws (1: AuthorizationException aze);
+  TopologySummary getTopologySummary(1: string id);
   NimbusSummary getLeader() throws (1: AuthorizationException aze);
   bool isTopologyNameAllowed(1: string name) throws (1: AuthorizationException aze);
   TopologyInfo getTopologyInfoByName(1: string name) throws (1: NotAliveException e, 2: AuthorizationException aze);

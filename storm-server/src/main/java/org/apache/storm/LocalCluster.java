@@ -584,8 +584,8 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
-    public TopologySummary getTopologySummaryById(String id) throws AuthorizationException, TException {
-        return getNimbus().getTopologySummaryById(id);
+    public TopologySummary getTopologySummary(String id) throws TException {
+        return getNimbus().getTopologySummary(id);
     }
 
     @Override

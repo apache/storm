@@ -142,7 +142,7 @@ public interface ILocalCluster extends AutoCloseable {
 
     TopologySummary getTopologySummaryByName(java.lang.String name) throws AuthorizationException, TException;
 
-    TopologySummary getTopologySummaryById(java.lang.String id) throws AuthorizationException, TException;
+    TopologySummary getTopologySummary(java.lang.String id) throws TException;
 
     /**
      * Get the state of a topology.

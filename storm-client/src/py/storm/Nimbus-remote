@@ -77,7 +77,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  ClusterSummary getClusterInfo()')
     print('   getTopologySummaries()')
     print('  TopologySummary getTopologySummaryByName(string name)')
-    print('  TopologySummary getTopologySummaryById(string id)')
+    print('  TopologySummary getTopologySummary(string id)')
     print('  NimbusSummary getLeader()')
     print('  bool isTopologyNameAllowed(string name)')
     print('  TopologyInfo getTopologyInfoByName(string name)')
@@ -386,11 +386,11 @@ elif cmd == 'getTopologySummaryByName':
         sys.exit(1)
     pp.pprint(client.getTopologySummaryByName(args[0],))
 
-elif cmd == 'getTopologySummaryById':
+elif cmd == 'getTopologySummary':
     if len(args) != 1:
-        print('getTopologySummaryById requires 1 args')
+        print('getTopologySummary requires 1 args')
         sys.exit(1)
-    pp.pprint(client.getTopologySummaryById(args[0],))
+    pp.pprint(client.getTopologySummary(args[0],))
 
 elif cmd == 'getLeader':
     if len(args) != 0:

@@ -44,7 +44,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         "isTopologyNameAllowed",
         "getTopologySummaries",
         "getTopologySummaryByName",
-        "getTopologySummaryById",
+        "getTopologySummary",
         "getSupervisorPageInfo",
         "getOwnerResourceSummaries"));
     protected Set<String> supervisorCommands = new HashSet<>(Arrays.asList(

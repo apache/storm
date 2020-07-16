@@ -256,7 +256,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Meter getUserTopologyCalls;
     private final Meter getClusterInfoCalls;
     private final Meter getTopologySummariesCalls;
-    private final Meter getTopologySummaryByIdCalls;
+    private final Meter getTopologySummaryCalls;
     private final Meter getTopologySummaryByNameCalls;
     private final Meter getLeaderCalls;
     private final Meter isTopologyNameAllowedCalls;
@@ -508,7 +508,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.getUserTopologyCalls = metricsRegistry.registerMeter("nimbus:num-getUserTopology-calls");
         this.getClusterInfoCalls = metricsRegistry.registerMeter("nimbus:num-getClusterInfo-calls");
         this.getTopologySummariesCalls = metricsRegistry.registerMeter("nimbus:num-getTopologySummaries-calls");
-        this.getTopologySummaryByIdCalls = metricsRegistry.registerMeter("nimbus:num-getTopologySummaryById-calls");
+        this.getTopologySummaryCalls = metricsRegistry.registerMeter("nimbus:num-getTopologySummary-calls");
         this.getTopologySummaryByNameCalls = metricsRegistry.registerMeter("nimbus:num-getTopologySummaryByName-calls");
         this.getLeaderCalls = metricsRegistry.registerMeter("nimbus:num-getLeader-calls");
         this.isTopologyNameAllowedCalls = metricsRegistry.registerMeter("nimbus:num-isTopologyNameAllowed-calls");
@@ -3016,13 +3016,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 continue;
             }
             String topoId = entry.getKey();
-            TopologySummary summary = getTopologySummary(topoId, base);
+            TopologySummary summary = getTopologySummaryImpl(topoId, base);
             topologySummaries.add(summary);
         }
         return topologySummaries;
     }
 
-    private TopologySummary getTopologySummary(String topoId, StormBase base) throws Exception {
+    private TopologySummary getTopologySummaryImpl(String topoId, StormBase base) throws Exception {
         IStormClusterState state = stormClusterState;
         Assignment assignment = state.assignmentInfo(topoId, null);
 
@@ -4741,7 +4741,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             checkAuthorization(name, null, "getTopologySummaryByName");
             IStormClusterState state = stormClusterState;
             String topoId = state.getTopoId(name).orElseThrow(() -> new WrappedNotAliveException(name + " is not alive"));
-            return getTopologySummary(topoId, state.topologyBases().get(topoId));
+            return getTopologySummaryImpl(topoId, state.topologyBases().get(topoId));
         } catch (Exception e) {
             LOG.warn("Get TopologySummaryByName info exception.", e);
             if (e instanceof TException) {
@@ -4752,13 +4752,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public TopologySummary getTopologySummaryById(String id) throws AuthorizationException, TException {
+    public TopologySummary getTopologySummary(String id) throws TException {
         try {
-            getTopologySummaryByIdCalls.mark();
+            getTopologySummaryCalls.mark();
             IStormClusterState state = stormClusterState;
             StormBase base = state.topologyBases().get(id);
-            checkAuthorization(null, null, "getTopologySummaryById");
-            return getTopologySummary(id, base);
+            checkAuthorization(null, null, "getTopologySummary");
+            return getTopologySummaryImpl(id, base);
         } catch (Exception e) {
             LOG.warn("Get TopologySummaryById info exception.", e);
             if (e instanceof TException) {

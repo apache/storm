@@ -111,7 +111,7 @@ public class Nimbus {
 
     public TopologySummary getTopologySummaryByName(java.lang.String name) throws AuthorizationException, org.apache.storm.thrift.TException;
 
-    public TopologySummary getTopologySummaryById(java.lang.String id) throws AuthorizationException, org.apache.storm.thrift.TException;
+    public TopologySummary getTopologySummary(java.lang.String id) throws org.apache.storm.thrift.TException;
 
     public NimbusSummary getLeader() throws AuthorizationException, org.apache.storm.thrift.TException;
 
@@ -255,7 +255,7 @@ public class Nimbus {
 
     public void getTopologySummaryByName(java.lang.String name, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException;
 
-    public void getTopologySummaryById(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException;
+    public void getTopologySummary(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException;
 
     public void getLeader(org.apache.storm.thrift.async.AsyncMethodCallback<NimbusSummary> resultHandler) throws org.apache.storm.thrift.TException;
 
@@ -1236,30 +1236,27 @@ public class Nimbus {
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologySummaryByName failed: unknown result");
     }
 
-    public TopologySummary getTopologySummaryById(java.lang.String id) throws AuthorizationException, org.apache.storm.thrift.TException
+    public TopologySummary getTopologySummary(java.lang.String id) throws org.apache.storm.thrift.TException
     {
-      send_getTopologySummaryById(id);
-      return recv_getTopologySummaryById();
+      send_getTopologySummary(id);
+      return recv_getTopologySummary();
     }
 
-    public void send_getTopologySummaryById(java.lang.String id) throws org.apache.storm.thrift.TException
+    public void send_getTopologySummary(java.lang.String id) throws org.apache.storm.thrift.TException
     {
-      getTopologySummaryById_args args = new getTopologySummaryById_args();
+      getTopologySummary_args args = new getTopologySummary_args();
       args.set_id(id);
-      sendBase("getTopologySummaryById", args);
+      sendBase("getTopologySummary", args);
     }
 
-    public TopologySummary recv_getTopologySummaryById() throws AuthorizationException, org.apache.storm.thrift.TException
+    public TopologySummary recv_getTopologySummary() throws org.apache.storm.thrift.TException
     {
-      getTopologySummaryById_result result = new getTopologySummaryById_result();
-      receiveBase(result, "getTopologySummaryById");
+      getTopologySummary_result result = new getTopologySummary_result();
+      receiveBase(result, "getTopologySummary");
       if (result.is_set_success()) {
         return result.success;
       }
-      if (result.aze != null) {
-        throw result.aze;
-      }
-      throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologySummaryById failed: unknown result");
+      throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologySummary failed: unknown result");
     }
 
     public NimbusSummary getLeader() throws AuthorizationException, org.apache.storm.thrift.TException
@@ -2977,35 +2974,35 @@ public class Nimbus {
       }
     }
 
-    public void getTopologySummaryById(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException {
+    public void getTopologySummary(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException {
       checkReady();
-      getTopologySummaryById_call method_call = new getTopologySummaryById_call(id, resultHandler, this, ___protocolFactory, ___transport);
+      getTopologySummary_call method_call = new getTopologySummary_call(id, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
 
-    public static class getTopologySummaryById_call extends org.apache.storm.thrift.async.TAsyncMethodCall<TopologySummary> {
+    public static class getTopologySummary_call extends org.apache.storm.thrift.async.TAsyncMethodCall<TopologySummary> {
       private java.lang.String id;
-      public getTopologySummaryById_call(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler, org.apache.storm.thrift.async.TAsyncClient client, org.apache.storm.thrift.protocol.TProtocolFactory protocolFactory, org.apache.storm.thrift.transport.TNonblockingTransport transport) throws org.apache.storm.thrift.TException {
+      public getTopologySummary_call(java.lang.String id, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler, org.apache.storm.thrift.async.TAsyncClient client, org.apache.storm.thrift.protocol.TProtocolFactory protocolFactory, org.apache.storm.thrift.transport.TNonblockingTransport transport) throws org.apache.storm.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.id = id;
       }
 
       public void write_args(org.apache.storm.thrift.protocol.TProtocol prot) throws org.apache.storm.thrift.TException {
-        prot.writeMessageBegin(new org.apache.storm.thrift.protocol.TMessage("getTopologySummaryById", org.apache.storm.thrift.protocol.TMessageType.CALL, 0));
-        getTopologySummaryById_args args = new getTopologySummaryById_args();
+        prot.writeMessageBegin(new org.apache.storm.thrift.protocol.TMessage("getTopologySummary", org.apache.storm.thrift.protocol.TMessageType.CALL, 0));
+        getTopologySummary_args args = new getTopologySummary_args();
         args.set_id(id);
         args.write(prot);
         prot.writeMessageEnd();
       }
 
-      public TopologySummary getResult() throws AuthorizationException, org.apache.storm.thrift.TException {
+      public TopologySummary getResult() throws org.apache.storm.thrift.TException {
         if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new java.lang.IllegalStateException("Method call not finished!");
         }
         org.apache.storm.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.storm.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
         org.apache.storm.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
-        return (new Client(prot)).recv_getTopologySummaryById();
+        return (new Client(prot)).recv_getTopologySummary();
       }
     }
 
@@ -3689,7 +3686,7 @@ public class Nimbus {
       processMap.put("getClusterInfo", new getClusterInfo());
       processMap.put("getTopologySummaries", new getTopologySummaries());
       processMap.put("getTopologySummaryByName", new getTopologySummaryByName());
-      processMap.put("getTopologySummaryById", new getTopologySummaryById());
+      processMap.put("getTopologySummary", new getTopologySummary());
       processMap.put("getLeader", new getLeader());
       processMap.put("isTopologyNameAllowed", new isTopologyNameAllowed());
       processMap.put("getTopologyInfoByName", new getTopologyInfoByName());
@@ -4749,13 +4746,13 @@ public class Nimbus {
       }
     }
 
-    public static class getTopologySummaryById<I extends Iface> extends org.apache.storm.thrift.ProcessFunction<I, getTopologySummaryById_args> {
-      public getTopologySummaryById() {
-        super("getTopologySummaryById");
+    public static class getTopologySummary<I extends Iface> extends org.apache.storm.thrift.ProcessFunction<I, getTopologySummary_args> {
+      public getTopologySummary() {
+        super("getTopologySummary");
       }
 
-      public getTopologySummaryById_args getEmptyArgsInstance() {
-        return new getTopologySummaryById_args();
+      public getTopologySummary_args getEmptyArgsInstance() {
+        return new getTopologySummary_args();
       }
 
       protected boolean isOneway() {
@@ -4767,13 +4764,9 @@ public class Nimbus {
         return false;
       }
 
-      public getTopologySummaryById_result getResult(I iface, getTopologySummaryById_args args) throws org.apache.storm.thrift.TException {
-        getTopologySummaryById_result result = new getTopologySummaryById_result();
-        try {
-          result.success = iface.getTopologySummaryById(args.id);
-        } catch (AuthorizationException aze) {
-          result.aze = aze;
-        }
+      public getTopologySummary_result getResult(I iface, getTopologySummary_args args) throws org.apache.storm.thrift.TException {
+        getTopologySummary_result result = new getTopologySummary_result();
+        result.success = iface.getTopologySummary(args.id);
         return result;
       }
     }
@@ -5397,7 +5390,7 @@ public class Nimbus {
       processMap.put("getClusterInfo", new getClusterInfo());
       processMap.put("getTopologySummaries", new getTopologySummaries());
       processMap.put("getTopologySummaryByName", new getTopologySummaryByName());
-      processMap.put("getTopologySummaryById", new getTopologySummaryById());
+      processMap.put("getTopologySummary", new getTopologySummary());
       processMap.put("getLeader", new getLeader());
       processMap.put("isTopologyNameAllowed", new isTopologyNameAllowed());
       processMap.put("getTopologyInfoByName", new getTopologyInfoByName());
@@ -7742,20 +7735,20 @@ public class Nimbus {
       }
     }
 
-    public static class getTopologySummaryById<I extends AsyncIface> extends org.apache.storm.thrift.AsyncProcessFunction<I, getTopologySummaryById_args, TopologySummary> {
-      public getTopologySummaryById() {
-        super("getTopologySummaryById");
+    public static class getTopologySummary<I extends AsyncIface> extends org.apache.storm.thrift.AsyncProcessFunction<I, getTopologySummary_args, TopologySummary> {
+      public getTopologySummary() {
+        super("getTopologySummary");
       }
 
-      public getTopologySummaryById_args getEmptyArgsInstance() {
-        return new getTopologySummaryById_args();
+      public getTopologySummary_args getEmptyArgsInstance() {
+        return new getTopologySummary_args();
       }
 
       public org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> getResultHandler(final org.apache.storm.thrift.server.AbstractNonblockingServer.AsyncFrameBuffer fb, final int seqid) {
         final org.apache.storm.thrift.AsyncProcessFunction fcall = this;
         return new org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary>() { 
           public void onComplete(TopologySummary o) {
-            getTopologySummaryById_result result = new getTopologySummaryById_result();
+            getTopologySummary_result result = new getTopologySummary_result();
             result.success = o;
             try {
               fcall.sendResponse(fb, result, org.apache.storm.thrift.protocol.TMessageType.REPLY,seqid);
@@ -7770,12 +7763,8 @@ public class Nimbus {
           public void onError(java.lang.Exception e) {
             byte msgType = org.apache.storm.thrift.protocol.TMessageType.REPLY;
             org.apache.storm.thrift.TSerializable msg;
-            getTopologySummaryById_result result = new getTopologySummaryById_result();
-            if (e instanceof AuthorizationException) {
-              result.aze = (AuthorizationException) e;
-              result.set_aze_isSet(true);
-              msg = result;
-            } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
+            getTopologySummary_result result = new getTopologySummary_result();
+            if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
               _LOGGER.error("TTransportException inside handler", e);
               fb.close();
               return;
@@ -7802,8 +7791,8 @@ public class Nimbus {
         return false;
       }
 
-      public void start(I iface, getTopologySummaryById_args args, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException {
-        iface.getTopologySummaryById(args.id,resultHandler);
+      public void start(I iface, getTopologySummary_args args, org.apache.storm.thrift.async.AsyncMethodCallback<TopologySummary> resultHandler) throws org.apache.storm.thrift.TException {
+        iface.getTopologySummary(args.id,resultHandler);
       }
     }
 
@@ -40034,13 +40023,13 @@ public class Nimbus {
     }
   }
 
-  public static class getTopologySummaryById_args implements org.apache.storm.thrift.TBase<getTopologySummaryById_args, getTopologySummaryById_args._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummaryById_args>   {
-    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaryById_args");
+  public static class getTopologySummary_args implements org.apache.storm.thrift.TBase<getTopologySummary_args, getTopologySummary_args._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummary_args>   {
+    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummary_args");
 
     private static final org.apache.storm.thrift.protocol.TField ID_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("id", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
 
-    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaryById_argsStandardSchemeFactory();
-    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaryById_argsTupleSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummary_argsStandardSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummary_argsTupleSchemeFactory();
 
     private @org.apache.storm.thrift.annotation.Nullable java.lang.String id; // required
 
@@ -40111,13 +40100,13 @@ public class Nimbus {
       tmpMap.put(_Fields.ID, new org.apache.storm.thrift.meta_data.FieldMetaData("id", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
-      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaryById_args.class, metaDataMap);
+      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummary_args.class, metaDataMap);
     }
 
-    public getTopologySummaryById_args() {
+    public getTopologySummary_args() {
     }
 
-    public getTopologySummaryById_args(
+    public getTopologySummary_args(
       java.lang.String id)
     {
       this();
@@ -40127,14 +40116,14 @@ public class Nimbus {
     /**
      * Performs a deep copy on <i>other</i>.
      */
-    public getTopologySummaryById_args(getTopologySummaryById_args other) {
+    public getTopologySummary_args(getTopologySummary_args other) {
       if (other.is_set_id()) {
         this.id = other.id;
       }
     }
 
-    public getTopologySummaryById_args deepCopy() {
-      return new getTopologySummaryById_args(this);
+    public getTopologySummary_args deepCopy() {
+      return new getTopologySummary_args(this);
     }
 
     @Override
@@ -40206,12 +40195,12 @@ public class Nimbus {
     public boolean equals(java.lang.Object that) {
       if (that == null)
         return false;
-      if (that instanceof getTopologySummaryById_args)
-        return this.equals((getTopologySummaryById_args)that);
+      if (that instanceof getTopologySummary_args)
+        return this.equals((getTopologySummary_args)that);
       return false;
     }
 
-    public boolean equals(getTopologySummaryById_args that) {
+    public boolean equals(getTopologySummary_args that) {
       if (that == null)
         return false;
       if (this == that)
@@ -40241,7 +40230,7 @@ public class Nimbus {
     }
 
     @Override
-    public int compareTo(getTopologySummaryById_args other) {
+    public int compareTo(getTopologySummary_args other) {
       if (!getClass().equals(other.getClass())) {
         return getClass().getName().compareTo(other.getClass().getName());
       }
@@ -40276,7 +40265,7 @@ public class Nimbus {
 
     @Override
     public java.lang.String toString() {
-      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummaryById_args(");
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummary_args(");
       boolean first = true;
 
       sb.append("id:");
@@ -40311,15 +40300,15 @@ public class Nimbus {
       }
     }
 
-    private static class getTopologySummaryById_argsStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
-      public getTopologySummaryById_argsStandardScheme getScheme() {
-        return new getTopologySummaryById_argsStandardScheme();
+    private static class getTopologySummary_argsStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummary_argsStandardScheme getScheme() {
+        return new getTopologySummary_argsStandardScheme();
       }
     }
 
-    private static class getTopologySummaryById_argsStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummaryById_args> {
+    private static class getTopologySummary_argsStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummary_args> {
 
-      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummaryById_args struct) throws org.apache.storm.thrift.TException {
+      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummary_args struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
         while (true)
@@ -40346,7 +40335,7 @@ public class Nimbus {
         struct.validate();
       }
 
-      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummaryById_args struct) throws org.apache.storm.thrift.TException {
+      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummary_args struct) throws org.apache.storm.thrift.TException {
         struct.validate();
 
         oprot.writeStructBegin(STRUCT_DESC);
@@ -40361,16 +40350,16 @@ public class Nimbus {
 
     }
 
-    private static class getTopologySummaryById_argsTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
-      public getTopologySummaryById_argsTupleScheme getScheme() {
-        return new getTopologySummaryById_argsTupleScheme();
+    private static class getTopologySummary_argsTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummary_argsTupleScheme getScheme() {
+        return new getTopologySummary_argsTupleScheme();
       }
     }
 
-    private static class getTopologySummaryById_argsTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummaryById_args> {
+    private static class getTopologySummary_argsTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummary_args> {
 
       @Override
-      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryById_args struct) throws org.apache.storm.thrift.TException {
+      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummary_args struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
         java.util.BitSet optionals = new java.util.BitSet();
         if (struct.is_set_id()) {
@@ -40383,7 +40372,7 @@ public class Nimbus {
       }
 
       @Override
-      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryById_args struct) throws org.apache.storm.thrift.TException {
+      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummary_args struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
         java.util.BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
@@ -40398,22 +40387,19 @@ public class Nimbus {
     }
   }
 
-  public static class getTopologySummaryById_result implements org.apache.storm.thrift.TBase<getTopologySummaryById_result, getTopologySummaryById_result._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummaryById_result>   {
-    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaryById_result");
+  public static class getTopologySummary_result implements org.apache.storm.thrift.TBase<getTopologySummary_result, getTopologySummary_result._Fields>, java.io.Serializable, Cloneable, Comparable<getTopologySummary_result>   {
+    private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummary_result");
 
     private static final org.apache.storm.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("success", org.apache.storm.thrift.protocol.TType.STRUCT, (short)0);
-    private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
 
-    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaryById_resultStandardSchemeFactory();
-    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaryById_resultTupleSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummary_resultStandardSchemeFactory();
+    private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummary_resultTupleSchemeFactory();
 
     private @org.apache.storm.thrift.annotation.Nullable TopologySummary success; // required
-    private @org.apache.storm.thrift.annotation.Nullable AuthorizationException aze; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
-      SUCCESS((short)0, "success"),
-      AZE((short)1, "aze");
+      SUCCESS((short)0, "success");
 
       private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -40431,8 +40417,6 @@ public class Nimbus {
         switch(fieldId) {
           case 0: // SUCCESS
             return SUCCESS;
-          case 1: // AZE
-            return AZE;
           default:
             return null;
         }
@@ -40479,44 +40463,36 @@ public class Nimbus {
       java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.storm.thrift.meta_data.FieldMetaData("success", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologySummary.class)));
-      tmpMap.put(_Fields.AZE, new org.apache.storm.thrift.meta_data.FieldMetaData("aze", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
-      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaryById_result.class, metaDataMap);
+      org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummary_result.class, metaDataMap);
     }
 
-    public getTopologySummaryById_result() {
+    public getTopologySummary_result() {
     }
 
-    public getTopologySummaryById_result(
-      TopologySummary success,
-      AuthorizationException aze)
+    public getTopologySummary_result(
+      TopologySummary success)
     {
       this();
       this.success = success;
-      this.aze = aze;
     }
 
     /**
      * Performs a deep copy on <i>other</i>.
      */
-    public getTopologySummaryById_result(getTopologySummaryById_result other) {
+    public getTopologySummary_result(getTopologySummary_result other) {
       if (other.is_set_success()) {
         this.success = new TopologySummary(other.success);
       }
-      if (other.is_set_aze()) {
-        this.aze = new AuthorizationException(other.aze);
-      }
     }
 
-    public getTopologySummaryById_result deepCopy() {
-      return new getTopologySummaryById_result(this);
+    public getTopologySummary_result deepCopy() {
+      return new getTopologySummary_result(this);
     }
 
     @Override
     public void clear() {
       this.success = null;
-      this.aze = null;
     }
 
     @org.apache.storm.thrift.annotation.Nullable
@@ -40543,30 +40519,6 @@ public class Nimbus {
       }
     }
 
-    @org.apache.storm.thrift.annotation.Nullable
-    public AuthorizationException get_aze() {
-      return this.aze;
-    }
-
-    public void set_aze(@org.apache.storm.thrift.annotation.Nullable AuthorizationException aze) {
-      this.aze = aze;
-    }
-
-    public void unset_aze() {
-      this.aze = null;
-    }
-
-    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
-    public boolean is_set_aze() {
-      return this.aze != null;
-    }
-
-    public void set_aze_isSet(boolean value) {
-      if (!value) {
-        this.aze = null;
-      }
-    }
-
     public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
       switch (field) {
       case SUCCESS:
@@ -40574,14 +40526,6 @@ public class Nimbus {
           unset_success();
         } else {
           set_success((TopologySummary)value);
-        }
-        break;
-
-      case AZE:
-        if (value == null) {
-          unset_aze();
-        } else {
-          set_aze((AuthorizationException)value);
         }
         break;
 
@@ -40593,9 +40537,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return get_success();
-
-      case AZE:
-        return get_aze();
 
       }
       throw new java.lang.IllegalStateException();
@@ -40610,8 +40551,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return is_set_success();
-      case AZE:
-        return is_set_aze();
       }
       throw new java.lang.IllegalStateException();
     }
@@ -40620,12 +40559,12 @@ public class Nimbus {
     public boolean equals(java.lang.Object that) {
       if (that == null)
         return false;
-      if (that instanceof getTopologySummaryById_result)
-        return this.equals((getTopologySummaryById_result)that);
+      if (that instanceof getTopologySummary_result)
+        return this.equals((getTopologySummary_result)that);
       return false;
     }
 
-    public boolean equals(getTopologySummaryById_result that) {
+    public boolean equals(getTopologySummary_result that) {
       if (that == null)
         return false;
       if (this == that)
@@ -40640,15 +40579,6 @@ public class Nimbus {
           return false;
       }
 
-      boolean this_present_aze = true && this.is_set_aze();
-      boolean that_present_aze = true && that.is_set_aze();
-      if (this_present_aze || that_present_aze) {
-        if (!(this_present_aze && that_present_aze))
-          return false;
-        if (!this.aze.equals(that.aze))
-          return false;
-      }
-
       return true;
     }
 
@@ -40660,15 +40590,11 @@ public class Nimbus {
       if (is_set_success())
         hashCode = hashCode * 8191 + success.hashCode();
 
-      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
-      if (is_set_aze())
-        hashCode = hashCode * 8191 + aze.hashCode();
-
       return hashCode;
     }
 
     @Override
-    public int compareTo(getTopologySummaryById_result other) {
+    public int compareTo(getTopologySummary_result other) {
       if (!getClass().equals(other.getClass())) {
         return getClass().getName().compareTo(other.getClass().getName());
       }
@@ -40681,16 +40607,6 @@ public class Nimbus {
       }
       if (is_set_success()) {
         lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.success, other.success);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_aze()) {
-        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.aze, other.aze);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -40713,7 +40629,7 @@ public class Nimbus {
 
     @Override
     public java.lang.String toString() {
-      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummaryById_result(");
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getTopologySummary_result(");
       boolean first = true;
 
       sb.append("success:");
@@ -40721,14 +40637,6 @@ public class Nimbus {
         sb.append("null");
       } else {
         sb.append(this.success);
-      }
-      first = false;
-      if (!first) sb.append(", ");
-      sb.append("aze:");
-      if (this.aze == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.aze);
       }
       first = false;
       sb.append(")");
@@ -40759,15 +40667,15 @@ public class Nimbus {
       }
     }
 
-    private static class getTopologySummaryById_resultStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
-      public getTopologySummaryById_resultStandardScheme getScheme() {
-        return new getTopologySummaryById_resultStandardScheme();
+    private static class getTopologySummary_resultStandardSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummary_resultStandardScheme getScheme() {
+        return new getTopologySummary_resultStandardScheme();
       }
     }
 
-    private static class getTopologySummaryById_resultStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummaryById_result> {
+    private static class getTopologySummary_resultStandardScheme extends org.apache.storm.thrift.scheme.StandardScheme<getTopologySummary_result> {
 
-      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummaryById_result struct) throws org.apache.storm.thrift.TException {
+      public void read(org.apache.storm.thrift.protocol.TProtocol iprot, getTopologySummary_result struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
         while (true)
@@ -40786,15 +40694,6 @@ public class Nimbus {
                 org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
-            case 1: // AZE
-              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
-                struct.aze = new AuthorizationException();
-                struct.aze.read(iprot);
-                struct.set_aze_isSet(true);
-              } else { 
-                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-              }
-              break;
             default:
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -40804,7 +40703,7 @@ public class Nimbus {
         struct.validate();
       }
 
-      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummaryById_result struct) throws org.apache.storm.thrift.TException {
+      public void write(org.apache.storm.thrift.protocol.TProtocol oprot, getTopologySummary_result struct) throws org.apache.storm.thrift.TException {
         struct.validate();
 
         oprot.writeStructBegin(STRUCT_DESC);
@@ -40813,57 +40712,41 @@ public class Nimbus {
           struct.success.write(oprot);
           oprot.writeFieldEnd();
         }
-        if (struct.aze != null) {
-          oprot.writeFieldBegin(AZE_FIELD_DESC);
-          struct.aze.write(oprot);
-          oprot.writeFieldEnd();
-        }
         oprot.writeFieldStop();
         oprot.writeStructEnd();
       }
 
     }
 
-    private static class getTopologySummaryById_resultTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
-      public getTopologySummaryById_resultTupleScheme getScheme() {
-        return new getTopologySummaryById_resultTupleScheme();
+    private static class getTopologySummary_resultTupleSchemeFactory implements org.apache.storm.thrift.scheme.SchemeFactory {
+      public getTopologySummary_resultTupleScheme getScheme() {
+        return new getTopologySummary_resultTupleScheme();
       }
     }
 
-    private static class getTopologySummaryById_resultTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummaryById_result> {
+    private static class getTopologySummary_resultTupleScheme extends org.apache.storm.thrift.scheme.TupleScheme<getTopologySummary_result> {
 
       @Override
-      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryById_result struct) throws org.apache.storm.thrift.TException {
+      public void write(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummary_result struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
         java.util.BitSet optionals = new java.util.BitSet();
         if (struct.is_set_success()) {
           optionals.set(0);
         }
-        if (struct.is_set_aze()) {
-          optionals.set(1);
-        }
-        oprot.writeBitSet(optionals, 2);
+        oprot.writeBitSet(optionals, 1);
         if (struct.is_set_success()) {
           struct.success.write(oprot);
-        }
-        if (struct.is_set_aze()) {
-          struct.aze.write(oprot);
         }
       }
 
       @Override
-      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryById_result struct) throws org.apache.storm.thrift.TException {
+      public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummary_result struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(2);
+        java.util.BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           struct.success = new TopologySummary();
           struct.success.read(iprot);
           struct.set_success_isSet(true);
-        }
-        if (incoming.get(1)) {
-          struct.aze = new AuthorizationException();
-          struct.aze.read(iprot);
-          struct.set_aze_isSet(true);
         }
       }
     }
