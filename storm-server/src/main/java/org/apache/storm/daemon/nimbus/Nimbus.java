@@ -4078,7 +4078,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public TopologyInfo getTopologyInfoByName(String name) throws NotAliveException, AuthorizationException, TException {
+    public TopologyInfo getTopologyInfoByName(String name) throws TException {
         try {
             getTopologyInfoByNameCalls.mark();
             GetInfoOptions options = new GetInfoOptions();
@@ -4093,16 +4093,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 
-    private TopologyInfo getTopologyInfoByNameImpl(String name, GetInfoOptions options) throws NotAliveException,
-        AuthorizationException, TException, InvalidTopologyException, Exception {
+    private TopologyInfo getTopologyInfoByNameImpl(String name, GetInfoOptions options) throws TException, Exception {
         IStormClusterState state = stormClusterState;
         String id = state.getTopoId(name).orElseThrow(() -> new WrappedNotAliveException(name + " is not alive"));
         return getTopologyInfoWithOptsImpl(id, options);
     }
 
     @Override
-    public TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws
-        NotAliveException, AuthorizationException, TException {
+    public TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws TException {
         try {
             getTopologyInfoByNameWithOptsCalls.mark();
             return getTopologyInfoByNameImpl(name, options);
@@ -4720,7 +4718,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public List<TopologySummary> getTopologySummaries() throws AuthorizationException, TException {
+    public List<TopologySummary> getTopologySummaries() throws TException {
         try {
             getTopologySummariesCalls.mark();
             checkAuthorization(null, null, "getTopologySummaries");
@@ -4735,7 +4733,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public TopologySummary getTopologySummaryByName(String name) throws AuthorizationException, TException {
+    public TopologySummary getTopologySummaryByName(String name) throws TException {
         try {
             getTopologySummaryByNameCalls.mark();
             checkAuthorization(name, null, "getTopologySummaryByName");

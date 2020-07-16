@@ -107,9 +107,9 @@ public class Nimbus {
 
     public ClusterSummary getClusterInfo() throws AuthorizationException, org.apache.storm.thrift.TException;
 
-    public java.util.List<TopologySummary> getTopologySummaries() throws AuthorizationException, org.apache.storm.thrift.TException;
+    public java.util.List<TopologySummary> getTopologySummaries() throws org.apache.storm.thrift.TException;
 
-    public TopologySummary getTopologySummaryByName(java.lang.String name) throws AuthorizationException, org.apache.storm.thrift.TException;
+    public TopologySummary getTopologySummaryByName(java.lang.String name) throws org.apache.storm.thrift.TException;
 
     public TopologySummary getTopologySummary(java.lang.String id) throws org.apache.storm.thrift.TException;
 
@@ -117,11 +117,11 @@ public class Nimbus {
 
     public boolean isTopologyNameAllowed(java.lang.String name) throws AuthorizationException, org.apache.storm.thrift.TException;
 
-    public TopologyInfo getTopologyInfoByName(java.lang.String name) throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException;
+    public TopologyInfo getTopologyInfoByName(java.lang.String name) throws org.apache.storm.thrift.TException;
 
     public TopologyInfo getTopologyInfo(java.lang.String id) throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException;
 
-    public TopologyInfo getTopologyInfoByNameWithOpts(java.lang.String name, GetInfoOptions options) throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException;
+    public TopologyInfo getTopologyInfoByNameWithOpts(java.lang.String name, GetInfoOptions options) throws org.apache.storm.thrift.TException;
 
     public TopologyInfo getTopologyInfoWithOpts(java.lang.String id, GetInfoOptions options) throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException;
 
@@ -1185,7 +1185,7 @@ public class Nimbus {
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getClusterInfo failed: unknown result");
     }
 
-    public java.util.List<TopologySummary> getTopologySummaries() throws AuthorizationException, org.apache.storm.thrift.TException
+    public java.util.List<TopologySummary> getTopologySummaries() throws org.apache.storm.thrift.TException
     {
       send_getTopologySummaries();
       return recv_getTopologySummaries();
@@ -1197,20 +1197,17 @@ public class Nimbus {
       sendBase("getTopologySummaries", args);
     }
 
-    public java.util.List<TopologySummary> recv_getTopologySummaries() throws AuthorizationException, org.apache.storm.thrift.TException
+    public java.util.List<TopologySummary> recv_getTopologySummaries() throws org.apache.storm.thrift.TException
     {
       getTopologySummaries_result result = new getTopologySummaries_result();
       receiveBase(result, "getTopologySummaries");
       if (result.is_set_success()) {
         return result.success;
       }
-      if (result.aze != null) {
-        throw result.aze;
-      }
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologySummaries failed: unknown result");
     }
 
-    public TopologySummary getTopologySummaryByName(java.lang.String name) throws AuthorizationException, org.apache.storm.thrift.TException
+    public TopologySummary getTopologySummaryByName(java.lang.String name) throws org.apache.storm.thrift.TException
     {
       send_getTopologySummaryByName(name);
       return recv_getTopologySummaryByName();
@@ -1223,15 +1220,12 @@ public class Nimbus {
       sendBase("getTopologySummaryByName", args);
     }
 
-    public TopologySummary recv_getTopologySummaryByName() throws AuthorizationException, org.apache.storm.thrift.TException
+    public TopologySummary recv_getTopologySummaryByName() throws org.apache.storm.thrift.TException
     {
       getTopologySummaryByName_result result = new getTopologySummaryByName_result();
       receiveBase(result, "getTopologySummaryByName");
       if (result.is_set_success()) {
         return result.success;
-      }
-      if (result.aze != null) {
-        throw result.aze;
       }
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologySummaryByName failed: unknown result");
     }
@@ -1310,7 +1304,7 @@ public class Nimbus {
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "isTopologyNameAllowed failed: unknown result");
     }
 
-    public TopologyInfo getTopologyInfoByName(java.lang.String name) throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException
+    public TopologyInfo getTopologyInfoByName(java.lang.String name) throws org.apache.storm.thrift.TException
     {
       send_getTopologyInfoByName(name);
       return recv_getTopologyInfoByName();
@@ -1323,18 +1317,12 @@ public class Nimbus {
       sendBase("getTopologyInfoByName", args);
     }
 
-    public TopologyInfo recv_getTopologyInfoByName() throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException
+    public TopologyInfo recv_getTopologyInfoByName() throws org.apache.storm.thrift.TException
     {
       getTopologyInfoByName_result result = new getTopologyInfoByName_result();
       receiveBase(result, "getTopologyInfoByName");
       if (result.is_set_success()) {
         return result.success;
-      }
-      if (result.e != null) {
-        throw result.e;
-      }
-      if (result.aze != null) {
-        throw result.aze;
       }
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologyInfoByName failed: unknown result");
     }
@@ -1368,7 +1356,7 @@ public class Nimbus {
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologyInfo failed: unknown result");
     }
 
-    public TopologyInfo getTopologyInfoByNameWithOpts(java.lang.String name, GetInfoOptions options) throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException
+    public TopologyInfo getTopologyInfoByNameWithOpts(java.lang.String name, GetInfoOptions options) throws org.apache.storm.thrift.TException
     {
       send_getTopologyInfoByNameWithOpts(name, options);
       return recv_getTopologyInfoByNameWithOpts();
@@ -1382,18 +1370,12 @@ public class Nimbus {
       sendBase("getTopologyInfoByNameWithOpts", args);
     }
 
-    public TopologyInfo recv_getTopologyInfoByNameWithOpts() throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException
+    public TopologyInfo recv_getTopologyInfoByNameWithOpts() throws org.apache.storm.thrift.TException
     {
       getTopologyInfoByNameWithOpts_result result = new getTopologyInfoByNameWithOpts_result();
       receiveBase(result, "getTopologyInfoByNameWithOpts");
       if (result.is_set_success()) {
         return result.success;
-      }
-      if (result.e != null) {
-        throw result.e;
-      }
-      if (result.aze != null) {
-        throw result.aze;
       }
       throw new org.apache.storm.thrift.TApplicationException(org.apache.storm.thrift.TApplicationException.MISSING_RESULT, "getTopologyInfoByNameWithOpts failed: unknown result");
     }
@@ -2932,7 +2914,7 @@ public class Nimbus {
         prot.writeMessageEnd();
       }
 
-      public java.util.List<TopologySummary> getResult() throws AuthorizationException, org.apache.storm.thrift.TException {
+      public java.util.List<TopologySummary> getResult() throws org.apache.storm.thrift.TException {
         if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new java.lang.IllegalStateException("Method call not finished!");
         }
@@ -2964,7 +2946,7 @@ public class Nimbus {
         prot.writeMessageEnd();
       }
 
-      public TopologySummary getResult() throws AuthorizationException, org.apache.storm.thrift.TException {
+      public TopologySummary getResult() throws org.apache.storm.thrift.TException {
         if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new java.lang.IllegalStateException("Method call not finished!");
         }
@@ -3089,7 +3071,7 @@ public class Nimbus {
         prot.writeMessageEnd();
       }
 
-      public TopologyInfo getResult() throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException {
+      public TopologyInfo getResult() throws org.apache.storm.thrift.TException {
         if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new java.lang.IllegalStateException("Method call not finished!");
         }
@@ -3156,7 +3138,7 @@ public class Nimbus {
         prot.writeMessageEnd();
       }
 
-      public TopologyInfo getResult() throws NotAliveException, AuthorizationException, org.apache.storm.thrift.TException {
+      public TopologyInfo getResult() throws org.apache.storm.thrift.TException {
         if (getState() != org.apache.storm.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new java.lang.IllegalStateException("Method call not finished!");
         }
@@ -4708,11 +4690,7 @@ public class Nimbus {
 
       public getTopologySummaries_result getResult(I iface, getTopologySummaries_args args) throws org.apache.storm.thrift.TException {
         getTopologySummaries_result result = new getTopologySummaries_result();
-        try {
-          result.success = iface.getTopologySummaries();
-        } catch (AuthorizationException aze) {
-          result.aze = aze;
-        }
+        result.success = iface.getTopologySummaries();
         return result;
       }
     }
@@ -4737,11 +4715,7 @@ public class Nimbus {
 
       public getTopologySummaryByName_result getResult(I iface, getTopologySummaryByName_args args) throws org.apache.storm.thrift.TException {
         getTopologySummaryByName_result result = new getTopologySummaryByName_result();
-        try {
-          result.success = iface.getTopologySummaryByName(args.name);
-        } catch (AuthorizationException aze) {
-          result.aze = aze;
-        }
+        result.success = iface.getTopologySummaryByName(args.name);
         return result;
       }
     }
@@ -4850,13 +4824,7 @@ public class Nimbus {
 
       public getTopologyInfoByName_result getResult(I iface, getTopologyInfoByName_args args) throws org.apache.storm.thrift.TException {
         getTopologyInfoByName_result result = new getTopologyInfoByName_result();
-        try {
-          result.success = iface.getTopologyInfoByName(args.name);
-        } catch (NotAliveException e) {
-          result.e = e;
-        } catch (AuthorizationException aze) {
-          result.aze = aze;
-        }
+        result.success = iface.getTopologyInfoByName(args.name);
         return result;
       }
     }
@@ -4912,13 +4880,7 @@ public class Nimbus {
 
       public getTopologyInfoByNameWithOpts_result getResult(I iface, getTopologyInfoByNameWithOpts_args args) throws org.apache.storm.thrift.TException {
         getTopologyInfoByNameWithOpts_result result = new getTopologyInfoByNameWithOpts_result();
-        try {
-          result.success = iface.getTopologyInfoByNameWithOpts(args.name, args.options);
-        } catch (NotAliveException e) {
-          result.e = e;
-        } catch (AuthorizationException aze) {
-          result.aze = aze;
-        }
+        result.success = iface.getTopologyInfoByNameWithOpts(args.name, args.options);
         return result;
       }
     }
@@ -7634,11 +7596,7 @@ public class Nimbus {
             byte msgType = org.apache.storm.thrift.protocol.TMessageType.REPLY;
             org.apache.storm.thrift.TSerializable msg;
             getTopologySummaries_result result = new getTopologySummaries_result();
-            if (e instanceof AuthorizationException) {
-              result.aze = (AuthorizationException) e;
-              result.set_aze_isSet(true);
-              msg = result;
-            } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
+            if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
               _LOGGER.error("TTransportException inside handler", e);
               fb.close();
               return;
@@ -7699,11 +7657,7 @@ public class Nimbus {
             byte msgType = org.apache.storm.thrift.protocol.TMessageType.REPLY;
             org.apache.storm.thrift.TSerializable msg;
             getTopologySummaryByName_result result = new getTopologySummaryByName_result();
-            if (e instanceof AuthorizationException) {
-              result.aze = (AuthorizationException) e;
-              result.set_aze_isSet(true);
-              msg = result;
-            } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
+            if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
               _LOGGER.error("TTransportException inside handler", e);
               fb.close();
               return;
@@ -7956,15 +7910,7 @@ public class Nimbus {
             byte msgType = org.apache.storm.thrift.protocol.TMessageType.REPLY;
             org.apache.storm.thrift.TSerializable msg;
             getTopologyInfoByName_result result = new getTopologyInfoByName_result();
-            if (e instanceof NotAliveException) {
-              result.e = (NotAliveException) e;
-              result.set_e_isSet(true);
-              msg = result;
-            } else if (e instanceof AuthorizationException) {
-              result.aze = (AuthorizationException) e;
-              result.set_aze_isSet(true);
-              msg = result;
-            } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
+            if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
               _LOGGER.error("TTransportException inside handler", e);
               fb.close();
               return;
@@ -8094,15 +8040,7 @@ public class Nimbus {
             byte msgType = org.apache.storm.thrift.protocol.TMessageType.REPLY;
             org.apache.storm.thrift.TSerializable msg;
             getTopologyInfoByNameWithOpts_result result = new getTopologyInfoByNameWithOpts_result();
-            if (e instanceof NotAliveException) {
-              result.e = (NotAliveException) e;
-              result.set_e_isSet(true);
-              msg = result;
-            } else if (e instanceof AuthorizationException) {
-              result.aze = (AuthorizationException) e;
-              result.set_aze_isSet(true);
-              msg = result;
-            } else if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
+            if (e instanceof org.apache.storm.thrift.transport.TTransportException) {
               _LOGGER.error("TTransportException inside handler", e);
               fb.close();
               return;
@@ -38663,18 +38601,15 @@ public class Nimbus {
     private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaries_result");
 
     private static final org.apache.storm.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("success", org.apache.storm.thrift.protocol.TType.LIST, (short)0);
-    private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
 
     private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaries_resultStandardSchemeFactory();
     private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaries_resultTupleSchemeFactory();
 
     private @org.apache.storm.thrift.annotation.Nullable java.util.List<TopologySummary> success; // required
-    private @org.apache.storm.thrift.annotation.Nullable AuthorizationException aze; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
-      SUCCESS((short)0, "success"),
-      AZE((short)1, "aze");
+      SUCCESS((short)0, "success");
 
       private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -38692,8 +38627,6 @@ public class Nimbus {
         switch(fieldId) {
           case 0: // SUCCESS
             return SUCCESS;
-          case 1: // AZE
-            return AZE;
           default:
             return null;
         }
@@ -38741,8 +38674,6 @@ public class Nimbus {
       tmpMap.put(_Fields.SUCCESS, new org.apache.storm.thrift.meta_data.FieldMetaData("success", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.storm.thrift.meta_data.ListMetaData(org.apache.storm.thrift.protocol.TType.LIST, 
               new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologySummary.class))));
-      tmpMap.put(_Fields.AZE, new org.apache.storm.thrift.meta_data.FieldMetaData("aze", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaries_result.class, metaDataMap);
     }
@@ -38751,12 +38682,10 @@ public class Nimbus {
     }
 
     public getTopologySummaries_result(
-      java.util.List<TopologySummary> success,
-      AuthorizationException aze)
+      java.util.List<TopologySummary> success)
     {
       this();
       this.success = success;
-      this.aze = aze;
     }
 
     /**
@@ -38770,9 +38699,6 @@ public class Nimbus {
         }
         this.success = __this__success;
       }
-      if (other.is_set_aze()) {
-        this.aze = new AuthorizationException(other.aze);
-      }
     }
 
     public getTopologySummaries_result deepCopy() {
@@ -38782,7 +38708,6 @@ public class Nimbus {
     @Override
     public void clear() {
       this.success = null;
-      this.aze = null;
     }
 
     public int get_success_size() {
@@ -38825,30 +38750,6 @@ public class Nimbus {
       }
     }
 
-    @org.apache.storm.thrift.annotation.Nullable
-    public AuthorizationException get_aze() {
-      return this.aze;
-    }
-
-    public void set_aze(@org.apache.storm.thrift.annotation.Nullable AuthorizationException aze) {
-      this.aze = aze;
-    }
-
-    public void unset_aze() {
-      this.aze = null;
-    }
-
-    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
-    public boolean is_set_aze() {
-      return this.aze != null;
-    }
-
-    public void set_aze_isSet(boolean value) {
-      if (!value) {
-        this.aze = null;
-      }
-    }
-
     public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
       switch (field) {
       case SUCCESS:
@@ -38856,14 +38757,6 @@ public class Nimbus {
           unset_success();
         } else {
           set_success((java.util.List<TopologySummary>)value);
-        }
-        break;
-
-      case AZE:
-        if (value == null) {
-          unset_aze();
-        } else {
-          set_aze((AuthorizationException)value);
         }
         break;
 
@@ -38875,9 +38768,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return get_success();
-
-      case AZE:
-        return get_aze();
 
       }
       throw new java.lang.IllegalStateException();
@@ -38892,8 +38782,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return is_set_success();
-      case AZE:
-        return is_set_aze();
       }
       throw new java.lang.IllegalStateException();
     }
@@ -38922,15 +38810,6 @@ public class Nimbus {
           return false;
       }
 
-      boolean this_present_aze = true && this.is_set_aze();
-      boolean that_present_aze = true && that.is_set_aze();
-      if (this_present_aze || that_present_aze) {
-        if (!(this_present_aze && that_present_aze))
-          return false;
-        if (!this.aze.equals(that.aze))
-          return false;
-      }
-
       return true;
     }
 
@@ -38941,10 +38820,6 @@ public class Nimbus {
       hashCode = hashCode * 8191 + ((is_set_success()) ? 131071 : 524287);
       if (is_set_success())
         hashCode = hashCode * 8191 + success.hashCode();
-
-      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
-      if (is_set_aze())
-        hashCode = hashCode * 8191 + aze.hashCode();
 
       return hashCode;
     }
@@ -38963,16 +38838,6 @@ public class Nimbus {
       }
       if (is_set_success()) {
         lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.success, other.success);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_aze()) {
-        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.aze, other.aze);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -39003,14 +38868,6 @@ public class Nimbus {
         sb.append("null");
       } else {
         sb.append(this.success);
-      }
-      first = false;
-      if (!first) sb.append(", ");
-      sb.append("aze:");
-      if (this.aze == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.aze);
       }
       first = false;
       sb.append(")");
@@ -39075,15 +38932,6 @@ public class Nimbus {
                 org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
-            case 1: // AZE
-              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
-                struct.aze = new AuthorizationException();
-                struct.aze.read(iprot);
-                struct.set_aze_isSet(true);
-              } else { 
-                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-              }
-              break;
             default:
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -39109,11 +38957,6 @@ public class Nimbus {
           }
           oprot.writeFieldEnd();
         }
-        if (struct.aze != null) {
-          oprot.writeFieldBegin(AZE_FIELD_DESC);
-          struct.aze.write(oprot);
-          oprot.writeFieldEnd();
-        }
         oprot.writeFieldStop();
         oprot.writeStructEnd();
       }
@@ -39135,10 +38978,7 @@ public class Nimbus {
         if (struct.is_set_success()) {
           optionals.set(0);
         }
-        if (struct.is_set_aze()) {
-          optionals.set(1);
-        }
-        oprot.writeBitSet(optionals, 2);
+        oprot.writeBitSet(optionals, 1);
         if (struct.is_set_success()) {
           {
             oprot.writeI32(struct.success.size());
@@ -39148,15 +38988,12 @@ public class Nimbus {
             }
           }
         }
-        if (struct.is_set_aze()) {
-          struct.aze.write(oprot);
-        }
       }
 
       @Override
       public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaries_result struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(2);
+        java.util.BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           {
             org.apache.storm.thrift.protocol.TList _list983 = new org.apache.storm.thrift.protocol.TList(org.apache.storm.thrift.protocol.TType.STRUCT, iprot.readI32());
@@ -39170,11 +39007,6 @@ public class Nimbus {
             }
           }
           struct.set_success_isSet(true);
-        }
-        if (incoming.get(1)) {
-          struct.aze = new AuthorizationException();
-          struct.aze.read(iprot);
-          struct.set_aze_isSet(true);
         }
       }
     }
@@ -39552,18 +39384,15 @@ public class Nimbus {
     private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologySummaryByName_result");
 
     private static final org.apache.storm.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("success", org.apache.storm.thrift.protocol.TType.STRUCT, (short)0);
-    private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
 
     private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologySummaryByName_resultStandardSchemeFactory();
     private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologySummaryByName_resultTupleSchemeFactory();
 
     private @org.apache.storm.thrift.annotation.Nullable TopologySummary success; // required
-    private @org.apache.storm.thrift.annotation.Nullable AuthorizationException aze; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
-      SUCCESS((short)0, "success"),
-      AZE((short)1, "aze");
+      SUCCESS((short)0, "success");
 
       private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -39581,8 +39410,6 @@ public class Nimbus {
         switch(fieldId) {
           case 0: // SUCCESS
             return SUCCESS;
-          case 1: // AZE
-            return AZE;
           default:
             return null;
         }
@@ -39629,8 +39456,6 @@ public class Nimbus {
       java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.storm.thrift.meta_data.FieldMetaData("success", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologySummary.class)));
-      tmpMap.put(_Fields.AZE, new org.apache.storm.thrift.meta_data.FieldMetaData("aze", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologySummaryByName_result.class, metaDataMap);
     }
@@ -39639,12 +39464,10 @@ public class Nimbus {
     }
 
     public getTopologySummaryByName_result(
-      TopologySummary success,
-      AuthorizationException aze)
+      TopologySummary success)
     {
       this();
       this.success = success;
-      this.aze = aze;
     }
 
     /**
@@ -39653,9 +39476,6 @@ public class Nimbus {
     public getTopologySummaryByName_result(getTopologySummaryByName_result other) {
       if (other.is_set_success()) {
         this.success = new TopologySummary(other.success);
-      }
-      if (other.is_set_aze()) {
-        this.aze = new AuthorizationException(other.aze);
       }
     }
 
@@ -39666,7 +39486,6 @@ public class Nimbus {
     @Override
     public void clear() {
       this.success = null;
-      this.aze = null;
     }
 
     @org.apache.storm.thrift.annotation.Nullable
@@ -39693,30 +39512,6 @@ public class Nimbus {
       }
     }
 
-    @org.apache.storm.thrift.annotation.Nullable
-    public AuthorizationException get_aze() {
-      return this.aze;
-    }
-
-    public void set_aze(@org.apache.storm.thrift.annotation.Nullable AuthorizationException aze) {
-      this.aze = aze;
-    }
-
-    public void unset_aze() {
-      this.aze = null;
-    }
-
-    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
-    public boolean is_set_aze() {
-      return this.aze != null;
-    }
-
-    public void set_aze_isSet(boolean value) {
-      if (!value) {
-        this.aze = null;
-      }
-    }
-
     public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
       switch (field) {
       case SUCCESS:
@@ -39724,14 +39519,6 @@ public class Nimbus {
           unset_success();
         } else {
           set_success((TopologySummary)value);
-        }
-        break;
-
-      case AZE:
-        if (value == null) {
-          unset_aze();
-        } else {
-          set_aze((AuthorizationException)value);
         }
         break;
 
@@ -39743,9 +39530,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return get_success();
-
-      case AZE:
-        return get_aze();
 
       }
       throw new java.lang.IllegalStateException();
@@ -39760,8 +39544,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return is_set_success();
-      case AZE:
-        return is_set_aze();
       }
       throw new java.lang.IllegalStateException();
     }
@@ -39790,15 +39572,6 @@ public class Nimbus {
           return false;
       }
 
-      boolean this_present_aze = true && this.is_set_aze();
-      boolean that_present_aze = true && that.is_set_aze();
-      if (this_present_aze || that_present_aze) {
-        if (!(this_present_aze && that_present_aze))
-          return false;
-        if (!this.aze.equals(that.aze))
-          return false;
-      }
-
       return true;
     }
 
@@ -39809,10 +39582,6 @@ public class Nimbus {
       hashCode = hashCode * 8191 + ((is_set_success()) ? 131071 : 524287);
       if (is_set_success())
         hashCode = hashCode * 8191 + success.hashCode();
-
-      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
-      if (is_set_aze())
-        hashCode = hashCode * 8191 + aze.hashCode();
 
       return hashCode;
     }
@@ -39831,16 +39600,6 @@ public class Nimbus {
       }
       if (is_set_success()) {
         lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.success, other.success);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_aze()) {
-        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.aze, other.aze);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -39871,14 +39630,6 @@ public class Nimbus {
         sb.append("null");
       } else {
         sb.append(this.success);
-      }
-      first = false;
-      if (!first) sb.append(", ");
-      sb.append("aze:");
-      if (this.aze == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.aze);
       }
       first = false;
       sb.append(")");
@@ -39936,15 +39687,6 @@ public class Nimbus {
                 org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
-            case 1: // AZE
-              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
-                struct.aze = new AuthorizationException();
-                struct.aze.read(iprot);
-                struct.set_aze_isSet(true);
-              } else { 
-                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-              }
-              break;
             default:
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -39961,11 +39703,6 @@ public class Nimbus {
         if (struct.success != null) {
           oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
           struct.success.write(oprot);
-          oprot.writeFieldEnd();
-        }
-        if (struct.aze != null) {
-          oprot.writeFieldBegin(AZE_FIELD_DESC);
-          struct.aze.write(oprot);
           oprot.writeFieldEnd();
         }
         oprot.writeFieldStop();
@@ -39989,31 +39726,20 @@ public class Nimbus {
         if (struct.is_set_success()) {
           optionals.set(0);
         }
-        if (struct.is_set_aze()) {
-          optionals.set(1);
-        }
-        oprot.writeBitSet(optionals, 2);
+        oprot.writeBitSet(optionals, 1);
         if (struct.is_set_success()) {
           struct.success.write(oprot);
-        }
-        if (struct.is_set_aze()) {
-          struct.aze.write(oprot);
         }
       }
 
       @Override
       public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologySummaryByName_result struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(2);
+        java.util.BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           struct.success = new TopologySummary();
           struct.success.read(iprot);
           struct.set_success_isSet(true);
-        }
-        if (incoming.get(1)) {
-          struct.aze = new AuthorizationException();
-          struct.aze.read(iprot);
-          struct.set_aze_isSet(true);
         }
       }
     }
@@ -42682,21 +42408,15 @@ public class Nimbus {
     private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologyInfoByName_result");
 
     private static final org.apache.storm.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("success", org.apache.storm.thrift.protocol.TType.STRUCT, (short)0);
-    private static final org.apache.storm.thrift.protocol.TField E_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("e", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
-    private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)2);
 
     private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologyInfoByName_resultStandardSchemeFactory();
     private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologyInfoByName_resultTupleSchemeFactory();
 
     private @org.apache.storm.thrift.annotation.Nullable TopologyInfo success; // required
-    private @org.apache.storm.thrift.annotation.Nullable NotAliveException e; // required
-    private @org.apache.storm.thrift.annotation.Nullable AuthorizationException aze; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
-      SUCCESS((short)0, "success"),
-      E((short)1, "e"),
-      AZE((short)2, "aze");
+      SUCCESS((short)0, "success");
 
       private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -42714,10 +42434,6 @@ public class Nimbus {
         switch(fieldId) {
           case 0: // SUCCESS
             return SUCCESS;
-          case 1: // E
-            return E;
-          case 2: // AZE
-            return AZE;
           default:
             return null;
         }
@@ -42764,10 +42480,6 @@ public class Nimbus {
       java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.storm.thrift.meta_data.FieldMetaData("success", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologyInfo.class)));
-      tmpMap.put(_Fields.E, new org.apache.storm.thrift.meta_data.FieldMetaData("e", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, NotAliveException.class)));
-      tmpMap.put(_Fields.AZE, new org.apache.storm.thrift.meta_data.FieldMetaData("aze", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologyInfoByName_result.class, metaDataMap);
     }
@@ -42776,14 +42488,10 @@ public class Nimbus {
     }
 
     public getTopologyInfoByName_result(
-      TopologyInfo success,
-      NotAliveException e,
-      AuthorizationException aze)
+      TopologyInfo success)
     {
       this();
       this.success = success;
-      this.e = e;
-      this.aze = aze;
     }
 
     /**
@@ -42792,12 +42500,6 @@ public class Nimbus {
     public getTopologyInfoByName_result(getTopologyInfoByName_result other) {
       if (other.is_set_success()) {
         this.success = new TopologyInfo(other.success);
-      }
-      if (other.is_set_e()) {
-        this.e = new NotAliveException(other.e);
-      }
-      if (other.is_set_aze()) {
-        this.aze = new AuthorizationException(other.aze);
       }
     }
 
@@ -42808,8 +42510,6 @@ public class Nimbus {
     @Override
     public void clear() {
       this.success = null;
-      this.e = null;
-      this.aze = null;
     }
 
     @org.apache.storm.thrift.annotation.Nullable
@@ -42836,54 +42536,6 @@ public class Nimbus {
       }
     }
 
-    @org.apache.storm.thrift.annotation.Nullable
-    public NotAliveException get_e() {
-      return this.e;
-    }
-
-    public void set_e(@org.apache.storm.thrift.annotation.Nullable NotAliveException e) {
-      this.e = e;
-    }
-
-    public void unset_e() {
-      this.e = null;
-    }
-
-    /** Returns true if field e is set (has been assigned a value) and false otherwise */
-    public boolean is_set_e() {
-      return this.e != null;
-    }
-
-    public void set_e_isSet(boolean value) {
-      if (!value) {
-        this.e = null;
-      }
-    }
-
-    @org.apache.storm.thrift.annotation.Nullable
-    public AuthorizationException get_aze() {
-      return this.aze;
-    }
-
-    public void set_aze(@org.apache.storm.thrift.annotation.Nullable AuthorizationException aze) {
-      this.aze = aze;
-    }
-
-    public void unset_aze() {
-      this.aze = null;
-    }
-
-    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
-    public boolean is_set_aze() {
-      return this.aze != null;
-    }
-
-    public void set_aze_isSet(boolean value) {
-      if (!value) {
-        this.aze = null;
-      }
-    }
-
     public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
       switch (field) {
       case SUCCESS:
@@ -42891,22 +42543,6 @@ public class Nimbus {
           unset_success();
         } else {
           set_success((TopologyInfo)value);
-        }
-        break;
-
-      case E:
-        if (value == null) {
-          unset_e();
-        } else {
-          set_e((NotAliveException)value);
-        }
-        break;
-
-      case AZE:
-        if (value == null) {
-          unset_aze();
-        } else {
-          set_aze((AuthorizationException)value);
         }
         break;
 
@@ -42918,12 +42554,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return get_success();
-
-      case E:
-        return get_e();
-
-      case AZE:
-        return get_aze();
 
       }
       throw new java.lang.IllegalStateException();
@@ -42938,10 +42568,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return is_set_success();
-      case E:
-        return is_set_e();
-      case AZE:
-        return is_set_aze();
       }
       throw new java.lang.IllegalStateException();
     }
@@ -42970,24 +42596,6 @@ public class Nimbus {
           return false;
       }
 
-      boolean this_present_e = true && this.is_set_e();
-      boolean that_present_e = true && that.is_set_e();
-      if (this_present_e || that_present_e) {
-        if (!(this_present_e && that_present_e))
-          return false;
-        if (!this.e.equals(that.e))
-          return false;
-      }
-
-      boolean this_present_aze = true && this.is_set_aze();
-      boolean that_present_aze = true && that.is_set_aze();
-      if (this_present_aze || that_present_aze) {
-        if (!(this_present_aze && that_present_aze))
-          return false;
-        if (!this.aze.equals(that.aze))
-          return false;
-      }
-
       return true;
     }
 
@@ -42998,14 +42606,6 @@ public class Nimbus {
       hashCode = hashCode * 8191 + ((is_set_success()) ? 131071 : 524287);
       if (is_set_success())
         hashCode = hashCode * 8191 + success.hashCode();
-
-      hashCode = hashCode * 8191 + ((is_set_e()) ? 131071 : 524287);
-      if (is_set_e())
-        hashCode = hashCode * 8191 + e.hashCode();
-
-      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
-      if (is_set_aze())
-        hashCode = hashCode * 8191 + aze.hashCode();
 
       return hashCode;
     }
@@ -43024,26 +42624,6 @@ public class Nimbus {
       }
       if (is_set_success()) {
         lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.success, other.success);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = java.lang.Boolean.valueOf(is_set_e()).compareTo(other.is_set_e());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_e()) {
-        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.e, other.e);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_aze()) {
-        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.aze, other.aze);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -43074,22 +42654,6 @@ public class Nimbus {
         sb.append("null");
       } else {
         sb.append(this.success);
-      }
-      first = false;
-      if (!first) sb.append(", ");
-      sb.append("e:");
-      if (this.e == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.e);
-      }
-      first = false;
-      if (!first) sb.append(", ");
-      sb.append("aze:");
-      if (this.aze == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.aze);
       }
       first = false;
       sb.append(")");
@@ -43147,24 +42711,6 @@ public class Nimbus {
                 org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
-            case 1: // E
-              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
-                struct.e = new NotAliveException();
-                struct.e.read(iprot);
-                struct.set_e_isSet(true);
-              } else { 
-                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-              }
-              break;
-            case 2: // AZE
-              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
-                struct.aze = new AuthorizationException();
-                struct.aze.read(iprot);
-                struct.set_aze_isSet(true);
-              } else { 
-                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-              }
-              break;
             default:
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -43181,16 +42727,6 @@ public class Nimbus {
         if (struct.success != null) {
           oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
           struct.success.write(oprot);
-          oprot.writeFieldEnd();
-        }
-        if (struct.e != null) {
-          oprot.writeFieldBegin(E_FIELD_DESC);
-          struct.e.write(oprot);
-          oprot.writeFieldEnd();
-        }
-        if (struct.aze != null) {
-          oprot.writeFieldBegin(AZE_FIELD_DESC);
-          struct.aze.write(oprot);
           oprot.writeFieldEnd();
         }
         oprot.writeFieldStop();
@@ -43214,42 +42750,20 @@ public class Nimbus {
         if (struct.is_set_success()) {
           optionals.set(0);
         }
-        if (struct.is_set_e()) {
-          optionals.set(1);
-        }
-        if (struct.is_set_aze()) {
-          optionals.set(2);
-        }
-        oprot.writeBitSet(optionals, 3);
+        oprot.writeBitSet(optionals, 1);
         if (struct.is_set_success()) {
           struct.success.write(oprot);
-        }
-        if (struct.is_set_e()) {
-          struct.e.write(oprot);
-        }
-        if (struct.is_set_aze()) {
-          struct.aze.write(oprot);
         }
       }
 
       @Override
       public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologyInfoByName_result struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(3);
+        java.util.BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           struct.success = new TopologyInfo();
           struct.success.read(iprot);
           struct.set_success_isSet(true);
-        }
-        if (incoming.get(1)) {
-          struct.e = new NotAliveException();
-          struct.e.read(iprot);
-          struct.set_e_isSet(true);
-        }
-        if (incoming.get(2)) {
-          struct.aze = new AuthorizationException();
-          struct.aze.read(iprot);
-          struct.set_aze_isSet(true);
         }
       }
     }
@@ -44681,21 +44195,15 @@ public class Nimbus {
     private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("getTopologyInfoByNameWithOpts_result");
 
     private static final org.apache.storm.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("success", org.apache.storm.thrift.protocol.TType.STRUCT, (short)0);
-    private static final org.apache.storm.thrift.protocol.TField E_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("e", org.apache.storm.thrift.protocol.TType.STRUCT, (short)1);
-    private static final org.apache.storm.thrift.protocol.TField AZE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("aze", org.apache.storm.thrift.protocol.TType.STRUCT, (short)2);
 
     private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getTopologyInfoByNameWithOpts_resultStandardSchemeFactory();
     private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getTopologyInfoByNameWithOpts_resultTupleSchemeFactory();
 
     private @org.apache.storm.thrift.annotation.Nullable TopologyInfo success; // required
-    private @org.apache.storm.thrift.annotation.Nullable NotAliveException e; // required
-    private @org.apache.storm.thrift.annotation.Nullable AuthorizationException aze; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
-      SUCCESS((short)0, "success"),
-      E((short)1, "e"),
-      AZE((short)2, "aze");
+      SUCCESS((short)0, "success");
 
       private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -44713,10 +44221,6 @@ public class Nimbus {
         switch(fieldId) {
           case 0: // SUCCESS
             return SUCCESS;
-          case 1: // E
-            return E;
-          case 2: // AZE
-            return AZE;
           default:
             return null;
         }
@@ -44763,10 +44267,6 @@ public class Nimbus {
       java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.storm.thrift.meta_data.FieldMetaData("success", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, TopologyInfo.class)));
-      tmpMap.put(_Fields.E, new org.apache.storm.thrift.meta_data.FieldMetaData("e", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, NotAliveException.class)));
-      tmpMap.put(_Fields.AZE, new org.apache.storm.thrift.meta_data.FieldMetaData("aze", org.apache.storm.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, AuthorizationException.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTopologyInfoByNameWithOpts_result.class, metaDataMap);
     }
@@ -44775,14 +44275,10 @@ public class Nimbus {
     }
 
     public getTopologyInfoByNameWithOpts_result(
-      TopologyInfo success,
-      NotAliveException e,
-      AuthorizationException aze)
+      TopologyInfo success)
     {
       this();
       this.success = success;
-      this.e = e;
-      this.aze = aze;
     }
 
     /**
@@ -44791,12 +44287,6 @@ public class Nimbus {
     public getTopologyInfoByNameWithOpts_result(getTopologyInfoByNameWithOpts_result other) {
       if (other.is_set_success()) {
         this.success = new TopologyInfo(other.success);
-      }
-      if (other.is_set_e()) {
-        this.e = new NotAliveException(other.e);
-      }
-      if (other.is_set_aze()) {
-        this.aze = new AuthorizationException(other.aze);
       }
     }
 
@@ -44807,8 +44297,6 @@ public class Nimbus {
     @Override
     public void clear() {
       this.success = null;
-      this.e = null;
-      this.aze = null;
     }
 
     @org.apache.storm.thrift.annotation.Nullable
@@ -44835,54 +44323,6 @@ public class Nimbus {
       }
     }
 
-    @org.apache.storm.thrift.annotation.Nullable
-    public NotAliveException get_e() {
-      return this.e;
-    }
-
-    public void set_e(@org.apache.storm.thrift.annotation.Nullable NotAliveException e) {
-      this.e = e;
-    }
-
-    public void unset_e() {
-      this.e = null;
-    }
-
-    /** Returns true if field e is set (has been assigned a value) and false otherwise */
-    public boolean is_set_e() {
-      return this.e != null;
-    }
-
-    public void set_e_isSet(boolean value) {
-      if (!value) {
-        this.e = null;
-      }
-    }
-
-    @org.apache.storm.thrift.annotation.Nullable
-    public AuthorizationException get_aze() {
-      return this.aze;
-    }
-
-    public void set_aze(@org.apache.storm.thrift.annotation.Nullable AuthorizationException aze) {
-      this.aze = aze;
-    }
-
-    public void unset_aze() {
-      this.aze = null;
-    }
-
-    /** Returns true if field aze is set (has been assigned a value) and false otherwise */
-    public boolean is_set_aze() {
-      return this.aze != null;
-    }
-
-    public void set_aze_isSet(boolean value) {
-      if (!value) {
-        this.aze = null;
-      }
-    }
-
     public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
       switch (field) {
       case SUCCESS:
@@ -44890,22 +44330,6 @@ public class Nimbus {
           unset_success();
         } else {
           set_success((TopologyInfo)value);
-        }
-        break;
-
-      case E:
-        if (value == null) {
-          unset_e();
-        } else {
-          set_e((NotAliveException)value);
-        }
-        break;
-
-      case AZE:
-        if (value == null) {
-          unset_aze();
-        } else {
-          set_aze((AuthorizationException)value);
         }
         break;
 
@@ -44917,12 +44341,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return get_success();
-
-      case E:
-        return get_e();
-
-      case AZE:
-        return get_aze();
 
       }
       throw new java.lang.IllegalStateException();
@@ -44937,10 +44355,6 @@ public class Nimbus {
       switch (field) {
       case SUCCESS:
         return is_set_success();
-      case E:
-        return is_set_e();
-      case AZE:
-        return is_set_aze();
       }
       throw new java.lang.IllegalStateException();
     }
@@ -44969,24 +44383,6 @@ public class Nimbus {
           return false;
       }
 
-      boolean this_present_e = true && this.is_set_e();
-      boolean that_present_e = true && that.is_set_e();
-      if (this_present_e || that_present_e) {
-        if (!(this_present_e && that_present_e))
-          return false;
-        if (!this.e.equals(that.e))
-          return false;
-      }
-
-      boolean this_present_aze = true && this.is_set_aze();
-      boolean that_present_aze = true && that.is_set_aze();
-      if (this_present_aze || that_present_aze) {
-        if (!(this_present_aze && that_present_aze))
-          return false;
-        if (!this.aze.equals(that.aze))
-          return false;
-      }
-
       return true;
     }
 
@@ -44997,14 +44393,6 @@ public class Nimbus {
       hashCode = hashCode * 8191 + ((is_set_success()) ? 131071 : 524287);
       if (is_set_success())
         hashCode = hashCode * 8191 + success.hashCode();
-
-      hashCode = hashCode * 8191 + ((is_set_e()) ? 131071 : 524287);
-      if (is_set_e())
-        hashCode = hashCode * 8191 + e.hashCode();
-
-      hashCode = hashCode * 8191 + ((is_set_aze()) ? 131071 : 524287);
-      if (is_set_aze())
-        hashCode = hashCode * 8191 + aze.hashCode();
 
       return hashCode;
     }
@@ -45023,26 +44411,6 @@ public class Nimbus {
       }
       if (is_set_success()) {
         lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.success, other.success);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = java.lang.Boolean.valueOf(is_set_e()).compareTo(other.is_set_e());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_e()) {
-        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.e, other.e);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = java.lang.Boolean.valueOf(is_set_aze()).compareTo(other.is_set_aze());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_aze()) {
-        lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.aze, other.aze);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -45073,22 +44441,6 @@ public class Nimbus {
         sb.append("null");
       } else {
         sb.append(this.success);
-      }
-      first = false;
-      if (!first) sb.append(", ");
-      sb.append("e:");
-      if (this.e == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.e);
-      }
-      first = false;
-      if (!first) sb.append(", ");
-      sb.append("aze:");
-      if (this.aze == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.aze);
       }
       first = false;
       sb.append(")");
@@ -45146,24 +44498,6 @@ public class Nimbus {
                 org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
-            case 1: // E
-              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
-                struct.e = new NotAliveException();
-                struct.e.read(iprot);
-                struct.set_e_isSet(true);
-              } else { 
-                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-              }
-              break;
-            case 2: // AZE
-              if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRUCT) {
-                struct.aze = new AuthorizationException();
-                struct.aze.read(iprot);
-                struct.set_aze_isSet(true);
-              } else { 
-                org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-              }
-              break;
             default:
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -45180,16 +44514,6 @@ public class Nimbus {
         if (struct.success != null) {
           oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
           struct.success.write(oprot);
-          oprot.writeFieldEnd();
-        }
-        if (struct.e != null) {
-          oprot.writeFieldBegin(E_FIELD_DESC);
-          struct.e.write(oprot);
-          oprot.writeFieldEnd();
-        }
-        if (struct.aze != null) {
-          oprot.writeFieldBegin(AZE_FIELD_DESC);
-          struct.aze.write(oprot);
           oprot.writeFieldEnd();
         }
         oprot.writeFieldStop();
@@ -45213,42 +44537,20 @@ public class Nimbus {
         if (struct.is_set_success()) {
           optionals.set(0);
         }
-        if (struct.is_set_e()) {
-          optionals.set(1);
-        }
-        if (struct.is_set_aze()) {
-          optionals.set(2);
-        }
-        oprot.writeBitSet(optionals, 3);
+        oprot.writeBitSet(optionals, 1);
         if (struct.is_set_success()) {
           struct.success.write(oprot);
-        }
-        if (struct.is_set_e()) {
-          struct.e.write(oprot);
-        }
-        if (struct.is_set_aze()) {
-          struct.aze.write(oprot);
         }
       }
 
       @Override
       public void read(org.apache.storm.thrift.protocol.TProtocol prot, getTopologyInfoByNameWithOpts_result struct) throws org.apache.storm.thrift.TException {
         org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(3);
+        java.util.BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           struct.success = new TopologyInfo();
           struct.success.read(iprot);
           struct.set_success_isSet(true);
-        }
-        if (incoming.get(1)) {
-          struct.e = new NotAliveException();
-          struct.e.read(iprot);
-          struct.set_e_isSet(true);
-        }
-        if (incoming.get(2)) {
-          struct.aze = new AuthorizationException();
-          struct.aze.read(iprot);
-          struct.set_aze_isSet(true);
         }
       }
     }

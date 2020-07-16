@@ -138,9 +138,9 @@ public interface ILocalCluster extends AutoCloseable {
      */
     ClusterSummary getClusterInfo() throws TException;
 
-    java.util.List<TopologySummary> getTopologySummaries() throws AuthorizationException, TException;
+    java.util.List<TopologySummary> getTopologySummaries() throws TException;
 
-    TopologySummary getTopologySummaryByName(java.lang.String name) throws AuthorizationException, TException;
+    TopologySummary getTopologySummaryByName(java.lang.String name) throws TException;
 
     TopologySummary getTopologySummary(java.lang.String id) throws TException;
 

@@ -574,12 +574,12 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
-    public List<TopologySummary> getTopologySummaries() throws AuthorizationException, TException {
+    public List<TopologySummary> getTopologySummaries() throws TException {
         return getNimbus().getTopologySummaries();
     }
 
     @Override
-    public TopologySummary getTopologySummaryByName(String name) throws AuthorizationException, TException {
+    public TopologySummary getTopologySummaryByName(String name) throws TException {
         return getNimbus().getTopologySummaryByName(name);
     }
 
@@ -599,14 +599,12 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
-    public TopologyInfo getTopologyInfoWithOpts(String id, GetInfoOptions options) throws NotAliveException, AuthorizationException,
-        TException {
+    public TopologyInfo getTopologyInfoWithOpts(String id, GetInfoOptions options) throws TException {
         return nimbus.getTopologyInfoWithOpts(id, options);
     }
 
     @Override
-    public TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws NotAliveException, AuthorizationException,
-        TException {
+    public TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws TException {
         return nimbus.getTopologyInfoByNameWithOpts(name, options);
     }
 
