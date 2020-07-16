@@ -108,7 +108,7 @@ public class StormCluster {
     }
 
     public TopologyInfo getInfo(TopologySummary topologySummary) throws TException {
-        return client.getTopologyInfoByName(topologySummary.get_id());
+        return client.getTopologyInfo(topologySummary.get_id());
     }
 
     public Nimbus.Iface getNimbusClient() {
