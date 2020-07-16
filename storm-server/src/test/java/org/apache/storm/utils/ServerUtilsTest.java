@@ -24,21 +24,30 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipFile;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.storm.testing.TmpPath;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerUtilsTest {
+
+    public static final Logger LOG = LoggerFactory.getLogger(ServerUtilsTest.class);
 
     @Test
     public void testExtractZipFileDisallowsPathTraversal() throws Exception {
@@ -47,7 +56,7 @@ public class ServerUtilsTest {
             Path extractionDest = testRoot.resolve("dest");
             Files.createDirectories(extractionDest);
 
-            /**
+            /*
              * Contains good.txt and ../evil.txt. Evil.txt will path outside the target dir, and should not be extracted.
              */
             try (ZipFile zip = new ZipFile(Paths.get("src/test/resources/evil-path-traversal.jar").toFile())) {
@@ -67,7 +76,7 @@ public class ServerUtilsTest {
             Path extractionDest = destParent.resolve("resources");
             Files.createDirectories(extractionDest);
 
-            /**
+            /*
              * Contains resources/good.txt and resources/../evil.txt. Evil.txt should not be extracted as it would end
              * up outside the extraction dest.
              */
@@ -162,6 +171,109 @@ public class ServerUtilsTest {
         int uid1 = ServerUtils.getUserId(null);
         Path p = Files.createTempFile("testGetUser", ".txt");
         int uid2 = ServerUtils.getPathOwnerUid(p.toString());
+        if (!p.toFile().delete()) {
+            LOG.warn("Could not delete tempoary file {}", p);
+        }
         assertEquals("User UID " + uid1 + " is not same as file " + p.toString() + " owner UID of " + uid2, uid1, uid2);
+    }
+
+    @Test
+    public void testIsAnyProcessPosixProcessPidDirAlive() throws IOException {
+        final String testName = "testIsAnyProcessPosixProcessPidDirAlive";
+        int errCnt = 0;
+        int maxPidCnt = 5;
+        if (ServerUtils.IS_ON_WINDOWS) {
+            LOG.info("{}: test cannot be run on Windows. Marked as successful", testName);
+            return;
+        }
+        final Path parentDir = Paths.get("/proc");
+        if (!parentDir.toFile().exists()) {
+            LOG.info("{}: test cannot be run on system without process directory {}, os.name={}",
+                    testName, parentDir, System.getProperty("os.name"));
+            return;
+        }
+        // Create processes and wait for their termination
+        Set<Long> observables = new HashSet<>();
+
+        for (int i = 0 ; i < maxPidCnt ; i++) {
+            String cmd = "sleep 2000";
+            Process process = Runtime.getRuntime().exec(cmd);
+            long pid = getPidOfUnixProcess(process);
+            LOG.info("{}: ({}) ran process \"{}\" with pid={}", testName, i, cmd, pid);
+            if (pid < 0) {
+                errCnt++;
+                LOG.error("{}: ({}) Cannot obtain process id for executed command \"{}\"", testName, i, cmd);
+                continue;
+            }
+            observables.add(pid);
+        }
+        String userName = System.getProperty("user.name");
+        // now kill processes one by one
+        List<Long> pidList = new ArrayList<>(observables);
+        final long processKillIntervalMs = 2000;
+        for (int i = 0 ; i < pidList.size() ; i++) {
+            long pid = pidList.get(i);
+            LOG.info("{}: ({}) Sleeping for {} milliseconds before kill", testName, i, processKillIntervalMs);
+            if (sleepInterrupted(processKillIntervalMs)) {
+                return;
+            }
+            Runtime.getRuntime().exec("kill -9 " + pid);
+            LOG.info("{}: ({}) Sleeping for {} milliseconds after kill", testName, i, processKillIntervalMs);
+            if (sleepInterrupted(processKillIntervalMs)) {
+                return;
+            }
+            boolean pidDirsAvailable = ServerUtils.isAnyPosixProcessPidDirAlive(observables, userName);
+            if (i < pidList.size() - 1) {
+                if (pidDirsAvailable) {
+                    LOG.info("{}: ({}) Found existing process directories before killing last process", testName, i);
+                } else {
+                    errCnt++;
+                    LOG.error("{}: ({}) Found no existing process directories before killing last process", testName, i);
+                }
+            } else {
+                if (pidDirsAvailable) {
+                    errCnt++;
+                    LOG.error("{}: ({}) Found existing process directories after killing last process", testName, i);
+                } else {
+                    LOG.info("{}: ({}) Found no existing process directories after killing last process", testName, i);
+                }
+            }
+        }
+        if (errCnt > 0) {
+            fail("There are " + errCnt + " failures in test");
+        }
+    }
+
+    private synchronized long getPidOfUnixProcess(Process p) {
+        long pid = -1;
+
+        try {
+            if (p.getClass().getName().equals("java.lang.UNIXProcess")) {
+                Field f = p.getClass().getDeclaredField("pid");
+                f.setAccessible(true);
+                pid = f.getLong(p);
+                f.setAccessible(false);
+            }
+        } catch (Exception e) {
+            pid = -1;
+        }
+        return pid;
+    }
+
+    /**
+     * Sleep for specified milliseconds and return true if sleep was interrupted.
+     *
+     * @param milliSeconds number of milliseconds to sleep
+     * @return true if sleep was interrupted, false otherwise.
+     */
+    private boolean sleepInterrupted(long milliSeconds) {
+        try {
+            Thread.sleep(milliSeconds);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+            Thread.currentThread().interrupt();
+            return true;
+        }
+        return false;
     }
 }

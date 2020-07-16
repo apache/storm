@@ -35,6 +35,7 @@ import java.io.RandomAccessFile;
 import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
@@ -224,14 +225,6 @@ public class ServerUtils {
         }
         store.prepare(conf);
         return store;
-    }
-
-    /**
-     * Meant to be called only by the supervisor for stormjar/stormconf/stormcode files.
-     */
-    public static void downloadResourcesAsSupervisor(String key, String localFile,
-                                                     ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
-        _instance.downloadResourcesAsSupervisorImpl(key, localFile, cb);
     }
 
     /**
@@ -770,18 +763,6 @@ public class ServerUtils {
         return Thread.currentThread().getContextClassLoader().getResource(name);
     }
 
-    public void downloadResourcesAsSupervisorImpl(String key, String localFile,
-                                                  ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
-        final int maxRetryAttempts = 2;
-        final int attemptsIntervalTime = 100;
-        for (int retryAttempts = 0; retryAttempts < maxRetryAttempts; retryAttempts++) {
-            if (downloadResourcesAsSupervisorAttempt(cb, key, localFile)) {
-                break;
-            }
-            Utils.sleep(attemptsIntervalTime);
-        }
-    }
-
     private static final Pattern MEMINFO_PATTERN = Pattern.compile("^([^:\\s]+):\\s*([0-9]+)\\s*kB$");
 
     /**
@@ -1202,11 +1183,16 @@ public class ServerUtils {
             return true;
         }
 
-        boolean allDead = true;
         if (ServerUtils.IS_ON_WINDOWS) {
-            return allDead = !isAnyProcessAlive(pids, user);
+            return !isAnyProcessAlive(pids, user);
         }
-        // optimized for Posix - try to use uid
+        // optimized for Posix - first examine /proc and then use optimized version of "ps" with uid
+        try {
+            return !isAnyPosixProcessPidDirAlive(pids, user);
+        } catch (IOException ex) {
+            LOG.warn("Failed to determine if processes {} for user {} are dead using filesystem, will try \"ps\" command: {}",
+                    pids, user, ex);
+        }
         if (!cachedUserToUidMap.containsKey(user)) {
             int uid = ServerUtils.getWorkerPathOwnerUid(conf, workerId);
             if (uid < 0) {
@@ -1217,9 +1203,54 @@ public class ServerUtils {
             }
         }
         if (cachedUserToUidMap.containsKey(user)) {
-            return allDead = !ServerUtils.isAnyProcessAlive(pids, cachedUserToUidMap.get(user));
+            return !ServerUtils.isAnyProcessAlive(pids, cachedUserToUidMap.get(user));
         } else {
-            return allDead = !ServerUtils.isAnyProcessAlive(pids, user);
+            return !ServerUtils.isAnyProcessAlive(pids, user);
         }
+    }
+
+    /**
+     * Find if the process is alive using the existence of /proc/&lt;pid&gt; directory
+     * owned by the supplied user. This is an alternative to "ps -p pid -u uid" command
+     * used in {@link #isAnyPosixProcessAlive(Collection, int)}
+     *
+     * <p>
+     * Processes are tracked using the existence of the directory "/proc/&lt;pid&gt;
+     * For each of the supplied PIDs, their PID directory is checked for existence and ownership
+     * by the specified uid.
+     * </p>
+     *
+     * @param pids Process IDs that need to be monitored for liveness
+     * @param user the userId that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    public static boolean isAnyPosixProcessPidDirAlive(Collection<Long> pids, String user) throws IOException {
+        File procDir = new File("/proc");
+        if (!procDir.exists()) {
+            throw new IOException("Missing process directory " + procDir.getAbsolutePath() + ": method not supported on "
+                    + "os.name=" + System.getProperty("os.name"));
+        }
+        for (long pid: pids) {
+            File pidDir = new File(procDir, String.valueOf(pid));
+            if (!pidDir.exists()) {
+                continue;
+            }
+            // check if existing process is owned by the specified user, if not, the process is dead
+            try {
+                String pidUser = Files.getOwner(pidDir.toPath()).getName();
+                LOG.info("Process directory {} owner is {}", pidDir, pidUser);
+                if (!user.equals(pidUser)) {
+                    LOG.debug("Process is dead, since directory {} owner {} is not same as expected user {}", pidDir, pidUser, user);
+                    continue;
+                }
+            } catch (NoSuchFileException ex) {
+                continue; // process died before the user can be checked
+            }
+            LOG.debug("Processes {} is alive and owned by user {}", pid, user);
+            return true;
+        }
+        LOG.info("None of the processes {} are alive AND owned by user {}", pids, user);
+        return false;
     }
 }
