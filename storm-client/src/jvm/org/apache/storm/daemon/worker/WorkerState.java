@@ -120,6 +120,8 @@ public class WorkerState {
     final ConcurrentMap<String, Long> blobToLastKnownVersion;
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
+    // cachedNodeToHost can be temporarily out of sync with cachedTaskToNodePort
+    final AtomicReference<Map<String, String>> cachedNodeToHost;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
     // executor id is in form [start_task_id end_task_id]
     final Map<List<Long>, JCQueue> executorReceiveQueueMap;
@@ -214,6 +216,7 @@ public class WorkerState {
         this.endpointSocketLock = new ReentrantReadWriteLock();
         this.cachedNodeToPortSocket = new AtomicReference<>(new HashMap<>());
         this.cachedTaskToNodePort = new AtomicReference<>(new HashMap<>());
+        this.cachedNodeToHost = new AtomicReference<>(new HashMap<>());
         this.suicideCallback = Utils.mkSuicideFn();
         this.uptime = Utils.makeUptimeComputer();
         this.defaultSharedResources = makeDefaultResources();
@@ -426,9 +429,9 @@ public class WorkerState {
             }
         }
 
-        Set<NodeInfo> currentConnections = cachedNodeToPortSocket.get().keySet();
-        Set<NodeInfo> newConnections = Sets.difference(neededConnections, currentConnections);
-        Set<NodeInfo> removeConnections = Sets.difference(currentConnections, neededConnections);
+        final Set<NodeInfo> currentConnections = cachedNodeToPortSocket.get().keySet();
+        final Set<NodeInfo> newConnections = Sets.difference(neededConnections, currentConnections);
+        final Set<NodeInfo> removeConnections = Sets.difference(currentConnections, neededConnections);
 
         Map<String, String> nodeHost = assignment != null ? assignment.get_node_host() : null;
         // Add new connections atomically
@@ -446,12 +449,18 @@ public class WorkerState {
             return next;
         });
 
-
         try {
             endpointSocketLock.writeLock().lock();
             cachedTaskToNodePort.set(newTaskToNodePort);
         } finally {
             endpointSocketLock.writeLock().unlock();
+        }
+
+        // It is okay that cachedNodeToHost can be temporarily out of sync with cachedTaskToNodePort
+        if (nodeHost != null) {
+            cachedNodeToHost.set(nodeHost);
+        } else {
+            cachedNodeToHost.set(new HashMap<>());
         }
 
         for (NodeInfo nodeInfo : removeConnections) {
@@ -610,7 +619,7 @@ public class WorkerState {
             return new WorkerTopologyContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
                                              componentToStreamToFields, topologyId, codeDir, pidDir, port, localTaskIds,
                                              defaultSharedResources,
-                                             userSharedResources, cachedTaskToNodePort, assignmentId);
+                                             userSharedResources, cachedTaskToNodePort, assignmentId, cachedNodeToHost);
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
