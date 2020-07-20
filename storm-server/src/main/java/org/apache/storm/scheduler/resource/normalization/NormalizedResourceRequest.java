@@ -124,7 +124,6 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
     private static Map<String, Double> parseResources(String input) {
         Map<String, Double> topologyResources = new HashMap<>();
         JSONParser parser = new JSONParser();
-        LOG.debug("Input to parseResources {}", input);
         try {
             if (input != null) {
                 Object obj = parser.parse(input);
