@@ -1239,7 +1239,6 @@ public class UIHelpers {
         result.put("failed", commonStats.get_failed());
         result.put("completeLatency", spoutAggregateStats.get_complete_latency_ms());
 
-
         ErrorInfo lastError = componentAggregateStats.get_last_error();
         result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
         return result;
@@ -1508,7 +1507,7 @@ public class UIHelpers {
      * @return getTopologyBoltAggStatsMap
      */
     private static Map<String, Object> getTopologyBoltAggStatsMap(ComponentAggregateStats componentAggregateStats,
-                                                                  String boltId) {
+                                                                  String boltId, Map<String, Object> config, String topologyId) {
         Map<String, Object> result = new HashMap();
         CommonAggregateStats commonStats = componentAggregateStats.get_common_stats();
         result.putAll(getCommonAggStatsMap(commonStats));
@@ -1519,8 +1518,12 @@ public class UIHelpers {
         result.put("executeLatency", StatsUtil.floatStr(boltAggregateStats.get_execute_latency_ms()));
         result.put("executed", boltAggregateStats.get_executed());
         result.put("processLatency", StatsUtil.floatStr(boltAggregateStats.get_process_latency_ms()));
+
         ErrorInfo lastError = componentAggregateStats.get_last_error();
         result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
+        if (!Objects.isNull(lastError)) {
+            result.putAll(getComponentErrorInfo(lastError, config, topologyId));
+        }
         return result;
     }
 
@@ -1615,7 +1618,7 @@ public class UIHelpers {
         List<Map> boltStats = new ArrayList();
 
         for (Map.Entry<String, ComponentAggregateStats> boltEntry : bolts.entrySet()) {
-            boltStats.add(getTopologyBoltAggStatsMap(boltEntry.getValue(), boltEntry.getKey()));
+            boltStats.add(getTopologyBoltAggStatsMap(boltEntry.getValue(), boltEntry.getKey(), config, topologyPageInfo.get_id()));
         }
         result.put("bolts", boltStats);
 

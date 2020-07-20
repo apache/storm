@@ -4367,6 +4367,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 CommonAggregateStats commonStats = entry.getValue().get_common_stats();
                 setResourcesDefaultIfNotSet(boltResources, entry.getKey(), topoConf);
                 commonStats.set_resources_map(boltResources.get(entry.getKey()).toNormalizedMap());
+                entry.getValue().set_last_error(stormClusterState.lastError(topoPageInfo.get_id(), entry.getKey()));
             }
         }
     }
