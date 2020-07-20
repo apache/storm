@@ -3000,13 +3000,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             nimbusSummary.set_isLeader(isLeader);
         }
 
-        List<TopologySummary> topologySummaries = getTopologySummaries();
+        List<TopologySummary> topologySummaries = getTopologySummariesImpl();
 
         ClusterSummary ret = new ClusterSummary(summaries, topologySummaries, nimbuses);
         return ret;
     }
 
-    private List<TopologySummary> getTopologySummariesImpl() throws Exception {
+    private List<TopologySummary> getTopologySummariesImpl() throws IOException, TException {
         IStormClusterState state = stormClusterState;
         List<TopologySummary> topologySummaries = new ArrayList<>();
         Map<String, StormBase> bases = state.topologyBases();
@@ -3022,7 +3022,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return topologySummaries;
     }
 
-    private TopologySummary getTopologySummaryImpl(String topoId, StormBase base) throws Exception {
+    private TopologySummary getTopologySummaryImpl(String topoId, StormBase base) throws IOException, TException {
         IStormClusterState state = stormClusterState;
         Assignment assignment = state.assignmentInfo(topoId, null);
 
@@ -3074,7 +3074,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         try {
             summary.set_replication_count(getBlobReplicationCount(ConfigUtils.masterStormCodeKey(topoId)));
-        } catch (KeyNotFoundException e) {
+        } catch (Exception e) {
             // This could fail if a blob gets deleted by mistake.  Don't crash nimbus.
             LOG.error("Unable to find blob entry", e);
         }

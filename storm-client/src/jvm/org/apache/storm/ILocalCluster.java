@@ -12,6 +12,7 @@
 
 package org.apache.storm;
 
+import java.util.List;
 import java.util.Map;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.AuthorizationException;
@@ -138,11 +139,11 @@ public interface ILocalCluster extends AutoCloseable {
      */
     ClusterSummary getClusterInfo() throws TException;
 
-    java.util.List<TopologySummary> getTopologySummaries() throws TException;
+    List<TopologySummary> getTopologySummaries() throws TException;
 
-    TopologySummary getTopologySummaryByName(java.lang.String name) throws TException;
+    TopologySummary getTopologySummaryByName(String name) throws TException;
 
-    TopologySummary getTopologySummary(java.lang.String id) throws TException;
+    TopologySummary getTopologySummary(String id) throws TException;
 
     /**
      * Get the state of a topology.
