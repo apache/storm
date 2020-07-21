@@ -1,6 +1,7 @@
 package org.apache.storm.daemon.ui;
 
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.generated.BoltAggregateStats;
 import org.apache.storm.generated.CommonAggregateStats;
 import org.apache.storm.generated.ComponentAggregateStats;
@@ -161,6 +162,96 @@ class UIHelpersTest {
         assertFalse(boltResult.containsKey("errorHost"));
         assertFalse(boltResult.containsKey("errorTime"));
         assertFalse(boltResult.containsKey("errorLapsedSecs"));
+    }
+
+    /**
+     * A more general test case that a bolt's aggregate stats are
+     * correctly populated into the resulting map.
+     */
+    @Test
+    void test_getTopologyBoltAggStatsMap_generalFields() {
+        // Define inputs
+        final String expectedBoltId = "MyBoltId";
+        final float expectedCapacity = 0.97f;
+        final double expectedProcessLatency = 432.0D;
+        final double expectedExecuteLatency = 122.0D;
+        final long expectedExecuted = 153343L;
+        final long expectedEmitted = 43234L;
+        final long expectedAcked = 5553L;
+        final long expectedFailed = 220L;
+        final int expectedExecutors = 2;
+        final int expectedTasks = 3;
+        final long expectedTransferred = 3423423L;
+        final double expectedOnMemoryHeap = 1024D;
+        final double expectedOffMemoryHeap = 2048D;
+        final double expectedCpuCorePercent = 75D;
+
+        // Build stats instance for our bolt
+        final ComponentAggregateStats aggregateStats = buildAggregateStatsBase();
+
+        // Common stats
+        final CommonAggregateStats commonStats = aggregateStats.get_common_stats();
+        commonStats.set_acked(expectedAcked);
+        commonStats.set_emitted(expectedEmitted);
+        commonStats.set_failed(expectedFailed);
+        commonStats.set_num_executors(expectedExecutors);
+        commonStats.set_num_tasks(expectedTasks);
+        commonStats.set_transferred(expectedTransferred);
+
+        // Bolt stats
+        final BoltAggregateStats boltStats = aggregateStats.get_specific_stats().get_bolt();
+        boltStats.set_capacity(expectedCapacity);
+        boltStats.set_execute_latency_ms(expectedExecuteLatency);
+        boltStats.set_process_latency_ms(expectedProcessLatency);
+        boltStats.set_executed(expectedExecuted);
+
+        // Build Resources Map
+        final Map<String, Double> resourcesMap = new HashMap<>();
+        resourcesMap.put(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, expectedOnMemoryHeap);
+        resourcesMap.put(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, expectedOffMemoryHeap);
+        resourcesMap.put(Constants.COMMON_CPU_RESOURCE_NAME, expectedCpuCorePercent);
+        commonStats.set_resources_map(resourcesMap);
+
+        // Add to TopologyPageInfo
+        addBoltStats(expectedBoltId, aggregateStats);
+
+        // Call method under test.
+        final Map<String, Object> result = UIHelpers.getTopologySummary(
+            topoPageInfo,
+            WINDOW,
+            new HashMap<>(),
+            "spp"
+        );
+
+        // Validate
+        assertNotNull(result, "Should never return null");
+
+        // Validate our Bolt result
+        final Map<String, Object> boltResult = getBoltStatsFromTopologySummaryResult(result, expectedBoltId);
+        assertNotNull(boltResult, "Should have an entry for bolt");
+
+        // Validate fields
+        assertEquals(expectedBoltId, boltResult.get("boltId"));
+        assertEquals(expectedBoltId, boltResult.get("encodedBoltId"));
+        assertEquals(expectedTransferred, boltResult.get("transferred"));
+        assertEquals(String.format("%.3f", expectedExecuteLatency), boltResult.get("executeLatency"));
+        assertEquals(String.format("%.3f", expectedProcessLatency), boltResult.get("processLatency"));
+        assertEquals(expectedExecuted, boltResult.get("executed"));
+        assertEquals(expectedFailed, boltResult.get("failed"));
+        assertEquals(expectedAcked, boltResult.get("acked"));
+        assertEquals(String.format("%.3f", expectedCapacity), boltResult.get("capacity"));
+        assertEquals(expectedEmitted, boltResult.get("emitted"));
+        assertEquals(expectedExecutors, boltResult.get("executors"));
+        assertEquals(expectedTasks, boltResult.get("tasks"));
+
+        // Validate resources
+        assertEquals(expectedOnMemoryHeap, (double) boltResult.get("requestedMemOnHeap"), 0.01);
+        assertEquals(expectedOffMemoryHeap, (double) boltResult.get("requestedMemOffHeap"), 0.01);
+        assertEquals(expectedCpuCorePercent, (double) boltResult.get("requestedCpu"), 0.01);
+        assertEquals("", boltResult.get("requestedGenericResourcesComp"));
+
+        // We expect there to be no error populated.
+        assertEquals("", boltResult.get("lastError"), "Should have empty value");
     }
 
     /**
