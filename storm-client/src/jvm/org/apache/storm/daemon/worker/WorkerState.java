@@ -381,17 +381,23 @@ public class WorkerState {
     }
 
     public void suicideIfLocalAssignmentsChanged(Assignment assignment) {
+        boolean shouldHalt = false;
         if (assignment != null) {
             Set<List<Long>> assignedExecutors = new HashSet<>(readWorkerExecutors(assignmentId, port, assignment));
             if (!localExecutors.equals(assignedExecutors)) {
-                LOG.info("Found conflicting assignments. We shouldn't be alive!"
-                         + " Assigned: " + assignedExecutors + ", Current: "
-                         + localExecutors);
-                if (!ConfigUtils.isLocalMode(conf)) {
-                    suicideCallback.run();
-                } else {
-                    LOG.info("Local worker tried to commit suicide!");
-                }
+                LOG.info("Found conflicting assignments. We shouldn't be alive!" + " Assigned: " + assignedExecutors
+                         + ", Current: " + localExecutors);
+                shouldHalt = true;
+            }
+        } else {
+            LOG.info("Assigment is null. We should not be alive!");
+            shouldHalt = true;
+        }
+        if (shouldHalt) {
+            if (!ConfigUtils.isLocalMode(conf)) {
+                suicideCallback.run();
+            } else {
+                LOG.info("Local worker tried to commit suicide!");
             }
         }
     }
