@@ -161,15 +161,15 @@ public class WindowedBoltExecutor implements IRichBolt {
             windowLengthCount = new Count(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT)).intValue());
         } else if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS)) {
             windowLengthDuration = new Duration(
-                ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS)).intValue(),
-                TimeUnit.MILLISECONDS);
+                    ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS)).intValue(),
+                    TimeUnit.MILLISECONDS);
         }
         // sliding interval
         if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT)) {
             slidingIntervalCount = new Count(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT)).intValue());
         } else if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS)) {
             slidingIntervalDuration =
-                new Duration(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS)).intValue(), TimeUnit.MILLISECONDS);
+                    new Duration(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS)).intValue(), TimeUnit.MILLISECONDS);
         } else {
             // default is a sliding window of count 1
             slidingIntervalCount = new Count(1);
@@ -181,7 +181,7 @@ public class WindowedBoltExecutor implements IRichBolt {
             if (lateTupleStream != null) {
                 if (!context.getThisStreams().contains(lateTupleStream)) {
                     throw new IllegalArgumentException(
-                        "Stream for late tuples must be defined with the builder method withLateTupleStream");
+                            "Stream for late tuples must be defined with the builder method withLateTupleStream");
                 }
             }
             // max lag
@@ -198,7 +198,7 @@ public class WindowedBoltExecutor implements IRichBolt {
                 watermarkInterval = DEFAULT_WATERMARK_EVENT_INTERVAL_MS;
             }
             waterMarkEventGenerator = new WaterMarkEventGenerator<>(manager, watermarkInterval,
-                                                                    maxLagMs, getComponentStreams(context));
+                    maxLagMs, getComponentStreams(context));
         } else {
             if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM)) {
                 throw new IllegalArgumentException("Late tuple stream can be defined only when specifying a timestamp field");
@@ -206,21 +206,10 @@ public class WindowedBoltExecutor implements IRichBolt {
         }
         // validate
         validate(topoConf, windowLengthCount, windowLengthDuration,
-            slidingIntervalCount, slidingIntervalDuration);
-        if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_WINDOW_EVICTION_POLICY)
-            && topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_EVICTION_POLICY) instanceof EvictionPolicy) {
-            evictionPolicy = (EvictionPolicy<Tuple, ?>)topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_EVICTION_POLICY);
-
-        } else {
-            evictionPolicy = getEvictionPolicy(windowLengthCount, windowLengthDuration);
-        }
-        if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_WINDOW_TRIGGER_POLICY)
-            && topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_TRIGGER_POLICY) instanceof TriggerPolicy) {
-            triggerPolicy = (TriggerPolicy<Tuple,?>) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_TRIGGER_POLICY);
-        } else {
-            triggerPolicy = getTriggerPolicy(slidingIntervalCount, slidingIntervalDuration,
-               manager, evictionPolicy);
-        }
+                slidingIntervalCount, slidingIntervalDuration);
+        evictionPolicy = getEvictionPolicy(windowLengthCount, windowLengthDuration);
+        triggerPolicy = getTriggerPolicy(slidingIntervalCount, slidingIntervalDuration,
+                manager, evictionPolicy);
         manager.setEvictionPolicy(evictionPolicy);
         manager.setTriggerPolicy(triggerPolicy);
         return manager;

@@ -22,10 +22,7 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IWindowedBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TupleFieldTimestampExtractor;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.windowing.EvictionPolicy;
 import org.apache.storm.windowing.TimestampExtractor;
-import org.apache.storm.windowing.TriggerPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -227,27 +224,6 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
             throw new IllegalArgumentException("Watermark interval cannot be set null");
         }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, interval.value);
-        return this;
-    }
-
-    /**
-    * Specify the Trigger Policy.
-    *
-    * @param triggerPolicy the policy to be applied while computing the window
-    * */
-
-    public BaseWindowedBolt withTriggerPolicy(TriggerPolicy<Tuple, ?> triggerPolicy) {
-        windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_TRIGGER_POLICY, triggerPolicy);
-        return this;
-    }
-
-    /**
-     * Specify the Trigger Policy.
-     *
-     * @param evictionPolicy the policy to be applied while evicting tuples from the window
-     * */
-    public BaseWindowedBolt withEvictionPolicy(EvictionPolicy<Tuple, ?> evictionPolicy) {
-        windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_EVICTION_POLICY, evictionPolicy);
         return this;
     }
 
