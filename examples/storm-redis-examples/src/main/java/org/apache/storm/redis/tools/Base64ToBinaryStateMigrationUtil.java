@@ -35,8 +35,7 @@ import org.apache.storm.redis.common.container.RedisCommandsContainerBuilder;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import redis.clients.util.SafeEncoder;
+import redis.clients.jedis.util.SafeEncoder;
 
 public class Base64ToBinaryStateMigrationUtil {
     private static final Logger LOG = LoggerFactory.getLogger(Base64ToBinaryStateMigrationUtil.class);
