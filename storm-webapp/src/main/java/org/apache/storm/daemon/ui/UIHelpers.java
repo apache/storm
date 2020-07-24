@@ -1487,7 +1487,7 @@ public class UIHelpers {
      * @return getTopologySpoutAggStatsMap
      */
     private static Map<String, Object> getTopologySpoutAggStatsMap(ComponentAggregateStats componentAggregateStats,
-                                                                   String spoutId) {
+                                                                   String spoutId, Map<String, Object> config, String topologyId) {
         Map<String, Object> result = new HashMap();
         CommonAggregateStats commonStats = componentAggregateStats.get_common_stats();
         result.putAll(getCommonAggStatsMap(commonStats));
@@ -1497,6 +1497,11 @@ public class UIHelpers {
         result.put("completeLatency", spoutAggregateStats.get_complete_latency_ms());
         ErrorInfo lastError = componentAggregateStats.get_last_error();
         result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
+
+        if (!Objects.isNull(lastError)) {
+            result.putAll(getComponentErrorInfo(lastError, config, topologyId));
+        }
+
         return result;
     }
 
@@ -1610,7 +1615,7 @@ public class UIHelpers {
         List<Map> spoutStats = new ArrayList();
 
         for (Map.Entry<String, ComponentAggregateStats> spoutEntry : spouts.entrySet()) {
-            spoutStats.add(getTopologySpoutAggStatsMap(spoutEntry.getValue(), spoutEntry.getKey()));
+            spoutStats.add(getTopologySpoutAggStatsMap(spoutEntry.getValue(), spoutEntry.getKey(), config, topologyPageInfo.get_id()));
         }
         result.put("spouts", spoutStats);
 
