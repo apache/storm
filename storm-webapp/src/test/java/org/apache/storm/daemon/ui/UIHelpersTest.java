@@ -25,6 +25,7 @@ import org.apache.storm.generated.CommonAggregateStats;
 import org.apache.storm.generated.ComponentAggregateStats;
 import org.apache.storm.generated.ErrorInfo;
 import org.apache.storm.generated.SpecificAggregateStats;
+import org.apache.storm.generated.SpoutAggregateStats;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
 import org.json.simple.JSONValue;
@@ -106,7 +107,7 @@ class UIHelpersTest {
         expectedLastError.set_host(expectedErrorHost);
 
         // Build stats instance for our bolt
-        final ComponentAggregateStats aggregateStats = buildAggregateStatsBase();
+        final ComponentAggregateStats aggregateStats = buildBoltAggregateStatsBase();
         aggregateStats.set_last_error(expectedLastError);
         addBoltStats(expectedBoltId, aggregateStats);
 
@@ -138,7 +139,7 @@ class UIHelpersTest {
 
         // Fuzzy matching
         assertTrue(((int) boltResult.get("errorLapsedSecs")) >= 0);
-        assertTrue(((int) boltResult.get("errorLapsedSecs")) <= 5);
+        assertTrue(((int) boltResult.get("errorLapsedSecs")) <= 10);
     }
 
     /**
@@ -151,7 +152,7 @@ class UIHelpersTest {
         final String expectedBoltId = "MyBoltId";
 
         // Build stats instance for our bolt
-        final ComponentAggregateStats aggregateStats = buildAggregateStatsBase();
+        final ComponentAggregateStats aggregateStats = buildBoltAggregateStatsBase();
         addBoltStats(expectedBoltId, aggregateStats);
 
         // Call method under test.
@@ -205,7 +206,7 @@ class UIHelpersTest {
         final double expectedCpuCorePercent = 75D;
 
         // Build stats instance for our bolt
-        final ComponentAggregateStats aggregateStats = buildAggregateStatsBase();
+        final ComponentAggregateStats aggregateStats = buildBoltAggregateStatsBase();
 
         // Common stats
         final CommonAggregateStats commonStats = aggregateStats.get_common_stats();
@@ -273,6 +274,182 @@ class UIHelpersTest {
     }
 
     /**
+     * Very narrow test case to validate that 'last error' fields are populated for a spout
+     * with an error is present.
+     */
+    @Test
+    void test_getTopologySpoutAggStatsMap_includesLastError() {
+        // Define inputs
+        final String expectedSpoutId = "MySpoutId";
+        final String expectedErrorMsg = "This is my test error message";
+        final int expectedErrorTime = (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        final int expectedErrorPort = 4321;
+        final String expectedErrorHost = "my.errored.host";
+
+        // Define our Last Error
+        final ErrorInfo expectedLastError = new ErrorInfo(expectedErrorMsg, expectedErrorTime);
+        expectedLastError.set_port(expectedErrorPort);
+        expectedLastError.set_host(expectedErrorHost);
+
+        // Build stats instance for our spout
+        final ComponentAggregateStats aggregateStats = buildSpoutAggregateStatsBase();
+        aggregateStats.set_last_error(expectedLastError);
+        addSpoutStats(expectedSpoutId, aggregateStats);
+
+        // Call method under test.
+        final Map<String, Object> result = UIHelpers.getTopologySummary(
+            topoPageInfo,
+            WINDOW,
+            new HashMap<>(),
+            "spp"
+        );
+
+        // Validate
+        assertNotNull(result, "Should never return null");
+
+        // Validate our Spout result
+        final Map<String, Object> spoutResult = getSpoutStatsFromTopologySummaryResult(result, expectedSpoutId);
+        assertNotNull(spoutResult, "Should have an entry for spout");
+
+        // Verify each piece
+        assertEquals(expectedSpoutId, spoutResult.get("spoutId"));
+        assertEquals(expectedSpoutId, spoutResult.get("encodedSpoutId"));
+
+        // Verify error
+        assertEquals(expectedErrorMsg, spoutResult.get("error"));
+        assertEquals(expectedErrorMsg, spoutResult.get("lastError"));
+        assertEquals(expectedErrorPort, spoutResult.get("errorPort"));
+        assertEquals(expectedErrorHost, spoutResult.get("errorHost"));
+        assertEquals(expectedErrorTime, spoutResult.get("errorTime"));
+
+        // Fuzzy matching
+        assertTrue(((int) spoutResult.get("errorLapsedSecs")) >= 0);
+        assertTrue(((int) spoutResult.get("errorLapsedSecs")) <= 10);
+    }
+
+    /**
+     * Very narrow test case to validate that 'last error' fields are NOT populated for a spout
+     * that does NOT have a last error associated.
+     */
+    @Test
+    void test_getTopologySpoutAggStatsMap_hasNoLastError() {
+        // Define inputs
+        final String expectedSpoutId = "MySpoutId";
+
+        // Build stats instance for our spout
+        final ComponentAggregateStats aggregateStats = buildSpoutAggregateStatsBase();
+        addSpoutStats(expectedSpoutId, aggregateStats);
+
+        // Call method under test.
+        final Map<String, Object> result = UIHelpers.getTopologySummary(
+            topoPageInfo,
+            WINDOW,
+            new HashMap<>(),
+            "spp"
+        );
+
+        // Validate
+        assertNotNull(result, "Should never return null");
+
+        // Validate our Spout result
+        final Map<String, Object> spoutResult = getSpoutStatsFromTopologySummaryResult(result, expectedSpoutId);
+        assertNotNull(spoutResult, "Should have an entry for spout");
+
+        // Verify each piece
+        assertEquals(expectedSpoutId, spoutResult.get("spoutId"));
+        assertEquals(expectedSpoutId, spoutResult.get("encodedSpoutId"));
+
+        // Verify error fields are not populated.
+        assertEquals("", spoutResult.get("lastError"), "Should have empty value");
+        assertFalse(spoutResult.containsKey("error"));
+        assertFalse(spoutResult.containsKey("errorPort"));
+        assertFalse(spoutResult.containsKey("errorHost"));
+        assertFalse(spoutResult.containsKey("errorTime"));
+        assertFalse(spoutResult.containsKey("errorLapsedSecs"));
+    }
+
+    /**
+     * A more general test case that a spout's aggregate stats are
+     * correctly populated into the resulting map.
+     */
+    @Test
+    void test_getTopologySpoutAggStatsMap_generalFields() {
+        // Define inputs
+        final String expectedSpoutId = "MySpoutId";
+        final double expectedCompleteLatency = 432.0D;
+        final long expectedEmitted = 43234L;
+        final long expectedAcked = 5553L;
+        final long expectedFailed = 220L;
+        final int expectedExecutors = 2;
+        final int expectedTasks = 3;
+        final long expectedTransferred = 3423423L;
+        final double expectedOnMemoryHeap = 1024D;
+        final double expectedOffMemoryHeap = 2048D;
+        final double expectedCpuCorePercent = 75D;
+
+        // Build stats instance for our spout
+        final ComponentAggregateStats aggregateStats = buildSpoutAggregateStatsBase();
+
+        // Common stats
+        final CommonAggregateStats commonStats = aggregateStats.get_common_stats();
+        commonStats.set_acked(expectedAcked);
+        commonStats.set_emitted(expectedEmitted);
+        commonStats.set_failed(expectedFailed);
+        commonStats.set_num_executors(expectedExecutors);
+        commonStats.set_num_tasks(expectedTasks);
+        commonStats.set_transferred(expectedTransferred);
+
+        // Spout stats
+        final SpoutAggregateStats spoutStats = aggregateStats.get_specific_stats().get_spout();
+        spoutStats.set_complete_latency_ms(expectedCompleteLatency);
+
+        // Build Resources Map
+        final Map<String, Double> resourcesMap = new HashMap<>();
+        resourcesMap.put(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, expectedOnMemoryHeap);
+        resourcesMap.put(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, expectedOffMemoryHeap);
+        resourcesMap.put(Constants.COMMON_CPU_RESOURCE_NAME, expectedCpuCorePercent);
+        commonStats.set_resources_map(resourcesMap);
+
+        // Add to TopologyPageInfo
+        addSpoutStats(expectedSpoutId, aggregateStats);
+
+        // Call method under test.
+        final Map<String, Object> result = UIHelpers.getTopologySummary(
+            topoPageInfo,
+            WINDOW,
+            new HashMap<>(),
+            "spp"
+        );
+
+        // Validate
+        assertNotNull(result, "Should never return null");
+
+        // Validate our Spout result
+        final Map<String, Object> spoutResult = getSpoutStatsFromTopologySummaryResult(result, expectedSpoutId);
+        assertNotNull(spoutResult, "Should have an entry for spout");
+
+        // Validate fields
+        assertEquals(expectedSpoutId, spoutResult.get("spoutId"));
+        assertEquals(expectedSpoutId, spoutResult.get("encodedSpoutId"));
+        assertEquals(expectedTransferred, spoutResult.get("transferred"));
+        assertEquals(String.format("%.3f", expectedCompleteLatency), spoutResult.get("completeLatency"));
+        assertEquals(expectedFailed, spoutResult.get("failed"));
+        assertEquals(expectedAcked, spoutResult.get("acked"));
+        assertEquals(expectedEmitted, spoutResult.get("emitted"));
+        assertEquals(expectedExecutors, spoutResult.get("executors"));
+        assertEquals(expectedTasks, spoutResult.get("tasks"));
+
+        // Validate resources
+        assertEquals(expectedOnMemoryHeap, (double) spoutResult.get("requestedMemOnHeap"), 0.01);
+        assertEquals(expectedOffMemoryHeap, (double) spoutResult.get("requestedMemOffHeap"), 0.01);
+        assertEquals(expectedCpuCorePercent, (double) spoutResult.get("requestedCpu"), 0.01);
+        assertEquals("", spoutResult.get("requestedGenericResourcesComp"));
+
+        // We expect there to be no error populated.
+        assertEquals("", spoutResult.get("lastError"), "Should have empty value");
+    }
+
+    /**
      * Add an AggregateStats entry to the TopologyPageInfo instance.
      * @param boltId Id of the bolt to add the entry for.
      * @param aggregateStats Defines the entry.
@@ -282,15 +459,42 @@ class UIHelpersTest {
     }
 
     /**
-     * Builds an empty ComponentAggregateStats instance.
+     * Add an AggregateStats entry to the TopologyPageInfo instance.
+     * @param spoutId Id of the spout to add the entry for.
+     * @param aggregateStats Defines the entry.
+     */
+    private void addSpoutStats(final String spoutId, final ComponentAggregateStats aggregateStats) {
+        topoPageInfo.get_id_to_spout_agg_stats().put(spoutId, aggregateStats);
+    }
+
+    /**
+     * Builds an empty ComponentAggregateStats instance for bolts.
      * @return empty ComponentAggregateStats instance.
      */
-    private ComponentAggregateStats buildAggregateStatsBase() {
+    private ComponentAggregateStats buildBoltAggregateStatsBase() {
         final CommonAggregateStats commonStats = new CommonAggregateStats();
         final BoltAggregateStats boltAggregateStats = new BoltAggregateStats();
 
         final SpecificAggregateStats specificStats = new SpecificAggregateStats();
         specificStats.set_bolt(boltAggregateStats);
+
+        final ComponentAggregateStats aggregateStats = new ComponentAggregateStats();
+        aggregateStats.set_common_stats(commonStats);
+        aggregateStats.set_specific_stats(specificStats);
+
+        return aggregateStats;
+    }
+
+    /**
+     * Builds an empty ComponentAggregateStats instance for spouts.
+     * @return empty ComponentAggregateStats instance.
+     */
+    private ComponentAggregateStats buildSpoutAggregateStatsBase() {
+        final CommonAggregateStats commonStats = new CommonAggregateStats();
+        final SpoutAggregateStats spoutAggregateStats = new SpoutAggregateStats();
+
+        final SpecificAggregateStats specificStats = new SpecificAggregateStats();
+        specificStats.set_spout(spoutAggregateStats);
 
         final ComponentAggregateStats aggregateStats = new ComponentAggregateStats();
         aggregateStats.set_common_stats(commonStats);
@@ -316,5 +520,24 @@ class UIHelpersTest {
             .filter((entry) -> boltId.equals(entry.get("boltId")))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Unable to find entry for boltId '" + boltId + "'"));
+    }
+
+    /**
+     * Given the results Map from UIHelper.getTopologySummary(), return the entry for
+     * the requested spoutId.
+     *
+     * @param result Map from UIHelper.getTopologySummary()
+     * @param spoutId Id of the spout to return the entry for.
+     * @return Map for the given boltId.
+     * @throws IllegalArgumentException if passed an invalid BoltId.
+     */
+    private Map<String, Object> getSpoutStatsFromTopologySummaryResult(final Map<String, Object> result, final String spoutId) {
+        assertNotNull(result.get("spouts"), "Should have non-null 'spouts' property");
+        final List<HashMap<String, Object>> bolts = (List<HashMap<String, Object>>) result.get("spouts");
+
+        return bolts.stream()
+            .filter((entry) -> spoutId.equals(entry.get("spoutId")))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Unable to find entry for spoutId '" + spoutId + "'"));
     }
 }

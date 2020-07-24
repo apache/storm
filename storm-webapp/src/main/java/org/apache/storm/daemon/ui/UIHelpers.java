@@ -1494,7 +1494,7 @@ public class UIHelpers {
         result.put("spoutId", spoutId);
         result.put("encodedSpoutId", Utils.urlEncodeUtf8(spoutId));
         SpoutAggregateStats spoutAggregateStats = componentAggregateStats.get_specific_stats().get_spout();
-        result.put("completeLatency", spoutAggregateStats.get_complete_latency_ms());
+        result.put("completeLatency", StatsUtil.floatStr(spoutAggregateStats.get_complete_latency_ms()));
         ErrorInfo lastError = componentAggregateStats.get_last_error();
         result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
 
