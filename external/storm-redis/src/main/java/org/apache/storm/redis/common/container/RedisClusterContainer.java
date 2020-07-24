@@ -18,7 +18,6 @@
 
 package org.apache.storm.redis.common.container;
 
-import java.io.IOException;
 import org.apache.storm.redis.common.adapter.RedisCommandsAdapterJedisCluster;
 import org.apache.storm.redis.common.commands.RedisCommands;
 import redis.clients.jedis.JedisCluster;
@@ -60,11 +59,7 @@ public class RedisClusterContainer implements RedisCommandsInstanceContainer {
      * {@inheritDoc}
      */
     @Override
-    public void close() throws IOException {
-        try {
-            this.jedisCluster.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void close() {
+        this.jedisCluster.close();
     }
 }

@@ -15,12 +15,12 @@ package org.apache.storm.redis.bolt;
 import java.util.List;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.container.JedisCommandsContainer;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisFilterMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import redis.clients.jedis.GeoCoordinate;
-import redis.clients.jedis.JedisCommands;
 
 /**
  * Basic bolt for querying from Redis and filters out if key/field doesn't exist.
@@ -85,7 +85,7 @@ public class RedisFilterBolt extends AbstractRedisBolt {
         String key = filterMapper.getKeyFromTuple(input);
 
         boolean found;
-        JedisCommands jedisCommand = null;
+        JedisCommandsContainer jedisCommand = null;
         try {
             jedisCommand = getInstance();
 
@@ -127,8 +127,6 @@ public class RedisFilterBolt extends AbstractRedisBolt {
         } catch (Exception e) {
             this.collector.reportError(e);
             this.collector.fail(input);
-        } finally {
-            returnInstance(jedisCommand);
         }
     }
 

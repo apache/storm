@@ -12,24 +12,57 @@
 
 package org.apache.storm.redis.common.container;
 
+import redis.clients.jedis.GeoCoordinate;
+
 import java.io.Closeable;
-import redis.clients.jedis.JedisCommands;
+import java.util.List;
+
 
 /**
  * Interfaces for containers which stores instances implementing JedisCommands.
  */
-public interface JedisCommandsInstanceContainer extends Closeable {
-    /**
-     * Borrows instance from container.
-     * @return instance which implements JedisCommands
-     */
-    JedisCommands getInstance();
+public interface JedisCommandsContainer extends Closeable {
+    Boolean exists(String key);
 
-    /**
-     * Returns instance to container.
-     * @param jedisCommands borrowed instance
-     */
-    void returnInstance(JedisCommands jedisCommands);
+    String get(String key);
+
+    String hget(String key, String field);
+
+    Long geoadd(String key, double longitude, double latitude, String member);
+
+    List<GeoCoordinate> geopos(String key, String... members);
+
+    Boolean hexists(String key, String field);
+
+    Long hset(String key, String field, String value);
+
+    String lpop(String key);
+
+    Long pfadd(String key, String... elements);
+
+    long pfcount(String key);
+
+    Long rpush(String key, String... string);
+
+    Long sadd(String key, String... member);
+
+    Long scard(String key);
+
+    String set(String key, String value);
+
+    Boolean sismember(String key, String member);
+
+    Long zadd(String key, double score, String member);
+
+    Long zrank(String key, String member);
+
+    Double zscore(String key, String member);
+
+
+
+
+
+
 
     /**
      * Release Container.

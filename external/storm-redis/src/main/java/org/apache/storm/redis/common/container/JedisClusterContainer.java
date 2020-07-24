@@ -12,16 +12,17 @@
 
 package org.apache.storm.redis.common.container;
 
-import java.io.IOException;
+import redis.clients.jedis.GeoCoordinate;
 import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisCommands;
+
+import java.util.List;
 
 /**
  * Container for managing JedisCluster.
  * <p/>
  * Note that JedisCluster doesn't need to be pooled since it's thread-safe and it stores pools internally.
  */
-public class JedisClusterContainer implements JedisCommandsInstanceContainer {
+public class JedisClusterContainer implements JedisCommandsContainer {
 
     private JedisCluster jedisCluster;
 
@@ -33,20 +34,94 @@ public class JedisClusterContainer implements JedisCommandsInstanceContainer {
         this.jedisCluster = jedisCluster;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public JedisCommands getInstance() {
-        return this.jedisCluster;
+    public Boolean exists(final String key) {
+        return jedisCluster.exists(key);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void returnInstance(JedisCommands jedisCommands) {
-        // do nothing
+    public String get(final String key) {
+        return jedisCluster.get(key);
+    }
+
+    @Override
+    public String hget(final String key, final String field) {
+        return jedisCluster.hget(key, field);
+    }
+
+    @Override
+    public Long geoadd(final String key, final double longitude, final double latitude, final String member) {
+        return jedisCluster.geoadd(key, longitude, latitude, member);
+    }
+
+    @Override
+    public List<GeoCoordinate> geopos(final String key, final String... members) {
+        return jedisCluster.geopos(key, members);
+    }
+
+    @Override
+    public Boolean hexists(final String key, final String field) {
+        return jedisCluster.hexists(key, field);
+    }
+
+    @Override
+    public Long hset(final String key, final String field, final String value) {
+        return jedisCluster.hset(key, field, value);
+    }
+
+    @Override
+    public String lpop(final String key) {
+        return jedisCluster.lpop(key);
+    }
+
+    @Override
+    public Long pfadd(final String key, final String... elements) {
+        return jedisCluster.pfadd(key, elements);
+    }
+
+    @Override
+    public long pfcount(final String key) {
+        return jedisCluster.pfcount(key);
+    }
+
+    @Override
+    public Long rpush(final String key, final String... string) {
+        return jedisCluster.rpush(key, string);
+    }
+
+    @Override
+    public Long sadd(final String key, final String... member) {
+        return jedisCluster.sadd(key, member);
+    }
+
+    @Override
+    public Long scard(final String key) {
+        return jedisCluster.scard(key);
+    }
+
+    @Override
+    public String set(final String key, final String value) {
+        return jedisCluster.set(key, value);
+    }
+
+    @Override
+    public Boolean sismember(final String key, final String member) {
+        return jedisCluster.sismember(key, member);
+    }
+
+    @Override
+    public Long zadd(final String key, final double score, final String member) {
+        return jedisCluster.zadd(key, score, member);
+    }
+
+    @Override
+    public Long zrank(final String key, final String member) {
+        return jedisCluster.zrank(key, member);
+    }
+
+    @Override
+    public Double zscore(final String key, final String member) {
+        return jedisCluster.zscore(key, member);
     }
 
     /**
@@ -54,10 +129,6 @@ public class JedisClusterContainer implements JedisCommandsInstanceContainer {
      */
     @Override
     public void close() {
-        try {
-            this.jedisCluster.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.jedisCluster.close();
     }
 }
