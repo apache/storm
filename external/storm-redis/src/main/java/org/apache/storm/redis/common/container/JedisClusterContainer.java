@@ -12,10 +12,9 @@
 
 package org.apache.storm.redis.common.container;
 
+import java.util.List;
 import redis.clients.jedis.GeoCoordinate;
 import redis.clients.jedis.JedisCluster;
-
-import java.util.List;
 
 /**
  * Container for managing JedisCluster.

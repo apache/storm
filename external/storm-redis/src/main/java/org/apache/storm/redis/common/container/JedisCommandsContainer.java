@@ -12,11 +12,9 @@
 
 package org.apache.storm.redis.common.container;
 
-import redis.clients.jedis.GeoCoordinate;
-
 import java.io.Closeable;
 import java.util.List;
-
+import redis.clients.jedis.GeoCoordinate;
 
 /**
  * Interfaces for containers which stores instances implementing JedisCommands.
