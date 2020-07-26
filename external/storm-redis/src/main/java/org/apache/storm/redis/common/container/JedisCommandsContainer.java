@@ -58,12 +58,6 @@ public interface JedisCommandsContainer extends Closeable {
 
     Double zscore(String key, String member);
 
-
-
-
-
-
-
     /**
      * Release Container.
      */

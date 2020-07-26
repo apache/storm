@@ -13,6 +13,8 @@
 package org.apache.storm.redis.bolt;
 
 import java.util.List;
+import java.util.Objects;
+
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.container.JedisCommandsContainer;
@@ -112,7 +114,13 @@ public class RedisFilterBolt extends AbstractRedisBolt {
 
                 case GEO:
                     List<GeoCoordinate> geopos = jedisCommand.geopos(additionalKey, key);
-                    found = (geopos != null && geopos.size() > 0);
+                    if (geopos == null || geopos.isEmpty()) {
+                        found = false;
+                    } else {
+                        // If any entry is NOT null, then we have a match.
+                        found = geopos.stream()
+                            .anyMatch(Objects::nonNull);
+                    }
                     break;
 
                 default:

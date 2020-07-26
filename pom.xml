@@ -133,8 +133,8 @@
 
         <jackson.version>2.15.2</jackson.version>
         <jackson.databind.version>2.15.2</jackson.databind.version>
-
         <storm.kafka.client.version>0.11.0.3</storm.kafka.client.version>
+        <testcontainers.version>1.14.3</testcontainers.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude.groups>PerformanceTest</java.unit.test.exclude.groups>
