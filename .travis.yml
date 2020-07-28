@@ -37,7 +37,9 @@ matrix:
   include:
     - arch: s390x
       jdk: openjdk11
-      
+    - arch: arm64
+      jdk: openjdk11
+
 before_install:
   - rvm reload
   - rvm use 2.4.2 --install
@@ -50,6 +52,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install python3.6
   - export MVN_HOME=$HOME/apache-maven-3.6.3
+  - if [ "$(uname -m)" == aarch64 ]; then sudo apt-get -y install openjdk-11-jdk && export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64; fi
   - if [ ! -d $MVN_HOME/bin ]; then wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz -P $HOME; tar xzvf $HOME/apache-maven-3.6.3-bin.tar.gz -C $HOME; fi
   - export PATH=$MVN_HOME/bin:$PATH
 
