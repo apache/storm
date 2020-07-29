@@ -41,9 +41,6 @@ public class InOrderDeliveryTest {
 
     public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
         TopologySummary ts = client.getTopologySummaryByName(name);
-        if (ts == null) {
-            throw new Exception("Could not find a topology named " + name);
-        }
         String id = ts.get_id();
         TopologyInfo info = client.getTopologyInfo(id);
         int uptime = info.get_uptime_secs();
