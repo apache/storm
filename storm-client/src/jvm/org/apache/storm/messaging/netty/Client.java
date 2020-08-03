@@ -14,6 +14,7 @@ package org.apache.storm.messaging.netty;
 
 import static org.apache.storm.shade.com.google.common.base.Preconditions.checkState;
 
+import com.codahale.metrics.Meter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -25,13 +26,14 @@ import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.metric.api.IStatefulObject;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.IWaitStrategy.WaitSituation;
 import org.apache.storm.policy.WaitStrategyProgressive;
@@ -63,7 +65,7 @@ import org.slf4j.LoggerFactory;
  * asynchronously. Note: The current implementation drops any messages that are being enqueued for sending if the connection to the remote
  * destination is currently unavailable.
  */
-public class Client extends ConnectionWithStatus implements IStatefulObject, ISaslClient {
+public class Client extends ConnectionWithStatus implements ISaslClient {
     private static final long PENDING_MESSAGES_FLUSH_TIMEOUT_MS = 600000L;
     private static final long PENDING_MESSAGES_FLUSH_INTERVAL_MS = 1000L;
     /**
@@ -89,7 +91,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     /**
      * Total number of connection attempts.
      */
-    private final AtomicInteger totalConnectionAttempts = new AtomicInteger(0);
+    private final Meter totalConnectionAttempts;
     /**
      * Number of connection attempts since the last disconnect.
      */
@@ -97,15 +99,15 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     /**
      * Number of messages successfully sent to the remote destination.
      */
-    private final AtomicInteger messagesSent = new AtomicInteger(0);
+    private final Meter messagesSent;
     /**
      * Number of messages that could not be sent to the remote destination.
      */
-    private final AtomicInteger messagesLost = new AtomicInteger(0);
+    private final Meter messagesLost;
     /**
      * Number of messages buffered in memory.
      */
-    private final AtomicLong pendingMessages = new AtomicLong(0);
+    private final Meter pendingMessages;
     /**
      * Whether the SASL channel is ready.
      */
@@ -122,7 +124,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     Client(Map<String, Object> topoConf, AtomicBoolean[] remoteBpStatus,
         EventLoopGroup eventLoopGroup, HashedWheelTimer scheduler, String host,
-           int port) {
+           int port, StormMetricRegistry stormMetricRegistry,
+           String topologyId, int workerPort) {
         this.topoConf = topoConf;
         closing = false;
         this.scheduler = scheduler;
@@ -163,6 +166,15 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             waitStrategy = ReflectionUtils.newInstance(clazz);
         }
         waitStrategy.prepare(topoConf, WaitSituation.BACK_PRESSURE_WAIT);
+
+        totalConnectionAttempts = stormMetricRegistry.meter("send-connection-reconnects-" + host + ":" + port, topologyId,
+                Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID, workerPort);
+        messagesSent = stormMetricRegistry.meter("send-connection-sent-" + host + ":" + port, topologyId,
+                Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID, workerPort);
+        pendingMessages = stormMetricRegistry.meter("send-connection-pending-" + host + ":" + port, topologyId,
+                Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID, workerPort);
+        messagesLost = stormMetricRegistry.meter("send-connection-lostOnSend-" + host + ":" + port, topologyId,
+                Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID, workerPort);
     }
 
     /**
@@ -333,7 +345,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private void dropMessages(Iterator<TaskMessage> msgs) {
         // We consume the iterator by traversing and thus "emptying" it.
         int msgCount = iteratorSize(msgs);
-        messagesLost.getAndAdd(msgCount);
+        messagesLost.mark(msgCount);
         LOG.info("Dropping {} messages", msgCount);
     }
 
@@ -360,21 +372,21 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
         final int numMessages = batch.size();
         LOG.debug("writing {} messages to channel {}", batch.size(), channel.toString());
-        pendingMessages.addAndGet(numMessages);
+        pendingMessages.mark(numMessages);
 
         ChannelFuture future = channel.writeAndFlush(batch);
         future.addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
-                pendingMessages.addAndGet(0 - numMessages);
+                pendingMessages.mark(0 - numMessages);
                 if (future.isSuccess()) {
                     LOG.debug("sent {} messages to {}", numMessages, dstAddressPrefixedName);
-                    messagesSent.getAndAdd(batch.size());
+                    messagesSent.mark(batch.size());
                 } else {
                     LOG.error("failed to send {} messages to {}: {}", numMessages, dstAddressPrefixedName,
                               future.cause());
                     closeChannelAndReconnect(future.channel());
-                    messagesLost.getAndAdd(numMessages);
+                    messagesLost.mark(numMessages);
                 }
             }
 
@@ -420,15 +432,15 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     private void waitForPendingMessagesToBeSent() {
         LOG.info("waiting up to {} ms to send {} pending messages to {}",
-                 PENDING_MESSAGES_FLUSH_TIMEOUT_MS, pendingMessages.get(), dstAddressPrefixedName);
-        long totalPendingMsgs = pendingMessages.get();
+                 PENDING_MESSAGES_FLUSH_TIMEOUT_MS, pendingMessages.getCount(), dstAddressPrefixedName);
+        long totalPendingMsgs = pendingMessages.getCount();
         long startMs = System.currentTimeMillis();
-        while (pendingMessages.get() != 0) {
+        while (pendingMessages.getCount() != 0) {
             try {
                 long deltaMs = System.currentTimeMillis() - startMs;
                 if (deltaMs > PENDING_MESSAGES_FLUSH_TIMEOUT_MS) {
                     LOG.error("failed to send all pending messages to {} within timeout, {} of {} messages were not "
-                        + "sent", dstAddressPrefixedName, pendingMessages.get(), totalPendingMsgs);
+                        + "sent", dstAddressPrefixedName, pendingMessages.getCount(), totalPendingMsgs);
                     break;
                 }
                 Thread.sleep(PENDING_MESSAGES_FLUSH_INTERVAL_MS);
@@ -456,29 +468,13 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         Map<Integer, Double> loadCache = serverLoad;
         Map<Integer, Load> ret = new HashMap<>();
         if (loadCache != null) {
-            double clientLoad = Math.min(pendingMessages.get(), 1024) / 1024.0;
+            double clientLoad = Math.min(pendingMessages.getCount(), 1024) / 1024.0;
             for (Integer task : tasks) {
                 Double found = loadCache.get(task);
                 if (found != null) {
                     ret.put(task, new Load(true, found, clientLoad));
                 }
             }
-        }
-        return ret;
-    }
-
-    @Override
-    public Object getState() {
-        LOG.debug("Getting metrics for client connection to {}", dstAddressPrefixedName);
-        HashMap<String, Object> ret = new HashMap<String, Object>();
-        ret.put("reconnects", totalConnectionAttempts.getAndSet(0));
-        ret.put("sent", messagesSent.getAndSet(0));
-        ret.put("pending", pendingMessages.get());
-        ret.put("lostOnSend", messagesLost.getAndSet(0));
-        ret.put("dest", dstAddress.toString());
-        String src = srcAddressName();
-        if (src != null) {
-            ret.put("src", src);
         }
         return ret;
     }
@@ -545,7 +541,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         public void run(Timeout timeout) throws Exception {
             if (reconnectingAllowed()) {
                 final int connectionAttempt = connectionAttempts.getAndIncrement();
-                totalConnectionAttempts.getAndIncrement();
+                totalConnectionAttempts.mark();
 
                 LOG.debug("connecting to {} [attempt {}]", address.toString(), connectionAttempt);
                 ChannelFuture future = bootstrap.connect(address);
@@ -560,9 +556,9 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
                             checkState(setChannel);
                             LOG.debug("successfully connected to {}, {} [attempt {}]", address.toString(), newChannel.toString(),
                                       connectionAttempt);
-                            if (messagesLost.get() > 0) {
+                            if (messagesLost.getCount() > 0) {
                                 LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(),
-                                         messagesLost.get());
+                                         messagesLost.getCount());
                             }
                         } else {
                             Throwable cause = future.cause();
@@ -576,7 +572,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             } else {
                 close();
                 throw new RuntimeException("Giving up to scheduleConnect to " + dstAddressPrefixedName + " after "
-                    + connectionAttempts + " failed attempts. " + messagesLost.get() + " messages were lost");
+                    + connectionAttempts + " failed attempts. " + messagesLost.getCount() + " messages were lost");
 
             }
         }

@@ -273,7 +273,12 @@ Be aware that the `__system` bolt is an actual bolt so regular bolt metrics desc
 
 ##### Send (Netty Client)
 
-The `__send-iconnection` metric holds information about all of the clients for this worker.  It is of the form
+There are `send-connection` meter metrics for each of the clients for this worker.  The metric names below exist and have a suffix for the destination host and port:
+
+    * send-connection-reconnects
+    * send-connection-sent
+    * send-connection-pending
+    * send-connection-lostOnSend
 
 ```
 {

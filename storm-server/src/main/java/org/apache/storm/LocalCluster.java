@@ -86,6 +86,7 @@ import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.scheduler.INimbus;
 import org.apache.storm.scheduler.ISupervisor;
@@ -254,7 +255,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             IContext context = null;
             if (!ObjectReader.getBoolean(this.daemonConf.get(Config.STORM_LOCAL_MODE_ZMQ), false)) {
                 context = new Context();
-                context.prepare(this.daemonConf);
+                context.prepare(this.daemonConf, new StormMetricRegistry(), "unusedTopoId", -1);
             }
             this.sharedContext = context;
             this.thriftServer = builder.nimbusDaemon ? startNimbusDaemon(this.daemonConf, this.nimbus) : null;

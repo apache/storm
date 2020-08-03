@@ -174,7 +174,7 @@ public class WorkerState {
         this.credentialsAtom = new AtomicReference(initialCredentials);
         this.conf = conf;
         this.supervisorIfaceSupplier = supervisorIfaceSupplier;
-        this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
+        this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf, metricRegistry, topologyId, port);
         this.topologyId = topologyId;
         this.assignmentId = assignmentId;
         this.port = port;

@@ -44,6 +44,7 @@ import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.utils.Utils;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -110,7 +111,7 @@ public class NettyTest {
     private void doTestBasic(Map<String, Object> stormConf) throws Exception {
         LOG.info("1. Should send and receive a basic message");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, new StormMetricRegistry(), "unusedTopoId", -1);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
             try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
@@ -171,7 +172,7 @@ public class NettyTest {
     private void doTestLoad(Map<String, Object> stormConf) throws Exception {
         LOG.info("2 test load");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, new StormMetricRegistry(), "unusedTopoId", -1);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
             try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
@@ -225,7 +226,7 @@ public class NettyTest {
     private void doTestLargeMessage(Map<String, Object> stormConf) throws Exception {
         LOG.info("3 Should send and receive a large message");
         String reqMessage = StringUtils.repeat("c", 2_048_000);
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, new StormMetricRegistry(), "unusedTopoId", -1);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
             try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
@@ -264,7 +265,7 @@ public class NettyTest {
     private void doTestServerDelayed(Map<String, Object> stormConf) throws Exception {
         LOG.info("4. test server delayed");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, new StormMetricRegistry(), "unusedTopoId", -1);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
             int port = Utils.getAvailablePort(6700);
@@ -315,7 +316,7 @@ public class NettyTest {
         LOG.info("Should send and receive many messages (testing with " + numMessages + " messages)");
         ArrayList<TaskMessage> responses = new ArrayList<>();
         AtomicInteger received = new AtomicInteger();
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, new StormMetricRegistry(), "unusedTopoId", -1);
         try {
             try (IConnection server = context.bind(null, 0, mkConnectionCallback((message) -> {
                     responses.add(message);
@@ -362,7 +363,7 @@ public class NettyTest {
     private void doTestServerAlwaysReconnects(Map<String, Object> stormConf) throws Exception {
         LOG.info("6. test server always reconnects");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, new StormMetricRegistry(), "unusedTopoId", -1);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
             int port = Utils.getAvailablePort(6700);
@@ -396,7 +397,7 @@ public class NettyTest {
     private void connectToFixedPort(Map<String, Object> stormConf, int port) throws Exception {
         LOG.info("7. Should be able to rebind to a port quickly");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, new StormMetricRegistry(), "unusedTopoId", -1);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
             try (IConnection server = context.bind(null, port, mkConnectionCallback(response::set), null);

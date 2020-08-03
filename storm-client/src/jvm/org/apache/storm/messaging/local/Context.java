@@ -32,6 +32,7 @@ import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.netty.BackPressureStatus;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,7 @@ public class Context implements IContext {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf) {
+    public void prepare(Map<String, Object> topoConf, StormMetricRegistry metricRegistry, String topologyId, int workerPort) {
         //NOOP
     }
 
