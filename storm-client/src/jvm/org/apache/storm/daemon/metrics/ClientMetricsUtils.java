@@ -41,8 +41,8 @@ public class ClientMetricsUtils {
         return null;
     }
 
-    public static TimeUnit getTimeUnitForConfig(Map<String, Object> conf, String configName) {
-        String timeUnitString = ObjectReader.getString(conf.get(configName), null);
+    public static TimeUnit getTimeUnitForConfig(Map<String, Object> reporterConf, String configName) {
+        String timeUnitString = ObjectReader.getString(reporterConf.get(configName), null);
         if (timeUnitString != null) {
             return TimeUnit.valueOf(timeUnitString);
         }

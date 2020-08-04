@@ -72,7 +72,7 @@ public class TupleCountingBolt extends BaseRichBolt {
  For metrics to be useful they must be *reported*, in other words sent somewhere where they can be consumed and analyzed.
  That can be as simple as writing them to a log file, sending them to a time series database, or exposing them via JMX.
  
-Since Storm 1.2.0, the following metric reporters are supported
+The following metric reporters are supported
  
   * Console Reporter (`org.apache.storm.metrics2.reporters.ConsoleStormReporter`):
     Reports metrics to `System.out`.
