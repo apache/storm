@@ -528,6 +528,7 @@ public class StormSubmitter {
         InvalidTopologyException, AuthorizationException {
         ConfigValidation.validateTopoConf(topoConf);
         Utils.validateTopologyBlobStoreMap(topoConf);
+        Utils.validateWorkerLaunchOptions(null, topoConf, null, true);
     }
 
     /**

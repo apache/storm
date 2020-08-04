@@ -60,6 +60,7 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.jar.JarFile;
@@ -74,6 +75,7 @@ import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.NimbusBlobStore;
+import org.apache.storm.daemon.supervisor.ClientSupervisorUtils;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
@@ -1904,6 +1906,203 @@ public class Utils {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Return path to the Java command "x", prefixing with $}{JAVA_HOME}/bin/ if JAVA_HOME system property is defined.
+     * Otherwie return the supplied Java command unmodified.
+     *
+     * @param cmd Java command, e.g. "java", "jar" etc.
+     * @return command string to use.
+     */
+    public static String getJavaCmd(String cmd) {
+
+        String ret = null;
+        String javaHome = System.getenv().get("JAVA_HOME");
+        if (StringUtils.isNotBlank(javaHome)) {
+            ret = javaHome + File.separator + "bin" + File.separator + cmd;
+        } else {
+            ret = cmd;
+        }
+        return ret;
+    }
+
+    /**
+     * Find the list of substitutable variable names in supplied string. Substitutable variable names are
+     * preceded and followed by a percent sign and composed of upper case characters, numbers, underscore and dash
+     * characters.
+     *
+     * @param str string with 0 or more substitutable variables.
+     * @return a set with 0 or more variable names.
+     */
+    public static Set<String> findSubstitutableVarNames(String str) {
+        final String patternStr = "%([A-Z0-9_-]+)%";
+        final int matchedGroup = 1; // matched group is 1 because of the capturing parens in the patternStr
+
+        Set<String> ret = new TreeSet<>();
+        Pattern p = Pattern.compile(patternStr);
+        Matcher m = p.matcher(str);
+        int matchCnt = 0;
+        while (m.find()) {
+            matchCnt++;
+            try {
+                ret.add(str.substring(m.start(matchedGroup), m.end(matchedGroup)));
+            } catch (IllegalStateException ex) {
+                String err = String.format("Internal Error in findSubstitutableVarNames(\"%s\"), pattern \"%s\", matchCnt=%d",
+                        str, patternStr, matchCnt, str);
+                LOG.error(err, ex);
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Perform variable substitutions using the supplied substitutions.
+     * Leave unchanged any placeholders for undefined variables.
+     *
+     * @param str original string with placeholders for replacements.
+     * @param substitutions map of substitution variables and values.
+     * @return final string with variable replaced with supplied substitutions.
+     */
+    public static String substituteVarNames(String str, Map<String, Object> substitutions) {
+        Set<String> vars = findSubstitutableVarNames(str);
+        for (String var : vars) {
+            if (!substitutions.containsKey(var)) {
+                continue;
+            }
+            String orig = "%" + var + "%";
+            String substitution = String.valueOf(substitutions.get(var));
+            str = str.replace(orig, substitution);
+        }
+        return str;
+    }
+
+    public static List<String> substituteVarNamesInObject(Object value, Map<String, Object> substitutions) {
+        List<String> rets = new ArrayList<>();
+        if (value instanceof String) {
+            String string = substituteVarNames((String) value, substitutions);
+            if (StringUtils.isNotBlank(string)) {
+                rets.add(string);
+            }
+        } else if (value instanceof List) {
+            ((List<String>) value).forEach(x -> {
+                x = substituteVarNames(x, substitutions);
+                if (StringUtils.isNotBlank(x)) {
+                    rets.add(x);
+                }
+            });
+        }
+        return rets;
+    }
+
+    /**
+     * Enumeration of variables that can be substituted in Java command string.
+     */
+    public enum WellKnownRuntimeSubstitutionVars {
+        ID("ID"),
+        WORKER_ID("WORKER-ID"),
+        TOPOLOGY_ID("TOPOLOGY-ID"),
+        WORKER_PORT("WORKER-PORT"),
+        HEAP_MEM("HEAP-MEM"),
+        OFF_HEAP_MEM("OFF-HEAP-MEM"),
+        LIMIT_MEM("LIMIT-MEM");
+
+        private String varName;
+
+        WellKnownRuntimeSubstitutionVars(String varName) {
+            this.varName = varName;
+        }
+
+        public String getVarName() {
+            return varName;
+        }
+
+        public static Map<String, Object> getDummySubstitutions() {
+            Map<String, Object> ret = new HashMap<>();
+            ret.put(ID.getVarName(), "dummyId");
+            ret.put(WORKER_ID.getVarName(), "dummy-worker-id");
+            ret.put(TOPOLOGY_ID.getVarName(), "dummy-topology-id");
+            ret.put(WORKER_PORT.getVarName(), 6700);
+            ret.put(HEAP_MEM.getVarName(), 1024);
+            ret.put(OFF_HEAP_MEM.getVarName(), 1024);
+            ret.put(LIMIT_MEM.getVarName(), 1024);
+            return ret;
+        }
+    }
+
+    /**
+     * Launch a validation java command (java -showversion java.util.prefs.Base64 1 1) with JVM options
+     * used in worker launch to validate JVM options.
+     *
+     * @param supervisorConf configuration for the supervisor. May be null.
+     * @param topoConf configuration for the topology. Must be provided.
+     * @param substitutions may be null in which case it is {@link WellKnownRuntimeSubstitutionVars#getDummySubstitutions()}
+     * @param throwExceptionOnFailure if true then an exception is thrown instead of returning false
+     * @return true if the option combination is valid, false otherwise (or throws InvalidTopologyException)
+     */
+    public static boolean validateWorkerLaunchOptions(Map<String, Object> supervisorConf, Map<String, Object> topoConf,
+                                                      Map<String, Object> substitutions, boolean throwExceptionOnFailure)
+            throws InvalidTopologyException {
+        // from storm-server/.../BasicContainer.mkLaunchCommand
+        if (supervisorConf == null) {
+            supervisorConf = new HashMap<>();
+        }
+        if (substitutions == null) {
+            substitutions = WellKnownRuntimeSubstitutionVars.getDummySubstitutions();
+        }
+        List<String> commandList = new ArrayList<>();
+        commandList.add(getJavaCmd("java"));
+        commandList.add("-showversion");
+
+        Object logWriterChildOpts = topoConf.get(Config.TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS);
+        if (logWriterChildOpts != null) {
+            commandList.addAll(substituteVarNamesInObject(logWriterChildOpts, substitutions));
+        }
+
+        commandList.add("-server");
+        commandList.addAll(substituteVarNamesInObject(supervisorConf.get(Config.WORKER_CHILDOPTS), substitutions));
+        commandList.addAll(substituteVarNamesInObject(topoConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS), substitutions));
+        commandList.addAll(substituteVarNamesInObject(Utils.OR(
+                topoConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS),
+                supervisorConf.get(Config.WORKER_GC_CHILDOPTS)), substitutions));
+
+        // this config is only available in storm-server module DaemonConfig.WORKER_PROFILER_CHILDOPTS
+        Object workerProfileChildOpts = supervisorConf.get("worker.profiler.childopts");
+        if (workerProfileChildOpts != null) {
+            commandList.addAll(substituteVarNamesInObject(workerProfileChildOpts, substitutions));
+        }
+        commandList.add("-Dstorm.conf.file=" + ConfigUtils.concatIfNotNull(System.getProperty("storm.conf.file")));
+        commandList.add("-Dstorm.options=" + ConfigUtils.concatIfNotNull(System.getProperty("storm.options")));
+        // use java.util.prefs.Base64 1 1 to test if JVM options are valid
+        commandList.add("java.util.prefs.Base64");
+        commandList.add("1");
+        commandList.add("1");
+
+        String cmd = String.join(" ", commandList);
+        try {
+            Process process = ClientSupervisorUtils.launchProcess(commandList, null, null, null, null);
+            int exitCode = process.waitFor();
+            switch (exitCode) {
+                case 0:
+                    LOG.info("Success exitcode 0 when executing command: {}", cmd);
+                    return true;
+
+                default:
+                    LOG.error("Failure exitcode {} when executing command: {}", exitCode, cmd);
+                    if (throwExceptionOnFailure) {
+                        throw new InvalidTopologyException("Invalid topology JVM options tested via command \"" + cmd + "\"");
+                    } else {
+                        return false;
+                    }
+            }
+        } catch (Exception ex) {
+            LOG.error("Exception executing command {}: {}", cmd, ex);
+            if (throwExceptionOnFailure) {
+                throw new InvalidTopologyException("Failed to test JVM options via command \"" + cmd + "\"");
+            } else {
+                return false;
             }
         }
     }

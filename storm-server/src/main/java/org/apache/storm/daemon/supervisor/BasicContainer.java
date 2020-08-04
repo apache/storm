@@ -427,19 +427,21 @@ public class BasicContainer extends Container {
     private String substituteChildOptsInternal(String string, int memOnheap, int memOffheap) {
         if (StringUtils.isNotBlank(string)) {
             String p = String.valueOf(port);
-            string = string.replace("%ID%", p);
-            string = string.replace("%WORKER-ID%", workerId);
-            string = string.replace("%TOPOLOGY-ID%", topologyId);
-            string = string.replace("%WORKER-PORT%", p);
+            Map<String, Object> varSubstitutions = new HashMap<>();
+            varSubstitutions.put(Utils.WellKnownRuntimeSubstitutionVars.ID.getVarName(), p);
+            varSubstitutions.put(Utils.WellKnownRuntimeSubstitutionVars.WORKER_ID.getVarName(), workerId);
+            varSubstitutions.put(Utils.WellKnownRuntimeSubstitutionVars.TOPOLOGY_ID.getVarName(), topologyId);
+            varSubstitutions.put(Utils.WellKnownRuntimeSubstitutionVars.WORKER_PORT.getVarName(), p);
             if (memOnheap > 0) {
-                string = string.replace("%HEAP-MEM%", String.valueOf(memOnheap));
+                varSubstitutions.put(Utils.WellKnownRuntimeSubstitutionVars.HEAP_MEM.getVarName(), String.valueOf(memOnheap));
             }
             if (memOffheap > 0) {
-                string = string.replace("%OFF-HEAP-MEM%", String.valueOf(memOffheap));
+                varSubstitutions.put(Utils.WellKnownRuntimeSubstitutionVars.OFF_HEAP_MEM.getVarName(), String.valueOf(memOffheap));
             }
             if (memoryLimitMb > 0) {
-                string = string.replace("%LIMIT-MEM%", String.valueOf(memoryLimitMb));
+                varSubstitutions.put(Utils.WellKnownRuntimeSubstitutionVars.LIMIT_MEM.getVarName(), String.valueOf(memoryLimitMb));
             }
+            string = Utils.substituteVarNames(string, varSubstitutions);
         }
         return string;
     }
@@ -568,14 +570,7 @@ public class BasicContainer extends Container {
     }
 
     protected String javaCmd(String cmd) {
-        String ret = null;
-        String javaHome = System.getenv().get("JAVA_HOME");
-        if (StringUtils.isNotBlank(javaHome)) {
-            ret = javaHome + File.separator + "bin" + File.separator + cmd;
-        } else {
-            ret = cmd;
-        }
-        return ret;
+        return Utils.getJavaCmd(cmd);
     }
 
     /**

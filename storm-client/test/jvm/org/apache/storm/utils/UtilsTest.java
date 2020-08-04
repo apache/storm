@@ -19,19 +19,27 @@
 package org.apache.storm.utils;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.storm.Config;
+import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
+import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class UtilsTest {
 
@@ -227,14 +235,72 @@ public class UtilsTest {
     public void checkVersionInfo() {
         Map<String, String> versions = new HashMap<>();
         String key = VersionInfo.getVersion();
-        assertNotEquals("Unknown", key, "Looks like we don't know what version of storm we are");
+        Assert.assertNotEquals("Unknown", key, "Looks like we don't know what version of storm we are");
         versions.put(key, System.getProperty("java.class.path"));
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, versions);
         NavigableMap<String, IVersionInfo> alternativeVersions = Utils.getAlternativeVersionsMap(conf);
-        assertEquals(1, alternativeVersions.size());
+        Assert.assertEquals(1, alternativeVersions.size());
         IVersionInfo found = alternativeVersions.get(key);
-        assertNotNull(found);
-        assertEquals(key, found.getVersion());
+        Assert.assertNotNull(found);
+        Assert.assertEquals(key, found.getVersion());
+    }
+    @Test
+    public void testFindSubstitutableVarNames() {
+        Map<String, Set<String>> testCases = new LinkedHashMap<>();
+        testCases.put("(1) this is a test %THIS_ISTEST-8% this is point %INValid-var% test %VALI_D-VAR% %%",
+                new TreeSet<>(Arrays.asList("THIS_ISTEST-8", "VALI_D-VAR")));
+        testCases.put("(2) this is a test %T1HIS_ISTEST-8% this is point %INValid-var% test %__VALI_D-VAR% %% %_1%",
+                new TreeSet<>(Arrays.asList("T1HIS_ISTEST-8", "__VALI_D-VAR", "_1")));
+
+        testCases.forEach((key, expected) -> {
+            Set<String> foundVars = Utils.findSubstitutableVarNames(key);
+            Set<String> disjunction = Sets.symmetricDifference(foundVars, expected);
+            Assert.assertEquals(String.format("ERROR: In \"%s\" found != expected, differences=\"%s\"", key, disjunction),
+                    expected, foundVars);
+        });
+    }
+
+    @Test
+    public void testGetDummySubstitutions() {
+        Map<String, Object> dummySubs = Utils.WellKnownRuntimeSubstitutionVars.getDummySubstitutions();
+        int expectedSize = Utils.WellKnownRuntimeSubstitutionVars.values().length;
+        Set<String> expectedVars = Stream.of(Utils.WellKnownRuntimeSubstitutionVars.values())
+                .map(Utils.WellKnownRuntimeSubstitutionVars::getVarName)
+                .collect(Collectors.toSet());
+        int foundSize = dummySubs.size();
+        Set<String> foundVars = new HashSet<>(dummySubs.keySet());
+        Collection<String> missingVars = Sets.difference(expectedVars, foundVars);
+        if (!missingVars.isEmpty()) {
+            String msg = String.format("Expected %d variables, found %d, missing values for \"%s\"", expectedSize, foundSize, missingVars);
+            Assert.fail(msg);
+        }
+        Collection<String> extraVars = Sets.difference(foundVars, expectedVars);
+        if (!extraVars.isEmpty()) {
+            String msg = String.format("Expected %d variables, found %d, extra values for \"%s\"", expectedSize, foundSize, extraVars);
+            Assert.fail(msg);
+        }
+    }
+
+    @Test
+    public void testValidateWorkerLaunchOptions() throws InvalidTopologyException {
+        Map<String, Object> supervisorConf = new HashMap<>();
+        Map<String, Object> topoConf = new HashMap<>();
+
+        // both should be active
+        supervisorConf.put(Config.WORKER_CHILDOPTS, "-DchildOpts1=val1");
+        topoConf.put(Config.TOPOLOGY_WORKER_CHILDOPTS, "-DchildOpts2=val2");
+
+        // topoConf will override
+        supervisorConf.put(Config.WORKER_GC_CHILDOPTS, "-DGcOpts=val1");
+        topoConf.put(Config.TOPOLOGY_WORKER_GC_CHILDOPTS, "-DGcOpts=val2");
+
+        supervisorConf.put("worker.profiler.childopts", "-DprofilerOpts=val1");
+        topoConf.put(Config.TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS, "-Df1=f2");
+
+        Assert.assertTrue(Utils.validateWorkerLaunchOptions(supervisorConf, topoConf, null, false));
+
+        topoConf.put(Config.TOPOLOGY_WORKER_GC_CHILDOPTS, "--XX:+UseG1GC"); // invalid syntax
+        Assert.assertFalse(Utils.validateWorkerLaunchOptions(supervisorConf, topoConf, null, false));
     }
 }
