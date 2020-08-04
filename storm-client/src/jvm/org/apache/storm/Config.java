@@ -1747,21 +1747,24 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * Specify the Locale for daemon metrics reporter plugin. Use the specified IETF BCP 47 language tag string for a Locale.
-     * This config should have been placed in the DaemonConfig class. Keeping it here only for backwards compatibility.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE = "storm.daemon.metrics.reporter.plugin.locale";
 
     /**
      * Specify the rate unit in TimeUnit for daemon metrics reporter plugin.
-     * This config should have been placed in the DaemonConfig class. Keeping it here only for backwards compatibility.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT = "storm.daemon.metrics.reporter.plugin.rate.unit";
 
     /**
      * Specify the duration unit in TimeUnit for daemon metrics reporter plugin.
-     * This config should have been placed in the DaemonConfig class. Keeping it here only for backwards compatibility.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT = "storm.daemon.metrics.reporter.plugin.duration.unit";
