@@ -26,22 +26,22 @@ public class ConsoleStormReporter extends ScheduledStormReporter {
     private static final Logger LOG = LoggerFactory.getLogger(ConsoleStormReporter.class);
 
     @Override
-    public void prepare(MetricRegistry registry, Map stormConf, Map reporterConf) {
+    public void prepare(MetricRegistry registry, Map<String, Object> topoConf, Map<String, Object> reporterConf) {
         LOG.debug("Preparing ConsoleReporter");
         ConsoleReporter.Builder builder = ConsoleReporter.forRegistry(registry);
 
         builder.outputTo(System.out);
-        Locale locale = ClientMetricsUtils.getMetricsReporterLocale(stormConf);
+        Locale locale = ClientMetricsUtils.getMetricsReporterLocale(reporterConf);
         if (locale != null) {
             builder.formattedFor(locale);
         }
 
-        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(stormConf);
+        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(reporterConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }
 
-        TimeUnit durationUnit = ClientMetricsUtils.getMetricsDurationUnit(stormConf);
+        TimeUnit durationUnit = ClientMetricsUtils.getMetricsDurationUnit(reporterConf);
         if (durationUnit != null) {
             builder.convertDurationsTo(durationUnit);
         }

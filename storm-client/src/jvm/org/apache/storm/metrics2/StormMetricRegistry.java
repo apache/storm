@@ -186,7 +186,7 @@ public class StormMetricRegistry {
         return getMetricNameMap(taskId, taskIdTimers);
     }
 
-    public void start(Map<String, Object> stormConfig, DaemonType type) {
+    public void start(Map<String, Object> topoConf) {
         try {
             hostName = dotToUnderScore(Utils.localHostname());
         } catch (UnknownHostException e) {
@@ -195,26 +195,21 @@ public class StormMetricRegistry {
         }
 
         LOG.info("Starting metrics reporters...");
-        List<Map<String, Object>> reporterList = (List<Map<String, Object>>) stormConfig.get(Config.STORM_METRICS_REPORTERS);
+        List<Map<String, Object>> reporterList = (List<Map<String, Object>>) topoConf.get(Config.TOPOLOGY_METRICS_REPORTERS);
+        
         if (reporterList != null && reporterList.size() > 0) {
             for (Map<String, Object> reporterConfig : reporterList) {
-                // only start those requested
-                List<String> daemons = (List<String>) reporterConfig.get("daemons");
-                for (String daemon : daemons) {
-                    if (DaemonType.valueOf(daemon.toUpperCase()) == type) {
-                        startReporter(stormConfig, reporterConfig);
-                    }
-                }
+                startReporter(topoConf, reporterConfig);
             }
         }
     }
 
-    private void startReporter(Map<String, Object> stormConfig, Map<String, Object> reporterConfig) {
+    private void startReporter(Map<String, Object> topoConf, Map<String, Object> reporterConfig) {
         String clazz = (String) reporterConfig.get("class");
         LOG.info("Attempting to instantiate reporter class: {}", clazz);
         StormReporter reporter = ReflectionUtils.newInstance(clazz);
         if (reporter != null) {
-            reporter.prepare(registry, stormConfig, reporterConfig);
+            reporter.prepare(registry, topoConf, reporterConfig);
             reporter.start();
             reporters.add(reporter);
         }

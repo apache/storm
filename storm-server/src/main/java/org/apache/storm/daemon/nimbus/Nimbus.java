@@ -1136,6 +1136,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             enforceNettyAuth);
         ret.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, enforceNettyAuth);
 
+        if (!mergedConf.containsKey(Config.TOPOLOGY_METRICS_REPORTERS) && mergedConf.containsKey(Config.STORM_METRICS_REPORTERS)) {
+            ret.put(Config.TOPOLOGY_METRICS_REPORTERS, mergedConf.get(Config.STORM_METRICS_REPORTERS));
+        }
+
         // Don't allow topoConf to override various cluster-specific properties.
         // Specifically adding the cluster settings to the topoConf here will make sure these settings
         // also override the subsequently generated conf picked up locally on the classpath.

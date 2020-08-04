@@ -409,26 +409,3 @@ worker.metrics:
 
 # The number of buckets for running statistics
 num.stat.buckets: 20
-
-# Metrics v2 configuration (optional)
-#storm.metrics.reporters:
-#  # Graphite Reporter
-#  - class: "org.apache.storm.metrics2.reporters.GraphiteStormReporter"
-#    daemons:
-#        - "supervisor"
-#        - "nimbus"
-#        - "worker"
-#    report.period: 60
-#    report.period.units: "SECONDS"
-#    graphite.host: "localhost"
-#    graphite.port: 2003
-#
-#  # Console Reporter
-#  - class: "org.apache.storm.metrics2.reporters.ConsoleStormReporter"
-#    daemons:
-#        - "worker"
-#    report.period: 10
-#    report.period.units: "SECONDS"
-#    filter:
-#        class: "org.apache.storm.metrics2.filters.RegexFilter"
-#        expression: ".*my_component.*emitted.*"
