@@ -188,8 +188,7 @@ public class WorkerState {
         this.stormComponentToDebug = new AtomicReference<>();
         this.topology = ConfigUtils.readSupervisorTopology(conf, topologyId, AdvancedFSOps.make(conf));
         this.taskToComponent = StormCommon.stormTaskInfo(topology, topologyConf);
-        // mkReceiveQueueMap relies on taskToComponent which relies on topology above
-        this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors);
+        this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors, taskToComponent);
         this.localTaskIds = new ArrayList<>();
         this.taskToExecutorQueue = new HashMap<>();
         this.blobToLastKnownVersion = new ConcurrentHashMap<>();
@@ -706,7 +705,7 @@ public class WorkerState {
     }
 
     private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf,
-                                                       Set<List<Long>> executors) throws InvalidTopologyException {
+                                                       Set<List<Long>> executors,  Map<Integer, String> taskToComponent) {
         Integer recvQueueSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE));
         Integer recvBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
         Integer overflowLimit = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT));
@@ -724,7 +723,7 @@ public class WorkerState {
             List<Integer> taskIds = StormCommon.executorIdToTasks(executor);
             int taskId = taskIds.get(0);
             String compId;
-            if (taskId == -1) {
+            if (taskId == Constants.SYSTEM_TASK_ID) {
                 compId = Constants.SYSTEM_COMPONENT_ID;
             } else {
                 compId = taskToComponent.get(taskId);
