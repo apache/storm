@@ -40,6 +40,7 @@ import org.apache.storm.metric.SystemBolt;
 import org.apache.storm.metric.filter.FilterByMetricName;
 import org.apache.storm.metric.util.DataPointExpander;
 import org.apache.storm.security.auth.IAuthorizer;
+import org.apache.storm.serialization.SerializationFactory;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.task.IBolt;
@@ -435,6 +436,19 @@ public class StormCommon {
         topology.put_to_bolts(Constants.SYSTEM_COMPONENT_ID, systemBoltSpec);
     }
 
+    /**
+     * Construct a new topology structure after adding system components and streams.
+     * WARNING: while changing the existing code to add or remove streams for a component is allowed, please be aware that
+     *          it might cause issues during cluster rolling upgrade
+     *          because {@link SerializationFactory.IdDictionary} depends on having a consistent map of component to streams
+     *          to work properly (see STORM-3687 for an example).
+     *          It will not impact a cluster running on a single version or running an older topology on a newer cluster.
+     *          But a mixed cluster (with different versions of daemons running) is not guaranteed to work.
+     * @param topoConf the topology configuration
+     * @param topology the original topology structure
+     * @return the newly constructed topology
+     * @throws InvalidTopologyException if the topology is invalid
+     */
     public static StormTopology systemTopology(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
         return _instance.systemTopologyImpl(topoConf, topology);
     }
