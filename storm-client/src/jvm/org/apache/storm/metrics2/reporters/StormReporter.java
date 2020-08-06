@@ -20,7 +20,7 @@ public interface StormReporter extends Reporter {
     String REPORT_PERIOD = "report.period";
     String REPORT_PERIOD_UNITS = "report.period.units";
 
-    void prepare(MetricRegistry metricsRegistry, Map<String, Object> conf, Map<String, Object> reporterConf);
+    void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf, Map<String, Object> reporterConf);
 
     void start();
 

@@ -180,7 +180,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         IStateStorage stateStorage = ClusterUtils.mkStateStorage(conf, topologyConf, csContext);
         IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, null, csContext);
 
-        metricRegistry.start(conf, DaemonType.WORKER);
+        metricRegistry.start(topologyConf);
 
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();

@@ -32,24 +32,24 @@ public class GraphiteStormReporter extends ScheduledStormReporter {
     public static final String GRAPHITE_TRANSPORT = "graphite.transport";
     private static final Logger LOG = LoggerFactory.getLogger(GraphiteStormReporter.class);
 
-    private static String getMetricsPrefixedWith(Map reporterConf) {
+    private static String getMetricsPrefixedWith(Map<String, Object> reporterConf) {
         return ObjectReader.getString(reporterConf.get(GRAPHITE_PREFIXED_WITH), null);
     }
 
-    private static String getMetricsTargetHost(Map reporterConf) {
+    private static String getMetricsTargetHost(Map<String, Object> reporterConf) {
         return ObjectReader.getString(reporterConf.get(GRAPHITE_HOST), null);
     }
 
-    private static Integer getMetricsTargetPort(Map reporterConf) {
+    private static Integer getMetricsTargetPort(Map<String, Object> reporterConf) {
         return ObjectReader.getInt(reporterConf.get(GRAPHITE_PORT), null);
     }
 
-    private static String getMetricsTargetTransport(Map reporterConf) {
+    private static String getMetricsTargetTransport(Map<String, Object> reporterConf) {
         return ObjectReader.getString(reporterConf.get(GRAPHITE_TRANSPORT), "tcp");
     }
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map stormConf, Map reporterConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf,  Map<String, Object> reporterConf) {
         LOG.debug("Preparing...");
         GraphiteReporter.Builder builder = GraphiteReporter.forRegistry(metricsRegistry);
 

@@ -20,26 +20,31 @@ import org.apache.storm.utils.ObjectReader;
 
 public class ClientMetricsUtils {
 
-    public static TimeUnit getMetricsRateUnit(Map<String, Object> topoConf) {
-        return getTimeUnitForCofig(topoConf, Config.STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT);
+    private static final String RATE_UNIT = "rate.unit";
+    private static final String DURATION_UNIT = "duration.unit";
+    // Use the specified IETF BCP 47 language tag string for a Locale
+    private static final String LOCALE = "locale";
+
+    public static TimeUnit getMetricsRateUnit(Map<String, Object> reporterConf) {
+        return getTimeUnitForConfig(reporterConf, RATE_UNIT);
     }
 
-    public static TimeUnit getMetricsDurationUnit(Map<String, Object> topoConf) {
-        return getTimeUnitForCofig(topoConf, Config.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT);
+    public static TimeUnit getMetricsDurationUnit(Map<String, Object> reporterConf) {
+        return getTimeUnitForConfig(reporterConf, DURATION_UNIT);
     }
 
-    public static Locale getMetricsReporterLocale(Map<String, Object> topoConf) {
-        String languageTag = ObjectReader.getString(topoConf.get(Config.STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE), null);
+    public static Locale getMetricsReporterLocale(Map<String, Object> reporterConf) {
+        String languageTag = ObjectReader.getString(reporterConf.get(LOCALE), null);
         if (languageTag != null) {
             return Locale.forLanguageTag(languageTag);
         }
         return null;
     }
 
-    private static TimeUnit getTimeUnitForCofig(Map<String, Object> topoConf, String configName) {
-        String rateUnitString = ObjectReader.getString(topoConf.get(configName), null);
-        if (rateUnitString != null) {
-            return TimeUnit.valueOf(rateUnitString);
+    public static TimeUnit getTimeUnitForConfig(Map<String, Object> reporterConf, String configName) {
+        String timeUnitString = ObjectReader.getString(reporterConf.get(configName), null);
+        if (timeUnitString != null) {
+            return TimeUnit.valueOf(timeUnitString);
         }
         return null;
     }
