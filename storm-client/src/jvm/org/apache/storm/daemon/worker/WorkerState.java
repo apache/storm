@@ -705,7 +705,7 @@ public class WorkerState {
     }
 
     private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf,
-                                                       Set<List<Long>> executors,  Map<Integer, String> taskToComponent) {
+                                                       Set<List<Long>> executors, Map<Integer, String> taskToComponent) {
         Integer recvQueueSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE));
         Integer recvBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
         Integer overflowLimit = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT));
