@@ -51,7 +51,6 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.net.ProgressListener;
 
 /**
  * Use this class to submit topologies to run on the Storm cluster. You should run your program with the "storm jar" command from the
@@ -538,7 +537,7 @@ public class StormSubmitter {
                     cycles.stream()
                             .map(x -> String.join(",", x))
                             .collect(Collectors.joining(" ; ")));
-            throw new InvalidTopologyException(err);
+            LOG.warn(err);
         }
     }
 
