@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.apache.storm.dependency.DependencyPropertiesParser;
 import org.apache.storm.dependency.DependencyUploader;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -49,6 +51,7 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.net.ProgressListener;
 
 /**
  * Use this class to submit topologies to run on the Storm cluster. You should run your program with the "storm jar" command from the
@@ -233,7 +236,7 @@ public class StormSubmitter {
         conf.putAll(topoConf);
         topoConf.putAll(prepareZookeeperAuthentication(conf));
 
-        validateConfs(conf, topology);
+        validateConfs(conf, topology, name);
 
         Map<String, String> passedCreds = new HashMap<>();
         if (opts != null) {
@@ -524,10 +527,19 @@ public class StormSubmitter {
         }
     }
 
-    private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException,
+    private static void validateConfs(Map<String, Object> topoConf, StormTopology topology, String name) throws IllegalArgumentException,
         InvalidTopologyException, AuthorizationException {
         ConfigValidation.validateTopoConf(topoConf);
         Utils.validateTopologyBlobStoreMap(topoConf);
+
+        List<List<String>> cycles = Utils.findComponentCycles(topology, name);
+        if (!cycles.isEmpty()) {
+            String err = String.format("Topology %s contains cycles in components \"%s\"", name,
+                    cycles.stream()
+                            .map(x -> String.join(",", x))
+                            .collect(Collectors.joining(" ; ")));
+            throw new InvalidTopologyException(err);
+        }
     }
 
     /**
