@@ -1911,8 +1911,8 @@ public class Utils {
     }
 
     /**
-     * Return path to the Java command "x", prefixing with $}{JAVA_HOME}/bin/ if JAVA_HOME system property is defined.
-     * Otherwie return the supplied Java command unmodified.
+     * Return path to the Java command "x", prefixing with ${JAVA_HOME}/bin/ if JAVA_HOME system property is defined.
+     * Otherwise return the supplied Java command unmodified.
      *
      * @param cmd Java command, e.g. "java", "jar" etc.
      * @return command string to use.
