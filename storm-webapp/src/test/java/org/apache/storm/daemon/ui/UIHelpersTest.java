@@ -28,14 +28,15 @@ import org.apache.storm.generated.SpecificAggregateStats;
 import org.apache.storm.generated.SpoutAggregateStats;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
+import org.apache.storm.utils.Time;
 import org.json.simple.JSONValue;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -51,6 +52,11 @@ class UIHelpersTest {
      * Default empty TopologyPageInfo instance to be extended in each test case.
      */
     private TopologyPageInfo topoPageInfo;
+
+    /**
+     * For simulating time.
+     */
+    private Time.SimulatedTime mockTime;
 
     /**
      * Setups up bare minimum TopologyPageInfo instance such that we can pass to
@@ -86,6 +92,15 @@ class UIHelpersTest {
         topoPageInfo.set_topology_stats(topologyStats);
         topoPageInfo.set_id_to_spout_agg_stats(idToSpoutAggStats);
         topoPageInfo.set_id_to_bolt_agg_stats(idToBoltAggStats);
+
+        // Simulate time
+        mockTime = new Time.SimulatedTime(null);
+    }
+
+    @AfterEach
+    void cleanup() {
+        // Stop simulating time
+        mockTime.close();
     }
 
     /**
@@ -97,7 +112,9 @@ class UIHelpersTest {
         // Define inputs
         final String expectedBoltId = "MyBoltId";
         final String expectedErrorMsg = "This is my test error message";
-        final int expectedErrorTime = (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        final int expectedErrorTime = Time.currentTimeSecs();
+        final int errorElapsedTimeSecs = 13;
+        final int expectedErrorElapsedTime = expectedErrorTime + errorElapsedTimeSecs;
         final int expectedErrorPort = 4321;
         final String expectedErrorHost = "my.errored.host";
 
@@ -110,6 +127,9 @@ class UIHelpersTest {
         final ComponentAggregateStats aggregateStats = buildBoltAggregateStatsBase();
         aggregateStats.set_last_error(expectedLastError);
         addBoltStats(expectedBoltId, aggregateStats);
+
+        // Advance time by 'errorElapsedTimeSecs'
+        Time.advanceTimeSecs(errorElapsedTimeSecs);
 
         // Call method under test.
         final Map<String, Object> result = UIHelpers.getTopologySummary(
@@ -131,15 +151,11 @@ class UIHelpersTest {
         assertEquals(expectedBoltId, boltResult.get("encodedBoltId"));
 
         // Verify error
-        assertEquals(expectedErrorMsg, boltResult.get("error"));
         assertEquals(expectedErrorMsg, boltResult.get("lastError"));
         assertEquals(expectedErrorPort, boltResult.get("errorPort"));
         assertEquals(expectedErrorHost, boltResult.get("errorHost"));
         assertEquals(expectedErrorTime, boltResult.get("errorTime"));
-
-        // Fuzzy matching
-        assertTrue(((int) boltResult.get("errorLapsedSecs")) >= 0);
-        assertTrue(((int) boltResult.get("errorLapsedSecs")) <= 10);
+        assertEquals(expectedErrorElapsedTime, boltResult.get("errorLapsedSecs"));
     }
 
     /**
@@ -175,8 +191,8 @@ class UIHelpersTest {
         assertEquals(expectedBoltId, boltResult.get("encodedBoltId"));
 
         // Verify error fields are not populated.
-        assertEquals("", boltResult.get("lastError"), "Should have empty value");
-        assertFalse(boltResult.containsKey("error"));
+        assertTrue(boltResult.containsKey("lastError"));
+        assertEquals("", boltResult.get("lastError"), "Backwards compat. with API docs say this should be empty string when empty");
         assertFalse(boltResult.containsKey("errorPort"));
         assertFalse(boltResult.containsKey("errorHost"));
         assertFalse(boltResult.containsKey("errorTime"));
@@ -270,7 +286,7 @@ class UIHelpersTest {
         assertEquals("", boltResult.get("requestedGenericResourcesComp"));
 
         // We expect there to be no error populated.
-        assertEquals("", boltResult.get("lastError"), "Should have empty value");
+        assertEquals("", boltResult.get("lastError"), "No error should be reported as empty string");
     }
 
     /**
@@ -282,7 +298,9 @@ class UIHelpersTest {
         // Define inputs
         final String expectedSpoutId = "MySpoutId";
         final String expectedErrorMsg = "This is my test error message";
-        final int expectedErrorTime = (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        final int expectedErrorTime = Time.currentTimeSecs();
+        final int errorElapsedTimeSecs = 13;
+        final int expectedErrorElapsedTime = expectedErrorTime + errorElapsedTimeSecs;
         final int expectedErrorPort = 4321;
         final String expectedErrorHost = "my.errored.host";
 
@@ -295,6 +313,9 @@ class UIHelpersTest {
         final ComponentAggregateStats aggregateStats = buildSpoutAggregateStatsBase();
         aggregateStats.set_last_error(expectedLastError);
         addSpoutStats(expectedSpoutId, aggregateStats);
+
+        // Advance time by 'errorElapsedTimeSecs'
+        Time.advanceTimeSecs(errorElapsedTimeSecs);
 
         // Call method under test.
         final Map<String, Object> result = UIHelpers.getTopologySummary(
@@ -316,15 +337,11 @@ class UIHelpersTest {
         assertEquals(expectedSpoutId, spoutResult.get("encodedSpoutId"));
 
         // Verify error
-        assertEquals(expectedErrorMsg, spoutResult.get("error"));
         assertEquals(expectedErrorMsg, spoutResult.get("lastError"));
         assertEquals(expectedErrorPort, spoutResult.get("errorPort"));
         assertEquals(expectedErrorHost, spoutResult.get("errorHost"));
         assertEquals(expectedErrorTime, spoutResult.get("errorTime"));
-
-        // Fuzzy matching
-        assertTrue(((int) spoutResult.get("errorLapsedSecs")) >= 0);
-        assertTrue(((int) spoutResult.get("errorLapsedSecs")) <= 10);
+        assertEquals(expectedErrorElapsedTime, spoutResult.get("errorLapsedSecs"));
     }
 
     /**
@@ -360,8 +377,8 @@ class UIHelpersTest {
         assertEquals(expectedSpoutId, spoutResult.get("encodedSpoutId"));
 
         // Verify error fields are not populated.
-        assertEquals("", spoutResult.get("lastError"), "Should have empty value");
-        assertFalse(spoutResult.containsKey("error"));
+        assertTrue(spoutResult.containsKey("lastError"));
+        assertEquals("", spoutResult.get("lastError"), "Backwards compat. with API docs say this should be empty string when empty");
         assertFalse(spoutResult.containsKey("errorPort"));
         assertFalse(spoutResult.containsKey("errorHost"));
         assertFalse(spoutResult.containsKey("errorTime"));
@@ -446,7 +463,7 @@ class UIHelpersTest {
         assertEquals("", spoutResult.get("requestedGenericResourcesComp"));
 
         // We expect there to be no error populated.
-        assertEquals("", spoutResult.get("lastError"), "Should have empty value");
+        assertEquals("", spoutResult.get("lastError"), "No error should be reported as empty string");
     }
 
     /**

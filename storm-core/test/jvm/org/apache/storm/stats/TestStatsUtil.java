@@ -17,11 +17,28 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.generated.ComponentAggregateStats;
+import org.apache.storm.generated.ComponentType;
+import org.apache.storm.generated.ErrorInfo;
+import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class TestStatsUtil {
 
@@ -54,6 +71,8 @@ public class TestStatsUtil {
         exec1.add(1);
         HashMap<String, Object> exec1Beat = new HashMap<String, Object>();
         exec1Beat.put("uptime", 100);
+        exec1Beat.put("type", "bolt");
+        exec1Beat.put("stats", createBeatBoltStats());
 
         // should not be returned since this executor is not part of the topology's assignment
         List<Integer> exec2 = new ArrayList<Integer>();
@@ -61,6 +80,8 @@ public class TestStatsUtil {
         exec2.add(4);
         HashMap<String, Object> exec2Beat = new HashMap<String, Object>();
         exec2Beat.put("uptime", 200);
+        exec2Beat.put("type", "bolt");
+        exec2Beat.put("stats", createBeatBoltStats());
 
         beats.put(exec1, exec1Beat);
         beats.put(exec2, exec2Beat);
@@ -92,6 +113,33 @@ public class TestStatsUtil {
         worker2Resources.put(new WorkerSlot("node3", 3), ws3);
     }
 
+    private Map<String, Object> createBeatBoltStats() {
+        return createBeatStats("bolt");
+    }
+
+    private Map<String, Object> createBeatSpoutStats() {
+        return createBeatStats("spout");
+    }
+
+    private Map<String, Object> createBeatStats(final String type) {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("type", type);
+
+        stats.put("acked", new HashMap<>());
+        stats.put("emitted", new HashMap<>());
+        stats.put("executed", new HashMap<>());
+        stats.put("failed", new HashMap<>());
+        stats.put("transferred", new HashMap<>());
+
+        stats.put("execute-latencies", new HashMap<>());
+        stats.put("process-latencies", new HashMap<>());
+        stats.put("complete-latencies", new HashMap<>());
+
+        stats.put("rate", 100D);
+
+        return stats;
+    }
+
     private void makeTopoInfoWithSysWorker() {
         makeTopoInfo();
 
@@ -108,6 +156,30 @@ public class TestStatsUtil {
         thirdWorker.add("node3");
         thirdWorker.add(new Long(3));
         exec2NodePort.put(makeExecutorId(5, 7), thirdWorker);
+    }
+
+    private void makeTopoInfoWithSpout() {
+        makeTopoInfo();
+
+        // Add spout
+        task2Component.put(8, "my-spout");
+
+        HashMap<String, Object> exec3Beat = new HashMap<String, Object>();
+        exec3Beat.put("uptime", 300);
+        exec3Beat.put("type", "spout");
+        exec3Beat.put("stats", createBeatSpoutStats());
+
+        List<Integer> exec3 = new ArrayList<Integer>();
+        exec3.add(8);
+        exec3.add(8);
+
+        List<Object> hostPort = new ArrayList<Object>();
+        hostPort.add("node4");
+        hostPort.add(new Long(4));
+
+        exec2NodePort.put(makeExecutorId(8, 8), hostPort);
+
+        beats.put(exec3, exec3Beat);
     }
 
     private List<WorkerSummary> checkWorkerStats(boolean includeSys, boolean userAuthorized, String filterSupervisor) {
@@ -248,5 +320,168 @@ public class TestStatsUtil {
         Assert.assertEquals(1, ws.get_component_to_num_tasks().size());
         Assert.assertEquals(1, ws.get_component_to_num_tasks().get("my-component2").intValue());
         Assert.assertEquals(1, summaries.size());
+    }
+
+    /**
+     * Targeted validation against StatsUtil.aggTopoExecsStats()
+     * to verify that when a bolt or spout has an error reported,
+     * it is included in the returned TopologyPageInfo result.
+     */
+    @Test
+    public void aggTopoExecsStats_boltAndSpoutsHaveLastErrorReported() {
+        // Define inputs
+        final String expectedBoltErrorMsg = "This is my test bolt error message";
+        final int expectedBoltErrorTime = (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        final int expectedBoltErrorPort = 4321;
+        final String expectedBoltErrorHost = "my.errored.host";
+
+        final String expectedSpoutErrorMsg = "This is my test spout error message";
+        final int expectedSpoutErrorTime = (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        final int expectedSpoutErrorPort = 1234;
+        final String expectedSpoutErrorHost = "my.errored.host2";
+
+        // Define our Last Error for the bolt
+        final ErrorInfo expectedBoltLastError = new ErrorInfo(expectedBoltErrorMsg, expectedBoltErrorTime);
+        expectedBoltLastError.set_port(expectedBoltErrorPort);
+        expectedBoltLastError.set_host(expectedBoltErrorHost);
+
+        // Define our Last Error for the spout
+        final ErrorInfo expectedSpoutLastError = new ErrorInfo(expectedSpoutErrorMsg, expectedSpoutErrorTime);
+        expectedSpoutLastError.set_port(expectedSpoutErrorPort);
+        expectedSpoutLastError.set_host(expectedSpoutErrorHost);
+
+        // Create mock StormClusterState
+        final IStormClusterState mockStormClusterState = mock(IStormClusterState.class);
+        when(mockStormClusterState.lastError(eq("my-storm-id"), eq("my-component")))
+            .thenReturn(expectedBoltLastError);
+        when(mockStormClusterState.lastError(eq("my-storm-id"), eq("my-spout")))
+            .thenReturn(expectedSpoutLastError);
+
+        // Setup inputs.
+        makeTopoInfoWithSpout();
+
+        // Call method under test.
+        final TopologyPageInfo topologyPageInfo = StatsUtil.aggTopoExecsStats(
+            "my-storm-id",
+            exec2NodePort,
+            task2Component,
+            beats,
+            null,
+            ":all-time",
+            false,
+            mockStormClusterState
+        );
+
+        // Validate result
+        assertNotNull(topologyPageInfo, "Should never be null");
+        assertEquals("my-storm-id", topologyPageInfo.get_id());
+        assertEquals(8, topologyPageInfo.get_num_tasks(), "Should have 7 tasks.");
+        assertEquals(2, topologyPageInfo.get_num_workers(), "Should have 2 workers.");
+        assertEquals(2, topologyPageInfo.get_num_executors(), "Should have only a single executor.");
+
+        // Validate Spout aggregate statistics
+        assertNotNull(topologyPageInfo.get_id_to_spout_agg_stats(), "Should be non-null");
+        assertEquals(1, topologyPageInfo.get_id_to_spout_agg_stats().size());
+        assertEquals(1, topologyPageInfo.get_id_to_spout_agg_stats_size());
+
+        assertTrue(topologyPageInfo.get_id_to_spout_agg_stats().containsKey("my-spout"));
+        assertNotNull(topologyPageInfo.get_id_to_spout_agg_stats().get("my-spout"));
+        ComponentAggregateStats componentStats = topologyPageInfo.get_id_to_spout_agg_stats().get("my-spout");
+        assertEquals(ComponentType.SPOUT, componentStats.get_type(), "Should be of type spout");
+
+        assertNotNull(componentStats.get_last_error(), "Last error should not be null");
+        ErrorInfo lastError = componentStats.get_last_error();
+        assertEquals(expectedSpoutErrorMsg, lastError.get_error());
+        assertEquals(expectedSpoutErrorHost, lastError.get_host());
+        assertEquals(expectedSpoutErrorPort, lastError.get_port());
+        assertEquals(expectedSpoutErrorTime, lastError.get_error_time_secs());
+
+        // Validate Bolt aggregate statistics
+        assertNotNull(topologyPageInfo.get_id_to_bolt_agg_stats(), "Should be non-null");
+        assertEquals(1, topologyPageInfo.get_id_to_bolt_agg_stats().size());
+        assertEquals(1, topologyPageInfo.get_id_to_bolt_agg_stats_size());
+
+        assertTrue(topologyPageInfo.get_id_to_bolt_agg_stats().containsKey("my-component"));
+        assertNotNull(topologyPageInfo.get_id_to_bolt_agg_stats().get("my-component"));
+        componentStats = topologyPageInfo.get_id_to_bolt_agg_stats().get("my-component");
+        assertEquals(ComponentType.BOLT, componentStats.get_type(), "Should be of type bolt");
+
+        assertNotNull(componentStats.get_last_error(), "Last error should not be null");
+        lastError = componentStats.get_last_error();
+        assertEquals(expectedBoltErrorMsg, lastError.get_error());
+        assertEquals(expectedBoltErrorHost, lastError.get_host());
+        assertEquals(expectedBoltErrorPort, lastError.get_port());
+        assertEquals(expectedBoltErrorTime, lastError.get_error_time_secs());
+
+        // Verify mock interactions
+        verify(mockStormClusterState, times(1))
+            .lastError(eq("my-storm-id"), eq("my-component"));
+        verify(mockStormClusterState, times(1))
+            .lastError(eq("my-storm-id"), eq("my-spout"));
+    }
+
+    /**
+     * Targeted validation against StatsUtil.aggTopoExecsStats()
+     * to verify that when a bolt and spout does NOT have an error reported,
+     * it gracefully handles not having a value.
+     */
+    @Test
+    public void aggTopoExecsStats_boltAndSpoutsHaveNoLastErrorReported() {
+        // Create mock StormClusterState
+        final IStormClusterState mockStormClusterState = mock(IStormClusterState.class);
+        when(mockStormClusterState.lastError(eq("my-storm-id"), eq("my-component")))
+            .thenReturn(null);
+        when(mockStormClusterState.lastError(eq("my-storm-id"), eq("my-spout")))
+            .thenReturn(null);
+
+        // Setup inputs.
+        makeTopoInfoWithSpout();
+
+        // Call method under test.
+        final TopologyPageInfo topologyPageInfo = StatsUtil.aggTopoExecsStats(
+            "my-storm-id",
+            exec2NodePort,
+            task2Component,
+            beats,
+            null,
+            ":all-time",
+            false,
+            mockStormClusterState
+        );
+
+        // Validate result
+        assertNotNull(topologyPageInfo, "Should never be null");
+        assertEquals("my-storm-id", topologyPageInfo.get_id());
+        assertEquals(8, topologyPageInfo.get_num_tasks(), "Should have 7 tasks.");
+        assertEquals(2, topologyPageInfo.get_num_workers(), "Should have 2 workers.");
+        assertEquals(2, topologyPageInfo.get_num_executors(), "Should have only a single executor.");
+
+        // Validate Spout aggregate statistics
+        assertNotNull(topologyPageInfo.get_id_to_spout_agg_stats(), "Should be non-null");
+        assertEquals(1, topologyPageInfo.get_id_to_spout_agg_stats().size());
+        assertEquals(1, topologyPageInfo.get_id_to_spout_agg_stats_size());
+
+        assertTrue(topologyPageInfo.get_id_to_spout_agg_stats().containsKey("my-spout"));
+        assertNotNull(topologyPageInfo.get_id_to_spout_agg_stats().get("my-spout"));
+        ComponentAggregateStats componentStats = topologyPageInfo.get_id_to_spout_agg_stats().get("my-spout");
+        assertEquals(ComponentType.SPOUT, componentStats.get_type(), "Should be of type spout");
+        assertNull(componentStats.get_last_error(), "Last error should not be null");
+
+        // Validate Bolt aggregate statistics
+        assertNotNull(topologyPageInfo.get_id_to_bolt_agg_stats(), "Should be non-null");
+        assertEquals(1, topologyPageInfo.get_id_to_bolt_agg_stats().size());
+        assertEquals(1, topologyPageInfo.get_id_to_bolt_agg_stats_size());
+
+        assertTrue(topologyPageInfo.get_id_to_bolt_agg_stats().containsKey("my-component"));
+        assertNotNull(topologyPageInfo.get_id_to_bolt_agg_stats().get("my-component"));
+        componentStats = topologyPageInfo.get_id_to_bolt_agg_stats().get("my-component");
+        assertEquals(ComponentType.BOLT, componentStats.get_type(), "Should be of type bolt");
+        assertNull(componentStats.get_last_error(), "Last error should not be null");
+
+        // Verify mock interactions
+        verify(mockStormClusterState, times(1))
+            .lastError(eq("my-storm-id"), eq("my-component"));
+        verify(mockStormClusterState, times(1))
+            .lastError(eq("my-storm-id"), eq("my-spout"));
     }
 }

@@ -1425,10 +1425,12 @@ public class UIHelpers {
      * @param errorInfo errorInfo
      * @param config config
      * @param topologyId topologyId
+     * @param asLastError Pass a value of true if the result is to be used as part of a components 'lastError' response.
+     *                    Pass a value of false if the result is to be used as part of a components 'errors' response.
      * @return getComponentErrorInfo
      */
     private static Map<String, Object> getComponentErrorInfo(ErrorInfo errorInfo, Map config,
-                                                             String topologyId) {
+                                                             String topologyId, boolean asLastError) {
         Map<String, Object> result = new HashMap();
         result.put("errorTime",
                 errorInfo.get_error_time_secs());
@@ -1438,7 +1440,13 @@ public class UIHelpers {
         result.put("errorPort", port);
         result.put("errorWorkerLogLink", getWorkerLogLink(host, port, config, topologyId));
         result.put("errorLapsedSecs", Time.deltaSecs(errorInfo.get_error_time_secs()));
-        result.put("error", errorInfo.get_error());
+
+        if (asLastError) {
+            result.put("lastError", getTruncatedErrorString(errorInfo.get_error()));
+        } else {
+            result.put("error", errorInfo.get_error());
+        }
+
         return result;
     }
 
@@ -1455,7 +1463,7 @@ public class UIHelpers {
         errorInfoList.sort(Comparator.comparingInt(ErrorInfo::get_error_time_secs));
         result.put(
                 "componentErrors",
-                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId))
+                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId, false))
                         .collect(Collectors.toList())
         );
         return result;
@@ -1474,7 +1482,7 @@ public class UIHelpers {
         errorInfoList.sort(Comparator.comparingInt(ErrorInfo::get_error_time_secs));
         result.put(
                 "topologyErrors",
-                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId))
+                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId, false))
                         .collect(Collectors.toList())
         );
         return result;
@@ -1496,12 +1504,12 @@ public class UIHelpers {
         SpoutAggregateStats spoutAggregateStats = componentAggregateStats.get_specific_stats().get_spout();
         result.put("completeLatency", StatsUtil.floatStr(spoutAggregateStats.get_complete_latency_ms()));
         ErrorInfo lastError = componentAggregateStats.get_last_error();
-        result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
-
         if (!Objects.isNull(lastError)) {
-            result.putAll(getComponentErrorInfo(lastError, config, topologyId));
+            result.putAll(getComponentErrorInfo(lastError, config, topologyId, true));
+        } else {
+            // Maintain backwards compatibility in the API response by setting empty string value
+            result.put("lastError", "");
         }
-
         return result;
     }
 
@@ -1525,9 +1533,11 @@ public class UIHelpers {
         result.put("processLatency", StatsUtil.floatStr(boltAggregateStats.get_process_latency_ms()));
 
         ErrorInfo lastError = componentAggregateStats.get_last_error();
-        result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
         if (!Objects.isNull(lastError)) {
-            result.putAll(getComponentErrorInfo(lastError, config, topologyId));
+            result.putAll(getComponentErrorInfo(lastError, config, topologyId, true));
+        } else {
+            // Maintain backwards compatibility in the API response by setting empty string value
+            result.put("lastError", "");
         }
         return result;
     }
