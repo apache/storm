@@ -555,6 +555,9 @@ Response fields:
 |spouts.transferred| Long |Total number of messages  transferred in given window|
 |spouts.tasks| Integer |Total number of tasks for the spout|
 |spouts.lastError| String |Shows the last error happened in a spout|
+|spouts.errorHost| String | Worker hostname the last error was reported on|
+|spouts.errorPort| String | Worker port the last error was reported on|
+|spouts.errorTime| Integer | Unix timestamp the last error was reported (seconds since epoch) |
 |spouts.errorLapsedSecs| Integer | Number of seconds elapsed since that last error happened in a spout|
 |spouts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |spouts.acked| Long |Number of messages acked|
@@ -572,6 +575,9 @@ Response fields:
 |bolts.acked| Long |Number of tuples acked by the bolt|
 |bolts.failed| Long |Number of tuples failed by the bolt|
 |bolts.lastError| String |Shows the last error occurred in the bolt|
+|bolts.errorHost| String | Worker hostname the last error was reported on|
+|bolts.errorPort| String | Worker port the last error was reported on|
+|bolts.errorTime| Integer | Unix timestamp the last error was reported (seconds since epoch) |
 |bolts.errorLapsedSecs| Integer |Number of seconds elapsed since that last error happened in a bolt|
 |bolts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |bolts.emitted| Long |Number of tuples emitted|
