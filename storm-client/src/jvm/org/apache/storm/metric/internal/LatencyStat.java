@@ -21,13 +21,12 @@ package org.apache.storm.metric.internal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimerTask;
-import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.utils.Utils;
 
 /**
- * Acts as a Latency Metric, but also keeps track of approximate latency for the last 10 mins, 3 hours, 1 day, and all time.
+ * Keeps track of approximate latency for the last 10 mins, 3 hours, 1 day, and all time.
  */
-public class LatencyStatAndMetric implements IMetric {
+public class LatencyStat {
     //The current lat and count buckets are protected by a different lock
     // from the other buckets.  This is to reduce the lock contention
     // When doing complex calculations.  Never grab the instance object lock
@@ -66,7 +65,7 @@ public class LatencyStatAndMetric implements IMetric {
      *
      * @param numBuckets the number of buckets to divide the time periods into.
      */
-    public LatencyStatAndMetric(int numBuckets) {
+    public LatencyStat(int numBuckets) {
         this(numBuckets, -1);
     }
 
@@ -76,7 +75,7 @@ public class LatencyStatAndMetric implements IMetric {
      * @param numBuckets the number of buckets to divide the time periods into.
      * @param startTime  if positive the simulated time to start the from.
      */
-    LatencyStatAndMetric(int numBuckets, long startTime) {
+    LatencyStat(int numBuckets, long startTime) {
         numBuckets = Math.max(numBuckets, 2);
         //We want to capture the full time range, so the target size is as
         // if we had one bucket less, then we do
@@ -123,11 +122,6 @@ public class LatencyStatAndMetric implements IMetric {
         }
     }
 
-    @Override
-    public synchronized Object getValueAndReset() {
-        return getValueAndReset(System.currentTimeMillis());
-    }
-
     synchronized Object getValueAndReset(long now) {
         long lat;
         long count;
@@ -143,7 +137,7 @@ public class LatencyStatAndMetric implements IMetric {
         long exactExtraCountSum = count + exactExtraCount;
         @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
         double ret = Utils.zeroIfNaNOrInf(
-            ((double) (lat + exactExtraLat)) / exactExtraCountSum);
+                ((double) (lat + exactExtraLat)) / exactExtraCountSum);
         bucketStart = now;
         exactExtraLat = 0;
         exactExtraCount = 0;
