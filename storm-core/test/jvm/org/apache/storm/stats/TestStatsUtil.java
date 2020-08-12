@@ -113,17 +113,13 @@ public class TestStatsUtil {
         worker2Resources.put(new WorkerSlot("node3", 3), ws3);
     }
 
+    /**
+     * Utility method for creating a template for Bolt stats.
+     * @return Empty template map for Bolt statistics.
+     */
     private Map<String, Object> createBeatBoltStats() {
-        return createBeatStats("bolt");
-    }
-
-    private Map<String, Object> createBeatSpoutStats() {
-        return createBeatStats("spout");
-    }
-
-    private Map<String, Object> createBeatStats(final String type) {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("type", type);
+        stats.put("type", "bolt");
 
         stats.put("acked", new HashMap<>());
         stats.put("emitted", new HashMap<>());
@@ -133,9 +129,27 @@ public class TestStatsUtil {
 
         stats.put("execute-latencies", new HashMap<>());
         stats.put("process-latencies", new HashMap<>());
-        stats.put("complete-latencies", new HashMap<>());
 
-        stats.put("rate", 100D);
+        stats.put("rate", 0D);
+
+        return stats;
+    }
+
+    /**
+     * Utility method for creating a template for Spout stats.
+     * @return Empty template map for Spout statistics.
+     */
+    private Map<String, Object> createBeatSpoutStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("type", "spout");
+
+        stats.put("acked", new HashMap<>());
+        stats.put("emitted", new HashMap<>());
+        stats.put("failed", new HashMap<>());
+        stats.put("transferred", new HashMap<>());
+
+        stats.put("complete-latencies", new HashMap<>());
+        stats.put("rate", 0D);
 
         return stats;
     }
@@ -158,6 +172,10 @@ public class TestStatsUtil {
         exec2NodePort.put(makeExecutorId(5, 7), thirdWorker);
     }
 
+    /**
+     * Utility method for creating dependencies for TopologyInfo
+     * that include one spout component.
+     */
     private void makeTopoInfoWithSpout() {
         makeTopoInfo();
 
