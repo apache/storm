@@ -31,17 +31,10 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.state.State;
-import org.apache.storm.task.TopologyContext;
+import org.apache.storm.testing.TestWordCounter;
+import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.thrift.transport.TTransportException;
-import org.apache.storm.topology.IRichSpout;
-import org.apache.storm.topology.IStatefulBolt;
-import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.topology.base.BaseRichSpout;
-import org.apache.storm.topology.base.BaseStatefulBolt;
-import org.apache.storm.tuple.Tuple;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -271,44 +264,10 @@ public class UtilsTest {
             }
 
             CycleDetectionScenario(String testName, String testDescription, StormTopology topology, int expectedCycles) {
-                this.testName = testName;
+                this.testName = testName.replace(' ', '-');
                 this.testDescription = testDescription;
                 this.topology = topology;
                 this.expectedCycles = expectedCycles;
-            }
-
-            private IRichSpout makeDummySpout() {
-                return new BaseRichSpout() {
-                    @Override
-                    public void declareOutputFields(OutputFieldsDeclarer declarer) {
-                    }
-
-                    @Override
-                    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-                    }
-
-                    @Override
-                    public void nextTuple() {
-                    }
-
-                    private void writeObject(java.io.ObjectOutputStream stream) {
-                    }
-                };
-            }
-
-            private IStatefulBolt makeDummyStatefulBolt() {
-                return new BaseStatefulBolt() {
-                    @Override
-                    public void execute(Tuple input) {
-                    }
-
-                    @Override
-                    public void initState(State state) {
-                    }
-
-                    private void writeObject(java.io.ObjectOutputStream stream) {
-                    }
-                };
             }
 
             public List<CycleDetectionScenario> createTestScenarios() {
@@ -321,13 +280,13 @@ public class UtilsTest {
                 {
                     testNo++;
                     tb = new TopologyBuilder();
-                    tb.setSpout("spout1", makeDummySpout(), 10);
-                    tb.setBolt("bolt1", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1");
-                    tb.setBolt("bolt2", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1");
-                    tb.setBolt("bolt11", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt12", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt21", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt2");
-                    tb.setBolt("bolt22", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt2");
+                    tb.setSpout("spout1", new TestWordSpout(), 10);
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1");
+                    tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("spout1");
+                    tb.setBolt("bolt11", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt12", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt21", new TestWordCounter(), 10).shuffleGrouping("bolt2");
+                    tb.setBolt("bolt22", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     s = new CycleDetectionScenario(String.format("(%d) Base", testNo),
                             "Three level component hierarchy with no loops",
                             tb.createTopology(),
@@ -339,16 +298,16 @@ public class UtilsTest {
                 {
                     testNo++;
                     tb = new TopologyBuilder();
-                    tb.setSpout("spout1", makeDummySpout(), 10);
-                    tb.setBolt("bolt1", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1");
-                    tb.setBolt("bolt2", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1");
-                    tb.setBolt("bolt11", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt12", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt21", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt2");
-                    tb.setBolt("bolt22", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt2");
+                    tb.setSpout("spout1", new TestWordSpout(), 10);
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1");
+                    tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("spout1");
+                    tb.setBolt("bolt11", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt12", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt21", new TestWordCounter(), 10).shuffleGrouping("bolt2");
+                    tb.setBolt("bolt22", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     // loop bolt 3  (also connect bolt3 to spout 1)
-                    tb.setBolt("bolt3", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt3");
-                    ret.add(new CycleDetectionScenario(String.format("(%d) Base", testNo),
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt3");
+                    ret.add(new CycleDetectionScenario(String.format("(%d) One Loop", testNo),
                             "Four level component hierarchy with 1 cycle in bolt3",
                             tb.createTopology(),
                             1));
@@ -358,18 +317,18 @@ public class UtilsTest {
                 {
                     testNo++;
                     tb = new TopologyBuilder();
-                    tb.setSpout("spout1", makeDummySpout(), 10);
-                    tb.setBolt("bolt1", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1");
-                    tb.setBolt("bolt2", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1");
-                    tb.setBolt("bolt11", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt12", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt21", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt2");
-                    tb.setBolt("bolt22", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt2");
+                    tb.setSpout("spout1", new TestWordSpout(), 10);
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1");
+                    tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("spout1");
+                    tb.setBolt("bolt11", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt12", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt21", new TestWordCounter(), 10).shuffleGrouping("bolt2");
+                    tb.setBolt("bolt22", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     // loop bolt 3 -> 4 -> 5 -> 3 (also connect bolt3 to spout1)
-                    tb.setBolt("bolt3", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt5");
-                    tb.setBolt("bolt4", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt3");
-                    tb.setBolt("bolt5", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt4");
-                    ret.add(new CycleDetectionScenario(String.format("(%d) Base", testNo),
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt5");
+                    tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3");
+                    tb.setBolt("bolt5", new TestWordCounter(), 10).shuffleGrouping("bolt4");
+                    ret.add(new CycleDetectionScenario(String.format("(%d) One Loop", testNo),
                             "Four level component hierarchy with 1 cycle in bolt3,bolt4,bolt5",
                             tb.createTopology(),
                             1));
@@ -379,23 +338,40 @@ public class UtilsTest {
                 {
                     testNo++;
                     tb = new TopologyBuilder();
-                    tb.setSpout("spout1", makeDummySpout(), 10);
-                    tb.setBolt("bolt1", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1");
-                    tb.setBolt("bolt2", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1");
-                    tb.setBolt("bolt11", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt12", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt21", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt2");
-                    tb.setBolt("bolt22", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt2");
+                    tb.setSpout("spout1", new TestWordSpout(), 10);
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1");
+                    tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("spout1");
+                    tb.setBolt("bolt11", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt12", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt21", new TestWordCounter(), 10).shuffleGrouping("bolt2");
+                    tb.setBolt("bolt22", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     // loop bolt 3 -> 4 -> 5 -> 3 (also connect bolt3 to spout1)
-                    tb.setBolt("bolt3", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt5");
-                    tb.setBolt("bolt4", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt3");
-                    tb.setBolt("bolt5", makeDummyStatefulBolt(), 10).shuffleGrouping("bolt4");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt5");
+                    tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3");
+                    tb.setBolt("bolt5", new TestWordCounter(), 10).shuffleGrouping("bolt4");
                     // loop bolt 6  (also connect bolt6 to spout 1)
-                    tb.setBolt("bolt6", makeDummyStatefulBolt(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt6");
-                    ret.add(new CycleDetectionScenario(String.format("(%d) Base", testNo),
+                    tb.setBolt("bolt6", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt6");
+                    ret.add(new CycleDetectionScenario(String.format("(%d) Two Loops", testNo),
                             "Four level component hierarchy with 2 cycles in bolt3,bolt4,bolt5 and bolt6",
                             tb.createTopology(),
                             2));
+                }
+
+                // complex cycle
+                {
+                    // (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> B2)
+                    testNo++;
+                    tb = new TopologyBuilder();
+                    tb.setSpout("spout1", new TestWordSpout(), 10);
+                    tb.setSpout("spout2", new TestWordSpout(), 10);
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt4");
+                    tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2").shuffleGrouping("bolt4");
+                    tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3").shuffleGrouping("spout2");
+                    ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops", testNo),
+                            "Complex cycle (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> B2)",
+                            tb.createTopology(),
+                            1));
                 }
 
                 return ret;

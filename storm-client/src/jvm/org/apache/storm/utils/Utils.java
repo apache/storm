@@ -1911,23 +1911,15 @@ public class Utils {
     }
 
     /**
-     * Create a map of forward edges for spouts and bolts in a topology. The mapping contains ids of the spouts and bolts.
+     * Create a map of forward edges for bolts in a topology. Note that spouts can be source but not a target in
+     * the edge. The mapping contains ids of spouts and bolts.
      *
      * @param topology StormTopology to examine.
-     * @return a map with entry for each SpoutId/BoltId to a set of out bound edges of SpoutIds/BoltIds.
+     * @return a map with entry for each SpoutId/BoltId to a set of outbound edges of BoltIds.
      */
     private static Map<String, Set<String>> getStormTopologyForwardGraph(StormTopology topology) {
         Map<String, Set<String>> edgesOut = new HashMap<>();
 
-        if (topology.get_spouts() != null) {
-            topology.get_spouts().entrySet().forEach(entry -> {
-                if (!Utils.isSystemId(entry.getKey())) {
-                    entry.getValue().get_common().get_inputs().forEach((k, v) -> {
-                        edgesOut.computeIfAbsent(k.get_componentId(), x -> new HashSet<>()).add(entry.getKey());
-                    });
-                }
-            });
-        }
         if (topology.get_bolts() != null) {
             topology.get_bolts().entrySet().forEach(entry -> {
                 if (!Utils.isSystemId(entry.getKey())) {
@@ -1962,24 +1954,27 @@ public class Utils {
         Set<String> children = new HashSet<>(edgesOut.get(compId1));
         for (String compId2: children) {
             if (seen.contains(compId2)) {
-                // cycle detected
-                List<String> cycle = new ArrayList<>();
+                // cycle/diamond detected
+                List<String> possibleCycle = new ArrayList<>();
                 if (compId1.equals(compId2)) {
-                    cycle.add(compId2);
+                    possibleCycle.add(compId2);
                 } else if (edgesOut.get(compId2).contains(compId1)) {
-                    cycle.addAll(Arrays.asList(compId1, compId2));
+                    possibleCycle.addAll(Arrays.asList(compId1, compId2));
                 } else {
                     List<String> tmp = Collections.list(stack.elements());
                     int prevIdx = tmp.indexOf(compId2);
                     if (prevIdx >= 0) {
-                        tmp.subList(prevIdx, tmp.size());
+                        // cycle (as opposed to diamond)
+                        tmp = tmp.subList(prevIdx, tmp.size());
+                        tmp.add(compId2);
+                        possibleCycle.addAll(tmp);
                     }
-                    tmp.add(compId2);
-                    cycle.addAll(tmp);
                 }
-                cycles.add(cycle);
-                edgesOut.get(compId1).remove(compId2); // disconnect this cycle
-                continue;
+                if (!possibleCycle.isEmpty()) {
+                    cycles.add(possibleCycle);
+                    edgesOut.get(compId1).remove(compId2); // disconnect this cycle
+                    continue;
+                }
             }
             seen.add(compId2);
             stack.push(compId2);
@@ -2024,15 +2019,6 @@ public class Utils {
         // warning about unreachable components
         if (!unreachable.isEmpty()) {
             LOG.warn("Topology {} contains unreachable components \"{}\"", topoId, String.join(",", unreachable));
-        }
-
-        // detected cycles
-        if (!ret.isEmpty()) {
-            LOG.error("Topology {} contains cycles {}", topoId,
-                    ret.stream()
-                            .map(x -> String.join(",", x))
-                            .collect(Collectors.joining(" ; "))
-            );
         }
         return ret;
     }
