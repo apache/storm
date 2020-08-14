@@ -40,9 +40,7 @@ import org.apache.storm.utils.Utils;
 public class InOrderDeliveryTest {
 
     public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
-        TopologySummary ts = client.getTopologySummaryByName(name);
-        String id = ts.get_id();
-        TopologyInfo info = client.getTopologyInfo(id);
+        TopologyInfo info = client.getTopologyInfoByName(name);
         int uptime = info.get_uptime_secs();
         long acked = 0;
         long failed = 0;

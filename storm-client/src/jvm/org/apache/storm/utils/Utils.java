@@ -1196,10 +1196,14 @@ public class Utils {
 
     public static String getTopologyId(String name, Nimbus.Iface client) {
         try {
-            return client.getTopologySummaryByName(name).get_id();
+            TopologySummary topologySummary = client.getTopologySummaryByName(name);
+            if (topologySummary != null) {
+                return topologySummary.get_id();
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        return null;
     }
 
     /**

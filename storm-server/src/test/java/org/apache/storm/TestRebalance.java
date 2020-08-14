@@ -45,9 +45,9 @@ public class TestRebalance {
 
     public static String topoNameToId(String topoName, ILocalCluster cluster) throws TException {
         TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
-            if (topoSum.get_name().equals(topoName)) {
-                return topoSum.get_id();
-            }
+        if (topoSum != null) {
+            return topoSum.get_id();
+        }
         return null;
     }
 

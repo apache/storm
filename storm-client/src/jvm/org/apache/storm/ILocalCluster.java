@@ -167,7 +167,7 @@ public interface ILocalCluster extends AutoCloseable {
      * Get the state of a topology.
      *
      * @param id the id of the topology (not the name)
-     * @param options This is GetInfoOptions to choose Error(s) in on TopologyInfo.
+     * @param options This is to choose number of Error(s) in TopologyInfo.
      * @return the state of a topology
      * @throws TException on any error from nimbus
      */

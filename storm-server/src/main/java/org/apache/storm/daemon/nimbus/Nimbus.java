@@ -2978,7 +2978,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
-    private ClusterSummary getClusterInfoImpl() throws Exception, AuthorizationException {
+    private ClusterSummary getClusterInfoImpl() throws Exception {
         IStormClusterState state = stormClusterState;
         Map<String, SupervisorInfo> infos = state.allSupervisorInfo();
         List<SupervisorSummary> summaries = new ArrayList<>(infos.size());
@@ -4755,7 +4755,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             getTopologySummaryCalls.mark();
             IStormClusterState state = stormClusterState;
             StormBase base = state.topologyBases().get(id);
-            checkAuthorization(null, null, "getTopologySummary");
+            if (base == null) {
+              throw new WrappedNotAliveException(id + " is not alive")
+            }
+            checkAuthorization(base.get_name(), null, "getTopologySummary");
             return getTopologySummaryImpl(id, base);
         } catch (Exception e) {
             LOG.warn("Get TopologySummaryById info exception.", e);
